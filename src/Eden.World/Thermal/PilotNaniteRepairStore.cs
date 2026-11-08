@@ -62,6 +62,10 @@ internal sealed class PilotNaniteRepairStore(WorldDatabase database) : IPilotNan
         {
             throw new InvalidDataException("Stop paid overload cycles before repairing modules.");
         }
+        if (LiveWorld.Find(database.Path)?.Heat.Requested(pilotId, shipId).Count > 0)
+        {
+            throw new InvalidDataException("Stop overloading before starting paste repairs.");
+        }
         var calculation = FittingCalculation.Read(world, catalog, pilot);
         var stacks = world
             .Set<OwnedItem>()
@@ -145,6 +149,7 @@ internal sealed class PilotNaniteRepairStore(WorldDatabase database) : IPilotNan
                         InitialDamage = schedule.InitialDamage,
                         InitialHitPoints = schedule.InitialHitPoints,
                         PasteUnits = schedule.PasteUnits,
+                        PasteUnitsPerDamage = schedule.PasteUnitsPerDamage,
                     }
                 );
             }

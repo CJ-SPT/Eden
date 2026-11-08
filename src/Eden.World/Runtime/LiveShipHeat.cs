@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Runtime.Combat;
@@ -16,6 +18,17 @@ internal sealed record ShipHeatCheckpoint(IReadOnlyList<ShipHeatProjection> Ship
         using var transaction = world.Database.CurrentTransaction is null ? world.Database.BeginTransaction() : null;
         foreach (var ship in Ships)
         {
+            foreach (var module in ship.State.Modules.Where(m => m.Condition.Damage > 0))
+            {
+                long id = module.ItemId;
+                double damage = module.Condition.Damage;
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldModuleCondition(ModuleId,Damage) VALUES({id},{damage})
+                    ON CONFLICT(ModuleId) DO UPDATE SET Damage=excluded.Damage
+                    """
+                );
+            }
             string data = ShipHeatPersistence.Encode(ship.State);
             world.Database.ExecuteSql(
                 $"""
@@ -28,8 +41,8 @@ internal sealed record ShipHeatCheckpoint(IReadOnlyList<ShipHeatProjection> Ship
     }
 }
 
-// Temperature/contribution ownership only. The forthcoming damage consumer must
-// settle completions before any native overload command can be enabled.
+// Owns paid heat, deterministic damage trials and checkpoint projection.
+// Burnout commits module state and activity removal at the funded deadline.
 internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, TimeProvider clock)
 {
     private const int RetainedIdleShips = 512;
@@ -39,6 +52,58 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
     private readonly HashSet<long> _reloadSaved = [];
     private readonly HashSet<long> _active = [];
     private int _internal;
+
+    private readonly Dictionary<long, (long Pilot, long Ship)> _requested = [];
+
+    internal bool Selected(long pilot, long module, long? ship = null)
+    {
+        using var ownership = owner.Enter();
+        return _requested.TryGetValue(module, out var request) && request.Pilot == pilot && (ship is null || request.Ship == ship);
+    }
+
+    private readonly Dictionary<(long Pilot, long Ship), IReadOnlySet<long>> _requestViews = [];
+
+    internal IReadOnlySet<long> Requested(long pilot, long ship)
+    {
+        using var ownership = owner.Enter();
+        if (!_requestViews.TryGetValue((pilot, ship), out var view))
+        {
+            if (_requestViews.Count >= RetainedIdleShips)
+            {
+                _requestViews.Clear();
+            }
+            view = _requested.Where(p => p.Value == (pilot, ship)).Select(p => p.Key).ToFrozenSet();
+            _requestViews[(pilot, ship)] = view;
+        }
+        return view;
+    }
+
+    internal void Select(long pilot, long ship, IReadOnlyList<long> modules, bool enabled)
+    {
+        using var ownership = owner.Enter();
+        _requestViews.Remove((pilot, ship));
+        foreach (long module in modules)
+        {
+            if (enabled)
+            {
+                _requested[module] = (pilot, ship);
+            }
+            else
+            {
+                _requested.Remove(module);
+            }
+        }
+    }
+
+    internal void ClearSelection(long pilot, long ship)
+    {
+        using var ownership = owner.Enter();
+        _requestViews.Remove((pilot, ship));
+        foreach (long module in _requested.Where(p => p.Value == (pilot, ship)).Select(p => p.Key).ToArray())
+        {
+            _requested.Remove(module);
+        }
+    }
 
     internal void Warm()
     {
@@ -138,8 +203,55 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         return loaded.State;
     }
 
+    internal ModuleCondition? Condition(long pilot, long ship, long module) =>
+        _internal == 0 && !_stale.Contains(ship) && _ships.TryGetValue(ship, out var loaded) && loaded.PilotId == pilot
+            ? loaded.State.Modules.FirstOrDefault(m => m.ItemId == module)?.Condition
+            : null;
+
+    private sealed record ConditionView(
+        IReadOnlyList<HeatDamageModule> Modules,
+        IReadOnlyList<FittedModuleCondition> Baseline,
+        IReadOnlyList<FittedModuleCondition> Result
+    );
+
+    private readonly Dictionary<long, ConditionView> _conditionViews = [];
+
+    internal IReadOnlyList<FittedModuleCondition> Conditions(long ship, IReadOnlyList<FittedModuleCondition> baseline)
+    {
+        if (_stale.Contains(ship) || !_ships.TryGetValue(ship, out var loaded))
+        {
+            return baseline;
+        }
+        if (
+            _conditionViews.TryGetValue(ship, out var cached)
+            && ReferenceEquals(cached.Modules, loaded.State.Modules)
+            && ReferenceEquals(cached.Baseline, baseline)
+        )
+        {
+            return cached.Result;
+        }
+        var modules = loaded.State.Modules.ToDictionary(m => m.ItemId);
+        var result = Array.AsReadOnly(
+            baseline
+                .Select(m =>
+                    modules.TryGetValue(m.Condition.ItemId, out var live)
+                        ? m with
+                        {
+                            Condition = live.Condition,
+                            Online = live.Online,
+                            BurnedAt = live.BurnedAt,
+                        }
+                        : m
+                )
+                .ToArray()
+        );
+        _conditionViews[ship] = new(loaded.State.Modules, baseline, result);
+        return result;
+    }
+
     internal void InvalidateProfiles()
     {
+        Flush();
         foreach (long ship in _ships.Keys)
         {
             _stale.Add(ship);
@@ -181,8 +293,8 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                     || c.Table is "WorldShip" or "WorldShipHeat" && c.Id == loaded.ShipId
                     || c.Table == "WorldFitRevision" && c.Id == loaded.PilotId
                     || positionMembership && c.Table == "WorldPosition" && c.Id == loaded.ShipId
-                    || c.Table == "WorldModuleCondition" && loaded.State.Cycles.Any(s => s.ModuleId == c.Id)
-                    || c.Table == "WorldRemoteAssistance" && loaded.State.Cycles.Any(s => s.ModuleId == c.Id)
+                    || c.Table == "WorldModuleCondition" && loaded.State.Modules.Any(s => s.ItemId == c.Id)
+                    || c.Table == "WorldRemoteAssistance" && loaded.State.Modules.Any(s => s.ItemId == c.Id)
                 )
             )
             {
@@ -204,16 +316,45 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
             {
                 var previous = _ships[ship];
                 var loaded = _stale.Contains(ship) ? Load(ship, now, true, _reloadSaved.Contains(ship) ? null : previous.State) : previous;
-                _stale.Remove(ship);
-                _reloadSaved.Remove(ship);
                 if (loaded is null)
                 {
+                    _stale.Remove(ship);
+                    _reloadSaved.Remove(ship);
+                    _conditionViews.Remove(ship);
                     _ships.Remove(ship);
                     _dirty.Remove(ship);
                     _active.Remove(ship);
                     continue;
                 }
-                var next = loaded.State.Idle ? loaded.State : HeatCycleRules.Advance(loaded.State, now).State;
+                var next = loaded.State.Idle ? loaded.State : HeatDamageRules.Advance(loaded.State, now);
+                var burned = next
+                    .Modules.Where(m =>
+                        m.Condition.BurnedOut
+                        && (m.Online || loaded.State.Modules.Any(old => old.ItemId == m.ItemId && !old.Condition.BurnedOut))
+                    )
+                    .OrderBy(m => m.BurnedAt)
+                    .ThenBy(m => m.ItemId)
+                    .ToArray();
+                if (burned.Length > 0)
+                {
+                    using WorldDbContext world = new(database.Path);
+                    using var transaction = world.Database.BeginTransaction();
+                    using CatalogDbContext catalog = new(database.CatalogPath);
+                    new ShipHeatCheckpoint([new(ship, next)]).Apply(world);
+                    foreach (var module in burned)
+                    {
+                        ModuleConditionPersistence.ApplyDamage(world, catalog, module.ItemId, 0, module.BurnedAt ?? next.UpdatedAt);
+                    }
+                    world.SaveChanges();
+                    transaction.Commit();
+                    foreach (var module in burned)
+                    {
+                        _requested.Remove(module.ItemId);
+                        _requestViews.Remove((loaded.PilotId, ship));
+                    }
+                }
+                _stale.Remove(ship);
+                _reloadSaved.Remove(ship);
                 if (next.Idle)
                 {
                     _active.Remove(ship);
@@ -223,6 +364,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                     _ships[ship] = loaded with { State = next };
                     if (
                         !HeatCycleRules.SameState(previous.State, next)
+                        && !(previous.State.Idle && next.Idle)
                         && (loaded.HasSavedState || previous.HasSavedState || !previous.State.Idle || !next.Idle)
                     )
                     {
@@ -311,6 +453,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                 .ToArray()
         )
         {
+            _conditionViews.Remove(ship);
             _ships.Remove(ship);
             _stale.Remove(ship);
             _reloadSaved.Remove(ship);

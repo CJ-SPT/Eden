@@ -73,12 +73,14 @@ internal sealed class PilotUpdateCoordinator(
     SignatureSuppressionHandler signatureSuppression,
     AssaultDamageControlHandler assaultDamageControl,
     NaniteRepairHandler naniteRepairs,
-    ModuleBurnoutMonitor burnout
+    ModuleBurnoutMonitor burnout,
+    OverloadHandler overload
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
     public bool IsMonitoring =>
-        corporations.IsMonitoring
+        overload.IsMonitoring
+        || corporations.IsMonitoring
         || fleets.IsMonitoring
         || industry.IsMonitoring
         || guests.IsDocked
@@ -141,6 +143,7 @@ internal sealed class PilotUpdateCoordinator(
     // Chat presence updates Local access after arrival without closing its transport.
     public void PrepareTranslocation(PilotCallContext context)
     {
+        overload.Clear();
         naniteRepairs.Cancel(context);
         playerDamage.Dispose();
         crimewatch.Reset();
@@ -191,6 +194,7 @@ internal sealed class PilotUpdateCoordinator(
     {
         DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
         ApplyPlayerDamage(context);
+        overload.Advance(context);
         burnout.Advance(context);
         naniteRepairs.Advance(context);
         crimewatch.Advance(context);
@@ -230,6 +234,8 @@ internal sealed class PilotUpdateCoordinator(
             repairs.Advance(context);
         }
         propulsion.Advance(context);
+        overload.Advance(context);
+        burnout.Advance(context);
         industry.Advance(context);
         using (SessionPerformance.Phase("update.npcCombat"))
         {

@@ -44,6 +44,25 @@ public sealed partial class PaidNaniteRepairTests
     }
 
     [Fact]
+    public void NativePartialStopPublishesTheReturnedPasteStackOnce()
+    {
+        using Fixture f = new(live: true, paste: 200);
+        SetRepairBasePrice(f, 2600000);
+        using var scope = f.Fit.Db.Services.CreateScope();
+        using var context = Client(f);
+        var handler = scope.ServiceProvider.GetRequiredService<NaniteRepairHandler>();
+        Assert.Equal(true, Reply(handler.Call(context, "dogmaIM", "InitiateModuleRepair", [f.Module])));
+        context.Notifications.Clear();
+        f.At(f.Now + TimeSpan.TicksPerMinute / 2);
+        Assert.Null(Reply(handler.Call(context, "dogmaIM", "StopModuleRepair", [f.Module])));
+        Assert.Equal(175, f.Paste());
+        Assert.Single(context.Notifications.OfType<ItemChanged>());
+        context.Notifications.Clear();
+        Assert.Null(Reply(handler.Call(context, "dogmaIM", "StopModuleRepair", [f.Module])));
+        Assert.Empty(context.Notifications);
+    }
+
+    [Fact]
     public void NativeSingleRepairRoutesOnceSpendsCargoAndPublishesElapsedDamageOnStop()
     {
         using Fixture f = new(live: true);

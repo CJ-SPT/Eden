@@ -20,9 +20,11 @@ internal static class NaniteRepairSchema
                     t.HasCheckConstraint("CK_NaniteRepair_Damage", "InitialDamage>0 AND InitialDamage<InitialHitPoints");
                     t.HasCheckConstraint("CK_NaniteRepair_HitPoints", "InitialHitPoints<=1.7976931348623157e308");
                     t.HasCheckConstraint("CK_NaniteRepair_Paste", "PasteUnits>=0");
+                    t.HasCheckConstraint("CK_NaniteRepair_Rate", "PasteUnitsPerDamage>=0 AND PasteUnitsPerDamage<=1.7976931348623157e308");
                 }
             )
             .HasKey(r => r.ModuleId);
+        model.Entity<SavedNaniteRepair>().Property(r => r.PasteUnitsPerDamage).HasDefaultValue(0d);
         model.Entity<SavedNaniteRepair>().Property(r => r.Generation).UseCollation("NOCASE");
         model.Entity<SavedNaniteRepair>().HasIndex(r => r.Generation).IsUnique();
         model.Entity<SavedNaniteRepair>().HasOne<OwnedItem>().WithMany().HasForeignKey(r => r.ModuleId);
@@ -30,7 +32,8 @@ internal static class NaniteRepairSchema
         model.Entity<SavedNaniteRepair>().HasOne<Ship>().WithMany().HasForeignKey(r => r.ShipId);
     }
 
-    internal static void Upgrade(WorldDbContext world) =>
+    internal static void Upgrade(WorldDbContext world)
+    {
         world.Database.ExecuteSqlRaw(
             """
             CREATE TABLE IF NOT EXISTS WorldNaniteRepair(
@@ -46,4 +49,18 @@ internal static class NaniteRepairSchema
             CREATE INDEX IF NOT EXISTS IX_WorldNaniteRepair_ShipId ON WorldNaniteRepair(ShipId);
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNaniteRepair')")
+                .Contains("PasteUnitsPerDamage")
+        )
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldNaniteRepair ADD COLUMN PasteUnitsPerDamage REAL NOT NULL DEFAULT 0
+                CHECK(PasteUnitsPerDamage>=0 AND PasteUnitsPerDamage<=1.7976931348623157e308)
+                """
+            );
+        }
+    }
 }

@@ -58,6 +58,7 @@ internal sealed class PilotRemoteAssistanceStore(WorldDatabase database, TimePro
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);

@@ -37,6 +37,9 @@ internal static class WorldConnections
         }
     }
 
+    internal static ModuleCondition? ModuleCondition(WorldDbContext context, long pilot, long ship, long module) =>
+        context.Database.GetDbConnection() is LiveConnection connection ? connection.Condition(pilot, ship, module) : null;
+
     internal static bool TryNaniteRepairing(WorldDbContext context, long module, long now, out bool repairing)
     {
         if (context.Database.GetDbConnection() is LiveConnection connection)
@@ -67,6 +70,9 @@ internal static class WorldConnections
         private bool _positionMembershipWrite;
         private bool _schemaWrite;
         internal bool DurableOnClose { get; set; }
+
+        internal ModuleCondition? Condition(long pilot, long ship, long module) =>
+            _changes.Contains(new("WorldModuleCondition", module)) ? null : world.Heat.Condition(pilot, ship, module);
 
         internal bool TryNaniteRepairing(long module, long now, out bool repairing) =>
             world.Nanites.TryRepairing(module, now, out repairing);

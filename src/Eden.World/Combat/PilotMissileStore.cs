@@ -80,9 +80,11 @@ internal sealed partial class PilotMissileStore(
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
+        overloaded |= members.Any(id => PilotOverloadStore.Selected(world, database.Path, pilotId, id));
         var launchers = members.Select(id => ReadLauncher(world, catalog, pilot, id, now)).ToArray();
         if (launchers.Any(l => l.Charge.TypeId != launchers[0].Charge.TypeId))
         {

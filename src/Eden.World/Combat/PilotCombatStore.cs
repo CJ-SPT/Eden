@@ -189,6 +189,7 @@ internal sealed class PilotCombatStore(
         }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var npc = playerTarget is null ? world.Set<WorldNpc>().Find(targetId) : null;
@@ -231,6 +232,7 @@ internal sealed class PilotCombatStore(
             );
         }
         var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
+        overloaded |= members.Any(id => PilotOverloadStore.Selected(world, database.Path, pilotId, id));
         var overloadFit = overloaded ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: members.ToHashSet()) : null;
         ShipHeatSnapshot? heat = null;
         List<PaidShot> paid = [];

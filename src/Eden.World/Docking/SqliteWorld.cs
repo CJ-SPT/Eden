@@ -15,7 +15,9 @@ using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
 using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Docking;
@@ -41,6 +43,15 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         var saved = world.Positions.Find(shipId);
         using CatalogDbContext catalog = new(_database.CatalogPath);
         var pilot = world.Pilots.SingleOrDefault(pilot => pilot.ActiveShipId == shipId);
+        bool transfer =
+            position is null
+            || systemId is int destinationSystem
+                && saved is not null
+                && (saved.SystemId ?? catalog.RequireStation(world.Ships.Find(shipId)!.StationId).SolarSystemId) != destinationSystem;
+        if (transfer)
+        {
+            ShipHeatPersistence.CancelForTravel(world, shipId);
+        }
         if (
             position is not null
             && systemId is int currentSystem
@@ -81,6 +92,10 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         }
         world.SaveChanges();
         transaction.Commit();
+        if (transfer && (pilot?.Id ?? world.Ships.Find(shipId)?.OwnerId) is long owner)
+        {
+            LiveWorld.Find(_database.Path)?.Heat.ClearSelection(owner, shipId);
+        }
     }
 
     public AccountProfile ReadAccount(long accountId)
@@ -124,8 +139,10 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         PilotTaskTrackingStore.Record(world, catalog, pilotId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), TaskEvents.Docked);
         pilot.ActiveShip.StationId = stationId;
         world.Positions.Remove(position);
+        ShipHeatPersistence.CancelForTravel(world, shipId);
         world.SaveChanges();
         transaction.Commit();
+        LiveWorld.Find(_database.Path)?.Heat.ClearSelection(pilotId, shipId);
         return FindPilot(pilot.AccountId, pilotId)!;
     }
 

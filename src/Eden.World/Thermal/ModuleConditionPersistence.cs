@@ -9,17 +9,18 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Thermal;
 
-// Internal transaction boundary for the forthcoming heat-cycle owner. This is
-// not a player-callable damage or repair command.
+// Transaction boundary for heat burnout and station/module repair owners.
 internal static class ModuleConditionPersistence
 {
     internal static ModuleCondition Read(WorldDbContext world, CatalogDbContext catalog, OwnedItem item) =>
-        Read(catalog, item, world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0);
+        WorldConnections.ModuleCondition(world, item.OwnerId, item.LocationId, item.Id)
+        ?? Read(catalog, item, world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0);
 
     internal static ModuleCondition Read(CatalogDbContext catalog, OwnedItem item, double damage)
     {

@@ -26,9 +26,10 @@ public sealed class MutadaptiveRepairCatalogTests
     }
 
     [Fact]
-    public void AllFiveStaticProfilesAreAdmittedWithExplicitHeatAndHullDependencies()
+    public void AllFiveStaticProfilesHaveImplementedHeatAndRetainExplicitHullDependencies()
     {
         using Fixture f = new();
+        PassiveCatalogFixture.LoadOverload(f.Path);
         using CatalogDbContext catalog = new(f.Path);
         var report = ShipContentAudit.Read(catalog);
         var modules = report.Entries.Where(e => e.GroupId == RemoteRepairRules.MutadaptiveArmorGroup).ToArray();
@@ -40,8 +41,8 @@ public sealed class MutadaptiveRepairCatalogTests
                 Assert.True(entry.Admitted);
                 Assert.True(RemoteRepairCatalog.Supported(catalog, entry.TypeId, entry.GroupId));
                 Assert.Equal(ModuleRack.High, FittingCatalog.Definition(catalog, entry.TypeId)!.Rack);
-                Assert.Equal(ContentSupportState.Partial, entry.State);
-                Assert.Single(entry.Checks, c => !c.Implemented && c.Milestone == ShipContentMilestone.Overheating);
+                Assert.Equal(ContentSupportState.Complete, entry.State);
+                Assert.True(Assert.Single(entry.Checks, c => c.Operation == ContentOperation.Overheating).Implemented);
             }
         );
         Assert.True(Assert.Single(report.Entries, e => e.TypeId == 49712).Admitted);

@@ -28,6 +28,19 @@ public sealed class NaniteRepairRuleTests
     }
 
     [Fact]
+    public void PartialRefundChargesEarnedDamageOnceAndRetainsLegacyPrepaidReservations()
+    {
+        var quote = NaniteRepairRules.Quote(new(1, 40, 20), 2600000, 6500, new(10, .5));
+        var schedule = Start(quote, 2, 3, 1000)!;
+        Assert.Equal(100, schedule.PasteUnits);
+        Assert.Equal(100, NaniteRepairRules.Refund(schedule, 1000));
+        Assert.Equal(99, NaniteRepairRules.Refund(schedule, 1001));
+        Assert.Equal(75, NaniteRepairRules.Refund(schedule, 1000 + TimeSpan.TicksPerMinute / 2));
+        Assert.Equal(0, NaniteRepairRules.Refund(schedule, schedule.Key.CompletesAt));
+        Assert.Equal(0, NaniteRepairRules.Refund(schedule with { PasteUnitsPerDamage = 0 }, 1000));
+    }
+
+    [Fact]
     public void InvalidAndOverflowingSchedulesCannotBecomePaidRepairs()
     {
         ModuleCondition condition = new(1, 40, 20);

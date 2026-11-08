@@ -8,6 +8,7 @@ using Eden.Gameplay.Thermal;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Persistence;
@@ -131,7 +132,7 @@ public sealed class ShipContentCoverageTests
     }
 
     [Fact]
-    public void MissileLaunchEvidenceKeepsNativeOverheatingPartialAndExcludesTheCivilianLauncher()
+    public void MissileLaunchEvidenceRecognizesNativeOverheatingAndExcludesTheCivilianLauncher()
     {
         const int LightLauncher = 499;
         using CatalogFixture fixture = new();
@@ -141,16 +142,16 @@ public sealed class ShipContentCoverageTests
         var entries = ShipContentAudit.Read(catalog).Entries;
         var launcher = Assert.Single(entries, e => e.TypeId == LightLauncher);
         Assert.True(launcher.Admitted);
-        Assert.Equal(ContentSupportState.Partial, launcher.State);
+        Assert.Equal(ContentSupportState.Complete, launcher.State);
         var heat = Assert.Single(launcher.Checks, check => check.Operation == ContentOperation.Overheating);
-        Assert.False(heat.Implemented);
+        Assert.True(heat.Implemented);
         Assert.Contains("banked missile launches", heat.Evidence, StringComparison.Ordinal);
         var civilian = Assert.Single(entries, e => e.TypeId == MissileDefinitions.CivilianLauncher);
         Assert.DoesNotContain(civilian.Checks, check => check.Operation == ContentOperation.Overheating);
     }
 
     [Fact]
-    public void ElectronicWarfareProfilesRemainAdmittedWithoutClaimingOverheating()
+    public void ElectronicWarfareProfilesUseTheirVerifiedOverloadProfiles()
     {
         using CatalogFixture fixture = new();
         PassiveCatalogFixture.LoadPlayerEwar(fixture.Path);
@@ -158,11 +159,15 @@ public sealed class ShipContentCoverageTests
         var report = ShipContentAudit.Read(catalog);
         var modules = report.Entries.Where(entry => entry.Category == InventoryCategory.Module && entry.Admitted).ToArray();
         Assert.NotEmpty(modules);
-        Assert.Contains(
-            modules,
+        var heatable = modules.Where(entry => entry.Checks.Any(check => check.Operation == ContentOperation.Overheating)).ToArray();
+        Assert.NotEmpty(heatable);
+        Assert.All(
+            heatable,
             entry =>
-                entry.State == ContentSupportState.Partial
-                && entry.Checks.Any(check => check.Operation == ContentOperation.Overheating && !check.Implemented)
+                Assert.Equal(
+                    OverloadCatalog.Definition(catalog, entry.TypeId) is not null,
+                    Assert.Single(entry.Checks, check => check.Operation == ContentOperation.Overheating).Implemented
+                )
         );
         Assert.Contains(
             report.Entries,

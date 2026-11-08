@@ -84,6 +84,7 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var source = Pilot(world, pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);

@@ -34,7 +34,7 @@ public sealed class OverloadCatalogTests
 
     [Theory]
     [MemberData(nameof(Representatives))]
-    public void EachDistinctProductionProgramHasAValidatedDefinitionAndRemainsUnfinishedForHeat(int type, int effect)
+    public void EachDistinctProductionProgramHasAValidatedDefinitionAndImplementedHeat(int type, int effect)
     {
         using Fixture f = new();
         using CatalogDbContext catalog = new(f.Path);
@@ -44,8 +44,7 @@ public sealed class OverloadCatalogTests
         Assert.Equal(FittingCatalog.Definition(catalog, type)!.Rack, profile.Rack);
         Assert.True(profile.HitPoints > 0);
         var entry = Assert.Single(ShipContentAudit.Read(catalog).Entries, e => e.TypeId == type);
-        Assert.Contains(entry.Checks, c => c.Operation == ContentOperation.Overheating && !c.Implemented);
-        Assert.DoesNotContain(entry.Checks, c => c.Operation == ContentOperation.Overheating && c.Implemented);
+        Assert.True(Assert.Single(entry.Checks, c => c.Operation == ContentOperation.Overheating).Implemented);
     }
 
     [Fact]

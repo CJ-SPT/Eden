@@ -54,6 +54,50 @@ public sealed class MissileHeatTests
             .LaunchOverloadedBank(f.PilotId, member, target, new HashSet<long> { target }, Motion, f.Clock.Now);
 
     [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void NativeBankSelectionFeedsPublicLaunchesAndStopsAtThePaidBoundary(int member)
+    {
+        using var f = Prepare();
+        var bank = LoadBank(f);
+        var npc = MissileCombatTests.Space(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var controls = f.Db.Services.GetRequiredService<IPilotOverloading>();
+        using CatalogDbContext catalog = new(f.CatalogPath);
+        var selected = controls.Set(
+            new(
+                f.PilotId,
+                f.ShipId,
+                bank[member],
+                OverloadCatalog.Definition(catalog, Launcher)!.EffectId,
+                OverloadScope.Module,
+                true,
+                f.Clock.Now
+            )
+        );
+        Assert.Equal(2, selected.Count);
+        var missiles = f.Db.Services.GetRequiredService<PilotMissileStore>();
+        var hot = missiles.LaunchBank(f.PilotId, bank[1 - member], npc.Id, new HashSet<long> { npc.Id }, Motion, f.Clock.Now);
+        Assert.All(hot, launch => Assert.Equal(OverloadedCycle, launch.Launcher.CycleMilliseconds, 8));
+        var stopped = controls.Set(
+            new(
+                f.PilotId,
+                f.ShipId,
+                bank[member],
+                OverloadCatalog.Definition(catalog, Launcher)!.EffectId,
+                OverloadScope.Module,
+                false,
+                f.Clock.Now
+            )
+        );
+        Assert.All(stopped, state => Assert.True(state.Pending));
+        f.Clock.Milliseconds += 15000;
+        var normal = missiles.LaunchBank(f.PilotId, bank[member], npc.Id, new HashSet<long> { npc.Id }, Motion, f.Clock.Now);
+        Assert.All(normal, launch => Assert.Equal(NormalCycle, launch.Launcher.CycleMilliseconds, 8));
+        Assert.Empty(f.Db.Services.GetRequiredService<IPilotShipHeat>().Read(f.PilotId, f.ShipId, f.Clock.Now).Cycles);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void BankPaysOneRoundAndOneHighRackCyclePerLauncher(bool resident)

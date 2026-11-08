@@ -101,6 +101,85 @@ public sealed partial class PaidNaniteRepairTests
         }
     }
 
+    private static void SetRepairBasePrice(Fixture f, double price)
+    {
+        using CatalogDbContext catalog = new(f.Fit.CatalogPath, writable: true);
+        var type = catalog.Set<SourceRecord>().Find("client/types", ShieldBooster.ToString())!;
+        var data = JsonNode.Parse(type.Data)!;
+        data["basePrice"] = price;
+        type.Data = data.ToJsonString();
+        catalog.Update(type);
+        var materials = catalog.Set<SourceRecord>().Find("client/typematerials", ShieldBooster.ToString())!;
+        materials.Data = "{\"materials\":[]}";
+        catalog.Update(materials);
+        catalog.SaveChanges();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PartialCancellationReturnsOnlyUnspentReservedPasteOnce(bool live)
+    {
+        using Fixture f = new(live: live, paste: 200);
+        SetRepairBasePrice(f, 2600000);
+        var schedule = f.Start();
+        Assert.Equal(100, schedule.PasteUnits);
+        Assert.Equal(5, schedule.PasteUnitsPerDamage);
+        Assert.Equal(100, f.Paste());
+        SetRepairBasePrice(f, 1300000);
+        f.At(schedule.Key.StartedAt + TimeSpan.TicksPerMinute / 2);
+        Assert.Equal(15, f.Repairs.Stop(f.Pilot, f.Ship, schedule.Key, f.Now)!.Damage, 8);
+        Assert.Equal(175, f.Paste());
+        Assert.Equal(15, f.Repairs.Stop(f.Pilot, f.Ship, schedule.Key, f.Now)!.Damage, 8);
+        Assert.Equal(175, f.Paste());
+    }
+
+    [Fact]
+    public void FailedPasteReturnRollsBackProgressAndCanRetryWithoutDuplicatingMaterial()
+    {
+        using Fixture f = new(live: true, paste: 200);
+        SetRepairBasePrice(f, 2600000);
+        var schedule = f.Start();
+        using (WorldDbContext world = new(f.Fit.Db.Path))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                CREATE TRIGGER RejectPasteReturn BEFORE UPDATE OF Quantity ON WorldItem
+                WHEN NEW.TypeId=28668 AND NEW.Quantity>OLD.Quantity
+                BEGIN SELECT RAISE(ABORT,'rejected paste return'); END
+                """
+            );
+        }
+        f.At(schedule.Key.StartedAt + TimeSpan.TicksPerMinute / 2);
+        var rejected = Assert.Throws<DbUpdateException>(() => f.Repairs.Stop(f.Pilot, f.Ship, schedule.Key, f.Now));
+        Assert.IsType<SqliteException>(rejected.InnerException);
+        Assert.Equal(20, f.DamageLeft(f.Module));
+        Assert.Equal(100, f.Paste());
+        using (WorldDbContext world = new(f.Fit.Db.Path))
+        {
+            Assert.NotNull(world.Set<SavedNaniteRepair>().Find(f.Module));
+            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectPasteReturn");
+        }
+        Assert.Equal(15, f.Repairs.Stop(f.Pilot, f.Ship, schedule.Key, f.Now)!.Damage, 8);
+        Assert.Equal(175, f.Paste());
+        Assert.Equal(15, f.Repairs.Stop(f.Pilot, f.Ship, schedule.Key, f.Now)!.Damage, 8);
+        Assert.Equal(175, f.Paste());
+    }
+
+    [Fact]
+    public void AutomaticDockCancellationReturnsUnspentPasteAtTheCommitBoundary()
+    {
+        using Fixture f = new(live: true, paste: 200);
+        SetRepairBasePrice(f, 2600000);
+        var schedule = f.Start();
+        f.At(schedule.Key.StartedAt + TimeSpan.TicksPerMinute / 2);
+        f.Fit.Db.Store.SetPosition(f.Ship, null);
+        f.At(schedule.Key.CompletesAt + TimeSpan.TicksPerMinute);
+        using (f.Live!.Enter()) { }
+        Assert.Equal(15, f.DamageLeft(f.Module), 8);
+        Assert.Equal(175, f.Paste());
+    }
+
     [Fact]
     public void ZeroNativeValueRepairHealsAtomicallyWithoutPasteOrATimer()
     {
@@ -207,7 +286,7 @@ public sealed partial class PaidNaniteRepairTests
         Assert.NotEqual(old.Key.Generation, next.Key.Generation);
         Assert.Null(f.Repairs.Stop(f.Pilot, f.Ship, old.Key, f.Now));
         Assert.Equal(20, f.DamageLeft(f.Module));
-        Assert.Equal(48, f.Paste());
+        Assert.Equal(49, f.Paste());
     }
 
     [Fact]
@@ -232,7 +311,7 @@ public sealed partial class PaidNaniteRepairTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void RestartSettlesPaidElapsedProgressOnceWithoutReplayingOrRefunding(bool late)
+    public void RestartSettlesPaidElapsedProgressOnceWithoutReplaying(bool late)
     {
         using Fixture f = new();
         var schedule = f.Start();
@@ -574,7 +653,7 @@ public sealed partial class PaidNaniteRepairTests
         WorldInitialization.Initialize(new(f.Fit.Db.Path), f.Fit.Clock);
         using (WorldDbContext world = new(f.Fit.Db.Path))
         {
-            Assert.Equal(108, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+            Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
             Assert.Empty(world.Set<SavedNaniteRepair>());
             world.Database.OpenConnection();
             world.Database.ExecuteSqlRaw("PRAGMA ignore_check_constraints=ON");

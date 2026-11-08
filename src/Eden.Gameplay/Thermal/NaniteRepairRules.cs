@@ -10,7 +10,10 @@ public sealed record NaniteMaterialValue(double BasePrice, long PortionSize, lon
 
 public sealed record NaniteRepairRates(double HitPointsPerMinute, double CostMultiplier);
 
-public sealed record NaniteRepairQuote(ModuleCondition Condition, long PasteUnits, long DurationTicks);
+public sealed record NaniteRepairQuote(ModuleCondition Condition, long PasteUnits, long DurationTicks)
+{
+    public double PasteUnitsPerDamage { get; init; }
+}
 
 public static class NaniteRepairRules
 {
@@ -27,6 +30,8 @@ public static class NaniteRepairRules
             || generation == Guid.Empty
             || quote.Condition.BurnedOut
             || quote.Condition.Damage <= 0
+            || !double.IsFinite(quote.PasteUnitsPerDamage)
+            || quote.PasteUnitsPerDamage < 0
             || quote.PasteUnits < 0
             || quote.DurationTicks < 0
             || quote.DurationTicks == 0 && quote.PasteUnits != 0
@@ -43,7 +48,10 @@ public static class NaniteRepairRules
                 quote.Condition.Damage,
                 quote.Condition.HitPoints,
                 quote.PasteUnits
-            );
+            )
+            {
+                PasteUnitsPerDamage = quote.PasteUnitsPerDamage,
+            };
     }
 
     public static double Repaired(NaniteRepairSchedule schedule, long now)
@@ -64,6 +72,18 @@ public static class NaniteRepairRules
         return schedule.InitialDamage * ((now - schedule.Key.StartedAt) / (double)(schedule.Key.CompletesAt - schedule.Key.StartedAt));
     }
 
+    public static long Refund(NaniteRepairSchedule schedule, long now)
+    {
+        Validate(schedule);
+        // Older reservations preserve their original prepaid contract.
+        if (schedule.PasteUnitsPerDamage == 0 || now >= schedule.Key.CompletesAt)
+        {
+            return 0;
+        }
+        double used = Math.Min(schedule.PasteUnits, Math.Ceiling(Repaired(schedule, now) * schedule.PasteUnitsPerDamage));
+        return schedule.PasteUnits - checked((long)used);
+    }
+
     public static void Validate(NaniteRepairSchedule schedule)
     {
         ValidateKey(schedule.Key);
@@ -74,6 +94,8 @@ public static class NaniteRepairRules
             || schedule.InitialDamage <= 0
             || !double.IsFinite(schedule.InitialHitPoints)
             || schedule.InitialHitPoints <= schedule.InitialDamage
+            || !double.IsFinite(schedule.PasteUnitsPerDamage)
+            || schedule.PasteUnitsPerDamage < 0
             || schedule.PasteUnits < 0
         )
         {
@@ -144,7 +166,7 @@ public static class NaniteRepairRules
         double repairCost = condition.Damage * unitPrice * rates.CostMultiplier;
         long units = checked((long)Math.Ceiling(repairCost / pasteBasePrice));
         long duration = Math.Max(1, checked((long)Math.Ceiling(condition.Damage / rates.HitPointsPerMinute * TimeSpan.TicksPerMinute)));
-        return new(condition, units, duration);
+        return new(condition, units, duration) { PasteUnitsPerDamage = unitPrice * rates.CostMultiplier / pasteBasePrice };
     }
 
     private static void CheckPrice(double value)

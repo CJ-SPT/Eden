@@ -9,6 +9,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Drones;
@@ -35,7 +36,10 @@ internal sealed class ShipDogmaBuilder(
     IPilotCharacterSheet sheet,
     IPilotJumpCloneSkills clones,
     IPilotWeaponBanks banks,
-    IPilotDrones? droneStore = null
+    IPilotDrones? droneStore = null,
+    IPilotOverloading? overload = null,
+    IPilotModuleConditions? conditions = null,
+    IPilotShipHeat? heat = null
 )
 {
     private static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
@@ -110,6 +114,18 @@ internal sealed class ShipDogmaBuilder(
         attributes[DogmaAttributeId.Mass] = pilot.Flight.Mass;
         attributes[DogmaAttributeId.CargoCapacity] = pilot.CargoCapacity;
         attributes[DogmaAttributeId.ShieldCharge] = current.Remaining.Shield;
+        if (heat is not null && attributes.GetValueOrDefault(DogmaAttributeId.HeatCapacityHigh) > 0)
+        {
+            var thermal = heat.Read(pilot.PilotId, pilot.ShipId, now);
+            attributes[DogmaAttributeId.HeatHigh] = thermal.Heat(ModuleRack.High);
+            attributes[DogmaAttributeId.HeatMedium] = thermal.Heat(ModuleRack.Medium);
+            attributes[DogmaAttributeId.HeatLow] = thermal.Heat(ModuleRack.Low);
+            attributes[DogmaAttributeId.HeatAbsorptionHigh] = thermal.Cycles.Where(c => c.Rack == ModuleRack.High).Sum(c => c.Absorption);
+            attributes[DogmaAttributeId.HeatAbsorptionMedium] = thermal
+                .Cycles.Where(c => c.Rack == ModuleRack.Medium)
+                .Sum(c => c.Absorption);
+            attributes[DogmaAttributeId.HeatAbsorptionLow] = thermal.Cycles.Where(c => c.Rack == ModuleRack.Low).Sum(c => c.Absorption);
+        }
         if (droneStore?.Control(pilot.PilotId) is { } control)
         {
             attributes[DogmaAttributeId.DroneBandwidthLoad] = control.UsedBandwidth;
@@ -156,10 +172,24 @@ internal sealed class ShipDogmaBuilder(
         {
             attributes[DogmaAttributeId.Quantity] = module.Quantity;
         }
+        if (conditions?.Read(pilot.PilotId, pilot.ShipId).FirstOrDefault(m => m.Condition.ItemId == module.Id) is { } condition)
+        {
+            attributes[DogmaAttributeId.Damage] = condition.Condition.Damage;
+            attributes[DogmaAttributeId.IsOnline] = condition.Online ? 1d : 0d;
+        }
         Dictionary<DogmaEffect, DogmaActiveEffect> effects = [];
-        if (module.Online)
+        if (attributes.GetValueOrDefault(DogmaAttributeId.IsOnline) != 0)
         {
             effects[DogmaEffect.Online] = new(module.Id, pilot.PilotId, pilot.ShipId, null, DogmaEffect.Online, now, null, 0);
+        }
+        if (
+            overload?.Requested(pilot.PilotId, pilot.ShipId).Contains(module.Id) == true
+            && conditions?.Read(pilot.PilotId, pilot.ShipId).FirstOrDefault(m => m.Condition.ItemId == module.Id)
+                is { OverloadEffect: > 0 } selected
+        )
+        {
+            var overloadEffect = (DogmaEffect)selected.OverloadEffect;
+            effects[overloadEffect] = new(module.Id, pilot.PilotId, pilot.ShipId, null, overloadEffect, now, null, 0);
         }
         foreach (var source in moduleEffects)
         {

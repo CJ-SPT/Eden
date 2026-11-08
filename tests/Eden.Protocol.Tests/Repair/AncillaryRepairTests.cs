@@ -152,9 +152,10 @@ public sealed partial class AncillaryRepairTests
     }
 
     [Fact]
-    public void StaticAdmissionRejectsAllEightMutationTemplatesAndPasteStillRetainsItsHeatConsumerGap()
+    public void StaticAdmissionRejectsAllEightMutationTemplatesAndPricedPasteSupportsBothConsumers()
     {
         using Fixture f = Prepare();
+        PassiveCatalogFixture.LoadOverload(f.CatalogPath);
         using CatalogDbContext catalog = new(f.CatalogPath);
         var types = catalog.Set<ItemType>().Where(t => t.GroupId == 1156 || t.GroupId == 1199).ToArray();
         Assert.Equal(26, types.Length);
@@ -170,10 +171,10 @@ public sealed partial class AncillaryRepairTests
         Assert.True(AmmunitionCatalog.Supported(catalog, Paste, AncillaryRepairRules.PasteGroup));
         var paste = ShipContentAudit.Read(catalog).Entries.Single(e => e.TypeId == Paste);
         Assert.True(paste.Admitted);
-        Assert.Equal(ContentSupportState.Partial, paste.State);
+        Assert.Equal(ContentSupportState.Complete, paste.State);
         Assert.Contains(
             paste.Checks,
-            c => c.Operation == ContentOperation.ConsumerCoverage && !c.Implemented && c.Milestone == ShipContentMilestone.Overheating
+            c => c.Operation == ContentOperation.ConsumerCoverage && c.Implemented && c.Milestone == ShipContentMilestone.Overheating
         );
     }
 

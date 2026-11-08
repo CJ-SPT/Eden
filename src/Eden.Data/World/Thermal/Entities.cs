@@ -23,4 +23,5 @@ public sealed class SavedNaniteRepair
     public double InitialDamage { get; set; }
     public double InitialHitPoints { get; set; }
     public long PasteUnits { get; set; }
+    public double PasteUnitsPerDamage { get; set; }
 }

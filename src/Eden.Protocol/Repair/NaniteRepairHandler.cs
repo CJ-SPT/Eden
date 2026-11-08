@@ -9,8 +9,12 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Repair;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class NaniteRepairHandler(IPilotNaniteRepair repairs, TimeProvider clock, IEnumerable<IModuleEffectSource> effects)
-    : ISelectedPilotCallHandler
+internal sealed class NaniteRepairHandler(
+    IPilotNaniteRepair repairs,
+    TimeProvider clock,
+    IEnumerable<IModuleEffectSource> effects,
+    IPilotInventory? inventory = null
+) : ISelectedPilotCallHandler
 {
     // Build 3662168's ModuleButton.RepairModule catches this name while
     // continuing the remaining bank members after insufficient paste.
@@ -18,6 +22,7 @@ internal sealed class NaniteRepairHandler(IPilotNaniteRepair repairs, TimeProvid
     private const int MaximumModules = 3 * InventoryDefinitions.SlotsPerRack;
     private readonly Dictionary<long, NaniteRepairSchedule> _active = [];
     private IReadOnlyList<NaniteRepairSchedule>? _view;
+    private IReadOnlyDictionary<long, InventoryItem> _paste = new Dictionary<long, InventoryItem>();
     private long _pilot;
     private long _ship;
     private int _system;
@@ -54,9 +59,10 @@ internal sealed class NaniteRepairHandler(IPilotNaniteRepair repairs, TimeProvid
                 {
                     // The world owner may already have settled docking, loss
                     // or expiry before this socket observes the transition.
-                    Stop(context, schedule);
+                    Stop(context, schedule, notifyPaste: false);
                 }
             }
+            NotifyPaste(context);
         }
         _active.Clear();
         _view = null;
@@ -95,7 +101,7 @@ internal sealed class NaniteRepairHandler(IPilotNaniteRepair repairs, TimeProvid
         }
     }
 
-    private void Stop(PilotCallContext context, NaniteRepairSchedule schedule)
+    private void Stop(PilotCallContext context, NaniteRepairSchedule schedule, bool notifyPaste = true)
     {
         try
         {
@@ -110,6 +116,35 @@ internal sealed class NaniteRepairHandler(IPilotNaniteRepair repairs, TimeProvid
             // pilot's fitted item; the next location prime owns its display.
         }
         _active.Remove(schedule.Key.ModuleId);
+        if (notifyPaste)
+        {
+            NotifyPaste(context);
+        }
+    }
+
+    private IReadOnlyDictionary<long, InventoryItem> Paste() =>
+        inventory
+            ?.List(_pilot, _ship)
+            .Where(i => i.TypeId == NaniteRepairRules.PasteType && i.FlagId == (int)InventoryFlag.Cargo)
+            .ToDictionary(i => i.Id)
+        ?? new Dictionary<long, InventoryItem>();
+
+    private void NotifyPaste(PilotCallContext context)
+    {
+        var current = Paste();
+        foreach (var item in current.Values)
+        {
+            var previous = _paste.GetValueOrDefault(item.Id);
+            if (item != previous)
+            {
+                InventoryChangesWire.NotifyItemChange(context, new(item, previous));
+            }
+        }
+        foreach (var item in _paste.Values.Where(i => !current.ContainsKey(i.Id)))
+        {
+            InventoryChangesWire.NotifyItemChange(context, new(item with { Quantity = 0 }, item));
+        }
+        _paste = current;
     }
 
     private void Notify(PilotCallContext context, IReadOnlyList<ModuleCondition> conditions)
@@ -194,6 +229,7 @@ internal sealed class NaniteRepairHandler(IPilotNaniteRepair repairs, TimeProvid
             {
                 InventoryChangesWire.NotifyItemChange(context, change);
             }
+            _paste = Paste();
             foreach (var started in result.Started)
             {
                 if (started.Schedule is { } schedule)

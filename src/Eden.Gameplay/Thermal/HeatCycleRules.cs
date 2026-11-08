@@ -15,6 +15,10 @@ public sealed record HeatRackSnapshot(HeatRackProfile Profile, double Heat);
 
 public sealed record ShipHeatSnapshot(long UpdatedAt, IReadOnlyList<HeatRackSnapshot> Racks, IReadOnlyList<PaidHeatCycle> Cycles)
 {
+    public IReadOnlyList<HeatDamageModule> Modules { get; init; } = [];
+    public int TotalSlots { get; init; }
+    public ulong DamageSeed { get; init; }
+
     public bool Idle => Cycles.Count == 0 && Racks.All(r => r.Heat == 0);
 
     public double Heat(ModuleRack rack) => Racks.SingleOrDefault(r => r.Profile.Rack == rack)?.Heat ?? 0;
@@ -29,7 +33,12 @@ public static class HeatCycleRules
     private const int HeatRackCount = 3;
 
     public static bool SameState(ShipHeatSnapshot left, ShipHeatSnapshot right) =>
-        left.UpdatedAt == right.UpdatedAt && left.Racks.SequenceEqual(right.Racks) && left.Cycles.SequenceEqual(right.Cycles);
+        left.UpdatedAt == right.UpdatedAt
+        && left.Racks.SequenceEqual(right.Racks)
+        && left.Cycles.SequenceEqual(right.Cycles)
+        && left.Modules.SequenceEqual(right.Modules)
+        && left.TotalSlots == right.TotalSlots
+        && left.DamageSeed == right.DamageSeed;
 
     public static ShipHeatSnapshot Create(IReadOnlyList<HeatRackProfile> profiles, long now) =>
         Restore(new(now, profiles.Select(p => new HeatRackSnapshot(p, 0)).ToArray(), []));
@@ -37,7 +46,12 @@ public static class HeatCycleRules
     public static ShipHeatSnapshot Restore(ShipHeatSnapshot state)
     {
         Validate(state);
-        return new(state.UpdatedAt, Array.AsReadOnly(state.Racks.ToArray()), Array.AsReadOnly(state.Cycles.ToArray()));
+        return state with
+        {
+            Racks = Array.AsReadOnly(state.Racks.ToArray()),
+            Cycles = Array.AsReadOnly(state.Cycles.ToArray()),
+            Modules = Array.AsReadOnly(state.Modules.ToArray()),
+        };
     }
 
     public static HeatTransition Start(ShipHeatSnapshot state, PaidHeatCycle cycle)
@@ -139,7 +153,15 @@ public static class HeatCycleRules
             cycles.RemoveAll(c => c.CompletesAt == deadline);
         }
         Move(now);
-        return new(new(now, Array.AsReadOnly(racks), Array.AsReadOnly(cycles.ToArray())), Array.AsReadOnly(completed.ToArray()));
+        return new(
+            state with
+            {
+                UpdatedAt = now,
+                Racks = Array.AsReadOnly(racks),
+                Cycles = Array.AsReadOnly(cycles.ToArray()),
+            },
+            Array.AsReadOnly(completed.ToArray())
+        );
 
         void Move(long target)
         {
@@ -175,6 +197,28 @@ public static class HeatCycleRules
         )
         {
             throw new InvalidDataException("Invalid ship heat state.");
+        }
+        if (
+            state.Modules.Count > InventoryDefinitions.SlotsPerRack * HeatRackCount
+            || state.Modules.Select(m => m.ItemId).Distinct().Count() != state.Modules.Count
+            || state.TotalSlots < 0
+        )
+        {
+            throw new InvalidDataException("Invalid heat module state.");
+        }
+        foreach (var module in state.Modules)
+        {
+            _ = ModuleConditionRules.Define(module.ItemId, module.Condition.HitPoints, module.Condition.Damage);
+            if (
+                module.ItemId != module.Condition.ItemId
+                || module.Slot is < 0 or >= InventoryDefinitions.SlotsPerRack
+                || module.Rack is not (ModuleRack.High or ModuleRack.Medium or ModuleRack.Low)
+                || !double.IsFinite(module.Damage)
+                || module.Damage < 0
+            )
+            {
+                throw new InvalidDataException("Invalid heat module profile.");
+            }
         }
         foreach (var rack in state.Racks)
         {

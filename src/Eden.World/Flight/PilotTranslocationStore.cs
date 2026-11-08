@@ -5,7 +5,9 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Docking;
+using Eden.World.Runtime;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Flight;
@@ -88,9 +90,11 @@ internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorl
                 ship.Position.SystemId = target.System.Id;
                 (ship.Position.X, ship.Position.Y, ship.Position.Z) = (point.X, point.Y, point.Z);
             }
+            ShipHeatPersistence.CancelForTravel(world, ship.Id);
             world.SaveChanges();
             var current = PilotFleetStore.Read(catalog, ship);
             transaction.Commit();
+            LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilotId, ship.Id);
             return new(lookup.FindPilot(pilot.AccountId, pilotId)!, new(current, previous));
         }
     }

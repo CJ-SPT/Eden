@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Fittings;
@@ -159,7 +160,62 @@ internal static class ShipHeatPersistence
         };
         state = HeatCycleRules.Configure(state, profiles, state.UpdatedAt).State;
         state = HeatCycleRules.Configure(state, profiles, now).State;
-        return new(pilot.Id, shipId, state, saved is not null, original is not null && !HeatCycleRules.SameState(original, state));
+        state = ConfigureModules(world, catalog, calculation, state);
+        return new(
+            pilot.Id,
+            shipId,
+            state,
+            saved is not null,
+            original is not null && !(original.Idle && state.Idle) && !HeatCycleRules.SameState(original, state)
+        );
+    }
+
+    internal static ShipHeatSnapshot ConfigureModules(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        FittingCalculation calculation,
+        ShipHeatSnapshot state
+    )
+    {
+        var capacity = HullFittingCapacity.Read(calculation.Graph.Attributes(calculation.ShipId));
+        var ids = calculation.Modules.Select(m => m.Item.Id).ToArray();
+        var conditions = world
+            .Set<Eden.Data.World.Thermal.SavedModuleCondition>()
+            .Where(c => ids.Contains(c.ModuleId))
+            .ToDictionary(c => c.ModuleId, c => c.Damage);
+        var modules = calculation
+            .Modules.Where(m => Rack(m.Item.FlagId) is not null)
+            .Where(m => catalog.FittingAttributes(m.Item.TypeId).GetValueOrDefault(DogmaAttributeId.StructureHitPoints) > 0)
+            .Select(m =>
+            {
+                var condition = ModuleConditionPersistence.Read(catalog, m.Item, conditions.GetValueOrDefault(m.Item.Id));
+                var rack = Rack(m.Item.FlagId)!.Value;
+                int firstSlot = rack switch
+                {
+                    ModuleRack.High => (int)InventoryFlag.HighSlot0,
+                    ModuleRack.Medium => (int)InventoryFlag.MediumSlot0,
+                    _ => (int)InventoryFlag.LowSlot0,
+                };
+                return new HeatDamageModule(
+                    m.Item.Id,
+                    rack,
+                    m.Item.FlagId - firstSlot,
+                    m.Item.Online,
+                    condition,
+                    calculation.Graph.Read(m.Item.Id, DogmaAttributeId.HeatDamage)
+                )
+                {
+                    BurnedAt = condition.BurnedOut ? state.Modules.FirstOrDefault(old => old.ItemId == m.Item.Id)?.BurnedAt : null,
+                };
+            })
+            .OrderBy(m => m.ItemId)
+            .ToArray();
+        return state with
+        {
+            Modules = Array.AsReadOnly(modules),
+            TotalSlots = capacity.High + capacity.Medium + capacity.Low + capacity.Rigs,
+            DamageSeed = state.DamageSeed == 0 ? BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(sizeof(ulong))) : state.DamageSeed,
+        };
     }
 
     internal static ModuleRack? Rack(int flag) =>
@@ -224,10 +280,27 @@ internal static class ShipHeatPersistence
         var profiles = Profiles(calculation.Graph.Attributes(calculation.ShipId));
         var state = saved is null ? HeatCycleRules.Create(profiles, startedAt) : Decode(saved.StateJson);
         state = HeatCycleRules.Configure(state, profiles, startedAt).State;
+        state = ConfigureModules(world, catalog, calculation, state);
         state = HeatCycleRules.Start(state, source).State;
         saved ??= world.Add(new SavedShipHeat { ShipId = calculation.ShipId }).Entity;
         saved.StateJson = Encode(state);
         return state;
+    }
+
+    internal static void CancelForTravel(WorldDbContext world, long ship)
+    {
+        if (world.Database.CurrentTransaction is null)
+        {
+            throw new InvalidOperationException("Cancel heat in the owning travel transaction.");
+        }
+        if (world.Set<SavedShipHeat>().Find(ship) is { } saved)
+        {
+            var state = Decode(saved.StateJson);
+            if (state.Cycles.Count > 0)
+            {
+                saved.StateJson = Encode(state with { Cycles = Array.Empty<PaidHeatCycle>() });
+            }
+        }
     }
 
     internal static void CancelPaidCycle(WorldDbContext world, long pilot, long ship, HeatCycleKey expected, long now)

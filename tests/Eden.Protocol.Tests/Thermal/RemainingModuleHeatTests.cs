@@ -61,7 +61,25 @@ public sealed class RemainingModuleHeatTests
         var combat = f.Db.Services.GetRequiredService<PilotCombatStore>();
         var normal = combat.FireBank(f.PilotId, first, npc.Id, SpacePosition.Zero, f.Clock.Now, .5);
         f.Clock.Milliseconds += 30000;
-        CombatVolley Fire() => combat.FireOverloadedBank(f.PilotId, second, npc.Id, SpacePosition.Zero, f.Clock.Now, .5);
+        if (resident)
+        {
+            f.Db.Services.GetRequiredService<IPilotOverloading>()
+                .Set(
+                    new(
+                        f.PilotId,
+                        ship,
+                        second,
+                        OverloadCatalog.Definition(catalog, type)!.EffectId,
+                        OverloadScope.Module,
+                        true,
+                        f.Clock.Now
+                    )
+                );
+        }
+        CombatVolley Fire() =>
+            resident
+                ? combat.FireBank(f.PilotId, second, npc.Id, SpacePosition.Zero, f.Clock.Now, .5)
+                : combat.FireOverloadedBank(f.PilotId, second, npc.Id, SpacePosition.Zero, f.Clock.Now, .5);
         var hot = Fire();
         var binding = Assert.Single(OverloadCatalog.Definition(catalog, type)!.Bonuses);
         double factor = 1 + catalog.FittingAttributes(type)[binding.SourceAttribute] / 100;

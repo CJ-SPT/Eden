@@ -168,7 +168,7 @@ public sealed partial class RemoteAssistanceTests
     }
 
     [Fact]
-    public void AllSixteenStaticProfilesHaveOneOperationalOwnerAndRetainHeatAsUnfinished()
+    public void AllSixteenStaticProfilesHaveOneOperationalOwnerAndImplementedHeat()
     {
         using Fixture f = Prepare();
         using CatalogDbContext catalog = new(f.CatalogPath);
@@ -188,7 +188,7 @@ public sealed partial class RemoteAssistanceTests
             e =>
             {
                 Assert.True(e.Admitted);
-                Assert.Contains(e.Checks, c => c.Operation == ContentOperation.Overheating && !c.Implemented);
+                Assert.True(Assert.Single(e.Checks, c => c.Operation == ContentOperation.Overheating).Implemented);
             }
         );
     }

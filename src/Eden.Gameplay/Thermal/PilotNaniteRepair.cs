@@ -11,7 +11,10 @@ public sealed record NaniteRepairSchedule(
     double InitialDamage,
     double InitialHitPoints,
     long PasteUnits
-);
+)
+{
+    public double PasteUnitsPerDamage { get; init; }
+}
 
 public sealed record NaniteRepairStarted(long ModuleId, NaniteRepairSchedule? Schedule, ModuleCondition Condition);
 

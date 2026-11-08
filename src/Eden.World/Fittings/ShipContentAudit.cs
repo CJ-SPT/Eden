@@ -300,7 +300,8 @@ internal static class ShipContentAudit
         if (effects.Any(effect => effect.EffectCategory == OverloadEffectCategory))
         {
             string evidence = "Unverified overload calculation profile.";
-            if (OverloadCatalog.Definition(catalog, type.Id) is not null)
+            bool overheating = OverloadCatalog.Definition(catalog, type.Id) is not null;
+            if (overheating)
             {
                 evidence = type.GroupId switch
                 {
@@ -319,9 +320,14 @@ internal static class ShipContentAudit
             checks.Add(
                 new(
                     ContentOperation.Overheating,
-                    false,
+                    overheating,
                     ShipContentMilestone.Overheating,
-                    evidence + " Native overload controls and rack damage settlement remain unfinished."
+                    evidence
+                        + (
+                            overheating
+                                ? " Native controls, paid cycles, resident heat damage and burnout are implemented."
+                                : " Overheating remains unavailable for this unverified profile."
+                        )
                 )
             );
         }

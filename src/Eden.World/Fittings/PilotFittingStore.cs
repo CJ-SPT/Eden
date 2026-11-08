@@ -491,7 +491,8 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         }
         if (isModule)
         {
-            attributes[DogmaAttributeId.Damage] = current.Damage;
+            attributes[DogmaAttributeId.Damage] =
+                WorldConnections.ModuleCondition(world, pilotId, module.LocationId, module.Id)?.Damage ?? current.Damage;
         }
         // Deadlines are live state and must not be captured with the fitted graph.
         if (

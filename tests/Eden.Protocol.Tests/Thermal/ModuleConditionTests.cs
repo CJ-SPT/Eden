@@ -330,7 +330,12 @@ public sealed class ModuleConditionTests
             Assert.Equal(0, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }
-        Assert.Empty(context.Notifications);
+        Assert.DoesNotContain(context.Notifications, n => n is ShipEffectChanged);
+        Assert.Contains(
+            context.Notifications.OfType<ModuleAttributesChanged>().SelectMany(n => n.Changes),
+            c => c.Attribute is DogmaAttributeId.HeatHigh or DogmaAttributeId.HeatMedium or DogmaAttributeId.HeatLow
+        );
+        context.Notifications.Clear();
         if (burnout)
         {
             Damage(f, module, 1000);

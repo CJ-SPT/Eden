@@ -14,10 +14,13 @@ namespace Eden.World.Thermal;
 [Injectable]
 internal sealed class PilotModuleConditionStore(WorldDatabase database) : IPilotModuleConditions
 {
-    public IReadOnlyList<FittedModuleCondition> Read(long pilot, long ship) =>
-        LiveReadModels.Find(database.Path) is { } resident
-            ? resident.ModuleConditions(pilot, ship, () => ReadSql(pilot, ship))
-            : ReadSql(pilot, ship);
+    public IReadOnlyList<FittedModuleCondition> Read(long pilot, long ship)
+    {
+        var live = LiveWorld.Find(database.Path);
+        using var ownership = live?.Enter();
+        var view = live?.Reads is { } resident ? resident.ModuleConditions(pilot, ship, () => ReadSql(pilot, ship)) : ReadSql(pilot, ship);
+        return live?.Heat.Conditions(ship, view) ?? view;
+    }
 
     private IReadOnlyList<FittedModuleCondition> ReadSql(long pilot, long ship)
     {

@@ -10,13 +10,14 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Thermal;
 
-// Internal paid repair boundary; the native repair RPCs have no owner yet.
+// Atomic paid repair settlement, including unused material reservations.
 internal static class NaniteRepairPersistence
 {
     internal static NaniteRepairSchedule Schedule(SavedNaniteRepair row)
@@ -28,7 +29,10 @@ internal static class NaniteRepairPersistence
             row.InitialDamage,
             row.InitialHitPoints,
             row.PasteUnits
-        );
+        )
+        {
+            PasteUnitsPerDamage = row.PasteUnitsPerDamage,
+        };
         NaniteRepairRules.Validate(schedule);
         return schedule;
     }
@@ -50,8 +54,53 @@ internal static class NaniteRepairPersistence
                 condition = ModuleConditionPersistence.Repair(world, catalog, item, NaniteRepairRules.Repaired(schedule, now));
             }
         }
+        long refund = NaniteRepairRules.Refund(schedule, now);
+        if (refund > 0)
+        {
+            RefundPaste(world, schedule, refund);
+        }
         world.Remove(row);
         return condition;
+    }
+
+    private static void RefundPaste(WorldDbContext world, NaniteRepairSchedule schedule, long quantity)
+    {
+        long ship = world.Ships.Any(s => s.Id == schedule.ShipId && s.OwnerId == schedule.PilotId)
+            ? schedule.ShipId
+            : world.Pilots.Where(p => p.Id == schedule.PilotId).Select(p => p.ActiveShipId).Single();
+        var stacks = world
+            .Set<OwnedItem>()
+            .Where(i =>
+                i.OwnerId == schedule.PilotId
+                && i.LocationId == ship
+                && i.FlagId == (int)InventoryFlag.Cargo
+                && i.TypeId == NaniteRepairRules.PasteType
+                && !i.Singleton
+            )
+            .OrderBy(i => i.Id)
+            .ToArray();
+        foreach (var stack in stacks)
+        {
+            int returned = checked((int)Math.Min(quantity, int.MaxValue - stack.Quantity));
+            stack.Quantity += returned;
+            quantity -= returned;
+        }
+        while (quantity > 0)
+        {
+            int returned = checked((int)Math.Min(quantity, int.MaxValue));
+            world.Add(
+                new OwnedItem
+                {
+                    Id = InventoryPersistence.NextId(world),
+                    OwnerId = schedule.PilotId,
+                    LocationId = ship,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    TypeId = NaniteRepairRules.PasteType,
+                    Quantity = returned,
+                }
+            );
+            quantity -= returned;
+        }
     }
 
     internal static void Reconcile(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)

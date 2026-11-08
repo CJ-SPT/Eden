@@ -92,6 +92,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             owner.Nanites.RequireAvailable(bank, now);
         }
+        overloaded |= (bank ?? [moduleId]).Any(id => owner.Heat.Selected(pilotId, id, ship.ShipId));
         int count = bank?.Count ?? 1;
         var draws = Enumerable.Range(0, count).Select(index => new TurretDraw(index == 0 ? roll : Draw(), crystalRoll ?? Draw())).ToArray();
         var profiles = overloaded ? OverloadedTurrets(ship, bank ?? [moduleId]) : null;
