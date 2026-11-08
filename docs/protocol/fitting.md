@@ -28,6 +28,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 - [Ancillary remote armor and shield repairs, November 7, 2026](#ancillary-remote-armor-and-shield-repairs-november-7-2026)
 
+- [Signature suppression calculation foundation, November 7, 2026](#signature-suppression-calculation-foundation-november-7-2026)
+
 - [T1 and T2 ship rigs, November 6, 2026](#t1-and-t2-ship-rigs-november-6-2026)
 - [Personal saved fitting plans (November 6, 2026)](#personal-saved-fitting-plans-november-6-2026)
 - [Persistent weapon grouping](#persistent-weapon-grouping)
@@ -146,6 +148,39 @@ Development started with the exact `AncillaryRemoteRepairTests.EveryStaticProfil
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** On a copied save, observe targeted ancillary fuel/reload HUD state and the recipient's repair update; confirm observer graphics stop after lock loss or manual stop. Native rendering, input and gameplay feel remain unverified.
+
+## Signature suppression calculation foundation, November 7, 2026
+
+Milestone 5's signature suppression foundation covers all **five published static modules** in group **1154**: Signature Radius Suppressor I (**4409**), Domination (**83643**), Dread Guristas (**83644**), Zohar's Modified (**83660**) and Hakuzosu's Modified (**83661**). `SignatureSuppressionRules` defines immutable profiles, shared dogma modifiers and exact duration/reactivation deadlines. `SignatureSuppressionCatalog` validates their complete four-effect shape, declared default, policy and hull restrictions. This validator is not yet connected to production fitting; all five remain unadmitted. No protocol handler, payment operation, saved schema or runtime behavior changes in this foundation.
+
+Effect **8108**, `signatureRadiusBonusOnline`, applies attribute **3113** to ship signature radius **552** while online. Default active effect **8109**, `targetSpectrumBreakerBonus`, applies **3114** to the same ship attribute, pays capacitor attribute **6** and takes duration from **3115**, rather than the ordinary duration attribute. Both native modifiers are **post-multipliers (operation 4)**. Signature radius declares `stackable=0`; the foundation preserves the shared dogma stacking bucket and does not invent an exemption for either effect. The active modifier joins the online modifier, rather than replacing it. An initial five-profile test incorrectly expected their unpenalized product; it failed and was corrected against the pinned stacking metadata. For example, the basic module on a 420-signature input gives 378 while online and approximately **115.04908824** in the foundation's active graph with the second stacking penalty applied to its weaker online reduction. Native rendering/acceptance is unverified.
+
+The basic profile has online/active factors **0.9/0.3**, **12 seconds** duration and **660 GJ** cost. Faction factors are **0.875/0.25** or **0.875/0.275**, with **14 seconds** duration; officer factors are **0.85/0.2** or **0.85/0.225**, with **16 seconds** duration. Dread Guristas and Hakuzosu use **520 GJ**; the others use 660. All declare **150,000 ms** reactivation delay, one fitted/active module per group and disallowed repeating activation. The prepared schedule adds the duration and then the reactivation delay, rounds fractional ticks upward and rejects negative clocks or overflow. Runtime cancellation and restart handling remain operational work.
+
+Signature Masking (**4411**) selects group 1154 and increases attribute 3115 by **5% per level**. Calculation tests use its actual selector and source modifier with levels 0, 1, 3 and 5; the basic duration reaches 15 seconds at level 5 without changing cost, cooldown or multipliers. This does not yet add the skill's consumer to production fitting. The three exact restriction alternatives are Battleship (**27**), Black Ops (**898**) and Marauder (**900**). The common typed restriction reader accepts those alternatives and rejects cruiser/corvette inputs. Additional or missing restriction slots, altered fitted/active/repeat policies, missing defaults, malformed profiles and changed effect operators fail validation.
+
+Evidence is build **3662168**, catalog fingerprint **45BBDCA5C79ECA0353BF05854CDE25042DA02CA3D4607C34BAFE10693C33B2EA**, including all module, attribute, effect and prerequisite records. CCP's [March 2021 rebalance notes](https://www.eveonline.com/news/view/patch-notes-version-19-02) establish the module's passive/active roles, duration skill, costs, delay and allowed hull classes. Its [Equinox expansion notes](https://www.eveonline.com/news/view/equinox-expansion-notes) identify the four faction/officer additions. Current values and stacking flags come from the pinned catalog. No source was copied. Shared dogma behavior and preceding engine references remain unchanged; this checkpoint changes no Carbon-owned Blue, transport or Destiny rules and conducts no client execution.
+
+`tools/Export-SignatureSuppressionCatalog.py` exports all five modules, Signature Masking, representative hull/MWD inputs and prerequisite closure into the **25-type** `SignatureSuppressionCatalog.json` fixture. It reads only the catalog and rejects an output path matching its input. Regenerate with:
+
+```powershell
+$catalog = Join-Path $env:LOCALAPPDATA 'Eden\catalog.sqlite'
+python tools/Export-SignatureSuppressionCatalog.py --catalog $catalog
+```
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors (4.40 seconds combined). The **70-case affected selection passed**, including all **33 new calculation/catalog cases**, in **5.56 seconds** for the test command (feature build 1.09 seconds). Both Python suites passed (**8 catalog**, **9 formatting** cases, 0.92 seconds combined). Formatting verification checked **1,073 files**, including the 140-column check (15.19 seconds); documentation checks verified **482 local links and anchors**. Fixture export reproduced byte-for-byte, input overwrite was rejected and source catalog bytes remained unchanged (4.10 seconds). Fixture SHA-256: **4CE0F65CFF798822485BD0AED9EAB09312D3BC50B927C443A814048C52271DEE**. The production coverage export reproduced the existing **6,079-entry** inventory byte-for-byte, retaining 235 admitted hulls, 3,392 modules/rigs, 801 charges and 76 combat drones. No full .NET suite was requested or run.
+
+Development began with the exact `SignatureSuppressionTests.EveryStaticProfilePreservesItsTwoNativeMultipliersAndRemainsUnadmitted` filter. Its initial five failures exposed the incorrect unpenalized-product test expectation, as recorded above; the corrected profile cases and final affected selection passed. Final filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Defenses.SignatureSuppressionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.DogmaGraphTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingCapabilityRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogFittingReadTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.DataModelOwnershipTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this calculation foundation; the modules are not enabled.
+
+Remaining operational work must connect real-budget fitting and skill admission, atomic capacitor payment and saved cooldown, coherent online/active graph invalidation, exact expiry under the existing world owner, zero-SQL warmed observer reads, cancellation/restart handling, signature consumers and native HUD/prime/graphics/next-activation notifications. That work must pass focused persistence/protocol and deadline tests before the five profiles are admitted. Mutadaptive repairs, reactive hardeners and assault damage controls remain open alongside this signature suppression lifecycle.
 
 ## T1 and T2 ship rigs, November 6, 2026
 

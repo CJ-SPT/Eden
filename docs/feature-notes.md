@@ -302,6 +302,8 @@ Milestone 4's first checkpoint adds the eight static remote hull repairers to th
 
 Milestone 5's [local ancillary checkpoint](protocol/fitting.md#local-ancillary-armor-and-shield-repairs-november-7-2026) implements ordinary local shield/armor variants and paid fuel/reload persistence; its [remote ancillary checkpoint](protocol/fitting.md#ancillary-remote-armor-and-shield-repairs-november-7-2026) adds all eight targeted profiles and their logistics selectors. Mutadaptive remote repairs, reactive hardeners, assault damage controls and signature suppressors remain open. Overheating stays in milestone 6, including paste repair. Actual-budget Incursus, Breacher, Bantam and Inquisitor fits verify earned repair bonuses; capital module profiles still use explicit artificial corvette budgets.
 
+The [signature suppression calculation foundation](protocol/fitting.md#signature-suppression-calculation-foundation-november-7-2026) now defines all five static profiles, their native online/active multipliers, Signature Masking duration, restrictions and exact paid-duration/reactivation deadlines. Production fitting and activation remain disabled until payment, expiry, persistence, fitting invalidation and native lifecycle are connected. The coverage inventory is unchanged; this foundation does not complete signature suppression or milestone 5.
+
 ## Protocol coverage
 
 The [client RPC inventory](client-routes/README.md) lists missing handler candidates and compatibility routes from inert inspection of pinned build 3662168. It includes sortable route lists, client call sites and a repeatable audit tool; dynamic calls and partial feature support still need review.

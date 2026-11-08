@@ -136,6 +136,8 @@ public enum DogmaEffect
     WarpDisruptor = 39,
     WarpScrambler = 5934,
     WarpCoreStabilizer = 8121,
+    SignatureSuppressionOnline = 8108,
+    SignatureSuppression = 8109,
     LowPower = 11,
     HighPower = 12,
     MediumPower = 13,
