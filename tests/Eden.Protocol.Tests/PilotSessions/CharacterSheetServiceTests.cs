@@ -1,6 +1,7 @@
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -159,6 +160,38 @@ public sealed class CharacterSheetServiceTests
         Assert.IsType<PilotCallResult.Failure>(fixture.Call("facWarMgr", "GetMyCharacterRankInfo", [], new() { ["unexpected"] = true }));
         Assert.Null(Reply(fixture.Call("facWarMgr", "GetMyCharacterRankInfo", [], new() { ["machoVersion"] = 1L })));
         Assert.Empty(fixture.Context.Notifications);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OwnRankOverviewReturnsAnEmptyListWithoutAwardingRanks(bool inSpace)
+    {
+        using Fixture fixture = new();
+        const string service = "facWarMgr";
+        const string method = "GetMyCharacterRankOverview";
+        Assert.Same(PilotCallResult.Unsupported, fixture.Call(service, method, []));
+        var pilot = fixture.Db.Store.FindPilot(1000001)!;
+        if (inSpace)
+        {
+            fixture.Db.Store.SetPosition(pilot.ShipId, SpacePosition.Zero);
+            pilot = fixture.Db.Store.FindPilot(1000001)!;
+        }
+        fixture.Context.Select(pilot);
+        var sheet = fixture.Db.Services.GetRequiredService<IPilotCharacterSheet>();
+        var before = sheet.ReadPublicProfile(pilot.PilotId);
+        Assert.Empty(Assert.IsType<List<object?>>(Reply(fixture.Call(service, method, []))));
+        Assert.Empty(Assert.IsType<List<object?>>(Reply(fixture.Call(service, method, [], new() { ["machoVersion"] = 1L }))));
+        foreach (object?[] args in new object?[][] { [90000002L], [null], [true], ["90000001"], [90000001L, 90000002L] })
+        {
+            Assert.IsType<PilotCallResult.Failure>(fixture.Call(service, method, args));
+        }
+        Assert.IsType<PilotCallResult.Failure>(fixture.Call(service, method, [], new() { ["unexpected"] = true }));
+        Assert.Equal(before, sheet.ReadPublicProfile(pilot.PilotId));
+        Assert.Null(Reply(fixture.Call(service, "GetMyCharacterRankInfo", [])));
+        Assert.Empty(fixture.Context.Notifications);
+        using WorldDbContext saved = new(fixture.Db.Path);
+        Assert.Empty(saved.Set<SavedCharacterSheet>());
     }
 
     private static void AssertEmptyRowset(object? value, string[] expectedHeader)

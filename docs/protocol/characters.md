@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Faction-warfare rank overview, November 8, 2026](#faction-warfare-rank-overview-november-8-2026)
 - [Personalization SKIN license reads, November 8, 2026](#personalization-skin-license-reads-november-8-2026)
 - [Pilot services subscription and checkout, November 8, 2026](#pilot-services-subscription-and-checkout-november-8-2026)
 - [Character biomass (November 6, 2026)](#character-biomass-november-6-2026)
@@ -31,6 +32,22 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Faction-warfare rank overview, November 8, 2026
+
+The maintainer's screenshot reports `Invalid Packet Destination: Unsupported local call facWarMgr.GetMyCharacterRankOverview`. In pinned build **3662168**, `FactionalWarfare.GetCharacterRankOverview(charID)` in `eve/client/script/ui/services/facWarSvc.pyj` forwards a request for the selected character to `facWarMgr.GetMyCharacterRankOverview()` with no arguments. It does not issue this RPC for other characters. `DecorationsPanel.ShowMyRanks` in `eve/client/script/ui/shared/neocom/charsheet/decorationsPanel.pyj` iterates the response to populate the Ranks list and supplies the native `NoRanks` empty-state hint. `Info.UpdateDataRank` in `eve/client/script/ui/shared/info/infosvc.pyj` also iterates the overview, filters by `factionID`, and uses `currentRank` to highlight the earned rank in the static hierarchy.
+
+`CharacterSheetHandler` now owns the missing overview call and returns an empty Python **list**, consistent with Eden's absence of earned militia ranks. The existing singular `GetMyCharacterRankInfo` and `GetCharacterRankInfo` replies retain Python **None**. The overview requires pilot selection, accepts no service arguments or keywords, and uses the router's existing removal of `machoVersion` transport metadata. Reading the overview does not award ranks, change faction/corporation membership or standings, write character-sheet state, or enqueue notifications. Faction-warfare enlistment and progression remain unsupported.
+
+Sources: the verified pinned `code.ccp`, SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`, and [EVE University Ranks](https://wiki.eveuniversity.org/Ranks), which describes ranks as militia awards shown in Decorations. No client code was executed. This change reuses the existing empty-list and None adapters; the Blue codec and its [Carbon Blue `af0d65b29f951260ea09140ca11adf5d40566997` reference](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) are unchanged.
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors; final build 1.12 seconds). Filter `FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CharacterSheetServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotServicesTests` ran **46 tests in 15.93 seconds: 45 passed, one pre-existing failure**. All three new regression cases passed. `CharacterSheetServiceTests.NativeRemapUpdatesAttributesDogmaTrainingDeadlineAndClientCaches` fails its unrelated whole dogma-attribute dictionary assertion; the exact method also failed on unchanged baseline `c8b0a04` in a separate worktree (6.53 seconds including runner startup). No full .NET suite was requested or run.
+
+New regression cases cover docked and in-space reads, selection gating, the list/None distinction after encoding and decoding, malformed arguments and keywords, accepted transport metadata, unchanged saved character state, no notifications, and the authenticated packet path. Before implementation, both docked/in-space cases reproduced the unsupported-call failure. Both Python policy suites passed (8 catalog checks in 0.758 seconds; 9 formatting checks in 0.024 seconds). Formatting verification passed for 1,176 files, including the 140-column policy; combined Python/format verification took 21.32 seconds. UTF-8, final-newline, trailing-whitespace, local documentation targets, new section anchors and diff checks passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Reopen Character Sheet → Decorations → Ranks and inspect a rank's Show Info hierarchy. Native rendering and input remain unverified.
 
 ## Personalization SKIN license reads, November 8, 2026
 

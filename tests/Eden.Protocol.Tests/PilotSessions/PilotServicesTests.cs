@@ -486,6 +486,22 @@ public sealed class PilotServicesTests
     }
 
     [Fact]
+    public async Task RankOverviewReturnsAnEmptyListThroughAuthenticatedPackets()
+    {
+        var packets = await ExchangeAsync(
+            42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("facWarMgr", "GetMyCharacterRankOverview", []),
+            Request("facWarMgr", "GetMyCharacterRankInfo", [])
+        );
+        Assert.Equal(4, packets.Count);
+        Assert.EndsWith(".SessionChangeNotification", packets[0].Name);
+        Assert.All(packets.Skip(1), packet => Assert.EndsWith(".CallRsp", packet.Name));
+        Assert.Empty(Assert.IsType<List<object?>>(Result(packets[2])));
+        Assert.Null(Result(packets[3]));
+    }
+
+    [Fact]
     public async Task SheetReadsOtherPilotsPublicProfilesAfterSelection()
     {
         var packets = await ExchangeAsync(

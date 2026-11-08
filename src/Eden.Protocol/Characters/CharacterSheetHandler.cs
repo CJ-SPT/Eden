@@ -64,11 +64,15 @@ internal sealed class CharacterSheetHandler(
             var data = creation.ReadAppearance(portraitId, true);
             return new CharacterPortraitReply(data);
         }
-        if (service == "facWarMgr" && method == "GetMyCharacterRankInfo")
+        if (service == "facWarMgr" && method is "GetMyCharacterRankInfo" or "GetMyCharacterRankOverview")
         {
-            return args.Length == 0 && keywords is null or { Count: 0 }
-                ? PilotCallResult.None
-                : new PilotCallResult.Failure("Invalid public character request.");
+            if (args.Length != 0 || keywords is { Count: > 0 })
+            {
+                return new PilotCallResult.Failure("Invalid public character request.");
+            }
+            // Build 3662168 DecorationsPanel.ShowMyRanks and Info.UpdateDataRank
+            // iterate the overview. Eden pilots have no earned militia ranks.
+            return method == "GetMyCharacterRankOverview" ? BlueEmpty.List : PilotCallResult.None;
         }
         if (
             (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3")
