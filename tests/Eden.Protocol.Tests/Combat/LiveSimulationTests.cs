@@ -19,6 +19,34 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed class LiveSimulationTests
 {
     [Fact]
+    public void ChangingNpcPopulationKeepsOtherSystemsWarm()
+    {
+        using NpcCombatTests.Fixture f = new(liveWorld: true);
+        const int remote = 30000142;
+        var encounters = f.Db.Services.GetRequiredService<INpcEncounters>();
+        _ = encounters.List(f.Npc.SystemId, f.Clock.Now);
+        _ = encounters.List(remote, f.Clock.Now);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var npc = world.Set<WorldNpc>().Find(f.Npc.Id)!;
+            npc.ShieldCharge -= 1;
+            world.SaveChanges();
+        }
+        using (var metrics = SessionPerformance.Begin("other system survives population change", _ => { }, force: true)!)
+        {
+            _ = encounters.List(remote, f.Clock.Now);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        Assert.Equal(
+            f.Npc.Health.Remaining.Shield - 1,
+            encounters.List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id).Health.Remaining.Shield,
+            6
+        );
+    }
+
+    [Fact]
     public void FinishingAReturnInvalidatesAnEarlierAcquisitionInTheSameSecond()
     {
         using NpcCombatTests.Fixture f = new(liveWorld: true);

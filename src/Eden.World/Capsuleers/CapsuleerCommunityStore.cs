@@ -29,6 +29,7 @@ internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsule
 
     internal static void Configure(ModelBuilder model)
     {
+        CapsuleerProvisioningSchema.Configure(model);
         var community = model.Entity<SavedCapsuleerCommunity>();
         community.ToTable("WorldCapsuleerCommunity").HasKey(c => c.Id);
         community.HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
@@ -154,8 +155,8 @@ internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsule
         {
             return;
         }
-        var community = world.Set<SavedCapsuleerCommunity>().Single();
-        if (community.PilotId is not long minerId)
+        var community = world.Set<SavedCapsuleerCommunity>().SingleOrDefault(c => c.Id == 1);
+        if (community?.PilotId is not long minerId)
         {
             return;
         }
@@ -221,7 +222,7 @@ internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsule
         world.SaveChanges();
     }
 
-    private static void GrantRequirements(WorldDbContext world, CatalogDbContext catalog, long pilot, int type, HashSet<int> visited)
+    internal static void GrantRequirements(WorldDbContext world, CatalogDbContext catalog, long pilot, int type, HashSet<int> visited)
     {
         if (!visited.Add(type))
         {

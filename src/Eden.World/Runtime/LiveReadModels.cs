@@ -111,7 +111,13 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
             return cached;
         }
         var value = load();
-        cache.Publish(key, value, now, expires?.Invoke(value) ?? long.MaxValue);
+        cache.Publish(
+            key,
+            value,
+            now,
+            expires?.Invoke(value) ?? long.MaxValue,
+            checked(ResidentSnapshot<TKey, T>.MinimumEntries + owner.CapsuleerJobs.Count)
+        );
         return value;
     }
 

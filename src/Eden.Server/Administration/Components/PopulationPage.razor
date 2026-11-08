@@ -1,0 +1,63 @@
+@page "/population"
+@attribute [Authorize(Policy = AdministratorAccounts.Policy)]
+@using Eden.Gameplay.Capsuleers
+@inject AdministrationOperations Operations
+@inject AuthenticationStateProvider Authentication
+@inject Eden.World.Catalog.CatalogProvider Catalog
+<PageTitle>Population · Eden</PageTitle>
+<h1>Autonomous population</h1>
+<p class="muted">One miner and hauler per supported system. New communities are provisioned on restart; established pilots keep their possessions and jobs.</p>
+@if (Error is not null)
+{
+    <p class="error" role="alert">@Error</p>
+}
+@if (Snapshot is { } snapshot)
+{
+    <section class="card">
+        <h2>Coverage</h2>
+        <dl class="readings">
+            <div><dt>Registered systems</dt><dd>@snapshot.Population.RegisteredSystems</dd></div>
+            <div><dt>Eligible systems</dt><dd>@snapshot.Population.EligibleSystems</dd></div>
+            <div><dt>Communities / pilots</dt><dd>@snapshot.Population.Communities / @snapshot.Population.Agents</dd></div>
+            <div><dt>Native pilot scenes</dt><dd>@snapshot.MaterializedPilots</dd></div>
+        </dl>
+    </section>
+    <section class="card">
+        <h2>Waiting pilots</h2>
+        @if (snapshot.Runtime.Blocked.Count == 0)
+        {
+            <p class="muted">No waiting reasons have been reported in this process.</p>
+        }
+        @foreach (var reason in snapshot.Runtime.Blocked)
+        {
+            <p>@reason.Agents · @reason.Reason</p>
+        }
+    </section>
+    <section class="card">
+        <h2>System eligibility</h2>
+        <div class="toolbar">
+            <label>System name or ID<input @bind="Search" @bind:after="ResetPage" /></label>
+            <label>Eligibility<select @bind="Reason" @bind:after="ResetPage">
+                <option value="">All systems</option>
+                @foreach (var value in Enum.GetValues<CapsuleerEligibility>())
+                {
+                    <option value="@value.ToString()">@CapsuleerProvisioningRules.Description(value)</option>
+                }
+            </select></label>
+            <button class="secondary" @onclick="Load">Refresh</button>
+        </div>
+        <p class="muted">@Filtered.Count matching systems. Eligibility changes never remove an established community.</p>
+        <div class="scroll"><table><thead><tr><th>System</th><th>Eligibility</th><th>Community</th><th>Home / destination</th></tr></thead><tbody>
+            @foreach (var system in Filtered.Skip(Page * PageSize).Take(PageSize))
+            {
+                <tr><td>@Name(system.SystemId) (@system.SystemId)</td><td>@CapsuleerProvisioningRules.Description(system.Eligibility)</td>
+                    <td>@(system.Provisioned ? "Established" : "Not provisioned")</td><td>@system.HomeStationId / @system.DestinationStationId</td></tr>
+            }
+        </tbody></table></div>
+        <div class="toolbar">
+            <button class="secondary" disabled="@(Page == 0)" @onclick="Previous">Previous</button>
+            <span>Page @(Page + 1)</span>
+            <button class="secondary" disabled="@((Page + 1) * PageSize >= Filtered.Count)" @onclick="Next">Next</button>
+        </div>
+    </section>
+}

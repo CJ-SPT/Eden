@@ -3,14 +3,20 @@ using Eden.Data.World.Characters;
 using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
-[Injectable]
+[Injectable(InjectionType.Singleton)]
 internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsuleerPopulation
 {
+    private readonly Lock _gate = new();
+    private Metadata? _metadata;
+
+    private sealed record Metadata(long Revision, CapsuleerPopulationSummary Summary, IReadOnlyList<CapsuleerSystemSummary> Systems);
+
     internal const int PopulationVersion = 1;
 
     internal static void Configure(ModelBuilder model)
@@ -64,7 +70,7 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
     // made by the legacy founders; it never provisions assets or copies paid work.
     internal static void Reconcile(WorldDbContext world, CatalogDbContext catalog)
     {
-        var miner = world.Set<SavedCapsuleerCommunity>().AsNoTracking().SingleOrDefault();
+        var miner = world.Set<SavedCapsuleerCommunity>().AsNoTracking().SingleOrDefault(c => c.Id == 1);
         if (miner?.PilotId is not long pilot)
         {
             return;
@@ -77,13 +83,13 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             """
         );
         AddAgent(world, new(pilot, system, miner.Career, miner.FounderShipId, miner.FounderModuleId, miner.StartingCents));
-        if (world.Set<SavedCapsuleerHauler>().AsNoTracking().SingleOrDefault() is { } hauler)
+        if (world.Set<SavedCapsuleerHauler>().AsNoTracking().SingleOrDefault(h => h.Id == 1) is { } hauler)
         {
             AddAgent(world, new(hauler.PilotId, system, CapsuleerCareer.Hauling, hauler.FounderShipId, 0, hauler.StartingCents));
         }
     }
 
-    private static void AddAgent(WorldDbContext world, CapsuleerAgent agent) =>
+    internal static void AddAgent(WorldDbContext world, CapsuleerAgent agent) =>
         world.Database.ExecuteSql(
             $"""
             INSERT INTO WorldCapsuleerAgent(PilotId,CommunitySystemId,Career,FounderShipId,FounderModuleId,StartingCents)
@@ -160,6 +166,51 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             .OrderBy(a => a.PilotId)
             .Select(a => new CapsuleerAgent(a.PilotId, a.CommunitySystemId, a.Career, a.FounderShipId, a.FounderModuleId, a.StartingCents))
             .ToArray();
+    }
+
+    public IReadOnlyList<CapsuleerSystemSummary> Systems() => ReadMetadata().Systems;
+
+    public CapsuleerPopulationSummary Summary() => ReadMetadata().Summary;
+
+    private Metadata ReadMetadata()
+    {
+        var live = LiveWorld.Find(database.Path);
+        using var owner = live?.Enter();
+        lock (_gate)
+        {
+            if (live is not null && _metadata?.Revision == live.CapsuleerRevision)
+            {
+                return _metadata;
+            }
+            using WorldDbContext world = new(database.Path);
+            var communities = world.Set<SavedCapsuleerPopulation>().Select(c => c.SystemId).ToHashSet();
+            var systems = world
+                .Set<SavedCapsuleerSystem>()
+                .AsNoTracking()
+                .OrderBy(s => s.SystemId)
+                .AsEnumerable()
+                .Select(s => new CapsuleerSystemSummary(
+                    s.SystemId,
+                    s.Eligibility,
+                    s.HomeStationId,
+                    s.DestinationStationId,
+                    communities.Contains(s.SystemId)
+                ))
+                .ToArray();
+            CapsuleerPopulationSummary summary = new(
+                systems.Length,
+                systems.Count(s => s.Eligibility == CapsuleerEligibility.Eligible),
+                communities.Count,
+                world.Set<SavedCapsuleerAgent>().Count(),
+                world.Set<SavedCapsuleerProvisioning>().Select(p => p.WorldSeed).SingleOrDefault()
+            );
+            var metadata = new Metadata(live?.CapsuleerRevision ?? 0, summary, Array.AsReadOnly(systems));
+            if (live is not null)
+            {
+                _metadata = metadata;
+            }
+            return metadata;
+        }
     }
 
     internal static CapsuleerJob[] Jobs(WorldDbContext world) =>

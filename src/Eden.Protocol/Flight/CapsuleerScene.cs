@@ -15,7 +15,8 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
     private readonly Dictionary<long, object> _presence = [];
     private long _revision;
     public int Stamp => space.Stamp(clock);
-    internal int MaterializedPilots => _pilots.Count;
+    private int _materializedPilots;
+    public int MaterializedPilots => Volatile.Read(ref _materializedPilots);
 
     public void Apply(CapsuleerBatch batch)
     {
@@ -55,6 +56,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                     Remove(observation.Pilot.PilotId);
                 }
             }
+            Volatile.Write(ref _materializedPilots, _pilots.Count);
             _revision = batch.Revision;
         }
     }
@@ -114,6 +116,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                 _pilots.Add(observation.Pilot.PilotId, pilot);
             }
             pilot.Publish(observation);
+            Volatile.Write(ref _materializedPilots, _pilots.Count);
         }
     }
 

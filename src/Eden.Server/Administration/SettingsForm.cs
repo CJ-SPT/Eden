@@ -30,6 +30,7 @@ internal sealed class SettingsForm
     public bool Mining { get; set; }
     public bool MajorThreatAnomalies { get; set; }
     public bool StartingSkills { get; set; }
+    public bool GlobalProvisioning { get; set; }
 
     [Range(1, 300)]
     public int CheckpointSeconds { get; set; }
@@ -59,6 +60,7 @@ internal sealed class SettingsForm
             Mining = settings.NpcPopulation.Mining,
             MajorThreatAnomalies = settings.NpcPopulation.MajorThreatAnomalies,
             StartingSkills = settings.Progression.GrantStartingSkills,
+            GlobalProvisioning = settings.Capsuleers.GlobalProvisioning,
             CheckpointSeconds = settings.Simulation.CheckpointSeconds,
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
             ResourceCheckSeconds = settings.Simulation.ResourceCheckSeconds,
@@ -79,6 +81,7 @@ internal sealed class SettingsForm
             Resources = new(RenewBelts, RenewalHourUtc),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
             Progression = new(StartingSkills),
+            Capsuleers = new(GlobalProvisioning),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
         };
 

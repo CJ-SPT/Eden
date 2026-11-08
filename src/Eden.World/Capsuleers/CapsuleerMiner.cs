@@ -491,7 +491,7 @@ internal sealed class CapsuleerMiner(
                 Now
             );
         }
-        if (_operation.World.Set<SavedCapsuleerHauler>().Any())
+        if (_operation.World.Set<SavedCapsuleerHauler>().Any(h => h.SourceStationId == Pilot.StationId))
         {
             _operation.MarketChanged |= CapsuleerTrade.ListStock(
                 _operation.World,
@@ -528,7 +528,12 @@ internal sealed class CapsuleerMiner(
             _laser = _laser with { Online = true };
         }
         RefreshObjects();
-        var fields = _objects.Where(o => o.GroupId == AsteroidDefinitions.BeltGroup).OrderBy(o => o.Id).ToArray();
+        var fields = _objects
+            .Where(o =>
+                o.GroupId == AsteroidDefinitions.BeltGroup && CapsuleerProvisioningCatalog.UsableOre(_operation.Catalog, checked((int)o.Id))
+            )
+            .OrderBy(o => o.Id)
+            .ToArray();
         if (fields.Length == 0)
         {
             throw new InvalidDataException("Waiting for a known asteroid belt.");

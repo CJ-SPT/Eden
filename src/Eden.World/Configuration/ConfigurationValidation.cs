@@ -36,6 +36,7 @@ internal static class ConfigurationValidation
             || settings.NpcPopulation is null
             || settings.Progression is null
             || settings.Simulation is null
+            || settings.Capsuleers is null
         )
         {
             throw new InvalidDataException("Every typed settings group is required.");

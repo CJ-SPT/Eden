@@ -65,6 +65,27 @@
     }
 </section>
 
+@if (Snapshot.Capsuleers is { } capsuleers)
+{
+    <section class="card">
+        <h2>Autonomous capsuleers</h2>
+        <dl class="readings">
+            <div><dt>Communities / pilots</dt><dd>@capsuleers.Runtime.Population.Communities / @capsuleers.Runtime.Population.Agents</dd></div>
+            <div><dt>Observed / background systems</dt><dd>@capsuleers.Runtime.ObservedSystems / @(Math.Max(0, capsuleers.Runtime.KnownSystems - capsuleers.Runtime.ObservedSystems))</dd></div>
+            <div><dt>Native pilot scenes</dt><dd>@capsuleers.MaterializedPilots</dd></div>
+            <div><dt>Jobs / due now</dt><dd>@capsuleers.Runtime.Jobs / @capsuleers.Runtime.DueJobs</dd></div>
+            <div><dt>Oldest queue delay</dt><dd>@Milliseconds(TimeSpan.FromTicks(capsuleers.Runtime.OldestDelayTicks))</dd></div>
+            <div><dt>Completed actions / failures</dt><dd>@capsuleers.Runtime.CompletedActions / @capsuleers.Runtime.Failures</dd></div>
+            <div><dt>Last simulation turn</dt><dd>@Milliseconds(capsuleers.Runtime.LastTurn)</dd></div>
+        </dl>
+        @if (capsuleers.Runtime.LastFailure is { } failure)
+        {
+            <p class="error">@failure</p>
+        }
+        <p><a href="/population">View system eligibility and waiting reasons</a></p>
+    </section>
+}
+
 @code {
     [Parameter, EditorRequired]
     public ServerPerformanceSnapshot Snapshot { get; set; } = null!;

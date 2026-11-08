@@ -15,6 +15,8 @@ public interface ICapsuleerPopulation
 {
     IReadOnlyList<CapsuleerCommunitySummary> Communities();
     IReadOnlyList<CapsuleerAgent> Agents(int communitySystemId);
+    IReadOnlyList<CapsuleerSystemSummary> Systems();
+    CapsuleerPopulationSummary Summary();
 }
 
 public sealed record HumanActivitySnapshot(long ElapsedTicks, int SelectedSessions, IReadOnlyList<int> ActiveSystems, long Resumes = 0)

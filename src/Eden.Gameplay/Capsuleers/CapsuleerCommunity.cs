@@ -61,6 +61,7 @@ public interface ICapsuleerSimulation
 public interface ICapsuleerScene
 {
     int Stamp { get; }
+    int MaterializedPilots => 0;
     void Apply(CapsuleerBatch batch);
     void Publish(MinerObservation observation);
     void Publish(HaulerObservation observation);

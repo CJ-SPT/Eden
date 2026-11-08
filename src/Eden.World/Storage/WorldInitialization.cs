@@ -118,6 +118,7 @@ public static class WorldInitialization
             .Where(m => m.Status == MissileFlightStatus.Flying)
             .ExecuteUpdate(set => set.SetProperty(m => m.Status, MissileFlightStatus.Expired).SetProperty(m => m.EndedAt, now));
         LiveCombatRuntime.Find(database.Path)?.WarmDrones();
+        new Eden.World.Capsuleers.CapsuleerProvisioner(database, clock ?? TimeProvider.System).Reconcile();
     }
 
     // Explicit development/test open: validate and migrate before creating a reader.

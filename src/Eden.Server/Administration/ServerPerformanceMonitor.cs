@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eden.Gameplay.Capsuleers;
 using Eden.World.Runtime;
 
 namespace Eden.Server.Administration;
@@ -29,6 +30,8 @@ public sealed record ServerCheckpointPerformance(
     long Bytes
 );
 
+public sealed record ServerCapsuleerPerformance(CapsuleerRuntimeSummary Runtime, int MaterializedPilots);
+
 public sealed record ServerPerformanceSnapshot(
     DateTimeOffset SampledAt,
     ServerResourceSample Resources,
@@ -38,7 +41,10 @@ public sealed record ServerPerformanceSnapshot(
     bool ResidentWorld,
     ServerCheckpointPerformance? LastCheckpoint,
     bool CheckpointFailed
-);
+)
+{
+    public ServerCapsuleerPerformance? Capsuleers { get; init; }
+}
 
 // One shared, demand-driven sample bounds overhead across administrator circuits.
 // Reading diagnostics never enters the world owner, projects combat or opens SQLite.
@@ -46,7 +52,8 @@ internal sealed class ServerPerformanceMonitor(
     TimeProvider clock,
     PilotGate pilots,
     LiveWorld? world = null,
-    Func<ServerResourceSample>? readResources = null
+    Func<ServerResourceSample>? readResources = null,
+    Func<ServerCapsuleerPerformance>? readCapsuleers = null
 )
 {
     internal static readonly TimeSpan SampleInterval = TimeSpan.FromSeconds(2);
@@ -98,7 +105,10 @@ internal sealed class ServerPerformanceMonitor(
                         checkpoint.Bytes
                     ),
                 world?.LastSaveFailure is not null
-            );
+            )
+            {
+                Capsuleers = readCapsuleers?.Invoke(),
+            };
             return _latest;
         }
     }

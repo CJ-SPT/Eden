@@ -7,7 +7,7 @@ namespace Eden.World.Runtime;
 internal sealed class ResidentSnapshot<TKey, TValue>(string name, params string[] tables)
     where TKey : notnull
 {
-    private const int MaximumEntries = 512;
+    internal const int MinimumEntries = 512;
 
     private sealed record Entry(TValue Value, long At, long Until);
 
@@ -25,9 +25,9 @@ internal sealed class ResidentSnapshot<TKey, TValue>(string name, params string[
         return false;
     }
 
-    internal void Publish(TKey key, TValue value, long now, long until)
+    internal void Publish(TKey key, TValue value, long now, long until, int maximumEntries = MinimumEntries)
     {
-        if (_entries.Count >= MaximumEntries)
+        if (_entries.Count >= maximumEntries)
         {
             _entries.Clear();
         }

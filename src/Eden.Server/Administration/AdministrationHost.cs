@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server.Administration.Components;
@@ -62,11 +63,19 @@ internal static class AdministrationHost
         builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
         builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
         builder.Services.AddScoped<AdministrationOperations>();
+        builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerPopulation>());
+        builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerDiagnostics>());
+        builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerScene>());
         builder.Services.AddSingleton(
             new ServerPerformanceMonitor(
                 TimeProvider.System,
                 worldServices.GetRequiredService<PilotGate>(),
-                worldServices.GetService<LiveWorld>()
+                worldServices.GetService<LiveWorld>(),
+                readCapsuleers: () =>
+                    new(
+                        worldServices.GetRequiredService<ICapsuleerDiagnostics>().Read(),
+                        worldServices.GetRequiredService<ICapsuleerScene>().MaterializedPilots
+                    )
             )
         );
         var protection = builder
@@ -235,6 +244,7 @@ internal static class AdministrationHost
             (HttpContext context, IAntiforgery antiforgery) => new { token = antiforgery.GetAndStoreTokens(context).RequestToken }
         );
         api.MapGet("/performance", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Performance(user));
+        api.MapGet("/population", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Population(user));
         api.MapGet("/configuration", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Read(user));
         api.MapGet(
             "/revisions",

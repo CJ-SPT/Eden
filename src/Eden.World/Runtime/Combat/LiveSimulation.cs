@@ -1,5 +1,6 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -20,6 +21,81 @@ internal sealed partial class LiveCombatRuntime
     private readonly NpcProfileCatalog _simulationProfiles = new();
     private readonly Dictionary<int, long[]> _systemNpcs = [];
     private readonly Dictionary<int, long> _populationDue = [];
+    private int? _populationRefreshSystem;
+
+    private void ObserveAsteroidPopulation(long id)
+    {
+        if (_populationRefreshSystem is { } scoped)
+        {
+            _populationDue.Remove(scoped);
+            return;
+        }
+        int? system = Loading(() =>
+        {
+            using WorldDbContext world = new(database.Path);
+            return world.Set<WorldAsteroid>().Where(a => a.Id == id).Select(a => (int?)a.SystemId).SingleOrDefault();
+        });
+        if (system is { } current)
+        {
+            _populationDue.Remove(current);
+        }
+        else
+        {
+            _populationDue.Clear();
+        }
+    }
+
+    private void InvalidatePopulation(int system)
+    {
+        _populationDue.Remove(system);
+        _systemNpcs.Remove(system);
+        _contacts.Remove(system);
+        foreach (var key in _guardGroups.Keys.Where(k => k.System == system).ToArray())
+        {
+            _guardGroups.Remove(key);
+        }
+    }
+
+    private void ObserveNpcPopulation(long id)
+    {
+        if (_populationRefreshSystem is { } scoped)
+        {
+            InvalidatePopulation(scoped);
+            return;
+        }
+        if (_npcs.TryGetValue(id, out var previous))
+        {
+            InvalidatePopulation(previous.SystemId);
+        }
+        int? current = Loading(() =>
+        {
+            using WorldDbContext world = new(database.Path);
+            return world.Set<WorldNpc>().Where(n => n.Id == id).Select(n => (int?)n.SystemId).SingleOrDefault();
+        });
+        if (current is int system)
+        {
+            InvalidatePopulation(system);
+        }
+    }
+
+    private void ObserveEncounterPopulation(long id)
+    {
+        if (_populationRefreshSystem is { } scoped)
+        {
+            InvalidatePopulation(scoped);
+            return;
+        }
+        int? current = Loading(() =>
+        {
+            using WorldDbContext world = new(database.Path);
+            return world.Set<WorldNpcEncounter>().Where(e => e.Id == id).Select(e => (int?)e.SystemId).SingleOrDefault();
+        });
+        if (current is int system)
+        {
+            InvalidatePopulation(system);
+        }
+    }
+
     private readonly Dictionary<long, IReadOnlyDictionary<DogmaAttributeId, double>> _effectiveNpcs = [];
 
     private sealed record LivePosition(int? System, SpacePosition Position);
@@ -197,7 +273,16 @@ internal sealed partial class LiveCombatRuntime
         if (!_populationDue.TryGetValue(system, out long due) || now >= due)
         {
             Flush();
-            refresh();
+            int? previousScope = _populationRefreshSystem;
+            _populationRefreshSystem = system;
+            try
+            {
+                refresh();
+            }
+            finally
+            {
+                _populationRefreshSystem = previousScope;
+            }
             _systemNpcs.Remove(system);
             _populationDue[system] = nextPopulation();
         }

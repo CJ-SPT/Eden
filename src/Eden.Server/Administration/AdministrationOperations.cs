@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.World.Catalog;
 using Microsoft.AspNetCore.Authorization;
@@ -15,6 +16,13 @@ internal sealed record AdminImportRequest(long Generation, string Document);
 
 internal sealed record AdminValidationResult(bool Valid, IReadOnlyList<string> Messages);
 
+internal sealed record AdminPopulationSnapshot(
+    CapsuleerPopulationSummary Population,
+    CapsuleerRuntimeSummary Runtime,
+    int MaterializedPilots,
+    IReadOnlyList<CapsuleerSystemSummary> Systems
+);
+
 internal sealed record AdminRecordView(CatalogStoredRecord Record, IReadOnlyList<CatalogRelatedRecord> Relationships);
 
 internal sealed class AdministrationOperations(
@@ -23,7 +31,10 @@ internal sealed class AdministrationOperations(
     IWorldConfiguration configuration,
     CatalogBrowser browser,
     CatalogProvider catalog,
-    ServerPerformanceMonitor performance
+    ServerPerformanceMonitor performance,
+    ICapsuleerPopulation population,
+    ICapsuleerDiagnostics capsuleers,
+    ICapsuleerScene scene
 )
 {
     private async Task Authorize(ClaimsPrincipal user)
@@ -44,6 +55,12 @@ internal sealed class AdministrationOperations(
     {
         await Authorize(user);
         return performance.Read();
+    }
+
+    internal async Task<AdminPopulationSnapshot> Population(ClaimsPrincipal user)
+    {
+        await Authorize(user);
+        return new(population.Summary(), capsuleers.Read(), scene.MaterializedPilots, population.Systems());
     }
 
     internal async Task<ConfigurationRevision> Revision(ClaimsPrincipal user, long id)

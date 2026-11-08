@@ -15,6 +15,10 @@ public sealed record SystemSimulationState(int SystemId, SystemSimulationMode Mo
 public sealed class SystemSimulationRegistry
 {
     private readonly Dictionary<int, SystemSimulationState> _systems = [];
+    private readonly HashSet<int> _observed = [];
+    private long _settledTicks;
+    private long _latestSystemTicks;
+    public int Count => _systems.Count;
 
     public void Register(int systemId)
     {
@@ -22,16 +26,31 @@ public sealed class SystemSimulationRegistry
         _systems.TryAdd(systemId, new(systemId, SystemSimulationMode.Background, 0, 0));
     }
 
-    public IReadOnlyList<SystemSimulationState> Read() => _systems.Values.OrderBy(s => s.SystemId).ToArray();
+    public IReadOnlyList<SystemSimulationState> Read() => _systems.Keys.Order().Select(Get).ToArray();
 
-    public SystemSimulationState Get(int systemId) =>
-        _systems.GetValueOrDefault(systemId) ?? new(systemId, SystemSimulationMode.Background, 0, 0);
+    public IReadOnlyList<SystemSimulationState> Observed() => _observed.Order().Select(Get).ToArray();
+
+    public void SettleAll(long throughTicks)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(throughTicks, Math.Max(_settledTicks, _latestSystemTicks));
+        _settledTicks = throughTicks;
+        foreach (int system in _observed.ToArray())
+        {
+            Settle(system, throughTicks);
+        }
+    }
+
+    public SystemSimulationState Get(int systemId)
+    {
+        var state = _systems.GetValueOrDefault(systemId) ?? new(systemId, SystemSimulationMode.Background, 0, 0);
+        return state.SettledTicks >= _settledTicks ? state : state with { SettledTicks = _settledTicks };
+    }
 
     public IReadOnlyList<SystemSimulationState> Begin(IReadOnlyList<int> activeSystems)
     {
         var active = activeSystems.ToHashSet();
         List<SystemSimulationState> changed = [];
-        foreach (int system in _systems.Keys.Union(active).Order().ToArray())
+        foreach (int system in _observed.Union(active).Order().ToArray())
         {
             var previous = Get(system);
             bool wasActive = previous.Mode is SystemSimulationMode.Active or SystemSimulationMode.Activating;
@@ -45,6 +64,7 @@ public sealed class SystemSimulationRegistry
                 Generation = checked(previous.Generation + 1),
             };
             _systems[system] = next;
+            _observed.Add(system);
             changed.Add(next);
         }
         return changed;
@@ -54,6 +74,7 @@ public sealed class SystemSimulationRegistry
     {
         var state = Get(systemId);
         ArgumentOutOfRangeException.ThrowIfLessThan(throughTicks, state.SettledTicks);
+        _latestSystemTicks = Math.Max(_latestSystemTicks, throughTicks);
         _systems[systemId] = state with
         {
             Mode = state.Mode switch
@@ -64,6 +85,10 @@ public sealed class SystemSimulationRegistry
             },
             SettledTicks = throughTicks,
         };
+        if (_systems[systemId].Mode == SystemSimulationMode.Background)
+        {
+            _observed.Remove(systemId);
+        }
     }
 }
 

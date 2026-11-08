@@ -1,5 +1,6 @@
 using System.Reflection;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
@@ -107,6 +108,7 @@ internal static class ServerServices
             // Build the immutable directory before admitting clients, so their first
             // GetAgents/owner lookup never pays the catalog materialization cost.
             _ = provider.GetRequiredService<INpcDirectory>().Agents();
+            _ = provider.GetRequiredService<ICapsuleerPopulation>().Summary();
         }
         return provider;
     }

@@ -26,6 +26,8 @@ public sealed record NpcPopulationPolicy(
 
 public sealed record ProgressionPolicy(bool GrantStartingSkills = true);
 
+public sealed record CapsuleerPopulationPolicy(bool GlobalProvisioning = true);
+
 public sealed record SimulationPolicy(int CheckpointSeconds = 15, int MarketPollMilliseconds = 1000, int ResourceCheckSeconds = 60);
 
 public sealed record WorldSettings
@@ -35,6 +37,7 @@ public sealed record WorldSettings
     public ResourcePolicy Resources { get; init; } = new();
     public NpcPopulationPolicy NpcPopulation { get; init; } = new();
     public ProgressionPolicy Progression { get; init; } = new();
+    public CapsuleerPopulationPolicy Capsuleers { get; init; } = new();
     public SimulationPolicy Simulation { get; init; } = new();
 }
 

@@ -20,6 +20,8 @@ internal sealed class CapsuleerMaintenance(
 {
     private PeriodicTimer? _timer;
     private Task _loop = Task.CompletedTask;
+    private bool _backlogged;
+    private volatile bool _stopping;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
     private CapsuleerBatch? _retryPresentation;
 
@@ -38,7 +40,16 @@ internal sealed class CapsuleerMaintenance(
         {
             try
             {
-                Tick();
+                do
+                {
+                    Tick();
+                    if (_backlogged)
+                    {
+                        // A bounded turn releases ownership before another catch-up
+                        // turn. The normal wake interval applies once work is current.
+                        await Task.Yield();
+                    }
+                } while (_backlogged && !_stopping);
             }
             catch (Exception error)
             {
@@ -53,7 +64,10 @@ internal sealed class CapsuleerMaintenance(
         {
             try
             {
-                return scheduler.Run(scene.Stamp).Miners.LastOrDefault();
+                _backlogged = false;
+                var batch = scheduler.Run(scene.Stamp);
+                _backlogged = batch.Turn.OldestDueTicks is not null;
+                return batch.Miners.LastOrDefault();
             }
             finally
             {
@@ -109,6 +123,7 @@ internal sealed class CapsuleerMaintenance(
 
     public void Dispose()
     {
+        _stopping = true;
         _timer?.Dispose();
         _loop.GetAwaiter().GetResult();
     }

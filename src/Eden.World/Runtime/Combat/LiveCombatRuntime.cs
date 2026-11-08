@@ -20,7 +20,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
     private const int RetainedShips = 512;
     private const int RetainedNpcs = 8192;
     private const int RetainedSystems = 256;
-    private const int RetainedItems = RetainedShips * 128;
+    private const int RetainedItemsPerShip = 128;
     private readonly Dictionary<long, LiveCombatShip> _ships = [];
     private readonly Dictionary<long, LiveCombatShip> _savedShips = [];
     private readonly Dictionary<long, LiveCombatNpc> _npcs = [];
@@ -165,22 +165,29 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
     {
         // Evict only at operation boundaries, after projecting every outstanding payment.
         // Revisited pilots and systems hydrate again; historical activity cannot grow forever.
+        // Registered autonomous pilots are persistent residents, not an unbounded
+        // observer history. Reserve their working set before evicting cold visitors.
+        int ships = checked(RetainedShips + owner.CapsuleerJobs.Count);
+        int systems = checked(RetainedSystems + owner.CapsuleerJobs.Count);
+        const int NpcsPerAgent = 32;
+        int npcs = checked(RetainedNpcs + owner.CapsuleerJobs.Count * NpcsPerAgent);
+        int items = checked(ships * RetainedItemsPerShip);
         if (
-            _shipPilots.Count >= RetainedShips
-            || _npcs.Count >= RetainedNpcs
-            || _staleNpcs.Count >= RetainedNpcs
-            || _systemNpcs.Count >= RetainedSystems
-            || _positions.Count >= RetainedShips
-            || _acquisitionShips.Count >= RetainedShips
-            || _contacts.Count >= RetainedSystems
-            || _guardGroups.Count >= RetainedNpcs
-            || _droneSystems.Count >= RetainedSystems
-            || _dronePilots.Count >= RetainedShips
-            || _dronePlayers.Count >= RetainedShips
-            || _droneHostilities.Count >= RetainedShips
-            || _droneCombatTriggers.Count >= RetainedShips
-            || _liveDrones.Count >= RetainedItems
-            || _itemPilots.Count >= RetainedItems
+            _shipPilots.Count >= ships
+            || _npcs.Count >= npcs
+            || _staleNpcs.Count >= npcs
+            || _systemNpcs.Count >= systems
+            || _positions.Count >= ships
+            || _acquisitionShips.Count >= ships
+            || _contacts.Count >= systems
+            || _guardGroups.Count >= npcs
+            || _droneSystems.Count >= systems
+            || _dronePilots.Count >= ships
+            || _dronePlayers.Count >= ships
+            || _droneHostilities.Count >= ships
+            || _droneCombatTriggers.Count >= ships
+            || _liveDrones.Count >= items
+            || _itemPilots.Count >= items
         )
         {
             Clear();
@@ -552,20 +559,24 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     break;
                 case "WorldNpcEncounter":
                 case "WorldNpcMiningOperation":
+                    ObserveEncounterPopulation(change.Id);
+                    break;
+                case "WorldAsteroid":
+                    ObserveAsteroidPopulation(change.Id);
+                    break;
+                case "WorldNpcStanding":
                     _populationDue.Clear();
                     break;
                 case "WorldNpcMiningMember":
-                    _populationDue.Clear();
+                    ObserveNpcPopulation(change.Id);
                     _contactEpoch++;
                     _staleNpcs.Add(change.Id);
                     break;
                 case "WorldNpc":
-                    _systemNpcs.Clear();
-                    _populationDue.Clear();
+                    ObserveNpcPopulation(change.Id);
                     _effectiveNpcs.Remove(change.Id);
                     _acquisitions.Clear();
                     _contactEpoch++;
-                    _guardGroups.Clear();
                     _staleNpcs.Add(change.Id);
                     break;
                 case "WorldNpcAggression":

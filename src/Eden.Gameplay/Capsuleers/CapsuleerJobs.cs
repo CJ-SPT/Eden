@@ -26,6 +26,8 @@ public sealed record CapsuleerJob(long PilotId, long Revision, long Sequence, lo
 
 public sealed record CapsuleerTurn(int Completed, int Pending, long? OldestDueTicks, bool BudgetExceeded);
 
+public sealed record CapsuleerQueueStatus(int Due, long? OldestDueTicks);
+
 // This queue is used under the world owner. Callers publish a replacement only after
 // its feature transaction commits. A throwing action stays due and can be retried.
 public sealed class CapsuleerJobQueue
@@ -106,6 +108,12 @@ public sealed class CapsuleerJobQueue
         long? oldest = _queue.Min is { } pending && pending.DueTicks <= throughTicks ? pending.DueTicks : null;
         return new(completed, _jobs.Count, oldest, clock.GetElapsedTime(started) > ExecutionBudget);
     }
+
+    public CapsuleerQueueStatus Inspect(long throughTicks) =>
+        new(
+            _queue.TakeWhile(j => j.DueTicks <= throughTicks).Count(),
+            _queue.Min is { } first && first.DueTicks <= throughTicks ? first.DueTicks : null
+        );
 
     private void Enqueue(CapsuleerJob job) => _queue.Add(job);
 

@@ -34,6 +34,49 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
     private const long Human = 90000001;
 
     [Fact]
+    public async Task LoginCatchupUsesTheEntryDeadlineEvenWhenEveryTurnAdvancesTheClock()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        AdvancingClock clock = new(f.Clock);
+        using var host = ServerServices.Build(f.Database, clock, liveWorld: true);
+        using var human = host.GetRequiredService<IHumanPresence>().Select(Human, Remote);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        _ = scheduler.Jobs();
+        f.Clock.Seconds = 10;
+        clock.Advance = true;
+        int calls = 0;
+        using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(10));
+        try
+        {
+            await host.GetRequiredService<ICapsuleerHandoff>().SynchronizeAsync(() => calls++, cancellation.Token);
+            Assert.Equal(1, calls);
+            Assert.True(f.Clock.Seconds > 10);
+            Assert.Contains(scheduler.Jobs(), j => j.DueTicks < host.GetRequiredService<IHumanPresence>().Read().ElapsedTicks);
+        }
+        finally
+        {
+            clock.Advance = false;
+        }
+    }
+
+    private sealed class AdvancingClock(TestClock inner) : TimeProvider
+    {
+        public bool Advance { get; set; }
+        public override long TimestampFrequency => inner.TimestampFrequency;
+
+        public override DateTimeOffset GetUtcNow() => inner.GetUtcNow();
+
+        public override long GetTimestamp()
+        {
+            if (Advance)
+            {
+                inner.Seconds += 10;
+            }
+            return inner.GetTimestamp();
+        }
+    }
+
+    [Fact]
     public void RegistryUsesExplicitTransitionsAndRejectsRewindingSettledTime()
     {
         SystemSimulationRegistry registry = new();
@@ -50,6 +93,11 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         registry.Begin([Source]);
         registry.Settle(Source, 20);
         Assert.Equal(3, registry.Get(Source).Generation);
+        registry.Register(Destination);
+        Assert.Throws<ArgumentOutOfRangeException>(() => registry.SettleAll(19));
+        Assert.Equal(0, registry.Get(Destination).SettledTicks);
+        registry.SettleAll(20);
+        Assert.Equal(20, registry.Get(Destination).SettledTicks);
     }
 
     [Fact]
@@ -189,7 +237,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         WorldInitialization.Initialize(f.Database, f.Clock);
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var scheduler = reopened.GetRequiredService<ICapsuleerScheduler>();
-        Assert.Empty(reopened.GetRequiredService<ICapsuleerHandoff>().Systems());
+        Assert.All(reopened.GetRequiredService<ICapsuleerHandoff>().Systems(), s => Assert.Equal(SystemSimulationMode.Background, s.Mode));
         Assert.Equal(jobs, scheduler.Jobs());
         Assert.Equal(paid.Work, scheduler.Miner(paid.Pilot.PilotId)!.Work);
         Assert.Equal(0, reopened.GetRequiredService<CapsuleerScene>().MaterializedPilots);

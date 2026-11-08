@@ -83,3 +83,7 @@ History shows the active/pending IDs and recent revisions. Import and restore al
 ## Constant classification
 
 Catalog facts stay in generated models/shared definitions. Native service IDs, effect operations, tax formulas, eligibility rules and mathematical invariants remain named code values. The table above lists server policy knobs. Settings never enable unsupported items or alter the build-specific support policy. Existing economic tables remain the transaction-owned projections used by features, while immutable revision documents own administration history.
+
+## Autonomous population
+
+The restart-only `Capsuleers.GlobalProvisioning` setting defaults to true. Startup records eligibility for every catalog system and provisions missing miner/hauler pairs in eligible locations. Disabling additional provisioning retains established pilots, grants and saved jobs. Re-enabling it resumes missing communities without replacing existing assets. See the [population guide](capsuleer-population.md) and local administration population/performance pages for coverage, deferral reasons and queue diagnostics.

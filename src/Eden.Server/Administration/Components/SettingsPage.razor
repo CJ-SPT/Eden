@@ -53,6 +53,10 @@ else
                 <label><InputCheckbox @bind-Value="Form.Mining" />Mining fleets</label>
                 <label><InputCheckbox @bind-Value="Form.MajorThreatAnomalies" />Allow Major Threat anomaly tiers in nullsec</label>
             </section>
+            <section class="card"><h2>Autonomous capsuleers</h2>
+                <label><InputCheckbox @bind-Value="Form.GlobalProvisioning" />Provision a miner and hauler per eligible system</label>
+                <p class="muted">Applies on restart. Existing pilots, possessions and jobs are retained when this is disabled.</p>
+            </section>
             <section class="card"><h2>Progression</h2>
                 <label><InputCheckbox @bind-Value="Form.StartingSkills" />Grant catalog starting skills to new pilots</label>
                 <p class="muted">Native training rates and skill requirements are read only.</p>

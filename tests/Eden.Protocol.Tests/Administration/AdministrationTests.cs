@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Server.Administration;
 using Eden.World.Storage;
@@ -107,6 +108,27 @@ public sealed class AdministrationTests
             new AdminSaveRequest(state!.Generation, state.Active.Draft)
         );
         Assert.Equal(HttpStatusCode.BadRequest, noSaveToken.StatusCode);
+    }
+
+    [Fact]
+    public async Task PopulationRequiresAdministratorAndReportsSavedCoverageWithoutAdvancingJobs()
+    {
+        await using var fixture = await Fixture.Start();
+        using var denied = await fixture.Client.GetAsync("/api/admin/population");
+        Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
+        using var pageDenied = await fixture.Client.GetAsync("/population");
+        Assert.Equal(HttpStatusCode.Redirect, pageDenied.StatusCode);
+        await fixture.SignIn();
+        var population = fixture.World.Services.GetRequiredService<ICapsuleerPopulation>();
+        var scheduler = fixture.World.Services.GetRequiredService<ICapsuleerScheduler>();
+        var before = scheduler.Jobs().ToArray();
+        var snapshot = (await fixture.Client.GetFromJsonAsync<AdminPopulationSnapshot>("/api/admin/population"))!;
+        Assert.Equal(population.Summary(), snapshot.Population);
+        Assert.Equal(population.Systems().Count, snapshot.Systems.Count);
+        Assert.Equal(before, scheduler.Jobs());
+        string html = await fixture.Client.GetStringAsync("/population");
+        Assert.Contains("Autonomous population", html);
+        Assert.Contains("href=\"/population\"", html);
     }
 
     [Fact]

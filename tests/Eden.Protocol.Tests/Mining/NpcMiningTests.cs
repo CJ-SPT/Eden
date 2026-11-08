@@ -12,6 +12,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
@@ -88,6 +89,37 @@ public sealed partial class NpcMiningTests
     {
         using WorldDbContext world = new(db.Path);
         return world.Set<WorldAsteroid>().Sum(a => a.Quantity);
+    }
+
+    [Fact]
+    public void CalmFundedMiningKeepsPopulationWarmUntilItsDeadlineAndOreChangesWakeIt()
+    {
+        var clock = Clock();
+        using TestWorld db = new(clock: clock, regionalNpcs: true, liveWorld: true);
+        Prepare(db);
+        var miners = Read(db, clock.Now);
+        long due = MiningDue(db);
+        using (WorldDbContext world = new(db.Path))
+        {
+            Assert.Equal(due, NpcPopulationSchedule.Next(world, SystemId, clock.Now));
+        }
+        clock.Seconds += 2;
+        using (var metrics = SessionPerformance.Begin("calm mining before paid deadline", _ => { }, force: true)!)
+        {
+            _ = db.Services.GetRequiredService<INpcSimulation>().Advance(SystemId, clock.Now);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        long rock = miners[0].Activity!.TargetId;
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Set<WorldAsteroid>().Find(rock)!.Quantity = 0;
+            world.SaveChanges();
+        }
+        _ = Read(db, clock.Now);
+        using WorldDbContext saved = new(db.Path);
+        Assert.All(saved.Set<WorldNpcMiningMember>().Where(m => m.AsteroidId == rock), m => Assert.Null(m.MiningDueAt));
     }
 
     [Fact]
@@ -287,11 +319,13 @@ public sealed partial class NpcMiningTests
         Assert.Empty(saved.Set<NpcAggression>().Where(a => a.NpcId == miner.Id));
     }
 
-    [Fact]
-    public void PoorCorporationStandingAlarmsWithoutAnUnprovokedPirateAttack()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PoorCorporationStandingAlarmsWithoutAnUnprovokedPirateAttack(bool live)
     {
         var clock = Clock();
-        using TestWorld db = new(clock: clock, regionalNpcs: true);
+        using TestWorld db = new(clock: clock, regionalNpcs: true, liveWorld: live);
         Prepare(db);
         var miner = Read(db, clock.Now)[0];
         db.Store.SetPosition(ShipId, miner.Position + new SpacePosition(1000, 0, 0), SystemId);
