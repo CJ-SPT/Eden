@@ -293,6 +293,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Inventory and ship ownership
 
+- [Personal Assets window (November 8, 2026)](protocol/inventory.md#personal-assets-window-november-8-2026)
+
 - [Production stack consolidation and repackaging (November 6, 2026)](protocol/inventory.md#production-stack-consolidation-and-repackaging-november-6-2026)
 
 - [Capsule retirement on boarding (November 6, 2026)](protocol/inventory.md#capsule-retirement-on-boarding-november-6-2026)

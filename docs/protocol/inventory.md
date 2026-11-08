@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Personal Assets window (November 8, 2026)](#personal-assets-window-november-8-2026)
 - [Capsule retirement on boarding (November 6, 2026)](#capsule-retirement-on-boarding-november-6-2026)
 - [Personal ship insurance](#personal-ship-insurance)
 - [Native inventory stack division](#native-inventory-stack-division)
@@ -180,3 +181,21 @@ Inert build **3662168** `code.ccp` inspection (SHA-256 **37FB2AF4FA0EC5C8FA320F3
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect Stack All quantity/capacity refresh and repackaging's packaged tile/insurance display on a copied world. Native rendering and input remain unverified.
+
+## Personal Assets window (November 8, 2026)
+
+The native window uses the same pilot-lifetime global inventory binding as the contract picker: `charMgr` with `(selectedPilotID, containerGlobal=10002)`. Previously `ListStations()` exposed only `stationID` and `itemCount`. Inert inspection shows `AssetsSvc.GetAll` immediately reads `solarSystemID`, while `AssetsWindow.GetStationSolarSystemIDAndTypeID` also consumes `typeID`. The reply now retains the original columns and adds both catalog-backed fields. Contract picker counts use the same directory query and remain row counts, including the active docked ship.
+
+The bound inventory now implements `ListStationItems(stationID)`, `List()` and `ListIncludingContainers()` with the existing native nine-physical-column inventory DBRow descriptor and virtual singleton/stack-size getters. Root station reads include personal hangar stacks and docked assembled ships. Search adds reachable singleton cargo, secure cargo, audit-log secure and freight-container contents with native None/Locked/Unlocked flags (0/63/64). It preserves each item's original container/location identity, flags and stack quantity. The server never treats ship cargo, fitted modules or ships carried in bays as station assets. Foreign ownership, invalid/orphan locations, installed blueprints, escrow and ships in space are excluded.
+
+`IPilotAssets` owns the typed read boundary; World loads a coherent relational snapshot and Gameplay selects the reachable asset graph. The protocol handler validates arguments and returns named models. Remote reads require character selection and work while docked or in space; the global binding survives location-reference release. Reads emit no inventory notifications or mutations. Repeated server reads reflect committed ownership/escrow changes; `inv5MinCacheContainer` retains the native client's existing five-minute caches. Location filtering, sorting, name/type checks and advanced search conditions remain client behavior.
+
+`structureAssetSafety.GetItemsInSafetyForCharacter()` returns a real empty Python list for the Safety tab. Eden has no Upwell storage or safety-wrap persistence, so no transfer, delivery or recovery calls are advertised. Corporation safety and `GetAssetWorth` remain unsupported; no artificial asset valuation is introduced. There is no schema or client-file change.
+
+References: [EVE University: Managing Your Assets](https://wiki.eveuniversity.org/Managing_Your_Assets), [Neocom Personal Assets](https://wiki.eveuniversity.org/Neocom#Personal_Assets) and [Asset Safety](https://wiki.eveuniversity.org/Asset_Safety). Exact call signatures and field casing were checked against build **3662168** `E:/EdenDev/3662168/tq/code.ccp`, SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**, including `invCache.pyj`, `assetsinfo.pyj`, `assetsWindow.pyj`, `eveAssets/assetSearching.pyj`, `inventorycommon/const.pyj` and `assetSafetySvc.pyj`. Inspection decoded inert code objects without importing or executing gameplay Python. Consulted [Carbon Blue PyRowSet.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/PyRowSet.cpp) for descriptor/DBRow construction; existing encoding is reused.
+
+**Automated validation:** `dotnet tool restore`, solution restore and build passed (build **7.76 seconds**, zero warnings/errors). The final focused run passed **79 tests in 27 seconds** using `FullyQualifiedName~PersonalAsset|FullyQualifiedName~ContractAsset|FullyQualifiedName~ContractServiceTests|FullyQualifiedName~Hosting.ServerServicesTests|FullyQualifiedName~Hosting.GameplayDependenciesTests|FullyQualifiedName~Hosting.DataModelOwnershipTests`. The initial exact-method filter was `FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.PersonalAssetServiceTests.NativePersonalAssetsListLocationsAndExpandRemoteStations`; the escrow regression was also run with its exact method filter. Coverage includes all four container groups, root/stack counts, station metadata, native inventory row encoding, embedded binding calls, location-independent references, space reads, committed ownership/escrow changes, foreign/orphan/installed/stored exclusions, rejected arguments, empty safety and reopened persistence. Initial development failures in the new test fixture (request-decoding an outbound DBRow and reinserting an existing catalog category) were corrected before the successful final run. Both Python policy suites passed (**8 catalog tests in 0.606 seconds**, **9 formatting tests in 0.020 seconds**); `Format.ps1 -Check` and documentation/diff checks passed. The full .NET suite was not requested or run. Native client rendering and filtering execution remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** With the updated server, reopen Personal Assets, expand a remote station and search for an owned item; confirm location filters/sorting and the empty Asset Safety tab. Wait for the native cache expiry when inspecting recent asset changes.

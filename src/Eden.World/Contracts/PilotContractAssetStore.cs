@@ -15,42 +15,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Contracts;
 
 [Injectable]
-internal sealed class PilotContractAssetStore(WorldDatabase database) : IPilotContractAssets
+internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAssets personalAssets) : IPilotContractAssets
 {
-    public IReadOnlyList<ContractAssetStation> Stations(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        if (!world.Pilots.Any(p => p.Id == pilotId))
-        {
-            throw new InvalidDataException("Unknown pilot.");
-        }
-        var items = world
-            .Set<OwnedItem>()
-            .Where(i => i.OwnerId == pilotId && i.FlagId == (int)InventoryFlag.Hangar)
-            .Where(i => !world.Set<IndustryJob>().Any(j => j.BlueprintId == i.Id && j.Status == IndustryJobStatus.Installed))
-            .GroupBy(i => i.LocationId)
-            .Select(g => new { LocationId = g.Key, Count = g.Count() })
-            .ToArray();
-        // The global inventory includes the active docked ship. The native contract
-        // wizard subtracts it from the current station's displayed item count.
-        var ships = world
-            .Ships.Where(s => s.OwnerId == pilotId && s.StoredInId == null && s.Position == null)
-            .GroupBy(s => s.StationId)
-            .Select(g => new ContractAssetStation(g.Key, g.Count()))
-            .ToArray();
-        var locations = items.Select(i => i.LocationId).Concat(ships.Select(s => (long)s.StationId)).ToArray();
-        var stations = locations.Select(catalog.FindStation).OfType<CatalogStationDefinition>().Select(s => s.Id).ToHashSet();
-        return items
-            .Where(i => i.LocationId is > 0 and <= int.MaxValue && stations.Contains((int)i.LocationId))
-            .Select(i => new ContractAssetStation((int)i.LocationId, i.Count))
-            .Concat(ships.Where(s => stations.Contains(s.StationId)))
-            .GroupBy(s => s.StationId)
-            .Select(g => new ContractAssetStation(g.Key, g.Sum(s => s.ItemCount)))
-            .OrderBy(s => s.StationId)
-            .ToArray();
-    }
+    public IReadOnlyList<ContractAssetStation> Stations(long pilotId) =>
+        personalAssets.Locations(pilotId).Select(s => new ContractAssetStation(s.StationId, s.ItemCount)).ToArray();
 
     public IReadOnlyList<InventoryItem> Station(long pilotId, int stationId)
     {

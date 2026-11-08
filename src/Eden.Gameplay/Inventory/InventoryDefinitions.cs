@@ -45,6 +45,8 @@ public enum InventoryFlag
     HighSlot0 = 27,
     HighSlot1 = 28,
     HighSlot7 = 34,
+    Locked = 63,
+    Unlocked = 64,
     DroneBay = 87,
     Implant = 89,
     ShipMaintenanceBay = 90,

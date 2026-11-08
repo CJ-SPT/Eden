@@ -1,4 +1,4 @@
-using Eden.Gameplay.Contracts;
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -6,7 +6,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class GlobalInventoryHandler(IPilotContractAssets assets) : ISelectedPilotCallHandler
+internal sealed class GlobalInventoryHandler(IPilotAssets assets) : ISelectedPilotCallHandler
 {
     // Build 3662168 inventorycommon.const.containerGlobal and invCache.GetInventory.
     internal const long ContainerId = 10002;
@@ -20,25 +20,47 @@ internal sealed class GlobalInventoryHandler(IPilotContractAssets assets) : ISel
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service != BoundService || method != "ListStations")
+        if (service != BoundService || method is not ("ListStations" or "ListStationItems" or "List" or "ListIncludingContainers"))
         {
             return PilotCallResult.Unsupported;
         }
-        if (args.Length != 0 || keywords is { Count: > 0 })
+        try
         {
-            return new PilotCallResult.Failure("Invalid personal asset station request.");
+            if (keywords is { Count: > 0 })
+            {
+                throw new InvalidDataException("Unexpected personal asset arguments.");
+            }
+            long pilot = context.Pilot.PilotId;
+            return (method, args) switch
+            {
+                ("ListStations", []) => new GlobalInventoryStations(assets.Locations(pilot)),
+                ("List", []) => Rows(assets.Items(pilot, new())),
+                ("ListIncludingContainers", []) => Rows(assets.Items(pilot, new(IncludeContainers: true))),
+                ("ListStationItems", [long station]) when station is > 0 and <= int.MaxValue => Rows(
+                    assets.Items(pilot, new((int)station))
+                ),
+                _ => new PilotCallResult.Failure("Invalid personal asset request."),
+            };
         }
-        return new GlobalInventoryStations(assets.Stations(context.Pilot.PilotId));
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
     }
+
+    private static BlueList<InventoryRow> Rows(IReadOnlyList<InventoryItem> items) => new(items.Select(InventoryRow.From).ToArray());
 }
 
-internal sealed record GlobalInventoryStations(IReadOnlyList<ContractAssetStation> Stations) : BlueModel
+internal sealed record GlobalInventoryStations(IReadOnlyList<PersonalAssetLocation> Stations) : BlueModel
 {
     public override object ToBlue() =>
-        new CompatibilityRowset(["stationID", "itemCount"], Stations.Select(s => new GlobalInventoryStationRow(s)).ToArray()).ToBlue();
+        new CompatibilityRowset(
+            ["stationID", "itemCount", "solarSystemID", "typeID"],
+            Stations.Select(s => new GlobalInventoryStationRow(s)).ToArray()
+        ).ToBlue();
 }
 
-internal sealed record GlobalInventoryStationRow(ContractAssetStation Station) : BlueModel
+internal sealed record GlobalInventoryStationRow(PersonalAssetLocation Station) : BlueModel
 {
-    public override object ToBlue() => new object?[] { Station.StationId, Station.ItemCount };
+    public override object ToBlue() => new object?[] { Station.StationId, Station.ItemCount, Station.SolarSystemId, Station.TypeId };
 }

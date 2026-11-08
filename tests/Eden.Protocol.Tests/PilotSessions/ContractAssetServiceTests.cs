@@ -126,7 +126,10 @@ public sealed class ContractAssetServiceTests
         var rows = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(reply)));
         Assert.Equal("eve.common.script.sys.rowset.Rowset", rows.Name);
         var state = BlueRead.Fields(rows.State);
-        Assert.Equal(new[] { "stationID", "itemCount" }, Assert.IsType<List<object?>>(state["header"]).Select(BlueMarshal.Text));
+        Assert.Equal(
+            new[] { "stationID", "itemCount", "solarSystemID", "typeID" },
+            Assert.IsType<List<object?>>(state["header"]).Select(BlueMarshal.Text)
+        );
         return Assert
             .IsType<List<object?>>(state["lines"])
             .Select(row => Assert.IsType<object?[]>(row))
