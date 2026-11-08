@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Personalization SKIN license reads, November 8, 2026](#personalization-skin-license-reads-november-8-2026)
 - [Pilot services subscription and checkout, November 8, 2026](#pilot-services-subscription-and-checkout-november-8-2026)
 - [Character biomass (November 6, 2026)](#character-biomass-november-6-2026)
 - [Character interaction history (November 5, 2026)](#character-interaction-history-november-5-2026)
@@ -30,6 +31,28 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Personalization SKIN license reads, November 8, 2026
+
+The maintainer's Personalization screenshot reports the missing `shipCosmeticsMgr.GetLicencedSkins` call. The pinned remote API uses **Licenced** while the local `cosmeticsSvc` wrapper uses **Licensed**. A selected-pilot `ShipCosmeticsHandler` now owns the collection read and related per-hull/license-detail reads. Eden currently has no saved activated SKIN entitlements, so the replies expose an empty owned collection without granting licenses or suppressing the client's static catalog.
+
+| Native call | Arguments | Reply |
+| --- | --- | --- |
+| `shipCosmeticsMgr.GetLicencedSkins` | None | Empty Python list |
+| `shipCosmeticsMgr.GetLicencedSkinsForShipType` | Selected pilot ID, positive 32-bit hull type ID | Empty Python list |
+| `shipCosmeticsMgr.GetFirstPartySkinData` | Positive licensee ID, positive 32-bit skin ID | Python None |
+
+All three calls require selection and reject service keywords/malformed argument shapes. Per-hull collection reads require the current pilot; applied-skin detail reads may refer to another licensee because observer previews use that contract. No licensee has an applied licensed skin in the current implementation. No inventory, appearance or ownership changes or notifications occur. Activation, consumption, saved expiry, SKIN application and administrator grants remain unsupported. Existing ship dirt and `GetEnabledCosmetics` handling are unchanged.
+
+Inert inspection of build **3662168** `E:/EdenDev/3662168/tq/code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, confirms `cosmetics/client/cosmeticsSvc.pyj` `GetLicensedSkins` calls `GetLicencedSkins()` without arguments. `_GetLicensedPersonalSkinsForType` sends `(session.charid, typeID)`. `GetFirstPartySkinObject` sends `(licenseeID, skinID)` and explicitly accepts None as absence. `charsheet/skinsPanel.pyj` `_GetFilteredSkinsByMaterialID` iterates the license list into a skin-ID dictionary, then combines it with `static.GetAllShipSkins`; `cosmeticsSvc.GetSkins` similarly iterates per-hull license records before adding unlicensed static materials. Empty lists preserve both paths. No client modules were executed.
+
+Gameplay references: [EVE University New Eden Store](https://wiki.eveuniversity.org/New_Eden_Store) describes timed/permanent ship SKINs, and its [static-data reference](https://wiki.eveuniversity.org/Static_Data_Export) distinguishes skin/license definitions from entitlements. The local typed `sde/skinLicenses` catalog supplies definitions only; it does not establish pilot ownership. Consulted local [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), `ReadObjectList0` and `ReadObjectNone`, against the unchanged adapters. No persistence schema or gameplay rules changed.
+
+**Automated validation.** Exact development filter `FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.ShipCosmeticsServiceTests.NativePersonalizationSkinPacketsReturnEmptyLicenseListsWithoutDestinationErrors` passed **1 test** (build-command **4.77 seconds**, test-command **5.11 seconds**). Final root checks passed **56 affected tests** in approximately **5 seconds**, with filter `FullyQualifiedName~ShipCosmeticsServiceTests|FullyQualifiedName~ShipAppearanceServiceTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` and `xUnit.MaxParallelThreads=4`. Tool/solution restores, build (**3.88 seconds**, zero warnings/errors), both Python policy suites (**8 catalog**, **9 formatting**), formatting verification (**1,169 files**), documentation links and diff checks passed. Preparation took **19.32 seconds** and final build/test/policy/format checks took **38.78 seconds**, using isolated `artifacts/feature-tests` output. Coverage includes actual native collection/per-hull/detail packets, decoded list/None shapes, current/foreign licensee detail reads, selection gating, docked/in-space repeated reads, malformed IDs/arguments/keywords, foreign collection rejection, unsupported mutation calls, unchanged pilots and absent notifications. No full .NET suite was requested or run. A running server requires a rebuild/restart to load the correction.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The screenshot establishes the original rejection only; Personalization rendering and preview behavior remain unverified.
+
+**Optional maintainer checks.** Restart the updated server and reopen Personalization > SKINs. Confirm the owned count is zero and the static catalog/filter controls load without the reported dialog.
 
 ## Pilot services subscription and checkout, November 8, 2026
 
