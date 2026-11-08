@@ -54,17 +54,14 @@ public static class FittingResourceRules
             throw new InvalidDataException("This fitting change would leave the ship with no structure.");
         }
         return new(
-            Scale(before.Health.Remaining.Shield, before.Health.Defense.Shield, defense.Shield),
+            ChargedResource.Resize(before.Health.Remaining.Shield, before.Health.Defense.Shield, defense.Shield),
             armorDamage,
             hullDamage,
-            Scale(
+            ChargedResource.Resize(
                 before.Capacitor,
                 before.Attributes.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity),
                 after.GetValueOrDefault(DogmaAttributeId.CapacitorCapacity)
             )
         );
     }
-
-    private static double Scale(double value, double oldCapacity, double newCapacity) =>
-        oldCapacity > 0 ? Math.Clamp(value / oldCapacity, 0, 1) * newCapacity : 0;
 }

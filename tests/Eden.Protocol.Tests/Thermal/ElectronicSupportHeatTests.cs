@@ -609,7 +609,9 @@ public sealed class ElectronicSupportHeatTests
             using var transaction = mutation.Database.BeginTransaction();
             using CatalogDbContext catalog = new(f.Fit.CatalogPath);
             var condition = ModuleConditionPersistence.Read(mutation, catalog, mutation.Set<OwnedItem>().Find(f.Module)!);
-            Assert.True(ModuleConditionPersistence.ApplyDamage(mutation, catalog, f.Module, condition.HitPoints).Current.BurnedOut);
+            Assert.True(
+                ModuleConditionPersistence.ApplyDamage(mutation, catalog, f.Module, condition.HitPoints, f.Fit.Clock.Now).Current.BurnedOut
+            );
             mutation.SaveChanges();
             transaction.Commit();
         }

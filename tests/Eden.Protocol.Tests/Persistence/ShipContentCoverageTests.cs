@@ -4,6 +4,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Content;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Thermal;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -102,6 +103,31 @@ public sealed class ShipContentCoverageTests
                 entry.State == ContentSupportState.Partial
                 && entry.Checks.Any(check => check.Operation == ContentOperation.ConsumerCoverage && !check.Implemented)
         );
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void NanitePasteCoverageChecksTheActualPaidRepairMaterial(bool priced)
+    {
+        using CatalogFixture fixture = new();
+        PassiveCatalogFixture.LoadAncillaryRepairs(fixture.Path);
+        PassiveCatalogFixture.LoadOverload(fixture.Path);
+        if (!priced)
+        {
+            using CatalogDbContext write = new(fixture.Path, writable: true);
+            write.Database.ExecuteSql(
+                $"""
+                UPDATE SourceRecord SET Data=json_remove(Data,'$.basePrice')
+                WHERE Dataset='client/types' AND Key={NaniteRepairRules.PasteType.ToString()}
+                """
+            );
+        }
+        using CatalogDbContext catalog = new(fixture.Path);
+        var paste = Assert.Single(ShipContentAudit.Read(catalog).Entries, entry => entry.TypeId == NaniteRepairRules.PasteType);
+        Assert.True(paste.Admitted);
+        Assert.Equal(priced, Assert.Single(paste.Checks, check => check.Operation == ContentOperation.ConsumerCoverage).Implemented);
+        Assert.Equal(priced ? ContentSupportState.Complete : ContentSupportState.Partial, paste.State);
     }
 
     [Fact]

@@ -5,6 +5,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Defenses;
 using Eden.World.Fittings;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,7 +35,11 @@ public sealed class PassiveTierTests
         Assert.Equal(862, supported.Length);
         Assert.Equal(31, supported.Select(type => type.GroupId).Distinct().Count());
         Assert.All(supported, type => Assert.NotNull(FittingCatalog.Definition(catalog, type.Id)));
-        Assert.All(types.Except(supported), type => Assert.Null(FittingCatalog.Definition(catalog, type.Id)));
+        var activeControls = types.Where(type => AssaultDamageControlCatalog.Supported(catalog, type.Id, type.GroupId)).ToArray();
+        Assert.Equal(6, activeControls.Length);
+        Assert.Empty(activeControls.Intersect(supported));
+        Assert.All(activeControls, type => Assert.NotNull(FittingCatalog.Definition(catalog, type.Id)));
+        Assert.All(types.Except(supported).Except(activeControls), type => Assert.Null(FittingCatalog.Definition(catalog, type.Id)));
         var tiers = supported
             .Select(type => catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(type.Id))!.Read<ClientTypes>().MetaGroupID)
             .ToHashSet();

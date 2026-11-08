@@ -233,7 +233,7 @@ public sealed class ShipHeatTests
             using WorldDbContext world = new(f.Fit.Db.Path);
             using var transaction = world.Database.BeginTransaction();
             using CatalogDbContext catalog = new(f.Fit.CatalogPath);
-            ModuleConditionPersistence.ApplyDamage(world, catalog, f.Module, 40);
+            ModuleConditionPersistence.ApplyDamage(world, catalog, f.Module, 40, f.Fit.Clock.Now);
             world.SaveChanges();
             transaction.Commit();
         }

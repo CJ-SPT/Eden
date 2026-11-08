@@ -477,7 +477,7 @@ public sealed partial class PaidNaniteRepairTests
         using (var transaction = world.Database.BeginTransaction())
         {
             using CatalogDbContext catalog = new(f.Fit.CatalogPath);
-            Assert.True(ModuleConditionPersistence.ApplyDamage(world, catalog, f.Module, 20).Current.BurnedOut);
+            Assert.True(ModuleConditionPersistence.ApplyDamage(world, catalog, f.Module, 20, f.Fit.Clock.Now).Current.BurnedOut);
             world.SaveChanges();
             transaction.Commit();
         }

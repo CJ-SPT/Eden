@@ -314,7 +314,7 @@ public sealed class OverloadFittingTests
         using CatalogDbContext catalog = new(f.CatalogPath);
         if (reason == "burned")
         {
-            ModuleConditionPersistence.ApplyDamage(world, catalog, module, 40);
+            ModuleConditionPersistence.ApplyDamage(world, catalog, module, 40, f.Clock.Now);
             world.SaveChanges();
         }
         long selected = reason == "foreign" ? module + 100000 : module;
