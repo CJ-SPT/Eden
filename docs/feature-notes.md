@@ -304,6 +304,8 @@ Milestone 5's [local ancillary checkpoint](protocol/fitting.md#local-ancillary-a
 
 The [signature suppression calculation foundation](protocol/fitting.md#signature-suppression-calculation-foundation-november-7-2026) is now connected to [paid activation and native cycles](protocol/fitting.md#signature-suppression-operation-and-timed-activation-expiry-november-7-2026). All five static profiles provide their online reduction and a paid one-shot burst, with earned Signature Masking duration, actual battleship fitting limits and saved reactivation deadlines. Timed bonuses expire under the world owner before observer/combat reads; disconnect and restart clear active bonuses while retaining payment and cooldown. The new checkpoint enables no additional hull cohort and does not close milestone 5.
 
+Milestone 6's [calculation foundation](protocol/fitting.md#overheating-calculation-foundation-november-7-2026) validates all 1,826 currently admitted heatable module profiles across 19 native overload programs, plus declared rack profiles across the 235 admitted hulls. Pure rack heating/cooling matches 13 vectors evaluated from the pinned client's isolated scalar function. Native overload toggles, authoritative rack state/damage, saved module condition, burnout and paste repair remain unfinished; no overload bonus is enabled by this checkpoint.
+
 ## Protocol coverage
 
 The [client RPC inventory](client-routes/README.md) lists missing handler candidates and compatibility routes from inert inspection of pinned build 3662168. It includes sortable route lists, client call sites and a repeatable audit tool; dynamic calls and partial feature support still need review.

@@ -1,0 +1,123 @@
+{
+  "build": 3662168,
+  "archiveSha256": "37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368",
+  "vectors": [
+    {
+      "heat": 0,
+      "milliseconds": 0,
+      "incoming": 0,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 0.0
+    },
+    {
+      "heat": 20,
+      "milliseconds": 0,
+      "incoming": 0.01,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 20.0
+    },
+    {
+      "heat": 0,
+      "milliseconds": 10000,
+      "incoming": 0.01,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 9.516258196404053
+    },
+    {
+      "heat": 20,
+      "milliseconds": 10000,
+      "incoming": 0.01,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 27.613006557123242
+    },
+    {
+      "heat": 50,
+      "milliseconds": 10000,
+      "incoming": 0,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 45.241870901797974
+    },
+    {
+      "heat": 0.5,
+      "milliseconds": 0,
+      "incoming": 0,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 0.5
+    },
+    {
+      "heat": 0.499999,
+      "milliseconds": 0,
+      "incoming": 0,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 0.0
+    },
+    {
+      "heat": 0.5,
+      "milliseconds": 1,
+      "incoming": 0,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 0.0
+    },
+    {
+      "heat": 20,
+      "milliseconds": 1000,
+      "incoming": 4.99999e-08,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 19.800996674983363
+    },
+    {
+      "heat": 20,
+      "milliseconds": 1000,
+      "incoming": 5e-08,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 20.0000039999999
+    },
+    {
+      "heat": 7,
+      "milliseconds": 12.5,
+      "incoming": 0.07,
+      "dissipation": 0.02,
+      "generation": 2.5,
+      "capacity": 75,
+      "expected": 7.148587423254653
+    },
+    {
+      "heat": 150,
+      "milliseconds": 10000,
+      "incoming": 0.02,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 140.93653765389908
+    },
+    {
+      "heat": 2,
+      "milliseconds": 1000000,
+      "incoming": 0,
+      "dissipation": 0.01,
+      "generation": 1,
+      "capacity": 100,
+      "expected": 0.0
+    }
+  ]
+}

@@ -19,6 +19,9 @@
     <EmbeddedResource Include="Fixtures/AncillaryRemoteRepairCatalog.json" />
     <EmbeddedResource Include="Fixtures/SignatureSuppressionCatalog.json" />
     <EmbeddedResource Include="Fixtures/AssaultDamageControlCatalog.json" />
+    <EmbeddedResource Include="Fixtures/OverloadCatalog.json" />
+    <EmbeddedResource Include="Fixtures/ThermalModuleMatrix.json" />
+    <EmbeddedResource Include="Fixtures/HeatReferenceVectors.json" />
     <EmbeddedResource Include="Fixtures/RemoteAssistanceCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />

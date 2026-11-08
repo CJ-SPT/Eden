@@ -13,6 +13,7 @@ using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Defenses;
 using Eden.World.Drones;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Fittings;
@@ -298,7 +299,18 @@ internal static class ShipContentAudit
         );
         if (effects.Any(effect => effect.EffectCategory == OverloadEffectCategory))
         {
-            checks.Add(new(ContentOperation.Overheating, false, ShipContentMilestone.Overheating, "Native overload routes have no owner."));
+            bool calculation = OverloadCatalog.Definition(catalog, type.Id) is not null;
+            checks.Add(
+                new(
+                    ContentOperation.Overheating,
+                    false,
+                    ShipContentMilestone.Overheating,
+                    calculation
+                        ? "Typed overload programs are validated; native toggles, rack heat/damage, "
+                            + "burnout and paste repair remain unfinished."
+                        : "Unverified overload calculation profile; native heat operation remains unfinished."
+                )
+            );
         }
         AddDroneConsumers(effects, checks);
         if (effects.Any(e => e.EffectID == (int)DogmaEffect.AssaultDamageControl))

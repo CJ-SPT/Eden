@@ -55,6 +55,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadAssaultDamageControls(string path) => Load(path, "AssaultDamageControlCatalog.json", null);
 
+    internal static void LoadOverload(string path) => Load(path, "OverloadCatalog.json", null);
+
     internal static void LoadAncillaryRemoteRepairs(string path, int? hullType = null) =>
         Load(path, "AncillaryRemoteRepairCatalog.json", null, hullType: hullType);
 
