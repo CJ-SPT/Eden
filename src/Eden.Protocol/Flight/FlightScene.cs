@@ -30,6 +30,7 @@ internal sealed class FlightScene(
     private ShipContact[] _peers = [];
     private readonly Dictionary<long, long> _peerOrderSequences = new();
     private StaticSpaceObject[] _visibleAsteroids = [];
+    private IReadOnlyList<StaticSpaceObject> _anomalies = [];
     private WreckContact[] _wrecks = [];
     private MissileContact[] _missiles = [];
 
@@ -60,6 +61,8 @@ internal sealed class FlightScene(
 
     internal void LeaveSpace()
     {
+        Objects = Objects.ExceptBy(_anomalies.Select(o => o.Id), o => o.Id).ToArray();
+        _anomalies = [];
         _peers = [];
         _peerOrderSequences.Clear();
         _visibleAsteroids = [];
@@ -235,6 +238,26 @@ internal sealed class FlightScene(
             }
         }
         _wrecks = current;
+    }
+
+    internal void RefreshAnomalies(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> objects)
+    {
+        var previous = _anomalies;
+        Objects = Objects.ExceptBy(previous.Select(o => o.Id), o => o.Id).Concat(objects).ToArray();
+        _anomalies = objects;
+        if (!context.InBallpark)
+        {
+            return;
+        }
+        foreach (var removed in previous.ExceptBy(objects.Select(o => o.Id), o => o.Id))
+        {
+            update(new DestinyCommand.RemoveBall(removed.Id, false));
+        }
+        var added = objects.ExceptBy(previous.Select(o => o.Id), o => o.Id).ToArray();
+        if (added.Length > 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, space.Stamp(clock))));
+        }
     }
 
     internal void RefreshAsteroids(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> asteroids)

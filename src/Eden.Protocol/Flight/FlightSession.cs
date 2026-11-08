@@ -205,6 +205,8 @@ internal sealed class FlightSession(
 
     public void NotifyHealth(ShipHealth current) => Scene.NotifyHealth(current);
 
+    internal void RefreshAnomalies(IReadOnlyList<StaticSpaceObject> objects) => Scene.RefreshAnomalies(SceneContext, objects);
+
     public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids) => Scene.RefreshAsteroids(SceneContext, asteroids);
 
     private void RefreshVisibleAsteroids() => Scene.RefreshVisibleAsteroids(SceneContext);

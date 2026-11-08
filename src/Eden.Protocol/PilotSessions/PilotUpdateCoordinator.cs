@@ -72,7 +72,8 @@ internal sealed class PilotUpdateCoordinator(
     RemoteAssistanceHandler remoteAssistance,
     SignatureSuppressionHandler signatureSuppression,
     AssaultDamageControlHandler assaultDamageControl,
-    NaniteRepairHandler naniteRepairs
+    NaniteRepairHandler naniteRepairs,
+    Eden.Protocol.Exploration.CombatAnomalyHandler anomalies
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -189,6 +190,7 @@ internal sealed class PilotUpdateCoordinator(
     {
         DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
         ApplyPlayerDamage(context);
+        anomalies.Advance(context);
         naniteRepairs.Advance(context);
         crimewatch.Advance(context);
         npcEwar.Advance(context);

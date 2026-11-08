@@ -19,6 +19,7 @@ public enum NpcAnchorKind
     Belt,
     Gate,
     Station,
+    Anomaly,
 }
 
 public static class NpcPopulationRules

@@ -614,3 +614,62 @@ Chose **Keep at Range → 5,000 m** on the Rookie. The Ibis accelerated to **334
 The Ibis docked at **Perimeter II - Moon 1 - Caldari Navy Assembly Plant** with its original cargo. Restarted both host and client on that save and verified the docked active Ibis and cargo again. Every world row matched the stopped snapshot, including the same NPC's returning position and velocity; no offline movement or aggression appeared. The acceptance save is left running there, docked with Inventory open.
 
 The final comparison against the starting save found only NPC movement and incoming ship-health changes. All items and **114 loaded rounds**, fitting state, **121 pilot skills**, history/queue, module cooldowns, wallet/market records and the delivered manufacturing job remained identical. Wallet stayed **18,944.01 ISK**. NPC identities and shield/armor/structure damage were retained, and no aggression remained. Schema **27**, SQLite integrity and foreign-key checks passed, and both server error logs were empty. Joining-stream bytes, competing viewers, exact threshold boundaries, coincident geometry and losing an orbit's aggression have automated coverage; this native run verified approach, sustained circling, pulling away, pursuit, returning to Orbit, docking and save restart.
+
+
+## Combat anomaly foundation (November 8, 2026)
+
+Perimeter exposes one shared Guristas Hideaway Observation Post (dungeon 2134). Its scanner contracts are
+`scanMgr.SignalTrackerRegister`, location-bound `GetSystemScanMgr().GetFullState()`, `OnSignalTrackerFullState`
+and `OnSignalTrackerAnomalyUpdate`. Full state contains anomalies, signatures, static sites and structures,
+in that order. Anomaly records supply instanceID, position, targetID, difficulty, dungeonID, archetypeID,
+dungeonNameID, factionID, scanStrengthAttribute and allowedTypes. The native anomaly adapter supplies full
+signal strength. Overlay item warps and fallback scan-ID warps resolve the active site in the current system,
+then use existing point warp and landing range rules. Replaced identities are rejected.
+
+Schema 109 saves identity, coordinates, wave and replacement deadline. NPCs save site membership through
+EncounterId and the Anomaly anchor kind, plus home coordinates. Arrival within 100 km activates one initial
+group. The last kill advances the wave in the existing damage/bounty/wreck transaction. Four ordinary groups
+complete the site. Its replacement appears on the first read at or after ten minutes. Wrecks retain their
+normal independent lifetime. Warm scanner reads and distant arrival checks use the shared cached view.
+
+Catalog evidence is build 3662168 dungeon 2134, room 19217, entry object 851072 and spawner 851073.
+The visible room landmark is radio telescope type 70824. Invisible spawners, audio emitters, clouds and
+asteroid environment assets require other client adapters. Run this read-only coverage audit from the root:
+
+```powershell
+python tools/Audit-CombatAnomalies.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output artifacts/combat-anomaly-coverage.json
+```
+
+The verified counts are 325 variants, 243 English names, 325 resolved entries, 258 single-room and 67
+multi-room variants, 255 with NPC groups, 229 with triggered groups, 185 with objective links and 1,081
+unresolved NPC group IDs. The optional `--fixture` argument exports the selected room, four Pithi types,
+and their dogma, missile and wreck dependencies into CombatAnomalyCatalog.json.
+
+The ordinary roster reconstructs the [Observation Post player report](https://eve-survival.org/?wakka=GuristasHideaway),
+last edited October 6, 2015. Groups alternate Arrogator/Imputor and Infiltrator/Invader, with 1-2 ships in
+the first two groups and 2-3 in the last two. Stable instance/wave/slot selection makes retries repeatable.
+Final kills release reinforcements. The fifth catalog group, rare spawns and escalations remain unresolved.
+Actual deadspace catalog stats, bounty and wreck types feed existing combat. These groups are outside the
+ordinary belt loot pools and currently leave empty wrecks. Eden places replacements ten billion metres
+along each axis from the system's lowest-ID catalog celestial. Placement and ten-minute replacement are
+Eden policy. Other variants and regional distribution remain later milestones.
+
+Sources checked by inert inspection of build 3662168 `code.ccp`, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, specifically `sensorSuiteService`,
+`scanSvc`, `sensorsuite/overlay/anomalies` and `menusvc._WarpXToScanResult`.
+Point warp reuses [Carbon Destiny revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp#L356-L377).
+[CCP's anomaly guide](https://support.eveonline.com/hc/en-us/articles/203269611-Cosmic-Anomalies)
+confirms immediate discovery without probes.
+
+Automated coverage includes scanner notifications, binding release, both warp routes, stale identities,
+warmed SQL/connection/fitting counts, concurrent arrival/fatal hits, rollback, rewards, waves, deadlines,
+resident contacts and checkpoint reopening. Live acceptance was not performed; agent client testing is
+disabled. Optional maintainer checks are native scanner presentation, telescope appearance and warp landing.
+
+
+Validation before integration used tool restore, solution restore/build, 100 focused .NET cases (26.73 seconds
+including test-host startup), eight catalog policy cases, nine formatting policy cases and `tools/Format.ps1 -Check`.
+The .NET filter was `FullyQualifiedName~CombatAnomalyTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~NpcCatalogSharingTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~WorldMigrationTests`.
+The first new lifecycle method was exercised individually before the combined run. Full .NET regression was
+outside this milestone's requested validation. Early development fixture-resource, scope-resolution, nullable
+and assertion-analyzer failures were corrected before the passing combined run.

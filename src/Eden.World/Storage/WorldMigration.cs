@@ -15,7 +15,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 108;
+    internal const int CurrentVersion = 109;
 
     public static void Open(
         WorldDbContext world,
@@ -95,7 +95,8 @@ internal static class WorldMigration
         NaniteRepairPersistence.Reconcile(world, catalog, clock);
         ModuleConditionPersistence.Reconcile(world, catalog);
         ShipHeatPersistence.ValidateSaved(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=108");
+        Eden.World.Exploration.CombatAnomalySchema.Upgrade(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=109");
         history.Commit();
     }
 }

@@ -45,6 +45,7 @@
     <EmbeddedResource Include="Fixtures/UtilityHullCatalog.json" />
     <EmbeddedResource Include="Fixtures/NativeShipInventory.json" />
     <EmbeddedResource Include="Fixtures/StationUndockCatalog.json" />
+    <EmbeddedResource Include="Fixtures/CombatAnomalyCatalog.json" />
     <EmbeddedResource Include="Fixtures/NpcPopulationCatalog.json" />
     <EmbeddedResource Include="Fixtures/NpcConvoyCatalog.json" />
     <EmbeddedResource Include="Fixtures/NpcMiningCatalog.json" />

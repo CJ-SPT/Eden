@@ -78,6 +78,7 @@ internal static class NpcDamagePersistence
             PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
             npc.DestroyedAt = now;
             NpcPopulationSeeder.RecordKill(world, npc, now);
+            Eden.World.Exploration.CombatAnomalyStore.Killed(world, catalog, npc, now);
             PilotSecurityStatusStore.RecordKill(world, catalog, pilot, npc, attributes, now);
             WreckStore.Create(world, catalog, npc, pilot, now);
             var wreck = world.Set<WorldWreck>().Local.SingleOrDefault(w => w.NpcId == npc.Id);

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Bookmarks;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Fleets;
@@ -7,8 +8,13 @@ using Eden.Protocol.PilotSessions;
 namespace Eden.Protocol.Flight;
 
 [Injectable]
-internal sealed class FlightCallHandler(ISystemObjects systems, IPilotBookmarks bookmarks, CooperativeFleetHandler fleets)
-    : ISelectedPilotCallHandler
+internal sealed class FlightCallHandler(
+    ISystemObjects systems,
+    IPilotBookmarks bookmarks,
+    CooperativeFleetHandler fleets,
+    ICombatAnomalies anomalies,
+    TimeProvider clock
+) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -30,6 +36,25 @@ internal sealed class FlightCallHandler(ISystemObjects systems, IPilotBookmarks 
                 context.Flight.Checkpoint();
             }
             return PilotCallResult.Unsupported;
+        }
+        if (
+            command is FlightCommand.WarpToScan
+            || command is FlightCommand.WarpTo { TargetId: >= CombatAnomalyRules.FirstSiteId and < CombatAnomalyRules.FirstObjectId }
+        )
+        {
+            var site = anomalies
+                .List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                .SingleOrDefault(s =>
+                    command is FlightCommand.WarpToScan scan
+                        ? scan.TargetId == s.TargetId
+                        : command is FlightCommand.WarpTo item && item.TargetId == s.Id
+                );
+            if (site is null)
+            {
+                return new PilotCallResult.Failure("This combat anomaly is no longer available in this system.");
+            }
+            double range = command is FlightCommand.WarpToScan scanWarp ? scanWarp.Range : ((FlightCommand.WarpTo)command).Range;
+            command = new FlightCommand.WarpToPoint(site.Id, site.Position, range);
         }
         if (command is FlightCommand.WarpToFleetMember memberWarp)
         {

@@ -54,6 +54,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 {
     private readonly WorldConfigurationSlot? _configuration = string.IsNullOrEmpty(path) ? null : WorldConfigurationSlot.For(path);
     internal Eden.Gameplay.Configuration.WorldSettings Settings => _configuration?.Settings ?? WorldConfigurationSlot.Defaults;
+    internal string WorldPath => path;
     public DbSet<Pilot> Pilots => Set<Pilot>();
     public DbSet<Ship> Ships => Set<Ship>();
     public DbSet<FlightPosition> Positions => Set<FlightPosition>();
@@ -85,6 +86,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        Eden.World.Exploration.CombatAnomalySchema.Configure(model);
         ModuleConditionSchema.Configure(model);
         ShipHeatSchema.Configure(model);
         NaniteRepairSchema.Configure(model);
