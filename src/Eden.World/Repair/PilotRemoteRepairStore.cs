@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Repair;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -10,6 +11,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -25,7 +27,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Repair;
 
 [Injectable]
-internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepairEvents events) : IPilotRemoteRepairing
+internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepairEvents events, TimeProvider clock) : IPilotRemoteRepairing
 {
     public bool IsOnline(long pilotId, long shipId, long moduleId) =>
         LiveReadModels.Find(database.Path)?.RemoteRepairModuleOnline(pilotId, shipId, moduleId, ReadOnline)
@@ -55,6 +57,28 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         IReadOnlySet<long> locks,
         long now,
         bool continuation = false
+    ) => StartCycle(pilotId, moduleId, effect, targetId, locks, now, continuation, false);
+
+    // Native overload activation remains gated on the damage/burnout owner.
+    internal RemoteRepairActivation StartOverloaded(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now,
+        bool continuation = false
+    ) => StartCycle(pilotId, moduleId, effect, targetId, locks, now, continuation, true);
+
+    private RemoteRepairActivation StartCycle(
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now,
+        bool continuation,
+        bool overloaded
     )
     {
         using WorldDbContext world = new(database.Path);
@@ -88,7 +112,12 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
-        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        var calculation = FittingCalculation.Read(
+            world,
+            catalog,
+            pilot,
+            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+        );
         var module = RemoteRepairRules.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         _ = Health(world, pilot, ship, now);
@@ -157,8 +186,13 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = end;
         RemoteRepairApplied? applied = module.Kind == RemoteRepairKind.Shield ? Apply(world, target, module, distance, now) : null;
+        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end) : null;
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         if (applied is not null)
         {
             events.Publish(applied);
@@ -230,7 +264,23 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
     public void Stop(long pilotId, long moduleId)
     {
         using WorldDbContext world = new(database.Path);
-        world.Set<WorldRemoteRepair>().Where(r => r.PilotId == pilotId && r.ModuleId == moduleId).ExecuteDelete();
+        using var transaction = world.Database.BeginTransaction();
+        if (world.Set<WorldRemoteRepair>().SingleOrDefault(r => r.PilotId == pilotId && r.ModuleId == moduleId) is { } row)
+        {
+            var cycle = JsonSerializer.Deserialize<RemoteRepairCycle>(row.CycleJson)!;
+            HeatCycleKey key = new(moduleId, cycle.StartedAt, cycle.CompletesAt);
+            if (
+                world.Set<SavedShipHeat>().Find(row.SourceShipId) is { } heat
+                && ShipHeatPersistence.Decode(heat.StateJson).Cycles.Any(c => c.Key == key)
+                && world.Ships.Any(s => s.Id == row.SourceShipId && s.OwnerId == pilotId)
+            )
+            {
+                ShipHeatPersistence.CancelPaidCycle(world, pilotId, row.SourceShipId, key, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            }
+            world.Remove(row);
+            world.SaveChanges();
+        }
+        transaction.Commit();
     }
 
     private sealed record RepairTarget(Pilot Pilot, IReadOnlyDictionary<DogmaAttributeId, double> Attributes, ShipHealth Health);

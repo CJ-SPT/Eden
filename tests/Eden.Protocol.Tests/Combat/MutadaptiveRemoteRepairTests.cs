@@ -29,9 +29,13 @@ public sealed partial class MutadaptiveRemoteRepairTests
     private const int Repairer = 49770;
     private const DogmaEffect Effect = DogmaEffect.MutadaptiveRemoteArmorRepair;
 
-    private static Fixture Prepare(bool board = true)
+    private static Fixture Prepare(bool board = true, bool thermal = false)
     {
         Fixture f = new();
+        if (thermal)
+        {
+            PassiveCatalogFixture.LoadOverload(f.CatalogPath);
+        }
         PassiveCatalogFixture.LoadMutadaptiveRemoteRepairs(f.CatalogPath);
         using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
         {

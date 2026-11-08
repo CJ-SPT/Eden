@@ -53,7 +53,8 @@ public sealed partial class RemoteRepairTests
 
     private static long Target(Fixture f) => f.Db.Store.FindPilot(1000002)!.ShipId;
 
-    private static PilotRemoteRepairStore Store(Fixture f) => new(new(f.Db.Path), f.Db.Services.GetRequiredService<IRemoteRepairEvents>());
+    private static PilotRemoteRepairStore Store(Fixture f) =>
+        new(new(f.Db.Path), f.Db.Services.GetRequiredService<IRemoteRepairEvents>(), f.Clock);
 
     private static void Space(Fixture f)
     {

@@ -1590,3 +1590,50 @@ Not performed; agent client testing is disabled. Native button/menu presentation
 - Let a repair complete, then repeat after docking or a gate jump; confirm damage and local repair indicators agree after the session change.
 
 Overheating remains incomplete: native overload controls, the remaining paid producers, heat damage/spread and live burnout orchestration are still pending. This checkpoint enables no player overload bonus and changes no production overheating coverage flag.
+
+## Paid repair-family overload cycles, November 7, 2026
+
+The paid overload producer now extends from shield boosters to local armor/hull repairs and targeted remote shield/armor/hull repairs. Internal `StartOverloaded` paths select the actual module's overload program in the earned fitting graph, reuse that calculation for ship and module values, pay capacitor/fuel, and register the exact funded deadline with rack heat in the same transaction. Heat is published only after commit. Normal fitting snapshots retain their ordinary values; production protocol calls still select normal cycles. This checkpoint enables no player overload controls, damage approximation, new hull cohort or content-coverage flag.
+
+Local repairs retain their paid completion amount and modified deadline in `PendingLocalRepair` records in the existing `WorldArmorRepair` table. Ancillary local armor repair and ancillary remote armor/shield repair use their existing native fuel rules after the overload modifiers: charged armor multiplies the modified base amount, and charged shield cycles preserve their zero capacitor cost. A failed heat write rolls back repair state, fuel, capacitor, cooldown changes and remote events together, preserving the previous reload deadline. A reopened local checkpoint retains its paid amount/deadline and heals once without another payment.
+
+Mutadaptive repair uses the actual Rodiva fitting graph and completed paid chain. Overload amount and ramp multiply once; switching to a normal cycle preserves the chain while dropping the overload modifier, then a subsequent overloaded cycle uses its next ramp step. Remote cancellation now removes its matching paid heat source in the repair transaction at the host clock, preserving heat already generated and other funded sources. A failed cancellation preserves both the repair row and heat source. Ordinary shield assistance remains immediate; armor/hull assistance remains deferred to its paid completion. Cancelled deferred work cannot heal at its former deadline.
+
+The calculation evidence remains the build-3662168 catalog programs and pinned client temperature function recorded in the [overheating foundation](#overheating-calculation-foundation-november-7-2026). Carbon Destiny's [ordered ticker at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_baseticker.py) remains the update-order reference. The [original EOS heat research](https://github.com/pyfa-org/eos/issues/12) was reviewed for the remaining damage/spread work; no stochastic damage formula or approximation is enabled by this producer checkpoint.
+
+### Automated validation
+
+Development began with exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.RepairHeatTests.LocalOverloadCommitsTheModifiedRepairAmountAndPaidDeadlineWithHeat&DisplayName~523`: **1 passed**, **8.54 seconds** (feature build **5.76 seconds**). The initial producer-class selection passed **19 cases** in **31.09 seconds**. The expanded selection initially passed **24 of 27 cases** in **35.57 seconds**; its three rollback assertions incorrectly expected no cooldown after a funded reload. The tests now verify that the original reload kind/deadline survive unchanged. Exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.RepairHeatTests.RejectedHeatPersistenceRollsBackRepairsFuelCapacitorAndEvents` passed all **3 cases** after correction (**12.45 seconds**, build **5.76 seconds**). The Rodiva ramp test and the three warmed-frame/checkpoint cases also passed before the final selection.
+
+The final affected filter is:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.AncillaryRemoteRepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.MutadaptiveRemoteRepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorld'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentRead'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitialization'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigration'
+  'FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CharacterLogoffTests'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+The final selection passed **667 cases**, with zero failed/skipped, in **221.66 seconds** (feature build **1.41 seconds**). It includes **31 new cases**: 30 repair producer/payment/runtime cases and the Rodiva normal/overload ramp case. Both warmed repair-producer variants assert **zero SQL commands, connection opens and fitting calculations across 100 active frames**. Reopen/checkpoint, rejected funding/skill, rollback, exact completion and multi-source cancellation outcomes are asserted against saved state and events. TRX: `artifacts/feature-tests/results/fef87f44b9f042d38439b5cc1eefff44/tests.trx`.
+
+Pinned tool and solution restores passed. The final root build passed with zero warnings/errors in **7.86 seconds**. Both Python policy suites passed (**8 catalog**, **9 formatting** cases, **1.09 seconds** combined). Formatting verification passed across **1,132 files**, including the 140-character width check, in **18.25 seconds**. Documentation checks verified **519 local links and anchors**; whitespace verification passed. No full .NET suite was requested or run. Catalog payloads, fixture data and the production coverage inventory are unchanged.
+
+The new cases exercise representative T1/T2 and capital remote profiles with explicit artificial corvette budgets, plus the actual-budget Rodiva. Artificial budgets establish calculation/payment integration rather than capital hull admission or real corvette fits. Existing catalog-wide overload checks retain coverage across all 1,826 admitted heatable profiles and 19 programs. Normal and overloaded paths, repair persistence/protocol boundaries, activation exclusion, session cleanup and immediate runtime dependencies belong to the final affected selection. The full 23-stage program remains active.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. These overload producer entry points remain internal; native overload presentation and burnout behavior are unverified and unfinished.
+
+### Optional maintainer checks
+
+None for the internal producer paths. Native overload acceptance belongs to the later command/damage integration. Other paid producer families, native module/rack controls, stochastic damage/spread, scoped burnout cancellation and resource resizing remain open in milestone 6.

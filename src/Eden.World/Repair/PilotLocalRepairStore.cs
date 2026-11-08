@@ -20,7 +20,24 @@ namespace Eden.World.Repair;
 [Injectable]
 internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLocalRepairing
 {
-    public LocalRepairActivation Start(long pilotId, long moduleId, long now, RepairLayer layer = RepairLayer.Armor, bool ancillary = false)
+    public LocalRepairActivation Start(
+        long pilotId,
+        long moduleId,
+        long now,
+        RepairLayer layer = RepairLayer.Armor,
+        bool ancillary = false
+    ) => StartCycle(pilotId, moduleId, now, layer, ancillary, false);
+
+    // Native overload activation remains gated on the damage/burnout owner.
+    internal LocalRepairActivation StartOverloaded(
+        long pilotId,
+        long moduleId,
+        long now,
+        RepairLayer layer = RepairLayer.Armor,
+        bool ancillary = false
+    ) => StartCycle(pilotId, moduleId, now, layer, ancillary, true);
+
+    private LocalRepairActivation StartCycle(long pilotId, long moduleId, long now, RepairLayer layer, bool ancillary, bool overloaded)
     {
         if (ancillary && layer != RepairLayer.Armor)
         {
@@ -52,7 +69,16 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
-        var attributes = PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, module));
+        var calculation = overloaded
+            ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: new HashSet<long> { moduleId })
+            : null;
+        var attributes = PilotFittingStore.ReadModuleAttributes(
+            world,
+            catalog,
+            pilotId,
+            PilotInventoryStore.Read(catalog, module),
+            calculation
+        );
         var repairer = LocalRepairRules.Define(moduleId, module.TypeId, attributes, layer);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && now < cooldown.ReadyAt)
@@ -72,7 +98,7 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
             var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, owner, previous));
             _ = PilotHealthStore.Read(world, previous.Id, defense, now);
         }
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         var health = PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now);
         if (health.Remaining.Destroyed)
         {
@@ -118,8 +144,13 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = completes;
+        var heat = calculation is null ? null : ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, completes);
         world.SaveChanges();
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+        }
         return new(new(moduleId, module.TypeId, now, completes, layer, ancillary), capacitor, fuel?.Magazine);
     }
 
