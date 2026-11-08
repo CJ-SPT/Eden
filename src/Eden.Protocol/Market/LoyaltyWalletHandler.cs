@@ -92,6 +92,18 @@ internal sealed class LoyaltyWalletHandler(
         _nextPoll = checked(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc() + TimeSpan.TicksPerSecond);
     }
 
+    public void Notify(PilotCallContext context, int issuer, long before, long after)
+    {
+        context.Notifications.Add(new LoyaltyBalanceChanged(issuer, before, after));
+        _balances[issuer] = after;
+    }
+
+    public void NotifyCorporation(PilotCallContext context, int issuer, long after)
+    {
+        context.Notifications.Add(new CorporationLoyaltyBalanceChanged(issuer));
+        _corporateBalances[issuer] = after;
+    }
+
     public PilotCallResult Call(
         PilotCallContext context,
         string service,

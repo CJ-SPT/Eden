@@ -12,6 +12,8 @@
 
 ## Development
 
+Native loyalty store behavior, offline offer provenance and exclusions are recorded in [LP stores](protocol/industry.md#loyalty-point-stores-november-8-2026).
+
 | Guide | Use it for |
 | --- | --- |
 | [Contributor guide](../AGENTS.md) | Project boundaries, code style, native service ownership, testing policy and milestone publishing. |

@@ -31,6 +31,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Loyalty point stores, November 8, 2026](protocol/industry.md#loyalty-point-stores-november-8-2026)
+
 - [Scanners and salvage operations, November 8, 2026](protocol/information.md#scanners-and-salvage-operations-november-8-2026)
 
 - [Personalization SKIN license reads, November 8, 2026](protocol/characters.md#personalization-skin-license-reads-november-8-2026)

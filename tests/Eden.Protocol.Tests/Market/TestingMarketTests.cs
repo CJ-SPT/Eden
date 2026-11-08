@@ -124,7 +124,9 @@ public sealed class TestingMarketTests
         var selectionResult = Assert.IsType<PilotCallResult.Success>(
             selection.Call(context, "charUnboundMgr", "GetCharacterSelectionData", Array.Empty<object?>(), null)
         );
-        var card = Assert.Single(Assert.IsType<CharacterSelectionReply>(selectionResult.Reply).Pilots);
+        var cards = Assert.IsType<CharacterSelectionReply>(selectionResult.Reply).Pilots;
+        Assert.Equal(2, cards.Count);
+        var card = Assert.Single(cards, candidate => candidate.Pilot.PilotId == id);
         var cardFields = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(card.ToBlue()).State);
         Assert.Equal(1_000_000d, cardFields["balance"]);
         context.Select(pilot);

@@ -177,6 +177,7 @@ public enum StationService
     Fitting = 17,
     Insurance = 21,
     JumpCloneFacility = 24,
+    LoyaltyStore = 25,
 }
 
 public static class InventoryDefinitions

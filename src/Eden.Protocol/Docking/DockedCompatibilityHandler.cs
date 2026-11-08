@@ -36,6 +36,7 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet) : ISelectedP
             ("charMgr", "SetActivityStatus") => PilotCallResult.None,
             ("dynamicBountyMgr", "GetOutputForClientSolarSystem") => new DynamicBountyState(),
             ("ProjectDiscovery", "is_enabled") => false,
+            ("ProjectDiscovery", "get_player_analysis_kredits") when args.Length == 0 => 0,
             ("clientStatLogger", "LogString") => PilotCallResult.None,
             ("shipKillCounter", "GetItemKillCountPlayer") => 0,
             ("userSvc", "GetMultiCharactersTrainingSlots") => BlueEmpty.Dictionary,

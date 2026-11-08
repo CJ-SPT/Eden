@@ -242,12 +242,12 @@ internal sealed class CorporationWalletStore(WorldDatabase database, TimeProvide
     private static PilotWallet PilotWallet(WorldDbContext world, long pilotId) =>
         world.Set<PilotWallet>().Find(pilotId) ?? world.Add(new PilotWallet { PilotId = pilotId }).Entity;
 
-    private static long ReadBalance(WorldDbContext world, SavedCorporation corporation, int key) =>
+    internal static long ReadBalance(WorldDbContext world, SavedCorporation corporation, int key) =>
         key == CorporationWalletRules.MasterKey
             ? corporation.BalanceCents
             : world.Set<SavedCorporationWallet>().Find(corporation.Id, key)?.BalanceCents ?? 0;
 
-    private static void WriteBalance(WorldDbContext world, SavedCorporation corporation, int key, long balance)
+    internal static void WriteBalance(WorldDbContext world, SavedCorporation corporation, int key, long balance)
     {
         if (key == CorporationWalletRules.MasterKey)
         {

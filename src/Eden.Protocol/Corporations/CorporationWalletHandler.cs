@@ -20,6 +20,12 @@ internal sealed class CorporationWalletHandler(ICorporationWallet wallet, IPlaye
         _balances.Clear();
     }
 
+    public void Notify(PilotCallContext context, int corporationId, int key, long cents)
+    {
+        context.Notifications.Add(new CorporationBalanceChanged(corporationId, key, cents));
+        _balances[key] = cents;
+    }
+
     public void Enter(PilotCallContext context)
     {
         if (_corporation != context.Pilot.CorpId)
