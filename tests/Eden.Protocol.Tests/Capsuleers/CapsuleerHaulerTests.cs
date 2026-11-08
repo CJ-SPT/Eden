@@ -60,11 +60,15 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             {
                 available = world.Set<WorldAsteroid>().Sum(a => a.Quantity);
             }
+            using (WorldDbContext world = new(f.Database.Path))
+            {
+                world.Database.ExecuteSql($"UPDATE WorldWallet SET Cents=0 WHERE PilotId={hauler}");
+            }
             MinerObservation? mining = null;
             for (int i = 0; i < 30000; i++)
             {
                 f.Clock.Seconds++;
-                mining = host.GetRequiredService<ICapsuleerSimulation>().Advance(checked((int)f.Clock.Seconds))!;
+                mining = CapsuleerTestDriver.Miner(host, f.Clock);
                 Assert.Null(mining.WaitingReason);
                 if (mining.Work.Activity == MinerActivity.Docked && mining.Work.Trips > 0)
                 {
@@ -73,19 +77,22 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             }
             Assert.Equal(MinerActivity.Docked, mining!.Work.Activity);
             f.Clock.Seconds++;
-            mining = host.GetRequiredService<ICapsuleerSimulation>().Advance(checked((int)f.Clock.Seconds))!;
+            mining = CapsuleerTestDriver.Miner(host, f.Clock);
             using (WorldDbContext world = new(f.Database.Path))
             {
                 Assert.True(world.Set<WorldAsteroid>().Sum(a => a.Quantity) < available);
             }
             var order = Assert.Single(host.GetRequiredService<IPersonalMarket>().PersonalOrders(miner));
             price = order.PriceCents;
+            using (WorldDbContext world = new(f.Database.Path))
+            {
+                world.Database.ExecuteSql($"UPDATE WorldWallet SET Cents={HaulingRules.StartingCents} WHERE PilotId={hauler}");
+            }
             long before = host.GetRequiredService<IPilotMarket>().Balance(hauler);
             var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(-1, hauler)!;
             cargoUnits = HaulingRules.PurchaseQuantity(order.Remaining, price, before, pilot.CargoCapacity, 0.1);
             Assert.True(cargoUnits > 0);
-            var trade = host.GetRequiredService<ICapsuleerHauling>();
-            var loaded = trade.Advance(1)!;
+            var loaded = Until(host, f.Clock, state => state.Work.Activity == HaulerActivity.Flying);
             Assert.Equal(HaulerActivity.Flying, loaded.Work.Activity);
             Assert.Equal(
                 cargoUnits,
@@ -113,7 +120,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             f.Clock.Seconds++;
             using (var metrics = SessionPerformance.Begin("hauler in-flight observer frame", output.WriteLine, force: true)!)
             {
-                var flying = trade.Advance(checked((int)f.Clock.Seconds))!;
+                var flying = CapsuleerTestDriver.Hauler(host, f.Clock);
                 scene.Publish(flying);
                 Assert.Contains(
                     host.GetRequiredService<SharedSpace>()
@@ -141,15 +148,14 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
         using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
         {
             Assert.Equal((hauler, originalShip), (f.Founder().PilotId, f.Founder().FounderShipId));
-            var simulation = host.GetRequiredService<ICapsuleerHauling>();
             f.Clock.Seconds++;
-            var resumed = simulation.Advance(1)!;
+            var resumed = CapsuleerTestDriver.Hauler(host, f.Clock)!;
             Assert.Equal(departure.Work.Stamp + 1, resumed.Work.Stamp);
             Assert.Equal(HaulerActivity.Jumping, resumed.Work.Activity);
             Until(host, f.Clock, state => state.Pilot.SystemId == DestinationSystem);
             Until(host, f.Clock, state => state.Pilot.Position is null && state.Pilot.StationId == Destination);
             f.Clock.Seconds++;
-            simulation.Advance(1000);
+            CapsuleerTestDriver.Hauler(host, f.Clock);
             var order = Assert.Single(host.GetRequiredService<IPersonalMarket>().PersonalOrders(hauler));
             Assert.Equal((Destination, Ore, cargoUnits), (order.StationId, order.TypeId, order.Remaining));
             Assert.Equal(PersonalMarketRules.Round(price * HaulingRules.DestinationMultiplier), order.PriceCents);
@@ -159,7 +165,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             Until(host, f.Clock, state => state.Pilot.Position is null && state.Pilot.StationId == Source);
             Assert.Equal(cargoUnits, Assert.Single(host.GetRequiredService<IPersonalMarket>().PersonalOrders(hauler)).Remaining);
             long unsoldBalance = host.GetRequiredService<IPilotMarket>().Balance(hauler);
-            var waitingForBuyers = simulation.Advance(1001)!;
+            var waitingForBuyers = CapsuleerTestDriver.Hauler(host, f.Clock)!;
             Assert.Equal(HaulerActivity.Waiting, waitingForBuyers.Work.Activity);
             Assert.Equal(unsoldBalance, host.GetRequiredService<IPilotMarket>().Balance(hauler));
         }
@@ -185,7 +191,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
         }
         host.GetRequiredService<IPilotMarket>().Buy(90000001, Source, [new(Ore, offer.PriceCents, Load)]);
         long hauler = f.Founder().PilotId;
-        var waiting = host.GetRequiredService<ICapsuleerHauling>().Advance(1)!;
+        var waiting = CapsuleerTestDriver.Hauler(host, f.Clock)!;
         Assert.Equal(HaulerActivity.Waiting, waiting.Work.Activity);
         Assert.Null(waiting.Pilot.Position);
         Assert.Equal(HaulingRules.StartingCents, host.GetRequiredService<IPilotMarket>().Balance(hauler));
@@ -217,7 +223,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             Assert.Equal(0, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }
-        Assert.Equal(stamp + 1, live.HaulerCheckpoint!.Work.Stamp);
+        Assert.Equal(stamp, live.HaulerCheckpoint!.Work.Stamp);
         CapsuleerMinerTests.UpdateSelection(host, session, null);
         f.Clock.Seconds += 3600;
         using (var metrics = SessionPerformance.Begin("empty world hauling", output.WriteLine, force: true)!)
@@ -227,7 +233,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             Assert.Equal(0, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }
-        Assert.Equal(stamp + 1, live.HaulerCheckpoint!.Work.Stamp);
+        Assert.Equal(stamp, live.HaulerCheckpoint!.Work.Stamp);
     }
 
     [Fact]
@@ -270,7 +276,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void PurchaseCommittedBeforeFailedLoadingResumesWithoutASecondPayment()
+    public void FailedLoadingRollsBackPurchaseAndRetryCommitsOnePayment()
     {
         using Fixture f = new();
         long hauler = f.Founder().PilotId;
@@ -289,19 +295,19 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
                     """
                 );
             }
-            var failure = Assert.Throws<DbUpdateException>(() => host.GetRequiredService<ICapsuleerHauling>().Advance(1));
+            var failure = Assert.Throws<DbUpdateException>(() => CapsuleerTestDriver.Hauler(host, f.Clock));
             Assert.Contains("test loading failure", Assert.IsType<Microsoft.Data.Sqlite.SqliteException>(failure.InnerException).Message);
             paidBalance = host.GetRequiredService<IPilotMarket>().Balance(hauler);
-            Assert.True(paidBalance < HaulingRules.StartingCents);
-            Assert.Single(host.GetRequiredService<IPilotMarket>().Transactions(hauler));
+            Assert.Equal(HaulingRules.StartingCents, paidBalance);
+            Assert.Empty(host.GetRequiredService<IPilotMarket>().Transactions(hauler));
             using WorldDbContext saved = new(f.Database.Path);
             saved.Database.ExecuteSqlRaw("DROP TRIGGER reject_loading");
         }
         WorldInitialization.Initialize(f.Database, f.Clock);
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
-        var loaded = reopened.GetRequiredService<ICapsuleerHauling>().Advance(1)!;
+        var loaded = CapsuleerTestDriver.Hauler(reopened, f.Clock)!;
         Assert.Equal(HaulerActivity.Flying, loaded.Work.Activity);
-        Assert.Equal(paidBalance, reopened.GetRequiredService<IPilotMarket>().Balance(hauler));
+        Assert.True(reopened.GetRequiredService<IPilotMarket>().Balance(hauler) < paidBalance);
         Assert.Single(reopened.GetRequiredService<IPilotMarket>().Transactions(hauler));
         Assert.Equal(
             Load,
@@ -340,6 +346,9 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
                         Id = attacker,
                         TypeId = 601,
                         CorporationId = 1000035,
+                        HomeX = 0,
+                        HomeY = 0,
+                        HomeZ = 0,
                         SystemId = SourceSystem,
                     }
                 );
@@ -363,7 +372,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             var docked = Until(host, f.Clock, state => state.Pilot.Position is null);
             Assert.Equal(FleetDefinitions.CapsuleGroup, docked.Pilot.ShipGroupId);
             Assert.Equal(SourceSystem, docked.Pilot.SystemId);
-            var waiting = host.GetRequiredService<ICapsuleerHauling>().Advance(1000)!;
+            var waiting = CapsuleerTestDriver.Hauler(host, f.Clock)!;
             Assert.Equal(HaulerActivity.Waiting, waiting.Work.Activity);
             Assert.Single(host.GetRequiredService<IPilotMarket>().Transactions(hauler));
             Assert.Empty(host.GetRequiredService<IPersonalMarket>().PersonalOrders(hauler));
@@ -417,7 +426,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
         for (int i = 0; i < 10000; i++)
         {
             clock.Seconds++;
-            last = host.GetRequiredService<ICapsuleerHauling>().Advance(checked((int)clock.Seconds))!;
+            last = CapsuleerTestDriver.Hauler(host, clock);
             host.GetRequiredService<ICapsuleerScene>().Publish(last);
             Assert.Null(last.Work.WaitingReason);
             if (ready(last))

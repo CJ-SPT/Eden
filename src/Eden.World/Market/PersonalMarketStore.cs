@@ -411,6 +411,21 @@ internal sealed partial class PilotMarketStore
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = ExecuteBuy(world, catalog, pilotId, stationId, items, days);
+        transaction.Commit();
+        signal.Changed();
+        return result;
+    }
+
+    internal MarketResult ExecuteBuy(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int stationId,
+        IReadOnlyList<MarketPurchase> items,
+        int days
+    )
+    {
         var pilot = Pilot(world, pilotId);
         var station = TradeStation(catalog, pilot, stationId);
         if (items.Count == 0 || items.Select(i => i.TypeId).Distinct().Count() != items.Count)
@@ -437,8 +452,6 @@ internal sealed partial class PilotMarketStore
         }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Bought, trades.Count);
         world.SaveChanges();
-        transaction.Commit();
-        signal.Changed();
         return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes);
     }
 
@@ -448,6 +461,20 @@ internal sealed partial class PilotMarketStore
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = ExecuteSell(world, catalog, pilotId, items, days);
+        transaction.Commit();
+        signal.Changed();
+        return result;
+    }
+
+    internal MarketResult ExecuteSell(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IReadOnlyList<MarketSale> items,
+        int days
+    )
+    {
         var pilot = Pilot(world, pilotId);
         var station = TradeStation(catalog, pilot, pilot.ActiveShip.StationId);
         if (items.Count == 0 || items.Select(i => i.ItemId).Distinct().Count() != items.Count)
@@ -499,8 +526,6 @@ internal sealed partial class PilotMarketStore
         }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Sold, trades.Count);
         world.SaveChanges();
-        transaction.Commit();
-        signal.Changed();
         return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes);
     }
 
@@ -626,6 +651,17 @@ internal sealed partial class PilotMarketStore
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        int expired = Expire(world, catalog, limit);
+        transaction.Commit();
+        if (expired > 0)
+        {
+            signal.Changed();
+        }
+        return expired;
+    }
+
+    internal int Expire(WorldDbContext world, CatalogDbContext catalog, int limit = PersonalMarketRules.MaintenanceBatch)
+    {
         long now = Now;
         var orders = world
             .Set<SavedPersonalOrder>()
@@ -639,11 +675,6 @@ internal sealed partial class PilotMarketStore
             Close(world, catalog, order, PersonalOrderStatus.Expired);
         }
         world.SaveChanges();
-        transaction.Commit();
-        if (orders.Length > 0)
-        {
-            signal.Changed();
-        }
         return orders.Length;
     }
 }

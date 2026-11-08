@@ -17,7 +17,7 @@ public interface ICapsuleerPopulation
     IReadOnlyList<CapsuleerAgent> Agents(int communitySystemId);
 }
 
-public sealed record HumanActivitySnapshot(long ElapsedTicks, int SelectedSessions, IReadOnlyList<int> ActiveSystems)
+public sealed record HumanActivitySnapshot(long ElapsedTicks, int SelectedSessions, IReadOnlyList<int> ActiveSystems, long Resumes = 0)
 {
     public bool Active => SelectedSessions > 0;
 }

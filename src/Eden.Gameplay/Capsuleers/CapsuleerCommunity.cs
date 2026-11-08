@@ -42,7 +42,10 @@ public sealed record MinerProgress(
     long ShipId = 0,
     int Trips = 0,
     string? WaitingReason = null,
-    long PaidUntil = 0
+    long PaidUntil = 0,
+    long ActiveTicks = 0,
+    long DueTicks = 0,
+    long ClockOffsetTicks = 0
 );
 
 public sealed record MinerObservation(DockedPilot Pilot, MinerProgress Work, InventoryItem? Laser, string? WaitingReason)
@@ -52,7 +55,6 @@ public sealed record MinerObservation(DockedPilot Pilot, MinerProgress Work, Inv
 
 public interface ICapsuleerSimulation
 {
-    MinerObservation? Advance(int destinyStamp);
     void ObserveAggression(long shipId);
 }
 

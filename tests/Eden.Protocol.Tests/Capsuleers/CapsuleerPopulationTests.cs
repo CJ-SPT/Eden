@@ -39,7 +39,7 @@ public sealed class CapsuleerPopulationTests
             for (int i = 0; i < 10000 && observation?.Work.Activity != MinerActivity.Mining; i++)
             {
                 f.Clock.Seconds++;
-                observation = host.GetRequiredService<ICapsuleerSimulation>().Advance(i);
+                observation = CapsuleerTestDriver.Miner(host, f.Clock);
             }
             Assert.Equal(MinerActivity.Mining, observation!.Work.Activity);
         }
@@ -71,11 +71,21 @@ public sealed class CapsuleerPopulationTests
             Assert.Contains(agents, a => a.PilotId == f.Founder().PilotId && a.Career == CapsuleerCareer.Hauling);
             Assert.Empty(population.Agents(DestinationSystem));
             using WorldDbContext world = new(f.Database.Path);
-            Assert.Equal(progress, world.Set<SavedCapsuleerCommunity>().Single().Progress);
+            var migrated = MinerCheckpoint.Read(world.Set<SavedCapsuleerCommunity>().Single().Progress)!;
+            var old = MinerCheckpoint.Read(progress)!;
+            Assert.Equal(
+                old with
+                {
+                    ActiveTicks = migrated.ActiveTicks,
+                    DueTicks = migrated.DueTicks,
+                    ClockOffsetTicks = migrated.ClockOffsetTicks,
+                },
+                migrated
+            );
             Assert.Equal(cents, world.Set<PilotWallet>().Find(miner)!.Cents);
             Assert.Equal(items, world.Set<OwnedItem>().Count());
             Assert.Equal(ship, world.Pilots.Find(miner)!.ActiveShipId);
-            Assert.Empty(CapsuleerPopulationStore.Jobs(world));
+            Assert.Equal(2, CapsuleerPopulationStore.Jobs(world).Length);
             Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         }
     }
@@ -118,6 +128,7 @@ public sealed class CapsuleerPopulationTests
         using (WorldDbContext world = new(f.Database.Path))
         {
             pilot = world.Set<SavedCapsuleerCommunity>().Single().PilotId!.Value;
+            world.Set<SavedCapsuleerJob>().Where(j => j.PilotId == pilot).ExecuteDelete();
             world.Add(
                 new SavedCapsuleerJob
                 {
@@ -152,7 +163,7 @@ public sealed class CapsuleerPopulationTests
         {
             Assert.Equal(balance, world.Set<PilotWallet>().Find(pilot)!.Cents);
             Assert.Equal(10, world.Set<OwnedItem>().Single(i => i.TypeId == 1230).Quantity);
-            Assert.Equal(expected, Assert.Single(CapsuleerPopulationStore.Jobs(world)));
+            Assert.Equal(expected, Assert.Single(CapsuleerPopulationStore.Jobs(world), j => j.PilotId == pilot));
             Assert.True(
                 CapsuleerPopulationStore.Settle(world, expected, 20, CapsuleerAction.Arrival, transaction => Pay(transaction, pilot))
             );
@@ -164,7 +175,10 @@ public sealed class CapsuleerPopulationTests
         using WorldDbContext reopened = new(f.Database.Path);
         Assert.Equal(balance - 17, reopened.Set<PilotWallet>().Find(pilot)!.Cents);
         Assert.Equal(9, reopened.Set<OwnedItem>().Single(i => i.TypeId == 1230).Quantity);
-        Assert.Equal(expected.Next(20, CapsuleerAction.Arrival), Assert.Single(CapsuleerPopulationStore.Jobs(reopened)));
+        Assert.Equal(
+            expected.Next(20, CapsuleerAction.Arrival),
+            Assert.Single(CapsuleerPopulationStore.Jobs(reopened), j => j.PilotId == pilot)
+        );
 
         static void Pay(WorldDbContext world, long pilot)
         {

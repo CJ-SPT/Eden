@@ -2,7 +2,9 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.ExceptionServices;
+using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Diagnostics;
+using Eden.World.Capsuleers;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -69,15 +71,14 @@ internal sealed class LiveWorld : IDisposable
     internal void SqlClosed(IReadOnlyCollection<CombatRowChange> changes)
     {
         SqlConnections--;
-        if (MinerCheckpoint is { } miner && changes.Any(c => c.Table == "WorldPilot" && c.Id == miner.PilotId))
+        foreach (var change in changes)
         {
-            MinerHullRevision++;
+            if (change.Table == "WorldPilot" && CapsuleerJobs.ContainsKey(change.Id))
+            {
+                CapsuleerHullRevisions[change.Id] = CapsuleerHullRevisions.GetValueOrDefault(change.Id) + 1;
+            }
         }
-        if (HaulerCheckpoint is { } hauler && changes.Any(c => c.Table == "WorldPilot" && c.Id == hauler.PilotId))
-        {
-            HaulerHullRevision++;
-        }
-        if (changes.Any(c => c.Table is "WorldCapsuleerHauler" or "WorldCapsuleerCommunity"))
+        if (changes.Any(c => c.Table == "WorldCapsuleerAgent"))
         {
             CapsuleerRevision++;
         }
@@ -90,10 +91,12 @@ internal sealed class LiveWorld : IDisposable
     }
 
     internal long CapsuleerRevision { get; private set; }
-    internal long HaulerHullRevision { get; private set; }
-    internal Eden.World.Capsuleers.HaulerCheckpoint? HaulerCheckpoint { get; set; }
-    internal long MinerHullRevision { get; private set; }
-    internal Eden.World.Capsuleers.MinerCheckpoint? MinerCheckpoint { get; set; }
+    internal Dictionary<long, long> CapsuleerHullRevisions { get; } = [];
+    internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];
+    internal Dictionary<long, MinerCheckpoint> MinerCheckpoints { get; } = [];
+    internal Dictionary<long, HaulerCheckpoint> HaulerCheckpoints { get; } = [];
+    internal MinerCheckpoint? MinerCheckpoint => MinerCheckpoints.Values.FirstOrDefault();
+    internal HaulerCheckpoint? HaulerCheckpoint => HaulerCheckpoints.Values.FirstOrDefault();
 
     internal void ObjectsChanged() => _generation++;
 
@@ -376,9 +379,10 @@ internal sealed class LiveWorld : IDisposable
                     Stopwatch.GetElapsedTime(started),
                     Heat.Capture(),
                     Tractors.Capture(),
-                    MinerCheckpoint,
-                    HaulerCheckpoint,
-                    activity
+                    MinerCheckpoints.Values.ToArray(),
+                    HaulerCheckpoints.Values.ToArray(),
+                    activity,
+                    new CapsuleerJobCheckpoint(CapsuleerJobs.Values.ToArray())
                 );
             }
             catch

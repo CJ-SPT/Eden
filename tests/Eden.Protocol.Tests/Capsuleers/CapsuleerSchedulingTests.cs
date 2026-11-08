@@ -7,6 +7,31 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed class CapsuleerSchedulingTests(ITestOutputHelper output)
 {
     [Fact]
+    public void RoleDeadlinesPreserveRemainingWorkAndDockedRetriesSleepUntilDue()
+    {
+        long elapsed = TimeSpan.FromMilliseconds(12345).Ticks;
+        long deadline = CapsuleerScheduleRules.MigrateDeadline(elapsed, 100, 115);
+        Assert.Equal(elapsed + TimeSpan.FromSeconds(15).Ticks, deadline);
+        Assert.Equal(101, CapsuleerScheduleRules.Stamp(elapsed + TimeSpan.TicksPerSecond, elapsed - 100 * TimeSpan.TicksPerSecond));
+        MinerProgress waiting = new(
+            MinerActivity.Waiting,
+            0,
+            100,
+            115,
+            0,
+            0,
+            0,
+            new Eden.Gameplay.Flight.NavigationState().Capture(),
+            ActiveTicks: elapsed,
+            DueTicks: deadline
+        );
+        Assert.Equal(new CapsuleerSchedule(deadline, CapsuleerAction.Retry), CapsuleerScheduleRules.Next(waiting, false));
+        Assert.Equal(elapsed + TimeSpan.TicksPerSecond, CapsuleerScheduleRules.Next(waiting, true).DueTicks);
+        var collecting = waiting with { Activity = MinerActivity.Mining, DueTicks = elapsed + TimeSpan.TicksPerMillisecond };
+        Assert.Equal(collecting.DueTicks, CapsuleerScheduleRules.Next(collecting, true).DueTicks);
+    }
+
+    [Fact]
     public void DueJobsUseStableOrderRejectStaleRevisionsAndRetryFailedActions()
     {
         var clock = new TestClock();

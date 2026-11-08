@@ -1,0 +1,208 @@
+using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
+using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Server;
+using Eden.World.Capsuleers;
+using Eden.World.Runtime;
+using Eden.World.Storage;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Eden.Protocol.Tests.Capsuleers;
+
+public sealed class CapsuleerRuntimeTests
+{
+    private const int SourceSystem = 30000141;
+    private const int SourceStation = 60015157;
+    private const int OreType = 1230;
+
+    [Fact]
+    public async Task ConcurrentWakesExecuteEachDueRoleOnceAndCheckpointTheSameJobGeneration()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        CapsuleerJob[] committed;
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+            using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+            Assert.Equal(2, scheduler.Jobs().Count);
+            f.Clock.Seconds++;
+            await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => scheduler.Run(1))));
+            committed = scheduler.Jobs().OrderBy(j => j.PilotId).ToArray();
+            Assert.All(committed, job => Assert.Equal(1L, job.Sequence));
+            Assert.Equal(0, scheduler.Run(1).Turn.Completed);
+            var live = host.GetRequiredService<LiveWorld>();
+            Assert.Equal(1, live.MinerCheckpoint!.Work.Stamp);
+            Assert.Equal(1, live.HaulerCheckpoint!.Work.Stamp);
+            await live.FlushAsync();
+        }
+        f.Clock.Seconds += 3600;
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<ICapsuleerScheduler>();
+        Assert.Equal(committed, restored.Jobs().OrderBy(j => j.PilotId));
+        Assert.Equal(0, restored.Run(100).Turn.Completed);
+        using var human = reopened.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        Assert.Equal(0, restored.Run(100).Turn.Completed);
+    }
+
+    [Fact]
+    public void FailedFinalJobWriteRollsBackFittingUndockingAndResidentProgress()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        long miner = host.GetRequiredService<ICapsuleerCommunity>().Pilots().Single(p => p.Career == CapsuleerCareer.Mining).PilotId;
+        var expected = scheduler.Jobs().Single(j => j.PilotId == miner);
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            RejectJob(world, miner);
+        }
+        f.Clock.Seconds++;
+        Assert.Throws<SqliteException>(() => scheduler.Run(1));
+        Assert.Equal(expected, scheduler.Jobs().Single(j => j.PilotId == miner));
+        var before = scheduler.Miner(miner)!;
+        Assert.Null(before.Pilot.Position);
+        Assert.Equal(0, before.Work.Stamp);
+        Assert.Equal(0, before.Work.Trips);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            var laser = world.Set<OwnedItem>().Single(i => i.OwnerId == miner);
+            Assert.Equal((long)SourceStation, laser.LocationId);
+            Assert.Equal((int)InventoryFlag.Hangar, laser.FlagId);
+            Assert.False(laser.Singleton);
+            Assert.False(laser.Online);
+            Assert.Empty(world.Positions.Where(p => p.ShipId == before.Pilot.ShipId));
+            world.Database.ExecuteSqlRaw("DROP TRIGGER reject_job");
+        }
+        scheduler.Run(1);
+        var committed = scheduler.Miner(miner)!;
+        Assert.Equal(MinerActivity.FlyingToBelt, committed.Work.Activity);
+        Assert.NotNull(committed.Pilot.Position);
+        Assert.Equal(1, committed.Work.Trips);
+        Assert.Equal(1L, scheduler.Jobs().Single(j => j.PilotId == miner).Sequence);
+        Assert.Equal(0, scheduler.Run(1).Turn.Completed);
+    }
+
+    [Fact]
+    public async Task FailedPurchaseJobLeavesMoneyOrderAndCargoUnchangedAndRetrySettlesOnce()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        long hauler = f.Founder().PilotId;
+        long ship = f.Founder().FounderShipId;
+        long balance;
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            long miner = host.GetRequiredService<ICapsuleerCommunity>().Pilots().Single(p => p.Career == CapsuleerCareer.Mining).PilotId;
+            f.AddStock(miner, 1000);
+            host.GetRequiredService<CapsuleerTrade>().ListStock(miner, SourceStation);
+            var offer = Assert.Single(host.GetRequiredService<IPersonalMarket>().PersonalOrders(miner));
+            var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+            var expected = scheduler.Jobs().Single(j => j.PilotId == hauler);
+            balance = host.GetRequiredService<IPilotMarket>().Balance(hauler);
+            using (WorldDbContext world = new(f.Database.Path))
+            {
+                RejectJob(world, hauler);
+            }
+            using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+            f.Clock.Seconds++;
+            Assert.Throws<SqliteException>(() =>
+            {
+                for (int batch = 0; batch < 3; batch++)
+                {
+                    scheduler.Run(1);
+                }
+            });
+            Assert.Equal(expected, scheduler.Jobs().Single(j => j.PilotId == hauler));
+            Assert.Equal(balance, host.GetRequiredService<IPilotMarket>().Balance(hauler));
+            Assert.Empty(host.GetRequiredService<IPilotMarket>().Transactions(hauler));
+            Assert.Equal(offer, Assert.Single(host.GetRequiredService<IPersonalMarket>().PersonalOrders(miner)));
+            Assert.Empty(host.GetRequiredService<IPilotInventory>().List(hauler, ship));
+            using (WorldDbContext world = new(f.Database.Path))
+            {
+                world.Database.ExecuteSqlRaw("DROP TRIGGER reject_job");
+            }
+            scheduler.Run(1);
+            Assert.Equal(1L, scheduler.Jobs().Single(j => j.PilotId == hauler).Sequence);
+            Assert.Equal(0, scheduler.Run(1).Turn.Completed);
+            Assert.Equal(balance - offer.PriceCents * offer.Remaining, host.GetRequiredService<IPilotMarket>().Balance(hauler));
+            Assert.Single(host.GetRequiredService<IPilotMarket>().Transactions(hauler));
+            await host.GetRequiredService<LiveWorld>().FlushAsync();
+        }
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        Assert.Single(reopened.GetRequiredService<IPilotMarket>().Transactions(hauler));
+        Assert.Equal(1000, reopened.GetRequiredService<IPilotInventory>().List(hauler, ship).Single(i => i.TypeId == OreType).Quantity);
+    }
+
+    [Fact]
+    public void Schema116PaidCycleMigrationRetainsRemainingDeadlineAndResumeRebasesItsNativeCooldown()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        MinerProgress paid;
+        long miner;
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            MinerObservation observation;
+            do
+            {
+                observation = CapsuleerTestDriver.Miner(host, f.Clock);
+            } while (observation.Work.Activity != MinerActivity.Mining);
+            paid = observation.Work;
+            miner = observation.Pilot.PilotId;
+        }
+        const long elapsed = 123456789;
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            new MinerCheckpoint(miner, paid with { ActiveTicks = 0, DueTicks = 0, ClockOffsetTicks = 0 }).Apply(world);
+            world.Set<SavedCapsuleerJob>().ExecuteDelete();
+            world.Database.ExecuteSql($"UPDATE WorldCapsuleerClock SET ElapsedTicks={elapsed} WHERE Id=1");
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=116");
+        }
+        f.Clock.Seconds += 3600;
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        long deadline = CapsuleerScheduleRules.MigrateDeadline(elapsed, paid.Stamp, paid.DueStamp);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            var migrated = MinerCheckpoint.Read(world.Set<SavedCapsuleerCommunity>().Single().Progress)!;
+            Assert.Equal(paid.Navigation, migrated.Navigation);
+            Assert.Equal(paid.PaidUntil, migrated.PaidUntil);
+            Assert.Equal(deadline, migrated.DueTicks);
+            Assert.Equal(paid.Cycles, migrated.Cycles);
+        }
+        using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var resumed = CapsuleerTestDriver.Miner(reopened, f.Clock);
+        Assert.Equal(MinerActivity.Mining, resumed.Work.Activity);
+        Assert.Equal(paid.Stamp + 1, resumed.Work.Stamp);
+        Assert.Equal(deadline, resumed.Work.DueTicks);
+        Assert.Equal(paid.Cycles, resumed.Work.Cycles);
+        Assert.Equal(f.Clock.Now + deadline - resumed.Work.ActiveTicks, resumed.Work.PaidUntil);
+        using WorldDbContext saved = new(f.Database.Path);
+        Assert.Equal(resumed.Work.PaidUntil, saved.Set<ModuleCooldown>().Find(paid.ModuleId)!.ReadyAt);
+        f.Clock.Milliseconds += 50;
+        using var metrics = SessionPerformance.Begin("scheduler not-due frame", _ => { }, force: true)!;
+        Assert.Equal(0, reopened.GetRequiredService<ICapsuleerScheduler>().Run(2).Turn.Completed);
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    private static void RejectJob(WorldDbContext world, long pilot)
+    {
+        world.Database.ExecuteSqlRaw(
+            """
+            CREATE TABLE TestRejectedCapsuleerJob(PilotId INTEGER PRIMARY KEY);
+            CREATE TRIGGER reject_job BEFORE UPDATE OF Revision ON WorldCapsuleerJob
+            WHEN NEW.PilotId IN (SELECT PilotId FROM TestRejectedCapsuleerJob) AND NEW.Revision>OLD.Revision
+            BEGIN SELECT RAISE(ABORT,'test final job failure'); END;
+            """
+        );
+        world.Database.ExecuteSql($"INSERT INTO TestRejectedCapsuleerJob(PilotId) VALUES ({pilot})");
+    }
+}

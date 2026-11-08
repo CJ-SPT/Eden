@@ -164,6 +164,12 @@ internal sealed class NpcCombatStore(
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        Disengage(world, shipId, npcId);
+        transaction.Commit();
+    }
+
+    internal static void Disengage(WorldDbContext world, long shipId, long? npcId = null)
+    {
         var aggression = world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId && (npcId == null || a.NpcId == npcId)).ToArray();
         var ids = aggression.Select(a => a.NpcId).ToArray();
         foreach (var npc in world.Set<WorldNpc>().Where(n => ids.Contains(n.Id) && n.DestroyedAt == null && n.RetiredAt == null))
@@ -183,7 +189,6 @@ internal sealed class NpcCombatStore(
                 set.SetProperty(m => m.Status, MissileFlightStatus.Expired).SetProperty(m => m.EndedAt, m => m.UpdatedAt)
             );
         world.SaveChanges();
-        transaction.Commit();
     }
 
     public NpcShot? Fire(long pilotId, long shipId, long npcId, SpacePosition velocity, long now, double roll, int destinyStamp)

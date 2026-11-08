@@ -55,6 +55,9 @@ internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorl
 
     public PilotTranslocation Move(long pilotId, long expectedShipId, int targetId)
     {
+        // Take the resident owner before the shared movement gate. Bot execution
+        // already owns the world when it requests these same views.
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
             // Loading a system can initialize its asteroid rows. Do that before

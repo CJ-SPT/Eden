@@ -9,6 +9,7 @@ using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,6 +46,9 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
 
     public IReadOnlyList<CombatAnomaly> List(int systemId, long now)
     {
+        // Take the resident owner before the shared movement gate. Bot execution
+        // already owns the world when it requests these same views.
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
             var provider = database.Catalog;
@@ -206,6 +210,9 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
 
     public void Arrive(int systemId, SpacePosition position, long now)
     {
+        // Take the resident owner before the shared movement gate. Bot execution
+        // already owns the world when it requests these same views.
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
             var nearby = List(systemId, now)
@@ -287,6 +294,9 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
 
     public IReadOnlyList<AnomalySystemSites> Directory(long now)
     {
+        // Take the resident owner before the shared movement gate. Bot execution
+        // already owns the world when it requests these same views.
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
             long version = Version(-1);

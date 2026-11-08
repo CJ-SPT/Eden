@@ -48,9 +48,24 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
 
     public IReadOnlyList<InventoryChange> Move(long pilotId, long destinationId, InventoryMoveRequest request)
     {
-        var (itemIds, sourceId, flagId, quantity) = request;
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Move(world, catalog, pilotId, destinationId, request, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        transaction.Commit();
+        return result;
+    }
+
+    internal static IReadOnlyList<InventoryChange> Move(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long destinationId,
+        InventoryMoveRequest request,
+        long now
+    )
+    {
+        var (itemIds, sourceId, flagId, quantity) = request;
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
         bool sameShipQuantityMove = sourceId == ship.Id && destinationId == ship.Id && quantity.HasValue;
@@ -75,7 +90,6 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             throw new InvalidDataException("Items can only move between your docked ship's cargo and its station hangar.");
         }
 
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var holdFlags = ShipHoldRules.Definitions.Select(h => (int)h.Flag).ToArray();
         var items = world
             .Set<OwnedItem>()
@@ -129,11 +143,9 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             }
             var splitChanges = SplitInPlace(world, catalog, stack, selected);
             world.SaveChanges();
-            transaction.Commit();
             return splitChanges;
         }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var checkpoint = unfittedIds.Length > 0 ? FittingChanges.Capture(world, catalog, pilot, now) : null;
         var magazines = world
             .Set<OwnedItem>()
@@ -254,7 +266,6 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         {
             changes.AddRange(FittingChanges.Finish(world, catalog, pilot, checkpoint, now));
         }
-        transaction.Commit();
         return changes;
     }
 

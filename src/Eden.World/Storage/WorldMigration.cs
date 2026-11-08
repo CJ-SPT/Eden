@@ -15,7 +15,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 116;
+    internal const int CurrentVersion = 117;
 
     public static void Open(
         WorldDbContext world,
@@ -102,7 +102,8 @@ internal static class WorldMigration
         Eden.World.Capsuleers.CapsuleerCommunityStore.Provision(world, catalog, clock);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Initialize(world);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=116");
+        Eden.World.Capsuleers.CapsuleerPopulationStore.ScheduleFounders(world);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=117");
         history.Commit();
     }
 }

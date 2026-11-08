@@ -125,6 +125,14 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
+        var result = Dock(world, catalog, pilotId, shipId, stationId);
+        transaction.Commit();
+        LiveWorld.Find(_database.Path)?.Heat.ClearSelection(pilotId, shipId);
+        return result;
+    }
+
+    internal DockedPilot Dock(WorldDbContext world, CatalogDbContext catalog, long pilotId, long shipId, int stationId)
+    {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var destination = catalog.FindStation(stationId);
         if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is not { } position || destination is null)
@@ -153,9 +161,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         world.Positions.Remove(position);
         ShipHeatPersistence.CancelForTravel(world, shipId);
         world.SaveChanges();
-        transaction.Commit();
-        LiveWorld.Find(_database.Path)?.Heat.ClearSelection(pilotId, shipId);
-        return FindPilot(pilot.AccountId, pilotId)!;
+        return FindPilot(world, pilot.AccountId, pilotId)!;
     }
 
     public IReadOnlyList<DockedPilot> ListPilots(long accountId)

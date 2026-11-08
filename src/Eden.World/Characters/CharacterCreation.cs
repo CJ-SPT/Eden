@@ -103,6 +103,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         world.SaveChanges();
         Eden.World.Capsuleers.CapsuleerCommunityStore.Provision(world, catalog, clock);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);
+        Eden.World.Capsuleers.CapsuleerPopulationStore.ScheduleFounders(world);
         transaction.Commit();
         return pilotId;
     }

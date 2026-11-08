@@ -8,26 +8,19 @@ using Eden.Server.Chat;
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CapsuleerMaintenance(
-    ICapsuleerSimulation simulation,
-    ICapsuleerScene scene,
-    ChatRuntime chat,
-    TimeProvider clock,
-    ICapsuleerHauling hauling,
-    IHumanPresence presence
-) : IDisposable
+internal sealed class CapsuleerMaintenance(ICapsuleerScheduler scheduler, ICapsuleerScene scene, ChatRuntime chat, TimeProvider clock)
+    : IDisposable
 {
     private readonly Lock _gate = new();
     private PeriodicTimer? _timer;
     private Task _loop = Task.CompletedTask;
-    private long _lastSecond = presence.Read().ElapsedTicks / TimeSpan.TicksPerSecond;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
 
     internal void Start()
     {
         if (_timer is null)
         {
-            _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
+            _timer = new PeriodicTimer(CapsuleerJobQueue.WakeInterval, clock);
             _loop = Run(_timer);
         }
     }
@@ -51,25 +44,18 @@ internal sealed class CapsuleerMaintenance(
     {
         lock (_gate)
         {
-            var activity = presence.Read();
-            long second = activity.ElapsedTicks / TimeSpan.TicksPerSecond;
-            if (!activity.Active || second <= _lastSecond)
-            {
-                return null;
-            }
-            _lastSecond = second;
-            var observation = simulation.Advance(scene.Stamp);
-            if (observation is not null)
+            var batch = scheduler.Run(scene.Stamp);
+            foreach (var observation in batch.Miners)
             {
                 scene.Publish(observation);
                 PublishPresence(observation.Pilot);
             }
-            if (hauling.Advance(scene.Stamp) is { } delivery)
+            foreach (var delivery in batch.Haulers)
             {
                 scene.Publish(delivery);
                 PublishPresence(delivery.Pilot);
             }
-            return observation;
+            return batch.Miners.LastOrDefault();
         }
     }
 

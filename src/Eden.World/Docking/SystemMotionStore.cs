@@ -14,6 +14,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Propulsion;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,9 @@ public sealed partial class SqliteWorld
         IReadOnlyList<StaticSpaceObject> objects
     )
     {
+        // Take the resident owner before the shared movement gate. Bot execution
+        // already owns the world when it requests these same views.
+        using var ownership = LiveWorld.Find(_database.Path)?.Enter();
         lock (_database.MotionLock)
         {
             if (LiveCombatRuntime.Find(_database.Path)?.Advance(systemId, stamp, now, ships, objects) is { } resident)

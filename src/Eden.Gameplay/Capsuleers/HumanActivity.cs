@@ -9,6 +9,7 @@ public sealed class HumanActivity
     private long _elapsedTicks;
     private long _frequency;
     private Int128 _remainder;
+    private long _resumes;
     private IReadOnlyList<int> _activeSystems = [];
 
     public HumanActivity(long elapsedTicks, long timestamp)
@@ -31,6 +32,10 @@ public sealed class HumanActivity
             {
                 return;
             }
+            if (_sessions.Count == 0)
+            {
+                _resumes = checked(_resumes + 1);
+            }
             _sessions[session] = system;
         }
         else if (!_sessions.Remove(session))
@@ -43,7 +48,7 @@ public sealed class HumanActivity
     public HumanActivitySnapshot Read(long timestamp, long frequency)
     {
         Advance(timestamp, frequency);
-        return new(_elapsedTicks, _sessions.Count, _activeSystems);
+        return new(_elapsedTicks, _sessions.Count, _activeSystems, _resumes);
     }
 
     private void Advance(long timestamp, long frequency)

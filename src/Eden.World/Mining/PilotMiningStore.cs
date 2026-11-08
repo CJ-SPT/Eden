@@ -264,6 +264,12 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        Stop(world, pilotId, moduleId, expectedCompletesAt);
+        transaction.Commit();
+    }
+
+    internal static void Stop(WorldDbContext world, long pilotId, long moduleId, long expectedCompletesAt)
+    {
         world
             .Set<ModuleCooldown>()
             .Where(c =>
@@ -273,6 +279,5 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
                 && world.Set<OwnedItem>().Any(i => i.Id == moduleId && i.OwnerId == pilotId)
             )
             .ExecuteDelete();
-        transaction.Commit();
     }
 }

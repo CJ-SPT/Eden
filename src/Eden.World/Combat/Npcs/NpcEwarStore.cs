@@ -56,9 +56,11 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
 
     public IReadOnlyList<NpcEwarContact> Advance(long pilotId, long shipId, long now)
     {
+        // Take the resident owner before the shared movement gate. Bot execution
+        // already owns the world when it requests these same views.
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
-            using var ownership = LiveWorld.Find(database.Path)?.Enter();
             var sources = LiveCombatRuntime.Find(database.Path)?.EwarSources(shipId, now);
             if (sources is { Count: 0 } && LiveReadModels.Find(database.Path) is { } reads && !reads.HasNpcEwar(shipId))
             {

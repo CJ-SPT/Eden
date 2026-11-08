@@ -39,6 +39,11 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
                 _initialized.Add(systemId);
             }
         }
+        return List(world, catalog, systemId);
+    }
+
+    internal static IReadOnlyList<StaticSpaceObject> List(WorldDbContext world, CatalogDbContext catalog, int systemId)
+    {
         var saved = world
             .Set<WorldAsteroid>()
             .AsNoTracking()

@@ -109,17 +109,22 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         using var transaction = world.Database.BeginTransaction();
         ExpireTimedModules(world);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        double result = SignatureRadius(world, catalog, itemId, typeId);
+        transaction.Commit();
+        return result;
+    }
+
+    internal static double SignatureRadius(WorldDbContext world, CatalogDbContext catalog, long itemId, int typeId)
+    {
         if (world.Ships.Find(itemId) is not { } ship)
         {
             double npcSignature = PlayerEwarStore
                 .NpcAttributes(world, itemId, ReadAttributes(catalog, typeId))
                 .GetValueOrDefault(DogmaAttributeId.SignatureRadius);
-            transaction.Commit();
             return npcSignature;
         }
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == ship.OwnerId);
         double signature = ShipAttributes(world, catalog, pilot, ship).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
-        transaction.Commit();
         return signature;
     }
 
@@ -137,6 +142,21 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Fit(world, catalog, pilotId, itemIds, sourceId, flagId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        transaction.Commit();
+        return result;
+    }
+
+    internal static IReadOnlyList<InventoryChange> Fit(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IReadOnlyList<long> itemIds,
+        long sourceId,
+        int flagId,
+        long now
+    )
+    {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
         if (
@@ -168,7 +188,6 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         {
             throw new InvalidDataException("Equipment is unavailable.");
         }
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
         var before = PilotInventoryStore.List(world, catalog, pilotId, sourceId).ToDictionary(i => i.Id);
         var capacity = checkpoint.Capacity;
@@ -328,7 +347,6 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, rackEvent);
         }
         var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
-        transaction.Commit();
         return result.Concat(cascaded).ToArray();
 
         (int First, int Count) SlotsFor(int typeId)
@@ -377,6 +395,21 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = SetOnline(world, catalog, pilotId, shipId, itemId, online, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        transaction.Commit();
+        return result;
+    }
+
+    internal static IReadOnlyList<InventoryChange> SetOnline(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long itemId,
+        bool online,
+        long now
+    )
+    {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var item = world
             .Set<OwnedItem>()
@@ -404,7 +437,6 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         {
             return [];
         }
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
         if (online)
         {
@@ -431,7 +463,6 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         }
         world.SaveChanges();
         var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
-        transaction.Commit();
         return new[] { new InventoryChange(previous with { Online = online }, previous) }.Concat(cascaded).ToArray();
     }
 

@@ -18,6 +18,22 @@ internal sealed class PilotGateTravelStore(WorldDatabase database, SqliteWorld s
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        long account = Transfer(world, catalog, pilotId, shipId, sourceGateId, exitGateId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        transaction.Commit();
+        LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilotId, shipId);
+        return ships.FindPilot(account, pilotId)!;
+    }
+
+    internal static long Transfer(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long sourceGateId,
+        long exitGateId,
+        long now
+    )
+    {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var position = pilot.ActiveShip.Position;
         int origin = position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
@@ -40,7 +56,6 @@ internal sealed class PilotGateTravelStore(WorldDatabase database, SqliteWorld s
         {
             throw new InvalidDataException("Use the active ship at a connected stargate within activation range.");
         }
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, gate.DestinationSystemId);
         var arrival = GateTravelRules.Arrival(
             shipId,
@@ -49,8 +64,6 @@ internal sealed class PilotGateTravelStore(WorldDatabase database, SqliteWorld s
             radius
         );
         SqliteWorld.SetPosition(world, catalog, shipId, arrival, gate.DestinationSystemId, now);
-        transaction.Commit();
-        LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilotId, shipId);
-        return ships.FindPilot(pilot.AccountId, pilotId)!;
+        return pilot.AccountId;
     }
 }

@@ -37,6 +37,13 @@ internal sealed class SystemObjects(WorldDatabase database, IAsteroidField aster
         return [.. catalog.Definition(s_objects, systemId), .. asteroids.List(systemId)];
     }
 
+    internal static IReadOnlyList<StaticSpaceObject> Load(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
+    {
+        Eden.World.Mining.AsteroidFieldStore.Populate(world, catalog, systemId, now);
+        world.SaveChanges();
+        return [.. catalog.Definition(s_objects, systemId), .. Eden.World.Mining.AsteroidFieldStore.List(world, catalog, systemId)];
+    }
+
     private static ImmutableArray<StaticSpaceObject> LoadStatic(CatalogDbContext catalog, int systemId)
     {
         var gates = catalog.Definitions.GatesInSystem(systemId).ToDictionary(gate => gate.Id);

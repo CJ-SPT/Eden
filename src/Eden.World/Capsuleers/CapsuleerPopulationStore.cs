@@ -92,6 +92,55 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             """
         );
 
+    internal static void ScheduleFounders(WorldDbContext world)
+    {
+        long elapsed = world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
+        var existing = world.Set<SavedCapsuleerJob>().Select(j => j.PilotId).ToHashSet();
+        foreach (var agent in world.Set<SavedCapsuleerAgent>().AsNoTracking().OrderBy(a => a.PilotId).ToArray())
+        {
+            if (existing.Contains(agent.PilotId))
+            {
+                continue;
+            }
+            CapsuleerSchedule schedule = new(
+                checked(elapsed + TimeSpan.TicksPerSecond),
+                agent.Career == CapsuleerCareer.Mining ? CapsuleerAction.Prepare : CapsuleerAction.Trade
+            );
+            bool inSpace = world.Pilots.Where(p => p.Id == agent.PilotId).Any(p => p.ActiveShip.Position != null);
+            if (agent.Career == CapsuleerCareer.Mining)
+            {
+                var row = world.Set<SavedCapsuleerCommunity>().Single(c => c.PilotId == agent.PilotId);
+                if (MinerCheckpoint.Read(row.Progress) is { } work)
+                {
+                    work = work with
+                    {
+                        ActiveTicks = elapsed,
+                        ClockOffsetTicks = checked(elapsed - (long)work.Stamp * TimeSpan.TicksPerSecond),
+                        DueTicks = CapsuleerScheduleRules.MigrateDeadline(elapsed, work.Stamp, work.DueStamp),
+                    };
+                    new MinerCheckpoint(agent.PilotId, work).Apply(world);
+                    schedule = CapsuleerScheduleRules.Next(work, inSpace);
+                }
+            }
+            else
+            {
+                var row = world.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == agent.PilotId);
+                if (HaulerCheckpoint.Read(row.Progress) is { } work)
+                {
+                    work = work with
+                    {
+                        ActiveTicks = elapsed,
+                        ClockOffsetTicks = checked(elapsed - (long)work.Stamp * TimeSpan.TicksPerSecond),
+                        DueTicks = CapsuleerScheduleRules.MigrateDeadline(elapsed, work.Stamp, work.DueStamp),
+                    };
+                    new HaulerCheckpoint(agent.PilotId, work).Apply(world);
+                    schedule = CapsuleerScheduleRules.Next(work, inSpace);
+                }
+            }
+            CapsuleerJobCheckpoint.Apply(world, new(agent.PilotId, 0, 0, schedule.DueTicks, schedule.Action));
+        }
+    }
+
     public IReadOnlyList<CapsuleerCommunitySummary> Communities()
     {
         using WorldDbContext world = new(database.Path);

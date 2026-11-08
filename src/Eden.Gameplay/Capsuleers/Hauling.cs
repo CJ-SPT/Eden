@@ -22,14 +22,16 @@ public sealed record HaulerProgress(
     long TargetId,
     NavigationFrame Navigation,
     string? WaitingReason = null,
-    int ArrivalUntil = 0
+    int ArrivalUntil = 0,
+    long ActiveTicks = 0,
+    long DueTicks = 0,
+    long ClockOffsetTicks = 0
 );
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth Health);
 
 public interface ICapsuleerHauling
 {
-    HaulerObservation? Advance(int destinyStamp);
     void ObserveAggression(long shipId);
 }
 

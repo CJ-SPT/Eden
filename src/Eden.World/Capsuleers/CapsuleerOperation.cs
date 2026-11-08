@@ -1,0 +1,96 @@
+using Eden.Gameplay.Capsuleers;
+using Eden.World.Catalog;
+using Eden.World.Market;
+using Eden.World.Runtime;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+
+namespace Eden.World.Capsuleers;
+
+// A role action opens SQL only when it crosses an inventory, ownership or payment
+// boundary. Navigation and nonfatal simulation keep their existing resident path.
+internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob expected, MarketChangeSignal market) : IDisposable
+{
+    private WorldDbContext? _world;
+    private CatalogDbContext? _catalog;
+    private IDbContextTransaction? _transaction;
+    internal bool MarketChanged { get; set; }
+    internal bool TravelChanged { get; set; }
+    internal bool HasWorld => _world is not null;
+
+    internal WorldDbContext World
+    {
+        get
+        {
+            if (_world is null)
+            {
+                _world = new(database.Path);
+                _transaction = _world.Database.BeginTransaction();
+                // Resident scheduling is canonical between checkpoints. Bring its
+                // expected revision into the same transaction before the mutation.
+                CapsuleerJobCheckpoint.Apply(_world, expected);
+            }
+            return _world;
+        }
+    }
+
+    internal CatalogDbContext Catalog => _catalog ??= new(database.CatalogPath);
+
+    internal void Commit(CapsuleerJob next, MinerCheckpoint? miner, HaulerCheckpoint? hauler)
+    {
+        var live = LiveWorld.Find(database.Path);
+        if (_world is not null || live is null)
+        {
+            var world = World;
+            miner?.Apply(world);
+            hauler?.Apply(world);
+            int changed = world.Database.ExecuteSql(
+                $"""
+                UPDATE WorldCapsuleerJob SET Revision={next.Revision},Sequence={next.Sequence},
+                    DueTicks={next.DueTicks},Action={next.Action}
+                WHERE PilotId={expected.PilotId} AND Revision={expected.Revision} AND Sequence={expected.Sequence}
+                    AND DueTicks={expected.DueTicks} AND Action={expected.Action}
+                """
+            );
+            if (changed != 1)
+            {
+                throw new InvalidOperationException("The capsuleer job changed before settlement.");
+            }
+            world.SaveChanges();
+            _transaction!.Commit();
+        }
+        Dispose();
+        if (live is not null)
+        {
+            if (miner is not null)
+            {
+                live.MinerCheckpoints[miner.PilotId] = miner;
+            }
+            if (hauler is not null)
+            {
+                live.HaulerCheckpoints[hauler.PilotId] = hauler;
+            }
+            live.CapsuleerJobs[next.PilotId] = next;
+            live.ObjectsChanged();
+            if (TravelChanged)
+            {
+                live.Heat.ClearSelection(next.PilotId, miner?.Work.ShipId ?? hauler!.Work.ShipId);
+            }
+        }
+        if (MarketChanged)
+        {
+            market.Changed();
+        }
+    }
+
+    public void Dispose()
+    {
+        _transaction?.Dispose();
+        _transaction = null;
+        _world?.Dispose();
+        _world = null;
+        _catalog?.Dispose();
+        _catalog = null;
+    }
+}

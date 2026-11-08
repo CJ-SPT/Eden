@@ -11,6 +11,9 @@ using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Docking;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
+using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -19,7 +22,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Capsuleers;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CapsuleerMiner(
+internal sealed class CapsuleerMinerFactory(
     WorldDatabase database,
     SqliteWorld ships,
     ISystemObjects systems,
@@ -31,15 +34,52 @@ internal sealed class CapsuleerMiner(
     INpcEncounters encounters,
     INpcMissiles missiles,
     IPilotHealth health,
-    IPilotMining mining,
-    CapsuleerTrade trade
-) : ICapsuleerSimulation
+    MarketChangeSignal marketSignal,
+    PilotMarketStore marketStore
+)
+{
+    internal CapsuleerMiner Create(long pilotId) =>
+        new(
+            pilotId,
+            database,
+            ships,
+            systems,
+            belts,
+            inventory,
+            fitting,
+            clock,
+            combat,
+            encounters,
+            missiles,
+            health,
+            marketSignal,
+            marketStore
+        );
+}
+
+internal sealed class CapsuleerMiner(
+    long pilotId,
+    WorldDatabase database,
+    SqliteWorld ships,
+    ISystemObjects systems,
+    IAsteroidField belts,
+    IPilotInventory inventory,
+    IPilotFitting fitting,
+    TimeProvider clock,
+    INpcCombat combat,
+    INpcEncounters encounters,
+    INpcMissiles missiles,
+    IPilotHealth health,
+    MarketChangeSignal marketSignal,
+    PilotMarketStore marketStore
+)
 {
     private const int RetrySeconds = 60;
     private const double ApproachRange = 500;
-    private readonly object _gate = new();
     private bool _loaded;
+    private CapsuleerOperation _operation = null!;
     private long _threatenedShip;
+    private long _resumeCount = -1;
 
     public void ObserveAggression(long shipId)
     {
@@ -63,62 +103,151 @@ internal sealed class CapsuleerMiner(
     private MinerProgress Work => _work!;
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    public MinerObservation? Advance(int destinyStamp)
+    internal MinerObservation? Read()
     {
-        lock (_gate)
+        if (!_loaded)
         {
-            using var owner = Live?.Enter();
-            if (!_loaded || _pilot is null)
+            Load();
+        }
+        return _pilot is null ? null : Observation();
+    }
+
+    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes)
+    {
+        if (!_loaded)
+        {
+            Load();
+        }
+        if (_pilot is null)
+        {
+            throw new InvalidDataException("The scheduled capsuleer is missing.");
+        }
+        if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
+        {
+            _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
+            using WorldDbContext world = new(database.Path);
+            if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == Pilot.ShipId))
             {
                 Load();
             }
-            if (_pilot is null)
+        }
+        ObserveDanger(destinyStamp);
+        if (
+            Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
+            && Pilot.Position is not null
+            && Work.Activity != MinerActivity.Returning
+        )
+        {
+            _work = Work with { Activity = MinerActivity.ReadyToReturn };
+        }
+        var beforePilot = Pilot;
+        var before = Work;
+        var beforeLaser = _laser;
+        var beforeTarget = _target;
+        var beforeObjects = _objects;
+        var beforeObstacles = _obstacles;
+        _work = Work with { ActiveTicks = job.DueTicks, Stamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks) };
+        _operation = new(database, job, marketSignal);
+        try
+        {
+            if (_resumeCount != resumes && Work.Activity == MinerActivity.Mining && Work.PaidUntil != 0 && Work.DueTicks > activeNow)
             {
-                return null;
-            }
-            if (Live is { } ownerWorld && _hullRevision != ownerWorld.MinerHullRevision)
-            {
-                _hullRevision = ownerWorld.MinerHullRevision;
-                using WorldDbContext world = new(database.Path);
-                if (!world.Pilots.Any(p => p.Id == Pilot.PilotId && p.ActiveShipId == Pilot.ShipId))
-                {
-                    Load();
-                }
-            }
-            _work = Work with { Stamp = checked(Work.Stamp + 1) };
-            try
-            {
-                ObserveDanger(destinyStamp);
                 if (
-                    Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
-                    && Pilot.Position is not null
-                    && Work.Activity != MinerActivity.Returning
+                    !_operation
+                        .World.Set<Eden.Data.World.Inventory.OwnedItem>()
+                        .Any(i => i.Id == Work.ModuleId && i.OwnerId == pilotId && i.LocationId == Pilot.ShipId && i.Online)
                 )
                 {
-                    _work = Work with { Activity = MinerActivity.ReadyToReturn };
+                    throw new InvalidDataException("The funded mining laser is no longer fitted to this pilot's ship.");
                 }
-                Step();
+                long completes = checked(Now + Work.DueTicks - activeNow);
+                var cooldown =
+                    _operation.World.Set<Eden.Data.World.Combat.ModuleCooldown>().Find(Work.ModuleId)
+                    ?? _operation.World.Add(new Eden.Data.World.Combat.ModuleCooldown { ModuleId = Work.ModuleId }).Entity;
+                cooldown.Kind = Eden.Data.World.Combat.ModuleCooldownKind.Cycle;
+                cooldown.ReadyAt = completes;
+                _work = Work with { PaidUntil = completes };
             }
-            catch (Exception error) when (error is InvalidDataException or CargoCapacityException)
+            Step();
+            var next = Commit(job);
+            _resumeCount = resumes;
+            return next;
+        }
+        catch (Exception error) when (error is InvalidDataException or CargoCapacityException)
+        {
+            _operation.Dispose();
+            _pilot = beforePilot;
+            _work = before;
+            _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
+            _target = beforeTarget;
+            _objects = beforeObjects;
+            _obstacles = beforeObstacles;
+            RestorePosition(beforePilot);
+            _laser = beforeLaser;
+            _operation = new(database, job, marketSignal);
+            _navigation.AdoptHull();
+            _work = Work with
             {
-                _navigation.AdoptHull();
-                _work = Work with { Activity = MinerActivity.Waiting, DueStamp = Work.Stamp + RetrySeconds, WaitingReason = error.Message };
-            }
-            _work = Work with { Navigation = _navigation.Capture() };
-            var checkpoint = new MinerCheckpoint(Pilot.PilotId, Work);
-            if (Live is { } live)
+                ActiveTicks = job.DueTicks,
+                Stamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks),
+                Activity = MinerActivity.Waiting,
+                DueStamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks) + RetrySeconds,
+                DueTicks = checked(job.DueTicks + TimeSpan.FromSeconds(RetrySeconds).Ticks),
+                WaitingReason = error.Message,
+            };
+            try
             {
-                live.MinerCheckpoint = checkpoint;
-                live.ObjectsChanged();
+                return Commit(job);
             }
-            else
+            catch
             {
-                using WorldDbContext world = new(database.Path);
-                checkpoint.Apply(world);
+                _pilot = beforePilot;
+                _work = before;
+                _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
+                _target = beforeTarget;
+                _objects = beforeObjects;
+                _obstacles = beforeObstacles;
+                RestorePosition(beforePilot);
+                _laser = beforeLaser;
+                throw;
             }
-            return new(Pilot, Work, _laser, Work.WaitingReason) { Health = health.Read(Pilot.PilotId, Now) };
+        }
+        catch
+        {
+            _pilot = beforePilot;
+            _work = before;
+            _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
+            _target = beforeTarget;
+            _objects = beforeObjects;
+            _obstacles = beforeObstacles;
+            RestorePosition(beforePilot);
+            _laser = beforeLaser;
+            throw;
+        }
+        finally
+        {
+            _operation.Dispose();
         }
     }
+
+    private void RestorePosition(DockedPilot pilot)
+    {
+        if (pilot.Position is { } position)
+        {
+            Live?.Combat?.PublishPilotPosition(pilot.ShipId, pilot.SystemId, position);
+        }
+    }
+
+    private CapsuleerJob Commit(CapsuleerJob job)
+    {
+        _work = Work with { Navigation = _navigation.Capture() };
+        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
+        var next = job.Next(schedule.DueTicks, schedule.Action);
+        _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
+        return next;
+    }
+
+    private MinerObservation Observation() => new(Pilot, Work, _laser, Work.WaitingReason) { Health = health.Read(pilotId, Now) };
 
     private void ObserveDanger(int destinyStamp)
     {
@@ -167,13 +296,17 @@ internal sealed class CapsuleerMiner(
     private void Load()
     {
         using WorldDbContext world = new(database.Path);
-        var row = world.Set<SavedCapsuleerCommunity>().AsNoTracking().SingleOrDefault();
+        var row = world.Set<SavedCapsuleerCommunity>().AsNoTracking().SingleOrDefault(c => c.PilotId == pilotId);
         if (row?.PilotId is long id)
         {
             long account = world.Pilots.Where(p => p.Id == id).Select(p => p.AccountId).Single();
             _pilot = ships.FindPilot(account, id)!;
             _seed = row.Seed;
-            _work = Live?.MinerCheckpoint?.Work ?? MinerCheckpoint.Read(row.Progress);
+            _work = Live?.MinerCheckpoints.GetValueOrDefault(pilotId)?.Work ?? MinerCheckpoint.Read(row.Progress);
+            var previous = _work;
+            long anchor =
+                previous?.ActiveTicks
+                ?? (world.Set<SavedCapsuleerJob>().Single(j => j.PilotId == pilotId).DueTicks - TimeSpan.TicksPerSecond);
             if (_work is null || Work.ShipId != Pilot.ShipId)
             {
                 _navigation = new();
@@ -189,6 +322,15 @@ internal sealed class CapsuleerMiner(
                     Pilot.ShipId
                 );
             }
+            if (previous is null || previous.ShipId != Pilot.ShipId)
+            {
+                _work = Work with
+                {
+                    ActiveTicks = anchor,
+                    ClockOffsetTicks = previous?.ClockOffsetTicks ?? anchor,
+                    Stamp = previous?.Stamp ?? 0,
+                };
+            }
             _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
             RefreshObjects();
             _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
@@ -199,7 +341,9 @@ internal sealed class CapsuleerMiner(
 
     private void RefreshObjects()
     {
-        _objects = systems.Load(Pilot.SystemId);
+        _objects = _operation is { HasWorld: true }
+            ? SystemObjects.Load(_operation.World, _operation.Catalog, Pilot.SystemId, Now)
+            : systems.Load(Pilot.SystemId);
         _obstacles = _objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray();
     }
 
@@ -217,16 +361,16 @@ internal sealed class CapsuleerMiner(
             case MinerActivity.ApproachingOre:
                 Approach();
                 break;
-            case MinerActivity.Locking when Work.Stamp >= Work.DueStamp:
+            case MinerActivity.Locking when Work.ActiveTicks >= Work.DueTicks:
                 PayCycle();
                 break;
-            case MinerActivity.Mining when Work.Stamp >= Work.DueStamp:
+            case MinerActivity.Mining when Work.ActiveTicks >= Work.DueTicks:
                 Collect();
                 break;
             case MinerActivity.ReadyToReturn:
                 ReturnHome();
                 break;
-            case MinerActivity.Waiting when Work.Stamp >= Work.DueStamp:
+            case MinerActivity.Waiting when Work.ActiveTicks >= Work.DueTicks:
                 _work = Work with { WaitingReason = null };
                 if (Pilot.Position is null)
                 {
@@ -246,32 +390,53 @@ internal sealed class CapsuleerMiner(
         {
             throw new InvalidDataException("Waiting for a replacement mining ship.");
         }
-        var aboard = inventory.List(Pilot.PilotId, Pilot.ShipId);
+        var aboard = PilotInventoryStore.List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId);
         var ore = aboard.Where(i => i.CategoryId == AsteroidDefinitions.Category && ShipHoldRules.IsHold(i.FlagId)).ToArray();
         if (ore.Length > 0)
         {
-            inventory.Move(
+            PilotInventoryStore.Move(
+                _operation.World,
+                _operation.Catalog,
                 Pilot.PilotId,
                 Pilot.StationId,
-                new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null)
+                new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null),
+                Now
             );
         }
-        if (trade.Enabled())
+        if (_operation.World.Set<SavedCapsuleerHauler>().Any())
         {
-            trade.ListStock(Pilot.PilotId, Pilot.StationId);
+            _operation.MarketChanged |= CapsuleerTrade.ListStock(
+                _operation.World,
+                _operation.Catalog,
+                marketStore,
+                Pilot.PilotId,
+                Pilot.StationId
+            );
         }
         _laser = aboard.FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI && InventoryDefinitions.IsHighSlot(i.FlagId));
         if (_laser is null)
         {
             var kit =
-                inventory.List(Pilot.PilotId, Pilot.StationId).FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI)
+                PilotInventoryStore
+                    .List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.StationId)
+                    .FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI)
                 ?? throw new InvalidDataException("Waiting for a mining laser.");
-            fitting.Fit(Pilot.PilotId, [kit.Id], Pilot.StationId, (int)InventoryFlag.AutoFit);
-            _laser = inventory.List(Pilot.PilotId, Pilot.ShipId).Single(i => i.Id == kit.Id);
+            PilotFittingStore.Fit(
+                _operation.World,
+                _operation.Catalog,
+                Pilot.PilotId,
+                [kit.Id],
+                Pilot.StationId,
+                (int)InventoryFlag.AutoFit,
+                Now
+            );
+            _laser = PilotInventoryStore
+                .List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId)
+                .Single(i => i.Id == kit.Id);
         }
         if (!_laser.Online)
         {
-            fitting.SetOnline(Pilot.PilotId, Pilot.ShipId, _laser.Id, true);
+            PilotFittingStore.SetOnline(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, _laser.Id, true, Now);
             _laser = _laser with { Online = true };
         }
         RefreshObjects();
@@ -282,7 +447,8 @@ internal sealed class CapsuleerMiner(
         }
         var field = fields[(int)((uint)(_seed + Work.Trips) % (uint)fields.Length)];
         var launch = StationUndocking.Launch(Pilot.ShipId, Pilot.Home, Pilot.Flight);
-        ships.SetPosition(Pilot.ShipId, launch.Position, Pilot.SystemId);
+        SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, launch.Position, Pilot.SystemId, Now);
+        _operation.TravelChanged = true;
         _pilot = Pilot with { Position = launch.Position };
         _navigation.AdoptHull();
         _navigation.SetVelocity(launch.Velocity);
@@ -320,7 +486,7 @@ internal sealed class CapsuleerMiner(
         _pilot = Pilot with { Position = tick.Position };
         if (!wasWarping && _navigation.Warp is not null)
         {
-            combat.Disengage(Pilot.ShipId);
+            Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
         }
         if (Live?.Combat is { } residentCombat)
         {
@@ -328,7 +494,7 @@ internal sealed class CapsuleerMiner(
         }
         else
         {
-            ships.SetPosition(Pilot.ShipId, tick.Position, Pilot.SystemId);
+            SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, tick.Position, Pilot.SystemId, Now);
         }
     }
 
@@ -343,9 +509,10 @@ internal sealed class CapsuleerMiner(
         {
             if (Distance(_target!) <= DockingDefinitions.MaximumRange)
             {
-                _pilot = ships.Dock(Pilot.PilotId, Pilot.ShipId, Pilot.StationId);
-                combat.Disengage(Pilot.ShipId);
+                _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Pilot.StationId);
+                Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
                 _navigation.Dock();
+                _operation.TravelChanged = true;
                 _work = Work with { Activity = MinerActivity.Docked, TargetId = 0 };
             }
             else
@@ -373,7 +540,9 @@ internal sealed class CapsuleerMiner(
         {
             return;
         }
-        var attributes = fitting.ShipAttributes(Pilot.PilotId);
+        var attributes = _operation.HasWorld
+            ? PilotFittingStore.ShipAttributes(_operation.World, _operation.Catalog, Pilot.PilotId)
+            : fitting.ShipAttributes(Pilot.PilotId);
         if (
             attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets) <= 0
             || Distance(target) > attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange)
@@ -383,21 +552,27 @@ internal sealed class CapsuleerMiner(
         }
         double seconds = TargetingDefinitions.LockSeconds(
             attributes.GetValueOrDefault(DogmaAttributeId.ScanResolution),
-            fitting.SignatureRadius(target.Id, target.TypeId)
+            _operation.HasWorld
+                ? PilotFittingStore.SignatureRadius(_operation.World, _operation.Catalog, target.Id, target.TypeId)
+                : fitting.SignatureRadius(target.Id, target.TypeId)
         );
         if (!double.IsFinite(seconds) || seconds <= 0)
         {
             throw new InvalidDataException("The ship cannot lock this asteroid.");
         }
         _navigation.SetAtRest();
-        _work = Work with { Activity = MinerActivity.Locking, DueStamp = Work.Stamp + (int)Math.Ceiling(seconds) };
+        _work = Work with
+        {
+            Activity = MinerActivity.Locking,
+            DueStamp = Work.Stamp + (int)Math.Ceiling(seconds),
+            DueTicks = checked(Work.ActiveTicks + (long)Math.Ceiling(seconds * TimeSpan.TicksPerSecond)),
+        };
     }
 
     private void PayCycle()
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
+        var world = _operation.World;
+        var catalog = _operation.Catalog;
         var start = PilotMiningStore.Begin(world, catalog, Pilot.PilotId, Work.ModuleId, Work.TargetId, Now);
         int seconds = checked((int)Math.Ceiling(start.Laser.DurationMilliseconds / 1000));
         var next = Work with
@@ -405,24 +580,20 @@ internal sealed class CapsuleerMiner(
             Activity = MinerActivity.Mining,
             DueStamp = Work.Stamp + seconds,
             CycleSeconds = seconds,
+            DueTicks = checked(Work.ActiveTicks + (long)Math.Ceiling(start.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond)),
             PaidUntil = checked(Now + (long)(start.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond)),
             Navigation = _navigation.Capture(),
         };
-        new MinerCheckpoint(Pilot.PilotId, next).Apply(world);
-        transaction.Commit();
         _work = next;
     }
 
     private void Collect()
     {
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        using var transaction = world.Database.BeginTransaction();
+        var world = _operation.World;
+        var catalog = _operation.Catalog;
         if (world.Set<WorldAsteroid>().Find(Work.TargetId) is not { Quantity: > 0 })
         {
             var searching = Work with { Activity = MinerActivity.FlyingToBelt, Navigation = _navigation.Capture() };
-            new MinerCheckpoint(Pilot.PilotId, searching).Apply(world);
-            transaction.Commit();
             _work = searching;
             return;
         }
@@ -438,8 +609,6 @@ internal sealed class CapsuleerMiner(
         {
             next = next with { Activity = MinerActivity.FlyingToBelt };
         }
-        new MinerCheckpoint(Pilot.PilotId, next).Apply(world);
-        transaction.Commit();
         _work = next;
     }
 
@@ -447,7 +616,7 @@ internal sealed class CapsuleerMiner(
     {
         if (Work.PaidUntil != 0)
         {
-            mining.Stop(Pilot.PilotId, Work.ModuleId, Work.PaidUntil);
+            PilotMiningStore.Stop(_operation.World, Pilot.PilotId, Work.ModuleId, Work.PaidUntil);
             _work = Work with { PaidUntil = 0 };
         }
         StartCourse(_objects.Single(o => o.Id == Pilot.StationId), MinerActivity.Returning);

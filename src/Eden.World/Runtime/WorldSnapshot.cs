@@ -13,9 +13,10 @@ internal sealed class WorldSnapshot(
     TimeSpan capture,
     ShipHeatCheckpoint? heat = null,
     TractorCheckpoint? tractors = null,
-    Eden.World.Capsuleers.MinerCheckpoint? miner = null,
-    Eden.World.Capsuleers.HaulerCheckpoint? hauler = null,
-    Eden.World.Capsuleers.CapsuleerClockCheckpoint? activity = null
+    IReadOnlyList<Eden.World.Capsuleers.MinerCheckpoint>? miners = null,
+    IReadOnlyList<Eden.World.Capsuleers.HaulerCheckpoint>? haulers = null,
+    Eden.World.Capsuleers.CapsuleerClockCheckpoint? activity = null,
+    Eden.World.Capsuleers.CapsuleerJobCheckpoint? jobs = null
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -30,9 +31,10 @@ internal sealed class WorldSnapshot(
             combat is not null
             || heat is not null
             || tractors is not null
-            || miner is not null
-            || hauler is not null
+            || miners is not null
+            || haulers is not null
             || activity is not null
+            || jobs is not null
         )
         {
             using WorldDbContext world = new(database);
@@ -40,8 +42,15 @@ internal sealed class WorldSnapshot(
             combat?.Apply(world);
             heat?.Apply(world);
             tractors?.Apply(world);
-            miner?.Apply(world);
-            hauler?.Apply(world);
+            foreach (var miner in miners ?? [])
+            {
+                miner.Apply(world);
+            }
+            foreach (var hauler in haulers ?? [])
+            {
+                hauler.Apply(world);
+            }
+            jobs?.Apply(world);
             activity?.Apply(world);
             transaction.Commit();
         }

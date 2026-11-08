@@ -10,6 +10,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,9 @@ internal sealed class NpcEncounterStore(
 {
     public IReadOnlyList<NpcContact> List(int systemId, long now)
     {
+        // Take the resident owner before the shared movement gate. Bot execution
+        // already owns the world when it requests these same views.
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
             if (
