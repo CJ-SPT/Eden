@@ -82,7 +82,7 @@ internal sealed class PilotBrain(
         );
         BrainEffect FittingEffect(FittingSkillBonus bonus) =>
             new(
-                bonus.Modifier.Selector == ModifierSelector.OwnerRequiredSkill ? pilotId : shipId,
+                bonus.Modifier.Domain == ModifierDomain.Character ? pilotId : shipId,
                 bonus.Modifier.Selector switch
                 {
                     ModifierSelector.Group => BrainModifier.LocationGroup,
@@ -97,8 +97,8 @@ internal sealed class PilotBrain(
                 [bonus.SkillId],
                 bonus.Value
             );
-        effects.AddRange(fittingBonuses.Where(b => b.Modifier.Selector != ModifierSelector.OwnerRequiredSkill).Select(FittingEffect));
-        var ownerEffects = fittingBonuses.Where(b => b.Modifier.Selector == ModifierSelector.OwnerRequiredSkill).Select(FittingEffect);
+        effects.AddRange(fittingBonuses.Where(b => b.Modifier.Domain != ModifierDomain.Character).Select(FittingEffect));
+        var ownerEffects = fittingBonuses.Where(b => b.Modifier.Domain == ModifierDomain.Character).Select(FittingEffect);
         var character = industry
             .CharacterBonuses(pilotId)
             .Select(bonus => new BrainEffect(

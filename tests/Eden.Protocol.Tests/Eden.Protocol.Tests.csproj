@@ -22,6 +22,7 @@
     <EmbeddedResource Include="Fixtures/OverloadCatalog.json" />
     <EmbeddedResource Include="Fixtures/ThermalModuleMatrix.json" />
     <EmbeddedResource Include="Fixtures/HeatReferenceVectors.json" />
+    <EmbeddedResource Include="Fixtures/NaniteRepairReference.json" />
     <EmbeddedResource Include="Fixtures/RemoteAssistanceCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />

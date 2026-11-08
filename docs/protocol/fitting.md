@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Nanite repair calculations and character skills, November 7, 2026](#nanite-repair-calculations-and-character-skills-november-7-2026)
+
 - [Overheating calculation foundation, November 7, 2026](#overheating-calculation-foundation-november-7-2026)
 
 - [Assault damage controls and reactive-hardener evidence, November 7, 2026](#assault-damage-controls-and-reactive-hardener-evidence-november-7-2026)
@@ -1392,3 +1394,52 @@ Not performed; agent client testing is disabled. Heat gauges, overload controls 
 ### Optional maintainer checks
 
 None for this internal temperature boundary. Native overload acceptance belongs to the later damage and activation integration.
+
+## Nanite repair calculations and character skills, November 7, 2026
+
+Milestone 6 now prepares typed nanite repair quotes from actual saved module damage and the earned fitting graph. This checkpoint enables the two Nanite skill modifiers and their native character brain effects. It does **not** enable `InitiateModuleRepair`, `InitiateModuleRepairMany` or `StopModuleRepair`, consume paste, schedule repairs, heal module damage or declare overheating complete. Payment, progress/cancellation, restart behavior, activation exclusion and the native repair lifecycle remain open alongside damage/spread and the remaining overload producers.
+
+Pinned build **3662168**, archive SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, supplies the pricing evidence. In `eve/common/script/dogma/baseDogmaLocation.pyj`, `FindNumUnitsToRepairModule` uses `inventoryUtil.GetComputedBasePrice(typeID, 1)` rather than the module's listed base price. That helper uses the static type-material recipe, truncates material unit prices and divides by material portion size in both the unit and final material calculation. It falls back to the item's base price/portion only when no recipe exists. Material rows with zero portion are skipped; an item's zero portion uses one in the fallback path. Paste cost is the ceiling of damage times computed value/HP times character `shipBrokenModuleRepairCostMultiplier` (**1277**), divided by paste type **28668**'s base price (**6,500 ISK**), without dividing by the paste's own production portion. These are static valuation inputs, not market order prices.
+
+The [native vector exporter](../../tools/Export-NativeNaniteVectors.py) constructs only the two isolated function objects, supplies inert typed-catalog adapters and math, and executes no client module or dogma class body. Its [reference matrix](../../tests/Eden.Protocol.Tests/Fixtures/NaniteRepairReference.json) covers all **2,766 admitted non-rig rack modules**, three earned cost levels per profile, and six extra truncation/fallback/zero-value cases. Pure Gameplay calculations match those native results. A zero computed value has a special native free-repair path; the typed quote reports zero units/duration while leaving actual healing to the future command. Reads never clear damage. Burned-out modules cannot receive paste quotes; station repair remains their implemented recovery path.
+
+Nanite Operation (**28879**) applies its level-scaled **1294** bonus to character cost attribute **1277**; Nanite Interfacing (**28880**) applies its level-scaled **1295** bonus to character rate **1267**, whose native default is **10 HP/minute**. The four exact fitted programs (**3521**, **3522**, **3524**, **3723**) and the standard skill program are validated before their selectors enter the graph. Defaults and bonus values come from catalog metadata; trained levels come from saved skill points. Quotes use a filetime ceiling of damage divided by the effective HP/minute rate. The client UI's separate integer-millisecond estimate plus one-second stop-call grace is not a paste cost or a second repair-rate multiplier.
+
+The native brain now sends character-domain fitting bonuses in `CharacterEffects`, addressed to the pilot with the native `M` form. Ship-domain and owner-required-skill forms retain their respective routing. This corrects the previous blanket routing of non-owner fitting bonuses to the ship and makes the earned Nanite modifiers reach the same character node used by server calculations. Training invalidates the existing fitting snapshot; the next evaluation refreshes once, and subsequent bonus reads reuse it. No module or hull admission changes, and no saved-world schema change is needed.
+
+The [overload fixture exporter](../../tools/Export-OverloadCatalog.py) now includes Nanite skill prerequisites, exact material recipes and their price inputs for the existing native-program representatives and a passive-module case. Carbon Destiny revision **114e89fa584f0e1a81eb0a679aabf41af8870072** was checked for relevant repair ownership; this work follows the pinned dogma functions and does not copy movement/ticker behavior.
+
+### Automated validation
+
+Development started with the exact filter `FullyQualifiedName=Eden.Protocol.Tests.Thermal.NaniteRepairRuleTests.EveryAdmittedModulePriceAndSkillCostMatchesTheIsolatedNativeFunctions` (**1 passed**, **1.96 seconds**, feature build **4.68 seconds**). It compares all 2,766 admitted module prices and six edge profiles, with three native cost results per profile. The broader affected filter was:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotBrainTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.DogmaGraphTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.SupportModuleTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentReadTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.MissileFittingTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.HardenerTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Market.TypedServiceModelsTests'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+All **320 affected cases** passed in **55.77 seconds** (feature build **1.10 seconds**), including **23 new cases**. The new coverage includes native values across the complete admitted rack-module matrix; real catalog pricing for all 19 overload program representatives plus a passive module; cost/rate levels 0/1/3/5; native character `M` addressing; exact ceiling/fractional timing; free/healthy quotes; burnout, ownership, slot and malformed-program rejection; unchanged saved damage/cargo; numeric overflow; and one fitting refresh after training. TRX: `artifacts/feature-tests/results/2b96fa28ed8e41dabb6e6ba6a0cb0129/tests.trx`. After replacing literal source IDs with named constants, the final `FullyQualifiedName~Eden.Protocol.Tests.Thermal.NaniteRepair` filter passed all **23 new cases** again (**12.00 seconds**, feature build **1.12 seconds**); TRX: `artifacts/feature-tests/results/f26d2eb92cc34bbdb1db64cb8989a65b/tests.trx`.
+
+Development failures were investigated rather than retried unchanged. Compilation needed the cooldown namespace and the appropriate collection assertion. Native wire assertions initially used incorrect field names; they now check `modifierType` and `toItemID`. The real-catalog pricing case initially included unrelated minimal passive-fixture records without price payloads; it now explicitly covers the 20 complete native representatives, while the pure matrix retains all 2,766 production module prices. Exporter isolation initially lacked Python 2 helper/builtin bindings; it now supplies only the required builtins, closes its output on failure and finalizes the isolated interpreter. No full .NET suite was requested or run.
+
+Final pinned tool restore, root solution restore and build passed with zero warnings/errors in **4.11 seconds**. Both Python policy suites passed (**8 catalog**, **9 formatting** cases, **0.94 seconds** combined). Formatting verification passed across **1,122 files** in **14.50 seconds**, including the 140-character width check. Documentation checks verified **562 local links and anchors**, and the whitespace check passed. The expanded overload fixture, unchanged thermal matrix and native Nanite reference all reproduce byte-for-byte. Native output-to-input rejection and unchanged catalog bytes passed; production coverage remains byte-identical with all 6,079 entries and false overheating flags unchanged (**15.11 seconds** combined). Overload fixture SHA-256: **3ED0E83A4E258DF117E6BF4D406F32072DF4DB2348BB4007BAFCF66C4305037C**. Nanite reference SHA-256: **A51255FCA12C836C861F47ED1DB9BD6663D8F429F208CF52F91793DFF43CF350**.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native Nanite skill displays and future paste-repair controls remain unverified.
+
+### Optional maintainer checks
+
+None for the internal quote boundary. Paid native repair acceptance belongs to the later lifecycle integration.

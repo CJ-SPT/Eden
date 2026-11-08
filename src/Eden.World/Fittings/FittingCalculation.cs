@@ -422,6 +422,7 @@ internal sealed record FittingCalculation(
             .Concat(Enum.GetValues<CapacitorEmissionSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
             .Concat([OverloadRules.ThermodynamicsSkill])
+            .Concat(Enum.GetValues<NaniteRepairSkill>().Select(s => (int)s))
             // Drone work/damage skills remain owned by DroneRules.ApplySkills.
             .Concat([(int)DroneSkill.Drones, (int)DroneSkill.DroneAvionics, (int)DroneSkill.AdvancedDroneAvionics])
             .Distinct()
@@ -449,10 +450,15 @@ internal sealed record FittingCalculation(
             var attributes = PilotFittingStore.ReadAttributes(catalog, skill).ToDictionary();
             attributes[DogmaAttributeId.SkillLevel] = level;
             nodes.Add(new(skill, attributes));
-            var modifiersForSkill =
-                skill == OverloadRules.ThermodynamicsSkill
-                    ? OverloadCatalog.ThermodynamicsModifiers(catalog)
-                    : PassiveCatalog.Modifiers(catalog, skill);
+            var modifiersForSkill = skill switch
+            {
+                OverloadRules.ThermodynamicsSkill => OverloadCatalog.ThermodynamicsModifiers(catalog),
+                (int)NaniteRepairSkill.Operation or (int)NaniteRepairSkill.Interfacing => NaniteRepairCatalog.SkillModifiers(
+                    catalog,
+                    skill
+                ),
+                _ => PassiveCatalog.Modifiers(catalog, skill),
+            };
             foreach (var modifier in modifiersForSkill)
             {
                 Add(skill, modifier, true);
@@ -478,6 +484,7 @@ internal sealed record FittingCalculation(
         }
         var requested = modifiers
             .Select(m => m.Attribute)
+            .Concat([DogmaAttributeId.ModuleRepairRate, DogmaAttributeId.ModuleRepairCostMultiplier])
             .Concat(modifiers.SelectMany(m => DogmaValue.References(m.Source)).Select(v => v.AttributeId))
             .ToHashSet();
         Dictionary<DogmaAttributeId, DogmaAttributeDefinition> definitions = [];

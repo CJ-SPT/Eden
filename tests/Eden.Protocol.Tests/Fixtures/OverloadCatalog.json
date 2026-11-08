@@ -2,6 +2,83 @@
   "build": 3662168,
   "types": [
     {
+      "id": 34,
+      "name": "Tritanium",
+      "groupId": 18,
+      "groupName": "Mineral",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 35,
+      "name": "Pyerite",
+      "groupId": 18,
+      "groupName": "Mineral",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 36,
+      "name": "Mexallon",
+      "groupId": 18,
+      "groupName": "Mineral",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 37,
+      "name": "Isogen",
+      "groupId": 18,
+      "groupName": "Mineral",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 38,
+      "name": "Nocxium",
+      "groupId": 18,
+      "groupName": "Mineral",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 39,
+      "name": "Zydrine",
+      "groupId": 18,
+      "groupName": "Mineral",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 40,
+      "name": "Megacyte",
+      "groupId": 18,
+      "groupName": "Mineral",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 399,
       "name": "Small Shield Booster I",
       "groupId": 40,
@@ -2518,6 +2595,46 @@
       ]
     },
     {
+      "id": 2348,
+      "name": "Gel-Matrix Biopaste",
+      "groupId": 1040,
+      "groupName": "Specialized Commodities - Tier 3",
+      "categoryId": 43,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 1640,
+          "value": 60000.0
+        },
+        {
+          "id": 1641,
+          "value": 60000.0
+        }
+      ]
+    },
+    {
+      "id": 2463,
+      "name": "Nanites",
+      "groupId": 1034,
+      "groupName": "Refined Commodities - Tier 2",
+      "categoryId": 43,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 1640,
+          "value": 7200.0
+        },
+        {
+          "id": 1641,
+          "value": 7200.0
+        }
+      ]
+    },
+    {
       "id": 3300,
       "name": "Gunnery",
       "groupId": 255,
@@ -3498,6 +3615,46 @@
       ]
     },
     {
+      "id": 3689,
+      "name": "Mechanical Parts",
+      "groupId": 1034,
+      "groupName": "Refined Commodities - Tier 2",
+      "categoryId": 43,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 1640,
+          "value": 7200.0
+        },
+        {
+          "id": 1641,
+          "value": 7200.0
+        }
+      ]
+    },
+    {
+      "id": 3828,
+      "name": "Construction Blocks",
+      "groupId": 1034,
+      "groupName": "Refined Commodities - Tier 2",
+      "categoryId": 43,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 1640,
+          "value": 7200.0
+        },
+        {
+          "id": 1641,
+          "value": 7200.0
+        }
+      ]
+    },
+    {
       "id": 4409,
       "name": "Signature Radius Suppressor I",
       "groupId": 1154,
@@ -3686,6 +3843,137 @@
       ]
     },
     {
+      "id": 9840,
+      "name": "Transmitter",
+      "groupId": 1034,
+      "groupName": "Refined Commodities - Tier 2",
+      "categoryId": 43,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 1640,
+          "value": 7200.0
+        },
+        {
+          "id": 1641,
+          "value": 7200.0
+        }
+      ]
+    },
+    {
+      "id": 9842,
+      "name": "Miniature Electronics",
+      "groupId": 1034,
+      "groupName": "Refined Commodities - Tier 2",
+      "categoryId": 43,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 1640,
+          "value": 7200.0
+        },
+        {
+          "id": 1641,
+          "value": 7200.0
+        }
+      ]
+    },
+    {
+      "id": 11399,
+      "name": "Morphite",
+      "groupId": 18,
+      "groupName": "Mineral",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 11534,
+      "name": "Gravimetric Sensor Cluster",
+      "groupId": 334,
+      "groupName": "Construction Components",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 11540,
+      "name": "Quantum Microprocessor",
+      "groupId": 334,
+      "groupName": "Construction Components",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 11542,
+      "name": "Fernite Carbide Composite Armor Plate",
+      "groupId": 334,
+      "groupName": "Construction Components",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 11553,
+      "name": "Oscillator Capacitor Unit",
+      "groupId": 334,
+      "groupName": "Construction Components",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 11695,
+      "name": "Plasma Pulse Generator",
+      "groupId": 334,
+      "groupName": "Construction Components",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
       "id": 12441,
       "name": "Missile Bombardment",
       "groupId": 256,
@@ -3802,6 +4090,154 @@
         {
           "id": 2138,
           "value": 2114.0
+        }
+      ]
+    },
+    {
+      "id": 16670,
+      "name": "Crystalline Carbonide",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 16671,
+      "name": "Titanium Carbide",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 16673,
+      "name": "Fernite Carbide",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 10000.0
+        }
+      ]
+    },
+    {
+      "id": 16678,
+      "name": "Sylramic Fibers",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 6000.0
+        }
+      ]
+    },
+    {
+      "id": 16679,
+      "name": "Fullerides",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 3000.0
+        }
+      ]
+    },
+    {
+      "id": 16680,
+      "name": "Phenolic Composites",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 2200.0
+        }
+      ]
+    },
+    {
+      "id": 16681,
+      "name": "Nanotransistors",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 1500.0
+        }
+      ]
+    },
+    {
+      "id": 16682,
+      "name": "Hypersynaptic Fibers",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 750.0
+        }
+      ]
+    },
+    {
+      "id": 17392,
+      "name": "Data Chips",
+      "groupId": 1040,
+      "groupName": "Specialized Commodities - Tier 3",
+      "categoryId": 43,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 1640,
+          "value": 60000.0
+        },
+        {
+          "id": 1641,
+          "value": 60000.0
         }
       ]
     },
@@ -4122,6 +4558,102 @@
       ]
     },
     {
+      "id": 28668,
+      "name": "Nanite Repair Paste",
+      "groupId": 916,
+      "groupName": "Nanite Repair Paste",
+      "categoryId": 8,
+      "mass": 2500.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 28879,
+      "name": "Nanite Operation",
+      "groupId": 1216,
+      "groupName": "Engineering",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3392.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1294,
+          "value": -5.0
+        }
+      ]
+    },
+    {
+      "id": 28880,
+      "name": "Nanite Interfacing",
+      "groupId": 1216,
+      "groupName": "Engineering",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 28879.0
+        },
+        {
+          "id": 275,
+          "value": 3.0
+        },
+        {
+          "id": 277,
+          "value": 3.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1295,
+          "value": 20.0
+        }
+      ]
+    },
+    {
       "id": 33092,
       "name": "Caldari Destroyer",
       "groupId": 257,
@@ -4206,6 +4738,38 @@
         {
           "id": 1047,
           "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 33359,
+      "name": "Photonic Metamaterials",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 300.0
+        }
+      ]
+    },
+    {
+      "id": 33362,
+      "name": "Nonlinear Metamaterials",
+      "groupId": 429,
+      "groupName": "Composite",
+      "categoryId": 4,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 726,
+          "value": 300.0
         }
       ]
     },
@@ -7065,6 +7629,25 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 726,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233430,
+        "dataType": 4,
+        "defaultValue": 1.0,
+        "unitID": 9,
+        "name": "moonMiningAmount",
+        "attributeID": 726,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "description": ""
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 734,
       "data": {
         "stackable": 1,
@@ -8064,6 +8647,23 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 1267,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "dictates how many hitpoints you can repair per minute",
+        "dataType": 5,
+        "defaultValue": 10.0,
+        "attributeID": 1267,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "name": "moduleRepairRate"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 1271,
       "data": {
         "stackable": 1,
@@ -8085,6 +8685,23 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 1277,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.5,
+        "attributeID": 1277,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "name": "shipBrokenModuleRepairCostMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 1281,
       "data": {
         "stackable": 1,
@@ -8102,6 +8719,44 @@
         "tooltipTitleID": 295335,
         "categoryID": 17,
         "description": "Just for the UI to display the ship warp speed."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1294,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233563,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 121,
+        "name": "shipBrokenRepairCostMultiplierBonus",
+        "attributeID": 1294,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": ""
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1295,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233429,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 105,
+        "name": "moduleRepairRateBonus",
+        "attributeID": 1295,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": ""
       }
     },
     {
@@ -8376,6 +9031,40 @@
         "displayWhenZero": 0,
         "categoryID": 9,
         "name": "shipBonus3MF"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1640,
+      "data": {
+        "stackable": 1,
+        "description": "Cost multiplier per m3 volume of this commodity when importing to a planet",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "unitID": 121,
+        "attributeID": 1640,
+        "published": 0,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "name": "importTaxMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1641,
+      "data": {
+        "stackable": 1,
+        "description": "Export tax multiplier when exporting this commodity off a planet.",
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "unitID": 121,
+        "attributeID": 1641,
+        "published": 0,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "name": "exportTaxMultiplier"
       }
     },
     {
@@ -11883,6 +12572,120 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 3521,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3521,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 1277,
+            "operation": 6,
+            "modifyingAttributeID": 1294,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillNaniteOperationRepairCost",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3522,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3522,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 1294,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillNaniteOperationRepairCostLevel",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3524,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3524,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 1295,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillNaniteInterfacingRepairTimeLevel",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 3723,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3723,
+        "modifierInfo": [
+          {
+            "domain": "charID",
+            "modifiedAttributeID": 1267,
+            "operation": 6,
+            "modifyingAttributeID": 1295,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "skillNaniteInterfacingRepairTime2",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 4357,
       "data": {
         "isAssistance": 0,
@@ -13456,6 +14259,41 @@
         "propulsionChance": 0,
         "published": 0
       }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 34,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 35,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 36,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 37,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 38,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 39,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 40,
+      "data": {}
     },
     {
       "dataset": "client/typedogma",
@@ -16261,6 +17099,40 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 2348,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 1640,
+            "value": 60000.0
+          },
+          {
+            "attributeID": 1641,
+            "value": 60000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 2463,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 1640,
+            "value": 7200.0
+          },
+          {
+            "attributeID": 1641,
+            "value": 7200.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 3300,
       "data": {
         "dogmaAttributes": [
@@ -17529,6 +18401,40 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 3689,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 1640,
+            "value": 7200.0
+          },
+          {
+            "attributeID": 1641,
+            "value": 7200.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 3828,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 1640,
+            "value": 7200.0
+          },
+          {
+            "attributeID": 1641,
+            "value": 7200.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 4409,
       "data": {
         "dogmaAttributes": [
@@ -17745,6 +18651,110 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 9840,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 1640,
+            "value": 7200.0
+          },
+          {
+            "attributeID": 1641,
+            "value": 7200.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9842,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 1640,
+            "value": 7200.0
+          },
+          {
+            "attributeID": 1641,
+            "value": 7200.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11399,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11534,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 100.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11540,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 100.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11542,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 100.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11553,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 100.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 11695,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 100.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 12441,
       "data": {
         "dogmaAttributes": [
@@ -17885,6 +18895,127 @@
             "isDefault": 1
           }
         ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16670,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 10000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16671,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 10000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16673,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 10000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16678,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 6000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16679,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 3000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16680,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 2200.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16681,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 1500.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16682,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 750.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 17392,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 1640,
+            "value": 60000.0
+          },
+          {
+            "attributeID": 1641,
+            "value": 60000.0
+          }
+        ],
+        "dogmaEffects": []
       }
     },
     {
@@ -18240,6 +19371,119 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 28668,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28879,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 165.0
+          },
+          {
+            "attributeID": 181,
+            "value": 166.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3392.0
+          },
+          {
+            "attributeID": 275,
+            "value": 2.0
+          },
+          {
+            "attributeID": 277,
+            "value": 4.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1294,
+            "value": -5.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3521,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3522,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28880,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 165.0
+          },
+          {
+            "attributeID": 181,
+            "value": 166.0
+          },
+          {
+            "attributeID": 182,
+            "value": 28879.0
+          },
+          {
+            "attributeID": 275,
+            "value": 3.0
+          },
+          {
+            "attributeID": 277,
+            "value": 3.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1295,
+            "value": 20.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 3524,
+            "isDefault": 0
+          },
+          {
+            "effectID": 3723,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 33092,
       "data": {
         "dogmaAttributes": [
@@ -18360,6 +19604,32 @@
             "isDefault": 0
           }
         ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 33359,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 300.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 33362,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 726,
+            "value": 300.0
+          }
+        ],
+        "dogmaEffects": []
       }
     },
     {
@@ -18608,6 +19878,1189 @@
             "isDefault": 1
           }
         ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 34,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 35,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 36,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 37,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 38,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 39,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 40,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 399,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 1327
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 481
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 113
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 434,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 3967
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 2131
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 228
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 13
+          },
+          {
+            "materialTypeID": 38,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 447,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 502
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 297
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 334
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 197
+          },
+          {
+            "materialTypeID": 39,
+            "quantity": 4
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 450,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 231
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 220
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 452,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 1742
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 6
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 78
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 13
+          },
+          {
+            "materialTypeID": 39,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 523,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 858
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 288
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 4
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 524,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 470
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 6827
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 578,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 8071
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 7488
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 219
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 587,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 13333
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 3333
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 1333
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 601,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 638,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 5200000
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 2600000
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 390000
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 130000
+          },
+          {
+            "materialTypeID": 38,
+            "quantity": 15600
+          },
+          {
+            "materialTypeID": 39,
+            "quantity": 3900
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 1950
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 1948,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 2884
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 919
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 1952,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 5030
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 78
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 2
+          },
+          {
+            "materialTypeID": 9840,
+            "quantity": 5
+          },
+          {
+            "materialTypeID": 9842,
+            "quantity": 11
+          },
+          {
+            "materialTypeID": 11399,
+            "quantity": 3
+          },
+          {
+            "materialTypeID": 11534,
+            "quantity": 6
+          },
+          {
+            "materialTypeID": 11540,
+            "quantity": 5
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 1977,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 949
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 2048,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 1062
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 2
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 53
+          },
+          {
+            "materialTypeID": 3689,
+            "quantity": 5
+          },
+          {
+            "materialTypeID": 3828,
+            "quantity": 3
+          },
+          {
+            "materialTypeID": 11399,
+            "quantity": 1
+          },
+          {
+            "materialTypeID": 11540,
+            "quantity": 1
+          },
+          {
+            "materialTypeID": 11542,
+            "quantity": 1
+          },
+          {
+            "materialTypeID": 11553,
+            "quantity": 1
+          },
+          {
+            "materialTypeID": 11695,
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 2289,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 8071
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 7488
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 219
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 2291,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 8071
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 7488
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 219
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 2293,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 8071
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 7488
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 219
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 2295,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 8071
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 7488
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 219
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 2348,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 2463,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3300,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3303,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3317,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3319,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3327,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3329,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3330,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3334,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3338,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3392,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3393,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3394,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3402,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3413,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3416,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3418,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3420,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3426,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3427,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3428,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3434,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3435,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3436,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3449,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3450,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3454,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3689,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 3828,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 4409,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 636
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 62
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 358
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 11
+          },
+          {
+            "materialTypeID": 38,
+            "quantity": 6
+          },
+          {
+            "materialTypeID": 39,
+            "quantity": 6
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 8
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 5321,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 322
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 69
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 166
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 1
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 9840,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 9842,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 11399,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 11534,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 16671,
+            "quantity": 22
+          },
+          {
+            "materialTypeID": 16681,
+            "quantity": 1
+          },
+          {
+            "materialTypeID": 16682,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 11540,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 16671,
+            "quantity": 17
+          },
+          {
+            "materialTypeID": 16680,
+            "quantity": 6
+          },
+          {
+            "materialTypeID": 16681,
+            "quantity": 2
+          },
+          {
+            "materialTypeID": 33362,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 11542,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 16673,
+            "quantity": 44
+          },
+          {
+            "materialTypeID": 16678,
+            "quantity": 11
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 11553,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 16670,
+            "quantity": 27
+          },
+          {
+            "materialTypeID": 16679,
+            "quantity": 11
+          },
+          {
+            "materialTypeID": 16681,
+            "quantity": 1
+          },
+          {
+            "materialTypeID": 33359,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 11695,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 16670,
+            "quantity": 22
+          },
+          {
+            "materialTypeID": 16680,
+            "quantity": 7
+          },
+          {
+            "materialTypeID": 16681,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 12441,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 12709,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 840
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 183
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 470
+          },
+          {
+            "materialTypeID": 37,
+            "quantity": 4
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 4
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 16670,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 16671,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 16673,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 16678,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 16679,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 16680,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 16681,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 16682,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 17392,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 19921,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 23533,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 444
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 111
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 23606,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 26492,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 26510,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 26550,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 28164,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 28668,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 2348,
+            "quantity": 1
+          },
+          {
+            "materialTypeID": 2463,
+            "quantity": 4
+          },
+          {
+            "materialTypeID": 17392,
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 28879,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 28880,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 33092,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 33096,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 33359,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 33362,
+      "data": {}
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 35788,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 949
+          },
+          {
+            "materialTypeID": 40,
+            "quantity": 2
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typematerials",
+      "key": 47254,
+      "data": {
+        "materials": [
+          {
+            "materialTypeID": 34,
+            "quantity": 1462
+          },
+          {
+            "materialTypeID": 35,
+            "quantity": 3
+          },
+          {
+            "materialTypeID": 36,
+            "quantity": 62
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 34,
+      "data": {
+        "descriptionID": 87134,
+        "typeID": 34,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76482,
+        "iconID": 22,
+        "published": 1,
+        "marketGroupID": 1857,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 2.0,
+        "portionSize": 1,
+        "groupID": 18
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 35,
+      "data": {
+        "descriptionID": 87135,
+        "typeID": 35,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76483,
+        "iconID": 400,
+        "published": 1,
+        "marketGroupID": 1857,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 8.0,
+        "portionSize": 1,
+        "groupID": 18
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 36,
+      "data": {
+        "descriptionID": 87136,
+        "typeID": 36,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76484,
+        "iconID": 401,
+        "published": 1,
+        "marketGroupID": 1857,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 32.0,
+        "portionSize": 1,
+        "groupID": 18
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 37,
+      "data": {
+        "descriptionID": 87137,
+        "typeID": 37,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76485,
+        "iconID": 402,
+        "published": 1,
+        "marketGroupID": 1857,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 128.0,
+        "portionSize": 1,
+        "groupID": 18
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 38,
+      "data": {
+        "descriptionID": 87138,
+        "typeID": 38,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76486,
+        "iconID": 1201,
+        "published": 1,
+        "marketGroupID": 1857,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 512.0,
+        "portionSize": 1,
+        "groupID": 18
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 39,
+      "data": {
+        "descriptionID": 87139,
+        "typeID": 39,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76487,
+        "iconID": 404,
+        "published": 1,
+        "marketGroupID": 1857,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 2048.0,
+        "portionSize": 1,
+        "groupID": 18
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 40,
+      "data": {
+        "descriptionID": 87140,
+        "typeID": 40,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 76488,
+        "iconID": 405,
+        "published": 1,
+        "marketGroupID": 1857,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 8192.0,
+        "portionSize": 1,
+        "groupID": 18
       }
     },
     {
@@ -19066,6 +21519,44 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 77
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2348,
+      "data": {
+        "descriptionID": 87020,
+        "typeID": 2348,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 76348,
+        "iconID": 10042,
+        "published": 1,
+        "marketGroupID": 1336,
+        "volume": 3.0,
+        "mass": 0.0,
+        "basePrice": 1.0,
+        "portionSize": 1,
+        "groupID": 1040
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2463,
+      "data": {
+        "descriptionID": 93074,
+        "typeID": 2463,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 104480,
+        "iconID": 10053,
+        "published": 1,
+        "marketGroupID": 1335,
+        "volume": 0.75,
+        "mass": 0.0,
+        "basePrice": 1.0,
+        "portionSize": 1,
+        "groupID": 1034
       }
     },
     {
@@ -19593,6 +22084,45 @@
     },
     {
       "dataset": "client/types",
+      "key": 3689,
+      "data": {
+        "descriptionID": 93072,
+        "typeID": 3689,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 104478,
+        "iconID": 1186,
+        "published": 1,
+        "marketGroupID": 1335,
+        "volume": 0.75,
+        "mass": 0.0,
+        "basePrice": 600.0,
+        "portionSize": 1,
+        "groupID": 1034
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3828,
+      "data": {
+        "descriptionID": 93066,
+        "typeID": 3828,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 104472,
+        "iconID": 26,
+        "published": 1,
+        "marketGroupID": 1335,
+        "volume": 0.75,
+        "mass": 0.0,
+        "basePrice": 500.0,
+        "portionSize": 1,
+        "groupID": 1034
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 4409,
       "data": {
         "descriptionID": 278326,
@@ -19638,6 +22168,164 @@
     },
     {
       "dataset": "client/types",
+      "key": 9840,
+      "data": {
+        "descriptionID": 93080,
+        "typeID": 9840,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 104486,
+        "iconID": 1364,
+        "published": 1,
+        "marketGroupID": 1335,
+        "volume": 0.75,
+        "mass": 0.0,
+        "basePrice": 313.0,
+        "portionSize": 1,
+        "groupID": 1034
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9842,
+      "data": {
+        "descriptionID": 93073,
+        "typeID": 9842,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 104479,
+        "iconID": 1365,
+        "published": 1,
+        "marketGroupID": 1335,
+        "volume": 0.75,
+        "mass": 0.0,
+        "basePrice": 400.0,
+        "portionSize": 1,
+        "groupID": 1034
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11399,
+      "data": {
+        "descriptionID": 87921,
+        "typeID": 11399,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 77483,
+        "iconID": 2103,
+        "published": 1,
+        "marketGroupID": 1857,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 32768.0,
+        "portionSize": 1,
+        "groupID": 18
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11534,
+      "data": {
+        "descriptionID": 87964,
+        "typeID": 11534,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 77543,
+        "iconID": 2181,
+        "published": 1,
+        "marketGroupID": 803,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 334
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11540,
+      "data": {
+        "descriptionID": 87969,
+        "typeID": 11540,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 77548,
+        "iconID": 2185,
+        "published": 1,
+        "marketGroupID": 803,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 334
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11542,
+      "data": {
+        "descriptionID": 87971,
+        "typeID": 11542,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 2,
+        "typeNameID": 77550,
+        "iconID": 2191,
+        "published": 1,
+        "marketGroupID": 1889,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 334
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11553,
+      "data": {
+        "descriptionID": 87981,
+        "typeID": 11553,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 77560,
+        "iconID": 2198,
+        "published": 1,
+        "marketGroupID": 1888,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 334
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 11695,
+      "data": {
+        "descriptionID": 88017,
+        "typeID": 11695,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 77602,
+        "iconID": 2230,
+        "published": 1,
+        "marketGroupID": 1888,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 334
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 12441,
       "data": {
         "descriptionID": 88122,
@@ -19677,6 +22365,178 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 379
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16670,
+      "data": {
+        "descriptionID": 92825,
+        "typeID": 16670,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 103616,
+        "iconID": 2679,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 10.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16671,
+      "data": {
+        "descriptionID": 92828,
+        "typeID": 16671,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 103619,
+        "iconID": 2681,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 10.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16673,
+      "data": {
+        "descriptionID": 92826,
+        "typeID": 16673,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 103617,
+        "iconID": 2680,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 10.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16678,
+      "data": {
+        "descriptionID": 92827,
+        "typeID": 16678,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 103618,
+        "iconID": 2662,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 0.05,
+        "mass": 0.0,
+        "basePrice": 20.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16679,
+      "data": {
+        "descriptionID": 92821,
+        "typeID": 16679,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 103612,
+        "iconID": 2684,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 0.15,
+        "mass": 0.0,
+        "basePrice": 230.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16680,
+      "data": {
+        "descriptionID": 92823,
+        "typeID": 16680,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 103614,
+        "iconID": 2661,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 0.2,
+        "mass": 0.0,
+        "basePrice": 600.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16681,
+      "data": {
+        "descriptionID": 92822,
+        "typeID": 16681,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 103613,
+        "iconID": 2686,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 0.25,
+        "mass": 0.0,
+        "basePrice": 700.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16682,
+      "data": {
+        "descriptionID": 88995,
+        "typeID": 16682,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 97394,
+        "iconID": 2685,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 0.6,
+        "mass": 0.0,
+        "basePrice": 2560.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17392,
+      "data": {
+        "descriptionID": 93054,
+        "typeID": 17392,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 104460,
+        "iconID": 2038,
+        "published": 1,
+        "marketGroupID": 1336,
+        "volume": 3.0,
+        "mass": 1.0,
+        "basePrice": 1.0,
+        "portionSize": 1,
+        "groupID": 1040
       }
     },
     {
@@ -19815,6 +22675,63 @@
     },
     {
       "dataset": "client/types",
+      "key": 28668,
+      "data": {
+        "descriptionID": 93083,
+        "typeID": 28668,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 104489,
+        "iconID": 3302,
+        "published": 1,
+        "marketGroupID": 1103,
+        "volume": 0.01,
+        "mass": 2500.0,
+        "basePrice": 6500.0,
+        "portionSize": 10,
+        "groupID": 916
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28879,
+      "data": {
+        "descriptionID": 90773,
+        "typeID": 28879,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100528,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 368,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 1000000.0,
+        "portionSize": 1,
+        "groupID": 1216
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28880,
+      "data": {
+        "descriptionID": 91258,
+        "typeID": 28880,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 101061,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 368,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 5000000.0,
+        "portionSize": 1,
+        "groupID": 1216
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 33092,
       "data": {
         "descriptionID": 286680,
@@ -19853,6 +22770,44 @@
         "basePrice": 2500000.0,
         "portionSize": 1,
         "groupID": 257
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 33359,
+      "data": {
+        "descriptionID": 289091,
+        "typeID": 33359,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 289090,
+        "iconID": 2678,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 1.0,
+        "mass": 0.0,
+        "basePrice": 3500.0,
+        "portionSize": 1,
+        "groupID": 429
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 33362,
+      "data": {
+        "descriptionID": 289097,
+        "typeID": 33362,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 289096,
+        "iconID": 2678,
+        "published": 1,
+        "marketGroupID": 499,
+        "volume": 1.0,
+        "mass": 0.0,
+        "basePrice": 3500.0,
+        "portionSize": 1,
+        "groupID": 429
       }
     },
     {

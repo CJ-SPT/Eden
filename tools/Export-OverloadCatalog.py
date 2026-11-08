@@ -78,7 +78,7 @@ def export(catalog_path, output, matrix, coverage):
         cohort = sorted(representatives.values())
         # Include all program shapes, normal excluded profiles, real hull racks
         # and the complete Thermodynamics prerequisite/modifier closure.
-        pending = set(cohort) | {601, 638, 587, 28164, 2048, 4409, 47254}
+        pending = set(cohort) | {601, 638, 587, 28164, 2048, 4409, 47254, 28879, 28880, 28668}
         types, records, attributes, effects = [], {}, thermal_attrs | attrs | {1229}, set()
         while pending:
             type_id = min(pending)
@@ -97,8 +97,9 @@ def export(catalog_path, output, matrix, coverage):
             for a, v in values:
                 if a in (182, 183, 184, 1285, 1289, 1290) and v:
                     pending.add(int(v))
-            for dataset in ('client/types', 'client/typedogma'):
+            for dataset in ('client/types', 'client/typedogma', 'client/typematerials'):
                 records[dataset, type_id] = record(dataset, type_id)
+            pending.update(row['materialTypeID'] for row in records['client/typematerials', type_id].get('materials', []))
             wreck = records['client/types', type_id].get('wreckTypeID')
             if wreck:
                 pending.add(wreck)
@@ -108,6 +109,7 @@ def export(catalog_path, output, matrix, coverage):
             records['client/dogmaeffects', effect] = data
             for modifier in data.get('modifierInfo', []):
                 attributes.update(modifier[key] for key in ('modifiedAttributeID', 'modifyingAttributeID') if key in modifier)
+        attributes.update({1267, 1277})
         while attributes:
             attr = attributes.pop()
             if ('client/dogmaattributes', attr) in records:
