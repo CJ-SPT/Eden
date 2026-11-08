@@ -141,7 +141,10 @@ internal sealed class ShipDogmaBuilder(
             : fitting.ModuleAttributes(pilot.PilotId, module)
         ).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
-        attributes[DogmaAttributeId.Damage] = module.CrystalDamage;
+        if (module.CategoryId != (int)InventoryCategory.Module)
+        {
+            attributes[DogmaAttributeId.Damage] = module.CrystalDamage;
+        }
         if (module.CategoryId == (int)InventoryCategory.Drone && droneStore?.Profile(pilot.PilotId, module.TypeId) is { } drone)
         {
             foreach (var (attribute, value) in DroneWire.Attributes(drone, attributes))

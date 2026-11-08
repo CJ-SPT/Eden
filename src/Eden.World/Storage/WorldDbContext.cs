@@ -44,6 +44,7 @@ using Eden.World.Redemption;
 using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Skills;
+using Eden.World.Thermal;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -84,6 +85,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        ModuleConditionSchema.Configure(model);
         WorldConfigurationSchema.Configure(model);
         model.Entity<SavedCharacterDeletion>().ToTable("WorldCharacterDeletion").HasKey(d => d.PilotId);
         model.Entity<SavedCharacterDeletion>().HasOne<Pilot>().WithMany().HasForeignKey(d => d.PilotId);

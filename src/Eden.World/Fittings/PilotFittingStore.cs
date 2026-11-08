@@ -4,6 +4,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
@@ -20,6 +21,7 @@ using Eden.World.Propulsion;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Fittings;
@@ -390,6 +392,14 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             throw new InvalidDataException("Change module online state on your docked active ship.");
         }
         var previous = PilotInventoryStore.List(world, catalog, pilotId, shipId).Single(i => i.Id == itemId);
+        if (
+            online
+            && world.Set<SavedModuleCondition>().Find(itemId) is not null
+            && ModuleConditionPersistence.Read(world, catalog, item).BurnedOut
+        )
+        {
+            throw new InvalidDataException("Repair this burned-out module before bringing it online.");
+        }
         if (item.Online == online)
         {
             return [];
@@ -470,6 +480,11 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                     ? calculation.Graph.Attributes(module.Id)
                     : ReadAttributes(catalog, module.TypeId)
             ).ToDictionary();
+        }
+        // Condition and deadlines are live state, outside the fitted graph cache.
+        if (module.CategoryId == (int)InventoryCategory.Module)
+        {
+            attributes[DogmaAttributeId.Damage] = ModuleConditionPersistence.OwnedDamage(world, pilotId, module.Id);
         }
         // Deadlines are live state and must not be captured with the fitted graph.
         if (

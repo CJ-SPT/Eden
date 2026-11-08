@@ -1,6 +1,7 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
@@ -100,7 +101,7 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
                         world.Set<OwnedItem>().Any(i => i.LocationId == item.Id),
                         PilotIndustryStore.IsInstalled(world, item.Id),
                         0,
-                        0
+                        world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0
                     )
                 );
                 if (item.Singleton)

@@ -8,13 +8,14 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Repair;
 using Eden.World.Storage.Migrations;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 105;
+    internal const int CurrentVersion = 106;
 
     public static void Open(
         WorldDbContext world,
@@ -37,6 +38,7 @@ internal static class WorldMigration
         WorldVersions06To20.Apply(world, catalog, version);
         WorldVersions21To34.Apply(world, clock, version);
         TimedModuleSchema.Upgrade(world);
+        ModuleConditionSchema.Upgrade(world);
         if (version < CurrentVersion)
         {
             WorldVersions35To49.Apply(world, version);
@@ -88,7 +90,8 @@ internal static class WorldMigration
         DroneDelegationPersistence.Upgrade(world);
         NpcEnergySchema.Upgrade(world);
         RemoteAssistanceSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=105");
+        ModuleConditionPersistence.Reconcile(world, catalog);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=106");
         history.Commit();
     }
 }

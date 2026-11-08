@@ -1242,6 +1242,54 @@ FullyQualifiedName~Eden.Protocol.Tests.Thermal|FullyQualifiedName~ShipContentCov
 
 Both Python suites passed (**8 catalog**, **9 formatting** cases; **0.91 seconds** combined). Formatting verification passed across **1,102 files** in **14.18 seconds**, including the 140-character width check. Fixture, matrix and native-vector reproduction are byte-identical; source catalog bytes remain unchanged and source overwrite is rejected (**10.12 seconds** combined evidence checks). SHA-256 values are **41626964E894F14BB678A599902F0311C4E3613276842D08516A02B33043B8F3** (representatives), **A406408B52AF7C3B2FA3DDF51DE870B27B40E74D669B5968DCC64CBD33A6AD5A** (matrix) and **F26491B09C6A0E9880B1FE68B3DA39DFDE6F649B8E1CF096BCF2AC7755DA5C93** (native vectors). The regenerated 6,079-entry inventory changes exactly **1,826 evidence strings**; every admitted ID, support state and total remains unchanged (**235 hulls**, **3,408 modules/rigs**, **801 charges**, **76 combat drones**). Every overheating check remains false. Local documentation links and anchors were checked. No saved-world migration or live simulation path changes, and no full .NET suite was requested or run.
 
+## Persistent module condition and station repair, November 7, 2026
+
+Milestone 6 now has a persistent condition boundary for the forthcoming heat-cycle owner. This checkpoint enables no overload bonus or player-callable damage command. The native calculation and catalog evidence remain in the [preceding record](#overheating-calculation-foundation-november-7-2026). Paid-cycle heat generation, rack damage probability/spread, module/rack commands, scoped activation cancellation and observer notifications, resource resizing on burnout, and nanite paste repair remain open. Overheating coverage stays false for every existing profile.
+
+Saved-world schema **106** adds `WorldModuleCondition`, keyed by the existing module item identity with cascading deletion. No row means healthy. Damage persists through unfitting, movement, ownership changes, checkpoints and restart; repackaging rejects damaged modules. Opening an older save creates an empty table without inventing damage. Finite nonnegative damage is enforced by SQLite and typed Gameplay rules. Current catalog structure HP is used for condition; damage above a changed capacity is retained rather than silently healed.
+
+The internal World transaction helper accepts assembled quantity-one modules fitted to an owned high, medium or low rack, including offline and passive targets. It saturates new damage at HP. Burnout sets the item offline and cancels saved active bonuses, pending local repairs, remote repair/assistance, EWAR and tackle rows in the same transaction. It preserves paid cooldowns, capacitor, consumed fuel and launched ordnance. Rollback restores damage, online state and activity together. Restart reconciles a burned-out saved item with an incorrectly online flag before normal use. Live cycle producers and their native stop notifications must still be integrated before this can become an operational overheating feature.
+
+Station `repairSvc` quotes now report a damaged assembled module's actual damage and HP. Repairs use Eden's existing **1 ISK per damage point** pricing policy, including each quote's native upward damage rounding. One budget fraction applies to every selected damaged ship layer and module. Wallet debit, module condition, ship repair, receipt and journal settle atomically; rejected ownership, location, service or payment leaves them unchanged. Healthy/zero-budget selections cannot consume a payment. Full repair deletes the condition row but never automatically brings a burned-out module online. Ship-only receipt JSON retains its historical array shape; module/mixed receipts store named ship and module lists.
+
+Dogma module priming reads current damage attribute **3** outside the cached fitting graph, including specialized weapon/mining/booster readers. Station repair publishes typed `OnModuleAttributeChanges` with the remaining damage. Charge crystal wear and drone condition retain their separate owners. A condition-only change does not rebuild fitting; committed burnout invalidates online/active bonuses through the existing inventory and activation hooks. This adds a point lookup during module attribute reads, not a new simulation monitor.
+
+### Automated validation
+
+The first exact regression filter was `FullyQualifiedName=Eden.Protocol.Tests.Thermal.ModuleConditionTests.PaidModuleRepairQuotesActualDamageAndKeepsConditionAfterRestart` (**1 passed**, test command **4.83 seconds**). The final affected filter was:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.RepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.ArmorRepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.HullRepairTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.HardenerTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Repair.ShieldBoostTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.EnergyTierTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackSplitTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Industry.ProductionInventoryTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests'
+) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+All **289** affected cases passed, including **26 new condition cases**, in **77.94 seconds**; the feature build took **1.08 seconds**. Coverage includes damage saturation and invalid input, passive/offline/high/medium/low targets, real paid local-repair cancellation, passive/active bonus removal, cooldown/capacitor preservation, transaction rollback, mixed payments, ownership/location/payment rejection, native prime/repair attributes, unchanged crystal wear, condition reads without fitting recalculation, unfitting/transfer/repackaging, schema-77/105 upgrades, deletion cascades, checkpoints and restart reconciliation. TRX: `artifacts/feature-tests/results/f9b108239ec24ba69516f259566ca5d8/tests.trx`. Initial development builds rejected a missing inventory import and test initialization/SQL-call errors; these were corrected before the passing runs. No full .NET suite was requested or run.
+
+Pinned tool restore and root solution restore/build passed with no warnings or errors (**4.76 seconds** for root restore/build). Both Python suites passed (**8 catalog** cases in **0.83 seconds**, **9 formatting** cases in **0.15 seconds**). Formatting verification passed across **1,108 files** in **14.69 seconds**, including the 140-character width check. The production coverage export is byte-identical to the preceding checkpoint: all 6,079 records, admitted cohorts and overheating flags remain unchanged; source catalog bytes are unchanged (**13.74 seconds**). Local documentation links and anchors were checked.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native module damage display and repair-window presentation remain unverified.
+
+### Optional maintainer checks
+
+None for this internal condition boundary. Native overload and burnout acceptance belongs to the later operational integration.
+
 Development began with the exact thirteen-vector native comparison, which passed before the broader selection. The first thermal selection passed 60 of 66 cases; six malformed-program fixture cases failed because the edited no-tracking source record was not explicitly updated. Explicit fixture attachment made those edits persistent, and the exact six-case rejection filter passed. An initial formatting pass identified a long evidence string, which was split without an exception. The final affected selection includes all corrections and the additional immutable/effective-source case. Failed/intermediate checks are not counted as final validation.
 
 **Live acceptance:** Not performed; agent client testing is disabled.

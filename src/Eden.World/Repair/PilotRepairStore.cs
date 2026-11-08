@@ -2,13 +2,16 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Repair;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -18,6 +21,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
@@ -99,6 +103,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                     item is null
                     || item.OwnerId != pilot.Id
                     || !item.Singleton
+                    || item.Quantity != 1
                     || !(
                         item.LocationId == pilot.ActiveShip.StationId && item.FlagId == (int)InventoryFlag.Hangar
                         || ownerShip is not null
@@ -115,20 +120,13 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                 {
                     throw new InvalidDataException("This item does not support repairs yet.");
                 }
-                // Eden has no module heat/damage state yet. These owned modules
-                // are healthy; do not invent damage or consume them on repair.
-                result.Add(
-                    id,
-                    [
-                        new(
-                            id,
-                            type.Id,
-                            type.GroupId,
-                            0,
-                            catalog.FittingAttributes(type.Id).GetValueOrDefault(DogmaAttributeId.StructureHitPoints, 0)
-                        ),
-                    ]
-                );
+                double damage = world.Set<SavedModuleCondition>().Find(id)?.Damage ?? 0;
+                double hp = catalog.FittingAttributes(type.Id).GetValueOrDefault(DogmaAttributeId.StructureHitPoints, 0);
+                if (damage != 0)
+                {
+                    _ = ModuleConditionRules.Define(id, hp, damage);
+                }
+                result.Add(id, [new(id, type.Id, type.GroupId, damage, hp)]);
             }
         }
         return result;
@@ -165,12 +163,20 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         }
         if (charged == 0)
         {
-            return new(balance, []);
+            return new(balance, [], []);
         }
         double fraction = budget.Fraction;
         List<ShipRepair> repairs = [];
+        List<ModuleRepair> modules = [];
         foreach (var quote in quotes)
         {
+            if (world.Set<OwnedItem>().Find(quote.ItemId) is { } module)
+            {
+                double repaired = quote.Damage * fraction;
+                var condition = ModuleConditionPersistence.Repair(world, catalog, module, repaired);
+                modules.Add(new(module.Id, module.TypeId, quote.Damage - condition.Damage, condition.Damage));
+                continue;
+            }
             var saved = world.Set<ShipHealthState>().Find(quote.ItemId)!;
             var repair = RepairRules.Apply(quote.ItemId, saved.ArmorDamage, saved.StructureDamage, budget);
             double armor = repair.ArmorRepaired;
@@ -193,12 +199,17 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                     AmountCents = charged,
                     BalanceCents = wallet.Cents,
                     Time = now,
-                    RepairsJson = JsonSerializer.Serialize(repairs),
+                    // Keep historical ship-only receipts in their existing array
+                    // shape; module/mixed settlements use named detail lists.
+                    RepairsJson =
+                        modules.Count == 0
+                            ? JsonSerializer.Serialize(repairs)
+                            : JsonSerializer.Serialize(new StationRepairDetails(repairs, modules)),
                 }
             );
         world.SaveChanges();
         transaction.Commit();
-        return new(wallet.Cents, repairs);
+        return new(wallet.Cents, repairs, modules);
     }
 
     public IReadOnlyList<RepairPayment> Payments(long pilotId)

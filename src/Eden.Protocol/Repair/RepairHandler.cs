@@ -83,6 +83,22 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
                     ])
                 );
             }
+            if (result.Modules is { Count: > 0 } modules)
+            {
+                context.Notifications.Add(
+                    new ModuleAttributesChanged(
+                        modules
+                            .Select(m => new ModuleAttributeChange(
+                                context.Pilot.PilotId,
+                                new DogmaItemKey.Item(m.ModuleId),
+                                DogmaAttributeId.Damage,
+                                now,
+                                m.RemainingDamage
+                            ))
+                            .ToArray()
+                    )
+                );
+            }
             return PilotCallResult.None;
         }
         catch (InvalidDataException error)

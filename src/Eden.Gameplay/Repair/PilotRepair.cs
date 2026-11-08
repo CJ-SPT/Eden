@@ -6,7 +6,11 @@ public sealed record RepairQuote(long ItemId, int TypeId, int GroupId, double Da
 
 public sealed record ShipRepair(long ShipId, double ArmorRepaired, double StructureRepaired);
 
-public sealed record RepairResult(long BalanceCents, IReadOnlyList<ShipRepair> Ships);
+public sealed record ModuleRepair(long ModuleId, int TypeId, double DamageRepaired, double RemainingDamage);
+
+public sealed record StationRepairDetails(IReadOnlyList<ShipRepair> Ships, IReadOnlyList<ModuleRepair> Modules);
+
+public sealed record RepairResult(long BalanceCents, IReadOnlyList<ShipRepair> Ships, IReadOnlyList<ModuleRepair> Modules);
 
 public sealed record RepairPayment(
     long Id,
