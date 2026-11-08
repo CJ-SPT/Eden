@@ -59,6 +59,80 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         }
     }
 
+    [Fact]
+    public async Task UnrelatedSystemEntryLeavesSavedBacklogUntouched()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var presence = host.GetRequiredService<IHumanPresence>();
+        using var first = presence.Select(Human, Remote);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        var before = scheduler.Jobs().ToArray();
+        f.Clock.Seconds = 128;
+        int calls = 0;
+        await host.GetRequiredService<ICapsuleerHandoff>().SynchronizeAsync(Remote, () => calls++);
+        Assert.Equal(1, calls);
+        Assert.Equal(before, scheduler.Jobs());
+        Assert.Contains(before, j => j.DueTicks < presence.Read().ElapsedTicks);
+        Assert.Empty(host.GetRequiredService<LiveWorld>().MinerCheckpoints);
+        Assert.Empty(host.GetRequiredService<LiveWorld>().HaulerCheckpoints);
+    }
+
+    [Fact]
+    public async Task DetachedJobProjectionRetainsDifferencesAcrossSuccessfulSavesAndFailedProjection()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        var original = scheduler.Jobs().First();
+        var live = host.GetRequiredService<LiveWorld>();
+        var next = original.Next(original.DueTicks + TimeSpan.TicksPerSecond, original.Action);
+        live.CapsuleerJobs[original.PilotId] = next;
+        live.ObjectsChanged();
+        using (var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot()))
+        {
+            using (var command = snapshot.Database.CreateCommand())
+            {
+                command.CommandText = "CREATE TRIGGER RejectJob BEFORE UPDATE ON WorldCapsuleerJob BEGIN SELECT RAISE(ABORT,'test'); END";
+                command.ExecuteNonQuery();
+            }
+            Assert.Throws<SqliteException>(() => snapshot.Project());
+            using WorldDbContext captured = new(snapshot.Database);
+            Assert.Equal(
+                original.Sequence,
+                captured
+                    .Set<Eden.Data.World.Capsuleers.SavedCapsuleerJob>()
+                    .AsNoTracking()
+                    .Single(j => j.PilotId == original.PilotId)
+                    .Sequence
+            );
+        }
+        await live.FlushAsync();
+        // An unrelated change causes a new backup of the resident SQL image.
+        // Previously saved resident job state must still be projected into that backup.
+        live.ObjectsChanged();
+        using (var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot()))
+        {
+            snapshot.Project();
+            using WorldDbContext captured = new(snapshot.Database);
+            Assert.Equal(
+                next.Sequence,
+                captured
+                    .Set<Eden.Data.World.Capsuleers.SavedCapsuleerJob>()
+                    .AsNoTracking()
+                    .Single(j => j.PilotId == original.PilotId)
+                    .Sequence
+            );
+        }
+        await live.FlushAsync();
+        // Read the on-disk image separately from the registered resident world.
+        using SqliteConnection disk = new($"Data Source={f.Database.Path};Mode=ReadOnly;Pooling=False");
+        disk.Open();
+        using var query = disk.CreateCommand();
+        query.CommandText = $"SELECT Sequence FROM WorldCapsuleerJob WHERE PilotId={original.PilotId}";
+        Assert.Equal(next.Sequence, (long)query.ExecuteScalar()!);
+    }
+
     private sealed class AdvancingClock(TestClock inner) : TimeProvider
     {
         public bool Advance { get; set; }
@@ -94,8 +168,10 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         registry.Settle(Source, 20);
         Assert.Equal(3, registry.Get(Source).Generation);
         registry.Register(Destination);
-        Assert.Throws<ArgumentOutOfRangeException>(() => registry.SettleAll(19));
-        Assert.Equal(0, registry.Get(Destination).SettledTicks);
+        registry.SettleAll(19);
+        Assert.Equal(20, registry.Get(Source).SettledTicks);
+        Assert.Equal(19, registry.Get(Destination).SettledTicks);
+        Assert.Throws<ArgumentOutOfRangeException>(() => registry.SettleAll(18));
         registry.SettleAll(20);
         Assert.Equal(20, registry.Get(Destination).SettledTicks);
     }
@@ -217,7 +293,8 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         Assert.Equal(job.Sequence + 1, Assert.Single(scheduler.Jobs(), j => j.PilotId == arrived.Pilot.PilotId).Sequence);
         var peer = Assert.Single(Peers(host, arrived.Pilot), p => p.Pilot.PilotId == arrived.Pilot.PilotId);
         Assert.True(peer.Arriving);
-        Assert.Equal(0, scheduler.Run(0).Turn.Completed);
+        scheduler.Run(0);
+        Assert.Equal(job.Sequence + 1, Assert.Single(scheduler.Jobs(), j => j.PilotId == arrived.Pilot.PilotId).Sequence);
     }
 
     [Fact]

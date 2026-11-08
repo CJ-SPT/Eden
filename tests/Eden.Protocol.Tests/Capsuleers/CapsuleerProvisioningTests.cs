@@ -31,6 +31,42 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
     private const int DestinationStation = 60003760;
 
     [Fact]
+    public void UnchangedProvisioningUsesSavedEligibilityWithBoundedDatabaseWork()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        var provisioner = new CapsuleerProvisioner(f.Database, f.Clock);
+        var first = provisioner.Reconcile();
+        using var metrics = SessionPerformance.Begin("unchanged eligibility", output.WriteLine, force: true)!;
+        var second = provisioner.Reconcile();
+        Assert.Equal(first.RegisteredSystems, second.RegisteredSystems);
+        Assert.Equal(0, second.CreatedCommunities);
+        Assert.InRange(metrics.Commands, 1, 12);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Fact]
+    public void RenewedDepositsRetryDeferredProvisioningWithoutCatalogChanges()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        AddDestinationOre(f.Database);
+        using (WorldDbContext world = new(f.Database.Path))
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath))
+        {
+            Eden.World.Mining.AsteroidFieldStore.Populate(world, catalog, Destination, f.Clock.Now);
+            world.SaveChanges();
+            world.Set<WorldAsteroid>().Where(a => a.SystemId == Destination).ExecuteUpdate(s => s.SetProperty(a => a.Quantity, 0));
+        }
+        var provisioner = new CapsuleerProvisioner(f.Database, f.Clock);
+        Assert.Equal(0, provisioner.Reconcile().CreatedCommunities);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            world.Set<WorldAsteroid>().Where(a => a.SystemId == Destination).ExecuteUpdate(s => s.SetProperty(a => a.Quantity, 100));
+        }
+        Assert.Equal(1, provisioner.Reconcile().CreatedCommunities);
+        Assert.Equal(0, provisioner.Reconcile().CreatedCommunities);
+    }
+
+    [Fact]
     public void EligibleSystemsReceiveOneAtomicPairWithStableNamesSkillsAndStaggeredJobs()
     {
         using CapsuleerHaulerTests.Fixture f = new();

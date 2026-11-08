@@ -42,14 +42,8 @@ internal sealed class WorldSnapshot(
             combat?.Apply(world);
             heat?.Apply(world);
             tractors?.Apply(world);
-            foreach (var miner in miners ?? [])
-            {
-                miner.Apply(world);
-            }
-            foreach (var hauler in haulers ?? [])
-            {
-                hauler.Apply(world);
-            }
+            Eden.World.Capsuleers.MinerCheckpoint.Apply(world, miners ?? []);
+            Eden.World.Capsuleers.HaulerCheckpoint.Apply(world, haulers ?? []);
             jobs?.Apply(world);
             activity?.Apply(world);
             transaction.Commit();

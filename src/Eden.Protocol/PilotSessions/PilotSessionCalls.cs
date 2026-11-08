@@ -87,9 +87,9 @@ internal sealed class PilotSessionCalls(
             }
             presentation?.Refresh();
         }
-        if (handoff is not null)
+        if (handoff is not null && context.Selected)
         {
-            await handoff.SynchronizeAsync(Dispatch);
+            await handoff.SynchronizeAsync(context.Pilot.SystemId, Dispatch);
         }
         else
         {
@@ -179,11 +179,14 @@ internal sealed class PilotSessionCalls(
         {
             if (handoff is not null)
             {
-                await handoff.SynchronizeAsync(() =>
-                {
-                    presentation?.Refresh();
-                    context.Flight.Snapshot();
-                });
+                await handoff.SynchronizeAsync(
+                    context.Pilot.SystemId,
+                    () =>
+                    {
+                        presentation?.Refresh();
+                        context.Flight.Snapshot();
+                    }
+                );
             }
             else
             {

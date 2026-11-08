@@ -81,29 +81,55 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
 internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleerHandoff handoff, IWorldSynchronization synchronization)
     : IHumanPresence
 {
+    private readonly Dictionary<Guid, int> _sessions = [];
+
     public IHumanPresenceLease Select(long pilotId, int systemId)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pilotId);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(systemId);
         Guid session = Guid.NewGuid();
         Update(session, systemId);
-        return new Lease(this, session);
+        return new Lease(this, session, systemId);
     }
 
     public HumanActivitySnapshot Read() => activity.Read();
 
     public void Update(Guid session, int? systemId) => Change(session, systemId, () => true);
 
-    private void Change(Guid session, int? systemId, Func<bool> validate, Action? committed = null)
+    private void Change(Guid session, int? systemId, Func<bool> validate, Action? committed = null, int? previousSystem = null)
     {
-        handoff.Synchronize(() =>
+        int target;
+        lock (synchronization.Gate)
+        {
+            target = systemId ?? previousSystem ?? _sessions.GetValueOrDefault(session);
+        }
+        void Apply()
         {
             if (validate())
             {
                 activity.Update(session, systemId);
+                if (systemId is { } selected)
+                {
+                    _sessions[session] = selected;
+                }
+                else
+                {
+                    _sessions.Remove(session);
+                }
                 committed?.Invoke();
             }
-        });
+        }
+        if (target == 0)
+        {
+            lock (synchronization.Gate)
+            {
+                Apply();
+            }
+        }
+        else
+        {
+            handoff.Synchronize(target, Apply);
+        }
     }
 
     private void Forget(Guid session, Action committed)
@@ -111,13 +137,15 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         lock (synchronization.Gate)
         {
             activity.Update(session, null);
+            _sessions.Remove(session);
             committed();
         }
     }
 
-    private sealed class Lease(HumanPresence presence, Guid session) : IHumanPresenceLease
+    private sealed class Lease(HumanPresence presence, Guid session, int initialSystem) : IHumanPresenceLease
     {
         private bool _disposed;
+        private int _system = initialSystem;
 
         public void Transfer(int systemId)
         {
@@ -129,7 +157,8 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
                 {
                     ObjectDisposedException.ThrowIf(_disposed, this);
                     return true;
-                }
+                },
+                () => _system = systemId
             );
         }
 
@@ -137,7 +166,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         {
             try
             {
-                presence.Change(session, null, () => !_disposed, () => _disposed = true);
+                presence.Change(session, null, () => !_disposed, () => _disposed = true, _system);
             }
             catch
             {

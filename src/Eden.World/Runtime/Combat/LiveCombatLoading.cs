@@ -303,6 +303,68 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
+        return HydrateNpc(
+            catalog,
+            npc,
+            world.Set<WorldNpcMiningMember>().Find(id),
+            PlayerEwarStore.Active(world, id),
+            Contributions(world, id),
+            now
+        );
+    }
+
+    private void LoadNpcs(IReadOnlyList<long> ids, long now)
+    {
+        if (ids.Count == 0)
+        {
+            return;
+        }
+        Loading(() =>
+        {
+            using WorldDbContext world = new(database.Path);
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            var rows = world.Set<WorldNpc>().Where(n => ids.Contains(n.Id)).ToArray();
+            var mining = world.Set<WorldNpcMiningMember>().Where(n => ids.Contains(n.NpcId)).ToDictionary(n => n.NpcId);
+            var effects = world
+                .Set<WorldPlayerEwar>()
+                .Where(e => ids.Contains(e.TargetId))
+                .AsNoTracking()
+                .OrderBy(e => e.ModuleId)
+                .AsEnumerable()
+                .ToLookup(e => e.TargetId, e => e.Contact());
+            var damage = world
+                .Set<SavedCombatDamage>()
+                .Where(d => ids.Contains(d.VictimId))
+                .AsNoTracking()
+                .AsEnumerable()
+                .ToLookup(d => d.VictimId);
+            foreach (var row in rows)
+            {
+                var npc = HydrateNpc(
+                    catalog,
+                    row,
+                    mining.GetValueOrDefault(row.Id),
+                    effects[row.Id].ToArray(),
+                    damage[row.Id].ToImmutableDictionary(d => d.AttackerId, ReadContribution),
+                    now
+                );
+                _npcs[row.Id] = npc;
+                _savedNpcs[row.Id] = npc;
+                _staleNpcs.Remove(row.Id);
+            }
+            return true;
+        });
+    }
+
+    private LiveCombatNpc HydrateNpc(
+        CatalogDbContext catalog,
+        WorldNpc npc,
+        WorldNpcMiningMember? mining,
+        IReadOnlyList<ElectronicWarfareContact> effects,
+        IReadOnlyDictionary<long, CombatParty> contributions,
+        long now
+    )
+    {
         var profile = _simulationProfiles.Read(catalog, npc.TypeId);
         var type = profile.Type;
         var attributes = profile.Attributes;
@@ -314,9 +376,7 @@ internal sealed partial class LiveCombatRuntime
             var charge = PilotFittingStore.ReadAttributes(catalog, chargeId);
             missileRange = NpcMissileRules.Drive(MissileChargeCatalog.Drive(catalog, chargeId, charge), attributes).NominalRange;
         }
-        attributes = PlayerEwarStore.NpcAttributes(world, id, profile.Attributes, missileRange);
-        var contributions = Contributions(world, id);
-        var mining = world.Set<WorldNpcMiningMember>().Find(id);
+        attributes = PlayerEwarRules.NpcAttributes(profile.Attributes, effects, missileRange);
         return new(
             npc.Id,
             npc.TypeId,
@@ -358,7 +418,7 @@ internal sealed partial class LiveCombatRuntime
             RepairProfile = NpcRepairRules.Profile(attributes),
             RepairState = new(npc.ShieldRepairAt, npc.ArmorRepairAt, npc.RepairRevision),
             ElectronicWarfare = profile.ElectronicWarfare,
-            IncomingElectronicWarfare = PlayerEwarStore.Active(world, id),
+            IncomingElectronicWarfare = effects,
             Transit = mining?.Transit(npc),
             Activity = mining?.Activity(
                 npc,
@@ -375,12 +435,11 @@ internal sealed partial class LiveCombatRuntime
             .Where(d => d.VictimId == id)
             .AsNoTracking()
             .ToArray()
-            .ToImmutableDictionary(
-                d => d.AttackerId,
-                d =>
-                    (JsonSerializer.Deserialize<CombatParty>(d.PartyJson) ?? throw new InvalidDataException("Invalid saved attacker.")) with
-                    {
-                        Damage = d.Damage,
-                    }
-            );
+            .ToImmutableDictionary(d => d.AttackerId, ReadContribution);
+
+    private static CombatParty ReadContribution(SavedCombatDamage damage) =>
+        (JsonSerializer.Deserialize<CombatParty>(damage.PartyJson) ?? throw new InvalidDataException("Invalid saved attacker.")) with
+        {
+            Damage = damage.Damage,
+        };
 }

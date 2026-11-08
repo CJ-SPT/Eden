@@ -78,12 +78,21 @@ public sealed class CapsuleerJobQueue
         return true;
     }
 
-    public CapsuleerTurn Run(long throughTicks, Func<CapsuleerJob, CapsuleerJob> execute, TimeProvider clock)
+    public CapsuleerTurn Run(
+        long throughTicks,
+        Func<CapsuleerJob, CapsuleerJob> execute,
+        TimeProvider clock,
+        IReadOnlySet<long>? pilots = null
+    )
     {
         ArgumentOutOfRangeException.ThrowIfNegative(throughTicks);
         long started = clock.GetTimestamp();
         int completed = 0;
-        while (_queue.Min is { } job && job.DueTicks <= throughTicks && completed < ActionsPerTurn)
+        // A scoped barrier selects its relevant jobs once, preserving their deadline ordering.
+        var candidates = pilots is null
+            ? _queue
+            : new SortedSet<CapsuleerJob>(pilots.Where(_jobs.ContainsKey).Select(p => _jobs[p]), _queue.Comparer);
+        while (candidates.Min is { } job && job.DueTicks <= throughTicks && completed < ActionsPerTurn)
         {
             if (completed > 0 && clock.GetElapsedTime(started) >= ExecutionBudget)
             {
@@ -101,11 +110,13 @@ public sealed class CapsuleerJobQueue
                 throw new InvalidOperationException("A completed action must advance its own job and deadline once.");
             }
             _queue.Remove(job);
+            candidates.Remove(job);
             _jobs[job.PilotId] = next;
             Enqueue(next);
+            candidates.Add(next);
             completed++;
         }
-        long? oldest = _queue.Min is { } pending && pending.DueTicks <= throughTicks ? pending.DueTicks : null;
+        long? oldest = candidates.Min is { } pending && pending.DueTicks <= throughTicks ? pending.DueTicks : null;
         return new(completed, _jobs.Count, oldest, clock.GetElapsedTime(started) > ExecutionBudget);
     }
 

@@ -17,7 +17,6 @@ public sealed class SystemSimulationRegistry
     private readonly Dictionary<int, SystemSimulationState> _systems = [];
     private readonly HashSet<int> _observed = [];
     private long _settledTicks;
-    private long _latestSystemTicks;
     public int Count => _systems.Count;
 
     public void Register(int systemId)
@@ -32,11 +31,11 @@ public sealed class SystemSimulationRegistry
 
     public void SettleAll(long throughTicks)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThan(throughTicks, Math.Max(_settledTicks, _latestSystemTicks));
+        ArgumentOutOfRangeException.ThrowIfLessThan(throughTicks, _settledTicks);
         _settledTicks = throughTicks;
         foreach (int system in _observed.ToArray())
         {
-            Settle(system, throughTicks);
+            Settle(system, Math.Max(Get(system).SettledTicks, throughTicks));
         }
     }
 
@@ -74,7 +73,6 @@ public sealed class SystemSimulationRegistry
     {
         var state = Get(systemId);
         ArgumentOutOfRangeException.ThrowIfLessThan(throughTicks, state.SettledTicks);
-        _latestSystemTicks = Math.Max(_latestSystemTicks, throughTicks);
         _systems[systemId] = state with
         {
             Mode = state.Mode switch
@@ -96,7 +94,10 @@ public interface ICapsuleerHandoff
 {
     IReadOnlyList<SystemSimulationState> Systems();
     void Synchronize(Action action);
+    void Synchronize(int systemId, Action action) => Synchronize(action);
     ValueTask SynchronizeAsync(Action action, CancellationToken cancellationToken = default);
+    ValueTask SynchronizeAsync(int systemId, Action action, CancellationToken cancellationToken = default) =>
+        SynchronizeAsync(action, cancellationToken);
     CapsuleerBatch Capture();
 }
 

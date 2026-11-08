@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using Eden.Infrastructure.Diagnostics;
@@ -11,7 +12,7 @@ namespace Eden.Server;
 [Injectable(InjectionType.Singleton)]
 internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptions? options = null)
 {
-    public async Task RunAsync()
+    public async Task RunAsync(long? startupStarted = null)
     {
         using CancellationTokenSource shutdown = new();
         void OnCancel(object? sender, ConsoleCancelEventArgs args)
@@ -22,6 +23,10 @@ internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptio
 
         using TcpListener listener = new(IPAddress.Parse((options ?? new()).ListenAddress), (options ?? new()).GamePort);
         listener.Start();
+        if (startupStarted is { } started)
+        {
+            ServerLog.Console.Information($"Listeners ready after {Stopwatch.GetElapsedTime(started).TotalSeconds:F2}s.");
+        }
         ServerLog.Console.Information($"Eden listening on {listener.LocalEndpoint} for build {CompatibilityHandshake.Build}.");
         Console.CancelKeyPress += OnCancel;
         try

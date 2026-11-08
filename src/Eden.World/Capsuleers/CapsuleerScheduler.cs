@@ -95,6 +95,26 @@ internal sealed class CapsuleerScheduler(
     private readonly Dictionary<long, long> _ships = [];
     private readonly Dictionary<long, long> _pilotShips = [];
     private readonly Dictionary<long, int> _locations = [];
+    private readonly Dictionary<long, (int Source, int Destination)> _routes = [];
+    private readonly Dictionary<int, HashSet<long>> _systemAgents = [];
+
+    private void IndexLocation(long pilot, int system)
+    {
+        if (
+            _locations.TryGetValue(pilot, out int previous)
+            && (!_routes.TryGetValue(pilot, out var route) || previous != route.Source && previous != route.Destination)
+        )
+        {
+            _systemAgents.GetValueOrDefault(previous)?.Remove(pilot);
+        }
+        _locations[pilot] = system;
+        if (!_systemAgents.TryGetValue(system, out var agents))
+        {
+            agents = [];
+            _systemAgents.Add(system, agents);
+        }
+        agents.Add(pilot);
+    }
 
     private sealed record SavedLocation(long PilotId, int StationId, int? SystemId);
 
@@ -128,13 +148,22 @@ internal sealed class CapsuleerScheduler(
         var stations = locations.Where(l => l.SystemId is null).Select(l => l.StationId).Distinct().ToArray();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var systems = stations.ToDictionary(id => id, id => catalog.RequireStation(id).SolarSystemId);
+        foreach (var route in world.Set<SavedCapsuleerHauler>().AsNoTracking())
+        {
+            int source = catalog.RequireStation(route.SourceStationId).SolarSystemId;
+            int destination = catalog.RequireStation(route.DestinationStationId).SolarSystemId;
+            _routes[route.PilotId] = (source, destination);
+            IndexLocation(route.PilotId, source);
+            IndexLocation(route.PilotId, destination);
+        }
         foreach (var location in locations)
         {
-            _locations[location.PilotId] = location.SystemId ?? systems[location.StationId];
+            IndexLocation(location.PilotId, location.SystemId ?? systems[location.StationId]);
         }
         foreach (var job in jobs)
         {
             Current.TryAdd(job.PilotId, job);
+            Live?.ProjectedCapsuleerJobs.TryAdd(job.PilotId, job);
         }
         foreach (var agent in agents)
         {
@@ -155,7 +184,7 @@ internal sealed class CapsuleerScheduler(
 
     public CapsuleerBatch Run(int destinyStamp) => RunThrough(destinyStamp, null);
 
-    private CapsuleerBatch RunThrough(int destinyStamp, long? horizon)
+    private CapsuleerBatch RunThrough(int destinyStamp, long? horizon, int? systemId = null)
     {
         using var owner = Live?.Enter();
         lock (synchronization.Gate)
@@ -165,6 +194,7 @@ internal sealed class CapsuleerScheduler(
             long throughTicks = Math.Min(activity.ElapsedTicks, horizon ?? activity.ElapsedTicks);
             Reconcile(activity);
             Load();
+            HashSet<long>? pilots = systemId is { } target ? _systemAgents.GetValueOrDefault(target) ?? [] : null;
             Dictionary<long, MinerObservation> mining = [];
             Dictionary<long, HaulerObservation> hauling = [];
             CapsuleerTurn turn;
@@ -182,21 +212,21 @@ internal sealed class CapsuleerScheduler(
                         CapsuleerJob next;
                         if (_miners.TryGetValue(job.PilotId, out var miner))
                         {
-                            bool background = !activity.ActiveSystems.Contains(miner.SystemId);
+                            bool background = !activity.ActiveSystems.Contains(_locations[job.PilotId]);
                             next = miner.Execute(job, destinyStamp, activity.ElapsedTicks, activity.Resumes, background);
                             Current[job.PilotId] = next;
                             _completed++;
-                            var observation = miner.Read()!;
+                            var observation = miner.Read(includeHealth: !background)!;
                             mining[job.PilotId] = observation;
                             Blocking(job.PilotId, observation.WaitingReason);
                             _pendingMiners[job.PilotId] = observation;
-                            _locations[job.PilotId] = observation.Pilot.SystemId;
+                            IndexLocation(job.PilotId, observation.Pilot.SystemId);
                             _systems.Register(observation.Pilot.SystemId);
                             RegisterShip(job.PilotId, observation.Pilot.ShipId);
                         }
                         else if (_haulers.TryGetValue(job.PilotId, out var hauler))
                         {
-                            bool background = !activity.ActiveSystems.Contains(hauler.SystemId);
+                            bool background = !activity.ActiveSystems.Contains(_locations[job.PilotId]);
                             next = hauler.Execute(job, destinyStamp, background);
                             Current[job.PilotId] = next;
                             _completed++;
@@ -204,7 +234,7 @@ internal sealed class CapsuleerScheduler(
                             hauling[job.PilotId] = observation;
                             Blocking(job.PilotId, observation.Work.WaitingReason);
                             _pendingHaulers[job.PilotId] = observation;
-                            _locations[job.PilotId] = observation.Pilot.SystemId;
+                            IndexLocation(job.PilotId, observation.Pilot.SystemId);
                             _systems.Register(observation.Pilot.SystemId);
                             RegisterShip(job.PilotId, observation.Pilot.ShipId);
                         }
@@ -215,7 +245,8 @@ internal sealed class CapsuleerScheduler(
                         Current[job.PilotId] = next;
                         return next;
                     },
-                    clock
+                    clock,
+                    pilots
                 );
             }
             catch (Exception error)
@@ -233,7 +264,15 @@ internal sealed class CapsuleerScheduler(
             }
             if (turn.OldestDueTicks is null)
             {
-                Settle(Math.Max(_settledTicks, throughTicks));
+                if (systemId is { } settledSystem)
+                {
+                    _systems.Settle(settledSystem, Math.Max(_systems.Get(settledSystem).SettledTicks, throughTicks));
+                }
+                else
+                {
+                    // Local barriers may already have advanced individual systems.
+                    Settle(Math.Max(_settledTicks, throughTicks));
+                }
             }
             return new(turn, mining.Values.ToArray(), hauling.Values.ToArray());
         }
@@ -274,22 +313,32 @@ internal sealed class CapsuleerScheduler(
     // share ownership; no timer can insert an older action between them.
     // Freeze the entry horizon: an overloaded world must not extend a login's
     // catch-up target every time another bounded turn advances real time.
-    public void Synchronize(Action action)
+    public void Synchronize(Action action) => SynchronizeCore(action, null);
+
+    public void Synchronize(int systemId, Action action) => SynchronizeCore(action, systemId);
+
+    private void SynchronizeCore(Action action, int? systemId)
     {
         long horizon = presence.Read().ElapsedTicks;
-        while (!TrySynchronize(action, horizon))
+        while (!TrySynchronize(action, horizon, systemId))
         {
             Thread.Yield();
         }
     }
 
-    public async ValueTask SynchronizeAsync(Action action, CancellationToken cancellationToken = default)
+    public ValueTask SynchronizeAsync(Action action, CancellationToken cancellationToken = default) =>
+        SynchronizeCoreAsync(action, null, cancellationToken);
+
+    public ValueTask SynchronizeAsync(int systemId, Action action, CancellationToken cancellationToken = default) =>
+        SynchronizeCoreAsync(action, systemId, cancellationToken);
+
+    private async ValueTask SynchronizeCoreAsync(Action action, int? systemId, CancellationToken cancellationToken)
     {
         long horizon = presence.Read().ElapsedTicks;
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (TrySynchronize(action, horizon))
+            if (TrySynchronize(action, horizon, systemId))
             {
                 return;
             }
@@ -297,18 +346,25 @@ internal sealed class CapsuleerScheduler(
         }
     }
 
-    private bool TrySynchronize(Action action, long horizon)
+    private bool TrySynchronize(Action action, long horizon, int? systemId)
     {
         lock (synchronization.Gate)
         {
-            var turn = RunThrough(_destinyStamp, horizon).Turn;
+            var turn = RunThrough(_destinyStamp, horizon, systemId).Turn;
             if (turn.OldestDueTicks is not null)
             {
                 return false;
             }
             action();
             Reconcile(presence.Read());
-            Settle(_settledTicks);
+            if (systemId is { } selected)
+            {
+                _systems.Settle(selected, _systems.Get(selected).SettledTicks);
+            }
+            else
+            {
+                Settle(_settledTicks);
+            }
             return true;
         }
     }
@@ -323,7 +379,8 @@ internal sealed class CapsuleerScheduler(
             foreach (var location in _locations.Where(p => active.Contains(p.Value)))
             {
                 if (
-                    _miners.TryGetValue(location.Key, out var miner) && (miner.Sample(_settledTicks) || _activated.Contains(location.Value))
+                    _miners.TryGetValue(location.Key, out var miner)
+                    && (miner.Sample(_systems.Get(location.Value).SettledTicks) || _activated.Contains(location.Value))
                 )
                 {
                     var observation = miner.Read()!;
@@ -331,7 +388,7 @@ internal sealed class CapsuleerScheduler(
                 }
                 if (
                     _haulers.TryGetValue(location.Key, out var hauler)
-                    && (hauler.Sample(_settledTicks) || _activated.Contains(location.Value))
+                    && (hauler.Sample(_systems.Get(location.Value).SettledTicks) || _activated.Contains(location.Value))
                 )
                 {
                     var observation = hauler.Read()!;

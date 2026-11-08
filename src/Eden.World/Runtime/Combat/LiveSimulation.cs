@@ -122,6 +122,7 @@ internal sealed partial class LiveCombatRuntime
             });
             _systemNpcs[system] = ids;
         }
+        LoadNpcs(ids.Where(id => !_npcs.ContainsKey(id) || _staleNpcs.Contains(id)).ToArray(), now);
         return ids.Select(id => Npc(id, now)).OfType<LiveCombatNpc>().Where(n => n.Available && n.SystemId == system).ToArray();
     }
 

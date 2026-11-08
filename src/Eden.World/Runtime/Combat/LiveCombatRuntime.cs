@@ -526,7 +526,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     _savedPositions.Remove(change.Id);
                     _acquisitionShips.Clear();
                     _acquisitions.Clear();
-                    goto case "WorldShipHealth";
+                    break;
                 case "WorldShipHealth":
                 case "WorldShipEnergy":
                     if (_shipPilots.TryGetValue(change.Id, out long pilot))

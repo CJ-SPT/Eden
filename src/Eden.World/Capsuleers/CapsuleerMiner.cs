@@ -125,13 +125,13 @@ internal sealed class CapsuleerMiner(
         }
     }
 
-    internal MinerObservation? Read()
+    internal MinerObservation? Read(bool includeHealth = true)
     {
         if (!_loaded)
         {
             Load();
         }
-        return _pilot is null ? null : Observation();
+        return _pilot is null ? null : Observation(includeHealth);
     }
 
     internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes, bool background = false)
@@ -313,7 +313,8 @@ internal sealed class CapsuleerMiner(
         return true;
     }
 
-    private MinerObservation Observation() => new(Pilot, Work, _laser, Work.WaitingReason) { Health = health.Read(pilotId, Now) };
+    private MinerObservation Observation(bool includeHealth) =>
+        new(Pilot, Work, _laser, Work.WaitingReason) { Health = includeHealth ? health.Read(pilotId, Now) : null };
 
     private void ObserveDanger(int destinyStamp)
     {

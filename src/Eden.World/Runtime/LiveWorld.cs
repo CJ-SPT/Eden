@@ -94,6 +94,12 @@ internal sealed class LiveWorld : IDisposable
     internal long CapsuleerRevision { get; private set; }
     internal Dictionary<long, long> CapsuleerHullRevisions { get; } = [];
     internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];
+
+    // These versions describe the resident SQL image, which is the source for every backup.
+    // Successful file saves cannot clear differences that have not reached that image.
+    internal Dictionary<long, CapsuleerJob> ProjectedCapsuleerJobs { get; } = [];
+    internal Dictionary<long, MinerCheckpoint> ProjectedMiners { get; } = [];
+    internal Dictionary<long, HaulerCheckpoint> ProjectedHaulers { get; } = [];
     internal Dictionary<long, MinerCheckpoint> MinerCheckpoints { get; } = [];
     internal Dictionary<long, HaulerCheckpoint> HaulerCheckpoints { get; } = [];
     internal MinerCheckpoint? MinerCheckpoint => MinerCheckpoints.Values.FirstOrDefault();
@@ -380,10 +386,12 @@ internal sealed class LiveWorld : IDisposable
                     Stopwatch.GetElapsedTime(started),
                     Heat.Capture(),
                     Tractors.Capture(),
-                    MinerCheckpoints.Values.ToArray(),
-                    HaulerCheckpoints.Values.ToArray(),
+                    MinerCheckpoints.Values.Where(m => ProjectedMiners.GetValueOrDefault(m.PilotId) != m).ToArray(),
+                    HaulerCheckpoints.Values.Where(h => ProjectedHaulers.GetValueOrDefault(h.PilotId) != h).ToArray(),
                     activity,
-                    new CapsuleerJobCheckpoint(CapsuleerJobs.Values.ToArray())
+                    new CapsuleerJobCheckpoint(
+                        CapsuleerJobs.Values.Where(j => ProjectedCapsuleerJobs.GetValueOrDefault(j.PilotId) != j).ToArray()
+                    )
                 );
             }
             catch

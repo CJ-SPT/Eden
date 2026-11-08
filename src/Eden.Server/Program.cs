@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using Eden.Gameplay.Redemption;
@@ -64,6 +65,7 @@ internal static class Program
             int index = Array.IndexOf(args, option);
             return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
         }
+        long startupStarted = Stopwatch.GetTimestamp();
         string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
         string worldPath = Path.GetFullPath(Value("--world") ?? Path.Combine(directory, "world.sqlite"));
         foreach (string option in new[] { "--set-admin-password", "--admin-port" })
@@ -132,12 +134,17 @@ internal static class Program
         {
             Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
             using FileStream startupOwnership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            long reconciliationStarted = Stopwatch.GetTimestamp();
             WorldInitialization.Initialize(
                 new WorldDatabase(worldPath),
                 economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null,
                 economics: economicConfiguration
             );
+            ServerLog.Console.Information(
+                $"World reconciliation completed in {Stopwatch.GetElapsedTime(reconciliationStarted).TotalSeconds:F2}s."
+            );
         }
+        long hostStarted = Stopwatch.GetTimestamp();
         // Ticket preparation signs a local claim without opening the saved world.
         using var services = ServerServices.Build(
             new WorldDatabase(worldPath),
@@ -145,6 +152,7 @@ internal static class Program
             liveWorld: preparationRoot is null,
             loadConfiguration: preparationRoot is null
         );
+        ServerLog.Console.Information($"Host creation completed in {Stopwatch.GetElapsedTime(hostStarted).TotalSeconds:F2}s.");
         if (preparationRoot is { } root)
         {
             if (!OperatingSystem.IsWindows())
@@ -227,7 +235,7 @@ internal static class Program
         ServerLog.Console.Information($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
         try
         {
-            await services.GetRequiredService<LoopbackServer>().RunAsync();
+            await services.GetRequiredService<LoopbackServer>().RunAsync(startupStarted);
         }
         finally
         {

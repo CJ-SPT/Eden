@@ -46,24 +46,27 @@ internal static class CapsuleerProvisioningCatalog
         CatalogDbContext catalog,
         bool enabled,
         IReadOnlyDictionary<int, int> establishedHomes,
-        bool origins
+        bool origins,
+        IReadOnlySet<int>? selectedSystems = null
     )
     {
         bool equipment =
             catalog.FittingType(CapsuleerCommunityStore.VentureType) is not null
             && catalog.FittingType(HaulingRules.BadgerType) is not null
             && catalog.FittingType((int)MiningLaserType.MinerI) is not null;
-        var security = catalog.Definitions.Systems.Keys.ToDictionary(
-            id => id,
-            id => catalog.Read(CatalogData.Client.Solarsystemcontent, (long)id)?.Security
-        );
+        var content = catalog.ReadMany(CatalogData.Client.Solarsystemcontent, catalog.Definitions.Systems.Keys.Select(id => (long)id));
+        var security = catalog.Definitions.Systems.Keys.ToDictionary(id => id, id => content.GetValueOrDefault(id)?.Security);
+        // Eligibility visits every supported belt. Read that dataset once for this catalog generation.
+        _ = catalog.Records(CatalogData.Client.Asteroidcountbytypeidbeltid);
         var markets = catalog
             .Stations()
             .Where(s => StationCapabilities.Has(catalog, s.OperationId, StationService.Market))
             .GroupBy(s => s.SolarSystemId)
             .ToDictionary(g => g.Key, g => g.OrderBy(s => s.Id).ToArray());
         List<CapsuleerSite> sites = [];
-        foreach (int system in catalog.Definitions.Systems.Keys.Order())
+        foreach (
+            int system in catalog.Definitions.Systems.Keys.Where(id => selectedSystems is null || selectedSystems.Contains(id)).Order()
+        )
         {
             var stations = markets.GetValueOrDefault(system) ?? [];
             int? home = establishedHomes.TryGetValue(system, out int saved) ? saved : stations.FirstOrDefault()?.Id;

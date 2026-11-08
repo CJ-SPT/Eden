@@ -367,11 +367,16 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         }
         npc.Navigation = NpcNavigationState.Idle;
         (npc.VelocityX, npc.VelocityY, npc.VelocityZ) = (0, 0, 0);
-        if (member.MiningDueAt is long due && now >= due)
+        if (member.MiningDueAt is long pending && now < pending)
+        {
+            return;
+        }
+        double cargoVolume = CargoVolume(world, catalog, npc.Id);
+        if (member.MiningDueAt is not null)
         {
             long quantity = NpcMiningRules.Extract(
                 laser.Amount,
-                hull.Capacity - CargoVolume(world, catalog, npc.Id),
+                hull.Capacity - cargoVolume,
                 OreVolume(catalog, rock.TypeId),
                 rock.Quantity
             );
@@ -380,11 +385,12 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
                 ?? world.Add(new WorldNpcMiningCargo { NpcId = npc.Id, TypeId = rock.TypeId }).Entity;
             cargo.Quantity = checked(cargo.Quantity + quantity);
             rock.Quantity -= quantity;
+            cargoVolume += quantity * OreVolume(catalog, rock.TypeId);
             member.MiningDueAt = null;
             member.MiningStartedAt = null;
             world.SaveChanges();
         }
-        if (member.MiningDueAt is not null || CargoVolume(world, catalog, npc.Id) >= hull.Capacity || rock.Quantity <= 0)
+        if (cargoVolume >= hull.Capacity || rock.Quantity <= 0)
         {
             return;
         }

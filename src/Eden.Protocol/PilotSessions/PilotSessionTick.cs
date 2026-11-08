@@ -34,9 +34,9 @@ internal sealed class PilotSessionTick(
         using var operation = operations?.Begin();
         using var performance = SessionPerformance.Begin("tick", diagnostics?.Trace ?? report);
         long started = Stopwatch.GetTimestamp();
-        if (handoff is not null)
+        if (handoff is not null && context.Selected)
         {
-            await handoff.SynchronizeAsync(() => presentation?.Refresh());
+            await handoff.SynchronizeAsync(context.Pilot.SystemId, () => presentation?.Refresh());
         }
         if (!context.Selected)
         {

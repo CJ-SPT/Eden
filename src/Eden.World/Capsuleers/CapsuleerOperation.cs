@@ -59,6 +59,18 @@ internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob ex
             }
             world.SaveChanges();
             _transaction!.Commit();
+            if (live is not null)
+            {
+                live.ProjectedCapsuleerJobs[next.PilotId] = next;
+                if (miner is not null)
+                {
+                    live.ProjectedMiners[miner.PilotId] = miner;
+                }
+                if (hauler is not null)
+                {
+                    live.ProjectedHaulers[hauler.PilotId] = hauler;
+                }
+            }
         }
         Dispose();
         if (live is not null)

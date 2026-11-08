@@ -29,16 +29,18 @@ internal static class SavedWorldValidation
         {
             throw new InvalidDataException("Save references an unknown skill or training multiplier.");
         }
+        var knownTypes = catalog.Definitions.Items.Keys.ToHashSet();
         foreach (int type in world.Ships.Select(s => s.TypeId).Distinct())
         {
-            if (!catalog.Set<ItemType>().Any(t => t.Id == type))
+            if (!knownTypes.Contains(type))
             {
                 throw new InvalidDataException($"Save references unknown ship type {type}.");
             }
         }
+        var knownStations = catalog.Definitions.Stations.Keys.ToHashSet();
         foreach (int station in world.Ships.Select(s => s.StationId).Distinct())
         {
-            if (!catalog.Set<Station>().Any(s => s.Id == station))
+            if (!knownStations.Contains(station))
             {
                 throw new InvalidDataException($"Save references unknown station {station}.");
             }

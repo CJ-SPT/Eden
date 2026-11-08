@@ -275,6 +275,9 @@ public sealed class LiveSimulationTests
             Advance(1);
             Assert.Equal(1, cold.TackleReads);
             Assert.Equal(1, cold.AggressionReads);
+            // Both population sizes hydrate the same four batched NPC datasets.
+            Assert.InRange(cold.Commands, 1, 20);
+            Assert.InRange(cold.Connections, 1, 12);
         }
         Assert.Equal(count, encounters.List(f.Npc.SystemId, f.Clock.Now).Count);
         f.Combat.Acquire([new(pilot.PilotId, pilot.ShipId)], f.Clock.Now);

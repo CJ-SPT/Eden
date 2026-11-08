@@ -42,6 +42,9 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
     private CapsuleerProvisioningTurn Provision(int limit, CancellationToken cancellationToken)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
+        // Local catalog edits can preserve the imported source fingerprint.
+        FileInfo catalogFile = new(database.CatalogPath);
+        string fingerprint = $"{catalog.Definitions.Identity.SourceFingerprint}|{catalogFile.Length}|{catalogFile.LastWriteTimeUtc.Ticks}";
         long seed;
         Dictionary<int, int> homes;
         using (WorldDbContext world = new(database.Path))
@@ -58,10 +61,27 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
             homes = world.Set<SavedCapsuleerPopulation>().ToDictionary(c => c.SystemId, c => c.HomeStationId);
             transaction.Commit();
         }
-        var origins = CapsuleerProvisioningCatalog.Origins(catalog);
-        var sites = CapsuleerProvisioningCatalog.Plan(catalog, database.Settings.Capsuleers.GlobalProvisioning, homes, origins.Length != 0);
+        SavedCapsuleerSystem[] saved;
         using (WorldDbContext world = new(database.Path))
         {
+            saved = world.Set<SavedCapsuleerSystem>().AsNoTracking().ToArray();
+        }
+        bool enabled = database.Settings.Capsuleers.GlobalProvisioning;
+        bool reusable =
+            saved.Length == catalog.Definitions.Systems.Count
+            && saved.All(s =>
+                catalog.Definitions.Systems.ContainsKey(s.SystemId)
+                && s.CatalogFingerprint == fingerprint
+                && s.PolicyVersion == CapsuleerProvisioningRules.Version
+                && (s.Eligibility == CapsuleerEligibility.Disabled) == !enabled
+            );
+        var origins = reusable ? [] : CapsuleerProvisioningCatalog.Origins(catalog);
+        var sites = reusable
+            ? saved.Select(s => new CapsuleerSite(s.SystemId, s.Eligibility, s.HomeStationId, s.DestinationStationId)).ToArray()
+            : CapsuleerProvisioningCatalog.Plan(catalog, enabled, homes, origins.Length != 0);
+        if (!reusable)
+        {
+            using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();
             var records = world.Set<SavedCapsuleerSystem>().ToDictionary(s => s.SystemId);
             foreach (var site in sites)
@@ -75,7 +95,7 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 record.Eligibility = site.Eligibility;
                 record.HomeStationId = site.HomeStationId;
                 record.DestinationStationId = site.DestinationStationId;
-                record.CatalogFingerprint = catalog.Definitions.Identity.SourceFingerprint;
+                record.CatalogFingerprint = fingerprint;
                 record.PolicyVersion = CapsuleerProvisioningRules.Version;
             }
             world.SaveChanges();
@@ -93,6 +113,32 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         }
         int created = 0;
         int pending = 0;
+        if (reusable && enabled)
+        {
+            // Depleted saved fields may have renewed since the previous attempt.
+            var deferred = saved
+                .Where(s => s.Eligibility == CapsuleerEligibility.NoUsableOre && !complete.Contains(s.SystemId))
+                .Select(s => s.SystemId)
+                .ToArray();
+            using WorldDbContext world = new(database.Path);
+            var replenished = world
+                .Set<WorldAsteroid>()
+                .Where(a => deferred.Contains(a.SystemId) && a.Quantity > 0)
+                .Select(a => new { a.SystemId, a.TypeId })
+                .Distinct()
+                .AsEnumerable()
+                .Where(a => CapsuleerProvisioningCatalog.SupportedOre(catalog, a.TypeId))
+                .Select(a => a.SystemId)
+                .ToHashSet();
+            if (replenished.Count > 0)
+            {
+                origins = CapsuleerProvisioningCatalog.Origins(catalog);
+                var reconsidered = CapsuleerProvisioningCatalog
+                    .Plan(catalog, enabled, homes, origins.Length != 0, replenished)
+                    .ToDictionary(s => s.SystemId);
+                sites = sites.Select(s => reconsidered.GetValueOrDefault(s.SystemId) ?? s).ToArray();
+            }
+        }
         foreach (var site in sites.Where(s => s.Eligibility == CapsuleerEligibility.Eligible))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -129,6 +175,11 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 transaction.Commit();
                 continue;
             }
+            if (origins.Length == 0)
+            {
+                origins = CapsuleerProvisioningCatalog.Origins(catalog);
+            }
+            world.Set<SavedCapsuleerSystem>().Single(s => s.SystemId == site.SystemId).Eligibility = CapsuleerEligibility.Eligible;
             EnsureAccount(world);
             var population = world.Set<SavedCapsuleerPopulation>().Find(site.SystemId);
             if (population is null)
