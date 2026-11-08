@@ -353,6 +353,7 @@ internal sealed partial class LiveCombatRuntime
             GroupId = type.GroupId,
             CategoryId = type.CategoryId,
             Name = type.Name,
+            StandingThresholds = profile.StandingThresholds,
             MissileRange = missileRange,
             RepairProfile = NpcRepairRules.Profile(attributes),
             RepairState = new(npc.ShieldRepairAt, npc.ArmorRepairAt, npc.RepairRevision),

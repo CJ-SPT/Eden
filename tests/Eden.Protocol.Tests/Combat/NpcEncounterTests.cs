@@ -90,11 +90,22 @@ public sealed class NpcEncounterTests
         Assert.Equal(10000003500, results[0][0].Position.X);
     }
 
-    [Fact]
-    public void PirateSlimsRetainTheirCatalogStandingThresholds()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PirateSlimsRetainTheirCatalogStandingThresholds(bool resident)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: resident);
         Prepare(db);
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/spacecomponentsbytype','30380',
+                    '{{"entityStandings":{{"hostileResponseThreshold":-2.5,"friendlyResponseThreshold":4.5}}}}');
+                """
+            );
+        }
         var pirates = db.Services.GetRequiredService<INpcEncounters>().List(30000144, s_now);
         Assert.NotEmpty(pirates);
         var addition = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(Ballpark.AddNpcs(pirates, 1))), 3);
@@ -103,8 +114,8 @@ public sealed class NpcEncounterTests
             item =>
             {
                 var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(item).State);
-                Assert.DoesNotContain("hostile_response_threshold", fields.Keys);
-                Assert.DoesNotContain("friendly_response_threshold", fields.Keys);
+                Assert.Equal(-2.5, Assert.IsType<double>(fields["hostile_response_threshold"]));
+                Assert.Equal(4.5, Assert.IsType<double>(fields["friendly_response_threshold"]));
             }
         );
     }

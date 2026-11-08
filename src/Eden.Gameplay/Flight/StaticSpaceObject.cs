@@ -15,6 +15,7 @@ public sealed record StaticSpaceObject(
 )
 {
     public bool Solid { get; init; } = true;
+    public bool IsGlobal { get; init; } = true;
 }
 
 public interface ISystemObjects

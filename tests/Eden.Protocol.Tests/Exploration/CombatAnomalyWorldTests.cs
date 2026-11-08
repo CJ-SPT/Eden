@@ -37,6 +37,7 @@ public sealed class CombatAnomalyWorldTests
         foreach (var definition in definitions)
         {
             Assert.NotEmpty(definition.Waves);
+            Assert.All(definition.Objects, body => Assert.False(body.IsGlobal));
             Assert.True(definition.Waves.Length * AnomalyEncounterRules.MembersPerWave < AnomalyEncounterRules.NpcsPerSite);
             Assert.True(definition.Objects.Length < AnomalyEncounterRules.ObjectsPerSite);
             Assert.True(definition.CorporationId > 0);

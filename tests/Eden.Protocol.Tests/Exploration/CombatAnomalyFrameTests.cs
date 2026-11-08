@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Exploration;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
@@ -13,7 +14,9 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Combat;
 using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
 using Eden.World.Exploration;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,8 +24,56 @@ using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Exploration;
 
-public sealed class DroneAnomalyProtocolTests(ITestOutputHelper output)
+public sealed class CombatAnomalyFrameTests(ITestOutputHelper output)
 {
+    [Fact]
+    public void DestroyedAnomalyMembersDoNotScheduleRegionalPopulationRetries()
+    {
+        using NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);
+        var database = new WorldDatabase(fixture.Db.Path);
+        PassiveCatalogFixture.LoadCombatAnomalyWorld(database.CatalogPath);
+        SpacePosition origin = new(1e12, 1e12, 1e12);
+        using (WorldDbContext world = new(database.Path))
+        {
+            world.Add(
+                new WorldCombatAnomaly
+                {
+                    Id = CombatAnomalyRules.FirstSiteId,
+                    SystemId = CombatAnomalyRules.SystemId,
+                    DungeonId = 3454,
+                    DefinitionVersion = 1,
+                    X = origin.X,
+                    Y = origin.Y,
+                    Z = origin.Z,
+                }
+            );
+            world.SaveChanges();
+        }
+        new CombatAnomalyStore(database).Arrive(CombatAnomalyRules.SystemId, origin, fixture.Clock.Now);
+        using (WorldDbContext world = new(database.Path))
+        {
+            var npc = world.Set<WorldNpc>().First(n => n.EncounterId == CombatAnomalyRules.FirstSiteId);
+            npc.DestroyedAt = fixture.Clock.Now;
+            world.SaveChanges();
+        }
+        fixture.Clock.Seconds += NpcEncounterDefinitions.RespawnSeconds + 1;
+        using (WorldDbContext world = new(database.Path))
+        {
+            Assert.Equal(long.MaxValue, NpcPopulationSchedule.Next(world, CombatAnomalyRules.SystemId, fixture.Clock.Now));
+        }
+        var encounters = fixture.Db.Services.GetRequiredService<INpcEncounters>();
+        var initial = encounters.List(CombatAnomalyRules.SystemId, fixture.Clock.Now);
+        using var metrics = SessionPerformance.Begin("anomaly population retries", _ => { }, force: true)!;
+        for (int second = 0; second < 10; second++)
+        {
+            fixture.Clock.Seconds++;
+            Assert.Equal(initial.Select(n => n.Id), encounters.List(CombatAnomalyRules.SystemId, fixture.Clock.Now).Select(n => n.Id));
+        }
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
     private sealed class EmptyAsteroids : IAsteroidField
     {
         public IReadOnlyList<StaticSpaceObject> List(int systemId) => [];
@@ -31,7 +82,8 @@ public sealed class DroneAnomalyProtocolTests(ITestOutputHelper output)
     [Theory]
     [InlineData(2351)]
     [InlineData(2352)]
-    public async Task DroneHordeFramesDeliverDamageWithoutRepeatedSceneLoadsOrPacketFloods(int dungeonId)
+    [InlineData(3454)]
+    public async Task CombatSiteFramesDeliverDamageWithoutRepeatedSceneLoadsOrPacketFloods(int dungeonId)
     {
         using NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);
         var database = new WorldDatabase(fixture.Db.Path);
@@ -60,6 +112,24 @@ public sealed class DroneAnomalyProtocolTests(ITestOutputHelper output)
         }
         CombatAnomalyStore sites = new(database);
         sites.Arrive(CombatAnomalyRules.SystemId, origin, fixture.Clock.Now);
+        // An earlier wave's loss remains in the ledger after the regional
+        // respawn interval. It must not force population reloads each frame.
+        using (WorldDbContext world = new(database.Path))
+        {
+            world.Add(
+                new WorldNpc
+                {
+                    TypeId = fixture.Npc.TypeId,
+                    SystemId = CombatAnomalyRules.SystemId,
+                    EncounterId = CombatAnomalyRules.FirstSiteId,
+                    AnchorKind = NpcAnchorKind.Anomaly,
+                    SpawnSlot = 900,
+                    DestroyedAt = fixture.Clock.Now,
+                }
+            );
+            world.SaveChanges();
+        }
+        fixture.Clock.Seconds += NpcEncounterDefinitions.RespawnSeconds + 1;
         using (CatalogDbContext catalog = new(database.CatalogPath))
         {
             origin += CombatAnomalyCatalog.Find(catalog, dungeonId)!.Spawner + new SpacePosition(1000, 0, 0);
@@ -79,6 +149,9 @@ public sealed class DroneAnomalyProtocolTests(ITestOutputHelper output)
         );
         context.Select(pilot);
         context.Flight.Snapshot();
+        var router = services.GetRequiredService<PilotCallRouter>();
+        Assert.IsType<PilotCallResult.Success>(router.Call(context, "onlineStatus", "GetInitialState", Array.Empty<object?>(), _ => { }));
+        Assert.IsType<PilotCallResult.Success>(router.Call(context, "userSvc", "GetRedeemTokens", Array.Empty<object?>(), _ => { }));
         CombatAnomalyHandler anomalies = new(sites, fixture.Clock);
         PilotSessionTick tick = new(
             fixture.Clock,
@@ -143,13 +216,14 @@ public sealed class DroneAnomalyProtocolTests(ITestOutputHelper output)
         int commands = 0;
         int connections = 0;
         int fits = 0;
+        long firstSecond = fixture.Clock.Seconds;
         for (int second = 1; second <= 35; second++)
         {
-            fixture.Clock.Seconds = second;
+            fixture.Clock.Seconds = firstSecond + second;
             frameBytes = 0;
             framePackets = 0;
             additions = 0;
-            using var metrics = SessionPerformance.Begin("drone-anomaly-frame", _ => { }, force: true)!;
+            using var metrics = SessionPerformance.Begin("combat-anomaly-frame", _ => { }, force: true)!;
             long start = Stopwatch.GetTimestamp();
             await tick.AdvanceAsync(context, transport, _ => { }, 1000001, 42);
             if (second <= 5)
@@ -171,6 +245,15 @@ public sealed class DroneAnomalyProtocolTests(ITestOutputHelper output)
             $"Dungeon={dungeonId}, frames={milliseconds.Count}, damage={damage}, integratedDamage={integratedDamage}, "
                 + $"maxBytes={maxBytes}, maxPackets={maxPackets}, "
                 + $"p95Ms={milliseconds.Order().ElementAt(28):F2}, SQL={commands}, connections={connections}, fits={fits}"
+        );
+        var owner = LiveWorld.Find(database.Path)!;
+        owner.MeasureCheckpoints = true;
+        await owner.FlushAsync();
+        var checkpoint = owner.LastCheckpoint!;
+        output.WriteLine(
+            $"Checkpoint: captureMs={checkpoint.Capture.TotalMilliseconds:F2}, "
+                + $"projectionMs={checkpoint.Projection.TotalMilliseconds:F2}, writeMs={checkpoint.Write.TotalMilliseconds:F2}, "
+                + $"SQL={checkpoint.Commands}, connections={checkpoint.Connections}"
         );
         if (dungeonId == 2352)
         {

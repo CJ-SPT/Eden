@@ -16,6 +16,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -151,7 +152,8 @@ public sealed class NpcConvoyTests
         Assert.True(moved.Position.DistanceTo(first.Navigation!.Destination!) < first.Position.DistanceTo(first.Navigation.Destination!));
         db.Store.Advance(SystemId, 2, Now + TimeSpan.TicksPerSecond, [], []);
         Assert.Equal(moved, Convoys(db, Now + TimeSpan.TicksPerSecond).Single(n => n.Id == first.Id));
-        _ = WorldInitialization.Open(db.Path);
+        db.Services.GetService<LiveWorld>()?.Dispose();
+        WorldInitialization.Initialize(new(db.Path), new TestClock(DateTimeOffset.FromFileTime(Now + TimeSpan.TicksPerSecond)));
         Assert.Equal(traffic.Select(n => n.Id), Convoys(db, Now + TimeSpan.TicksPerSecond).Select(n => n.Id));
     }
 
@@ -208,7 +210,8 @@ public sealed class NpcConvoyTests
         Assert.All(removals, r => Assert.False(r.Explode));
         long replacementAt = Deadline(db);
         Assert.Equal(due + NpcConvoyRules.CooldownSeconds * TimeSpan.TicksPerSecond, replacementAt);
-        _ = WorldInitialization.Open(db.Path);
+        db.Services.GetService<LiveWorld>()?.Dispose();
+        WorldInitialization.Initialize(new(db.Path), clock);
         Assert.Empty(Convoys(db, replacementAt - 1));
         clock.AdvanceWallTime(TimeSpan.FromTicks(replacementAt - clock.Now));
         flight.RefreshNpcs();
@@ -256,7 +259,8 @@ public sealed class NpcConvoyTests
         Assert.Empty(saved.Set<WorldNpcEwar>());
         Assert.DoesNotContain(saved.Set<WorldMissile>(), m => m.SourceShipId == target.Id);
         var remaining = Convoys(f.Db, f.Clock.Now).Single(n => n.Id == target.Id).Health.Remaining;
-        _ = WorldInitialization.Open(f.Db.Path);
+        f.Db.Services.GetService<LiveWorld>()?.Dispose();
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         Assert.Equal(remaining, Convoys(f.Db, f.Clock.Now).Single(n => n.Id == target.Id).Health.Remaining);
     }
 

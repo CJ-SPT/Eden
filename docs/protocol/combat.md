@@ -911,3 +911,164 @@ An expanded run was interrupted after two unchanged connection-count assertions 
 and observed one. Both failures reproduced on parent `cd817d3`. The test now preserves its two-connection
 ceiling while accepting the shared catalog cache avoiding the second connection. Tackle and aggression
 read-count assertions remain exact. Full .NET regression was not requested or run.
+
+## Local anomaly scenery visibility (November 8, 2026)
+
+The maintainer reported roughly 45 FPS in a combat site and a steady 300 FPS at the star. A later supplied
+frame graph shows approximately 158 FPS in a Guristas Forlorn Hub with lower site-dependent plateaus.
+Those observations establish a scene-dependent difference, not its cause. A passive process sample found
+one client thread near one core of CPU usage and roughly 16–18 percent client 3D-engine GPU utilization.
+No game input, interactive acceptance or client-code execution was performed by the agent.
+
+An actual protocol mismatch was identified: `Ballpark.WriteObject` marked every non-asteroid static object
+global, including all anomaly room scenery. Carbon's global bit means visibility from every ball, and its
+client position path has special handling for global objects. The pinned client also launches
+`SpaceObject._GlobalObjectHandlerThread` for global models of native type `EveStation2`. That handler
+rechecks distance and changes model mute/display/update state once a second. Local encounter objects
+should not enter that system-wide path.
+
+`StaticSpaceObject` now carries explicit global visibility, with the existing default retained for system
+celestials. Catalog anomaly objects opt out. The native Global flag follows that property, while asteroids
+retain their existing local behavior. Geometry, object identities, supported scenery, collision flags and
+the rigid-ball binary layout are unchanged. All 199 encounter definitions are checked for local objects,
+and packet tests cover local/global, solid/non-solid and asteroid cases. The session-frame replay now
+also covers Guristas Forlorn Hub dungeon 3454 alongside Drone Horde dungeons 2351 and 2352.
+
+Sources: inert inspection of pinned build 3662168 `SpaceObject._AddModelToScene` and
+`SpaceObject._GlobalObjectHandlerThread`, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`;
+[Carbon Destiny Ball.h](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ball.h),
+[Ball.cpp](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ball.cpp)
+and `IDstConstants.h` at revision `114e89fa584f0e1a81eb0a679aabf41af8870072`.
+[EVE University's performance guide](https://wiki.eveuniversity.org/Optimizing_client_performance)
+also distinguishes scene and bracket costs, but its settings advice does not establish this defect's FPS impact.
+
+The layout regression failed on global scenery before the catalog correction and passed afterward.
+This removes incorrect global visibility and associated native handler eligibility. It does not establish
+an FPS improvement or identify every source of client CPU work. Live acceptance: Not performed; agent
+client testing is disabled. Optional maintainer check: rebuild/restart the server and re-enter the same
+site with the same camera and settings, comparing FPS with the star and the pre-change scene.
+
+The maintainer supplied another frame graph with the recurring FPS steps after a server restart. The
+running Protocol and World assemblies included the new visibility getter and setter. Consequently this
+correction has not resolved the reported FPS behavior. Further diagnosis must distinguish bracket/UI
+work from 3D scene work; native default toggles were verified as Alt+Shift+Z for hiding brackets and
+Ctrl+Shift+F9 for the 3D view. No claim of a rendering-speed improvement is made.
+
+Automated validation passed tool/solution restore, a solution build with zero warnings/errors, and 133
+focused .NET cases in 57.58 seconds including test-host startup. Both Python policy suites passed
+(8 catalog and 9 formatting cases), as did formatting verification. The .NET filter was:
+
+```text
+FullyQualifiedName~CombatAnomaly|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~TranslocationTests|FullyQualifiedName~NpcSceneUpdateTests
+```
+
+Full .NET regression was not requested or run.
+
+## NPC overview error loop and resident polling (November 8, 2026)
+
+The maintainer continued to observe periodic FPS steps while idle in a capsule. Disabling brackets and
+the 3D view had not resolved the issue. A later focused screenshot explicitly showed no FPS throttling,
+so background-window throttling did not explain the recurring pattern. The earlier global-scenery
+correction remains valid but did not resolve these steps.
+
+A passive sample of the already-running native client found the busiest thread using approximately
+938 ms of CPU in one second. Of 100 instruction-pointer samples, 41 landed in `_trinity_dx11.dll` and
+30 in `python27.dll`; none landed in `_destiny.dll`. These coarse samples do not assign all rendering
+costs to any individual model. A separate 400-sample read of Python frame names found 77 samples in
+Sentry error serialization; 43 samples retained the complete standing-error caller chain. The repeating caller was:
+
+```text
+overviewPulse.update_thread -> overviewWindow.OnVisibleEntryUpdatePulse -> LoadVisibleEntries
+overviewScrollEntry.Load -> UpdateColumns -> UpdateIconColor -> bracketVarious.GetIconColor
+entitystandings.get_icon_color_sort_value_and_hint_for_owner_standing
+entitystandings._get_icon_color_and_hint_from_entity_standing_response -> logger.error -> Sentry
+```
+
+Inert inspection of build 3662168 confirmed that missing or None `hostile_response_threshold` makes
+that last method load the catalog defaults and log an error on every overview refresh. Ordinary pirate
+and convoy slim items omitted both threshold fields; guard and mining slim items already provided them.
+The client serializes the error report synchronously, including expensive UI-object representations.
+Hiding brackets leaves the overview refresh active, explaining why that earlier experiment did not
+remove this work.
+
+NPC hull profiles now read typed `entityStandings` thresholds from `client/spacecomponentsbytype` once
+per catalog generation. Both legacy and resident contacts carry those values into their native slim
+items. Every NPC slim supplies finite numeric hostile/friendly thresholds. The build-specific fallback
+for types without the component is 11/11 for hostile pirates and -11/-11 for civilian convoys; existing
+guard and mining response policies remain explicit. Automated round trips verify non-default catalog
+values in both runtimes and default role values. The anomaly fixture includes only the relevant
+standing component, rather than unrelated behavior trees. No client script or model was modified.
+
+Two independent server costs were also corrected. Contacts/watchlist, pending redeem tokens and
+corporation-wallet division reads now use the existing bounded resident snapshots, keyed by their
+actual table dependencies. Committed contact, block, role, title, membership and balance changes
+invalidate them; rolled-back writes cannot publish cached values. Token expiry retains its exact
+saved deadline, including subsecond reads. Claim, trash, reversal and reopened-checkpoint cases are
+covered. Destroyed NPCs anchored to anomalies no longer enter the regional belt/guard respawn
+schedule. Previously, an old anomaly loss could leave that schedule due forever and reload/project
+the population every second, even while a capsule was idle.
+
+The same 35-second active-site replay, with five warmup ticks and an old anomaly loss retained, showed
+the direct/sentry Drone Horde layout fall from 1,318 SQL commands and 460 connections to zero across
+30 measured frames. Its diagnostic p95 fell from 12.83 ms to approximately 1 ms. Active missile layouts
+still use their existing transactional missile paths and are not SQL-free. These timings measure
+automated server/session work, not native FPS. Idle-capsule replays use the normal flight factory,
+background monitors, encoded output and a second remote observer, covering an empty grid and the
+Guristas Forlorn Hub both near and away from scenery. Checkpoint capture/projection/writing is
+measured separately.
+
+The identical idle replay on baseline `19584b7` and the correction had these deterministic budgets
+across 30 measured two-session frames:
+
+| Idle scene | Baseline SQL / connections | Corrected SQL / connections | Outgoing bytes per frame, both |
+| --- | --- | --- | --- |
+| Empty grid | 360 / 360 | 0 / 0 | 0 |
+| Populated site, away from scenery | 1,380 / 540 | 0 / 0 | 0 |
+| Populated site, near scenery | 1,380 / 540 | 0 / 0 | 0 |
+
+All three corrected cases also have zero fitting calculations. The lack of outgoing traffic even on
+baseline separates unnecessary server polling from the native overview error loop. Timing remains
+diagnostic: the final concurrent affected run measured 1.10–6.60 ms idle two-session p95 frames;
+the earlier isolated runs were 0.93–3.20 ms. Active missile frames are considerably more expensive.
+
+Sources: pinned `spacecomponents/client/components/entitystandings.pyj`, `overviewScrollEntry.pyj`,
+`overviewWindow.pyj`, `overviewPulse.pyj` and `cloud.pyj` in archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`; typed pinned catalog standing data;
+[EVE University combat-site reference](https://wiki.eveuniversity.org/Combat_anomalies).
+The cloud loader sets fixed orientation and radius-derived scale; the sample does not establish cloud
+animation as a cause. Windows Performance Recorder refused CPU profiling, so the passive observations
+used process/thread snapshots and read-only frame metadata. No game input, client-code injection,
+interactive acceptance, telemetry changes or live-save edits were performed by the agent.
+
+After the maintainer's retest, a second 400-sample frame-name capture contained no standing-error
+caller chains and only two Sentry samples in total, compared with 77 before the correction. This is
+passive diagnostic evidence, separate from interactive acceptance.
+
+**Automated validation:** tool/solution restores and solution build passed with zero warnings/errors
+(initial restore/build 6.42 seconds; final incremental build 0.81 seconds). All **339 distinct affected
+cases have passing results**: the expanded selection completed 338 passed / 1 failed in 122.89 seconds;
+its sole failure was an outdated administrative-grant test launching the World library as an executable.
+Pointing that test at the Server assembly passed its exact rerun in 10.83 seconds, with a 6.32-second
+feature build. No production changes followed the expanded run. An earlier selection exposed six
+convoy restart cases calling startup while their resident world was still running; all six reproduced
+on unmodified `19584b7`. Their test-only shutdown/clock correction passed the exact 12-case selection
+and the expanded run. The standing-field regression failed before the fix in both runtimes and passed
+afterward. The anomaly population deadline regression also failed before its correction and passed
+afterward. The final expanded filter was:
+
+```text
+FullyQualifiedName~CombatAnomaly|FullyQualifiedName~IdleAnomalyFrameTests|FullyQualifiedName~ResidentPollingTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcCatalogSharingTests|FullyQualifiedName~NpcGuardTests|FullyQualifiedName~NpcConvoyTests|FullyQualifiedName~NpcMiningSessionTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~ResidentCombatMonitoringTests|FullyQualifiedName~ResidentReadTests|FullyQualifiedName~OnlineStatusTests|FullyQualifiedName~PilotContactsTests|FullyQualifiedName~ContactsServiceTests|FullyQualifiedName~Redemption|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~NpcSceneUpdateTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~TranslocationTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~RegionalNpcTests
+```
+
+Both Python policy suites passed (8 catalog cases in 0.988 seconds; 9 formatting cases in 0.017
+seconds). Formatting, 140-character verification, local documentation links and diff checks passed.
+Full .NET regression was not requested or run. TRX evidence is retained under ignored
+`artifacts/anomaly-performance-final` and `artifacts/feature-tests/results`.
+
+Live acceptance: Not performed; agent client testing is disabled. **Maintainer-reported acceptance:**
+after the standing-field correction the maintainer reported "dead steady now" and supplied a focused
+site screenshot around 180 FPS, with clouds still visible and a flat frame graph. This supports removal
+of the recurring dips in that scene; it is not an all-layout rendering benchmark.
+
+Optional maintainer checks: none required for this correction; the reported site retest is recorded above.

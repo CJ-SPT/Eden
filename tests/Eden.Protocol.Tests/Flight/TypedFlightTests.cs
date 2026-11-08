@@ -1,14 +1,58 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Combat;
 
 namespace Eden.Protocol.Tests.Flight;
 
 public sealed class TypedFlightTests
 {
+    [Theory]
+    [InlineData(NpcRole.Pirate, 11, 11)]
+    [InlineData(NpcRole.Convoy, -11, -11)]
+    [InlineData(NpcRole.Navy, -11, -11)]
+    [InlineData(NpcRole.Customs, -11, -11)]
+    public void NpcSlimsAlwaysSupplyStandingThresholdsForNativeOverviewRefresh(NpcRole role, double hostile, double friendly)
+    {
+        using NpcCombatTests.Fixture fixture = new();
+        var npc = fixture.Npc with { Role = role, StandingThresholds = null };
+        var slim = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(new NpcSlimItem(npc))));
+        var fields = BlueRead.Fields(slim.State);
+        Assert.Equal(hostile, Assert.IsType<double>(fields["hostile_response_threshold"]));
+        Assert.Equal(friendly, Assert.IsType<double>(fields["friendly_response_threshold"]));
+    }
+
+    [Theory]
+    [InlineData(true, false, true)]
+    [InlineData(true, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, false, false)]
+    [InlineData(true, true, true)]
+    [InlineData(false, true, true)]
+    public void StaticObjectVisibilityDoesNotChangeCollisionOrRigidPacketLayout(bool global, bool asteroid, bool solid)
+    {
+        StaticSpaceObject body = new(42, 1230, 226, asteroid ? 25 : 2, 1, new(10, 20, 30), 100) { IsGlobal = global, Solid = solid };
+        using BinaryReader reader = new(new MemoryStream(Ballpark.AddObjects([body], 7).State));
+        Assert.Equal(0, reader.ReadByte());
+        Assert.Equal(7, reader.ReadInt32());
+        Assert.Equal(body.Id, reader.ReadInt64());
+        Assert.Equal((byte)NavigationMode.Rigid, reader.ReadByte());
+        Assert.Equal(body.Radius, reader.ReadSingle());
+        Assert.Equal(body.Position.X, reader.ReadDouble());
+        Assert.Equal(body.Position.Y, reader.ReadDouble());
+        Assert.Equal(body.Position.Z, reader.ReadDouble());
+        var flags = (DestinyBallFlags)reader.ReadByte();
+        Assert.Equal(global && !asteroid, flags.HasFlag(DestinyBallFlags.Global));
+        Assert.Equal(solid, flags.HasFlag(DestinyBallFlags.Massive));
+        Assert.False(flags.HasFlag(DestinyBallFlags.Free));
+        Assert.Equal(-1, reader.ReadSByte());
+        Assert.Equal(reader.BaseStream.Length, reader.BaseStream.Position);
+    }
+
     [Fact]
     public void DamageStateKeepsNestedShieldTupleAndFloatingTimeConstant()
     {

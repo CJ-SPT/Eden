@@ -43,8 +43,10 @@ def export(catalog_path, output, encounters):
                 'SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=? ORDER BY AttributeId', (key,))]
             attributes.update(v['id'] for v in values)
             types[key] = dict(zip(('id', 'name', 'groupId', 'groupName', 'categoryId', 'mass', 'radius', 'capacity'), row), attributes=values)
-            for dataset in ('client/types', 'client/typedogma'):
+            for dataset in ('client/types', 'client/typedogma', 'client/spacecomponentsbytype'):
                 value = record(dataset, key)
+                if dataset == 'client/spacecomponentsbytype' and value is not None:
+                    value = {'entityStandings': value['entityStandings']} if 'entityStandings' in value else None
                 if value is not None:
                     records[dataset, key] = value
                     if dataset == 'client/types' and value.get('wreckTypeID'):

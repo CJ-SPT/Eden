@@ -77,11 +77,11 @@ internal static partial class Ballpark
 
     private static SlimItem WriteObject(BinaryWriter writer, StaticSpaceObject body)
     {
-        // Rigid balls have only the formation ID after the common header. Asteroids
-        // use local coordinates; global celestials remain selectable system-wide.
+        // Rigid balls have only the formation ID after the common header.
+        // Room scenery and asteroids stay local; celestials are system-wide.
         var flags =
             (body.GroupId == AsteroidDefinitions.BeltGroup || !body.Solid ? DestinyBallFlags.None : DestinyBallFlags.Massive)
-            | (body.CategoryId == AsteroidDefinitions.Category ? DestinyBallFlags.None : DestinyBallFlags.Global);
+            | (body.CategoryId == AsteroidDefinitions.Category || !body.IsGlobal ? DestinyBallFlags.None : DestinyBallFlags.Global);
         WriteBallHeader(writer, body.Id, (byte)NavigationMode.Rigid, body.Radius, body.Position, (byte)flags);
         writer.Write((sbyte)-1);
         return new StaticSlimItem(body);

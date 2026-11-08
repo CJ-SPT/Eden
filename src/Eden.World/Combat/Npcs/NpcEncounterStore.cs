@@ -181,7 +181,10 @@ internal sealed class NpcEncounterStore(
                                 0
                             )
                         )
-                );
+                )
+                {
+                    StandingThresholds = profiles[n.TypeId].StandingThresholds,
+                };
             })
             .ToArray();
         // A route deadline can fall between two reads in the same wall-clock
@@ -196,16 +199,15 @@ internal sealed class NpcEncounterStore(
         return contacts;
     }
 
-    private sealed record Profile(
-        CatalogItemDefinition Type,
-        IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
-        HullDefense Defense
-    );
+    private sealed record Profile(CatalogItemDefinition Type, IReadOnlyDictionary<DogmaAttributeId, double> Attributes, HullDefense Defense)
+    {
+        public NpcStandingThresholds? StandingThresholds { get; init; }
+    }
 
     private Profile ReadProfile(CatalogDbContext catalog, int typeId)
     {
         var profile = (hullProfiles ?? new NpcProfileCatalog(cache: false)).Read(catalog, typeId);
-        return new(profile.Type, profile.Attributes, profile.Defense);
+        return new(profile.Type, profile.Attributes, profile.Defense) { StandingThresholds = profile.StandingThresholds };
     }
 
     public bool WasDestroyed(long npcId)

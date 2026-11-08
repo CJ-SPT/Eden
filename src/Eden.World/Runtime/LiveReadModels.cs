@@ -220,6 +220,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _crimewatch.Observe(changes);
         _loggedOff.Observe(changes);
         ObserveSpace(changes);
+        ObservePolling(changes);
     }
 
     internal void Clear()
@@ -244,5 +245,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _crimewatch.Clear();
         _loggedOff.Clear();
         ClearSpace();
+        ClearPolling();
     }
 }

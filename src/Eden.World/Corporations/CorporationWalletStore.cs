@@ -6,6 +6,7 @@ using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -29,7 +30,10 @@ internal sealed class CorporationWalletStore(WorldDatabase database, TimeProvide
         }
     }
 
-    public IReadOnlyList<CorporationWalletDivision> Divisions(long actorId)
+    public IReadOnlyList<CorporationWalletDivision> Divisions(long actorId) =>
+        LiveReadModels.Find(database.Path)?.CorporationWallet(actorId, () => ReadDivisions(actorId)) ?? ReadDivisions(actorId);
+
+    private IReadOnlyList<CorporationWalletDivision> ReadDivisions(long actorId)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();

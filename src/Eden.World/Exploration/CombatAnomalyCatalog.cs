@@ -114,6 +114,7 @@ internal static class CombatAnomalyCatalog
                     (float)(o.Source.Radius ?? o.Type.Radius ?? 0)
                 )
                 {
+                    IsGlobal = false,
                     Solid = o.Type.GroupId is not (CloudGroup or EnvironmentGroup),
                 })
                 .ToImmutableArray();

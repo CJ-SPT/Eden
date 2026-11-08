@@ -4,6 +4,7 @@ using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Mail;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,7 +53,10 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             .ToArray();
     }
 
-    public PersonalContacts Read(long pilotId)
+    public PersonalContacts Read(long pilotId) =>
+        LiveReadModels.Find(database.Path)?.Contacts(pilotId, () => ReadContacts(pilotId)) ?? ReadContacts(pilotId);
+
+    private PersonalContacts ReadContacts(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
         CheckPilot(world, pilotId);

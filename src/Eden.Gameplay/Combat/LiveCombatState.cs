@@ -122,6 +122,7 @@ public sealed record LiveCombatNpc(
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes
 )
 {
+    public NpcStandingThresholds? StandingThresholds { get; init; }
     public IReadOnlyList<ElectronicWarfareContact> IncomingElectronicWarfare { get; init; } = [];
 
     public double? AcquisitionRange { get; init; }

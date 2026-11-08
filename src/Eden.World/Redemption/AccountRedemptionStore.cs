@@ -10,6 +10,7 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -79,7 +80,10 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         return token.Snapshot();
     }
 
-    public IReadOnlyList<RedeemToken> Read(long accountId)
+    public IReadOnlyList<RedeemToken> Read(long accountId) =>
+        LiveReadModels.Find(database.Path)?.RedeemTokens(accountId, Now, () => ReadTokens(accountId)) ?? ReadTokens(accountId);
+
+    private IReadOnlyList<RedeemToken> ReadTokens(long accountId)
     {
         using WorldDbContext world = new(database.Path);
         Account(world, accountId);

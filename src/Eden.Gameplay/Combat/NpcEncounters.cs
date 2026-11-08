@@ -27,7 +27,12 @@ public sealed record NpcContact(
     IReadOnlyList<NpcEwarContact>? ElectronicWarfare = null,
     NpcActivityContact? Activity = null,
     WarpCourse? Warp = null
-);
+)
+{
+    public NpcStandingThresholds? StandingThresholds { get; init; }
+}
+
+public sealed record NpcStandingThresholds(double Hostile, double Friendly);
 
 public enum NpcNavigationState
 {

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Characters;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -9,6 +10,38 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class OnlineStatusTests
 {
+    [Fact]
+    public void WarmWatchlistPollingUsesNoSqlAndStillPublishesPresenceChanges()
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var contacts = db.Services.GetRequiredService<IPilotContacts>();
+        contacts.Add(90000001, 90000002, 0, true);
+        using Client first = new(db, 1000001, clock);
+        first.Call("GetInitialState", []);
+        using (var metrics = SessionPerformance.Begin("watchlist polling", _ => { }, force: true)!)
+        {
+            for (int repeat = 0; repeat < 20; repeat++)
+            {
+                clock.Seconds++;
+                first.Online.Advance(first.Context);
+                Assert.False(first.Status(90000002));
+                Assert.Empty(first.Context.Notifications);
+            }
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        using Client second = new(db, 1000002, clock);
+        first.Online.Advance(first.Context);
+        Assert.Equal("OnContactLoggedOn", Assert.Single(first.Context.Notifications).Name);
+        first.Context.Notifications.Clear();
+        contacts.SetBlocked(90000001, [90000002], true);
+        first.Online.Advance(first.Context);
+        Assert.Equal("OnContactLoggedOff", Assert.Single(first.Context.Notifications).Name);
+        Assert.False(first.Status(90000002));
+    }
+
     [Fact]
     public void WatchlistPresenceTracksSelectionLogoffAndDisconnectWithoutDockingFlicker()
     {

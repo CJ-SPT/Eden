@@ -373351,6 +373351,7276 @@
       }
     },
     {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 2012,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 2072,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 3744,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 3746,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 3747,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 3748,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 3749,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 3750,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 10299,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13068,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13106,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13113,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13114,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13115,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13116,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13515,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13516,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13517,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13518,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13519,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13521,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13522,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13525,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13527,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13528,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13529,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13535,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13539,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13540,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13542,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13543,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13545,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13546,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13553,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13554,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13555,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13556,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13558,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13559,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13560,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13562,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13563,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13566,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13567,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13568,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13571,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13572,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13574,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13575,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13576,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13577,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13578,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13579,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13582,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13583,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13586,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13588,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13591,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13595,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13598,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13600,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13601,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13602,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13605,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13606,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13610,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13611,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13612,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13613,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13614,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13616,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13617,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13618,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13619,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13620,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13621,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13623,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13624,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13625,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13626,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13627,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13628,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13629,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13630,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13631,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13632,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13633,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13634,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13636,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13637,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13638,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13639,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13640,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13641,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13642,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13643,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13644,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13645,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13646,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13647,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13648,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13649,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13650,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13651,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13652,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13653,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13656,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13658,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13660,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13663,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13664,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13665,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13666,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13668,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 13669,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16215,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16563,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16564,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16565,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16566,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16728,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16729,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16733,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16735,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16736,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16737,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16740,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16741,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16747,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16757,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16758,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16759,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16760,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16762,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16765,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16766,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16767,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16768,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16769,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16771,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16774,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16796,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16797,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16798,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16799,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16800,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16803,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16814,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16815,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16816,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16817,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16819,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16821,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16822,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16823,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16824,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16825,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16827,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16830,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16831,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16836,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16839,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16841,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16850,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16855,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16856,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16857,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16860,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16862,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16874,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16875,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16877,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16878,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16879,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16880,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16881,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16882,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16883,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16884,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16885,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16886,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16887,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16888,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16889,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16890,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16891,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16892,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16893,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16894,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16895,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16896,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16897,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16899,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16900,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16927,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16928,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16929,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16930,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16931,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16932,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16933,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16934,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16935,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16936,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16938,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16939,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16940,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16941,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16942,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16943,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16944,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16945,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16946,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16947,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16948,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16949,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16950,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16951,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16952,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16953,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16958,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16980,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16981,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16982,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16983,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16984,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16985,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16986,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16987,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16988,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16989,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16990,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16991,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16992,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16994,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16995,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16996,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16997,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16998,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16999,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17000,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17001,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17002,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17003,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17004,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17005,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17006,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17017,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17021,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17031,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17033,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17034,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17035,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17036,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17037,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17038,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17039,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17040,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17041,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17042,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17043,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17044,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17057,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17058,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17059,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17060,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17061,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17062,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17063,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17065,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17066,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17067,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17068,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17069,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17070,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17071,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17072,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17073,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17074,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17075,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17076,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17077,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17078,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17079,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17080,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17081,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17082,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17083,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17110,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17111,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17112,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17113,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17114,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17115,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17116,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17117,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17118,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17119,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17120,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17121,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17122,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17144,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17145,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17146,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17147,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17152,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17153,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17156,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17157,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17158,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17159,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17278,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17279,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17394,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17395,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17398,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17401,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17569,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17570,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17571,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17573,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17574,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17575,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17581,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17582,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17583,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17593,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17594,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17595,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17597,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17598,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17599,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17615,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17626,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17627,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17628,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17629,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17641,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18012,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18013,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18014,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18015,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18017,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18018,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18019,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18020,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18023,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18026,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18027,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18032,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18033,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18070,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18071,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18072,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18073,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18074,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18075,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18076,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18077,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18078,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18079,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18080,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18082,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18083,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18084,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18085,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18086,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18087,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18088,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18564,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18568,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 18569,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 21814,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 22742,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 22858,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 22865,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 22866,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23287,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23288,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23289,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23290,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23291,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23292,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23297,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23298,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23299,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23300,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23301,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23302,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23343,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23344,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23355,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23356,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23357,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23358,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23392,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23394,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23395,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23396,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23397,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23398,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23399,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23400,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23401,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23402,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23403,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23458,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23463,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23464,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23465,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23466,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23467,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23468,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23469,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23470,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23471,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23472,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23475,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23476,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23477,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23478,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23479,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23480,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23481,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23482,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23483,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23484,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23485,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23486,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23487,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23488,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23489,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23490,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23493,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23494,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23495,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23496,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23497,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23498,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23499,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23501,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23502,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23503,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23504,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23505,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23655,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23663,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23667,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23921,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23922,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23923,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23924,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23969,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23970,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23971,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23972,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23973,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23974,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23975,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23976,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23977,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23978,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23979,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23980,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23981,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23982,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23983,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23984,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23985,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23986,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23987,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23988,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23989,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23990,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23991,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23992,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23993,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23994,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23995,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23996,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23997,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23998,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23999,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24000,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24001,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24002,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24003,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24004,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24005,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24006,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24007,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24008,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24009,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24010,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24011,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24012,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24013,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24014,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24015,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24016,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24017,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24018,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24019,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24020,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24021,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24022,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24023,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24024,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24025,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24026,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24027,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24028,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24033,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24034,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24035,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24036,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24037,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24038,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24039,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24040,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24041,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24042,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24043,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24044,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24045,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24046,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24047,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24048,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24049,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24050,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24051,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24052,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24053,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24054,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24055,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24056,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24057,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24058,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24059,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24060,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24061,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24062,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24063,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24064,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24065,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24066,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24067,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24068,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24069,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24070,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24071,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24072,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24073,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24074,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24075,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24076,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24079,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24081,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24082,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24083,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24084,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24085,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24086,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24087,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24088,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24089,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24090,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24091,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24092,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24093,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24094,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24095,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24096,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24097,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24098,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24099,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24100,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24101,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24102,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24103,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24104,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24105,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24106,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24107,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24108,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24109,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24110,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24111,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24112,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24113,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24114,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24115,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24116,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24117,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24118,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24119,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24120,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24121,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24122,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24125,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24126,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24127,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24128,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24129,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24130,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24131,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24132,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24133,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24134,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24135,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24136,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24137,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24138,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24139,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24140,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24141,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24142,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24143,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24144,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24145,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24146,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24147,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24148,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24149,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24150,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24151,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24152,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24153,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24154,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24155,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24156,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24157,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24158,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24159,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24160,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24165,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24166,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24167,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24168,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24169,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24170,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24177,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24178,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24179,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24180,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24184,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24185,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24186,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24189,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24190,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24191,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24192,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24220,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24221,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24222,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24226,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24227,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24228,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24232,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24233,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24234,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24286,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24767,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 25379,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 26712,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 26725,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 26727,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 26754,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 26894,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 26898,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 26900,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 26973,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27280,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27723,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27726,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27729,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27731,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27733,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27738,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27742,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27746,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27752,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27754,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27755,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27756,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27757,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27758,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27759,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27760,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27761,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27762,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27763,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 27953,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 30743,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 32298,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 32391,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 32400,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 32401,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 37461,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 37462,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 37463,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 37464,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 37465,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 37467,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 37468,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 37470,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 40637,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 40671,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 41397,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 81600,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 81601,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 81604,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83636,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83637,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83638,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83666,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83667,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83668,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83669,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83670,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83671,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83672,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83673,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83674,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83675,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83676,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 83677,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
       "dataset": "client/typedogma",
       "key": 185,
       "data": {

@@ -266,7 +266,10 @@ internal sealed partial class LiveCombatRuntime
                         0
                     )
                 )
-            );
+            )
+            {
+                StandingThresholds = npc.StandingThresholds,
+            };
             contacts.Add(contact);
             if (motionStamped)
             {

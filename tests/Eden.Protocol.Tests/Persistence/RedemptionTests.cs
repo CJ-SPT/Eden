@@ -85,7 +85,7 @@ public sealed class RedemptionTests
                 RedirectStandardError = true,
                 UseShellExecute = false,
             };
-            foreach (string arg in new[] { typeof(WorldDatabase).Assembly.Location, "--world", db.Path, "--grant-redeem", manifest })
+            foreach (string arg in new[] { typeof(ServerServices).Assembly.Location, "--world", db.Path, "--grant-redeem", manifest })
             {
                 start.ArgumentList.Add(arg);
             }

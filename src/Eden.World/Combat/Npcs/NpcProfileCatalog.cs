@@ -14,7 +14,10 @@ internal sealed record NpcHullProfile(
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
     HullDefense Defense,
     IReadOnlyList<NpcEwarAbility> ElectronicWarfare
-);
+)
+{
+    public NpcStandingThresholds? StandingThresholds { get; init; }
+}
 
 public sealed class NpcProfileCatalog(bool cache = true)
 {
@@ -33,6 +36,26 @@ public sealed class NpcProfileCatalog(bool cache = true)
             attributes,
             ShipHealth.DefenseFrom(attributes),
             NpcEwarRules.Profile(FittingCatalog.Effects(catalog, typeId), attributes).ToImmutableArray()
-        );
+        )
+        {
+            StandingThresholds = ReadStandingThresholds(catalog, typeId),
+        };
+    }
+
+    private static NpcStandingThresholds? ReadStandingThresholds(CatalogDbContext catalog, int typeId)
+    {
+        var components = catalog.Read(CatalogData.Client.Spacecomponentsbytype, (long)typeId);
+        if (components is null || !components.TryGetValue("entityStandings", out var standings))
+        {
+            return null;
+        }
+        double Read(string name) =>
+            standings.GetValueOrDefault(name) switch
+            {
+                ClientSpacecomponentsbytypeValueValueChoiceLong value => value.Value,
+                ClientSpacecomponentsbytypeValueValueChoiceDouble value when double.IsFinite(value.Value) => value.Value,
+                _ => throw new InvalidDataException($"NPC type {typeId} has no finite {name}."),
+            };
+        return new(Read("hostileResponseThreshold"), Read("friendlyResponseThreshold"));
     }
 }

@@ -126,6 +126,11 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
     // instead of inheriting hostile mission thresholds from a navy hull's type.
     private const double DefensivePatrolResponseThreshold = -11;
 
+    // Pinned entityStandings pirate thresholds lie above the standings range,
+    // keeping ordinary hostile NPCs red. Omitting these fields makes the native
+    // overview log an error and serialize a Sentry event on every refresh.
+    private const double HostileNpcResponseThreshold = 11;
+
     public override object ToBlue()
     {
         var fields = Fields(Npc.Id, Npc.TypeId, Npc.CorporationId, Npc.GroupId, Npc.CategoryId);
@@ -143,6 +148,12 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
         {
             fields["hostile_response_threshold"] = Eden.Gameplay.Mining.NpcMiningRules.HostileStanding;
             fields["friendly_response_threshold"] = Eden.Gameplay.Mining.NpcMiningRules.FriendlyStanding;
+        }
+        else
+        {
+            double fallback = Npc.Role == NpcRole.Convoy ? DefensivePatrolResponseThreshold : HostileNpcResponseThreshold;
+            fields["hostile_response_threshold"] = Npc.StandingThresholds?.Hostile ?? fallback;
+            fields["friendly_response_threshold"] = Npc.StandingThresholds?.Friendly ?? fallback;
         }
         return Wrap(fields);
     }
