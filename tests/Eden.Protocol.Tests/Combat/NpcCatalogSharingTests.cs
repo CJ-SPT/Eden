@@ -57,4 +57,62 @@ public sealed class NpcCatalogSharingTests
         Assert.Equal(0, metrics.Commands);
         Assert.Equal(0, metrics.Connections);
     }
+
+    [Fact]
+    public void ActiveSpawnPoolsSurviveCatalogCachePressureWithoutReloading()
+    {
+        using TestWorld world = new();
+        RegionalNpcTests.Prepare(world);
+        var database = new WorldDatabase(world.Path);
+        var provider = CatalogProvider.Open(database.CatalogPath, new CatalogCacheOptions { MaximumEstimatedBytes = 1024 * 1024 });
+        NpcSpawnCatalog reader = new(database);
+        var profiles = reader.Profiles;
+        Assert.NotEmpty(profiles);
+        using var metrics = SessionPerformance.Begin("resident-spawn-pools", _ => { }, force: true)!;
+        for (int read = 0; read < 3; read++)
+        {
+            Assert.Same(profiles[0], reader.Profiles[0]);
+            Assert.NotEmpty(reader.Pool(profiles[0].Faction, profiles[0].Hull));
+        }
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+        Assert.InRange(provider.Statistics.EstimatedBytes, 0, 1024 * 1024);
+    }
+
+    [Fact]
+    public void UnpublishedSerpentisCruiserTemplateIsExcludedFromRegionalSpawns()
+    {
+        const int templateType = 33352;
+        using TestWorld world = new();
+        RegionalNpcTests.Prepare(world);
+        using CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath);
+        Assert.Equal("Serpentis Cruiser", catalog.RequireItem(templateType).Name);
+        Assert.Equal(0, catalog.Read(CatalogData.Client.Types, (long)templateType)!.Published);
+        Assert.Empty(catalog.Definitions.Attributes(templateType));
+        Assert.Contains(templateType, Eden.Gameplay.Combat.NpcSpecialTypes.Excluded);
+        Assert.DoesNotContain(new NpcSpawnCatalog(new(world.Path)).Profiles, profile => profile.TypeId == templateType);
+    }
+
+    [Fact]
+    public void ActiveSpawnPoolsRefreshAfterCatalogEditsAndPreservePreviousProfiles()
+    {
+        using TestWorld world = new();
+        RegionalNpcTests.Prepare(world);
+        var database = new WorldDatabase(world.Path);
+        NpcSpawnCatalog reader = new(database);
+        var original = reader.Profiles[0];
+        using (CatalogDbContext writable = new(database.CatalogPath, writable: true))
+        {
+            writable.Database.ExecuteSql($"UPDATE ItemType SET Mass={original.Mass + 123} WHERE Id={original.TypeId}");
+        }
+        var changed = reader.Profiles.Single(p => p.TypeId == original.TypeId);
+        Assert.NotSame(original, changed);
+        Assert.Equal(original.Mass + 123, changed.Mass);
+        using var metrics = SessionPerformance.Begin("refreshed-spawn-pools", _ => { }, force: true)!;
+        Assert.Same(changed, reader.Pool(changed.Faction, changed.Hull).Single(p => p.TypeId == changed.TypeId));
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
 }

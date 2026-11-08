@@ -35,6 +35,9 @@ public enum NpcDevelopmentType
 {
     TestDrainer = 24630,
     TestAttacker = 25806,
+
+    // Unpublished generic hull with no typedogma record or combat attributes.
+    SerpentisCruiserTemplate = 33352,
 }
 
 public static class NpcSpecialTypes

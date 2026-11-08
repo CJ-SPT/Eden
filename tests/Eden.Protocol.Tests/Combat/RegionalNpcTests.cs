@@ -66,7 +66,7 @@ public sealed class RegionalNpcTests
         using TestWorld db = new(regionalNpcs: true);
         Prepare(db);
         var profiles = db.Services.GetRequiredService<NpcSpawnCatalog>();
-        Assert.Equal(22, NpcSpecialTypes.Excluded.Count);
+        Assert.Equal(23, NpcSpecialTypes.Excluded.Count);
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath))
         {
             Assert.All(NpcSpecialTypes.Excluded, id => Assert.NotNull(catalog.Set<ItemType>().Find(id)));
@@ -186,6 +186,8 @@ public sealed class RegionalNpcTests
     [InlineData((int)NpcDevelopmentType.TestDrainer, true)]
     [InlineData((int)NpcDevelopmentType.TestAttacker, false)]
     [InlineData((int)NpcDevelopmentType.TestAttacker, true)]
+    [InlineData((int)NpcDevelopmentType.SerpentisCruiserTemplate, false)]
+    [InlineData((int)NpcDevelopmentType.SerpentisCruiserTemplate, true)]
     public void ExcludedNpcsRetireWithoutRewardsAndOnlyEmptyGroupsAreReplaced(int excludedTypeId, bool survivor)
     {
         using TestWorld db = new(regionalNpcs: true);

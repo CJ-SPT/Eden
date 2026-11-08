@@ -706,3 +706,36 @@ Correction validation passed tool restore, solution restore/build, 39 focused .N
 including host startup, eight catalog policy cases, nine formatting policy cases and formatting verification.
 The initial filter was `FullyQualifiedName~CombatAnomalyTests.ScannerUpdateSerializesThroughSessionPacketWithNativeRemovalSet`.
 The combined filter was `FullyQualifiedName~CombatAnomalyTests|FullyQualifiedName~BlueMarshalTests`.
+
+
+## NPC population template exclusion and resident spawn pools (November 8, 2026)
+
+The repeated `NPC population skips type 33352` warning came from an unpublished generic Serpentis Cruiser
+in the pinned build. Its client/types record has group 571, published=0, mass 11,200,000 kg, radius 150 m and
+wreck type 26586. It has no client/typedogma record and no TypeAttribute rows, so the spawn loader rejects
+its missing movement, health and combat inputs. Type 33352 is now an explicit development-template exclusion
+in the build-specific NPC policy. Other unpublished types retain their existing individual capability checks.
+Historical saved instances use the existing excluded-NPC retirement path without kill rewards or wrecks.
+
+The warning repeated because the combined spawn definitions lived only in the shared bounded catalog cache.
+Eviction, or a cache budget smaller than that aggregate, caused every lookup to rebuild all profiles and
+repeat rejection diagnostics. The singleton population reader now retains its active immutable spawn pools
+against their CatalogProvider generation. Catalog invalidation refreshes them, while previous immutable
+profiles remain valid snapshots. Ordinary repeated reads avoid SQL connections, queries and fitting work
+even when the aggregate does not fit in the catalog memo budget. This retention is limited to the active
+population reader's catalog generation.
+
+The cache-pressure regression reproduced profile rebuilding before the change using a 1 MiB memo budget.
+Tests cover warmed profile/pool reads and counters, catalog edits, the exact pinned placeholder metadata,
+all ordinary faction/hull pools, and retirement with or without a surviving encounter member.
+Gameplay references checked were [EVE University belt rats](https://wiki.eveuniversity.org/Belt_rat) and
+[NPC naming conventions](https://wiki.eveuniversity.org/NPC_names). They describe normal pirate populations
+and named variants. The specific template exclusion follows the build-3662168 catalog evidence above.
+Live acceptance was not performed; agent client testing is disabled. Optional maintainer verification is to
+restart the server and confirm population updates no longer repeat the type-33352 warning.
+
+
+Validation passed tool restore, solution restore/build, 67 focused .NET cases in 25.28 seconds including
+host startup, eight catalog policy cases, nine formatting policy cases and `tools/Format.ps1 -Check`.
+The initial filter was `FullyQualifiedName~NpcCatalogSharingTests.ActiveSpawnPoolsSurviveCatalogCachePressureWithoutReloading`.
+The combined filter was `FullyQualifiedName~NpcCatalogSharingTests|FullyQualifiedName~RegionalNpcTests|FullyQualifiedName~CatalogProviderTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcPopulationTests`.

@@ -44,12 +44,26 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
         Estimate: values => 128 + values.Profiles.Length * 8192L
     );
 
+    private readonly object _gate = new();
+    private CatalogProvider? _catalog;
+    private NpcSpawnDefinitions? _profiles;
+
     private NpcSpawnDefinitions Definitions
     {
         get
         {
-            using CatalogDbContext catalog = new(database.CatalogPath);
-            return catalog.Definition(s_profiles, 0);
+            var catalog = database.Catalog;
+            lock (_gate)
+            {
+                if (!ReferenceEquals(_catalog, catalog))
+                {
+                    // Active spawn pools belong to this catalog generation. Keep
+                    // them resident when unrelated catalog entries evict the memo.
+                    _profiles = catalog.Definition(s_profiles, 0);
+                    _catalog = catalog;
+                }
+                return _profiles!;
+            }
         }
     }
 
