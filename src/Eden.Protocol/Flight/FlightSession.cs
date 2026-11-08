@@ -1,3 +1,4 @@
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
@@ -33,7 +34,8 @@ internal sealed class FlightSession(
     IPilotDrones? drones = null,
     IPilotCrimewatch? crimewatch = null,
     IPilotElectronicWarfare? electronicWarfare = null,
-    IPilotGateTravel? gates = null
+    IPilotGateTravel? gates = null,
+    IHumanPresence? presence = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -43,6 +45,7 @@ internal sealed class FlightSession(
     private FlightEffects? _effects;
     private FlightScene? _scene;
     private FlightModuleEffects? _moduleEffects;
+    private readonly IHumanPresenceLease? _humanPresence = presence?.Select(pilot.PilotId, pilot.SystemId);
 
     // Docking can replace Pilot before the lazy effect state is first needed.
     private readonly FlightProperties _initialFlight = pilot.Flight;
@@ -68,7 +71,14 @@ internal sealed class FlightSession(
     public DockedPilot Pilot
     {
         get => _pilot;
-        private set => _pilot = value with { Identity = value.Identity with { Fleet = _pilot.Identity.Fleet } };
+        private set
+        {
+            if (value.SystemId != _pilot.SystemId)
+            {
+                _humanPresence?.Transfer(value.SystemId);
+            }
+            _pilot = value with { Identity = value.Identity with { Fleet = _pilot.Identity.Fleet } };
+        }
     }
     public List<StampedDestinyUpdate> Updates { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
@@ -576,8 +586,15 @@ internal sealed class FlightSession(
         }
         finally
         {
-            _travel.CancelTranslocation();
-            LeaveSpace();
+            try
+            {
+                _travel.CancelTranslocation();
+                LeaveSpace();
+            }
+            finally
+            {
+                _humanPresence?.Dispose();
+            }
         }
     }
 

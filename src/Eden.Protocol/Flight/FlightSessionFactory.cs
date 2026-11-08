@@ -1,3 +1,4 @@
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
@@ -26,7 +27,8 @@ internal sealed class FlightSessionFactory(
     IPilotDrones? drones = null,
     IPilotCrimewatch? crimewatch = null,
     IPilotElectronicWarfare? electronicWarfare = null,
-    IPilotGateTravel? gates = null
+    IPilotGateTravel? gates = null,
+    IHumanPresence? presence = null
 )
 {
     public FlightSession Create(DockedPilot pilot)
@@ -53,7 +55,8 @@ internal sealed class FlightSessionFactory(
             drones,
             crimewatch,
             electronicWarfare,
-            gates
+            gates,
+            presence
         );
     }
 }

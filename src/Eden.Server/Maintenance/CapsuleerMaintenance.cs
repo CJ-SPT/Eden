@@ -13,13 +13,14 @@ internal sealed class CapsuleerMaintenance(
     ICapsuleerScene scene,
     ChatRuntime chat,
     TimeProvider clock,
-    ICapsuleerHauling hauling
+    ICapsuleerHauling hauling,
+    IHumanPresence presence
 ) : IDisposable
 {
     private readonly Lock _gate = new();
     private PeriodicTimer? _timer;
     private Task _loop = Task.CompletedTask;
-    private long _lastSecond;
+    private long _lastSecond = presence.Read().ElapsedTicks / TimeSpan.TicksPerSecond;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
 
     internal void Start()
@@ -50,9 +51,9 @@ internal sealed class CapsuleerMaintenance(
     {
         lock (_gate)
         {
-            var (active, elapsed) = chat.HumanActivity();
-            long second = elapsed.Ticks / TimeSpan.TicksPerSecond;
-            if (!active || second <= _lastSecond)
+            var activity = presence.Read();
+            long second = activity.ElapsedTicks / TimeSpan.TicksPerSecond;
+            if (!activity.Active || second <= _lastSecond)
             {
                 return null;
             }

@@ -22,17 +22,6 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock, I
     private readonly Dictionary<string, PendingToken> _tokens = [];
     private readonly Dictionary<Guid, Channel<ChatDelivery>> _queues = [];
 
-    private long _onlineAt;
-    private TimeSpan _elapsed;
-
-    internal (bool Active, TimeSpan Elapsed) HumanActivity()
-    {
-        lock (_gate)
-        {
-            return _world.HasHumanPilots ? (true, _elapsed + clock.GetElapsedTime(_onlineAt)) : (false, _elapsed);
-        }
-    }
-
     internal void PublishCapsuleer(ChatPilot pilot)
     {
         lock (_gate)
@@ -50,17 +39,7 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock, I
         lock (_gate)
         {
             long? previousPilot = _world.Pilot(session)?.Id;
-            bool active = _world.HasHumanPilots;
             Dispatch(_world.Update(session, pilot));
-            if (active != _world.HasHumanPilots)
-            {
-                long stamp = clock.GetTimestamp();
-                if (active)
-                {
-                    _elapsed += clock.GetElapsedTime(_onlineAt, stamp);
-                }
-                _onlineAt = stamp;
-            }
             if (pilot is null || previousPilot != pilot.Id)
             {
                 foreach (string token in _tokens.Where(t => t.Value.Session == session).Select(t => t.Key).ToArray())

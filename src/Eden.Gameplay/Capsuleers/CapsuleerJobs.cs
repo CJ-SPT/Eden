@@ -1,0 +1,123 @@
+namespace Eden.Gameplay.Capsuleers;
+
+public enum CapsuleerAction
+{
+    Prepare = 1,
+    Arrival,
+    GateTransfer,
+    Lock,
+    Collect,
+    Trade,
+    Retry,
+}
+
+public sealed record CapsuleerJob(long PilotId, long Revision, long Sequence, long DueTicks, CapsuleerAction Action)
+{
+    public CapsuleerJob Next(long dueTicks, CapsuleerAction action)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(dueTicks);
+        if (!Enum.IsDefined(action))
+        {
+            throw new ArgumentOutOfRangeException(nameof(action));
+        }
+        return this with { Revision = checked(Revision + 1), Sequence = checked(Sequence + 1), DueTicks = dueTicks, Action = action };
+    }
+}
+
+public sealed record CapsuleerTurn(int Completed, int Pending, long? OldestDueTicks, bool BudgetExceeded);
+
+// This queue is used under the world owner. Callers publish a replacement only after
+// its feature transaction commits. A throwing action stays due and can be retried.
+public sealed class CapsuleerJobQueue
+{
+    public const int ActionsPerTurn = 64;
+    public static readonly TimeSpan WakeInterval = TimeSpan.FromMilliseconds(50);
+    public static readonly TimeSpan ExecutionBudget = TimeSpan.FromMilliseconds(10);
+    private readonly SortedSet<CapsuleerJob> _queue = new(
+        Comparer<CapsuleerJob>.Create(
+            (left, right) => (left.DueTicks, left.PilotId, left.Sequence).CompareTo((right.DueTicks, right.PilotId, right.Sequence))
+        )
+    );
+    private readonly Dictionary<long, CapsuleerJob> _jobs = [];
+
+    public void Restore(IEnumerable<CapsuleerJob> jobs)
+    {
+        var restored = jobs.ToArray();
+        if (restored.Select(j => j.PilotId).Distinct().Count() != restored.Length)
+        {
+            throw new ArgumentException("An agent can have only one current job.", nameof(jobs));
+        }
+        foreach (var job in restored)
+        {
+            Validate(job);
+        }
+        _jobs.Clear();
+        _queue.Clear();
+        foreach (var job in restored)
+        {
+            _jobs.Add(job.PilotId, job);
+            Enqueue(job);
+        }
+    }
+
+    public bool Publish(CapsuleerJob job)
+    {
+        Validate(job);
+        if (_jobs.TryGetValue(job.PilotId, out var current) && job.Revision <= current.Revision)
+        {
+            return false;
+        }
+        if (current is not null)
+        {
+            _queue.Remove(current);
+        }
+        _jobs[job.PilotId] = job;
+        Enqueue(job);
+        return true;
+    }
+
+    public CapsuleerTurn Run(long throughTicks, Func<CapsuleerJob, CapsuleerJob> execute, TimeProvider clock)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(throughTicks);
+        long started = clock.GetTimestamp();
+        int completed = 0;
+        while (_queue.Min is { } job && job.DueTicks <= throughTicks && completed < ActionsPerTurn)
+        {
+            if (completed > 0 && clock.GetElapsedTime(started) >= ExecutionBudget)
+            {
+                break;
+            }
+            var next = execute(job);
+            Validate(next);
+            if (
+                next.PilotId != job.PilotId
+                || next.Revision != checked(job.Revision + 1)
+                || next.Sequence != checked(job.Sequence + 1)
+                || next.DueTicks <= job.DueTicks
+            )
+            {
+                throw new InvalidOperationException("A completed action must advance its own job and deadline once.");
+            }
+            _queue.Remove(job);
+            _jobs[job.PilotId] = next;
+            Enqueue(next);
+            completed++;
+        }
+        long? oldest = _queue.Min is { } pending && pending.DueTicks <= throughTicks ? pending.DueTicks : null;
+        return new(completed, _jobs.Count, oldest, clock.GetElapsedTime(started) > ExecutionBudget);
+    }
+
+    private void Enqueue(CapsuleerJob job) => _queue.Add(job);
+
+    private static void Validate(CapsuleerJob job)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(job.PilotId);
+        ArgumentOutOfRangeException.ThrowIfNegative(job.Revision);
+        ArgumentOutOfRangeException.ThrowIfNegative(job.Sequence);
+        ArgumentOutOfRangeException.ThrowIfNegative(job.DueTicks);
+        if (!Enum.IsDefined(job.Action))
+        {
+            throw new ArgumentOutOfRangeException(nameof(job));
+        }
+    }
+}

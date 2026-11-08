@@ -49,6 +49,7 @@ internal sealed class LiveWorld : IDisposable
     private bool _disposed;
     private WorldCheckpoint? _lastCheckpoint;
     private Exception? _lastSaveFailure;
+    private long _activityCheckpointTicks;
 
     internal string ConnectionString { get; }
     internal LiveCombatRuntime? Combat { get; }
@@ -56,6 +57,7 @@ internal sealed class LiveWorld : IDisposable
     internal LiveShipHeat Heat { get; }
     internal LiveNaniteRepairs Nanites { get; }
     internal LiveTractors Tractors { get; }
+    internal Eden.World.Capsuleers.CapsuleerActivity CapsuleerActivity { get; }
     internal bool MeasureCheckpoints { get; set; }
     internal int SqlConnections { get; private set; }
     private readonly LiveTimedModules? _timedModules;
@@ -151,6 +153,7 @@ internal sealed class LiveWorld : IDisposable
         Heat = new(this, database, clock);
         Tractors = new(this, database);
         Nanites = new(database, clock);
+        CapsuleerActivity = new(database, clock);
         _clock = clock;
         _report = report ?? ServerLog.Console.Debug;
         _reportFailure = report ?? ServerLog.Console.Error;
@@ -348,6 +351,12 @@ internal sealed class LiveWorld : IDisposable
             }
             Heat.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             Nanites.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            var activity = CapsuleerActivity.Capture();
+            if (activity is not null && activity.ElapsedTicks != _activityCheckpointTicks)
+            {
+                _activityCheckpointTicks = activity.ElapsedTicks;
+                ObjectsChanged();
+            }
             long generation = ObserveGeneration();
             if (generation == _savedGeneration)
             {
@@ -368,7 +377,8 @@ internal sealed class LiveWorld : IDisposable
                     Heat.Capture(),
                     Tractors.Capture(),
                     MinerCheckpoint,
-                    HaulerCheckpoint
+                    HaulerCheckpoint,
+                    activity
                 );
             }
             catch

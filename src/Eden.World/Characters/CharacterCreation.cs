@@ -102,6 +102,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         world.Add(new SavedHomeStation { PilotId = pilotId, StationId = station });
         world.SaveChanges();
         Eden.World.Capsuleers.CapsuleerCommunityStore.Provision(world, catalog, clock);
+        Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);
         transaction.Commit();
         return pilotId;
     }

@@ -243,6 +243,9 @@ internal static class WorldVersions50To68
         NpcMissileSchema.Upgrade(world);
         NpcEncounterSchema.Upgrade(world);
         NpcGuardSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=68");
+        if (version < 68)
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=68");
+        }
     }
 }

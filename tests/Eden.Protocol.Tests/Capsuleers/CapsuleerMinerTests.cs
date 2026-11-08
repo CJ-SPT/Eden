@@ -61,8 +61,8 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 var world = host.GetRequiredService<SqliteWorld>();
                 var a = world.FindPilot(1000001)!;
                 var b = world.FindPilot(1000002)!;
-                chat.Update(First, new(a.PilotId, a.Name, a.CorpId, Kisogo, 0));
-                chat.Update(Second, new(b.PilotId, b.Name, b.CorpId, Kisogo, 0));
+                UpdateSelection(host, First, new(a.PilotId, a.Name, a.CorpId, Kisogo, 0));
+                UpdateSelection(host, Second, new(b.PilotId, b.Name, b.CorpId, Kisogo, 0));
                 var room = new ChatRoom(ChatRoomKind.Local, Kisogo);
                 var firstChat = chat.Authenticate(
                     a.PilotId.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -97,8 +97,8 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                     Assert.Equal(work.Pilot.ShipId, contact.Pilot.ShipId);
                 }
                 Assert.Null(worker.Tick());
-                chat.Update(First, null);
-                chat.Update(Second, new(b.PilotId, b.Name, b.CorpId, 30000142, 0));
+                UpdateSelection(host, First, null);
+                UpdateSelection(host, Second, new(b.PilotId, b.Name, b.CorpId, 30000142, 0));
                 clock.Seconds++;
                 using (var metrics = SessionPerformance.Begin("paid miner waiting", output.WriteLine, force: true)!)
                 {
@@ -108,7 +108,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                     Assert.Equal(0, metrics.FittingCalculations);
                 }
                 stamp++;
-                chat.Update(Second, null);
+                UpdateSelection(host, Second, null);
                 clock.Seconds += 3600;
                 using (var empty = SessionPerformance.Begin("empty server miner", output.WriteLine, force: true)!)
                 {
@@ -135,7 +135,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 var chat = host.GetRequiredService<ChatRuntime>();
                 var worker = host.GetRequiredService<CapsuleerMaintenance>();
                 Assert.Null(worker.Tick());
-                chat.Update(First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+                UpdateSelection(host, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
                 clock.Seconds++;
                 var resumed = Assert.IsType<MinerObservation>(worker.Tick());
                 Assert.Equal(
@@ -172,7 +172,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             MinerObservation flying;
             using (var host = ServerServices.Build(database, clock, liveWorld: true))
             {
-                host.GetRequiredService<ChatRuntime>().Update(First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+                UpdateSelection(host, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
                 var worker = host.GetRequiredService<CapsuleerMaintenance>();
                 do
                 {
@@ -182,7 +182,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             clock.Seconds += 86400;
             WorldInitialization.Initialize(database, clock);
             using var reopened = ServerServices.Build(database, clock, liveWorld: true);
-            reopened.GetRequiredService<ChatRuntime>().Update(First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+            UpdateSelection(reopened, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
             var resumed = reopened.GetRequiredService<CapsuleerMaintenance>();
             var warp = Until(MinerActivity.FlyingToBelt, resumed, clock);
             Assert.Equal(flying.Work.Stamp + 1, warp.Work.Stamp);
@@ -280,7 +280,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             long quantity;
             using (var host = ServerServices.Build(database, clock, liveWorld: true))
             {
-                host.GetRequiredService<ChatRuntime>().Update(First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+                UpdateSelection(host, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
                 var worker = host.GetRequiredService<CapsuleerMaintenance>();
                 var paid = Until(MinerActivity.Mining, worker, clock);
                 target = paid.Work.TargetId;
@@ -293,7 +293,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             }
             WorldInitialization.Initialize(database, clock);
             using var reopened = ServerServices.Build(database, clock, liveWorld: true);
-            reopened.GetRequiredService<ChatRuntime>().Update(First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+            UpdateSelection(reopened, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
             Until(MinerActivity.Docked, reopened.GetRequiredService<CapsuleerMaintenance>(), clock);
             using WorldDbContext saved = new(database.Path);
             Assert.Equal(quantity, saved.Set<WorldAsteroid>().Find(target)!.Quantity);
@@ -314,7 +314,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
         {
             CreateWorld(database, clock);
             using var host = ServerServices.Build(database, clock, liveWorld: true);
-            host.GetRequiredService<ChatRuntime>().Update(First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+            UpdateSelection(host, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
             var worker = host.GetRequiredService<CapsuleerMaintenance>();
             var paid = Until(MinerActivity.Mining, worker, clock);
             using (WorldDbContext world = new(database.Path))
@@ -349,7 +349,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
         {
             CreateWorld(database, clock);
             using var host = ServerServices.Build(database, clock, liveWorld: true);
-            host.GetRequiredService<ChatRuntime>().Update(First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
+            UpdateSelection(host, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
             var worker = host.GetRequiredService<CapsuleerMaintenance>();
             var paid = Until(MinerActivity.Mining, worker, clock);
             using (WorldDbContext world = new(database.Path))
@@ -445,6 +445,12 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
         {
             directory.Delete(recursive: true);
         }
+    }
+
+    internal static void UpdateSelection(ServiceProvider host, Guid session, ChatPilot? pilot)
+    {
+        host.GetRequiredService<IHumanPresence>().Update(session, pilot?.SystemId);
+        host.GetRequiredService<ChatRuntime>().Update(session, pilot);
     }
 
     private static MinerObservation Until(MinerActivity activity, CapsuleerMaintenance worker, TestClock clock)

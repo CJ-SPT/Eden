@@ -15,7 +15,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 115;
+    internal const int CurrentVersion = 116;
 
     public static void Open(
         WorldDbContext world,
@@ -98,9 +98,11 @@ internal static class WorldMigration
         NaniteRepairPersistence.Reconcile(world, catalog, clock);
         ModuleConditionPersistence.Reconcile(world, catalog, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         ShipHeatPersistence.ValidateSaved(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=115");
         Eden.World.Capsuleers.CapsuleerCommunityStore.Initialize(world);
         Eden.World.Capsuleers.CapsuleerCommunityStore.Provision(world, catalog, clock);
+        Eden.World.Capsuleers.CapsuleerPopulationStore.Initialize(world);
+        Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=116");
         history.Commit();
     }
 }

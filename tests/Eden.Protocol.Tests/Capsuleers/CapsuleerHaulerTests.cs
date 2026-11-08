@@ -201,7 +201,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
         Assert.Null(worker.Tick());
         var chat = host.GetRequiredService<ChatRuntime>();
         var session = Guid.NewGuid();
-        chat.Update(session, new(90000001, "Eden Pilot", 1000044, DestinationSystem, 0));
+        CapsuleerMinerTests.UpdateSelection(host, session, new(90000001, "Eden Pilot", 1000044, DestinationSystem, 0));
         for (int i = 0; i < 5; i++)
         {
             f.Clock.Seconds++;
@@ -218,7 +218,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             Assert.Equal(0, metrics.FittingCalculations);
         }
         Assert.Equal(stamp + 1, live.HaulerCheckpoint!.Work.Stamp);
-        chat.Update(session, null);
+        CapsuleerMinerTests.UpdateSelection(host, session, null);
         f.Clock.Seconds += 3600;
         using (var metrics = SessionPerformance.Begin("empty world hauling", output.WriteLine, force: true)!)
         {
@@ -241,7 +241,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
         host.GetRequiredService<CapsuleerTrade>().ListStock(miner, Source);
         var chat = host.GetRequiredService<ChatRuntime>();
         var session = Guid.NewGuid();
-        chat.Update(session, new(90000001, "Eden Pilot", 1000044, SourceSystem, 0));
+        CapsuleerMinerTests.UpdateSelection(host, session, new(90000001, "Eden Pilot", 1000044, SourceSystem, 0));
         var connection = chat.Authenticate("90000001", chat.IssueToken(session));
         var room = new ChatRoom(ChatRoomKind.Local, SourceSystem);
         chat.Join(connection.Id, room, null);
@@ -428,7 +428,7 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
         throw new InvalidOperationException($"Hauler did not finish {last?.Work.Activity}, target {last?.Work.TargetId}.");
     }
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         private readonly DirectoryInfo _directory = TestDirectory.Create("capsuleer-hauling-");
         internal WorldDatabase Database { get; }
@@ -440,7 +440,16 @@ public sealed class CapsuleerHaulerTests(ITestOutputHelper output)
             CapsuleerMinerTests.CreateWorld(Database, Clock);
             using (WorldDbContext world = new(Database.Path))
             {
-                world.Database.ExecuteSqlRaw("DROP TABLE WorldCapsuleerHauler; PRAGMA user_version=114");
+                world.Database.ExecuteSqlRaw(
+                    """
+                    DROP TABLE WorldCapsuleerJob;
+                    DROP TABLE WorldCapsuleerAgent;
+                    DROP TABLE WorldCapsuleerPopulation;
+                    DROP TABLE WorldCapsuleerClock;
+                    DROP TABLE WorldCapsuleerHauler;
+                    PRAGMA user_version=114;
+                    """
+                );
             }
             using (CatalogDbContext catalog = new(Database.CatalogPath, writable: true))
             {
