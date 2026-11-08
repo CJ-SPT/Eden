@@ -285,6 +285,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 using WorldDbContext world = new(database.Path);
                 quantity = world.Set<WorldAsteroid>().Find(target)!.Quantity;
                 host.GetRequiredService<ICapsuleerSimulation>().ObserveAggression(paid.Pilot.ShipId);
+                host.GetRequiredService<ICapsuleerSimulation>().ObserveAggression(1);
                 clock.Seconds++;
                 Assert.Equal(MinerActivity.Returning, worker.Tick()!.Work.Activity);
             }

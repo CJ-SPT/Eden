@@ -40,7 +40,13 @@ internal sealed class CapsuleerMiner(
     private bool _loaded;
     private long _threatenedShip;
 
-    public void ObserveAggression(long shipId) => Interlocked.Exchange(ref _threatenedShip, shipId);
+    public void ObserveAggression(long shipId)
+    {
+        if (_pilot?.ShipId == shipId)
+        {
+            Interlocked.Exchange(ref _threatenedShip, shipId);
+        }
+    }
 
     private int _seed;
     private DockedPilot? _pilot;
@@ -297,6 +303,7 @@ internal sealed class CapsuleerMiner(
 
     private void Move()
     {
+        bool wasWarping = _navigation.Warp is not null;
         var tick = _navigation.Advance(
             Pilot.ShipId,
             Work.Stamp,
@@ -306,9 +313,13 @@ internal sealed class CapsuleerMiner(
             _obstacles
         );
         _pilot = Pilot with { Position = tick.Position };
-        if (Live?.Combat is { } combat)
+        if (!wasWarping && _navigation.Warp is not null)
         {
-            combat.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
+            combat.Disengage(Pilot.ShipId);
+        }
+        if (Live?.Combat is { } residentCombat)
+        {
+            residentCombat.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
         }
         else
         {
@@ -328,6 +339,7 @@ internal sealed class CapsuleerMiner(
             if (Distance(_target!) <= DockingDefinitions.MaximumRange)
             {
                 _pilot = ships.Dock(Pilot.PilotId, Pilot.ShipId, Pilot.StationId);
+                combat.Disengage(Pilot.ShipId);
                 _navigation.Dock();
                 _work = Work with { Activity = MinerActivity.Docked, TargetId = 0 };
             }
