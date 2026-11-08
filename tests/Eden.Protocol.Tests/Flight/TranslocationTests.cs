@@ -28,7 +28,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Flight;
 
-public sealed class TranslocationTests
+public sealed partial class TranslocationTests
 {
     private const int OtherSystem = 30000144;
     private const int SourceMoon = 40009087;
@@ -563,7 +563,7 @@ public sealed class TranslocationTests
         long undocks = TaskTrackingTestData.Count(f.Db, TaskEvents.Undocked);
         string items = Items(f.Db);
         var travel = f.Db.Services.GetRequiredService<IPilotTranslocation>();
-        foreach (int target in new[] { 0, -1, int.MaxValue, (int)pilot.PilotId })
+        foreach (long target in new[] { 0L, -1L, int.MaxValue, long.MaxValue })
         {
             Assert.Throws<InvalidDataException>(() => travel.Move(pilot.PilotId, pilot.ShipId, target));
         }
@@ -635,7 +635,7 @@ public sealed class TranslocationTests
                 "/tr me 1e7",
                 "/tr me 99999999",
                 "/tr 90000002 30000144",
-                "/tr me 90000002",
+                "/tr me 9223372036854775808",
                 "/tr me pos=1,2,3",
                 "/tr me 30000144 noblock",
                 "/heal me",

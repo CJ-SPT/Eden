@@ -3,14 +3,18 @@ using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Flight;
 
-public sealed record TranslocationTarget(int Id, FlightSystem System, int? StationId, SpacePosition Position, double Radius);
+public sealed record TranslocationTarget(long Id, FlightSystem System, int? StationId, SpacePosition Position, double Radius);
 
 public sealed record PilotTranslocation(DockedPilot Pilot, InventoryChange ShipChange);
 
 public interface IPilotTranslocation
 {
-    TranslocationTarget Resolve(int targetId);
-    PilotTranslocation Move(long pilotId, long expectedShipId, int targetId);
+    TranslocationTarget Resolve(long targetId);
+    PilotTranslocation Move(long pilotId, long expectedShipId, long targetId);
+
+    // A delayed camera handoff commits the resolved destination snapshot, even
+    // when the target has since moved, docked or disappeared.
+    PilotTranslocation Move(long pilotId, long expectedShipId, TranslocationTarget target);
 }
 
 public static class TranslocationRules

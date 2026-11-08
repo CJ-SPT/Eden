@@ -711,7 +711,7 @@ internal sealed class FlightSession(
             {
                 return null;
             }
-            var moved = transit.Travel.Move(Pilot.PilotId, Pilot.ShipId, transit.Target.Id);
+            var moved = transit.Travel.Move(Pilot.PilotId, Pilot.ShipId, transit.Target);
             Relocate(moved.Pilot, transit.Objects);
             _travel.CompleteTranslocation();
             return moved;

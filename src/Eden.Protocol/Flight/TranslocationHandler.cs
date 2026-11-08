@@ -51,11 +51,11 @@ internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemOb
                 command is not [var action, var subject, var destination]
                 || !action.Equals("/tr", StringComparison.OrdinalIgnoreCase)
                 || !subject.Equals("me", StringComparison.OrdinalIgnoreCase)
-                || !int.TryParse(destination, NumberStyles.None, CultureInfo.InvariantCulture, out int targetId)
+                || !long.TryParse(destination, NumberStyles.None, CultureInfo.InvariantCulture, out long targetId)
                 || targetId <= 0
             )
             {
-                throw new InvalidDataException("Use /tr me followed by a solar system, NPC station or static celestial ID.");
+                throw new InvalidDataException("Use /tr me followed by a supported destination ID.");
             }
             var target = travel.Resolve(targetId);
             var destinationObjects = objects.Load(target.System.Id);
@@ -81,7 +81,7 @@ internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemOb
                 }
                 return PilotCallResult.None;
             }
-            var moved = travel.Move(context.Pilot.PilotId, context.Pilot.ShipId, targetId);
+            var moved = travel.Move(context.Pilot.PilotId, context.Pilot.ShipId, target);
             bool locationChanged = moved.Pilot.LocationId != context.Pilot.LocationId;
             context.Flight.Relocate(moved.Pilot, destinationObjects);
             if (locationChanged)

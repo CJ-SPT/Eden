@@ -15,15 +15,37 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Flight;
 
 [Injectable]
-internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorld lookup, ISystemObjects objects, TimeProvider clock)
-    : IPilotTranslocation
+internal sealed partial class PilotTranslocationStore(
+    WorldDatabase database,
+    SqliteWorld lookup,
+    ISystemObjects objects,
+    TimeProvider clock
+) : IPilotTranslocation
 {
     // Build 3662168 inventorycommon.const.groupSun.
     private const int StarGroup = 6;
 
-    public TranslocationTarget Resolve(int targetId)
+    public TranslocationTarget Resolve(long targetId)
+    {
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        lock (database.MotionLock)
+        {
+            return ResolveTarget(targetId);
+        }
+    }
+
+    private TranslocationTarget ResolveTarget(long targetId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
+        if (targetId is > 0 and <= int.MaxValue && ResolveCatalog(catalog, (int)targetId) is { } known)
+        {
+            return known;
+        }
+        return ResolveRuntime(catalog, targetId);
+    }
+
+    private TranslocationTarget? ResolveCatalog(CatalogDbContext catalog, int targetId)
+    {
         if (catalog.FindStation(targetId) is { } station)
         {
             return new(targetId, SystemObjects.FindSystem(catalog, station.SolarSystemId), station.Id, SpacePosition.Zero, 0);
@@ -50,10 +72,12 @@ internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorl
                 star?.Radius ?? 0
             );
         }
-        throw new InvalidDataException("Choose a known solar system, NPC station or static celestial destination.");
+        return null;
     }
 
-    public PilotTranslocation Move(long pilotId, long expectedShipId, int targetId)
+    public PilotTranslocation Move(long pilotId, long expectedShipId, long targetId) => Move(pilotId, expectedShipId, Resolve(targetId));
+
+    public PilotTranslocation Move(long pilotId, long expectedShipId, TranslocationTarget target)
     {
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
@@ -62,7 +86,6 @@ internal sealed class PilotTranslocationStore(WorldDatabase database, SqliteWorl
         {
             // Loading a system can initialize its asteroid rows. Do that before
             // acquiring the move transaction's SQLite writer on this same world.
-            var target = Resolve(targetId);
             var destinationObjects = target.StationId is null ? objects.Load(target.System.Id) : [];
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();

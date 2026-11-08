@@ -216,6 +216,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="npc-visibility-after-same-system-gm-translocation"></a>[NPC visibility after same-system GM translocation](protocol/navigation.md#npc-visibility-after-same-system-gm-translocation)
 - <a id="npc-spawn-and-translocation-follow-up"></a>[NPC spawn and translocation follow-up](protocol/navigation.md#npc-spawn-and-translocation-follow-up)
 - <a id="developer-translocation"></a>[Developer translocation](protocol/navigation.md#developer-translocation)
+- <a id="runtime-tr-destinations-november-8-2026"></a>[Runtime TR destinations, November 8, 2026](protocol/navigation.md#runtime-tr-destinations-november-8-2026)
 - <a id="camera-and-input-handoff"></a>[Camera and input handoff](protocol/navigation.md#camera-and-input-handoff)
 - <a id="map-home-station-row"></a>[Map home station row](protocol/navigation.md#map-home-station-row)
 - <a id="native-map-startup"></a>[Native map startup](protocol/navigation.md#native-map-startup)
