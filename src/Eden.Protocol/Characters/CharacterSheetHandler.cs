@@ -9,7 +9,6 @@ namespace Eden.Protocol.Characters;
 
 [Injectable]
 internal sealed class CharacterSheetHandler(
-    ICharacterCreation creation,
     IPilotCharacterSheet sheet,
     INpcDirectory npcs,
     IPlayerCorporations corporations,
@@ -49,20 +48,6 @@ internal sealed class CharacterSheetHandler(
             {
                 return new PilotCallResult.Failure(error.Message);
             }
-        }
-        if (service == "paperDollServer" && method == "GetPaperDollData" && args is [long characterId] && characterId == pilot.PilotId)
-        {
-            return creation.ReadAppearance(characterId, false) is { } data ? new CharacterAppearanceReply(data) : PilotCallResult.None;
-        }
-        if (
-            service == "paperDollServer"
-            && method == "GetPaperDollPortraitDataFor"
-            && args is [long portraitId]
-            && portraitId == pilot.PilotId
-        )
-        {
-            var data = creation.ReadAppearance(portraitId, true);
-            return new CharacterPortraitReply(data);
         }
         if (service == "facWarMgr" && method is "GetMyCharacterRankInfo" or "GetMyCharacterRankOverview")
         {

@@ -14,12 +14,6 @@ internal sealed record CharacterBiographyReply(string Biography) : BlueModel
     public override object ToBlue() => new BlueUnicode(Biography);
 }
 
-// Appearance schemas are client-defined, validated inert data stored as Blue bytes.
-internal sealed record CharacterAppearanceReply(byte[] Data) : BlueModel
-{
-    public override object? ToBlue() => BlueMarshal.Decode(Data);
-}
-
 internal sealed record CharacterPortraitReply(byte[]? Data) : BlueModel
 {
     public override object ToBlue() =>

@@ -12,6 +12,8 @@
 
 ## Development
 
+[Character portraits](protocol/characters.md#character-portraits-across-the-client--november-9-2026) covers native local rendering, public appearance reads and defaults for pilots without creator data.
+
 [Skill editing and client packages](world-configuration.md#skill-editor) covers original restoration, custom skills, protected removal, staged activation and automatic launcher installation.
 
 [Ordinary agent missions](protocol/agents.md) records supported combat/courier content, multi-room encounters, keyed acceleration gates and ship restrictions, standing-based access, agreed rewards, delivery storylines and native protocol evidence.

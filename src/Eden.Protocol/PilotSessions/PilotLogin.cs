@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Characters;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
 
@@ -39,9 +40,9 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session, S
 
         await packets.WriteAsync(2);
         byte[] challenge = RandomNumberGenerator.GetBytes(64);
-        // Python 2 marshal string containing the fixed expression "{}". The client verifies
-        // the local signature, evaluates it, and returns the empty dictionary as its result.
-        byte[] expression = BlueMarshal.Encode(new byte[] { (byte)'s', 2, 0, 0, 0, (byte)'{', (byte)'}' });
+        // The signed expression enables the native portrait renderer before the roster
+        // opens, and still returns an empty dictionary without collecting client data.
+        byte[] expression = PortraitClient.Expression;
         byte[] signature = key.SignData(PilotLoginWire.HashArgument(expression), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         await packets.WriteAsync(
             new LoginChallenge(challenge, new SignedSettings(expression, signature), PilotLoginWire.HashArgument(credentials.Challenge))

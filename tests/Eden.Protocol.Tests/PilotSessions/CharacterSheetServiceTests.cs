@@ -1,6 +1,7 @@
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
@@ -241,6 +242,8 @@ public sealed class CharacterSheetServiceTests
         var expected = attributes.ToDogma().ToDictionary();
         expected[DogmaAttributeId.MaxJumpClones] = 0;
         expected[DogmaAttributeId.CloneJumpCooldown] = JumpCloneRules.BaseCooldownHours;
+        expected[DogmaAttributeId.MaxActiveDrones] = 0;
+        expected[DogmaAttributeId.DroneControlDistance] = (int)DroneRules.BaseControlRange;
         Assert.Equal(expected, dogma.Attributes);
         var values = Assert.IsType<Dictionary<long, object?>>(Reply(fixture.Call("@skills", "GetAttributes", [])));
         Assert.Equal(5, values.Count);

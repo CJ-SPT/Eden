@@ -179,6 +179,7 @@ These procedures retain historical acceptance examples, including old Rookie fix
 
 - [Create a pilot and check the first spawn](#create-a-pilot-and-check-the-first-spawn)
 - [Check the character sheet](#check-the-character-sheet)
+- [Check character portraits](#check-character-portraits)
 - [Check saved ship health](#check-saved-ship-health)
 - [Check a rejected gameplay action](#check-a-rejected-gameplay-action)
 
@@ -191,6 +192,10 @@ To test an existing save separately, stop the host, copy `world.sqlite` into a t
 #### Check the character sheet
 
 Start a fresh client with `-Login` and select **Eden Pilot**. Open the sheet from the portrait on the left, or use the window restored at login. Under **Character → Home Station**, check the pilot name, birth date, Jita home station, and total SP. Click **Skills → Skill Catalogue**, filter to **My skills**, and select **Spaceship Command**. On a fresh save the Caldari pilot has Spaceship Command III and 384,047 total SP. Reopen the client after restarting the server to compare against the saved pilot.
+
+#### Check character portraits
+
+After updating, restart the server and fully close/reopen the client. The signed login adapter takes effect before character selection; no separate client package installation is required. Compare the same pilot on the selection card, character sheet, Neocom, chat member list and station guest list. A newly created pilot should retain its submitted appearance and portrait settings. Seeded pilots and simulated capsuleers without creator data use native catalog defaults of their bloodline and gender. Reopen a window to compare its cached portrait. Initial native rendering may briefly show a silhouette. These are optional maintainer checks; native rendering has not been accepted by an agent.
 
 #### Check saved ship health
 

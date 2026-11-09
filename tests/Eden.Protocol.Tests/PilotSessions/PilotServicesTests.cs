@@ -502,7 +502,7 @@ public sealed class PilotServicesTests
     }
 
     [Fact]
-    public async Task SheetReadsOtherPilotsPublicProfilesAfterSelection()
+    public async Task SheetReadsRosterProfilesBeforeSelectionAndOtherPilotsAfterSelection()
     {
         var packets = await ExchangeAsync(
             42,
@@ -517,7 +517,8 @@ public sealed class PilotServicesTests
             Request("facWarMgr", "GetCharacterRankInfo", [90000002L]),
             Request("corporationSvc", "GetEmployementRecordAndCharacterTransfers", [90000002L])
         );
-        Assert.EndsWith(".ErrorResponse", packets[0].Name);
+        Assert.EndsWith(".CallRsp", packets[0].Name);
+        Assert.Equal(90000001L, BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[0])).State)["characterID"]);
         Assert.EndsWith(".CallRsp", packets[3].Name);
         Assert.Equal(90000002L, BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[3])).State)["characterID"]);
         var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[4])).State);

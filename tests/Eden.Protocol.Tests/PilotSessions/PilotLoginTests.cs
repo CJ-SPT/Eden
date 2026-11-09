@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using Eden.Protocol.Characters;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
@@ -54,6 +55,7 @@ public sealed class PilotLoginTests
             Assert.Equal(2L, await ReadEncrypted());
             object?[] reply = BlueRead.Tuple(await ReadEncrypted(), 4);
             object?[] signed = BlueRead.Tuple(reply[1], 2);
+            Assert.Equal(PortraitClient.Expression, BlueRead.Bytes(signed[0]));
             byte[] digest = SHA256.HashData(BlueMarshal.Encode(new object?[] { signed[0] }));
             Assert.True(key.VerifyData(digest, BlueRead.Bytes(signed[1]), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
             await SendEncrypted(new object?[] { new byte[32], "", null });

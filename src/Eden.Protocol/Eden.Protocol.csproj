@@ -4,6 +4,7 @@
     <ProjectReference Include="../Eden.Infrastructure/Eden.Infrastructure.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Characters/portrait_client.py" />
     <PackageReference Include="Google.Protobuf" Version="3.36.2" />
     <PackageReference Include="Grpc.Tools" Version="2.85.0" PrivateAssets="all" />
     <Protobuf

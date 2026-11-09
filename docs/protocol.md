@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Character portraits across the client, November 9, 2026](protocol/characters.md#character-portraits-across-the-client--november-9-2026)
+
 - [Silent bounty SP rewards, November 9, 2026](protocol/combat.md#silent-bounty-sp-rewards-november-9-2026)
 
 - [Skill editor and signed client packages, November 9, 2026](protocol/characters.md#skill-editor-and-signed-client-packages--november-9-2026)
