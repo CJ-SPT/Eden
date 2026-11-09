@@ -18,6 +18,7 @@ public sealed class MapStartupTests
         ("charMgr", "GetHomeStationRow"),
         ("solarsystemInterferenceMgr", "GetAllInterferenceBands"),
         ("solarsystemInterferenceMgr", "GetLocalInterferenceState"),
+        ("map", "GetAllRoamingWeatherSystems"),
     ];
 
     [Theory]
@@ -118,6 +119,16 @@ public sealed class MapStartupTests
     {
         switch (service)
         {
+            case "map":
+                var weather = Assert.IsType<BlueInstance>(reply);
+                Assert.Equal("eve.common.script.sys.rowset.Rowset", weather.Name);
+                var weatherFields = BlueRead.Fields(weather.State);
+                Assert.Equal(
+                    new[] { "locationID", "sceneType" },
+                    Assert.IsType<List<object?>>(weatherFields["header"]).Select(BlueMarshal.Text)
+                );
+                Assert.Empty(Assert.IsType<List<object?>>(weatherFields["lines"]));
+                break;
             case "solarsystemInterferenceMgr" when method == "GetLocalInterferenceState":
                 Assert.Null(reply);
                 break;

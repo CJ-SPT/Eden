@@ -14,6 +14,8 @@
 
 ## Development
 
+[Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) covers pathfinder history caching, weather baseline replies and simulated search/navigation requests.
+
 [Universal native search](protocol/characters.md#universal-native-search-november-9-2026) covers mixed categories, current saved names, catalog indexing and owner-name resolution.
 
 [Ice harvesting and public ice fields](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)

@@ -2,6 +2,8 @@
 
 [Documentation index](README.md)
 
+[Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) records the route planner’s history dependency, stable cache replies and empty telemetry limits.
+
 [Universal native search](protocol/characters.md#universal-native-search-november-9-2026) records mixed-category main/map searches and result resolution.
 
 Use the topic pages for native request/reply shapes, implementation findings, source revisions, automated validation and historical client observations. Records have moved by topic; their evidence and limitations are retained.
