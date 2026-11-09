@@ -67,7 +67,12 @@ public sealed record SkillEditorModifier(
     bool Local,
     string Description,
     int? RequiredSkillId = null
-);
+)
+{
+    public string AttributeName { get; init; } = "";
+    public string TargetName { get; init; } = "";
+    public string UnitName { get; init; } = "";
+}
 
 public sealed record SkillEditorOption(int Id, string Name, string Description = "", bool Available = true, string SearchTerms = "")
 {

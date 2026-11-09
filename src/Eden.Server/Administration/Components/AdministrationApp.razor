@@ -94,6 +94,9 @@
         .skill-bonus-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
         .skill-section .skill-bonus-heading h3 { margin: 0; }
         .skill-bonus-value { max-width: 260px; }
+        .skill-bonus-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+        .skill-bonus-builder { margin-top: 20px; }
+        .skill-bonus-summary { border-left: 3px solid var(--accent); padding-left: 12px; }
         .skill-section > button { margin-top: 12px; }
         .skill-recipe, .skill-preview { padding: 16px; background: var(--background); border-radius: 8px; }
         .skill-recipe p, .skill-preview p { margin: 8px 0 12px; }
@@ -109,6 +112,7 @@
                 grid-column: 1; grid-row: auto;
             }
             .skill-control-row > button { justify-self: start; }
+            .skill-bonus-fields { grid-template-columns: 1fr; gap: 4px; }
         }
         @@media (max-width: 450px) {
             .skill-preview { padding: 12px; }

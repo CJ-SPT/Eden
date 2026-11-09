@@ -132,6 +132,18 @@ public sealed class SkillBonusPresentationTests
         {
             Groups = [new(1, "Mining"), new(2, "Science"), new(3, "Astrogeology")],
         };
+        options = options with
+        {
+            Attributes = options.Attributes.Concat(SkillBonusBuilderTests.Choices().Attributes).DistinctBy(option => option.Id).ToArray(),
+            Effects = options
+                .Effects.Concat(
+                    SkillBonusBuilderTests
+                        .Choices()
+                        .Effects.Where(option => option.Id is 10 or 11)
+                        .Select(option => option with { Id = option.Id + 900000 })
+                )
+                .ToArray(),
+        };
         SkillForm form = new()
         {
             Prerequisites = [new() { TypeId = 1, Level = 5 }, new() { TypeId = 2, Level = 4 }, new() { TypeId = 3, Level = 3 }],
@@ -158,7 +170,7 @@ public sealed class SkillBonusPresentationTests
             );
             string html = component.ToHtmlString();
             Assert.Equal(3, html.Split("skill-input-row skill-control-row", StringSplitOptions.None).Length - 1);
-            Assert.Equal(4, html.Split("type=\"number\"", StringSplitOptions.None).Length - 1);
+            Assert.Equal(5, html.Split("type=\"number\"", StringSplitOptions.None).Length - 1);
             Assert.Contains("value=\"5\"", html);
             Assert.Contains("value=\"4\"", html);
             Assert.Contains("value=\"3\"", html);
@@ -171,6 +183,17 @@ public sealed class SkillBonusPresentationTests
                 panel!.SwitchView();
                 await File.WriteAllTextAsync(Path.Combine(output, "skill-editor-advanced.html"), component.ToHtmlString());
                 Assert.True(SkillEditingRules.SameDefinition(before, form.Build()));
+                var empty = await renderer.RenderComponentAsync<BonusHost>(
+                    ParameterView.FromDictionary(
+                        new Dictionary<string, object?>
+                        {
+                            [nameof(BonusHost.Form)] = new SkillForm(),
+                            [nameof(BonusHost.Options)] = options,
+                            [nameof(BonusHost.Editable)] = true,
+                        }
+                    )
+                );
+                await File.WriteAllTextAsync(Path.Combine(output, "skill-bonus-empty.html"), empty.ToHtmlString());
             }
         });
     }

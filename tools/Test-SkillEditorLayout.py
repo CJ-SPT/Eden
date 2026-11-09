@@ -20,7 +20,7 @@ def check_layout(fixture_directory):
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page()
-        for name in ("skill-editor", "skill-editor-advanced"):
+        for name in ("skill-editor", "skill-editor-advanced", "skill-bonus-empty", "skill-bonus-composed", "skill-bonus-ready"):
             fixture = (fixture_directory / f"{name}.html").read_text(encoding="utf-8")
             document = (
                 '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -41,7 +41,7 @@ def check_layout(fixture_directory):
                             ".forEach(element => element.open = true)"
                         )
                     rows = page.locator(".skill-control-row")
-                    assert rows.count() == (6 if name.endswith("advanced") else 3)
+                    assert rows.count() == (6 if name.endswith("advanced") else 0 if name.startswith("skill-bonus-") else 3)
                     for row in rows.all():
                         skill = row.locator("select").bounding_box()
                         numbers = row.locator('input[type="number"]')
@@ -64,6 +64,30 @@ def check_layout(fixture_directory):
                     if name == "skill-editor":
                         assert page.locator('[data-bonus="ore-mining-yield"] input').count() == 1
                         assert page.locator(".skill-preview").evaluate("element => element.scrollWidth <= element.clientWidth")
+                    for fields in page.locator(".skill-bonus-fields").all():
+                        boxes = [control.bounding_box() for control in fields.locator("input, select").all()]
+                        if width > 900:
+                            assert max(box["y"] for box in boxes) - min(box["y"] for box in boxes) < 1
+                        else:
+                            assert all(boxes[index + 1]["y"] >= box["y"] + box["height"]
+                                       for index, box in enumerate(boxes[:-1]))
+                        checks += 1
+                    if name.endswith("composed"):
+                        card = page.locator('[data-bonus="configured"]')
+                        assert card.locator("select").nth(0).input_value() == "True"
+                        assert card.locator("select").nth(1).input_value() == "True"
+                        assert card.locator('input[type="number"]').input_value() == "7.5"
+                    if not name.endswith("advanced"):
+                        builder = page.locator(".skill-bonus-builder")
+                        for label in ("What changes", "Applies to", "Change", "Bonus amount", "Apply"):
+                            assert builder.get_by_label(label, exact=True).is_visible()
+                        assert builder.get_by_role("button", name="Add bonus", exact=True).is_visible()
+                        assert builder.get_by_label("Apply", exact=True).input_value() == "True"
+                        if name.endswith("ready"):
+                            assert builder.get_by_label("What changes", exact=True).input_value() == "37:True"
+                            assert builder.get_by_label("Applies to", exact=True).input_value() == "your ship"
+                            assert builder.get_by_role("button", name="Add bonus", exact=True).is_enabled()
+                            assert "per skill level" in builder.locator(".skill-bonus-summary").inner_text()
                     assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
                     overflowing = page.locator(".skill-editor").evaluate(
                         """editor => [...editor.querySelectorAll('input, select, button')].filter(element => {
@@ -74,9 +98,9 @@ def check_layout(fixture_directory):
                     )
                     assert not overflowing, (name, width, expanded, overflowing)
                     if not expanded:
-                        page.screenshot(path=str(fixture_directory / f"{name}-{width}.png"), full_page=True)
+                        page.locator(".skill-editor").screenshot(path=str(fixture_directory / f"{name}-{width}.png"))
         browser.close()
-    print(f"Passed {checks} row checks across both views and five widths, with search collapsed and expanded; no overflow.")
+    print(f"Passed {checks} row checks across populated, technical, empty, composed and ready views and five widths, with search collapsed and expanded; no overflow.")
 
 
 if __name__ == "__main__":

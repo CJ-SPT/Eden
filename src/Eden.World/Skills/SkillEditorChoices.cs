@@ -88,6 +88,8 @@ public sealed partial class SkillEditorStore
                 DogmaOperation.PostPercent => $"Change {target} by {source} percent (25 means +25%; -25 means -25%).",
                 _ => $"{source} changes {target}; this operation cannot be edited here.",
             };
+            var targetAttribute = attributes.GetValueOrDefault(modifier.ModifiedAttributeID ?? 0);
+            var unit = units.GetValueOrDefault(targetAttribute?.UnitID ?? 0);
             return new(
                 (int)(modifier.ModifyingAttributeID ?? 0),
                 (int)(modifier.ModifiedAttributeID ?? 0),
@@ -95,7 +97,12 @@ public sealed partial class SkillEditorStore
                 modifier.Domain == "itemID" && modifier.Func == "ItemModifier",
                 description,
                 modifier.Domain == "shipID" && modifier.Func == "LocationRequiredSkillModifier" ? (int?)modifier.SkillTypeID : null
-            );
+            )
+            {
+                AttributeName = AttributeName(modifier.ModifiedAttributeID),
+                TargetName = Target(modifier),
+                UnitName = unit is null ? "" : Name(unit.DisplayNameID, unit.Name),
+            };
         }
         string MarketPath(long id)
         {

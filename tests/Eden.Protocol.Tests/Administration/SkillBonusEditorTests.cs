@@ -286,22 +286,22 @@ public sealed class SkillBonusEditorTests
             );
             string html = component.ToHtmlString();
             Assert.DoesNotContain("Effect rule", html);
-            Assert.DoesNotContain("<select", html);
+            Assert.Contains("What changes", html);
             if (legacy)
             {
-                Assert.Contains("This bonus stays at 20% at every trained level", html);
+                Assert.Contains("existing mining rules need repair", html);
                 Assert.Contains("Make it scale with skill level", html);
             }
             else
             {
-                Assert.Contains("Bonus per skill level (%)", html);
+                Assert.Contains("Amount (%)", html);
                 Assert.Contains("data-bonus=\"ore-mining-yield\"", html);
-                Assert.Equal(1, html.Split("type=\"number\"", StringSplitOptions.None).Length - 1);
+                Assert.Equal(2, html.Split("type=\"number\"", StringSplitOptions.None).Length - 1);
                 Assert.Contains("&#x2B;125%", html);
-                Assert.Contains("2.25", html);
+
                 Assert.Contains("Ice harvesters, gas harvesters and mining drones", html);
                 Assert.Contains("value=\"25\"", html);
-                Assert.Contains("Technical details", html);
+                Assert.Contains("Technical rules", html);
             }
             Assert.Equal(!editable, html.Contains("bonuses are read-only", StringComparison.Ordinal));
             Assert.Equal(!editable, html.Contains("<fieldset disabled", StringComparison.Ordinal));
@@ -362,9 +362,25 @@ public sealed class SkillBonusEditorTests
 
     public sealed class TestableBonuses : SkillBonuses
     {
-        public Task Add() => AddMining();
+        public new Task Add() => AddMining();
 
         public Task Remove() => RemoveMining();
+
+        public void ChooseStat(string stat)
+        {
+            StatChanged(new() { Value = stat });
+            StateHasChanged();
+        }
+
+        public Task Compose(double amount, bool decrease, bool perLevel)
+        {
+            Amount = amount;
+            Decrease = decrease;
+            PerLevel = perLevel;
+            return base.Add();
+        }
+
+        public void Refresh() => StateHasChanged();
 
         public void SwitchView()
         {

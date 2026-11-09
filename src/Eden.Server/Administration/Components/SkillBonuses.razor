@@ -1,9 +1,11 @@
+@using System.Globalization
+@using Eden.Gameplay.Dogma
 @using Eden.Gameplay.Skills
 <section class="skill-section">
     <div class="skill-bonus-heading">
         <h3>Bonuses</h3>
         <button type="button" class="secondary" @onclick="ToggleTechnical">
-            @(TechnicalEditing ? "Back to bonuses" : "Advanced: edit technical rules")
+            @(TechnicalEditing ? "Back to bonuses" : "Technical rules")
         </button>
     </div>
     @if (TechnicalEditing)
@@ -18,77 +20,108 @@
                 Create a new skill to add a supported custom bonus.</p>
         }
         <fieldset disabled="@(!Editable)">
-            @if (HasMiningBonus)
+            <div class="skill-bonus-list">
+            @foreach (var bonus in Bonuses)
             {
-                var mining = Form.Attributes.Single(attribute => attribute.AttributeId == SkillBonusEditing.MiningBonusAttribute);
-                <div class="skill-effect-card" data-bonus="ore-mining-yield">
+                <div class="skill-effect-card" data-bonus="@(bonus.Template.AttributeId == (int)DogmaAttributeId.MiningAmount ? "ore-mining-yield" : "configured")">
                     <div class="skill-bonus-heading">
-                        <h3>Ore mining yield</h3>
-                        <button type="button" class="secondary" @onclick="RemoveMining">Remove bonus</button>
+                        <h3>@bonus.Template.Name</h3>
+                        <button type="button" class="secondary" @onclick="() => Remove(bonus)">Remove bonus</button>
                     </div>
-                    <label class="skill-bonus-value">Bonus per skill level (%)
-                        <InputNumber @bind-Value="mining.Value" step="any" @bind-Value:after="ValueChanged" />
-                    </label>
-                    <p>Applies to ore mining lasers and strip miners requiring Mining.</p>
-                    <p class="muted">Ice harvesters, gas harvesters and mining drones do not receive this bonus.</p>
+                    <p>Affects @bonus.Template.Target.</p>
+                    <div class="skill-bonus-fields">
+                        <label>Change
+                            <select value="@bonus.Decrease.ToString()" @onchange="args => ChangeDirection(bonus, args)">
+                                <option value="False">Increase</option><option value="True">Decrease</option>
+                            </select>
+                        </label>
+                        <label>Amount (@(bonus.Template.Percent ? "%" : bonus.Template.Unit))
+                            <InputNumber @bind-Value="bonus.Amount" @bind-Value:after="ValueChanged" min="0" step="any" />
+                        </label>
+                        <label>Apply
+                            <select value="@bonus.PerLevel.ToString()" disabled="@(!bonus.Template.CanScale || bonus.Template.InlineScaling)"
+                                    @onchange="args => ChangeScaling(bonus, args)">
+                                <option value="False">Once trained</option><option value="True">Per skill level</option>
+                            </select>
+                        </label>
+                    </div>
+                    @if (bonus.Template.AttributeId == (int)DogmaAttributeId.MiningAmount)
+                    {
+                        <p class="muted">Ice harvesters, gas harvesters and mining drones do not receive this bonus.</p>
+                    }
                     <div class="skill-preview scroll">
                         <table>
-                            <caption>Extra ore yield from this skill</caption>
+                            <caption>Change from this skill alone</caption>
                             <thead><tr>@for (int level = 1; level <= 5; level++) { <th>Level @level</th> }</tr></thead>
-                            <tbody><tr>@for (int level = 1; level <= 5; level++)
-                                { <td>@((mining.Value * level).ToString("+0.##;-0.##;0"))%</td> }</tr></tbody>
+                            <tbody><tr>@for (int level = 1; level <= 5; level++) { <td>@bonus.Preview(level)</td> }</tr></tbody>
                         </table>
-                        <p class="muted">At level V: @((1 + mining.Value * 5 / 100).ToString("0.##"))× yield from this bonus.
-                            Other skills and bonuses can multiply the result.</p>
                     </div>
-                    <details>
-                        <summary>Technical details</summary>
-                        <p class="muted">The editor manages the level scaling and yield application together.
-                            Effect @SkillBonusEditing.MiningScalingEffect scales attribute @SkillBonusEditing.MiningBonusAttribute;
-                            effect @SkillBonusEditing.MiningYieldEffect applies it to matching modules.</p>
-                    </details>
                 </div>
             }
-            else if (SkillBonusEditing.CanConfigureMining(Form, Options) && SkillBonusEditing.HasMiningRules(Form, Options))
+            </div>
+            @if (SkillBonusEditing.CanConfigureMining(Form, Options) && SkillBonusEditing.HasMiningRules(Form, Options)
+                && !SkillBonusEditing.HasMiningBonus(Form, Options) && Bonuses.Count == 0)
             {
                 <div class="notice">
-                    <h3>Ore mining yield needs setup</h3>
-                    @if (!Form.Effects.Any(effect => effect.EffectId == SkillBonusEditing.MiningScalingEffect)
-                        && Form.Attributes.FirstOrDefault(attribute => attribute.AttributeId == SkillBonusEditing.MiningBonusAttribute) is { } flat)
-                    {
-                        <p>This bonus stays at @flat.Value% at every trained level.</p>
-                    }
-                    else
-                    {
-                        <p>The mining bonus has incomplete or overlapping rules.</p>
-                    }
-                    <p>Keep the current value and let the editor connect the rules.</p>
+                    <p>The existing mining rules need repair before they can be edited here.</p>
                     <button type="button" @onclick="AddMining">Make it scale with skill level</button>
                 </div>
             }
-            @if (Form.Effects.Any(effect => !HasMiningBonus
-                || effect.EffectId is not (SkillBonusEditing.MiningScalingEffect or SkillBonusEditing.MiningYieldEffect)))
+            @if (OtherRules)
             {
-                <p class="notice">Existing technical rules are preserved. Open Advanced to review or edit rules
-                    that cannot be shown as a guided bonus.</p>
+                <p class="notice">Some existing rules need the technical editor. They are preserved when you add a bonus here.</p>
             }
-            else if (!HasMiningBonus)
-            {
-                <p class="muted">No bonuses added. Choose a bonus to set what this skill improves.</p>
-            }
-            @if (!HasMiningBonus && SkillBonusEditing.CanConfigureMining(Form, Options)
-                && !SkillBonusEditing.HasMiningRules(Form, Options))
-            {
-                <button type="button" class="secondary" @onclick="() => ChoosingBonus = !ChoosingBonus">Add bonus</button>
-                @if (ChoosingBonus)
+            <div class="skill-recipe skill-bonus-builder">
+                <h3>Build a bonus</h3>
+                <p>Choose a stat, its target, and the size of the change.</p>
+                <label>Find a stat
+                    <input type="search" value="@Search" @oninput="FilterChanged" placeholder="For example: velocity, damage, cargo, mining" />
+                </label>
+                <div class="grid">
+                    <label>What changes
+                        <select aria-label="What changes" value="@SelectedStat" @onchange="StatChanged">
+                            <option value="">Choose a stat…</option>
+                            @foreach (var stat in StatChoices) { <option value="@stat.StatKey">@stat.StatName</option> }
+                        </select>
+                    </label>
+                    <label>Applies to
+                        <select aria-label="Applies to" value="@SelectedTarget" @onchange="TargetChanged" disabled="@(SelectedStat.Length == 0)">
+                            <option value="">Choose a target…</option>
+                            @foreach (var target in Targets) { <option value="@target">@target</option> }
+                        </select>
+                    </label>
+                </div>
+                <div class="skill-bonus-fields">
+                    <label>Change
+                        <select aria-label="Change" value="@Decrease.ToString()" @onchange="DirectionChanged">
+                            <option value="False">Increase</option><option value="True">Decrease</option>
+                        </select>
+                    </label>
+                    <label>Amount (@(Candidate?.Percent == false ? Candidate.Unit : "%"))
+                        <input aria-label="Bonus amount" type="number" @bind="Amount" min="0" step="any" />
+                    </label>
+                    <label>Apply
+                        <select aria-label="Apply" value="@PerLevel.ToString()" @onchange="BasisChanged"
+                                disabled="@(Candidate is null || !Candidate.CanScale || Candidate.InlineScaling)">
+                            <option value="False">Once trained</option><option value="True">Per skill level</option>
+                        </select>
+                    </label>
+                </div>
+                @if (Candidate is { } candidate)
                 {
-                    <div class="skill-recipe">
-                        <h3>Choose a bonus</h3>
-                        <p>Ore mining yield increases how much ore matching mining modules collect per cycle.</p>
-                        <button type="button" @onclick="AddMining">Add ore mining yield</button>
-                    </div>
+                    <p class="skill-bonus-summary"><strong>@(Decrease ? "Decrease" : "Increase") @candidate.Name.ToLowerInvariant()
+                        by @Amount@(candidate.Percent ? "%" : " " + candidate.Unit) @(PerLevel ? "per skill level" : "once trained")</strong>
+                        for @candidate.Target.</p>
+                    @if (Conflict is { } conflict) { <p class="error" role="status">@conflict</p> }
                 }
-            }
+                else
+                {
+                    <p class="muted">@(SelectedStat.Length == 0 ? "Choose a stat to see its available targets." : "Choose who receives this bonus.")</p>
+                }
+                @if (!ValidAmount) { <p class="error">Enter a finite amount of zero or more.</p> }
+                @if (!StatChoices.Any()) { <p class="muted">No supported stats match this search.</p> }
+                <button type="button" disabled="@(Candidate is null || Conflict is not null || !ValidAmount || !ValidBasis)" @onclick="Add">Add bonus</button>
+            </div>
         </fieldset>
     }
 </section>
@@ -99,42 +132,113 @@
     [Parameter] public bool Editable { get; set; } = true;
     [Parameter] public EventCallback Changed { get; set; }
     protected bool TechnicalEditing;
-    private bool ChoosingBonus;
+    protected string SelectedStat = "";
+    protected string SelectedTarget = "";
+    protected double Amount = 5;
+    protected bool Decrease;
+    protected bool PerLevel = true;
+    private string Search = "";
     private SkillForm? PreviousForm;
-    private bool HasMiningBonus => SkillBonusEditing.HasMiningBonus(Form, Options);
+    private SkillEditorChoices? PreviousOptions;
+    private IReadOnlyList<SkillBonusTemplate> Templates = [];
+    private IReadOnlyList<SkillBonusValue> Bonuses => SkillBonusBuilder.Read(Form, Options, Templates);
+    private IEnumerable<SkillBonusTemplate> StatChoices => Templates
+        .Where(template => template.StatKey == SelectedStat || Search.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .All(word => (template.Name + " " + template.Target + " " + template.SearchTerms).Contains(word, StringComparison.OrdinalIgnoreCase)))
+        .DistinctBy(template => template.StatKey);
+    private IEnumerable<string> Targets => Templates.Where(template => template.StatKey == SelectedStat).Select(template => template.Target).Distinct();
+    private IEnumerable<SkillBonusTemplate> Candidates => Templates.Where(template => template.StatKey == SelectedStat && template.Target == SelectedTarget);
+    private SkillBonusTemplate? Candidate => Candidates.OrderBy(template => SkillBonusBuilder.Conflict(Form, Options, template) is not null)
+        .ThenByDescending(template => template.CanScale).ThenBy(template => template.EffectId).FirstOrDefault();
+    private string? Conflict => Candidate is { } candidate ? SkillBonusBuilder.Conflict(Form, Options, candidate) : null;
+    private bool ValidAmount => double.IsFinite(Amount) && Amount >= 0;
+    private bool ValidBasis => Candidate is { } candidate && (!PerLevel || candidate.CanScale)
+        && (PerLevel || !candidate.InlineScaling);
+    private bool OtherRules => Form.Effects.Any(effect => !Bonuses.Any(bonus =>
+        effect.EffectId == bonus.Template.EffectId || effect.EffectId == bonus.ScalingId));
 
     protected override void OnParametersSet()
     {
+        if (!ReferenceEquals(PreviousOptions, Options))
+        {
+            PreviousOptions = Options;
+            Templates = SkillBonusBuilder.Templates(Options);
+        }
         if (!ReferenceEquals(PreviousForm, Form))
         {
             PreviousForm = Form;
             TechnicalEditing = false;
-            ChoosingBonus = false;
+            SelectedStat = "";
+            SelectedTarget = "";
+            Search = "";
         }
     }
 
     protected void ToggleTechnical() => TechnicalEditing = !TechnicalEditing;
-
+    private void DirectionChanged(ChangeEventArgs args) => Decrease = bool.TryParse(args.Value?.ToString(), out bool value) && value;
+    private void BasisChanged(ChangeEventArgs args) => PerLevel = bool.TryParse(args.Value?.ToString(), out bool value) && value;
+    private void FilterChanged(ChangeEventArgs args) => Search = args.Value?.ToString() ?? "";
+    protected void StatChanged(ChangeEventArgs args)
+    {
+        SelectedStat = args.Value?.ToString() ?? "";
+        SelectedTarget = Targets.Count() == 1 ? Targets.Single() : "";
+        PerLevel = Candidate?.CanScale ?? true;
+    }
+    private void TargetChanged(ChangeEventArgs args)
+    {
+        SelectedTarget = args.Value?.ToString() ?? "";
+        PerLevel = Candidate?.CanScale ?? false;
+    }
+    protected async Task Add()
+    {
+        if (!Editable || Candidate is not { } candidate || Conflict is not null || !ValidAmount || !ValidBasis)
+        {
+            return;
+        }
+        SkillBonusBuilder.Add(Form, Options, candidate, Amount, Decrease, PerLevel);
+        SelectedStat = "";
+        SelectedTarget = "";
+        await Changed.InvokeAsync();
+    }
+    private async Task Remove(SkillBonusValue bonus)
+    {
+        if (Editable)
+        {
+            SkillBonusBuilder.Remove(bonus);
+            await Changed.InvokeAsync();
+        }
+    }
+    private async Task ChangeScaling(SkillBonusValue bonus, ChangeEventArgs args)
+    {
+        if (Editable && bool.TryParse(args.Value?.ToString(), out bool perLevel))
+        {
+            SkillBonusBuilder.SetScaling(bonus, perLevel);
+            await Changed.InvokeAsync();
+        }
+    }
+    private async Task ChangeDirection(SkillBonusValue bonus, ChangeEventArgs args)
+    {
+        if (Editable && bool.TryParse(args.Value?.ToString(), out bool decrease))
+        {
+            bonus.Decrease = decrease;
+            await Changed.InvokeAsync();
+        }
+    }
     protected async Task AddMining()
     {
-        if (!Editable || !SkillBonusEditing.CanConfigureMining(Form, Options))
+        if (Editable && SkillBonusEditing.CanConfigureMining(Form, Options))
         {
-            return;
+            SkillBonusEditing.AddMining(Form, Options);
+            await Changed.InvokeAsync();
         }
-        SkillBonusEditing.AddMining(Form, Options);
-        ChoosingBonus = false;
-        await Changed.InvokeAsync();
     }
-
     protected async Task RemoveMining()
     {
-        if (!Editable || !HasMiningBonus)
+        if (Editable && SkillBonusBuilder.Read(Form, Options, Templates).FirstOrDefault(bonus =>
+            bonus.Template.EffectId == SkillBonusEditing.MiningYieldEffect) is { } bonus)
         {
-            return;
+            await Remove(bonus);
         }
-        SkillBonusEditing.RemoveMining(Form, Options);
-        await Changed.InvokeAsync();
     }
-
     private Task ValueChanged() => Changed.InvokeAsync();
 }
