@@ -22,6 +22,9 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 ## Current status
 
+[Gas harvesting](docs/protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026) supports eight static tools and 16
+Mykoserocin nebula templates, with finite saved clouds, probe discovery and gas hull bonuses. Hazardous gas and reactions remain pending.
+
 [Modulated ore mining](docs/protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026) supports the three static modulated miners
 and 66 ordinary mining crystals, with matching ore lists, fitted bonuses, persistent wear and native shattering updates.
 

@@ -8,6 +8,7 @@ public static class ScannerTargetIds
     private const int Prefixes = AlphabetSize * AlphabetSize * AlphabetSize;
     private const int Suffixes = 1000;
     public const long ExplorationSequenceOffset = 8_000_000;
+    public const long MiningSequenceOffset = 12_000_000;
 
     public static string FromCombatSequence(long sequence)
     {
@@ -21,7 +22,17 @@ public static class ScannerTargetIds
     public static string FromExplorationSequence(long sequence)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(sequence);
+        if (sequence >= MiningSequenceOffset - ExplorationSequenceOffset)
+        {
+            throw new InvalidDataException("The exploration scanner identifier range is exhausted.");
+        }
         return FromSequence(checked(ExplorationSequenceOffset + sequence));
+    }
+
+    public static string FromMiningSequence(long sequence)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(sequence);
+        return FromSequence(checked(MiningSequenceOffset + sequence));
     }
 
     // Native scan rows have a narrow ID column. Vary the letters first so

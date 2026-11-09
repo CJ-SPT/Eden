@@ -8,6 +8,9 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Topics
 
+[Gas harvesting and Mykoserocin nebulae, November 9, 2026](protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026)
+records the first gas-resource cohort, native targeting/mining and persistent signatures.
+
 [Modulated ore mining and crystals, November 9, 2026](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
 records loaded-crystal modifiers, target compatibility, persistent wear and native shattering updates.
 

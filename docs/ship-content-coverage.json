@@ -6,12 +6,12 @@
     {
       "category": "Ship",
       "state": "Complete",
-      "count": 130
+      "count": 131
     },
     {
       "category": "Ship",
       "state": "Partial",
-      "count": 105
+      "count": 104
     },
     {
       "category": "Ship",
@@ -26,7 +26,7 @@
     {
       "category": "Module",
       "state": "Complete",
-      "count": 3318
+      "count": 3326
     },
     {
       "category": "Module",
@@ -36,7 +36,7 @@
     {
       "category": "Module",
       "state": "Planned",
-      "count": 401
+      "count": 393
     },
     {
       "category": "Module",
@@ -85266,7 +85266,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "GasMining"
@@ -85352,7 +85352,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "GasMining"
@@ -85437,7 +85437,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "GasMining"
@@ -128498,8 +128498,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -128509,9 +128509,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -128525,8 +128532,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -128536,9 +128543,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -128552,8 +128566,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -128563,9 +128577,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -128933,8 +128954,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -128944,9 +128965,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -140943,8 +140971,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -140954,9 +140982,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -160699,7 +160734,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "GasMining"
@@ -205318,8 +205353,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -205328,9 +205363,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -205344,8 +205386,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -205354,9 +205396,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -205370,8 +205419,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -205380,9 +205429,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -214754,7 +214810,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         12329,
         12330,
@@ -214793,7 +214849,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "GasMining"
@@ -214880,7 +214936,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "GasMining"
@@ -215141,7 +215197,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "GasMining"
@@ -215221,7 +215277,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "GasMining"

@@ -1,0 +1,698 @@
+{
+  "build": 3662168,
+  "sites": [
+    {
+      "dungeonId": 2527,
+      "nameId": 111023,
+      "name": "Flame Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000012,
+        10000001,
+        10000036,
+        10000038,
+        10000011,
+        10000005,
+        10000030,
+        10000009,
+        10000042,
+        10000062,
+        10000061
+      ],
+      "deposits": [
+        {
+          "typeId": 28700,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 39466.0,
+            "y": 0.0,
+            "z": -24903.0
+          }
+        },
+        {
+          "typeId": 28700,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": -30612.0,
+            "y": 0.0,
+            "z": 30902.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2528,
+      "nameId": 111024,
+      "name": "Ghost Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000012,
+        10000001,
+        10000036,
+        10000038,
+        10000030,
+        10000028
+      ],
+      "deposits": [
+        {
+          "typeId": 28695,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 39466.0,
+            "y": 0.0,
+            "z": -24903.0
+          }
+        },
+        {
+          "typeId": 28695,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": -30612.0,
+            "y": 0.0,
+            "z": 30902.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2529,
+      "nameId": 111025,
+      "name": "Sunspark Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000069,
+        10000016,
+        10000021,
+        10000032,
+        10000033,
+        10000002,
+        10000018
+      ],
+      "deposits": [
+        {
+          "typeId": 28694,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 39466.0,
+            "y": 0.0,
+            "z": -24903.0
+          }
+        },
+        {
+          "typeId": 28694,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": -30612.0,
+            "y": 0.0,
+            "z": 30902.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2530,
+      "nameId": 111026,
+      "name": "Smoking Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000069,
+        10000027,
+        10000037,
+        10000016,
+        10000021,
+        10000066,
+        10000032,
+        10000033,
+        10000018
+      ],
+      "deposits": [
+        {
+          "typeId": 28697,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 39466.0,
+            "y": 0.0,
+            "z": -24903.0
+          }
+        },
+        {
+          "typeId": 28697,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": -30612.0,
+            "y": 0.0,
+            "z": 30902.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2531,
+      "nameId": 111027,
+      "name": "Sister Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000054,
+        10000012,
+        10000001,
+        10000052,
+        10000049,
+        10000065,
+        10000062,
+        10000044,
+        10000006
+      ],
+      "deposits": [
+        {
+          "typeId": 28698,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 39466.0,
+            "y": 0.0,
+            "z": -24903.0
+          }
+        },
+        {
+          "typeId": 28698,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": -30612.0,
+            "y": 0.0,
+            "z": 30902.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2532,
+      "nameId": 111028,
+      "name": "Wild Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000054,
+        10000009,
+        10000065,
+        10000012,
+        10000062,
+        10000044,
+        10000020
+      ],
+      "deposits": [
+        {
+          "typeId": 28699,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 39466.0,
+            "y": 0.0,
+            "z": -24903.0
+          }
+        },
+        {
+          "typeId": 28699,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": -30612.0,
+            "y": 0.0,
+            "z": 30902.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2533,
+      "nameId": 111029,
+      "name": "Bright Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000064,
+        10000058,
+        10000048,
+        10000045,
+        10000015
+      ],
+      "deposits": [
+        {
+          "typeId": 28701,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 39466.0,
+            "y": 0.0,
+            "z": -24903.0
+          }
+        },
+        {
+          "typeId": 28701,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": -30612.0,
+            "y": 0.0,
+            "z": 30902.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2534,
+      "nameId": 111030,
+      "name": "Calabash Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000043,
+        10000067,
+        10000048,
+        10000044
+      ],
+      "deposits": [
+        {
+          "typeId": 28696,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 39466.0,
+            "y": 0.0,
+            "z": -24903.0
+          }
+        },
+        {
+          "typeId": 28696,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": -30612.0,
+            "y": 0.0,
+            "z": 30902.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2535,
+      "nameId": 111031,
+      "name": "Pipe Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000012,
+        10000001,
+        10000036,
+        10000038,
+        10000030,
+        10000025,
+        10000042,
+        10000061
+      ],
+      "deposits": [
+        {
+          "typeId": 28700,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -23313.0,
+            "y": 0.0,
+            "z": -63686.0
+          }
+        },
+        {
+          "typeId": 28700,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 67409.0,
+            "y": 0.0,
+            "z": 49630.0
+          }
+        },
+        {
+          "typeId": 28700,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -41482.0,
+            "y": 53997.0,
+            "z": 49502.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2536,
+      "nameId": 111032,
+      "name": "Eagle Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000012,
+        10000001,
+        10000038,
+        10000036,
+        10000030,
+        10000009,
+        10000042,
+        10000028,
+        10000061
+      ],
+      "deposits": [
+        {
+          "typeId": 28695,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -23313.0,
+            "y": 0.0,
+            "z": -63686.0
+          }
+        },
+        {
+          "typeId": 28695,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 67409.0,
+            "y": 0.0,
+            "z": 49630.0
+          }
+        },
+        {
+          "typeId": 28695,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -41482.0,
+            "y": 53997.0,
+            "z": 49502.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2537,
+      "nameId": 111033,
+      "name": "Diablo Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000069,
+        10000037,
+        10000016,
+        10000021,
+        10000032,
+        10000033,
+        10000002,
+        10000003
+      ],
+      "deposits": [
+        {
+          "typeId": 28694,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -23313.0,
+            "y": 0.0,
+            "z": -63686.0
+          }
+        },
+        {
+          "typeId": 28694,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 67409.0,
+            "y": 0.0,
+            "z": 49630.0
+          }
+        },
+        {
+          "typeId": 28694,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -41482.0,
+            "y": 53997.0,
+            "z": 49502.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2538,
+      "nameId": 111034,
+      "name": "Ring Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000069,
+        10000027,
+        10000037,
+        10000016,
+        10000013,
+        10000021,
+        10000066,
+        10000032,
+        10000033
+      ],
+      "deposits": [
+        {
+          "typeId": 28697,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -23313.0,
+            "y": 0.0,
+            "z": -63686.0
+          }
+        },
+        {
+          "typeId": 28697,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 67409.0,
+            "y": 0.0,
+            "z": 49630.0
+          }
+        },
+        {
+          "typeId": 28697,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -41482.0,
+            "y": 53997.0,
+            "z": 49502.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2539,
+      "nameId": 111035,
+      "name": "Helix Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000054,
+        10000012,
+        10000001,
+        10000049,
+        10000065,
+        10000044
+      ],
+      "deposits": [
+        {
+          "typeId": 28698,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -23313.0,
+            "y": 0.0,
+            "z": -63686.0
+          }
+        },
+        {
+          "typeId": 28698,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 67409.0,
+            "y": 0.0,
+            "z": 49630.0
+          }
+        },
+        {
+          "typeId": 28698,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -41482.0,
+            "y": 53997.0,
+            "z": 49502.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2540,
+      "nameId": 111036,
+      "name": "Blackeye Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000054,
+        10000012,
+        10000049,
+        10000065,
+        10000062,
+        10000044
+      ],
+      "deposits": [
+        {
+          "typeId": 28699,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -23313.0,
+            "y": 0.0,
+            "z": -63686.0
+          }
+        },
+        {
+          "typeId": 28699,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 67409.0,
+            "y": 0.0,
+            "z": 49630.0
+          }
+        },
+        {
+          "typeId": 28699,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -41482.0,
+            "y": 53997.0,
+            "z": 49502.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2541,
+      "nameId": 111037,
+      "name": "Sparking Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000043,
+        10000064,
+        10000058,
+        10000067,
+        10000048,
+        10000023,
+        10000045
+      ],
+      "deposits": [
+        {
+          "typeId": 28701,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -23313.0,
+            "y": 0.0,
+            "z": -63686.0
+          }
+        },
+        {
+          "typeId": 28701,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 67409.0,
+            "y": 0.0,
+            "z": 49630.0
+          }
+        },
+        {
+          "typeId": 28701,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -41482.0,
+            "y": 53997.0,
+            "z": 49502.0
+          }
+        }
+      ]
+    },
+    {
+      "dungeonId": 2542,
+      "nameId": 111038,
+      "name": "Glass Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000043,
+        10000064,
+        10000044,
+        10000023,
+        10000048,
+        10000067
+      ],
+      "deposits": [
+        {
+          "typeId": 28696,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -23313.0,
+            "y": 0.0,
+            "z": -63686.0
+          }
+        },
+        {
+          "typeId": 28696,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 67409.0,
+            "y": 0.0,
+            "z": 49630.0
+          }
+        },
+        {
+          "typeId": 28696,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": -41482.0,
+            "y": 53997.0,
+            "z": 49502.0
+          }
+        }
+      ]
+    }
+  ]
+}

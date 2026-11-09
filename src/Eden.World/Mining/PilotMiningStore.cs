@@ -78,7 +78,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             || !module.Online
             || !module.Singleton
             || !InventoryDefinitions.IsHighSlot(module.FlagId)
-            || !InventoryDefinitions.IsOreMiningGroup(module.GroupId)
+            || !InventoryDefinitions.IsMiningGroup(module.GroupId)
             || FittingCatalog.Definition(catalog, module.TypeId) is null
             || asteroid is null
             || asteroid.Quantity <= 0
@@ -111,9 +111,25 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var ore = catalog.FittingType(asteroid.TypeId);
-        if (ore is null || ore.CategoryId != AsteroidDefinitions.Category || !Enum.IsDefined((MiningResourceGroup)ore.GroupId))
+        var moduleAttributes = catalog.FittingAttributes(module.TypeId);
+        var family = MiningDefinitions.Family(module.GroupId, moduleAttributes);
+        bool compatible =
+            family == MiningFamily.Gas
+                ? ore?.CategoryId == MiningDefinitions.GasCloudCategory
+                    && ore.GroupId == MiningDefinitions.GasCloudGroup
+                    && MiningSiteCatalog.SupportsGas(ore.Id)
+                : ore?.CategoryId == AsteroidDefinitions.Category && Enum.IsDefined((MiningResourceGroup)ore.GroupId);
+        if (!compatible)
         {
-            throw new InvalidDataException("Use an ore mining laser on ordinary ore, not ice, gas or Mercoxit.");
+            throw new InvalidDataException("The mining module does not match this resource.");
+        }
+        if (MiningSiteRules.IsDeposit(asteroid.Id) && world.Set<SavedMiningDeposit>().Find(asteroid.Id) is { } deposit)
+        {
+            var site = world.Set<SavedMiningSite>().Find(deposit.SiteId);
+            if (site is null || site.ReplaceAt is not null || site.ExpiresAt <= now)
+            {
+                throw new InvalidDataException("The resource site is no longer available.");
+            }
         }
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
         if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
@@ -138,10 +154,11 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             attributes.GetValueOrDefault(DogmaAttributeId.Duration),
             attributes.GetValueOrDefault(DogmaAttributeId.MiningAmount),
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalChance),
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalBonusYield),
+            family == MiningFamily.Gas ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalChance),
+            family == MiningFamily.Gas ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalBonusYield),
             attributes.GetValueOrDefault(DogmaAttributeId.MiningResidueChance) / 100,
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningResidueMultiplier, 1)
+            attributes.GetValueOrDefault(DogmaAttributeId.MiningResidueMultiplier, 1),
+            family
         );
         if (
             !(laser.DurationMilliseconds > 0 && laser.Volume > 0)
@@ -154,10 +171,11 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         return new(pilot, asteroid, laser);
     }
 
-    private static InventoryFlag OreHold(CatalogDbContext catalog, int hull) =>
-        PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.GeneralMiningHold) > 0
-            ? InventoryFlag.GeneralMiningHold
-            : InventoryFlag.Cargo;
+    private static InventoryFlag OreHold(CatalogDbContext catalog, int hull, MiningFamily family) =>
+        family == MiningFamily.Gas && PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.GasHold) > 0
+            ? InventoryFlag.GasHold
+        : PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.GeneralMiningHold) > 0 ? InventoryFlag.GeneralMiningHold
+        : InventoryFlag.Cargo;
 
     private static double Available(
         WorldDbContext world,
@@ -176,12 +194,12 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
                     .Sum(i => i.Volume * i.Quantity)
         );
 
-    public MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now)
+    public MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now, DogmaEffect? effect = null)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var start = Begin(world, catalog, pilotId, moduleId, asteroidId, now);
+        var start = Begin(world, catalog, pilotId, moduleId, asteroidId, now, effect);
         transaction.Commit();
         return start;
     }
@@ -192,15 +210,40 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         long pilotId,
         long moduleId,
         long asteroidId,
-        long now
+        long now,
+        DogmaEffect? effect = null
     )
     {
         var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        if (effect is not null && effect != laser.Effect)
+        {
+            throw new InvalidDataException("The mining effect does not match the fitted module.");
+        }
         if (world.Set<ModuleCooldown>().Find(moduleId) is { } existing && existing.ReadyAt > now)
         {
             throw new InvalidDataException("Wait for the mining cycle or crystal reload to finish.");
         }
-        var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
+        if (laser.Family == MiningFamily.Gas)
+        {
+            int limit = PilotSkillReader.Level(world, catalog, pilotId, (int)MiningSkill.GasHarvesting);
+            var active = world
+                .Set<ModuleCooldown>()
+                .Where(c => c.Kind == ModuleCooldownKind.Cycle && c.ReadyAt > now)
+                .Select(c => c.ModuleId)
+                .ToArray();
+            int count = world
+                .Set<OwnedItem>()
+                .Where(i => i.OwnerId == pilotId && i.LocationId == pilot.ActiveShipId && active.Contains(i.Id))
+                .AsEnumerable()
+                .Count(i =>
+                    catalog.FittingType(i.TypeId)?.GroupId is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup
+                );
+            if (count >= limit)
+            {
+                throw new InvalidDataException("Gas Cloud Harvesting limits your simultaneously active harvesters.");
+            }
+        }
+        var hold = OreHold(catalog, pilot.ActiveShip.TypeId, laser.Family);
         double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
         double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
@@ -250,7 +293,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         {
             throw new InvalidDataException("There is no paid mining cycle to collect.");
         }
-        var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
+        var hold = OreHold(catalog, pilot.ActiveShip.TypeId, laser.Family);
         double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double oreVolume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
         if (!(oreVolume > 0))
@@ -300,7 +343,13 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         }
         world.Set<ModuleCooldown>().Where(c => c.ModuleId == moduleId && c.Kind == ModuleCooldownKind.Cycle).ExecuteDelete();
         world.SaveChanges();
-        return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, asteroid.Quantity == 0, collected.CargoFull, crystalState);
+        bool depleted = asteroid.Quantity == 0;
+        if (depleted)
+        {
+            MiningSiteStore.Collected(world, asteroid.Id, now);
+            world.SaveChanges();
+        }
+        return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, depleted, collected.CargoFull, crystalState);
     }
 
     public void Stop(long pilotId, long moduleId, long expectedCompletesAt)

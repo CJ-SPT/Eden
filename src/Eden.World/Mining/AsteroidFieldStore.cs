@@ -52,17 +52,21 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
             .OrderBy(a => a.Id)
             .ToArray();
         var types = saved.Select(a => a.TypeId).Distinct().ToArray();
-        var groups = types.Select(catalog.FittingType).OfType<CatalogItemDefinition>().ToDictionary(type => type.Id, type => type.GroupId);
+        var definitions = types.Select(catalog.FittingType).OfType<CatalogItemDefinition>().ToDictionary(type => type.Id);
         return saved
             .Select(a => new StaticSpaceObject(
                 a.Id,
                 a.TypeId,
-                groups[a.TypeId],
-                AsteroidDefinitions.Category,
+                definitions[a.TypeId].GroupId,
+                definitions[a.TypeId].CategoryId,
                 1,
                 new SpacePosition(a.X, a.Y, a.Z),
                 a.Radius
-            ))
+            )
+            {
+                Solid = definitions[a.TypeId].GroupId != MiningDefinitions.GasCloudGroup,
+                IsGlobal = false,
+            })
             .ToArray();
     }
 

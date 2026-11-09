@@ -141,7 +141,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.TypeId,
                 effect.Target,
                 null,
-                "effects.Laser",
+                effect.Graphic,
                 false,
                 active,
                 active,

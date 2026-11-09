@@ -23,12 +23,17 @@ internal static class MiningLaserCatalog
         var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (
-            !InventoryDefinitions.IsOreMiningGroup(group)
+            !InventoryDefinitions.IsMiningGroup(group)
             || (group == InventoryDefinitions.StripMinerGroup && !MiningDefinitions.IsOrdinaryStripMiner(attributes))
             || type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
             || (
-                group is not (InventoryDefinitions.StripMinerGroup or InventoryDefinitions.ModulatedMinerGroup)
+                group
+                    is not (
+                        InventoryDefinitions.StripMinerGroup
+                        or InventoryDefinitions.ModulatedMinerGroup
+                        or InventoryDefinitions.GasHarvesterGroup
+                    )
                 && InventoryDefinitions.RequiresSpecificShip(attributes)
             )
             // Deep-core lasers need Mercoxit cloud hazards before being enabled.
@@ -38,7 +43,13 @@ internal static class MiningLaserCatalog
             return false;
         }
         var effects = PassiveCatalog.Effects(catalog, typeId);
+        var family = MiningDefinitions.Family(group, attributes);
+        var miningEffect = family == MiningFamily.Gas ? DogmaEffect.MiningClouds : DogmaEffect.MiningLaser;
         int expected = group == InventoryDefinitions.StripMinerGroup ? StripMinerEffectCount : LaserEffectCount;
+        if (group == InventoryDefinitions.GasHarvesterGroup)
+        {
+            expected = StripMinerEffectCount;
+        }
         if (group == InventoryDefinitions.ModulatedMinerGroup)
         {
             expected = ModulatedMinerEffectCount + (effects.Any(e => e.EffectID == (int)DogmaEffect.TurretFitted) ? 1 : 0);
@@ -46,7 +57,7 @@ internal static class MiningLaserCatalog
         return effects.Count == expected
             && effects.Count == FittingCatalog.Effects(catalog, typeId).Count
             && effects.Any(effect =>
-                effect.EffectID == (int)DogmaEffect.MiningLaser
+                effect.EffectID == (int)miningEffect
                 && effect.EffectCategory == (int)PassiveEffectPhase.Targeted
                 && effect.DischargeAttributeID == (int)DogmaAttributeId.CapacitorNeed
                 && effect.DurationAttributeID == (int)DogmaAttributeId.Duration
@@ -59,6 +70,7 @@ internal static class MiningLaserCatalog
                         or (int)DogmaEffect.HighPower
                         or (int)DogmaEffect.TurretFitted
                         or (int)DogmaEffect.MiningLaser
+                        or (int)DogmaEffect.MiningClouds
                         or (int)DogmaEffect.MiningCrystalInformation
                 && (
                     effect.EffectID == (int)DogmaEffect.MiningCrystalInformation

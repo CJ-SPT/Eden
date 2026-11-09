@@ -65,7 +65,7 @@ public static class MiningRules
         int extracted = (int)Math.Min(remainingUnits - residue, planned);
         // Bonus ore does not reduce the deposit, and still occupies the hold.
         int bonus =
-            collection.Completed && collection.Rolls.Critical < laser.CriticalChance
+            laser.Family != MiningFamily.Gas && collection.Completed && collection.Rolls.Critical < laser.CriticalChance
                 ? Math.Min(free - extracted, RoundedUnits(extracted * laser.CriticalBonusYield, collection.Rolls.CriticalYield))
                 : 0;
         return new(extracted, bonus, residue, free <= extracted + bonus);

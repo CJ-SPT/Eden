@@ -180,6 +180,7 @@ public enum DogmaEffect
     Microwarpdrive = 6730,
     ProjectileFired = 34,
     MiningLaser = 67,
+    MiningClouds = 2726,
     MiningCrystalInformation = 1212,
     Afterburner = 6731,
 }
@@ -244,8 +245,12 @@ public static class InventoryDefinitions
     public const int MiningLaserGroup = 54;
     public const int StripMinerGroup = 464;
     public const int ModulatedMinerGroup = 483;
+    public const int GasScoopGroup = 737;
+    public const int GasHarvesterGroup = 4138;
 
     public static bool IsOreMiningGroup(int groupId) => groupId is MiningLaserGroup or StripMinerGroup or ModulatedMinerGroup;
+
+    public static bool IsMiningGroup(int groupId) => IsOreMiningGroup(groupId) || groupId is GasScoopGroup or GasHarvesterGroup;
 
     public const int CivilianMinerType = 3651;
     public const double OutputBonusPerSkillLevel = 0.05;

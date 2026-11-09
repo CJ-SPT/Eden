@@ -3838,6 +3838,17 @@
       ]
     },
     {
+      "id": 25268,
+      "name": "Amber Cytoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 25540,
       "name": "'Crop' Gas Cloud Scoop",
       "groupId": 737,
@@ -4116,6 +4127,94 @@
           "value": 34.0
         }
       ]
+    },
+    {
+      "id": 28694,
+      "name": "Amber Mykoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28695,
+      "name": "Azure Mykoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28696,
+      "name": "Celadon Mykoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28697,
+      "name": "Golden Mykoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28698,
+      "name": "Lime Mykoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28699,
+      "name": "Malachite Mykoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28700,
+      "name": "Vermillion Mykoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28701,
+      "name": "Viridian Mykoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
     },
     {
       "id": 28748,
@@ -4562,6 +4661,410 @@
         {
           "id": 3154,
           "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 32880,
+      "name": "Venture",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "categoryId": 6,
+      "mass": 1200000.0,
+      "radius": 41.0,
+      "capacity": 50.0,
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 200.0
+        },
+        {
+          "id": 11,
+          "value": 45.0
+        },
+        {
+          "id": 12,
+          "value": 1.0
+        },
+        {
+          "id": 13,
+          "value": 3.0
+        },
+        {
+          "id": 14,
+          "value": 3.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 335.0
+        },
+        {
+          "id": 48,
+          "value": 240.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 125000.0
+        },
+        {
+          "id": 70,
+          "value": 3.6
+        },
+        {
+          "id": 76,
+          "value": 15000.0
+        },
+        {
+          "id": 79,
+          "value": 2500.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 2.0
+        },
+        {
+          "id": 104,
+          "value": -2.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 2.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.35e-06
+        },
+        {
+          "id": 182,
+          "value": 32918.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 5.0
+        },
+        {
+          "id": 207,
+          "value": 2.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 4.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 394.0
+        },
+        {
+          "id": 246,
+          "value": 394.0
+        },
+        {
+          "id": 263,
+          "value": 225.0
+        },
+        {
+          "id": 265,
+          "value": 175.0
+        },
+        {
+          "id": 267,
+          "value": 0.4
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 10.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 462,
+          "value": 5.0
+        },
+        {
+          "id": 479,
+          "value": 625000.0
+        },
+        {
+          "id": 482,
+          "value": 250.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 511,
+          "value": 0.0
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 40.0
+        },
+        {
+          "id": 564,
+          "value": 750.0
+        },
+        {
+          "id": 586,
+          "value": 10.0
+        },
+        {
+          "id": 600,
+          "value": 5.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 661,
+          "value": 3000.0
+        },
+        {
+          "id": 662,
+          "value": 0.05
+        },
+        {
+          "id": 1132,
+          "value": 400.0
+        },
+        {
+          "id": 1137,
+          "value": 3.0
+        },
+        {
+          "id": 1154,
+          "value": 3.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 1.0
+        },
+        {
+          "id": 1259,
+          "value": 0.5
+        },
+        {
+          "id": 1261,
+          "value": 0.5
+        },
+        {
+          "id": 1262,
+          "value": 0.0
+        },
+        {
+          "id": 1271,
+          "value": 10.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1296,
+          "value": -50.0
+        },
+        {
+          "id": 1547,
+          "value": 1.0
+        },
+        {
+          "id": 1555,
+          "value": 25.0
+        },
+        {
+          "id": 1556,
+          "value": 5000.0
+        },
+        {
+          "id": 1768,
+          "value": 11331.0
+        },
+        {
+          "id": 1842,
+          "value": 5.0
+        },
+        {
+          "id": 1891,
+          "value": 1.0
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2464,
+          "value": 1.0
+        },
+        {
+          "id": 3237,
+          "value": -5.0
+        },
+        {
+          "id": 3239,
+          "value": 100.0
+        },
+        {
+          "id": 3324,
+          "value": 1.0
+        },
+        {
+          "id": 3325,
+          "value": 1.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 5978,
+          "value": 1.0
+        },
+        {
+          "id": 6364,
+          "value": 4000.0
         }
       ]
     },
@@ -9298,6 +9801,270 @@
       ]
     },
     {
+      "id": 60313,
+      "name": "Gas Cloud Harvester I",
+      "groupId": 4138,
+      "groupName": "Gas Cloud Harvesters",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 60.0
+        },
+        {
+          "id": 54,
+          "value": 1500.0
+        },
+        {
+          "id": 73,
+          "value": 100000.0
+        },
+        {
+          "id": 77,
+          "value": 50.0
+        },
+        {
+          "id": 182,
+          "value": 25544.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 0.0
+        },
+        {
+          "id": 906,
+          "value": 1.0
+        },
+        {
+          "id": 1298,
+          "value": 543.0
+        },
+        {
+          "id": 1299,
+          "value": 463.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 60314,
+      "name": "Gas Cloud Harvester II",
+      "groupId": 4138,
+      "groupName": "Gas Cloud Harvesters",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 10.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 66.0
+        },
+        {
+          "id": 54,
+          "value": 1500.0
+        },
+        {
+          "id": 73,
+          "value": 80000.0
+        },
+        {
+          "id": 77,
+          "value": 100.0
+        },
+        {
+          "id": 182,
+          "value": 25544.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 0.0
+        },
+        {
+          "id": 906,
+          "value": 1.0
+        },
+        {
+          "id": 1298,
+          "value": 543.0
+        },
+        {
+          "id": 1299,
+          "value": 463.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 1.0
+        },
+        {
+          "id": 3154,
+          "value": 34.0
+        }
+      ]
+    },
+    {
+      "id": 60315,
+      "name": "ORE Gas Cloud Harvester",
+      "groupId": 4138,
+      "groupName": "Gas Cloud Harvesters",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 7.0
+        },
+        {
+          "id": 9,
+          "value": 40.0
+        },
+        {
+          "id": 30,
+          "value": 10.0
+        },
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 50,
+          "value": 50.0
+        },
+        {
+          "id": 54,
+          "value": 1500.0
+        },
+        {
+          "id": 73,
+          "value": 80000.0
+        },
+        {
+          "id": 77,
+          "value": 100.0
+        },
+        {
+          "id": 182,
+          "value": 25544.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 6.0
+        },
+        {
+          "id": 763,
+          "value": 0.0
+        },
+        {
+          "id": 906,
+          "value": 1.0
+        },
+        {
+          "id": 1298,
+          "value": 543.0
+        },
+        {
+          "id": 1299,
+          "value": 463.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        },
+        {
+          "id": 3153,
+          "value": 0.0
+        },
+        {
+          "id": 3154,
+          "value": 0.0
+        }
+      ]
+    },
+    {
       "id": 60377,
       "name": "Simple Ore Processing",
       "groupId": 1218,
@@ -12662,6 +13429,58 @@
       ]
     },
     {
+      "id": 90593,
+      "name": "Abyssal Gas Cloud Harvester",
+      "groupId": 4138,
+      "groupName": "Gas Cloud Harvesters",
+      "categoryId": 7,
+      "mass": 0.0,
+      "radius": 25.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 47,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 25544.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 763,
+          "value": 0.0
+        },
+        {
+          "id": 906,
+          "value": 1.0
+        },
+        {
+          "id": 1298,
+          "value": 543.0
+        },
+        {
+          "id": 1299,
+          "value": 463.0
+        },
+        {
+          "id": 1768,
+          "value": 11346.0
+        }
+      ]
+    },
+    {
       "id": 90727,
       "name": "Mining Precision",
       "groupId": 1218,
@@ -13271,6 +14090,23 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 104,
+      "data": {
+        "stackable": 1,
+        "displayNameID": 233138,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "name": "warpScrambleStatus",
+        "attributeID": 104,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "Warp ability of a ship.  If greater than zero than the ship cannot warp."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 109,
       "data": {
         "stackable": 0,
@@ -13637,6 +14473,23 @@
         "displayWhenZero": 0,
         "categoryID": 6,
         "name": "maxAttackTargets"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 207,
+      "data": {
+        "stackable": 0,
+        "displayNameID": 233352,
+        "dataType": 5,
+        "defaultValue": 1.0,
+        "name": "miningAmountMultiplier",
+        "attributeID": 207,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 51,
+        "description": "The factor by which the amount mined by a mining laser is scaled."
       }
     },
     {
@@ -14339,6 +15192,22 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 462,
+      "data": {
+        "stackable": 1,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 462,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 37,
+        "name": "shipBonusGF"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 468,
       "data": {
         "stackable": 1,
@@ -14544,6 +15413,23 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 586,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 586,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "shipBonusGF2"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 600,
       "data": {
         "stackable": 0,
@@ -14649,6 +15535,25 @@
         "displayWhenZero": 0,
         "categoryID": 9,
         "name": "minTargetVelDmgMultiplier"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 714,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233610,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 138,
+        "name": "consumptionQuantity",
+        "attributeID": 714,
+        "published": 1,
+        "highIsGood": 0,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "The amount of the given resource type needed to be consumed for each activation cycle of this structure."
       }
     },
     {
@@ -15129,6 +16034,25 @@
         "tooltipTitleID": 295335,
         "categoryID": 17,
         "description": "Just for the UI to display the ship warp speed."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 1296,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "displayNameID": 233033,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 105,
+        "name": "consumptionQuantityBonusPercentage",
+        "attributeID": 1296,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": ""
       }
     },
     {
@@ -16061,6 +16985,21 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 3239,
+      "data": {
+        "stackable": 1,
+        "name": "shipRoleBonusGasHarvestingYield",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 3239,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 37
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 3240,
       "data": {
         "stackable": 1,
@@ -16942,6 +17881,36 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 3526,
+      "data": {
+        "sfxName": "None",
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 3526,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 714,
+            "modifyingAttributeID": 1296,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 21603
+          }
+        ],
+        "effectName": "cynosuralTheoryConsumptionBonus",
+        "guid": "None",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 4999,
       "data": {
         "descriptionID": 280643,
@@ -17158,6 +18127,34 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 5058,
+      "data": {
+        "descriptionID": 281020,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5058,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 77,
+            "modifyingAttributeID": 207,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 4,
+            "skillTypeID": 3386
+          }
+        ],
+        "effectName": "miningYieldMultiplyPassive",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 5067,
       "data": {
         "descriptionID": 281040,
@@ -17233,6 +18230,34 @@
           }
         ],
         "effectName": "miningFrigateSkillLevelOreMiningYieldBonus",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5139,
+      "data": {
+        "descriptionID": 282885,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5139,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 77,
+            "modifyingAttributeID": 1842,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3386
+          }
+        ],
+        "effectName": "miningFrigateBonusOreMiningYield",
         "propulsionChance": 0,
         "published": 0
       }
@@ -17894,6 +18919,33 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 8313,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8313,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 73,
+            "modifyingAttributeID": 3237,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 25544
+          }
+        ],
+        "effectName": "miningFrigateBonusGasCloudHarvestingDuration",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 8314,
       "data": {
         "isAssistance": 0,
@@ -17914,6 +18966,33 @@
           }
         ],
         "effectName": "miningFrigateSkillLevelGasCloudHarvesting",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 8315,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 8315,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 77,
+            "modifyingAttributeID": 3239,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 25544
+          }
+        ],
+        "effectName": "shipRoleBonusGasHarvestingYield",
         "propulsionChance": 0,
         "published": 0
       }
@@ -22423,6 +23502,11 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 25268,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 25540,
       "data": {
         "dogmaAttributes": [
@@ -22748,6 +23832,46 @@
           }
         ]
       }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28694,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28695,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28696,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28697,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28698,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28699,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28700,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 28701,
+      "data": {}
     },
     {
       "dataset": "client/typedogma",
@@ -23255,6 +24379,428 @@
           {
             "effectID": 2726,
             "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 32880,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 3,
+            "value": 0.0
+          },
+          {
+            "attributeID": 9,
+            "value": 200.0
+          },
+          {
+            "attributeID": 11,
+            "value": 45.0
+          },
+          {
+            "attributeID": 12,
+            "value": 1.0
+          },
+          {
+            "attributeID": 13,
+            "value": 3.0
+          },
+          {
+            "attributeID": 14,
+            "value": 3.0
+          },
+          {
+            "attributeID": 15,
+            "value": 0.0
+          },
+          {
+            "attributeID": 19,
+            "value": 1.0
+          },
+          {
+            "attributeID": 21,
+            "value": 0.0
+          },
+          {
+            "attributeID": 37,
+            "value": 335.0
+          },
+          {
+            "attributeID": 48,
+            "value": 240.0
+          },
+          {
+            "attributeID": 49,
+            "value": 0.0
+          },
+          {
+            "attributeID": 55,
+            "value": 125000.0
+          },
+          {
+            "attributeID": 70,
+            "value": 3.6
+          },
+          {
+            "attributeID": 76,
+            "value": 15000.0
+          },
+          {
+            "attributeID": 79,
+            "value": 2500.0
+          },
+          {
+            "attributeID": 101,
+            "value": 0.0
+          },
+          {
+            "attributeID": 102,
+            "value": 2.0
+          },
+          {
+            "attributeID": 104,
+            "value": -2.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.67
+          },
+          {
+            "attributeID": 110,
+            "value": 0.67
+          },
+          {
+            "attributeID": 111,
+            "value": 0.67
+          },
+          {
+            "attributeID": 113,
+            "value": 0.67
+          },
+          {
+            "attributeID": 124,
+            "value": 16777215.0
+          },
+          {
+            "attributeID": 129,
+            "value": 2.0
+          },
+          {
+            "attributeID": 136,
+            "value": 1.0
+          },
+          {
+            "attributeID": 153,
+            "value": 1.35e-06
+          },
+          {
+            "attributeID": 182,
+            "value": 32918.0
+          },
+          {
+            "attributeID": 188,
+            "value": 0.0
+          },
+          {
+            "attributeID": 192,
+            "value": 5.0
+          },
+          {
+            "attributeID": 207,
+            "value": 2.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 4.0
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 217,
+            "value": 394.0
+          },
+          {
+            "attributeID": 246,
+            "value": 394.0
+          },
+          {
+            "attributeID": 263,
+            "value": 225.0
+          },
+          {
+            "attributeID": 265,
+            "value": 175.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.4
+          },
+          {
+            "attributeID": 268,
+            "value": 0.9
+          },
+          {
+            "attributeID": 269,
+            "value": 0.75
+          },
+          {
+            "attributeID": 270,
+            "value": 0.65
+          },
+          {
+            "attributeID": 271,
+            "value": 1.0
+          },
+          {
+            "attributeID": 272,
+            "value": 0.5
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 283,
+            "value": 10.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 462,
+            "value": 5.0
+          },
+          {
+            "attributeID": 479,
+            "value": 625000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 250.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 511,
+            "value": 0.0
+          },
+          {
+            "attributeID": 524,
+            "value": 0.75
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 40.0
+          },
+          {
+            "attributeID": 564,
+            "value": 750.0
+          },
+          {
+            "attributeID": 586,
+            "value": 10.0
+          },
+          {
+            "attributeID": 600,
+            "value": 5.0
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 661,
+            "value": 3000.0
+          },
+          {
+            "attributeID": 662,
+            "value": 0.05
+          },
+          {
+            "attributeID": 1132,
+            "value": 400.0
+          },
+          {
+            "attributeID": 1137,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1154,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1178,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1179,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1196,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1198,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1199,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1200,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1224,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1259,
+            "value": 0.5
+          },
+          {
+            "attributeID": 1261,
+            "value": 0.5
+          },
+          {
+            "attributeID": 1262,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1271,
+            "value": 10.0
+          },
+          {
+            "attributeID": 1281,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1296,
+            "value": -50.0
+          },
+          {
+            "attributeID": 1547,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1555,
+            "value": 25.0
+          },
+          {
+            "attributeID": 1556,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11331.0
+          },
+          {
+            "attributeID": 1842,
+            "value": 5.0
+          },
+          {
+            "attributeID": 1891,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2045,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2112,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2113,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2115,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2464,
+            "value": 1.0
+          },
+          {
+            "attributeID": 3237,
+            "value": -5.0
+          },
+          {
+            "attributeID": 3239,
+            "value": 100.0
+          },
+          {
+            "attributeID": 3324,
+            "value": 1.0
+          },
+          {
+            "attributeID": 3325,
+            "value": 1.0
+          },
+          {
+            "attributeID": 5796,
+            "value": 2147483647000.0
+          },
+          {
+            "attributeID": 5978,
+            "value": 1.0
+          },
+          {
+            "attributeID": 6364,
+            "value": 4000.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 3526,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5058,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5139,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8313,
+            "isDefault": 0
+          },
+          {
+            "effectID": 8315,
+            "isDefault": 0
           }
         ]
       }
@@ -28503,6 +30049,300 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 60313,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 6,
+            "value": 7.0
+          },
+          {
+            "attributeID": 9,
+            "value": 40.0
+          },
+          {
+            "attributeID": 30,
+            "value": 10.0
+          },
+          {
+            "attributeID": 47,
+            "value": 1.0
+          },
+          {
+            "attributeID": 50,
+            "value": 60.0
+          },
+          {
+            "attributeID": 54,
+            "value": 1500.0
+          },
+          {
+            "attributeID": 73,
+            "value": 100000.0
+          },
+          {
+            "attributeID": 77,
+            "value": 50.0
+          },
+          {
+            "attributeID": 182,
+            "value": 25544.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 763,
+            "value": 0.0
+          },
+          {
+            "attributeID": 906,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1298,
+            "value": 543.0
+          },
+          {
+            "attributeID": 1299,
+            "value": 463.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11346.0
+          },
+          {
+            "attributeID": 3153,
+            "value": 0.0
+          },
+          {
+            "attributeID": 3154,
+            "value": 0.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2726,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 60314,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 6,
+            "value": 10.0
+          },
+          {
+            "attributeID": 9,
+            "value": 40.0
+          },
+          {
+            "attributeID": 30,
+            "value": 10.0
+          },
+          {
+            "attributeID": 47,
+            "value": 1.0
+          },
+          {
+            "attributeID": 50,
+            "value": 66.0
+          },
+          {
+            "attributeID": 54,
+            "value": 1500.0
+          },
+          {
+            "attributeID": 73,
+            "value": 80000.0
+          },
+          {
+            "attributeID": 77,
+            "value": 100.0
+          },
+          {
+            "attributeID": 182,
+            "value": 25544.0
+          },
+          {
+            "attributeID": 277,
+            "value": 5.0
+          },
+          {
+            "attributeID": 422,
+            "value": 2.0
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 763,
+            "value": 0.0
+          },
+          {
+            "attributeID": 906,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1298,
+            "value": 543.0
+          },
+          {
+            "attributeID": 1299,
+            "value": 463.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11346.0
+          },
+          {
+            "attributeID": 3153,
+            "value": 1.0
+          },
+          {
+            "attributeID": 3154,
+            "value": 34.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2726,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 60315,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 6,
+            "value": 7.0
+          },
+          {
+            "attributeID": 9,
+            "value": 40.0
+          },
+          {
+            "attributeID": 30,
+            "value": 10.0
+          },
+          {
+            "attributeID": 47,
+            "value": 1.0
+          },
+          {
+            "attributeID": 50,
+            "value": 50.0
+          },
+          {
+            "attributeID": 54,
+            "value": 1500.0
+          },
+          {
+            "attributeID": 73,
+            "value": 80000.0
+          },
+          {
+            "attributeID": 77,
+            "value": 100.0
+          },
+          {
+            "attributeID": 182,
+            "value": 25544.0
+          },
+          {
+            "attributeID": 277,
+            "value": 5.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 633,
+            "value": 6.0
+          },
+          {
+            "attributeID": 763,
+            "value": 0.0
+          },
+          {
+            "attributeID": 906,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1298,
+            "value": 543.0
+          },
+          {
+            "attributeID": 1299,
+            "value": 463.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11346.0
+          },
+          {
+            "attributeID": 3153,
+            "value": 0.0
+          },
+          {
+            "attributeID": 3154,
+            "value": 0.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2726,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 60377,
       "data": {
         "dogmaAttributes": [
@@ -32281,6 +34121,68 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 90593,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 47,
+            "value": 1.0
+          },
+          {
+            "attributeID": 182,
+            "value": 25544.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 763,
+            "value": 0.0
+          },
+          {
+            "attributeID": 906,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1298,
+            "value": 543.0
+          },
+          {
+            "attributeID": 1299,
+            "value": 463.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11346.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 12,
+            "isDefault": 0
+          },
+          {
+            "effectID": 16,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2726,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 90727,
       "data": {
         "dogmaAttributes": [
@@ -33655,6 +35557,26 @@
     },
     {
       "dataset": "client/types",
+      "key": 25268,
+      "data": {
+        "descriptionID": 86877,
+        "typeID": 25268,
+        "graphicID": 3225,
+        "capacity": 0.0,
+        "typeNameID": 76116,
+        "iconID": 3225,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 25540,
       "data": {
         "descriptionID": 94805,
@@ -33746,6 +35668,166 @@
         "portionSize": 1,
         "techLevel": 2,
         "groupID": 737
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28694,
+      "data": {
+        "descriptionID": 86887,
+        "typeID": 28694,
+        "graphicID": 3225,
+        "capacity": 0.0,
+        "typeNameID": 76126,
+        "iconID": 3225,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28695,
+      "data": {
+        "descriptionID": 86888,
+        "typeID": 28695,
+        "graphicID": 3220,
+        "capacity": 0.0,
+        "typeNameID": 76127,
+        "iconID": 3220,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28696,
+      "data": {
+        "descriptionID": 86889,
+        "typeID": 28696,
+        "graphicID": 3219,
+        "capacity": 0.0,
+        "typeNameID": 76128,
+        "iconID": 3219,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28697,
+      "data": {
+        "descriptionID": 86890,
+        "typeID": 28697,
+        "graphicID": 3224,
+        "capacity": 0.0,
+        "typeNameID": 76129,
+        "iconID": 3224,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28698,
+      "data": {
+        "descriptionID": 86891,
+        "typeID": 28698,
+        "graphicID": 3222,
+        "capacity": 0.0,
+        "typeNameID": 76130,
+        "iconID": 3222,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28699,
+      "data": {
+        "descriptionID": 86892,
+        "typeID": 28699,
+        "graphicID": 3223,
+        "capacity": 0.0,
+        "typeNameID": 76131,
+        "iconID": 3223,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28700,
+      "data": {
+        "descriptionID": 86893,
+        "typeID": 28700,
+        "graphicID": 3218,
+        "capacity": 0.0,
+        "typeNameID": 76132,
+        "iconID": 3218,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28701,
+      "data": {
+        "descriptionID": 86894,
+        "typeID": 28701,
+        "graphicID": 3221,
+        "capacity": 0.0,
+        "typeNameID": 76133,
+        "iconID": 3221,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
       }
     },
     {
@@ -33871,6 +35953,40 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 737
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 32880,
+      "data": {
+        "quoteID": 871948,
+        "raceID": 128,
+        "typeNameID": 282279,
+        "designerIDs": [
+          1000276
+        ],
+        "radius": 41.0,
+        "factionID": 500014,
+        "quoteAuthorID": 871949,
+        "typeID": 32880,
+        "graphicID": 20198,
+        "capacity": 50.0,
+        "isDynamicType": 0,
+        "soundID": 20811,
+        "wreckTypeID": 26528,
+        "techLevel": 1,
+        "basePrice": 300000.0,
+        "marketGroupID": 1616,
+        "volume": 29500.0,
+        "portionSize": 1,
+        "descriptionID": 282280,
+        "metaLevel": 0,
+        "metaGroupID": 1,
+        "isisGroupID": 41,
+        "mass": 1200000.0,
+        "published": 1,
+        "certificateTemplate": 138,
+        "groupID": 25
       }
     },
     {
@@ -35153,6 +37269,80 @@
     },
     {
       "dataset": "client/types",
+      "key": 60313,
+      "data": {
+        "descriptionID": 587195,
+        "typeID": 60313,
+        "graphicID": 25143,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 587194,
+        "volume": 5.0,
+        "iconID": 3074,
+        "published": 1,
+        "radius": 25.0,
+        "marketGroupID": 2795,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "basePrice": 3000000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 4138
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 60314,
+      "data": {
+        "descriptionID": 587199,
+        "typeID": 60314,
+        "graphicID": 25143,
+        "capacity": 0.0,
+        "metaLevel": 5,
+        "isDynamicType": 0,
+        "typeNameID": 587198,
+        "volume": 5.0,
+        "iconID": 3074,
+        "published": 1,
+        "radius": 25.0,
+        "marketGroupID": 2795,
+        "metaGroupID": 2,
+        "mass": 0.0,
+        "variationParentTypeID": 60313,
+        "basePrice": 7200000.0,
+        "portionSize": 1,
+        "techLevel": 2,
+        "groupID": 4138
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 60315,
+      "data": {
+        "descriptionID": 587201,
+        "typeID": 60315,
+        "graphicID": 25143,
+        "capacity": 0.0,
+        "metaLevel": 6,
+        "isDynamicType": 0,
+        "typeNameID": 587200,
+        "volume": 5.0,
+        "iconID": 3074,
+        "published": 1,
+        "radius": 25.0,
+        "marketGroupID": 2795,
+        "metaGroupID": 4,
+        "mass": 0.0,
+        "variationParentTypeID": 60313,
+        "basePrice": 15000000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 4138
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 60377,
       "data": {
         "descriptionID": 587543,
@@ -36173,6 +38363,29 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 737
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 90593,
+      "data": {
+        "descriptionID": 1022037,
+        "typeID": 90593,
+        "graphicID": 25143,
+        "capacity": 0.0,
+        "metaLevel": 10,
+        "isDynamicType": 1,
+        "typeNameID": 1022036,
+        "volume": 5.0,
+        "iconID": 3074,
+        "published": 1,
+        "radius": 25.0,
+        "metaGroupID": 15,
+        "mass": 0.0,
+        "basePrice": 3000000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 4138
       }
     },
     {

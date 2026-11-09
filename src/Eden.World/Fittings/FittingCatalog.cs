@@ -106,7 +106,7 @@ internal static class FittingCatalog
         {
             return null;
         }
-        if (InventoryDefinitions.IsOreMiningGroup(type.GroupId) && !MiningLaserCatalog.Supported(catalog, typeId, type.GroupId))
+        if (InventoryDefinitions.IsMiningGroup(type.GroupId) && !MiningLaserCatalog.Supported(catalog, typeId, type.GroupId))
         {
             return null;
         }

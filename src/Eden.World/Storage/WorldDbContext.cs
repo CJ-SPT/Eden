@@ -531,6 +531,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldAsteroid>().Property(a => a.Id).ValueGeneratedNever();
         model.Entity<WorldAsteroid>().HasIndex(a => a.SystemId);
         model.Entity<WorldAsteroid>().HasIndex(a => a.BeltId);
+        Eden.World.Mining.MiningSiteSchema.Configure(model);
         model.Entity<OwnedItem>().ToTable("WorldItem", t => t.HasCheckConstraint("CK_Item_Quantity", "Quantity > 0"));
         model.Entity<OwnedItem>().Property(i => i.CrystalDamage).HasDefaultValue(0d);
         model.Entity<OwnedItem>().Property(i => i.MaterialEfficiency).HasDefaultValue(0);

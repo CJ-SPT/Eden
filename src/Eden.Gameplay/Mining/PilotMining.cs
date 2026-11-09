@@ -14,8 +14,12 @@ public sealed record MiningLaser(
     double CriticalChance,
     double CriticalBonusYield,
     double ResidueChance = 0,
-    double ResidueMultiplier = 1
-);
+    double ResidueMultiplier = 1,
+    MiningFamily Family = MiningFamily.Ore
+)
+{
+    public DogmaEffect Effect => Family == MiningFamily.Gas ? DogmaEffect.MiningClouds : DogmaEffect.MiningLaser;
+}
 
 public sealed record MiningStart(MiningLaser Laser, double Capacitor);
 
@@ -44,7 +48,7 @@ public sealed record MiningYield(
 public interface IPilotMining
 {
     IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module);
-    MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now);
+    MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now, DogmaEffect? effect = null);
     MiningYield Collect(long pilotId, long moduleId, long asteroidId, MiningCollection collection);
     void Stop(long pilotId, long moduleId, long expectedCompletesAt);
 }
@@ -56,6 +60,7 @@ public enum MiningSkill
     Precision = 90727,
     Exploitation = 90728,
     Frigate = 32918,
+    GasHarvesting = 25544,
 }
 
 public enum MiningLaserType
@@ -70,6 +75,14 @@ public sealed record MiningSkillModifier(MiningSkill Skill, DogmaAttributeId Att
 public static class MiningDefinitions
 {
     public const int DeepCoreMiningSkill = 11395;
+    public const int GasCloudGroup = 711;
+    public const int GasCloudCategory = 2;
+
+    public static bool IsResource(int category, int group) =>
+        category == AsteroidDefinitions.Category || category == GasCloudCategory && group == GasCloudGroup;
+
+    public static MiningFamily Family(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        group is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup ? MiningFamily.Gas : MiningFamily.Ore;
 
     public static bool OwnsYieldSkill(int skill) => skill is (int)MiningSkill.Mining or (int)MiningSkill.Astrogeology;
 

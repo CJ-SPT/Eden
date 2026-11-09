@@ -43,7 +43,11 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         {
             AsteroidFieldStore.Populate(world, catalog, systemId, now);
             world.SaveChanges();
-            var rock = world.Set<WorldAsteroid>().Where(a => a.SystemId == systemId && a.Quantity > 0).OrderBy(a => a.Id).FirstOrDefault();
+            var rock = world
+                .Set<WorldAsteroid>()
+                .Where(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
+                .OrderBy(a => a.Id)
+                .FirstOrDefault();
             if (rock is null)
             {
                 return;
@@ -104,7 +108,11 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
                 encounter.NextSpawnAt = operation.ResetAt;
                 return;
             }
-            var rock = world.Set<WorldAsteroid>().Where(a => a.SystemId == systemId && a.Quantity > 0).OrderBy(a => a.Id).FirstOrDefault();
+            var rock = world
+                .Set<WorldAsteroid>()
+                .Where(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
+                .OrderBy(a => a.Id)
+                .FirstOrDefault();
             if (rock is null)
             {
                 encounter.NextSpawnAt = checked(now + NpcMiningRules.CooldownSeconds * TimeSpan.TicksPerSecond);

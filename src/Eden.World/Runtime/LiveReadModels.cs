@@ -15,6 +15,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.World.Characters;
 using Eden.World.Loot;
 using Eden.World.Mail;
+using Eden.World.Mining;
 using Eden.World.Runtime.Combat;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -69,6 +70,10 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "WorldAccount"
     );
     private readonly ResidentSnapshot<int, IReadOnlyList<StaticSpaceObject>> _asteroids = new("resident.asteroids", "WorldAsteroid");
+    private readonly ResidentSnapshot<(int System, long Catalog), MiningSiteView> _miningSites = new(
+        "resident.miningSites",
+        "WorldMiningSite"
+    );
 
     private sealed record WreckView(IReadOnlyList<WreckContact> Contacts, long NextExpiry);
 
@@ -184,6 +189,9 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     internal IReadOnlyList<StaticSpaceObject> Asteroids(int system, Func<IReadOnlyList<StaticSpaceObject>> load) =>
         Read(_asteroids, system, () => Array.AsReadOnly(load().ToArray()));
 
+    internal MiningSiteView MiningSites(int system, long catalog, long now, Func<MiningSiteView> load) =>
+        Read(_miningSites, (system, catalog), load, now, view => view.Deadline);
+
     internal IReadOnlyList<WreckContact> Wrecks(int system, long now, Func<IReadOnlyList<WreckContact>> load) =>
         Read(
             _wrecks,
@@ -231,6 +239,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _listHead.Observe(changes);
         _fits.Observe(changes);
         _asteroids.Observe(changes);
+        _miningSites.Observe(changes);
         _wrecks.Observe(changes);
         _drones.Observe(changes);
         _droneControllers.Observe(changes);
@@ -264,6 +273,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _listHead.Clear();
         _fits.Clear();
         _asteroids.Clear();
+        _miningSites.Clear();
         _wrecks.Clear();
         _drones.Clear();
         _droneControllers.Clear();

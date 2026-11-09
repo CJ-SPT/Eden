@@ -6,6 +6,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
@@ -16,7 +17,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Exploration;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExploration? exploration = null) : ICombatAnomalies
+internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExploration? exploration = null, IMiningSites? mining = null)
+    : ICombatAnomalies
 {
     private sealed record View(
         long Version,
@@ -48,7 +50,12 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
 
     private readonly Dictionary<
         int,
-        (IReadOnlyList<CombatAnomaly> Combat, IReadOnlyList<CombatAnomaly> Exploration, IReadOnlyList<CombatAnomaly> Combined)
+        (
+            IReadOnlyList<CombatAnomaly> Combat,
+            IReadOnlyList<CombatAnomaly> Exploration,
+            IReadOnlyList<CombatAnomaly> Mining,
+            IReadOnlyList<CombatAnomaly> Combined
+        )
     > _signatures = [];
 
     public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now)
@@ -57,21 +64,23 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
         lock (database.MotionLock)
         {
             var combat = ListCore(systemId, now, true);
-            if (exploration is null)
+            if (exploration is null && mining is null)
             {
                 return combat;
             }
-            var other = exploration.Signatures(systemId, now);
+            var other = exploration?.Signatures(systemId, now) ?? Array.Empty<CombatAnomaly>();
+            var resources = mining?.Signatures(systemId, now) ?? Array.Empty<CombatAnomaly>();
             if (
                 _signatures.TryGetValue(systemId, out var view)
                 && ReferenceEquals(view.Combat, combat)
                 && ReferenceEquals(view.Exploration, other)
+                && ReferenceEquals(view.Mining, resources)
             )
             {
                 return view.Combined;
             }
-            var combined = combat.Concat(other).ToArray();
-            _signatures[systemId] = (combat, other, combined);
+            var combined = combat.Concat(other).Concat(resources).ToArray();
+            _signatures[systemId] = (combat, other, resources, combined);
             return combined;
         }
     }
@@ -259,7 +268,12 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
         {
             var nearby = List(systemId, now)
                 .Concat(Signatures(systemId, now))
-                .Where(s => !s.Started && position.DistanceTo(s.Position) <= CombatAnomalyRules.ArrivalRange)
+                .Where(s =>
+                    s.Exploration is null
+                    && s.Mining is null
+                    && !s.Started
+                    && position.DistanceTo(s.Position) <= CombatAnomalyRules.ArrivalRange
+                )
                 .ToArray();
             if (nearby.Length == 0)
             {

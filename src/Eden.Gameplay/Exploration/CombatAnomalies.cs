@@ -14,7 +14,8 @@ public sealed record CombatAnomaly(
     IReadOnlyList<StaticSpaceObject> Objects,
     int FactionId = 500010,
     bool IsSignature = false,
-    ExplorationKind? Exploration = null
+    ExplorationKind? Exploration = null,
+    Eden.Gameplay.Mining.MiningFamily? Mining = null
 );
 
 public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomaly> Sites);

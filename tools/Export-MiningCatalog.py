@@ -6,11 +6,37 @@ import sqlite3
 
 
 BUILD = 3662168
-GROUPS = {54, 464, 483, 482, 663, 737}
+GROUPS = {54, 464, 483, 482, 663, 737, 4138}
+
+# Positive locations from UniWiki Gas_cloud_harvesting, read November 9, 2026.
+# The source explicitly says these lists are incomplete; omitted regions are not a retail exclusion claim.
+MYKO_REGIONS = {
+    'Sister Nebula': ['Aridia', 'Curse', 'Derelik', 'Kador', 'Khanid', 'Kor-Azor', 'Omist', 'Solitude', 'Wicked Creek'],
+    'Helix Nebula': ['Aridia', 'Curse', 'Derelik', 'Khanid', 'Kor-Azor', 'Solitude'],
+    'Wild Nebula': ['Aridia', 'Insmother', 'Kor-Azor', 'Curse', 'Omist', 'Solitude', 'Tash-Murkon'],
+    'Blackeye Nebula': ['Aridia', 'Curse', 'Khanid', 'Kor-Azor', 'Omist', 'Solitude'],
+    'Sunspark Nebula': ['Black Rise', 'Lonetrek', 'Outer Passage', 'Sinq Laison', 'The Citadel', 'The Forge', 'The Spire'],
+    'Diablo Nebula': ['Black Rise', 'Everyshore', 'Lonetrek', 'Outer Passage', 'Sinq Laison', 'The Citadel', 'The Forge',
+                     'Vale of the Silent'],
+    'Smoking Nebula': ['Black Rise', 'Etherium Reach', 'Everyshore', 'Lonetrek', 'Outer Passage', 'Perrigen Falls',
+                      'Sinq Laison', 'The Citadel', 'The Spire'],
+    'Ring Nebula': ['Black Rise', 'Etherium Reach', 'Everyshore', 'Lonetrek', 'Malpais', 'Outer Passage', 'Perrigen Falls',
+                   'Sinq Laison', 'The Citadel'],
+    'Calabash Nebula': ['Domain', 'Genesis', 'Placid', 'Solitude'],
+    'Glass Nebula': ['Domain', 'Essence', 'Solitude', 'Pure Blind', 'Placid', 'Genesis'],
+    'Bright Nebula': ['Essence', 'Fountain', 'Placid', 'Tenal', 'Venal'],
+    'Sparking Nebula': ['Domain', 'Essence', 'Fountain', 'Genesis', 'Placid', 'Pure Blind', 'Tenal'],
+    'Ghost Nebula': ['Curse', 'Derelik', 'Devoid', 'The Bleak Lands', 'Heimatar', 'Molden Heath'],
+    'Eagle Nebula': ['Curse', 'Derelik', 'The Bleak Lands', 'Devoid', 'Heimatar', 'Insmother', 'Metropolis', 'Molden Heath',
+                    'Tenerifis'],
+    'Flame Nebula': ['Curse', 'Derelik', 'Devoid', 'The Bleak Lands', 'Great Wildlands', 'Detorid', 'Heimatar', 'Insmother',
+                    'Metropolis', 'Omist', 'Tenerifis'],
+    'Pipe Nebula': ['Curse', 'Derelik', 'Devoid', 'The Bleak Lands', 'Heimatar', 'Immensea', 'Metropolis', 'Tenerifis'],
+}
 
 
-def export(catalog_path, output):
-    if catalog_path.resolve() == output.resolve():
+def export(catalog_path, output, sites_output):
+    if catalog_path.resolve() in (output.resolve(), sites_output.resolve()) or output.resolve() == sites_output.resolve():
         raise ValueError('The output must not overwrite the source catalog')
     with sqlite3.connect(catalog_path.resolve().as_uri() + '?mode=ro', uri=True) as catalog:
         def record(dataset, key):
@@ -22,7 +48,37 @@ def export(catalog_path, output):
             raise ValueError('Expected the pinned build-3662168 catalog')
         pending = {type_id for type_id, group in catalog.execute('SELECT Id,GroupId FROM ItemType')
                    if group in GROUPS and record('client/types', type_id).get('published') == 1}
-        pending.update({601, 1230, 1223, 17478, 17480, 17476, 32918, 3410, 90727, 90728})
+        pending.update({601, 1230, 1223, 17478, 17480, 17476, 32880, 32918, 3410, 90727, 90728, 25268})
+        regions = {name: region_id for region_id, name in catalog.execute('SELECT Id,Name FROM Region')}
+        sites = []
+        for key, raw in catalog.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='client/dungeons' ORDER BY CAST(Key AS INTEGER)"):
+            dungeon = json.loads(raw)
+            name_id = dungeon.get('dungeonNameID', 0)
+            name = record('client/localization_fsd_en-us', name_id).get('text', '')
+            if name not in MYKO_REGIONS or dungeon.get('archetypeID') != 30 or len(dungeon.get('rooms', {})) != 1:
+                continue
+            objects = list(next(iter(dungeon['rooms'].values())).get('objects', {}).values())
+            if any(o.get('entities') for o in objects):
+                raise ValueError('Unexpected defenders in ' + name)
+            entry = next(o['position'] for o in objects if o.get('objectID') == dungeon.get('entryObjectID'))
+            deposits = []
+            for obj in sorted(objects, key=lambda o: o['objectID']):
+                type_id = obj.get('typeID', 0)
+                row = catalog.execute('SELECT Name,GroupId,Radius FROM ItemType WHERE Id=?', (type_id,)).fetchone()
+                if not row or row[1] != 711:
+                    continue
+                if 'Mykoserocin' not in row[0] or obj.get('radius', 0) <= 0:
+                    raise ValueError('Unexpected gas resource in ' + name)
+                quantity = int(obj['radius'])
+                if quantity != obj['radius']:
+                    raise ValueError('Nonintegral gas deposit')
+                deposits.append(dict(typeId=type_id, quantity=quantity, radius=row[2] or 0,
+                                     position={axis: obj['position'].get(axis, 0) - entry.get(axis, 0) for axis in 'xyz'}))
+                pending.add(type_id)
+            sites.append(dict(dungeonId=int(key), nameId=name_id, name=name, family=2, difficulty=dungeon.get('difficulty', 1),
+                              regions=[regions[r] for r in MYKO_REGIONS[name]], deposits=deposits))
+        if len(sites) != len(MYKO_REGIONS):
+            raise ValueError('Missing or ambiguous Mykoserocin templates')
         types, records, attributes, effects = [], {}, set(), set()
         while pending:
             type_id = min(pending)
@@ -61,12 +117,15 @@ def export(catalog_path, output):
                     records=[dict(dataset=d, key=k, data=v) for (d, k), v in sorted(records.items())])
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-        print('Exported', len(types), 'mining types to', output)
+        sites_output.parent.mkdir(parents=True, exist_ok=True)
+        sites_output.write_text(json.dumps(dict(build=BUILD, sites=sites), indent=2) + '\n', encoding='utf-8')
+        print('Exported', len(types), 'mining types and', len(sites), 'resource sites')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--catalog', required=True, type=Path)
     parser.add_argument('--output', type=Path, default=Path('tests/Eden.Protocol.Tests/Fixtures/MiningCatalog.json'))
+    parser.add_argument('--sites', type=Path, default=Path('src/Eden.World/Mining/mining-sites-3662168.json'))
     args = parser.parse_args()
-    export(args.catalog, args.output)
+    export(args.catalog, args.output, args.sites)

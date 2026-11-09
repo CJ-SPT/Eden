@@ -45,7 +45,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                 pilot.PilotId,
                 pilot.ShipId,
                 cycle.Target,
-                DogmaEffect.MiningLaser,
+                cycle.Laser.Effect,
                 cycle.StartTime,
                 cycle.Laser.DurationMilliseconds,
                 cycle.Repeats
@@ -119,11 +119,11 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         return result;
     }
 
-    private void Start(PilotCallContext context, long module, long target, long repeats, Cycle? previous = null)
+    private void Start(PilotCallContext context, long module, long target, long repeats, Cycle? previous = null, DogmaEffect? effect = null)
     {
         long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var start = mining.Begin(context.Pilot.PilotId, module, target, now);
+        var start = mining.Begin(context.Pilot.PilotId, module, target, now, effect ?? previous?.Laser.Effect);
         Cycle cycle = new(start.Laser, target, started, now, repeats);
         _cycles[module] = cycle;
         if (previous is null)
@@ -132,12 +132,9 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         }
         else
         {
-            context.Flight.SetMiningEffect(
-                new(module, previous.Laser.TypeId, target, previous.StartTime, previous.Laser.DurationMilliseconds),
-                false
-            );
+            context.Flight.SetMiningEffect(Contact(previous), false);
         }
-        context.Flight.SetMiningEffect(new(module, start.Laser.TypeId, target, now, start.Laser.DurationMilliseconds), true);
+        context.Flight.SetMiningEffect(Contact(cycle), true);
         context.Notifications.Add(
             new ModuleAttributesChanged([
                 new ModuleAttributeChange(
@@ -164,10 +161,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             return;
         }
         Effect(context, cycle, false);
-        context.Flight.SetMiningEffect(
-            new(cycle.Laser.ItemId, cycle.Laser.TypeId, cycle.Target, cycle.StartTime, cycle.Laser.DurationMilliseconds),
-            false
-        );
+        context.Flight.SetMiningEffect(Contact(cycle), false);
     }
 
     private void Effect(PilotCallContext context, Cycle cycle, bool active)
@@ -180,7 +174,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                     context.Pilot.PilotId,
                     context.Pilot.ShipId,
                     cycle.Target,
-                    DogmaEffect.MiningLaser,
+                    cycle.Laser.Effect,
                     cycle.StartTime,
                     cycle.Laser.DurationMilliseconds,
                     cycle.Repeats
@@ -213,7 +207,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             if (
                 method == "Activate"
                 && args is [long module, var effect, long target, long repeats]
-                && BlueMarshal.Text(effect) == MiningWireDefinitions.EffectName
+                && MiningWireDefinitions.Effect(BlueMarshal.Text(effect)) is { } requested
                 && repeats >= 0
                 && repeats <= int.MaxValue
             )
@@ -224,21 +218,25 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                 }
                 if (_cycles.TryGetValue(module, out var existing))
                 {
-                    return existing.Target == target
+                    return existing.Target == target && existing.Laser.Effect == requested
                         ? PilotCallResult.None
                         : new PilotCallResult.Failure("The mining laser is already active.");
                 }
-                Start(context, module, target, repeats);
+                Start(context, module, target, repeats, effect: requested);
                 return PilotCallResult.None;
             }
             if (
                 method == "Deactivate"
                 && args is [long item, var effectName]
-                && BlueMarshal.Text(effectName) == MiningWireDefinitions.EffectName
+                && MiningWireDefinitions.Effect(BlueMarshal.Text(effectName)) is { } requestedEffect
             )
             {
                 if (_cycles.TryGetValue(item, out var cycle))
                 {
+                    if (cycle.Laser.Effect != requestedEffect)
+                    {
+                        return new PilotCallResult.Failure("The mining effect does not match the active module.");
+                    }
                     // A manual mining stop returns whole units for the elapsed part of
                     // this cycle. Only completed cycles can roll a critical success.
                     double fraction = Math.Clamp(
@@ -258,4 +256,14 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             return new PilotCallResult.Failure(error.Message);
         }
     }
+
+    private static Eden.Protocol.Flight.MiningContact Contact(Cycle cycle) =>
+        new(
+            cycle.Laser.ItemId,
+            cycle.Laser.TypeId,
+            cycle.Target,
+            cycle.StartTime,
+            cycle.Laser.DurationMilliseconds,
+            MiningWireDefinitions.Graphic(cycle.Laser.Family)
+        );
 }

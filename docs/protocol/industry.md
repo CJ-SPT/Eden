@@ -4,6 +4,86 @@
 
 Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP stores.
 
+## Gas harvesting and Mykoserocin nebulae (November 9, 2026)
+
+The five static gas scoops and three barge gas harvesters use their exact build-3662168 ranges,
+capacitor costs, cycles, yields and residue. Scoops require turret hardpoints; harvesters enforce
+their barge/exhumer restrictions. Gas Cloud Harvesting limits simultaneously active gas modules.
+Catalog hull bonuses now feed gas operation, including the Venture's role yield and earned
+Mining Frigate cycle reduction. Gas receives neither ordinary ore work-skill yield bonuses nor
+critical ore. Full and manual partial cycles settle finite shared stock into a dedicated gas hold,
+general mining hold or cargo, in that order where the hull supplies those holds.
+
+The first resource-site cohort comprises all **16 unguarded Mykoserocin nebula templates** in the
+pinned client, covering eight gas types. Clouds preserve native room-local positions and stock
+(`dunRadius`, 1,000 or 2,000 units); physical radius comes from the gas type, not the stock value.
+They are non-solid local contacts with target locks, native `miningClouds`/`effects.CloudMining`,
+inventory changes and normal mining notifications. Gas has no dogma signature radius, so locking
+uses its physical catalog radius. This fallback is an Eden compatibility policy, not a measured
+retail lock-time assertion.
+
+Known positive regional locations come from [UniWiki Gas cloud harvesting](https://wiki.eveuniversity.org/Gas_cloud_harvesting).
+Its Mykoserocin location list is explicitly incomplete. Eden admits those positive regions only;
+this does not claim the other regions are excluded on retail. One eligible signature per system,
+three-day lifetime, deterministic template selection and ten-minute replacement after depletion
+or expiry are explicit Eden scheduling policy. Core probes discover the normal gas/ladar signature;
+resolution survives restart and expires with the site. Shared warmed site reads, including absent
+results, do not issue SQL or calculate fittings. Paid collection and site depletion retire together;
+saved deadlines and fresh scanner IDs prevent old resolution from revealing a replacement.
+
+World version **132** adds mining-site and deposit-membership tables without changing belt rows,
+owned items or existing production jobs. Mining sites do not become NPC ore-belt assignments.
+Cytoserocin explosions, defended gas sites, wormhole fullerites, reactions and compression remain
+unavailable. Gas tools reject the unsupported hazardous gas cohort. Adding gas does not supply
+reaction facilities or grant industry inputs.
+
+The read-only mining exporter now reproduces 158 fixture types and the 16 native templates.
+Its positive-region table is independently authored from UniWiki; client geometry and stock come
+from Eden's pinned catalog. No evejs code or content pack is imported. The evejs 261108.1 family,
+target-signature fallback and native beam paths informed the investigation. Catalog effects 2726,
+2727, 8313 and 8315 own the gas behavior. The older wiki's harvester timings yield to the pinned
+catalog (for example, Gas Cloud Harvester I uses 100 seconds in this build). Existing Blue formats
+remain checked against [Carbon Blue at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
+
+**Automated validation:** Exact development filters:
+`FullyQualifiedName=Eden.Protocol.Tests.Mining.GasMiningTests.GasHarvestingUsesItsOwnFamilyAndNeverReceivesOreSkillOrCriticalBonuses`,
+`FullyQualifiedName=Eden.Protocol.Tests.Mining.MiningTests.NativeGasActivationTargetsNonSolidCloudAndUsesTheCloudBeam`,
+and `FullyQualifiedName=Eden.Protocol.Tests.Mining.GasMiningTests.VentureUsesItsCatalogGasBonusesAndDepositsTheHarvestInItsMiningHold`.
+All passed. The native fixture was corrected to place its cloud within the short gas range using
+the authoritative movement checkpoint. A scan regression exposed the missing mining-site source
+in completion/resolution reads; both now validate the saved mining site's lifetime and identity.
+The earlier focused mining filter passed 65 cases in 21.55 seconds, before the final native,
+scan, hazardous-gas rejection and checkpoint coverage. Final milestone results follow below.
+
+Final tool/solution restores and solution builds passed with zero warnings/errors; the last build
+took 4.12 seconds. The 346-case affected run completed in 226.80 seconds: **342 passed** and four
+small-hull bonus cases failed because the generic test verifier had no gas-module probe. The
+verifier now loads gas metadata only for affected hulls and tests their appropriate gas module.
+The exact corrected case (`FullyQualifiedName=Eden.Protocol.Tests.Persistence.SmallHullBonusTests.EveryOperationalBonusChangesItsCatalogTargetByItsEarnedSkillAndRoleAmount&DisplayName~89648`)
+passed in 8.75 seconds. The final filter below passed **23/23 cases in 14.90 seconds**, including
+all four corrected hulls, gas-family rejection/holds, native site stock, expiry, replacements,
+warmed SQL/connection/fitting counters, detached checkpoints and negative scanner identifiers:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Mining.GasMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningRulesTests|(FullyQualifiedName=Eden.Protocol.Tests.Persistence.SmallHullBonusTests.EveryOperationalBonusChangesItsCatalogTargetByItsEarnedSkillAndRoleAmount&(DisplayName~89648|DisplayName~89647|DisplayName~89240|DisplayName~32880))
+```
+
+The earlier affected filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Mining.GasMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTierTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningCrystalTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.AsteroidFieldTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.NpcMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Exploration.ProbeScanning|FullyQualifiedName~Eden.Protocol.Tests.Exploration.HackingWorldTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SmallHullBonusTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+Both Python policy suites passed (8 catalog cases in 0.792 seconds; 9 formatting cases in 0.016
+seconds). Formatting and the 140-column check passed for 1,457 files. The mining fixture and site
+export reproduced byte-for-byte, the production coverage report was regenerated, and added
+documentation links and diff whitespace checks passed. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Scan a gas signature and inspect its name; approach a cloud and
+inspect its appearance and beam; inspect gas delivery and a short cycle on a legitimately fitted Venture.
+
 ## Modulated ore mining and crystals (November 9, 2026)
 
 The three published static modulated miners (17912, 18068 and 24305) now fit and mine ordinary ore.

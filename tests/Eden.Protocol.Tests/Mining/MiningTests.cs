@@ -36,6 +36,58 @@ namespace Eden.Protocol.Tests.Mining;
 public sealed class MiningTests
 {
     [Fact]
+    public void NativeGasActivationTargetsNonSolidCloudAndUsesTheCloudBeam()
+    {
+        using Fixture f = new();
+        string catalogPath = new WorldDatabase(f.Db.Path).CatalogPath;
+        PassiveCatalogFixture.LoadMining(catalogPath);
+        long pilot = f.Db.Store.FindPilot(1000001)!.PilotId;
+        using (CatalogDbContext catalog = new(catalogPath))
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            double rank = catalog.Set<TypeAttribute>().Find(25544, (int)DogmaAttributeId.SkillTimeConstant)!.Value;
+            world
+                .Set<PilotSkill>()
+                .Add(
+                    new()
+                    {
+                        PilotId = pilot,
+                        TypeId = 25544,
+                        Points = TrainedSkill.PointsForLevel(rank, 5),
+                    }
+                );
+            world.Set<WorldAsteroid>().Find(Fixture.Asteroid)!.TypeId = 28694;
+            world.SaveChanges();
+        }
+        var (context, _, mining, module) = f.Client(laser: (MiningLaserType)25266);
+        context.Flight.Checkpoint();
+        var authoritative = f.Db.Store.FindPilot(1000001)!.Position!;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var cloud = world.Set<WorldAsteroid>().Find(Fixture.Asteroid)!;
+            cloud.X = authoritative.X + 100;
+            cloud.Y = authoritative.Y;
+            cloud.Z = authoritative.Z;
+            world.SaveChanges();
+        }
+        context.Flight.RefreshAsteroids(f.Db.Services.GetRequiredService<IAsteroidField>().List(context.Pilot.SystemId));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningClouds", Fixture.Asteroid, 0L]));
+        Assert.Equal(DogmaEffect.MiningClouds, mining.ActiveEffect(context.Pilot, module)!.Effect);
+        var fx = context
+            .Flight.WireUpdates()
+            .Cast<object?[]>()
+            .Select(u => Assert.IsType<object?[]>(u[1]))
+            .Where(u => Equals(u[0], "OnSpecialFX"))
+            .Select(u => Assert.IsType<object?[]>(u[1]))
+            .ToArray();
+        Assert.Contains(fx, args => Equals(args[5], "effects.CloudMining") && Equals(args[7], true));
+        f.Clock.Milliseconds += 30000;
+        mining.Advance(context);
+        Assert.False(mining.IsActive(module));
+        Assert.Equal(28694, Assert.Single(context.Notifications.OfType<OreMined>()).Yield.TypeId);
+    }
+
+    [Fact]
     public void ModulatedMiningManualStopPublishesNativeCrystalDamageAndRemovesShatteredCharge()
     {
         using Fixture fixture = new();

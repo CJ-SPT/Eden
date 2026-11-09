@@ -10,6 +10,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
@@ -121,6 +122,11 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             double npcSignature = PlayerEwarStore
                 .NpcAttributes(world, itemId, ReadAttributes(catalog, typeId))
                 .GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+            if (npcSignature <= 0 && catalog.FittingType(typeId) is { GroupId: MiningDefinitions.GasCloudGroup } cloud)
+            {
+                // Gas types have no dogma signature. Use their physical catalog radius for locking.
+                return cloud.Radius ?? 0;
+            }
             return npcSignature;
         }
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == ship.OwnerId);

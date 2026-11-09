@@ -67,7 +67,13 @@ internal sealed class ModuleActivationHandler(
                 ?? PilotCallResult.Unsupported,
             SignatureSuppressionHandler.EffectName => signatureSuppression?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
-            MiningWireDefinitions.EffectName => mining.Call(context, service, method, args, keywords),
+            MiningWireDefinitions.EffectName or MiningWireDefinitions.GasEffectName => mining.Call(
+                context,
+                service,
+                method,
+                args,
+                keywords
+            ),
             CombatWireDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
             CombatWireDefinitions.AmmoWeaponEffect => combat.Call(context, service, method, args, keywords),
             MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,

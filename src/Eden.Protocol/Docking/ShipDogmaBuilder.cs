@@ -153,7 +153,7 @@ internal sealed class ShipDogmaBuilder(
                     or CombatDefinitions.HybridWeaponGroup
                     or CombatDefinitions.ProjectileWeaponGroup
                 ? combat.ModuleAttributes(pilot.PilotId, module)
-            : InventoryDefinitions.IsOreMiningGroup(module.GroupId) ? mining.ModuleAttributes(pilot.PilotId, module)
+            : InventoryDefinitions.IsMiningGroup(module.GroupId) ? mining.ModuleAttributes(pilot.PilotId, module)
             : fitting.ModuleAttributes(pilot.PilotId, module)
         ).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;

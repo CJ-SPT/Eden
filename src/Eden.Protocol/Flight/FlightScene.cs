@@ -102,7 +102,8 @@ internal sealed class FlightScene(
         return
             VisibleObjects(context)
                 .FirstOrDefault(o =>
-                    o.Id == id && (o.CategoryId == AsteroidDefinitions.Category || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id))
+                    o.Id == id
+                    && (MiningDefinitions.IsResource(o.CategoryId, o.GroupId) || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id))
                 )
                 is { } targetObject
             ? new(id, targetObject.TypeId, targetObject.Position, targetObject.Radius)
@@ -119,7 +120,7 @@ internal sealed class FlightScene(
     private StaticSpaceObject[] VisibleObjects(FlightSceneContext context) =>
         Objects
             .Where(o =>
-                o.CategoryId != AsteroidDefinitions.Category
+                !MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
                 || (context.Pilot.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)
             )
             .ToArray();
@@ -294,7 +295,7 @@ internal sealed class FlightScene(
 
     internal void RefreshAsteroids(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> asteroids)
     {
-        Objects = Objects.Where(o => o.CategoryId != AsteroidDefinitions.Category).Concat(asteroids).ToArray();
+        Objects = Objects.Where(o => !MiningDefinitions.IsResource(o.CategoryId, o.GroupId)).Concat(asteroids).ToArray();
         RefreshVisibleAsteroids(context);
     }
 
@@ -304,7 +305,7 @@ internal sealed class FlightScene(
         {
             return;
         }
-        var current = VisibleObjects(context).Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
+        var current = VisibleObjects(context).Where(o => MiningDefinitions.IsResource(o.CategoryId, o.GroupId)).ToArray();
         foreach (var departed in _visibleAsteroids.ExceptBy(current.Select(o => o.Id), o => o.Id))
         {
             update(new DestinyCommand.RemoveBall(departed.Id, false));
@@ -369,7 +370,7 @@ internal sealed class FlightScene(
         _wrecks = ReadWrecks(context);
         _missiles = ReadMissiles(context);
         Drones.Capture(context);
-        _visibleAsteroids = visible.Where(o => o.CategoryId == AsteroidDefinitions.Category).ToArray();
+        _visibleAsteroids = visible.Where(o => MiningDefinitions.IsResource(o.CategoryId, o.GroupId)).ToArray();
         send(
             new(
                 stamp,

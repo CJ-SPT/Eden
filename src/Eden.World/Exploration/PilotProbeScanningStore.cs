@@ -4,6 +4,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Exploration;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -388,6 +389,9 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                         || world
                             .Set<SavedExplorationSite>()
                             .Any(s => s.Id == r.Site.Id && s.SystemId == authoritative.SystemId && s.ReplaceAt == null && s.ExpiresAt > now)
+                        || world
+                            .Set<SavedMiningSite>()
+                            .Any(s => s.Id == r.Site.Id && s.SystemId == authoritative.SystemId && s.ReplaceAt == null && s.ExpiresAt > now)
                     )
                     .ToArray();
                 foreach (var result in results.Where(r => r.Certainty >= 1))
@@ -416,6 +420,9 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                 world.Set<WorldCombatAnomaly>().Any(s => s.Id == siteId && s.SystemId == systemId && s.IsSignature && s.CompletedAt == null)
                 || world
                     .Set<SavedExplorationSite>()
+                    .Any(s => s.Id == siteId && s.SystemId == systemId && s.ReplaceAt == null && s.ExpiresAt > now)
+                || world
+                    .Set<SavedMiningSite>()
                     .Any(s => s.Id == siteId && s.SystemId == systemId && s.ReplaceAt == null && s.ExpiresAt > now)
             );
     }

@@ -4,6 +4,15 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningRulesTests
 {
+    [Fact]
+    public void GasCannotRollCriticalBonusesEvenWithAnOreCriticalProfile()
+    {
+        var gas = Laser with { Volume = 10, Family = MiningFamily.Gas, CriticalChance = 1, CriticalBonusYield = 100 };
+        var result = MiningRules.Collect(100, 1000, 10, gas, new(1, true, Rolls with { Critical = 0 }));
+        Assert.Equal(1, result.Extracted);
+        Assert.Equal(0, result.CriticalBonus);
+    }
+
     private static readonly MiningLaser Laser = new(1, 483, 10000, 15000, 2.25, 5, 0, 2);
     private static readonly MiningRolls Rolls = new(.5, .5, .5, .5, .5);
 

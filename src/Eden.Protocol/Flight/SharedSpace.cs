@@ -14,7 +14,14 @@ namespace Eden.Protocol.Flight;
 
 internal sealed record FittedSpaceModule(long ItemId, int TypeId, int FlagId);
 
-internal sealed record MiningContact(long ModuleId, int TypeId, long Target, long StartedAt, double Duration);
+internal sealed record MiningContact(
+    long ModuleId,
+    int TypeId,
+    long Target,
+    long StartedAt,
+    double Duration,
+    string Graphic = "effects.Laser"
+);
 
 internal sealed record WeaponContact(
     long ModuleId,

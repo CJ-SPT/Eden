@@ -32,6 +32,33 @@ namespace Eden.Protocol.Tests.Exploration;
 
 public sealed class ProbeScanningTests
 {
+    [Fact]
+    public void GasSignatureResolvesWithNativeLadarFieldsAndArrivalDoesNotCreateACombatEncounter()
+    {
+        using var f = Prepare();
+        PassiveCatalogFixture.LoadMining(f.CatalogPath);
+        long module = Load(f);
+        WorldDatabase db = new(f.Db.Path);
+        CombatAnomalyStore sites = new(db, mining: new Eden.World.Mining.MiningSiteStore(db));
+        PilotProbeScanningStore scanning = new(db, sites);
+        var site = Assert.Single(
+            sites.Signatures(CombatAnomalyRules.SystemId, f.Clock.Now),
+            s => s.Mining == Eden.Gameplay.Mining.MiningFamily.Gas
+        );
+        var probes = scanning.Launch(f.PilotId, module, 8, f.Clock.Now).Probes;
+        var scan = scanning.Begin(f.PilotId, Formation(probes, site.Position), f.Clock.Now);
+        f.Clock.Milliseconds += (scan.ReadyAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond;
+        var result = Assert.Single(scanning.Complete(f.PilotId, scan, f.Clock.Now), r => r.Site.Id == site.Id);
+        Assert.Equal(1, result.Certainty);
+        var fields = Assert.IsType<Dictionary<string, object?>>(ProbeScanningWire.Result(result).State);
+        Assert.Equal(Eden.Gameplay.Mining.MiningSiteRules.GasStrengthAttribute, fields["strengthAttributeID"]);
+        Assert.Equal(Eden.Gameplay.Mining.MiningSiteRules.GasArchetype, fields["archetypeID"]);
+        Assert.True(scanning.Resolved(f.PilotId, site.Id, site.SystemId, f.Clock.Now));
+        sites.Arrive(site.SystemId, site.Position, f.Clock.Now);
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.DoesNotContain(world.Set<WorldNpc>(), n => n.EncounterId == site.Id);
+    }
+
     private static Fixture Prepare()
     {
         Fixture f = new();

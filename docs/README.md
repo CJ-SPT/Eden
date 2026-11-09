@@ -14,6 +14,9 @@
 
 ## Development
 
+[Gas harvesting and Mykoserocin nebulae](protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026)
+covers gas scoops/harvesters, hull bonuses, finite probe signatures and saved resource-site replacement.
+
 [Modulated ore mining and crystals](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
 covers the three static modulated miners, 66 ordinary crystals, matching ore lists and saved crystal wear.
 

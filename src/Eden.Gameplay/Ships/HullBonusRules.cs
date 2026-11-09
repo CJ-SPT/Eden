@@ -337,6 +337,7 @@ public static class HullBonusRules
                     or HullCapability.Turrets
                     or HullCapability.Missiles
                     or HullCapability.OreMining
+                    or HullCapability.GasMining
                     or HullCapability.LocalArmorRepair
                     or HullCapability.LocalShieldBoost
                     or HullCapability.Propulsion
