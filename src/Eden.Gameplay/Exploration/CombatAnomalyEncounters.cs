@@ -15,13 +15,15 @@ public sealed record AnomalyEncounterReport(
     ImmutableArray<ImmutableArray<AnomalyEncounterWave>> Variants,
     bool Reconstructed = false,
     ImmutableDictionary<int, int>? DungeonVariants = null,
-    string? LayoutSource = null
+    string? LayoutSource = null,
+    ImmutableDictionary<int, int>? VersionOneDungeonVariants = null
 );
 
 public sealed record AnomalySpawnMember(int TypeId, int Group, bool Trigger, bool Sentry);
 
 public static class AnomalyEncounterRules
 {
+    public const int CurrentDefinitionVersion = 2;
     public const int SitesPerSystem = 4;
     public const int SentryGroup = NpcEncounterDefinitions.SentryGroup;
     public const int OptionalSpawnOutcomes = 20;

@@ -142,7 +142,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
                     Slot = slot,
                     IsSignature = signature,
                     DungeonId = definition.DungeonId,
-                    DefinitionVersion = 1,
+                    DefinitionVersion = AnomalyEncounterRules.CurrentDefinitionVersion,
                     X = anchor.X + offset,
                     Y = anchor.Y + offset,
                     Z = anchor.Z - offset,
@@ -293,7 +293,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
             }
         }
         if (
-            site.Wave >= definition.Waves.Length - 1
+            site.Wave >= definition.WavesFor(site.DefinitionVersion).Length - 1
             && alive.Length == 0
             && !world.Set<WorldNpc>().Local.Any(n => n.EncounterId == site.Id && n.DestroyedAt is null && n.RetiredAt is null)
         )
@@ -362,16 +362,23 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
             return;
         }
         var definition = CombatAnomalyCatalog.Find(catalog, site.DungeonId)!;
-        while (site.Wave + 1 < definition.Waves.Length)
+        if (site.Wave < 0)
+        {
+            // Unvisited sites adopt corrections; started version-one sites retain
+            // their original recipe so saved wave indices and deadlines stay valid.
+            site.DefinitionVersion = AnomalyEncounterRules.CurrentDefinitionVersion;
+        }
+        var waves = definition.WavesFor(site.DefinitionVersion);
+        while (site.Wave + 1 < waves.Length)
         {
             site.Wave++;
-            var members = AnomalyEncounterRules.Members(site.Id, site.Wave, definition.Waves[site.Wave]);
+            var members = AnomalyEncounterRules.Members(site.Id, site.Wave, waves[site.Wave]);
             if (members.Count > 0)
             {
                 Spawn(world, catalog, site, members, now);
-                if (site.Wave + 1 < definition.Waves.Length && definition.Waves[site.Wave + 1].DelaySeconds > 0)
+                if (site.Wave + 1 < waves.Length && waves[site.Wave + 1].DelaySeconds > 0)
                 {
-                    site.NextWaveAt = checked(now + definition.Waves[site.Wave + 1].DelaySeconds * TimeSpan.TicksPerSecond);
+                    site.NextWaveAt = checked(now + waves[site.Wave + 1].DelaySeconds * TimeSpan.TicksPerSecond);
                 }
                 return;
             }
@@ -398,11 +405,23 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
     {
         var definition = CombatAnomalyCatalog.Find(catalog, site.DungeonId)!;
         var origin = new SpacePosition(site.X, site.Y, site.Z) + definition.Spawner;
+        var placements =
+            site.DefinitionVersion == 0
+                ? []
+                : AnomalySpawnRules.Place(
+                    site.Wave,
+                    members,
+                    definition.SpawnAnchors,
+                    new(definition.Spawner, definition.AcquisitionRange)
+                );
         for (int slot = 0; slot < members.Count; slot++)
         {
             var member = members[slot];
             var profile = new NpcProfileCatalog().Read(catalog, member.TypeId);
-            var p = origin + new SpacePosition((slot % 8) * NpcSpawnRules.MemberSpacing, 0, (slot / 8) * NpcSpawnRules.MemberSpacing);
+            var p =
+                site.DefinitionVersion == 0
+                    ? origin + new SpacePosition((slot % 8) * NpcSpawnRules.MemberSpacing, 0, (slot / 8) * NpcSpawnRules.MemberSpacing)
+                    : new SpacePosition(site.X, site.Y, site.Z) + placements[slot].Position;
             long id = checked(
                 CombatAnomalyRules.FirstNpcId
                 + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.NpcsPerSite
@@ -419,7 +438,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
                     AnchorKind = NpcAnchorKind.Anomaly,
                     EncounterId = site.Id,
                     SpawnSlot = slot,
-                    AcquisitionRange = definition.AcquisitionRange,
+                    AcquisitionRange = site.DefinitionVersion == 0 ? definition.AcquisitionRange : placements[slot].AcquisitionRange,
                     CorporationId = definition.CorporationId,
                     FactionId = (int)definition.Faction,
                     HomeX = p.X,

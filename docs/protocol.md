@@ -35,6 +35,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Catalog-wide station production, November 9, 2026](protocol/industry.md#catalog-wide-station-production-november-9-2026)
 
+- [Combat-site layout corrections, November 9, 2026](protocol/combat.md#combat-site-layout-corrections--november-9-2026)
+
 - [Science integration on main, November 9, 2026](protocol/industry.md#science-integration-on-main-november-9-2026)
 
 - [Multifit item-creation capability, November 9, 2026](protocol/fitting.md#multifit-item-creation-capability-november-9-2026)

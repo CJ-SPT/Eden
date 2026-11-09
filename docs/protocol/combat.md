@@ -1229,3 +1229,70 @@ notifications after silent credits, rollback and competing turret/missile/drone 
 
 **Optional maintainer checks.** Kill a bounty NPC and confirm no SP alert appears; refresh the skill
 window to verify the updated unallocated total.
+
+## Combat-site layout corrections — November 9, 2026
+
+Comparison with the local evejs release identified missing uses of data already present in Eden's
+build-3662168 catalog. The reference packs contain 176 pirate and 22 drone anomaly layouts;
+all 198 dungeon identities exist among Eden's 199 supported definitions. The remaining definition,
+Teeming Drone Horde, continues to use its own pinned geometry and explicitly reconstructed recipe.
+
+The inspected reference files were `evejs-combat-anomalies-1.4.4.json` (SHA-256
+`a14b1e4d69917cef442e5b35a912bcca443b0f195517f89a3cbcb244361799b9`) and
+`evejs-drone-anomalies-1.4.0.json` (SHA-256
+`cad158e85a6f220c09dbb7beb9beece6c9e3c29eed04f3ef3d26c2ae7bcd8e6b`). They were compiled from
+client build 3475087. The local release has no Git metadata. These packs were used to find relevant
+fields and original evidence; their authored placements, population tables and JavaScript were not
+copied into Eden. Runtime coordinates and type identities come from Eden's existing pinned catalog.
+
+Previously every wave formed one rectangular group beside whichever entity-bearing object happened
+to be enumerated first. Fixed sentry batteries also used that position. The catalog reader now retains
+each native spawn anchor, its initial/reinforcement flags and its aggression range. Report groups use
+eligible mobile anchors; matching batteries use their own exact type-and-stage-specific positions,
+without ship formation offsets. This restores the four-corner initial placement and central
+reinforcement placement of the four-bunker Drone Horde, and the separate eight-tower ring positions
+of its other layout. Coordinates remain relative to each dungeon's entry before translation to its
+saved site location.
+
+Nineteen previously alternating report bindings now follow unique native battery-type/count
+signatures. Affected families are Angel Hub, Rally Point and Yard; Blood Haven; Drone Squad and
+Surveillance; Guristas Refuge; Sansha Haven; and Serpentis Den, Haven and Yard. For example,
+Angel Hub 2146 now uses Dirty Shipyard and 2172 uses Small Armory. Reviewed explicit bindings retain
+precedence; ambiguous signatures retain their existing authored binding. The importer reproduces
+these choices, and the previous bindings remain in the manifest for saved version-one encounters.
+
+New encounters use definition version two. An unvisited version-one site adopts the correction when
+its first wave starts. Started version-one sites keep their original recipe, wave indices and saved
+reinforcement deadlines. Saved NPC rows are not relocated. Future waves use the corrected anchor
+placement; schema-109/version-zero encounters retain their legacy formation. No database migration
+or destructive save reset is required.
+
+**Evidence and limits.** [Drone Horde](https://wiki.eveuniversity.org/Drone_Horde) describes the corner
+and central spawn distinction. [Angel Hub](https://wiki.eveuniversity.org/Angel_Hub) distinguishes the
+four- and six-battery layouts. Native `npcGroupingID` rosters remain unavailable. Rotating report
+groups over eligible anchors and spacing mobile members in 1,500-metre rings are explicit Eden
+placement policies; they do not establish exact retail per-ship coordinates or group-to-anchor
+bindings. Reported batteries without an available type/stage match keep an authored fallback rather
+than reusing an occupied fixed tower location. Other historical unknowns, including hidden triggers,
+environmental effects, complete loot and capital/officer behavior, remain open. Existing Destiny
+position serialization is unchanged; the reference remains
+[Carbon Destiny Thunkers.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp).
+
+**Automated validation.** The eight-tower position regression failed against the original placement
+and passed after correction. Focused coverage checks the 19 corrected bindings, all 199 layouts,
+initial/reinforcement selection, exact battery positions, fallback behavior, transaction rollback,
+reopened positions and version-one recipe/deadline compatibility. Importer regressions run with
+`python tests/Eden.Protocol.Tests/Persistence/anomaly_layout_test.py`. Final milestone results are
+110 passing .NET cases using `FullyQualifiedName~Eden.Protocol.Tests.Exploration` (47-second test
+duration), including scanner/warp interfaces, bounty/wreck settlement, resident contacts and warmed
+session-frame checks. Tool restore, solution restore and build (zero warnings/errors), both Python
+policy suites (8 catalog cases in 0.727 seconds; 9 formatting cases in 0.016 seconds), the 3 importer
+regressions in 0.136 seconds, formatting verification (1,417 files, maximum 140 characters), documentation
+encoding/whitespace/anchor checks and `git diff --check` passed. The ordered build/test/policy/format
+validation took **76.77 seconds**. No full .NET suite was requested or run. TRX evidence is retained at
+`artifacts/feature-tests/results/site-layout-final/site-layouts.trx`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect both Drone Horde layouts and the two Angel Hub layouts for
+native scenery, battery placement and separated defender groups.

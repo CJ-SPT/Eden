@@ -23,6 +23,12 @@ internal sealed record CombatAnomalyDefinition(
     double AcquisitionRange = NpcEncounterDefinitions.VisibilityRange
 )
 {
+    internal ImmutableArray<AnomalySpawnAnchor> SpawnAnchors { get; init; } = [];
+    internal ImmutableArray<AnomalyEncounterWave> VersionOneWaves { get; init; } = [];
+
+    internal ImmutableArray<AnomalyEncounterWave> WavesFor(int version) =>
+        version == 1 && !VersionOneWaves.IsDefaultOrEmpty ? VersionOneWaves : Waves;
+
     internal bool RequiresMajorThreat => Name.Contains("Forsaken Sanctum", StringComparison.Ordinal) || Name == "Teeming Drone Horde";
 }
 
@@ -84,11 +90,32 @@ internal static class CombatAnomalyCatalog
             }
             var origin = Position(entry.Position);
             var spawner = room.Objects!.Values.FirstOrDefault(o => o.Entities is { Count: > 0 })?.Position;
+            var anchors = room
+                .Objects.Values.Where(o => o.Position is not null && o.TypeID.HasValue)
+                .OrderBy(o => o.ObjectID)
+                .Select(o => (Source: o, Type: catalog.FittingType(o.TypeID!.Value)))
+                .Where(o => o.Source.Entities is { Count: > 0 } || o.Type?.GroupId == AnomalyEncounterRules.SentryGroup)
+                .Select(o => new AnomalySpawnAnchor(
+                    o.Source.ObjectID!.Value,
+                    Position(o.Source.Position!) - origin,
+                    o.Source.GuardCommand?.AggressionRange is > 0
+                        ? o.Source.GuardCommand.AggressionRange.Value
+                        : NpcEncounterDefinitions.VisibilityRange,
+                    o.Source.GuardCommand?.ObjectTriggerSpawn != 1
+                        && (o.Source.Entities is not { Count: > 0 } || o.Source.Entities.Values.Any(e => e.TriggerSpawn != 1)),
+                    o.Source.GuardCommand?.ObjectTriggerSpawn == 1 || o.Source.Entities?.Values.Any(e => e.TriggerSpawn == 1) == true,
+                    o.Type?.GroupId == AnomalyEncounterRules.SentryGroup ? o.Type.Id : null
+                ))
+                .ToImmutableArray();
             if (report.DungeonVariants is null || !report.DungeonVariants.TryGetValue(checked((int)id), out int variant))
             {
                 throw new InvalidDataException($"Anomaly {id} has no explicit report binding.");
             }
             var waves = report.Variants[variant];
+            var previousWaves =
+                report.VersionOneDungeonVariants?.TryGetValue(checked((int)id), out int previousVariant) == true
+                    ? report.Variants[previousVariant]
+                    : waves;
             var faction =
                 name.StartsWith("Drone", StringComparison.Ordinal) || name.StartsWith("Teeming", StringComparison.Ordinal)
                     ? NpcPirateFaction.RogueDrones
@@ -135,6 +162,10 @@ internal static class CombatAnomalyCatalog
                         .FirstOrDefault(r => r is > 0)
                         ?? NpcEncounterDefinitions.VisibilityRange
                 )
+                {
+                    SpawnAnchors = anchors,
+                    VersionOneWaves = previousWaves,
+                }
             );
         }
         return definitions.ToImmutableArray();
