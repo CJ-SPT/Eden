@@ -15,7 +15,8 @@ def get_portrait(self, charID, size, sprite=None, orderIfMissing=True,
     # queues local rendering even when downloading images is disabled.
     if not path:
         if blocking:
-            path = self.RenderPortraitFromScene(charID, size, fullPoseSetup=fullPoseSetup)
+            # The pinned blocking path always restores the submitted portrait pose.
+            path = self.RenderPortraitFromScene(charID, size, fullPoseSetup=True)
         else:
             self._QueueScenePortrait(charID, size, sprite, callback)
     if path:

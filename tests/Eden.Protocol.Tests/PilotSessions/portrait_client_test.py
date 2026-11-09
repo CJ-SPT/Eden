@@ -74,7 +74,7 @@ assert photo.calls == [('render', 90000001, 512, True)]
 assert sprite.paths == [photo.rendered]
 photo = Photo()
 assert photo.GetPortrait(90000001, 128, blocking=True) == 'silhouette'
-assert photo.calls == [('render', 90000001, 128, False)]
+assert photo.calls == [('render', 90000001, 128, True)]
 assert eval(expression, {}) == {}
 assert Photo().GetPortrait(90000001, 32) == 'silhouette'
 '''.replace('EXPRESSION', repr(expression))
