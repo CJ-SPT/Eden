@@ -5,17 +5,22 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Combat;
 
 namespace Eden.Protocol.Tests.Flight;
 
 public sealed class TypedFlightTests
 {
+    // Build-3662168 inventorycommon.const.groupConcordDrone.
+    private const int ConcordNpcGroup = 301;
+
     [Theory]
     [InlineData(NpcRole.Pirate, 11, 11)]
     [InlineData(NpcRole.Convoy, -11, -11)]
     [InlineData(NpcRole.Navy, -11, -11)]
     [InlineData(NpcRole.Customs, -11, -11)]
+    [InlineData(NpcRole.Concord, -11, -11)]
     public void NpcSlimsAlwaysSupplyStandingThresholdsForNativeOverviewRefresh(NpcRole role, double hostile, double friendly)
     {
         using NpcCombatTests.Fixture fixture = new();
@@ -24,6 +29,39 @@ public sealed class TypedFlightTests
         var fields = BlueRead.Fields(slim.State);
         Assert.Equal(hostile, Assert.IsType<double>(fields["hostile_response_threshold"]));
         Assert.Equal(friendly, Assert.IsType<double>(fields["friendly_response_threshold"]));
+    }
+
+    [Theory]
+    [InlineData(ConcordRules.CaptainType, false)]
+    [InlineData(ConcordRules.CaptainType, true)]
+    [InlineData(ConcordRules.CommanderType, false)]
+    [InlineData(ConcordRules.CommanderType, true)]
+    public void ConcordSnapshotAndAdditionsStayFriendlyWithHostileCatalogThresholdsAndAnActiveWeapon(int type, bool attacking)
+    {
+        using NpcCombatTests.Fixture fixture = new();
+        var npc = fixture.Npc with
+        {
+            TypeId = type,
+            GroupId = ConcordNpcGroup,
+            CorporationId = ConcordRules.Corporation,
+            Role = NpcRole.Concord,
+            StandingThresholds = new(11, 11),
+            Weapon = attacking ? new(NpcCombatTests.Fixture.ShipId, 0, fixture.Clock.Now, 5000) : null,
+        };
+        ShipContact own = new(PilotContact.From(fixture.Pilot), SpacePosition.Zero, null, 0, null);
+        var snapshot = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(Ballpark.Snapshot(own, 1, [], [], [npc]))));
+        var slims = Assert.IsType<List<object?>>(BlueRead.Fields(snapshot.State)["slims"]);
+        var addition = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(Ballpark.AddNpcs([npc], 2))), 3);
+        var added = Assert.Single(Assert.IsType<List<object?>>(addition[1]));
+        foreach (var item in new[] { slims[1], added })
+        {
+            var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(item).State);
+            Assert.Equal((long)ConcordNpcGroup, fields["groupID"]);
+            Assert.Equal((long)ConcordRules.Corporation, fields["ownerID"]);
+            Assert.Equal(-11d, Assert.IsType<double>(fields["hostile_response_threshold"]));
+            Assert.Equal(-11d, Assert.IsType<double>(fields["friendly_response_threshold"]));
+        }
+        Assert.Equal(attacking, npc.Weapon is not null);
     }
 
     [Theory]

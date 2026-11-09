@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Eden.Infrastructure.Registration;
-using Eden.Protocol.Characters;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
 
@@ -40,9 +39,9 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session, S
 
         await packets.WriteAsync(2);
         byte[] challenge = RandomNumberGenerator.GetBytes(64);
-        // The signed expression enables the native portrait renderer before the roster
-        // opens, and still returns an empty dictionary without collecting client data.
-        byte[] expression = PortraitClient.Expression;
+        // Install the portrait and CONCORD icon adapters before the roster opens.
+        // The signed expression returns no settings or other client data.
+        byte[] expression = LoginClient.Expression;
         byte[] signature = key.SignData(PilotLoginWire.HashArgument(expression), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         await packets.WriteAsync(
             new LoginChallenge(challenge, new SignedSettings(expression, signature), PilotLoginWire.HashArgument(credentials.Challenge))

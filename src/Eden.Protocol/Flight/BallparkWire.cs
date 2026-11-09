@@ -138,6 +138,7 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
     // Build 3662168 compares standings in [-10, 10] with these thresholds.
     // Match the catalog's customs policy: blue until threatAttackingMe turns red,
     // instead of inheriting hostile mission thresholds from a navy hull's type.
+    // The signed login adapter exempts CONCORD from the red attacking override.
     private const double DefensivePatrolResponseThreshold = -11;
 
     // Pinned entityStandings pirate thresholds lie above the standings range,
@@ -153,7 +154,7 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
         fields["corpID"] = Npc.CorporationId;
         fields["charID"] = null;
         fields["modules"] = new List<object?>();
-        if (Npc.Role is NpcRole.Navy or NpcRole.Customs)
+        if (Npc.Role is NpcRole.Navy or NpcRole.Customs or NpcRole.Concord)
         {
             fields["hostile_response_threshold"] = DefensivePatrolResponseThreshold;
             fields["friendly_response_threshold"] = DefensivePatrolResponseThreshold;
