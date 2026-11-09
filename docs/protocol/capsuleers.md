@@ -231,3 +231,25 @@ Tool/solution restore, solution build (zero warnings/errors), both Python policy
 Solution build (zero warnings/errors), both Python policy suites (eight catalog and nine formatting cases), formatting verification and diff checks also passed. Dependencies and tools are unchanged from the passing stage-1 restores.
 
 **Optional maintainer checks.** None; timing variation is established by the deterministic checks.
+
+### Traffic improvement stage 3 — incremental scheduling
+
+Ordinary reconciliation now removes withdrawn jobs and publishes only changed revisions into the existing sorted queue. Full restoration is retained for initial/full reload and exception recovery. Incremental population loading does not rebuild the queue. Active membership, turn selection and inbound-lane scratch collections are reused under the world owner. A not-due turn returns before constructing scoped sorted candidates; due jobs retain their stable deadline/pilot/sequence ordering. Same-tick membership and exact saved deadlines remain authoritative.
+
+The same warmed workload before and after the change measured 200 complete maintenance wakes, including capture, shared native presentation and Local publication, with the test clock held below the next deadline. Every sample asserted zero SQL commands, connections and fitting calculations and unchanged canonical jobs.
+
+| Fixture | Baseline allocation | Updated allocation | Baseline / updated elapsed |
+| --- | ---: | ---: | ---: |
+| Empty system, one observer | 5,143,272 B | 4,348,328 B | 22.03 / 22.09 ms |
+| Occupied system, one observer | 7,245,704 B | 5,960,904 B | 30.54 / 14.59 ms |
+| Occupied system, two observers | 10,079,040 B | 8,787,584 B | 19.20 / 16.31 ms |
+
+These small-fixture samples include forced diagnostic instrumentation and JIT effects; allocation fell about 13–18%, while elapsed samples do not establish a production throughput claim. Separate updated checkpoint capture/projection/write samples measured 1.26/6.62/10.50 ms for the empty fixture, 0.43/1.67/15.77 ms with one occupied-system observer and 0.36/1.64/10.50 ms with two. A direct 10,000-selected-job check bounds 100 idle turns to 16 KiB of allocation and verifies withdrawn/re-enrolled work executes once in stable order.
+
+**Automated validation.** The exact `CapsuleerTrafficPerformanceTests.WarmedMaintenanceIncludesSharedPresentationWithoutSqlOrFittingWork` method passed three cases before and after the optimization (6.97/6.64 seconds including runner startup). The final focused filter `FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerRuntimeTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerEncounterTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests` passed 54 cases in 18.10 seconds including runner startup. Coverage includes concurrency, committed-generation recovery, rollback, observer release/re-entry, deferred inbound work and the late witnessed transfer. Copied-save evidence remains opt-in and was not exercised. No full .NET regression was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+Solution build (zero warnings/errors), both Python policy suites (eight catalog and nine formatting cases), formatting verification and diff checks also passed. Dependencies and tools remain unchanged from the passing stage-1 restores.
+
+**Optional maintainer checks.** None required for the scheduling correction.

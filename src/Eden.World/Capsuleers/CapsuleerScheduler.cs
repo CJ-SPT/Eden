@@ -29,6 +29,8 @@ internal sealed partial class CapsuleerScheduler(
     private readonly Dictionary<long, HaulerObservation> _pendingHaulers = [];
     private readonly HashSet<int> _activated = [];
     private HashSet<long> _running = [];
+    private HashSet<long> _nextRunning = [];
+    private readonly HashSet<long> _turnPilots = [];
     private readonly HashSet<int> _visited = [];
     private long _presentationRevision;
     private long _settledTicks;
@@ -228,7 +230,10 @@ internal sealed partial class CapsuleerScheduler(
                 _haulers.Add(agent.PilotId, haulers.Create(agent.PilotId));
             }
         }
-        _queue.Restore(_running.Select(pilot => Current[pilot]));
+        if (!incremental)
+        {
+            _queue.Restore(_running.Select(pilot => Current[pilot]));
+        }
         _populationRevision = Live?.CapsuleerRevision ?? 0;
         _population = population.Summary();
         _loaded = true;
@@ -246,7 +251,9 @@ internal sealed partial class CapsuleerScheduler(
             long throughTicks = Math.Min(activity.ElapsedTicks, horizon ?? activity.ElapsedTicks);
             Load();
             Reconcile(activity);
-            HashSet<long> pilots = new(_running);
+            var pilots = _turnPilots;
+            pilots.Clear();
+            pilots.UnionWith(_running);
             Dictionary<long, MinerObservation> mining = [];
             Dictionary<long, HaulerObservation> hauling = [];
             CapsuleerTurn turn;
@@ -397,10 +404,18 @@ internal sealed partial class CapsuleerScheduler(
             }
         }
         var inbound = ReconcileInbound(activity);
-        var running = activity
-            .ActiveSystems.SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? [])
-            .Where(pilot => activity.ActiveSystems.Contains(_locations[pilot]))
-            .ToHashSet();
+        var running = _nextRunning;
+        running.Clear();
+        foreach (int system in activity.ActiveSystems)
+        {
+            foreach (long pilot in _systemAgents.GetValueOrDefault(system) ?? [])
+            {
+                if (activity.ActiveSystems.Contains(_locations[pilot]))
+                {
+                    running.Add(pilot);
+                }
+            }
+        }
         running.UnionWith(inbound);
         foreach (long pilot in running.Except(_running))
         {
@@ -418,6 +433,7 @@ internal sealed partial class CapsuleerScheduler(
         running.UnionWith(_running.Where(pilot => Current[pilot].Action == CapsuleerAction.GateTransfer && !_haulers[pilot].IsInbound));
         foreach (long pilot in _running.Except(running))
         {
+            _queue.Remove(pilot);
             // Release navigation, contacts and fitting references. The immutable
             // checkpoint retains the encounter and its paid work for re-entry.
             if (_miners.ContainsKey(pilot))
@@ -429,8 +445,12 @@ internal sealed partial class CapsuleerScheduler(
                 _haulers[pilot] = haulers.Create(pilot);
             }
         }
+        _nextRunning = _running;
         _running = running;
-        _queue.Restore(_running.Select(pilot => Current[pilot]));
+        foreach (long pilot in _running)
+        {
+            _queue.Publish(Current[pilot]);
+        }
     }
 
     private void Settle(long throughTicks)

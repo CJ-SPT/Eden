@@ -7,6 +7,9 @@ internal sealed partial class CapsuleerScheduler
     private readonly Dictionary<long, long> _inboundLanes = [];
     private readonly HashSet<(long Gate, bool BothSystemsObserved)> _deferredInbound = [];
     private readonly HashSet<long> _lanePilots = [];
+    private readonly Dictionary<long, WatchedTrafficGate> _watchedLanes = [];
+    private readonly HashSet<long> _relevantLanes = [];
+    private readonly HashSet<long> _inboundRunning = [];
 
     private CapsuleerJob RestoreInbound(CapsuleerJob job, HaulerProgress work, long elapsed)
     {
@@ -26,7 +29,8 @@ internal sealed partial class CapsuleerScheduler
 
     private HashSet<long> ReconcileInbound(HumanActivitySnapshot activity)
     {
-        Dictionary<long, WatchedTrafficGate> watches = [];
+        var watches = _watchedLanes;
+        watches.Clear();
         foreach (var gate in gateWatch.Read(activity))
         {
             long key = Math.Min(gate.ArrivalGateId, gate.DepartureGateId);
@@ -53,15 +57,28 @@ internal sealed partial class CapsuleerScheduler
             _lanePilots.Add(pilot);
             watches.TryAdd(pilot, gate);
         }
-        HashSet<long> inbound = [];
-        var relevant = watches
-            .Keys.Concat(_running.Where(_lanePilots.Contains))
-            .Concat(
-                activity
-                    .ActiveSystems.SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? [])
-                    .Where(pilot => _lanePilots.Contains(pilot) && activity.ActiveSystems.Contains(_locations[pilot]))
-            )
-            .ToHashSet();
+        var inbound = _inboundRunning;
+        inbound.Clear();
+        var relevant = _relevantLanes;
+        relevant.Clear();
+        relevant.UnionWith(watches.Keys);
+        foreach (long pilot in _running)
+        {
+            if (_lanePilots.Contains(pilot))
+            {
+                relevant.Add(pilot);
+            }
+        }
+        foreach (int system in activity.ActiveSystems)
+        {
+            foreach (long pilot in _systemAgents.GetValueOrDefault(system) ?? [])
+            {
+                if (_lanePilots.Contains(pilot) && activity.ActiveSystems.Contains(_locations[pilot]))
+                {
+                    relevant.Add(pilot);
+                }
+            }
+        }
         foreach (long pilot in relevant)
         {
             var hauler = _haulers[pilot];

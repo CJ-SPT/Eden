@@ -78,6 +78,16 @@ public sealed class CapsuleerJobQueue
         return true;
     }
 
+    public bool Remove(long pilotId)
+    {
+        if (!_jobs.Remove(pilotId, out var job))
+        {
+            return false;
+        }
+        _queue.Remove(job);
+        return true;
+    }
+
     public CapsuleerTurn Run(
         long throughTicks,
         Func<CapsuleerJob, CapsuleerJob> execute,
@@ -88,6 +98,10 @@ public sealed class CapsuleerJobQueue
         ArgumentOutOfRangeException.ThrowIfNegative(throughTicks);
         long started = clock.GetTimestamp();
         int completed = 0;
+        if (_queue.Min is not { } first || first.DueTicks > throughTicks)
+        {
+            return new(0, _jobs.Count, null, false);
+        }
         // A scoped barrier selects its relevant jobs once, preserving their deadline ordering.
         var candidates = pilots is null
             ? _queue

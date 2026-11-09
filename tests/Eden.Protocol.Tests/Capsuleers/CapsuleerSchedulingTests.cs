@@ -110,6 +110,46 @@ public sealed class CapsuleerSchedulingTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void IdleLargePopulationKeepsAllocationBoundedAndWithdrawnJobsResumeOnce()
+    {
+        const int population = 10000;
+        const int wakes = 100;
+        const long allocationBudget = 16 * 1024;
+        CapsuleerJobQueue queue = new();
+        var jobs = Enumerable.Range(1, population).Select(id => new CapsuleerJob(id, 0, 0, 100, CapsuleerAction.Prepare)).ToArray();
+        var pilots = jobs.Select(job => job.PilotId).ToHashSet();
+        queue.Restore(jobs);
+        TestClock clock = new();
+        Func<CapsuleerJob, CapsuleerJob> unexpected = _ => throw new InvalidOperationException("No job is due.");
+        queue.Run(99, unexpected, clock, pilots);
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < wakes; i++)
+        {
+            queue.Run(99, unexpected, clock, pilots);
+        }
+        allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        Assert.InRange(allocated, 0, allocationBudget);
+        Assert.True(queue.Remove(1));
+        Assert.False(queue.Remove(1));
+        Assert.Equal(population - 1, queue.Inspect(100).Due);
+        Assert.True(queue.Publish(jobs[0]));
+        List<long> executed = [];
+        var turn = queue.Run(
+            100,
+            job =>
+            {
+                executed.Add(job.PilotId);
+                return job.Next(200, CapsuleerAction.Arrival);
+            },
+            clock,
+            pilots
+        );
+        Assert.Equal(Enumerable.Range(1, CapsuleerJobQueue.ActionsPerTurn).Select(id => (long)id), executed);
+        Assert.Equal(population, turn.Pending);
+        output.WriteLine($"{population} selected jobs, {wakes} idle wakes: {allocated} bytes.");
+    }
+
+    [Fact]
     public void ReschedulingDoesNotExecuteStaleCallbacksAndInvalidRestorePreservesQueue()
     {
         var clock = new TestClock();
