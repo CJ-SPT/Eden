@@ -35,8 +35,6 @@ internal sealed record CombatAnomalyDefinition(
 internal static class CombatAnomalyCatalog
 {
     private const int InvisibleBeaconGroup = 4055;
-    private const int CloudGroup = 227;
-    private const int EnvironmentGroup = 1882;
 
     private sealed record EncounterFile(int Build, ImmutableArray<AnomalyEncounterReport> Encounters);
 
@@ -138,11 +136,16 @@ internal static class CombatAnomalyCatalog
                     o.Type.CategoryId,
                     corporation,
                     Position(o.Source.Position!) - origin,
-                    (float)(o.Source.Radius ?? o.Type.Radius ?? 0)
+                    DungeonObjectGeometry.Radius(
+                        o.Type.CategoryId,
+                        o.Type.Radius,
+                        o.Source.Radius,
+                        catalog.Read(CatalogData.Client.Types, (long)o.Type.Id)?.Volume ?? 0
+                    )
                 )
                 {
                     IsGlobal = false,
-                    Solid = o.Type.GroupId is not (CloudGroup or EnvironmentGroup),
+                    Solid = DungeonObjectGeometry.IsSolid(o.Type.GroupId),
                 })
                 .ToImmutableArray();
             definitions.Add(

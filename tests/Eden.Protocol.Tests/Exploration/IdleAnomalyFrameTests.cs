@@ -82,9 +82,18 @@ public sealed class IdleAnomalyFrameTests(ITestOutputHelper output)
             }
             sites.Arrive(CombatAnomalyRules.SystemId, origin, fixture.Clock.Now);
             using CatalogDbContext catalog = new(database.CatalogPath);
-            origin +=
-                CombatAnomalyCatalog.Find(catalog, 3454)!.Spawner
-                + (nearScenery ? new SpacePosition(1000, 0, 0) : new SpacePosition(0, 100_000, 0));
+            var definition = CombatAnomalyCatalog.Find(catalog, 3454)!;
+            if (nearScenery)
+            {
+                // The first NPC anchor can be inside the Ruined Monument. Start
+                // beside a real surface, not inside an arbitrarily enumerated body.
+                var body = definition.Objects.Where(o => o.Solid).OrderBy(o => o.Id).First();
+                origin += body.Position + new SpacePosition(body.Radius + fixture.Pilot.Flight.ShipRadius + 1000, 0, 0);
+            }
+            else
+            {
+                origin += definition.Spawner + new SpacePosition(0, 100_000, 0);
+            }
         }
         fixture.Clock.Seconds += NpcEncounterDefinitions.RespawnSeconds + 1;
         fixture.Db.Store.SetPosition(fixture.Pilot.ShipId, origin, CombatAnomalyRules.SystemId);

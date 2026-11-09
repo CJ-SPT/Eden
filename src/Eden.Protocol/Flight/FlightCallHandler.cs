@@ -74,7 +74,17 @@ internal sealed class FlightCallHandler(
                 return new PilotCallResult.Failure("Resolve this cosmic signature to 100% before warping to it.");
             }
             double range = command is FlightCommand.WarpToScan scanWarp ? scanWarp.Range : ((FlightCommand.WarpTo)command).Range;
-            command = new FlightCommand.WarpToPoint(site.Id, site.Position, range);
+            var anchor = context.Pilot.Position is { } origin
+                ? SiteWarpInRules.ResolveAnchor(
+                    context.Pilot.ShipId,
+                    context.Pilot.Flight.ShipRadius,
+                    origin,
+                    site.Position,
+                    range,
+                    site.Objects
+                )
+                : site.Position;
+            command = new FlightCommand.WarpToPoint(site.Id, anchor, range);
         }
         if (command is FlightCommand.WarpToFleetMember memberWarp)
         {

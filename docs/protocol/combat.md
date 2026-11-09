@@ -1296,3 +1296,60 @@ validation took **76.77 seconds**. No full .NET suite was requested or run. TRX 
 
 **Optional maintainer checks.** Inspect both Drone Horde layouts and the two Angel Hub layouts for
 native scenery, battery placement and separated defender groups.
+
+## Anomaly warp-in collision correction — November 9, 2026
+
+The maintainer reported being thrown out of scenery after warping into Drone Assembly and Drone
+Cluster. The requested native entry coordinates were correct, but the projected collision geometry
+was not. `CombatAnomalyCatalog` used each dungeon object's authored `radius` as its physical ball
+radius. For ore this field is a deposit quantity: Veldspar objects in Drone Assembly 2341 and 2354
+therefore acquired collision spheres tens of kilometres across. A read-only catalog audit found
+overlapping source-radius spheres at 62 of the 199 existing anomaly entry points.
+
+Dungeon objects now use their item type's physical radius. Decorative ore rocks use Eden's existing
+square-root-of-ore-volume belt-size policy, with the source quantity and pinned ore unit volume;
+this is an explicit Eden size policy rather than an asserted retail asteroid-size formula. The
+`Non-Interactable Object` group 1975 joins clouds and massive environments as non-solid scenery.
+In Drone Cluster 2188 and 14215, the Spaceshuttle Shuttle Wreckage type 64550 retains its 6,000-metre
+visual ball radius but no longer carries the Destiny Massive flag. Individual collidable rocks remain
+solid, using their type radius instead of authored content bounds. Existing site identities, scene
+object identities and warp targets are preserved; no save migration or reset is required.
+
+The scan-target and item-target warp routes now check the actual landing point, including the ship's
+radius, chosen warp distance and existing ship-ID landing offset. If it intersects a real solid body,
+the target moves only far enough back along the approach ray to clear the connected obstacle spans
+with one metre of clearance. Clear landings are unchanged. This also covers the two obstructed default
+approaches to the Small Rock in Angel Refuge 2114 that remain after correcting the content radii.
+
+Reference evidence: the local evejs combat/drone packs documented in the preceding record distinguish
+`quantityProvenance: exact_dunRadius` for ore from physical type radii for scenery. This correction
+uses Eden's own pinned types, object coordinates and ore volumes, without importing evejs code or
+authored population data. [EVE University mining](https://wiki.eveuniversity.org/Mining) supplies the
+ore quantity/volume context. Existing collision mechanics remain based on
+[Carbon Destiny Ballpark.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp);
+the retained reference at 114e89fa584f0e1a81eb0a679aabf41af8870072 was also inspected for Massive-ball
+eligibility. The existing protocol writer already maps `StaticSpaceObject.Solid` to that flag.
+
+**Automated validation.** The stationary-arrival regression failed against the original catalog
+projection and passed after correction across all 199 definitions with a 500-metre-radius hull.
+Dedicated cases cover all six Drone Assembly/Cluster definitions, both native ship-ID landing offsets,
+six approach directions and ten stationary collision frames after each landing. A protocol regression
+checks the decorative wreck's radius and absent Massive flag. Pure cases distinguish ore quantity,
+type radius and solid versus decorative groups. Additional cases check actual landings across all
+199 definitions, overlapping obstacles, requested warp distances and unchanged clear arrivals.
+Final filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Exploration|FullyQualifiedName~DungeonObjectGeometryTests|FullyQualifiedName~SiteWarpInRuleTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~TypedFlightTests`.
+All **167 .NET cases passed** (66-second test duration), followed by the catalog policy suite (8 cases,
+0.563 seconds), formatting policy suite (9 cases, 0.018 seconds) and formatting verification (1,426
+files, maximum 140 characters). Tool/solution restore, solution build with zero warnings/errors,
+documentation encoding/whitespace and diff checks passed. The ordered validation took **88.53 seconds**.
+The idle-frame fixture was corrected to start beside an actual surface: its previous arbitrarily
+enumerated spawn object could be the interior of the Ruined Monument. All three exact idle-frame
+cases passed after that fixture correction, then the complete focused filter passed. No full .NET
+suite was requested or run. TRX: `artifacts/feature-tests/results/warp-in-final/warp-in.trx`.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The reported ejection is
+maintainer-observed evidence; the corrected native presentation remains unverified.
+
+**Optional maintainer checks.** Restart the server, then warp to Drone Assembly and Drone Cluster and
+confirm the ship remains stable after landing and while moving away from the entry.
