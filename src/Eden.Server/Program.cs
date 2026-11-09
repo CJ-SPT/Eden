@@ -146,6 +146,10 @@ internal static class Program
         WorldDatabase database = new(worldPath);
         if (preparationRoot is null)
         {
+            if (Value("--grant-redeem") is null && Value("--set-account-password") is null)
+            {
+                ServerBanner.Write(Console.Out);
+            }
             Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
             using FileStream startupOwnership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             long reconciliationStarted = Stopwatch.GetTimestamp();
