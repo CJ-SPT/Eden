@@ -72,6 +72,7 @@ public sealed record SkillEditorModifier(
 public sealed record SkillEditorOption(int Id, string Name, string Description = "", bool Available = true, string SearchTerms = "")
 {
     public double DefaultValue { get; init; }
+    public PassiveEffectPhase? Phase { get; init; }
     public IReadOnlyList<SkillEditorModifier> Modifiers { get; init; } = [];
 }
 

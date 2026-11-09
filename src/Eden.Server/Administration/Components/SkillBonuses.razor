@@ -14,11 +14,12 @@
         {
             <div class="skill-recipe">
                 <h3>Ore mining yield</h3>
-                <p>Add the two linked effects and their percentage value. New values start at 25% per level; existing values are kept.
+                <p>Add the two linked effects and their percentage value. Replaces equivalent mining-yield rules to avoid stacking them.
+                    New values start at 25% per level; existing values are kept.
                     Edit the percentage below.
                     Applies to fitted modules requiring Mining, including ore mining lasers and strip miners.
                     Ice harvesters, gas harvesters and mining drones do not receive this bonus.</p>
-                <button type="button" class="secondary" @onclick="AddMining">Add ore mining yield bonus</button>
+                <button type="button" class="secondary" @onclick="AddMining">Use per-level ore mining yield bonus</button>
             </div>
         }
         @foreach (var effect in Form.Effects)
@@ -32,9 +33,20 @@
                 </div>
                 @if (option is not null)
                 {
+                    @if (option.Phase == Eden.Gameplay.Inventory.PassiveEffectPhase.Online)
+                    {
+                        <p class="notice">This is an online-module rule. For a mining skill, use the per-level ore mining recipe above.
+                            It keeps your percentage and replaces this rule.</p>
+                    }
                     @foreach (var modifier in option.Modifiers)
                     {
                         <p class="skill-description">@modifier.Description</p>
+                    }
+                    @if (SkillBonusEditing.IsMiningApplication(option) && !HasMiningScaling)
+                    {
+                        <p class="notice">Flat mining bonus: the entered percentage stays the same at every trained level.
+                            A value of 20 gives +20% at both level I and level V.
+                            Use the per-level recipe above for +20% per level (+100% at level V).</p>
                     }
                     @foreach (int id in SkillBonusEditing.InputIds(option))
                     {
@@ -63,7 +75,8 @@
                                 <tbody><tr><th>Yield multiplier</th>@for (int level = 1; level <= 5; level++)
                                     { <td>@((1 + mining.Value * level / 100).ToString("0.##"))×</td> }</tr></tbody>
                             </table>
-                            <p class="muted">25% gives +25% at level I and +125% at level V (2.25× yield). Levels add together;
+                            <p class="muted">@mining.Value% gives +@(mining.Value)% at level I and +@(mining.Value * 5)% at level V.
+                                Levels add together;
                                 separate skills and other bonuses can multiply the result.</p>
                         </div>
                     }

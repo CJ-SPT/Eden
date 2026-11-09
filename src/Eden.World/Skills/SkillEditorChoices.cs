@@ -12,9 +12,12 @@ namespace Eden.World.Skills;
 
 public sealed partial class SkillEditorStore
 {
+    // Build 3662168 Mining/Astrogeology percentage input (miningAmountBonus).
+    private const int MiningYieldBonusAttribute = 434;
+
     private static bool SupportedEffect(int id, ClientDogmaeffects effect) =>
         id == SkillLevelEffect
-        || effect.EffectCategory is (int)PassiveEffectPhase.Fitted or (int)PassiveEffectPhase.Online
+        || effect.EffectCategory == (int)PassiveEffectPhase.Fitted
             && effect.ModifierInfo is { Length: > 0 } modifiers
             && modifiers.All(value =>
                 PassiveCatalog.Parse(value, effect.EffectCategory.Value) is { Domain: ModifierDomain.Ship or ModifierDomain.Item }
@@ -47,7 +50,19 @@ public sealed partial class SkillEditorStore
         string Text(long? id) => id is long key ? texts.GetValueOrDefault(key)?.Text ?? "" : "";
         string Name(long? id, string? fallback) => Text(id) is { Length: > 0 } text ? text : Humanize(fallback);
         string AttributeName(long? id) =>
-            id is long key && attributes.TryGetValue(key, out var value) ? Name(value.DisplayNameID, value.Name) : "Unknown attribute";
+            id == (int)DogmaAttributeId.MiningAmount ? "Ore mining yield"
+            : id is long key && attributes.TryGetValue(key, out var value) ? Name(value.DisplayNameID, value.Name)
+            : "Unknown attribute";
+        static string GameplayTerms(long? id) =>
+            id switch
+            {
+                (int)DogmaAttributeId.MiningAmount or MiningYieldBonusAttribute =>
+                    "ore mining yield miner laser strip volume bonus percent per level",
+                (int)DogmaAttributeId.MaxVelocity => "speed velocity movement navigation",
+                (int)DogmaAttributeId.Duration => "cycle duration time activation speed",
+                (int)DogmaAttributeId.CapacitorNeed => "capacitor energy cost activation use",
+                _ => "",
+            };
         string Target(ClientDogmaeffectsModifierInfoItem modifier) =>
             modifier.Func switch
             {
@@ -118,7 +133,8 @@ public sealed partial class SkillEditorStore
                         return new SkillEditorOption(
                             (int)pair.Key,
                             Name(value.DisplayNameID, value.Name),
-                            $"{value.Name}. {Text(value.TooltipDescriptionID)} {value.Description} {unitText}".Trim()
+                            $"{value.Name}. {Text(value.TooltipDescriptionID)} {value.Description} {unitText}".Trim(),
+                            SearchTerms: GameplayTerms(pair.Key)
                         )
                         {
                             DefaultValue = value.DefaultValue ?? 0,
@@ -146,9 +162,17 @@ public sealed partial class SkillEditorStore
                             )
                         ),
                     SupportedEffect((int)pair.Key, pair.Value),
-                    pair.Value.EffectName ?? ""
+                    (pair.Value.EffectName ?? "")
+                        + " "
+                        + string.Join(
+                            " ",
+                            (pair.Value.ModifierInfo ?? []).Select(modifier =>
+                                GameplayTerms(modifier.ModifiedAttributeID) + " " + GameplayTerms(modifier.ModifyingAttributeID)
+                            )
+                        )
                 )
                 {
+                    Phase = (PassiveEffectPhase?)pair.Value.EffectCategory,
                     Modifiers = (pair.Value.ModifierInfo ?? []).Select(Describe).ToArray(),
                 })
             ),

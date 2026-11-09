@@ -1,8 +1,7 @@
-@using System.Globalization
 @using Eden.Gameplay.Skills
 <section class="card skill-browser">
     <h2>Skills <span class="muted">@Filtered.Count</span></h2>
-    <label>Search by name or ID <input type="search" @bind="Search" @bind:event="oninput" @bind:after="FilterSkills" /></label>
+    <label>Find a skill <input type="search" placeholder="Name, description or ID…" @bind="Search" @bind:event="oninput" @bind:after="FilterSkills" /></label>
     <label>Show
         <select @bind="Filter" @bind:after="FilterSkills">
             <option value="all">All current skills</option>
@@ -48,6 +47,8 @@
     private SkillEditorSnapshot? PreviousSnapshot;
     private IReadOnlyList<SkillEditorEntry> Ordered = [];
     private IReadOnlyList<SkillEditorEntry> Filtered = [];
+    private IReadOnlyList<SkillEditorOption> SearchOptions = [];
+    private IReadOnlyDictionary<int, SkillEditorEntry> ById = new Dictionary<int, SkillEditorEntry>();
     private string Search = "";
     private string Filter = "all";
     private int Page;
@@ -58,6 +59,9 @@
         {
             PreviousSnapshot = Snapshot;
             Ordered = Snapshot.Skills.OrderBy(entry => entry.Definition.Name).ToArray();
+            SearchOptions = Ordered.Select(entry => new SkillEditorOption(
+                entry.Definition.TypeId, entry.Definition.Name, entry.Definition.Description)).ToArray();
+            ById = Ordered.ToDictionary(entry => entry.Definition.TypeId);
             ApplyFilter();
         }
     }
@@ -70,13 +74,11 @@
 
     private void ApplyFilter()
     {
-        Filtered = Ordered.Where(entry =>
+        Filtered = SkillChoiceSearch.Find(SearchOptions, Search, null, resultLimit: null).Select(option => ById[option.Id]).Where(entry =>
             (Filter == "deleted" ? entry.Deleted : !entry.Deleted)
             && (Filter != "original" || !entry.UserCreated)
             && (Filter != "custom" || entry.UserCreated)
             && (Filter != "modified" || entry.IsModified)
-            && (entry.Definition.Name.Contains(Search, StringComparison.OrdinalIgnoreCase)
-                || entry.Definition.TypeId.ToString(CultureInfo.InvariantCulture).Contains(Search, StringComparison.Ordinal))
         ).ToArray();
         Page = Math.Min(Page, Math.Max(0, (Filtered.Count - 1) / PageSize));
     }

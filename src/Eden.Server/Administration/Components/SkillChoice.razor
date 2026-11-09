@@ -20,12 +20,25 @@
     <details class="skill-search">
     <summary>Find @Label.ToLowerInvariant()</summary>
     <label class="muted">Search choices
-        <input type="search" value="@Search" @oninput="SearchChanged" placeholder="Search names or descriptions…" />
+        <input type="search" value="@Search" @oninput="SearchChanged" placeholder="Search names or descriptions, e.g. mining yield…" />
     </label>
     <small class="muted">Showing up to @SkillChoiceSearch.ResultLimit matches. Narrow the search to find more.</small>
     @if (Matches.Count == 0 && !string.IsNullOrWhiteSpace(Search))
     {
         <p class="muted" role="status">No matching choices. Your current selection is kept.</p>
+    }
+    @if (Matches.Count > 0 && !string.IsNullOrWhiteSpace(Search))
+    {
+        <div class="skill-search-results" role="list" aria-label="Matching choices">
+            @foreach (var option in Matches)
+            {
+                <div role="listitem">
+                    <button type="button" class="secondary" @onclick="() => ChooseMatch(option)">
+                        @option.Name <small>· @option.Id</small>
+                    </button>
+                </div>
+            }
+        </div>
     }
     </details>
     @if (ShowDescription && Selected is { Description.Length: > 0 } choice)
@@ -34,7 +47,13 @@
     }
     @if (Selected is { Available: false })
     {
-        <p class="muted">This existing value is preserved. New bonuses must use supported passive ship or module effects.</p>
+        <p class="muted">This existing value is retained for review.
+            @if (Selected.Phase is not null)
+            {
+                <span>New skill bonuses require supported passive effects.
+                    Online, active and targeted module effects cannot be added to a skill.</span>
+            }
+        </p>
     }
 </div>
 
@@ -70,9 +89,16 @@
         Match();
     }
 
-    private void SearchChanged(ChangeEventArgs args)
+    protected void SearchChanged(ChangeEventArgs args)
     {
         Search = args.Value?.ToString() ?? "";
+        Match();
+    }
+
+    protected void ChooseMatch(SkillEditorOption option)
+    {
+        CurrentValueAsString = option.Id.ToString(CultureInfo.InvariantCulture);
+        Search = "";
         Match();
     }
 

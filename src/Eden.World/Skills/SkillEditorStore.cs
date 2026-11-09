@@ -351,7 +351,8 @@ public sealed partial class SkillEditorStore(WorldDatabase database, TimeProvide
                 if (!SupportedEffect(reference.EffectId, effect))
                 {
                     throw new InvalidDataException(
-                        $"Effect {reference.EffectId} is not a supported passive ship or module bonus. Choose a supported catalog effect."
+                        $"Effect {reference.EffectId} cannot be added to a skill. Choose a supported passive effect; "
+                            + "online, active and targeted module effects are not skill bonuses."
                     );
                 }
             }

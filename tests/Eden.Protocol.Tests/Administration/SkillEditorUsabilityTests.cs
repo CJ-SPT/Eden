@@ -22,6 +22,40 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class SkillEditorUsabilityTests
 {
     [Fact]
+    public void SearchCombinesWordsRanksNamesBeforeDescriptionsAndFindsGameplayAliases()
+    {
+        var options = Enumerable
+            .Range(1, 100)
+            .Select(id => new SkillEditorOption(id, $"Unrelated {id}", "A mining yield description"))
+            .Concat([new(500, "Mining yield"), new(501, "Ore mining yield"), new(502, "Mining yield", Available: false)])
+            .ToArray();
+        var matches = SkillChoiceSearch.Find(options, "  MINING - yield  ", null);
+        Assert.Equal(30, matches.Count);
+        Assert.Equal(500, matches[0].Id);
+        Assert.Equal(501, matches[1].Id);
+        Assert.Equal(500, SkillChoiceSearch.Find(options, "yield mining", null)[0].Id);
+        Assert.Equal(500, SkillChoiceSearch.Find(options, "500", null)[0].Id);
+        Assert.DoesNotContain(matches, option => option.Id == 502);
+        Assert.DoesNotContain(SkillChoiceSearch.Find(options, "mining yield", 500), option => option.Id == 500);
+        Assert.Empty(SkillChoiceSearch.Find(options, "mining impossible", null));
+        Assert.Equal(102, SkillChoiceSearch.Find(options, "mining yield", null, resultLimit: null).Count);
+
+        using TestWorld world = new();
+        WorldDatabase database = new(world.Path);
+        PassiveCatalogFixture.Load(database.CatalogPath);
+        PassiveCatalogFixture.LoadStarterProduction(database.CatalogPath);
+        var choices = new SkillEditorStore(database, TimeProvider.System).Choices();
+        using var warm = SessionPerformance.Begin("gameplay-search", _ => { }, force: true)!;
+        var mining = SkillChoiceSearch.Find(choices.Effects, "mining yield", null);
+        Assert.Contains(mining, option => option.Id == 389);
+        Assert.Contains(mining, option => option.Id == 391);
+        Assert.DoesNotContain(mining, option => option.Id == 1882);
+        Assert.Contains(SkillChoiceSearch.Find(choices.Attributes, "mining yield", null), option => option.Id == 434);
+        Assert.Equal(0, warm.Commands);
+        Assert.Equal(0, warm.Connections);
+    }
+
+    [Fact]
     public void ColdSkillLoadingUsesBoundedBatchReadsAndWarmNavigationDoesNoCatalogWork()
     {
         using TestWorld world = new();
@@ -199,18 +233,21 @@ public sealed class SkillEditorUsabilityTests
         TestableChoice? choice = null;
         await renderer.Dispatcher.InvokeAsync(async () =>
         {
-            await renderer.RenderComponentAsync<ChoiceHost>(
+            var component = await renderer.RenderComponentAsync<ChoiceHost>(
                 ParameterView.FromDictionary(
                     new Dictionary<string, object?>
                     {
                         [nameof(ChoiceHost.Form)] = form,
                         [nameof(ChoiceHost.Context)] = context,
-                        [nameof(ChoiceHost.Capture)] = (Action<TestableChoice>)(component => choice = component),
+                        [nameof(ChoiceHost.Capture)] = (Action<TestableChoice>)(value => choice = value),
                     }
                 )
             );
             Assert.False(context.IsModified());
-            choice!.Select("8");
+            choice!.SearchFor("new icon");
+            Assert.Contains("Matching choices", component.ToHtmlString());
+            Assert.False(context.IsModified());
+            choice!.Pick(new(8, "New icon"));
             Assert.Equal(8, form.IconId);
             Assert.True(context.IsModified(new FieldIdentifier(form, nameof(form.IconId))));
             context.MarkAsUnmodified();
@@ -225,6 +262,14 @@ public sealed class SkillEditorUsabilityTests
     public sealed class TestableChoice : SkillChoice<int?>
     {
         public void Select(string value) => CurrentValueAsString = value;
+
+        public void Pick(SkillEditorOption option) => ChooseMatch(option);
+
+        public void SearchFor(string search)
+        {
+            SearchChanged(new() { Value = search });
+            StateHasChanged();
+        }
     }
 
     public sealed class ChoiceHost : ComponentBase

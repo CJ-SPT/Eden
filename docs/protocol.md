@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Mining skill bonus configuration and search, November 9, 2026](protocol/characters.md#mining-skill-bonus-configuration-and-search--november-9-2026)
+
 - [CONCORD overview color during attacks, November 9, 2026](protocol/combat.md#concord-overview-color-during-attacks--november-9-2026)
 
 - [CONCORD criminal response, November 9, 2026](protocol/combat.md#concord-criminal-response--november-9-2026)

@@ -4,6 +4,8 @@ using Eden.Data.World.Skills;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
+using Eden.Protocol.Skills;
+using Eden.Server;
 using Eden.Server.Administration;
 using Eden.Server.Administration.Components;
 using Eden.World.Catalog;
@@ -23,13 +25,18 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class SkillBonusEditorTests
 {
     [Theory]
-    [InlineData(25)]
-    [InlineData(12.5)]
-    [InlineData(0)]
-    public void MiningRecipePersistsAndAppliesConfiguredPercentPerLevelToMatchingModulesOnly(double percent)
+    [InlineData(25, 483, false)]
+    [InlineData(12.5, 483, false)]
+    [InlineData(0, 483, false)]
+    [InlineData(20, 482, true)]
+    public void MiningRecipePersistsAndAppliesConfiguredPercentPerLevelToMatchingModulesOnly(double percent, int miner, bool repair)
     {
         using TestWorld fixture = new();
         WorldDatabase database = new(fixture.Path);
+        if (repair)
+        {
+            PassiveCatalogFixture.Load(database.CatalogPath);
+        }
         PassiveCatalogFixture.LoadStarterProduction(database.CatalogPath);
         SkillEditorStore editor = new(database, TimeProvider.System);
         var options = editor.Choices();
@@ -46,10 +53,16 @@ public sealed class SkillBonusEditorTests
                 Prerequisites = [],
             }
         );
+        if (repair)
+        {
+            form.Attributes.Add(new() { AttributeId = 434, Value = percent });
+            form.Effects.Add(new() { EffectId = 1882 });
+        }
         SkillBonusEditing.AddMining(form, options);
         SkillBonusEditing.AddMining(form, options);
         Assert.Equal(2, form.Effects.Count);
-        Assert.Equal(25, Assert.Single(form.Attributes).Value);
+        Assert.Equal(repair ? percent : 25, Assert.Single(form.Attributes).Value);
+        Assert.DoesNotContain(form.Effects, effect => effect.EffectId == 1882);
         form.Attributes[0].Value = percent;
         var created = editor.Create(editor.Read().Generation, form.Build(), "Admin");
         SkillEditorStore reopened = new(new(fixture.Path), TimeProvider.System);
@@ -63,6 +76,14 @@ public sealed class SkillBonusEditorTests
             Path.Combine(package, "skills.json"),
             JsonSerializer.Serialize(new[] { new PublishedSkillDefinition(saved.Definition, true, false) }, SkillEditorStore.Json)
         );
+        File.WriteAllText(
+            Path.Combine(package, "package.json"),
+            JsonSerializer.Serialize(
+                new SkillClientPackage(new string('a', 64), reopened.Read().Generation, new string('b', 64), 1),
+                SkillEditorStore.Json
+            )
+        );
+        File.WriteAllText(fixture.Path + ".skills-active", new string('a', 64));
         const long pilotId = 90000001;
         long moduleId;
         long otherModuleId;
@@ -77,7 +98,7 @@ public sealed class SkillBonusEditorTests
                     Id = moduleId,
                     OwnerId = pilotId,
                     LocationId = ship,
-                    TypeId = 483,
+                    TypeId = miner,
                     FlagId = (int)InventoryFlag.HighSlot0,
                     Quantity = 1,
                     Singleton = true,
@@ -115,6 +136,7 @@ public sealed class SkillBonusEditorTests
         double baseline = Read(moduleId);
         double otherBaseline = Read(otherModuleId);
         Assert.True(baseline > 0);
+        using var services = ServerServices.Build(new WorldDatabase(fixture.Path), TimeProvider.System);
         foreach (int level in new[] { 1, 3, 5, 0 })
         {
             using (WorldDbContext world = new(fixture.Path))
@@ -127,7 +149,67 @@ public sealed class SkillBonusEditorTests
             }
             Assert.Equal(baseline * (1 + percent * level / 100), Read(moduleId), 6);
             Assert.Equal(otherBaseline, Read(otherModuleId), 6);
+            long shipId;
+            using (WorldDbContext world = new(fixture.Path))
+            {
+                shipId = world.Pilots.Single(pilot => pilot.Id == pilotId).ActiveShipId;
+            }
+            var brain = services.GetRequiredService<PilotBrain>().Read(pilotId, shipId);
+            var effects = brain.ShipEffects.Where(effect => effect.Skills.Contains(saved.Definition.TypeId)).ToArray();
+            if (level == 0)
+            {
+                Assert.Empty(effects);
+            }
+            else
+            {
+                var effect = Assert.Single(effects);
+                Assert.Equal(percent * level, effect.Value);
+                Assert.Equal(BrainModifier.LocationRequiredSkill, effect.Modifier);
+                Assert.Equal(BrainOperation.PostPercent, effect.Operation);
+                Assert.Equal(DogmaAttributeId.MiningAmount, effect.Attribute);
+                Assert.Equal(new[] { 3386 }, effect.Extras);
+            }
         }
+    }
+
+    [Fact]
+    public void OnlineModuleBonusIsRejectedAndRecipeRepairsItWithoutChangingOtherValues()
+    {
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        PassiveCatalogFixture.Load(database.CatalogPath);
+        PassiveCatalogFixture.LoadStarterProduction(database.CatalogPath);
+        SkillEditorStore editor = new(database, TimeProvider.System);
+        var options = editor.Choices();
+        var online = options.Effects.Single(effect => effect.Id == 1882);
+        Assert.Equal(PassiveEffectPhase.Online, online.Phase);
+        Assert.False(online.Available);
+        Assert.DoesNotContain(SkillChoiceSearch.Find(options.Effects, "mining", null), effect => effect.Id == 1882);
+        var snapshot = editor.Read();
+        var draft = snapshot.Skills.First().Definition with
+        {
+            TypeId = 0,
+            Name = "Mining Techniques",
+            IconId = null,
+            MarketGroupId = null,
+            Prerequisites = [],
+            Attributes = [new(434, 20), new(20, 3)],
+            Effects = [new(1882, false)],
+        };
+        var error = Assert.Throws<InvalidDataException>(() => editor.Create(snapshot.Generation, draft, "Admin"));
+        Assert.Contains("online, active and targeted", error.Message);
+        Assert.Equal(snapshot.Generation, editor.Read().Generation);
+        Assert.DoesNotContain(editor.Read().Skills, entry => entry.UserCreated);
+        var form = SkillForm.From(draft);
+        form.Effects.Add(new() { EffectId = 391 });
+        SkillBonusEditing.AddMining(form, options);
+        SkillBonusEditing.AddMining(form, options);
+        Assert.Equal(new[] { 389, 391 }, form.Effects.Select(effect => effect.EffectId).Order());
+        Assert.Equal(20, form.Attributes.Single(attribute => attribute.AttributeId == 434).Value);
+        Assert.Equal(3, form.Attributes.Single(attribute => attribute.AttributeId == 20).Value);
+        var created = editor.Create(snapshot.Generation, form.Build(), "Admin");
+        Assert.Equal("Mining Techniques", created.Definition.Name);
+        Assert.Equal(new[] { 389, 391 }, created.Definition.Effects.Select(effect => effect.EffectId));
     }
 
     [Fact]
@@ -165,16 +247,29 @@ public sealed class SkillBonusEditorTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task BonusPanelShowsEditableValuesScopeAndLevelPreview(bool editable)
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task BonusPanelShowsEditableValuesScopeAndLevelPreview(bool editable, bool legacy)
     {
         using TestWorld fixture = new();
         WorldDatabase database = new(fixture.Path);
+        if (legacy)
+        {
+            PassiveCatalogFixture.Load(database.CatalogPath);
+        }
         PassiveCatalogFixture.LoadStarterProduction(database.CatalogPath);
         var options = new SkillEditorStore(database, TimeProvider.System).Choices();
         SkillForm form = new();
-        SkillBonusEditing.AddMining(form, options);
+        if (legacy)
+        {
+            form.Attributes.Add(new() { AttributeId = 434, Value = 20 });
+            form.Effects.Add(new() { EffectId = 1882 });
+        }
+        else
+        {
+            SkillBonusEditing.AddMining(form, options);
+        }
         using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
         await using HtmlRenderer renderer = new(services, services.GetRequiredService<ILoggerFactory>());
         await renderer.Dispatcher.InvokeAsync(async () =>
@@ -192,9 +287,18 @@ public sealed class SkillBonusEditorTests
             string html = component.ToHtmlString();
             Assert.Contains("An <strong>attribute</strong> stores a number", html);
             Assert.Contains("% per level", html);
-            Assert.Contains("2.25", html);
+            if (legacy)
+            {
+                Assert.Contains("Flat mining bonus", html);
+                Assert.Contains("online-module rule", html);
+                Assert.Contains("+100% at level V", html);
+            }
+            else
+            {
+                Assert.Contains("2.25", html);
+            }
             Assert.Contains("Ice harvesters, gas harvesters and mining drones", html);
-            Assert.Contains("value=\"25\"", html);
+            Assert.Contains($"value=\"{(legacy ? 20 : 25)}\"", html);
             Assert.Contains("Catalog details", html);
             Assert.Equal(!editable, html.Contains("bonuses are read-only", StringComparison.Ordinal));
             Assert.Equal(!editable, html.Contains("<fieldset disabled", StringComparison.Ordinal));

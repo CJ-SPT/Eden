@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Mining skill bonus configuration and search, November 9, 2026](#mining-skill-bonus-configuration-and-search--november-9-2026)
+
 - [Skill editor and signed client packages, November 9, 2026](#skill-editor-and-signed-client-packages--november-9-2026)
 
 - [Faction-warfare rank overview, November 8, 2026](#faction-warfare-rank-overview-november-8-2026)
@@ -34,6 +36,30 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Mining skill bonus configuration and search — November 9, 2026
+
+A maintainer reported an incorrect custom mining bonus with a Miner II at skill level V. The screenshot selected online effect `1882` with miningAmountBonus `434 = 20`. Read-only inspection of the saved and published definition confirmed that sole effect and no level-scaling rule, despite its description promising 20% per skill level. The report did not include measured before/after yields, so the exact displayed or collected discrepancy remains unestablished.
+
+Pinned build-3662168 effect `1882` is a category-4 online-module percentage rule. The skill recipe uses category-0 effect `389` to multiply attribute `434` by trained level and effect `391` to apply that percentage to mining amount `77` on equipment requiring Mining `3386`. A flat 20% application stays 20% at V; 20% per level contributes 100% at V. The existing authoritative graph and outbound native brain literals have a Miner II regression for the repaired definition. Description text has no gameplay effect.
+
+Authoring now offers supported category-0 passive effects and rejects online/active/targeted module rules. Existing values remain visible for review. **Use per-level ore mining yield bonus** retains the percentage and replaces equivalent application rules, including `1882`, before adding `389`/`391`. This prevents the old recipe action from stacking both applications. Other values and unrelated effects remain intact. Published packages and running saves are not automatically rewritten; save/publish the repaired definition and restart through the normal package workflow.
+
+Search combines words across names, descriptions and gameplay aliases, prioritizes IDs/names, and shows clickable results below the input. `mining yield` finds the application and scaling rules. The sidebar also searches descriptions and preserves full paging. Search indexes share immutable choice collections and perform no SQL or fitting calculations after choices are loaded.
+
+Sources: inert inspection of pinned `eve/common/script/dogma/effect.pyj`, including `BrainEffect`, `GetLiteralKey`, `ResolveValue` and `ApplyBrainEffect`'s LRS dispatch. Original archive SHA-256: `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`; those module bytes were verified unchanged in the installed skill package. The LRS record carries an explicit percentage and selector; its skill IDs do not implicitly multiply the value by level. Consulted [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), `ReadObjectNewobj`, for unchanged native-object preservation. No codec or transport changed. [EVE University's mining-yield guide](https://wiki.eveuniversity.org/Mining_Yield) describes ordinary per-level skill bonuses and other yield multipliers; the effect IDs/operators come from the pinned catalog.
+
+**Automated validation:** Tool restore, solution restore and build passed with zero warnings/errors. The focused filter below passed 78 tests, with one optional pinned-client packaging test skipped because `EDEN_TEST_CLIENT_ROOT` was not configured. Both Python policy suites passed (8 catalog tests, 9 formatting tests), and `tools/Format.ps1 -Check` passed. Stable validation took 40.60 seconds. No full .NET suite was requested or run.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Administration|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotBrainTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogFittingReadTests
+```
+
+Development started through `tools/Test-Feature.ps1 -Filter` with `FullyQualifiedName=Eden.Protocol.Tests.Administration.SkillBonusEditorTests.MiningRecipePersistsAndAppliesConfiguredPercentPerLevelToMatchingModulesOnly`, expanded to cover the reported Miner II and 20% case. Search used the exact filter `FullyQualifiedName=Eden.Protocol.Tests.Administration.SkillEditorUsabilityTests.SearchCombinesWordsRanksNamesBeforeDescriptionsAndFindsGameplayAliases` before the combined checks. Coverage includes saved/reopened repair, no duplicate mining application, level 0/I/III/V yields and corresponding client brain literals, unchanged nonmatching equipment, atomic rejection of online rules, retained unrelated values, flat-rule warnings, multiword/ranked/alias searches, bounded picker results, uncapped sidebar paging, clickable search-result markup and form change tracking. The package fixture reproduces catalog metadata without compiling/installing a native client package.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The screenshot and Miner II/level-V report are maintainer evidence; native display and collection after repair remain unverified.
+
+**Optional maintainer checks:** After saving/publishing the repaired definition and restarting, compare Miner II yield with the level-V preview; search `mining yield` and choose a visible result; verify draft values while switching sections.
 
 ## Faction-warfare rank overview, November 8, 2026
 

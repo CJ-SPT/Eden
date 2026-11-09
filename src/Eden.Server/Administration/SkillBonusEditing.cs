@@ -40,6 +40,17 @@ internal static class SkillBonusEditing
             .Effects.Select(effect => SkillChoiceSearch.Index(choices.Effects).GetValueOrDefault(effect.EffectId))
             .OfType<SkillEditorOption>();
 
+    internal static bool IsMiningApplication(SkillEditorOption effect) =>
+        effect.Modifiers.Count == 1
+        && effect.Modifiers[0]
+            is {
+                Local: false,
+                SourceAttributeId: MiningBonusAttribute,
+                TargetAttributeId: (int)DogmaAttributeId.MiningAmount,
+                Operation: DogmaOperation.PostPercent,
+                RequiredSkillId: (int)MiningSkill.Mining,
+            };
+
     internal static IEnumerable<int> InputIds(SkillEditorOption effect) =>
         effect
             .Modifiers.Select(modifier =>
@@ -73,6 +84,13 @@ internal static class SkillBonusEditing
         {
             throw new InvalidOperationException("The installed catalog does not support the ore mining yield recipe.");
         }
+        // Module-online versions (notably 1882) and equivalent application rules
+        // would otherwise stack with 391 after converting a flat bonus to per-level.
+        var replacements = SelectedEffects(form, choices)
+            .Where(effect => effect.Id != MiningYieldEffect && IsMiningApplication(effect))
+            .Select(effect => effect.Id)
+            .ToHashSet();
+        form.Effects.RemoveAll(effect => replacements.Contains(effect.EffectId));
         foreach (int id in new[] { MiningScalingEffect, MiningYieldEffect })
         {
             if (form.Effects.All(effect => effect.EffectId != id))
