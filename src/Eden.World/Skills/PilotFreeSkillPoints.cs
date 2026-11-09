@@ -7,7 +7,7 @@ namespace Eden.World.Skills;
 
 internal sealed partial class PilotTrainingStore
 {
-    private sealed record PointOperation(FreePointRequest? Request, long Credit = 0);
+    private sealed record PointOperation(FreePointRequest? Request, long Credit = 0, TrainingTarget? Grant = null);
 
     private sealed record TrainingUpdateResult(TrainingState Training, bool Remapped, FreePointPlan? Points, long PointRevision = 0);
 
@@ -118,6 +118,10 @@ internal sealed partial class PilotTrainingStore
                 queue.Select(e => e.Target).ToArray()
             );
         }
+        else if (operation.Grant is { } grant)
+        {
+            plan = GrantPoints(world, pilotId, grant, balance);
+        }
         else
         {
             plan = new(FreeSkillPointRules.Credit(balance, operation.Credit), []);
@@ -130,11 +134,23 @@ internal sealed partial class PilotTrainingStore
         {
             SavePointBalance(world, pilotId, plan.Remaining);
         }
+        else if (operation.Grant is not null && plan.Allocations.Count > 0)
+        {
+            // Skill-only grants must invalidate another online recipient's brain/queue.
+            SavePointBalance(world, pilotId, balance);
+        }
         foreach (var allocation in plan.Allocations)
         {
             world.Set<PilotSkill>().Find(pilotId, allocation.TypeId)!.Points = allocation.After;
             changed.Add(allocation.TypeId);
-            Record(world, pilotId, now, allocation.TypeId, allocation.After, FreeSkillPointRules.UsedEvent);
+            Record(
+                world,
+                pilotId,
+                now,
+                allocation.TypeId,
+                allocation.After,
+                operation.Grant is not null ? GameMasterSkillGranted : FreeSkillPointRules.UsedEvent
+            );
         }
         world.SaveChanges();
         return plan;

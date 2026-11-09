@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Native redemption pairs and batched training queues, November 9, 2026](#native-redemption-pairs-and-batched-training-queues-november-9-2026)
+
 - [Mining skill bonus configuration and search, November 9, 2026](#mining-skill-bonus-configuration-and-search--november-9-2026)
 
 - [Skill editor and signed client packages, November 9, 2026](#skill-editor-and-signed-client-packages--november-9-2026)
@@ -320,6 +322,64 @@ World version **47** adds `WorldJumpClone`, `WorldJumpCloneTimer` and `WorldJump
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Inspect Jump Clones preflight, installed names and wallet entries in the native character sheet. Try the automatic ship departure, a cross-station jump and same-station swaps, then reconnect to inspect state. Native rendering, input and scene transitions remain unverified.
+
+## Native redemption pairs and batched training queues, November 9, 2026
+
+The maintainer reported **Choose an issued personal redeem token** when claiming 32 fixed SP rewards. The UI assembles dictionaries
+with `tokenID`, `massTokenID` and `typeID`, but build **3662168** `eve/client/script/ui/services/redeemsvc.pyj`,
+`RedeemService._HandleMctTokens`, converts ordinary rewards to **(tokenID, massTokenID) tuples** before `userSvc.ClaimRedeemTokens`.
+The historical record below inspected the UI boundary; its dictionary-based automated tests missed this conversion. The handler now
+accepts native pairs, requires the personal mass-token field to be None, and resolves each type from the authenticated account's
+pending, unexpired tokens. Legacy dictionaries retain their validation. Cross-account IDs, mass-campaign IDs, malformed entries
+and replay requests reject without spending rewards. The backend retains atomic claim and credit validation.
+
+The subsequent maintainer log recorded **QueuedLevel cannot be tracked because another instance with the same key value for
+{PilotId, Position} is already being tracked** in `PilotTrainingStore.UpdateCore`, called by `AccountRedemptionStore.Claim`.
+Multiple SP credits rebuild a queue using the same database context. Bulk deletion removed saved rows while leaving tracked entries
+alive, so the next rebuild collided with those identities. Queue reads now reuse tracked identities; replacement detaches only the
+deleted pilot's queue entries before recreating them. Other pilots' tracked state is preserved. Credits, history, deadlines,
+revisions and consumed tokens remain within the caller's transaction. Both active and paused queues reproduced the exact reported
+exception before the correction. An intermediate assertion used an arbitrary reward order that crossed Alpha's passive-training
+cap; the final preservation case explicitly orders smaller native rewards to isolate the queue regression.
+
+Source evidence: inert inspection of the staged archive, SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, includes `redeemItemsContainer.Controller.redeem`,
+`RedeemService.ClaimRedeemTokens` and `_HandleMctTokens`; conversion occurs in the service after the UI controller. Existing
+[Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+and Eden's tuple/list codec are reused without format changes. No client Python was executed. Related
+[Insider changes](navigation.md#insider-tools-and-reward-destinations-november-9-2026) route fixed rewards into redemption,
+recover misplaced stacks at startup and enable Skill Tool profiles and native command discovery.
+
+**Automated validation:** Exact development filters covered `DeveloperToolsTests.SkillPointTokensGoToRedemptionAndClaimExactlyOnce`,
+`RedemptionServiceTests.NativeClaimTuplePairsRedeemBatchedSkillPointsWithoutCreatingInventory` and
+`DeveloperToolsTests.SlashDiscoveryReturnsNativeRoleFilteredCommandList`, followed by affected classes and immediate dependencies.
+The initial 32-reward test passed without a queue; adding active/paused queues reproduced the reported exception before correction.
+The broader affected run passed **432 tests** in **2 minutes 13 seconds**, with four test workers. Its filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Inventory.DeveloperToolsTests|FullyQualifiedName~Eden.Protocol.Tests.Inventory.ItemSpawningTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotTrainingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.TrainingRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotSkillBookTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FreeSkillPointTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SkillPointRewardTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SkillInjectorTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SkillInjectorLifecycleTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SkillExtractionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SkillExtractionLifecycleTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.FreeSkillPointServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.SkillInjectorServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.SkillExtractionServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.RedemptionServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.RedemptionTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CourierServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.TranslocationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Fixtures.TestWorldSeedTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests
+```
+
+The subsequent catalog policy check stopped that sequence on the recovery routine's direct station read. Replacing it with the
+shared `FindStation` reader passed policy; the final root sequence then passed **145 focused tests**, covering the corrected recovery,
+creation, native redemption, administrative grant and hosting paths, in **40 seconds** (**43.41 seconds** including runner overhead).
+The final filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Inventory.DeveloperToolsTests|FullyQualifiedName~Eden.Protocol.Tests.Inventory.ItemSpawningTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.RedemptionServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.RedemptionTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+Tool/solution restores, solution build (**zero warnings/errors**), catalog Python policy (**8 tests**), formatting Python policy
+(**9 tests**), formatting verification (**1,447 files**), strict width and diff checks passed. The final required sequence took
+**78.91 seconds**. UTF-8/final-newline checks on six edited documentation files, three unique new section anchors and eight new
+cross-links also passed. An earlier required run was interrupted after the administrative-grant process test rejected a legitimate
+**Slow world owner Open** warning under load; its assertion now permits only that exact warning shape while still rejecting every
+other stderr diagnostic, and its exact method filter passed before the final sequence. Failed/interrupted and corrected development
+runs are retained under ignored test artifacts. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. Maintainer screenshots/logs above describe failures before the final fix.
+
+**Optional maintainer checks:** Restart the server, reopen Redeem Items and claim several SP rewards with a training queue present.
 
 ## Persistent account redemption
 

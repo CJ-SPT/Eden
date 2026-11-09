@@ -15,7 +15,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Skills;
 
 [Injectable]
-internal sealed partial class PilotTrainingStore(WorldDatabase database, TimeProvider clock) : IPilotTraining, IPilotFreeSkillPoints
+internal sealed partial class PilotTrainingStore(WorldDatabase database, TimeProvider clock)
+    : IPilotTraining,
+        IPilotFreeSkillPoints,
+        IPilotSkillGrants
 {
     // Build 3662168 appConst skill event IDs.
     private const int Started = 36;
@@ -118,7 +121,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 PilotCharacterSheetStore.GetOrCreate(world, pilotId).Apply(after);
             }
         }
-        var saved = world.Set<QueuedLevel>().AsNoTracking().Where(q => q.PilotId == pilotId).OrderBy(q => q.Position).ToArray();
+        var saved = world.Set<QueuedLevel>().Where(q => q.PilotId == pilotId).OrderBy(q => q.Position).ToArray();
         List<TrainingEntry> queue = [];
         HashSet<int> changed = [];
         bool alphaBudgetStopped = false;
@@ -251,6 +254,13 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             );
             activate = queue.FirstOrDefault()?.StartTime is not null;
             world.Set<QueuedLevel>().Where(q => q.PilotId == pilotId).ExecuteDelete();
+            // ExecuteDelete bypasses EF tracking. Batched rewards can rebuild
+            // this pilot's queue repeatedly within one transaction/context.
+            // Detach only the deleted rows before reusing their composite keys.
+            foreach (var tracked in world.ChangeTracker.Entries<QueuedLevel>().Where(e => e.Entity.PilotId == pilotId).ToArray())
+            {
+                tracked.State = EntityState.Detached;
+            }
             for (int i = 0; i < queue.Count; i++)
             {
                 var entry = queue[i];

@@ -179,7 +179,7 @@ public sealed class CourierServiceTests
         }
     }
 
-    internal sealed class Client(TestWorld db, TestClock clock, long account) : IDisposable
+    internal sealed class Client(TestWorld db, TestClock clock, long account, PilotRole roles = PilotRole.Player) : IDisposable
     {
         private readonly IServiceScope _scope = db.Services.CreateScope();
         public PilotCallContext Context { get; } =
@@ -190,7 +190,10 @@ public sealed class CourierServiceTests
                 p => new(db.Store, p, clock, new(), db.Objects),
                 account,
                 SignedSettings.Empty
-            );
+            )
+            {
+                Roles = (long)roles,
+            };
 
         public void Refresh()
         {

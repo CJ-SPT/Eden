@@ -13,6 +13,62 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class RedemptionServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeClaimTuplePairsRedeemBatchedSkillPointsWithoutCreatingInventory(bool active)
+    {
+        var clock = CalendarTestData.Clock();
+        using var db = FreePointTestData.Create(clock);
+        var store = RedemptionTests.Store(db);
+        // Keep this batch below Alpha's passive-training cap so active/paused
+        // preservation is independent of the separate cap reconciliation tests.
+        var types = Eden.Gameplay.Skills.SkillPointRewards.Amounts.OrderBy(pair => pair.Value).ThenBy(pair => pair.Key).Take(32).ToArray();
+        var tokens = types.Select(pair => store.Grant(RedemptionTests.Grant($"native-{pair.Key}", pair.Key, 2))).ToArray();
+        FreePointTestData.Training(db).Save(RedemptionTests.Pilot, [new(3327, 1), new(3327, 2)], active);
+        using CourierServiceTests.Client client = new(db, clock, RedemptionTests.Account);
+        client.Refresh();
+        client.Context.Notifications.Clear();
+        // Pinned redeemsvc._HandleMctTokens strips typeID from the UI rows.
+        var requested = tokens.Select(t => (object?)new object?[] { t.Id, null }).ToList();
+        var result = Assert.IsType<Dictionary<string, object?>>(
+            Reply(client.Call("ClaimRedeemTokens", [requested, RedemptionTests.Pilot], "userSvc", new() { ["useHomeStation"] = false }))
+        );
+        long expected = types.Sum(pair => pair.Value * 2);
+        Assert.Equal(expected, result["skillpoints"]);
+        Assert.Empty(Assert.IsType<List<object?>>(result["errors"]));
+        Assert.Empty(Assert.IsType<List<object?>>(result["itemsCreated"]));
+        Assert.Equal(expected, FreePointTestData.Points(db).Balance(RedemptionTests.Pilot));
+        var queue = FreePointTestData.Training(db).Advance(RedemptionTests.Pilot).Queue;
+        Assert.Equal(new[] { 1, 2 }, queue.Select(e => e.Target.Level).ToArray());
+        Assert.Equal(active, queue[0].StartTime.HasValue);
+        Assert.Empty(store.Read(RedemptionTests.Account));
+        Assert.Single(client.Context.Notifications.OfType<RedeemingQueueUpdated>());
+        Assert.Contains(client.Context.Notifications, n => n.Name == "OnFreeSkillPointsChanged");
+        Assert.DoesNotContain(client.Context.Notifications, n => n.Name == "OnItemChange");
+        Assert.IsType<PilotCallResult.Failure>(client.Call("ClaimRedeemTokens", [requested, RedemptionTests.Pilot], "userSvc"));
+        Assert.Equal(expected, FreePointTestData.Points(db).Balance(RedemptionTests.Pilot));
+    }
+
+    [Fact]
+    public void NativeClaimPairsRejectOtherAccountsAndMassTokensWithoutSpendingAnything()
+    {
+        var clock = CalendarTestData.Clock();
+        using var db = FreePointTestData.Create(clock);
+        var store = RedemptionTests.Store(db);
+        var token = store.Grant(RedemptionTests.Grant("native-owner", 63340, 1));
+        using CourierServiceTests.Client other = new(db, clock, 1000002);
+        Assert.IsType<PilotCallResult.Failure>(
+            other.Call("ClaimRedeemTokens", [new List<object?> { new object?[] { token.Id, null } }, RedemptionTests.Pilot], "userSvc")
+        );
+        using CourierServiceTests.Client owner = new(db, clock, RedemptionTests.Account);
+        Assert.IsType<PilotCallResult.Failure>(
+            owner.Call("ClaimRedeemTokens", [new List<object?> { new object?[] { token.Id, 1L } }, RedemptionTests.Pilot], "userSvc")
+        );
+        Assert.Equal(token, Assert.Single(store.Read(RedemptionTests.Account)));
+        Assert.Equal(0, FreePointTestData.Points(db).Balance(RedemptionTests.Pilot));
+    }
+
     [Fact]
     public void AccountQueueAndNativeClaimReportWorkBeforeSelectionWithPrivatePerTokenErrors()
     {

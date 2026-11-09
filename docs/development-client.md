@@ -119,11 +119,27 @@ The native menu submits `/tr me <destination ID>` to the server. Other subjects,
 
 ## Developer Type Browser
 
+Skill injectors, containers and additional physical categories are supported. Fixed **Skill Points** rewards, ISK and EverMarks
+tokens go to **Redeem Items** for your account. Server restart automatically recovers earlier misplaced personal reward stacks in
+station hangars and owned-ship cargo into that queue. Ordinary skill injectors remain inventory items with the normal injection action.
+Native batch redemption now accepts the client's token pairs and avoids the earlier duplicate-queue-entry connection failure.
+
 With a pilot selected on a developer account, open Insider's **Type Browser**, find a type and use its context menu. **WM: /create this type** creates a packaged stack in your current station Item Hangar while docked. **GM: /load me this type** creates it in your active ship's cargo, including in space, subject to normal cargo capacity. Quantity defaults to one for direct slash commands. The category/group actions create or load each listed type through separate calls.
 
 The accepted commands are `/createitem <typeID> [quantity]`, `/create <typeID> [quantity]` and `/load me <typeID> [quantity]`. Creation requires WORLDMOD; cargo loading requires GML or GMH. The normal developer role includes all three. Ordinary player accounts cannot create items. Unknown or noninventory types and invalid quantities reject without changing inventory. Wait for any TR handoff to finish first.
 
 Ship types arrive packaged and retain Eden's existing assembly and boarding restrictions. Blueprint types create originals. A browsable or creatable type does not establish gameplay support. Separate in-space `/spawn`, `/spawnN`, `/entity deploy`, fitting and unload actions remain unsupported. Successful creations survive saves and restarts. See [implementation and automated coverage](protocol/navigation.md#native-type-browser-item-creation-november-8-2026); native rendering/input acceptance has not been performed.
+
+## Developer Skill Tool
+
+Open **Insider → Tools → Skill Tool**, build or load a profile, then choose **Give skills in the current profile to current character**.
+The native tool also accepts another saved character. Developer/GMH accounts can grant published skills from level zero through five;
+zero learns a missing skill. Existing progress is never reduced and unallocated SP is retained. Satisfied queued levels are removed,
+remaining work is replanned and the normal skills, brain and queue displays are notified. Slash Console syntax is
+`/giveskill me <skillTypeID> <level>` or `/giveskill <pilotID> <skillTypeID> <level>`. Command discovery now supplies the native
+role-filtered list, correcting the **Unable to acquire server slash command list** popup. Restart the server and fully reopen the
+client after updating so its cached command list is refreshed. See the
+[implementation record](protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026). Native presentation remains unverified.
 
 ## Issuing account redeem rewards
 

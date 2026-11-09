@@ -198,6 +198,16 @@ public sealed class ItemSpawningTests
     [InlineData(InventoryCategory.Ship)]
     [InlineData(InventoryCategory.Module)]
     [InlineData(InventoryCategory.Blueprint)]
+    [InlineData(InventoryCategory.Accessories)]
+    [InlineData(InventoryCategory.Starbase)]
+    [InlineData(InventoryCategory.Reaction)]
+    [InlineData(InventoryCategory.Decryptor)]
+    [InlineData(InventoryCategory.PlanetaryIndustry)]
+    [InlineData(InventoryCategory.SpecialEditionAssets)]
+    [InlineData(InventoryCategory.ShipSkin)]
+    [InlineData(InventoryCategory.ExpertSystem)]
+    [InlineData(InventoryCategory.Personalization)]
+    [InlineData(InventoryCategory.ColonyResource)]
     public void PhysicalTypesCanBeCreatedWithoutClaimingGameplaySupport(InventoryCategory category)
     {
         ItemSpawnRules.Check(new(1, 1, ItemSpawnDestination.StationHangar), category, true);
@@ -208,8 +218,9 @@ public sealed class ItemSpawningTests
 
     [Theory]
     [InlineData(InventoryCategory.Station)]
-    [InlineData(InventoryCategory.ShipSkin)]
-    [InlineData(InventoryCategory.Personalization)]
+    [InlineData(InventoryCategory.Celestial)]
+    [InlineData((InventoryCategory)0)]
+    [InlineData((InventoryCategory)53)]
     [InlineData(InventoryCategory.Entity)]
     public void NonInventoryTypesAreRejected(InventoryCategory category) =>
         Assert.Throws<InvalidDataException>(() => ItemSpawnRules.Check(new(1, 1, ItemSpawnDestination.StationHangar), category, true));

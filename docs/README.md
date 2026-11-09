@@ -14,6 +14,11 @@
 
 ## Development
 
+[Insider tools and item creation](protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026) covers Skill Tool profiles,
+command discovery, skill injectors and correct reward destinations. The
+[redemption correction](protocol/characters.md#native-redemption-pairs-and-batched-training-queues-november-9-2026) fixes native claim
+arguments and the batch-SP training-queue crash.
+
 [Mission layout corrections](protocol/agents.md#mission-layout-corrections--november-9-2026) cover native NPC anchors, fixed batteries,
 restored scenery, room-local coordinate transforms and saved-position compatibility across the 50 existing combat definitions.
 

@@ -3,6 +3,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Redemption;
 
 namespace Eden.Protocol.Inventory;
 
@@ -40,11 +41,17 @@ internal sealed class DeveloperItemCommands(IPilotItemSpawning spawning)
             {
                 throw new InvalidDataException("The item quantity must be a positive 32-bit integer.");
             }
-            var change = spawning.Create(
+            var result = spawning.Create(
                 context.Pilot.PilotId,
                 context.Pilot.ShipId,
                 new(typeId, quantity, cargo ? ItemSpawnDestination.ShipCargo : ItemSpawnDestination.StationHangar)
             );
+            if (result is ItemSpawnResult.Redemption reward)
+            {
+                context.Notifications.Add(new RedeemingQueueUpdated());
+                return reward.Token.Id;
+            }
+            var change = ((ItemSpawnResult.Inventory)result).Change;
             InventoryChangesWire.NotifyItemChange(context, change);
             // Native create/load callers may use the returned item identity.
             return change.Item.Id;

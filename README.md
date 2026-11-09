@@ -75,6 +75,11 @@ All 442 catalog datasets have generated typed keys and payloads in `Eden.Data`; 
 
 The native Insider [Type Browser](docs/development-client.md#developer-type-browser) can create persistent items, original blueprints and packaged ships in a developer pilot's station hangar or load cargo within its capacity. Existing assembly/fitting support remains authoritative.
 
+Insider's [Skill Tool](docs/development-client.md#developer-skill-tool) grants published skill profiles. Type Browser creation includes
+skill injectors and more physical categories; fixed SP/currency rewards go to Redeem Items. Server restart recovers misplaced personal
+reward stacks. Command discovery, native redemption arguments and the batch-SP training-queue crash are
+[corrected](docs/protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026).
+
 The native [Trash Item action](docs/protocol/inventory.md#trashing-personal-items-and-ships-november-8-2026) permanently removes personal station items, containers and inactive ships with their contents, including remote personal assets. Active ships, space inventory and assets committed to contracts or industry are protected.
 
 ## Build and run

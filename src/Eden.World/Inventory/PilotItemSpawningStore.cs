@@ -1,15 +1,17 @@
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Redemption;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Inventory;
 
 [Injectable]
-internal sealed class PilotItemSpawningStore(WorldDatabase database) : IPilotItemSpawning
+internal sealed class PilotItemSpawningStore(WorldDatabase database, TimeProvider clock) : IPilotItemSpawning
 {
-    public InventoryChange Create(long pilotId, long expectedShipId, ItemSpawnRequest request)
+    public ItemSpawnResult Create(long pilotId, long expectedShipId, ItemSpawnRequest request)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -20,7 +22,18 @@ internal sealed class PilotItemSpawningStore(WorldDatabase database) : IPilotIte
             throw new InvalidDataException("The selected pilot or active ship changed. Select the pilot again.");
         }
         var type = catalog.FittingType(request.TypeId) ?? throw new InvalidDataException("Unknown inventory type.");
-        ItemSpawnRules.Check(request, (InventoryCategory)type.CategoryId, pilot.ActiveShip.Position is null);
+        ItemSpawnRules.Check(request, (InventoryCategory)type.CategoryId, pilot.ActiveShip.Position is null, type.GroupId);
+        if (ItemSpawnRules.AutomaticReward(request.TypeId))
+        {
+            var token = AccountRedemptionStore.Grant(
+                world,
+                catalog,
+                new RedeemGrant(pilot.AccountId, $"developer/{Guid.NewGuid():N}", request.TypeId, request.Quantity, type.Name),
+                clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+            );
+            transaction.Commit();
+            return new ItemSpawnResult.Redemption(token);
+        }
         bool cargo = request.Destination == ItemSpawnDestination.ShipCargo;
         long location = cargo ? pilot.ActiveShipId : pilot.ActiveShip.StationId;
         int flag = (int)(cargo ? InventoryFlag.Cargo : InventoryFlag.Hangar);
@@ -44,6 +57,6 @@ internal sealed class PilotItemSpawningStore(WorldDatabase database) : IPilotIte
         }
         world.SaveChanges();
         transaction.Commit();
-        return change;
+        return new ItemSpawnResult.Inventory(change);
     }
 }

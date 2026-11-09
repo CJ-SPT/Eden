@@ -24,9 +24,18 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
 
     public RedeemToken Grant(RedeemGrant grant)
     {
-        RedemptionRules.Check(grant);
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var token = Grant(world, catalog, grant, Now);
+        world.SaveChanges();
+        transaction.Commit();
+        return token;
+    }
+
+    internal static RedeemToken Grant(WorldDbContext world, CatalogDbContext catalog, RedeemGrant grant, long now)
+    {
+        RedemptionRules.Check(grant);
         Account(world, grant.AccountId);
         var prior = world.Set<SavedRedeemToken>().SingleOrDefault(t => t.AccountId == grant.AccountId && t.Reference == grant.Reference);
         if (prior is not null)
@@ -44,12 +53,10 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
             }
             return prior.Snapshot();
         }
-        long now = Now;
         if (grant.ExpiresAt <= now)
         {
             throw new InvalidDataException("The redeem grant must expire in the future.");
         }
-        using CatalogDbContext catalog = new(database.CatalogPath);
         CheckType(catalog, grant.TypeId);
         if ((SkillPointRewards.Amount(grant.TypeId) > 0 || CurrencyRewardRules.Kind(grant.TypeId).HasValue) && grant.StationId.HasValue)
         {
@@ -76,7 +83,6 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
             )
             .Entity;
         world.SaveChanges();
-        transaction.Commit();
         return token.Snapshot();
     }
 

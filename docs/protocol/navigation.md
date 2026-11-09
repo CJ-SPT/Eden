@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Insider tools and reward destinations, November 9, 2026](#insider-tools-and-reward-destinations-november-9-2026)
+
 - [Native Type Browser item creation, November 8, 2026](#native-type-browser-item-creation-november-8-2026)
 
 - [Runtime TR destinations, November 8, 2026](#runtime-tr-destinations-november-8-2026)
@@ -30,6 +32,53 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Insider tools and reward destinations, November 9, 2026
+
+Insider **Tools → Skill Tool** now applies profiles through `slash.SlashCmd('/giveskill me|pilotID skillTypeID level')`.
+GMH authority is required; developer accounts include it. Levels zero through five use the published catalog skill's training
+multiplier. A missing skill is learned without a book; existing progress is never reduced. Grants preserve unallocated SP and
+atomically update skills, GM history event **39**, training deadlines and the persisted revision. Satisfied queue levels disappear;
+remaining levels retain active/paused status subject to the existing clone-grade rules. Self grants refresh skills, brain,
+fitting/navigation attributes and queue notifications immediately. Another saved pilot refreshes through its session monitor or
+next login. Unknown pilots, unpublished/non-skill types, malformed commands and insufficient roles reject without committing changes.
+
+Type Browser creation previously reused the narrower redemption delivery list, excluding category **5 Accessories** and its
+ordinary skill injectors. Creation now also admits starbase equipment, reactions, decryptors, planetary industry items,
+special-edition assets, physical SKIN/expert-system/personalization items and colony resources. Cargo, secure, audit-log and freight
+containers are admitted by their celestial **group**, without admitting planets or other map objects. Ship packaging, blueprint
+originals, quantities, cargo capacity and command roles retain their existing behavior. Creation establishes inventory support;
+the item's separate activation, deployment, industry or entitlement mechanic may remain unsupported.
+
+All **59 native fixed SP rewards**, ISK tokens and EverMarks tokens go to **Redeem Items** for the account, through both create and
+load actions, including in space. They neither occupy cargo nor immediately credit a pilot. Startup recovery transfers earlier
+personal reward stacks in NPC-station hangars and owned-ship cargo into that queue, preserving quantities. Recovery is transactional
+and idempotent; inaccessible inventory, escrow, corporate items, singleton and online items are excluded. Existing pending tokens
+remain pending. Ordinary skill injectors remain inventory consumables with their existing injection rules.
+
+The maintainer also reported **Unable to acquire server slash command list** on Insider actions. Pinned `svc_slash.FetchRemoteCommandList`
+discovers commands by deliberately calling `slash.SlashCmd('/')`, catching a `UserError`, splitting its `reason` at **": "** and
+parsing the remainder as a Python list. Discovery now returns `SlashError` with that exact literal-list shape and only the commands
+authorized for the caller's roles: `create`, `createitem`, `giveskill`, `load` and `tr` as applicable. Names omit the leading slash,
+matching `MatchCmd`. The literal uses fixed server-owned names only. Discovery changes no state and is available during translocation;
+unsupported mutations still reject. This is a required native discovery error response, not an ordinary command failure.
+
+Evidence: read-only inspection of build **3662168**, archive SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, confirms `insider.InsiderService.ToolMenu`
+opens `trainer`; `svc_trainer.TrainerService.ApplyProfile` sends `/giveskill %s %s %d`; `Profile_ToCurrentCharacter` uses `me`;
+and `appConst.skillEventGMGive` is **39**. The catalog identifies injector group **1739**, category **5**. The same archive supplied
+`SlashService.FetchRemoteCommandList` and `MatchCmd`. No client Python was executed and no client patch is required.
+[EVE University test-server setup](https://wiki.eveuniversity.org/SingularitySetup) supplies gameplay context for testing supplies
+and accelerated skills, rather than privileged GM semantics.
+[Carbon Blue at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/tree/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae)
+was consulted for engine scope; existing wire, transport and Destiny adapters are reused without engine-format changes.
+
+**Automated validation:** The combined milestone's filters, results and limitations are recorded in the
+[redemption correction](characters.md#native-redemption-pairs-and-batched-training-queues-november-9-2026).
+
+**Live acceptance:** Not performed; agent client testing is disabled. Maintainer screenshots and logs describe pre-fix failures.
+
+**Optional maintainer checks:** After restarting the server, create/use a normal injector, redeem recovered SP rewards and apply a Skill Tool profile.
 
 ## Native Type Browser item creation, November 8, 2026
 
@@ -405,7 +454,7 @@ Automated acceptance on 2026-11-03 passed pinned tool/solution restore, build wi
 
 Native acceptance used two build-3662168 clients against a copied save under the local Eden Lab collision-20261103 directory. Eden Pilot approached the stopped Eden Wing in Jita, visibly pushed it, and stopped using the native Stop Ship control. Subsequent maintainer-controlled approach/stop checks exposed and helped isolate the interpolation resets and sample-gap replay described above. The maintainer reported that the event-stream revision was much better. Perimeter NPC testing was started by the maintainer, who then explicitly asked to assume the same recovery fix applies and finish. NPC visual acceptance remains **assumed at the maintainer's request**. The final NPC-only adjustment replaces the two-tick reset trigger with the retained-history limit and is covered by the full automated run. World version remains 33.
 
-## Shorter gate transitions and spread arrivals � November 9, 2026
+## Shorter gate transitions and spread arrivals — November 9, 2026
 
 The gate transition now completes after three seconds of simulation time. Eden previously used the pinned JumpOut effect's nominal ten-second resource duration as the authoritative transfer delay. The outbound ship effect and JumpOut command now carry 3,000 ms, matching the transfer deadline. The exact boundary regression verifies that transfer is unavailable at two seconds and succeeds at three, then checks the destination and reopened save.
 

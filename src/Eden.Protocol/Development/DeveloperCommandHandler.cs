@@ -6,6 +6,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.Inventory;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 
 namespace Eden.Protocol.Development;
 
@@ -14,7 +15,8 @@ internal sealed class DeveloperCommandHandler(
     IPilotTranslocation travel,
     ISystemObjects objects,
     PilotUpdateCoordinator updates,
-    DeveloperItemCommands items
+    DeveloperItemCommands items,
+    DeveloperSkillCommands skills
 ) : ISelectedPilotCallHandler
 {
     // Match the stock GM menu's ROLE_GML | ROLE_WORLDMOD visibility gate.
@@ -35,10 +37,6 @@ internal sealed class DeveloperCommandHandler(
         }
         try
         {
-            if (context.Flight.Translocating)
-            {
-                throw new InvalidDataException("Wait for the current translocation to finish.");
-            }
             if (args is not [string or byte[]] || keywords is { Count: > 0 })
             {
                 throw new InvalidDataException("Supply one developer command without additional arguments.");
@@ -49,6 +47,18 @@ internal sealed class DeveloperCommandHandler(
                 throw new InvalidDataException("The developer command is too long or contains a null character.");
             }
             string[] command = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            if (command is ["/"])
+            {
+                return new PilotCallResult.NamedFailure("SlashError", DeveloperCommandList.For(context.Roles));
+            }
+            if (context.Flight.Translocating)
+            {
+                throw new InvalidDataException("Wait for the current translocation to finish.");
+            }
+            if (command.Length > 0 && command[0].Equals("/giveskill", StringComparison.OrdinalIgnoreCase))
+            {
+                return skills.Grant(context, command);
+            }
             if (
                 command.Length > 0
                 && (
@@ -113,6 +123,14 @@ internal sealed class DeveloperCommandHandler(
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
+        }
+        catch (Eden.Gameplay.Skills.InvalidTrainingQueue error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+        catch (OverflowException)
+        {
+            return new PilotCallResult.Failure("The developer command exceeds the supported numeric range.");
         }
     }
 }

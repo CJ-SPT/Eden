@@ -77,7 +77,8 @@ internal sealed class RedemptionHandler(
                     Observe(tokens);
                     return new BlueList<RedeemTokenRow>(tokens.Select(t => new RedeemTokenRow(t)).ToArray());
                 case ("ClaimRedeemTokens", [List<object?> requested, long pilot]):
-                    var selected = requested.Select(Selection).ToArray();
+                    var pending = redemption.Read(context.AccountId).ToDictionary(t => t.Id, t => t.TypeId);
+                    var selected = requested.Select(value => Selection(value, pending)).ToArray();
                     var result = redemption.Claim(context.AccountId, pilot, selected, home);
                     if (context.Selected && context.Pilot.PilotId == pilot)
                     {
@@ -144,8 +145,17 @@ internal sealed class RedemptionHandler(
         context.Notifications.Add(new RedeemingQueueUpdated());
     }
 
-    private static RedeemSelection Selection(object? value)
+    private static RedeemSelection Selection(object? value, IReadOnlyDictionary<long, int> pending)
     {
+        // RedeemService._HandleMctTokens converts UI dictionaries into
+        // (tokenID, massTokenID) tuples before the build-3662168 remote call.
+        // Resolve the type from this account's issued tokens, never from a guess.
+        if (value is object?[] pair && pair is [long tokenId, null] && tokenId > 0)
+        {
+            return pending.TryGetValue(tokenId, out int issuedType)
+                ? new(tokenId, issuedType)
+                : throw new InvalidDataException("This redeem token is unavailable or expired.");
+        }
         if (
             value is not Dictionary<string, object?> row
             || row.Count != 3
