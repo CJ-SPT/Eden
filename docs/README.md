@@ -14,6 +14,8 @@
 
 ## Development
 
+[Universal native search](protocol/characters.md#universal-native-search-november-9-2026) covers mixed categories, current saved names, catalog indexing and owner-name resolution.
+
 [Ice harvesting and public ice fields](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)
 covers native ice tools, complete-cycle collection, public scanner discovery and saved field replacement.
 

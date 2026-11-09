@@ -22,6 +22,8 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 ## Current status
 
+[Native search](docs/protocol/characters.md#universal-native-search-november-9-2026) now finds catalog locations, agents, NPCs, corporations, factions and published items alongside local pilots and player corporations. Mixed-category map searches are supported; native presentation remains unverified.
+
 [Ice harvesting](docs/protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026) supports six static tools and four public
 ice-field layouts across 117 documented high-security systems, with finite saved stock and six-hour replacement after depletion.
 

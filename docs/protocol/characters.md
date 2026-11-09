@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Universal native search, November 9, 2026](#universal-native-search-november-9-2026)
+
 - [Native redemption pairs and batched training queues, November 9, 2026](#native-redemption-pairs-and-batched-training-queues-november-9-2026)
 
 - [Mining skill bonus configuration and search, November 9, 2026](#mining-skill-bonus-configuration-and-search--november-9-2026)
@@ -641,3 +643,20 @@ References: [EVE University Character Creator](https://wiki.eveuniversity.org/Ch
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** After restarting host and client, compare the same pilot across the selection card, character sheet, Neocom, chat and station guest list; compare a newly created pilot against its submitted appearance and reopen windows to check cached rendering. See [portrait checks](../development-client.md#check-character-portraits).
+
+
+## Universal native search, November 9, 2026
+
+The main native search window and map search now accept mixed categories through `search.Query` and `QuickQuery`. Results include active catalog agents/NPC characters, saved local pilots, NPC/player corporations, factions, constellations, systems, regions, stations and published item types. Deleted NPCs and unpublished item types are excluded. Known alliance, wormhole and structure categories return empty results because Eden has no searchable entities for those categories. Unknown categories, duplicate categories, invalid matching options and malformed requests reject without mutation.
+
+Gameplay owns named search requests, categories, results and matching rules. World shares a catalog-generation-scoped immutable search index and reads current saved player/corporation names separately. Catalog edits invalidate the index. Creation and changes to authoritative saved names are immediately visible and survive reopening; this does not add a character/corporation rename UI. Matching retains partial terms, exact terms, exact phrase and exact name, Unicode handling, deterministic name/ID ordering and the 500-result limit per category. `hideNPC` excludes NPC-owned entries. `onlyAltName` returns no entries because this index contains primary English catalog names and local names, without alternate-name records. Query replies omit empty groups; QuickQuery replies flatten requested category order and deduplicate IDs. Personal recipient searches retain their wire shape.
+
+`config.GetMultiOwnersEx` now also resolves catalog corporation/faction names when they are not already in the client cache. Agent identity reads retain the existing directory. Static location names, map coordinates and item metadata remain client-catalog data; search does not invent a second universe or change route calculation. Search is pilot-selection gated and read-only. No database migration or client overlay is required.
+
+Reference comparison: local evejs release **261108.1**, targeting older client **3396210**, `server/src/services/_other/searchService.js` SHA-256 **611c1dbd05f782e2f38a2cc2cea64349328c062d8af8505d71a25b2d57e647c8**. Eden's independent typed implementation follows inert inspection of pinned build **3662168** `eve/common/script/search/const.pyj`, `eve/client/script/ui/util/searchUtil.pyj`, and `eve/client/script/ui/shared/mapView/mapViewSearch.pyj`; archive SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**. In this client, map search requests constellation/system/region/station categories together. Consulted the [EVE University map guide](https://wiki.eveuniversity.org/Star_Map) and [Carbon Blue Marshal.cpp revision fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp). No codec or transport changes were needed.
+
+**Automated validation.** Exact filter `FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.UniversalSearchTests.MixedNativeSearchFindsEveryAvailableCategoryAndResolvesOwners` passed (1 test, 7.72 seconds runner wall time). Final filter `FullyQualifiedName~UniversalSearchTests|FullyQualifiedName~CharacterSearchTests|FullyQualifiedName~AgentDirectoryServiceTests|FullyQualifiedName~MailServiceTests|FullyQualifiedName~MailComposerDefaultsTests|FullyQualifiedName~ContactsServiceTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **100 tests** (18 seconds test duration). Tool/solution restore and solution build passed (4.82 seconds build, zero warnings/errors); both Python policy suites passed (8 catalog tests, 0.579 seconds; 9 formatting tests, 0.015 seconds); formatting verification (1,461 files), 140-character width and diff checks passed. Coverage includes category boundaries, overlapping agent/character deduplication, native owner resolution, NPC visibility, deleted/unpublished exclusions, Unicode/fallback names, catalog invalidation, 500-result bounds and fresh saved names after creation/rename/reopen. An initial test run had 44 passes and one fixture-origin failure, corrected by supplying a valid school; its exact regression then passed. The first catalog-policy run found a direct corporation-table read; using the shared catalog dictionary corrected it, followed by the final build/tests above. No full .NET suite was requested or run. Static client evidence and automated protocol checks do not establish native rendering or input acceptance.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Search for a station in map search and an NPC corporation in the main search window; open their results. Map routing dependencies are handled in the following navigation milestone.

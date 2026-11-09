@@ -13,7 +13,8 @@ internal sealed class AccountCompatibilityHandler(
     SharedStationGuests guests,
     ICharacterDirectory directory,
     INpcCorporationDirectory corporations,
-    IPlayerCorporations players
+    IPlayerCorporations players,
+    IUniversalSearch search
 ) : IPilotCallHandler
 {
     public PilotCallResult Call(
@@ -99,6 +100,21 @@ internal sealed class AccountCompatibilityHandler(
                 rows.Add(new(id, corporation.Details.Name, 0, TypeId: CorporationRules.CorporationType));
             }
         }
+        // Search can return catalog corporations/factions outside the client's primed owner cache.
+        // Build 3662168 inventorycommon.const typeFaction is distinct from the corporation type.
+        const int factionType = 30;
+        var missing = ids.OfType<long>().Except(rows.Select(row => row.Id)).ToArray();
+        rows.AddRange(
+            search
+                .Owners(missing)
+                .Select(owner => new OwnerRow(
+                    owner.Id,
+                    owner.Name,
+                    0,
+                    IsNpc: true,
+                    TypeId: owner.Category == SearchCategory.Faction ? factionType : CorporationRules.CorporationType
+                ))
+        );
         return new(rows);
     }
 }

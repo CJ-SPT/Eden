@@ -74,7 +74,7 @@ public sealed class CharacterSearchTests
             {
                 ["", new List<object?> { 2L }],
                 [new string('a', 101), new List<object?> { 2L }],
-                ["Eden", new List<object?> { 3L }],
+                ["Eden", new List<object?> { 14L }],
                 ["Eden", new List<object?> { 2L, 2L }],
                 ["Eden"],
             }

@@ -6,7 +6,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Characters;
 
 [Injectable]
-internal sealed class CharacterSearchHandler(ILocalCharacterSearch characters) : ISelectedPilotCallHandler
+internal sealed class CharacterSearchHandler(IUniversalSearch search) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -25,14 +25,16 @@ internal sealed class CharacterSearchHandler(ILocalCharacterSearch characters) :
             if (
                 args is not [var query, List<object?> groups]
                 || query is not (string or byte[])
-                || groups.Count != 1
-                || groups[0] is not (long and CharacterSearchRules.ResultType)
+                || groups.Any(group =>
+                    group is not (long and >= (long)SearchCategory.Agent and <= (long)SearchCategory.StructureWithInlinedData)
+                )
             )
             {
-                throw new InvalidDataException("Only local character-category searches are available.");
+                throw new InvalidDataException("Choose a search string and known search categories.");
             }
             var match = CharacterSearchMatch.PartialTerms;
             bool onlyAlternate = false;
+            bool hideNpc = false;
             foreach (var (key, value) in keywords ?? [])
             {
                 switch (key)
@@ -41,7 +43,7 @@ internal sealed class CharacterSearchHandler(ILocalCharacterSearch characters) :
                         match = (CharacterSearchMatch)mode;
                         break;
                     case "hideNPC" when value is bool or (long and (0 or 1)):
-                        // Local player characters are never NPCs.
+                        hideNpc = value is true or 1L;
                         break;
                     case "onlyAltName" when value is bool or (long and (0 or 1)):
                         onlyAlternate = value is true or 1L;
@@ -51,16 +53,16 @@ internal sealed class CharacterSearchHandler(ILocalCharacterSearch characters) :
                 }
             }
             string text = BlueMarshal.Text(query);
-            CharacterSearchRules.Check(text, match);
-            // Local characters have no alternate localized name.
-            var result = onlyAlternate ? Array.Empty<long>() : characters.Search(text, match);
+            var result = search.Search(
+                new(text, groups.Cast<long>().Select(group => (SearchCategory)group).ToArray(), match, hideNpc, onlyAlternate)
+            );
             if (method == "QuickQuery")
             {
-                return new BlueList<long>(result);
+                return new BlueList<long>(result.SelectMany(group => group.Ids).Distinct().ToArray());
             }
-            return result.Count == 0
-                ? BlueEmpty.Dictionary
-                : new BlueMap<int, BlueList<long>>(new Dictionary<int, BlueList<long>> { [CharacterSearchRules.ResultType] = new(result) });
+            return new BlueMap<SearchCategory, BlueList<long>>(
+                result.Where(group => group.Ids.Count > 0).ToDictionary(group => group.Category, group => new BlueList<long>(group.Ids))
+            );
         }
         catch (InvalidDataException error)
         {

@@ -2,6 +2,8 @@
 
 [Documentation index](README.md)
 
+[Universal native search](protocol/characters.md#universal-native-search-november-9-2026) records mixed-category main/map searches and result resolution.
+
 Use the topic pages for native request/reply shapes, implementation findings, source revisions, automated validation and historical client observations. Records have moved by topic; their evidence and limitations are retained.
 
 Historical native observations apply only to the recorded revision and actions. Agents perform automated testing only unless live testing is explicitly requested; see the [testing policy](../AGENTS.md#testing).
