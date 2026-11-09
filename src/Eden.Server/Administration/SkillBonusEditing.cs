@@ -40,6 +40,41 @@ internal static class SkillBonusEditing
             .Effects.Select(effect => SkillChoiceSearch.Index(choices.Effects).GetValueOrDefault(effect.EffectId))
             .OfType<SkillEditorOption>();
 
+    internal static bool CanConfigureMining(SkillForm form, SkillEditorChoices choices) =>
+        SupportsMining(choices)
+        && form.Attributes.Count(attribute => attribute.AttributeId == MiningBonusAttribute) <= 1
+        && form.Effects.Count(effect => effect.EffectId == MiningScalingEffect) <= 1
+        && form.Effects.Count(effect => effect.EffectId == MiningYieldEffect) <= 1
+        && form.Effects.All(effect =>
+            SkillChoiceSearch.Index(choices.Effects).GetValueOrDefault(effect.EffectId) is { } option
+            && (
+                option.Id == MiningScalingEffect
+                || IsMiningApplication(option)
+                || option.Modifiers.All(modifier =>
+                    modifier.SourceAttributeId != MiningBonusAttribute && modifier.TargetAttributeId != MiningBonusAttribute
+                )
+            )
+        );
+
+    internal static bool HasMiningBonus(SkillForm form, SkillEditorChoices choices) =>
+        CanConfigureMining(form, choices)
+        && form.Attributes.Any(attribute => attribute.AttributeId == MiningBonusAttribute)
+        && form.Effects.Any(effect => effect.EffectId == MiningScalingEffect)
+        && form.Effects.Any(effect => effect.EffectId == MiningYieldEffect)
+        && SelectedEffects(form, choices).All(effect => effect.Id == MiningYieldEffect || !IsMiningApplication(effect));
+
+    internal static bool HasMiningRules(SkillForm form, SkillEditorChoices choices) =>
+        SelectedEffects(form, choices).Any(effect => effect.Id == MiningScalingEffect || IsMiningApplication(effect));
+
+    internal static void RemoveMining(SkillForm form, SkillEditorChoices choices)
+    {
+        if (!HasMiningBonus(form, choices))
+        {
+            throw new InvalidOperationException("These mining rules require advanced editing.");
+        }
+        form.Effects.RemoveAll(effect => effect.EffectId is MiningScalingEffect or MiningYieldEffect);
+    }
+
     internal static bool IsMiningApplication(SkillEditorOption effect) =>
         effect.Modifiers.Count == 1
         && effect.Modifiers[0]
@@ -80,7 +115,7 @@ internal static class SkillBonusEditing
 
     internal static void AddMining(SkillForm form, SkillEditorChoices choices)
     {
-        if (!SupportsMining(choices))
+        if (!CanConfigureMining(form, choices))
         {
             throw new InvalidOperationException("The installed catalog does not support the ore mining yield recipe.");
         }

@@ -285,21 +285,24 @@ public sealed class SkillBonusEditorTests
                 )
             );
             string html = component.ToHtmlString();
-            Assert.Contains("An <strong>attribute</strong> stores a number", html);
-            Assert.Contains("% per level", html);
+            Assert.DoesNotContain("Effect rule", html);
+            Assert.DoesNotContain("<select", html);
             if (legacy)
             {
-                Assert.Contains("Flat mining bonus", html);
-                Assert.Contains("online-module rule", html);
-                Assert.Contains("+100% at level V", html);
+                Assert.Contains("This bonus stays at 20% at every trained level", html);
+                Assert.Contains("Make it scale with skill level", html);
             }
             else
             {
+                Assert.Contains("Bonus per skill level (%)", html);
+                Assert.Contains("data-bonus=\"ore-mining-yield\"", html);
+                Assert.Equal(1, html.Split("type=\"number\"", StringSplitOptions.None).Length - 1);
+                Assert.Contains("&#x2B;125%", html);
                 Assert.Contains("2.25", html);
+                Assert.Contains("Ice harvesters, gas harvesters and mining drones", html);
+                Assert.Contains("value=\"25\"", html);
+                Assert.Contains("Technical details", html);
             }
-            Assert.Contains("Ice harvesters, gas harvesters and mining drones", html);
-            Assert.Contains($"value=\"{(legacy ? 20 : 25)}\"", html);
-            Assert.Contains("Catalog details", html);
             Assert.Equal(!editable, html.Contains("bonuses are read-only", StringComparison.Ordinal));
             Assert.Equal(!editable, html.Contains("<fieldset disabled", StringComparison.Ordinal));
         });
@@ -316,6 +319,15 @@ public sealed class SkillBonusEditorTests
         [Parameter]
         public bool Editable { get; set; }
 
+        [Parameter]
+        public Action<TestableBonuses>? Capture { get; set; }
+
+        [Parameter]
+        public EventCallback Changed { get; set; }
+
+        [Parameter]
+        public bool ShowPrerequisites { get; set; }
+
         protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
         {
             builder.OpenComponent<EditForm>(0);
@@ -327,15 +339,37 @@ public sealed class SkillBonusEditorTests
                     _ =>
                         child =>
                         {
-                            child.OpenComponent<SkillBonuses>(0);
+                            child.OpenComponent<TestableBonuses>(0);
                             child.AddAttribute(1, "Form", Form);
                             child.AddAttribute(2, "Options", Options);
                             child.AddAttribute(3, "Editable", Editable);
+                            child.AddAttribute(4, "Changed", Changed);
+                            child.AddComponentReferenceCapture(5, component => Capture?.Invoke((TestableBonuses)component));
                             child.CloseComponent();
+                            if (ShowPrerequisites)
+                            {
+                                child.OpenComponent<SkillPrerequisites>(6);
+                                child.AddAttribute(7, "Form", Form);
+                                child.AddAttribute(8, "Options", Options.Groups);
+                                child.CloseComponent();
+                            }
                         }
                 )
             );
             builder.CloseComponent();
+        }
+    }
+
+    public sealed class TestableBonuses : SkillBonuses
+    {
+        public Task Add() => AddMining();
+
+        public Task Remove() => RemoveMining();
+
+        public void SwitchView()
+        {
+            ToggleTechnical();
+            StateHasChanged();
         }
     }
 }

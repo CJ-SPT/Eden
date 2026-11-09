@@ -100,7 +100,7 @@ else
                                     <label>Training multiplier (rank) <InputNumber @bind-Value="Form.Rank" min="0.01" max="1000" step="any" /></label>
                                 </div>
                                 <p class="muted">Rank multiplies the skill points needed for every level: rank 5 needs five times rank 1's points.
-                                    It does not multiply the skill's gameplay bonus. Configure that in Bonuses &amp; effects.</p>
+                                    It does not multiply the skill's gameplay bonus. Configure that in Bonuses.</p>
                             </section>
                             <details class="skill-section">
                                 <summary>Skillbook appearance and market</summary>
@@ -117,19 +117,7 @@ else
                         }
                         else
                         {
-                            <section class="skill-section">
-                                <h3>Prerequisites</h3>
-                                <p class="muted">Skills a pilot must train before this one. These requirements do not grant bonuses.</p>
-                                @foreach (var required in Form.Prerequisites)
-                                {
-                                    <div class="skill-input-row" @key="required">
-                                        <SkillChoice TValue="int" Label="Required skill" Options="PrerequisiteOptions" @bind-Value="required.TypeId" />
-                                        <label>Level <InputNumber @bind-Value="required.Level" min="1" max="5" /></label>
-                                        <button type="button" class="secondary" @onclick="() => RemovePrerequisite(required)">Remove</button>
-                                    </div>
-                                }
-                                <button type="button" class="secondary" disabled="@(Form.Prerequisites.Count >= 6)" @onclick="AddPrerequisite">Add prerequisite</button>
-                            </section>
+                            <SkillPrerequisites Form="Form" Options="PrerequisiteOptions" Changed="MarkDraftChanged" />
                             <section class="skill-section">
                                 <h3>Alpha training limits</h3>
                                 <p class="muted">Highest level an Alpha pilot of each race can train. Zero requires Omega.
@@ -143,9 +131,12 @@ else
                             </section>
                         }
                         </div>
-                        <div class="toolbar skill-save-bar">
-                            <button type="submit">@(Form.TypeId == 0 ? "Create skill" : "Save skill")</button>
-                            <button type="button" class="secondary" @onclick="ResetDraft">Discard draft</button>
+                        <div class="skill-save-bar">
+                            <p class="muted" role="status">@PublicationMessage</p>
+                            <div class="toolbar">
+                                <button type="submit">@(Form.TypeId == 0 ? "Create skill" : "Save skill")</button>
+                                <button type="button" class="secondary" @onclick="ResetDraft">Discard draft</button>
+                            </div>
                         </div>
                     </fieldset>
                 </EditForm>

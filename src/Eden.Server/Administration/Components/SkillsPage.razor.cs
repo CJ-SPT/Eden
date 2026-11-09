@@ -31,13 +31,10 @@ public partial class SkillsPage
     private Func<Task>? DiscardAction;
     private bool Dirty => ExtraDirty || Context?.IsModified() == true;
     private int EditorTab;
-    private static readonly (int Id, string Name)[] EditorTabs =
-    [
-        (0, "Identity & training"),
-        (1, "Bonuses & effects"),
-        (2, "Requirements & access"),
-    ];
+    private static readonly (int Id, string Name)[] EditorTabs = [(0, "Identity & training"), (1, "Bonuses"), (2, "Requirements & access")];
     private IReadOnlyList<SkillEditorOption> PrerequisiteOptions = [];
+
+    private string PublicationMessage => SkillPublicationState.Describe(Snapshot!.Generation, Publication, Dirty);
 
     private void MarkDraftChanged() => ExtraDirty = true;
 
@@ -260,17 +257,5 @@ public partial class SkillsPage
             Error = "Save or discard your skill draft before leaving this page.";
         }
         return Task.CompletedTask;
-    }
-
-    private void AddPrerequisite()
-    {
-        Form!.Prerequisites.Add(new());
-        ExtraDirty = true;
-    }
-
-    private void RemovePrerequisite(SkillForm.PrerequisiteInput value)
-    {
-        Form!.Prerequisites.Remove(value);
-        ExtraDirty = true;
     }
 }

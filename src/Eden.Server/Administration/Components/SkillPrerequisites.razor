@@ -1,0 +1,32 @@
+@using Eden.Gameplay.Skills
+<section class="skill-section">
+    <h3>Prerequisites</h3>
+    <p class="muted">Skills a pilot must train before this one. These requirements do not grant bonuses.</p>
+    @foreach (var required in Form.Prerequisites)
+    {
+        <div class="skill-input-row skill-control-row" @key="required">
+            <SkillChoice TValue="int" Label="Required skill" Options="Options" @bind-Value="required.TypeId" />
+            <label>Level <InputNumber @bind-Value="required.Level" min="1" max="5" /></label>
+            <button type="button" class="secondary" @onclick="() => Remove(required)">Remove</button>
+        </div>
+    }
+    <button type="button" class="secondary" disabled="@(Form.Prerequisites.Count >= 6)" @onclick="Add">Add prerequisite</button>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SkillForm Form { get; set; } = null!;
+    [Parameter, EditorRequired] public IReadOnlyList<SkillEditorOption> Options { get; set; } = [];
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private async Task Add()
+    {
+        Form.Prerequisites.Add(new());
+        await Changed.InvokeAsync();
+    }
+
+    private async Task Remove(SkillForm.PrerequisiteInput required)
+    {
+        Form.Prerequisites.Remove(required);
+        await Changed.InvokeAsync();
+    }
+}

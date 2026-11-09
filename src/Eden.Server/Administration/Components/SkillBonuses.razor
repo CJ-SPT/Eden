@@ -1,115 +1,96 @@
-@using Eden.Gameplay.Dogma
 @using Eden.Gameplay.Skills
 <section class="skill-section">
-    <h3>Bonuses and effects</h3>
-    <p class="muted">An <strong>attribute</strong> stores a number, such as 25. An <strong>effect</strong> is the rule that uses it:
-        what changes, which items it affects, and how the number is applied. An attribute alone does not grant a bonus.</p>
-    @if (!Editable)
+    <div class="skill-bonus-heading">
+        <h3>Bonuses</h3>
+        <button type="button" class="secondary" @onclick="ToggleTechnical">
+            @(TechnicalEditing ? "Back to bonuses" : "Advanced: edit technical rules")
+        </button>
+    </div>
+    @if (TechnicalEditing)
     {
-        <p class="notice">This original skill uses a dedicated gameplay calculation, so its bonuses are read-only.
-            Create a new skill to add a supported custom bonus.</p>
+        <SkillAdvancedEffects Form="Form" Options="Options" Editable="Editable" Changed="Changed" />
     }
-    <fieldset disabled="@(!Editable)">
-        @if (SkillBonusEditing.SupportsMining(Options))
+    else
+    {
+        @if (!Editable)
         {
-            <div class="skill-recipe">
-                <h3>Ore mining yield</h3>
-                <p>Add the two linked effects and their percentage value. Replaces equivalent mining-yield rules to avoid stacking them.
-                    New values start at 25% per level; existing values are kept.
-                    Edit the percentage below.
-                    Applies to fitted modules requiring Mining, including ore mining lasers and strip miners.
-                    Ice harvesters, gas harvesters and mining drones do not receive this bonus.</p>
-                <button type="button" class="secondary" @onclick="AddMining">Use per-level ore mining yield bonus</button>
-            </div>
+            <p class="notice">This original skill uses a dedicated gameplay calculation, so its bonuses are read-only.
+                Create a new skill to add a supported custom bonus.</p>
         }
-        @foreach (var effect in Form.Effects)
-        {
-            var option = SkillChoiceSearch.Index(Options.Effects).GetValueOrDefault(effect.EffectId);
-            <div class="skill-effect-card" @key="effect">
-                <div class="skill-effect-heading">
-                    <SkillChoice TValue="int" Label="Effect rule" Options="Options.Effects" ShowDescription="false" IncludeId="true"
-                                 @bind-Value="effect.EffectId" @bind-Value:after="EffectChanged" />
-                    <button type="button" class="secondary" @onclick="() => Remove(effect)">Remove effect</button>
-                </div>
-                @if (option is not null)
-                {
-                    @if (option.Phase == Eden.Gameplay.Inventory.PassiveEffectPhase.Online)
-                    {
-                        <p class="notice">This is an online-module rule. For a mining skill, use the per-level ore mining recipe above.
-                            It keeps your percentage and replaces this rule.</p>
-                    }
-                    @foreach (var modifier in option.Modifiers)
-                    {
-                        <p class="skill-description">@modifier.Description</p>
-                    }
-                    @if (SkillBonusEditing.IsMiningApplication(option) && !HasMiningScaling)
-                    {
-                        <p class="notice">Flat mining bonus: the entered percentage stays the same at every trained level.
-                            A value of 20 gives +20% at both level I and level V.
-                            Use the per-level recipe above for +20% per level (+100% at level V).</p>
-                    }
-                    @foreach (int id in SkillBonusEditing.InputIds(option))
-                    {
-                        var input = Form.Attributes.FirstOrDefault(attribute => attribute.AttributeId == id);
-                        var attributeOption = SkillChoiceSearch.Index(Options.Attributes).GetValueOrDefault(id);
-                        @if (input is not null)
-                        {
-                            <label>@(attributeOption?.Name ?? $"Attribute {id}") @InputUnit(id)
-                                <InputNumber @bind-Value="input.Value" step="any" />
-                            </label>
-                            <small class="muted">Shared by every effect using this attribute. @attributeOption?.Description</small>
-                        }
-                        else if (Editable && attributeOption is not null)
-                        {
-                            <button type="button" class="secondary" @onclick="EffectChanged">Add missing input value</button>
-                        }
-                    }
-                    @if (option.Id == SkillBonusEditing.MiningYieldEffect && HasMiningScaling
-                        && Form.Attributes.FirstOrDefault(attribute => attribute.AttributeId == SkillBonusEditing.MiningBonusAttribute) is { } mining)
-                    {
-                        <div class="skill-preview scroll">
-                            <p><strong>@mining.Value% ore mining yield per level</strong> · contribution from this pair of effects alone.</p>
-                            <table>
-                                <caption>Yield compared with the same module without this bonus</caption>
-                                <thead><tr><th>Skill level</th>@for (int level = 1; level <= 5; level++) { <th>@level</th> }</tr></thead>
-                                <tbody><tr><th>Yield multiplier</th>@for (int level = 1; level <= 5; level++)
-                                    { <td>@((1 + mining.Value * level / 100).ToString("0.##"))×</td> }</tr></tbody>
-                            </table>
-                            <p class="muted">@mining.Value% gives +@(mining.Value)% at level I and +@(mining.Value * 5)% at level V.
-                                Levels add together;
-                                separate skills and other bonuses can multiply the result.</p>
-                        </div>
-                    }
-                    @if (option.Modifiers.Count == 0)
-                    {
-                        <p class="muted skill-description">@option.Description</p>
-                    }
-                    <details><summary>Catalog details</summary>
-                        <p class="muted skill-description">Effect @option.Id · @option.Description</p>
-                        <label><InputCheckbox @bind-Value="effect.IsDefault" /> Default effect (client marker; does not change bonus strength)</label>
-                    </details>
-                }
-            </div>
-        }
-        <button type="button" class="secondary" @onclick="AddEffect">Add effect rule</button>
-        <p class="muted">Choose supported existing rules. Scaling by level and applying a bonus may require two linked effects,
-            as shown in the mining recipe. New rule implementations and arbitrary targets cannot be authored here.</p>
-        <details>
-            <summary>Advanced attribute values</summary>
-            <p class="muted">These are the stored inputs used above, plus any other catalog attributes on this skill.
-                Percent rules use 25 for 25%; multiplier rules use 1.25 for 1.25×.
-                Removing an effect keeps its attribute values for reuse.</p>
-            @foreach (var attribute in Form.Attributes)
+        <fieldset disabled="@(!Editable)">
+            @if (HasMiningBonus)
             {
-                <div class="skill-input-row" @key="attribute">
-                    <SkillChoice TValue="int" Label="Attribute" Options="Options.Attributes" @bind-Value="attribute.AttributeId" />
-                    <label>Stored value <InputNumber @bind-Value="attribute.Value" step="any" /></label>
-                    <button type="button" class="secondary" @onclick="() => Remove(attribute)">Remove</button>
+                var mining = Form.Attributes.Single(attribute => attribute.AttributeId == SkillBonusEditing.MiningBonusAttribute);
+                <div class="skill-effect-card" data-bonus="ore-mining-yield">
+                    <div class="skill-bonus-heading">
+                        <h3>Ore mining yield</h3>
+                        <button type="button" class="secondary" @onclick="RemoveMining">Remove bonus</button>
+                    </div>
+                    <label class="skill-bonus-value">Bonus per skill level (%)
+                        <InputNumber @bind-Value="mining.Value" step="any" @bind-Value:after="ValueChanged" />
+                    </label>
+                    <p>Applies to ore mining lasers and strip miners requiring Mining.</p>
+                    <p class="muted">Ice harvesters, gas harvesters and mining drones do not receive this bonus.</p>
+                    <div class="skill-preview scroll">
+                        <table>
+                            <caption>Extra ore yield from this skill</caption>
+                            <thead><tr>@for (int level = 1; level <= 5; level++) { <th>Level @level</th> }</tr></thead>
+                            <tbody><tr>@for (int level = 1; level <= 5; level++)
+                                { <td>@((mining.Value * level).ToString("+0.##;-0.##;0"))%</td> }</tr></tbody>
+                        </table>
+                        <p class="muted">At level V: @((1 + mining.Value * 5 / 100).ToString("0.##"))× yield from this bonus.
+                            Other skills and bonuses can multiply the result.</p>
+                    </div>
+                    <details>
+                        <summary>Technical details</summary>
+                        <p class="muted">The editor manages the level scaling and yield application together.
+                            Effect @SkillBonusEditing.MiningScalingEffect scales attribute @SkillBonusEditing.MiningBonusAttribute;
+                            effect @SkillBonusEditing.MiningYieldEffect applies it to matching modules.</p>
+                    </details>
                 </div>
             }
-            <button type="button" class="secondary" @onclick="AddAttribute">Add attribute</button>
-        </details>
-    </fieldset>
+            else if (SkillBonusEditing.CanConfigureMining(Form, Options) && SkillBonusEditing.HasMiningRules(Form, Options))
+            {
+                <div class="notice">
+                    <h3>Ore mining yield needs setup</h3>
+                    @if (!Form.Effects.Any(effect => effect.EffectId == SkillBonusEditing.MiningScalingEffect)
+                        && Form.Attributes.FirstOrDefault(attribute => attribute.AttributeId == SkillBonusEditing.MiningBonusAttribute) is { } flat)
+                    {
+                        <p>This bonus stays at @flat.Value% at every trained level.</p>
+                    }
+                    else
+                    {
+                        <p>The mining bonus has incomplete or overlapping rules.</p>
+                    }
+                    <p>Keep the current value and let the editor connect the rules.</p>
+                    <button type="button" @onclick="AddMining">Make it scale with skill level</button>
+                </div>
+            }
+            @if (Form.Effects.Any(effect => !HasMiningBonus
+                || effect.EffectId is not (SkillBonusEditing.MiningScalingEffect or SkillBonusEditing.MiningYieldEffect)))
+            {
+                <p class="notice">Existing technical rules are preserved. Open Advanced to review or edit rules
+                    that cannot be shown as a guided bonus.</p>
+            }
+            else if (!HasMiningBonus)
+            {
+                <p class="muted">No bonuses added. Choose a bonus to set what this skill improves.</p>
+            }
+            @if (!HasMiningBonus && SkillBonusEditing.CanConfigureMining(Form, Options)
+                && !SkillBonusEditing.HasMiningRules(Form, Options))
+            {
+                <button type="button" class="secondary" @onclick="() => ChoosingBonus = !ChoosingBonus">Add bonus</button>
+                @if (ChoosingBonus)
+                {
+                    <div class="skill-recipe">
+                        <h3>Choose a bonus</h3>
+                        <p>Ore mining yield increases how much ore matching mining modules collect per cycle.</p>
+                        <button type="button" @onclick="AddMining">Add ore mining yield</button>
+                    </div>
+                }
+            }
+        </fieldset>
+    }
 </section>
 
 @code {
@@ -117,61 +98,43 @@
     [Parameter, EditorRequired] public SkillEditorChoices Options { get; set; } = null!;
     [Parameter] public bool Editable { get; set; } = true;
     [Parameter] public EventCallback Changed { get; set; }
-    private bool HasMiningScaling => Form.Effects.Any(effect => effect.EffectId == SkillBonusEditing.MiningScalingEffect);
+    protected bool TechnicalEditing;
+    private bool ChoosingBonus;
+    private SkillForm? PreviousForm;
+    private bool HasMiningBonus => SkillBonusEditing.HasMiningBonus(Form, Options);
 
-    private string InputUnit(int id)
+    protected override void OnParametersSet()
     {
-        var modifiers = SkillBonusEditing.SelectedEffects(Form, Options)
-            .SelectMany(option => option.Modifiers).ToArray();
-        bool perLevel = modifiers.Any(modifier => modifier.Local
-            && modifier.SourceAttributeId == (int)DogmaAttributeId.SkillLevel && modifier.TargetAttributeId == id
-            && modifier.Operation is DogmaOperation.PreMultiply or DogmaOperation.PostMultiply);
-        bool percent = modifiers.Any(modifier => modifier.SourceAttributeId == id && modifier.Operation == DogmaOperation.PostPercent);
-        bool multiplier = modifiers.Any(modifier => modifier.SourceAttributeId == id
-            && modifier.Operation is DogmaOperation.PreMultiply or DogmaOperation.PostMultiply);
-        return (percent, perLevel) switch
+        if (!ReferenceEquals(PreviousForm, Form))
         {
-            (true, true) => "(% per level)",
-            (true, false) => "(%)",
-            (false, true) => "(per level)",
-            _ when multiplier => "(multiplier; 1 = unchanged)",
-            _ => "(stored value)",
-        };
+            PreviousForm = Form;
+            TechnicalEditing = false;
+            ChoosingBonus = false;
+        }
     }
 
-    private async Task AddMining()
+    protected void ToggleTechnical() => TechnicalEditing = !TechnicalEditing;
+
+    protected async Task AddMining()
     {
+        if (!Editable || !SkillBonusEditing.CanConfigureMining(Form, Options))
+        {
+            return;
+        }
         SkillBonusEditing.AddMining(Form, Options);
+        ChoosingBonus = false;
         await Changed.InvokeAsync();
     }
 
-    private async Task EffectChanged()
+    protected async Task RemoveMining()
     {
-        SkillBonusEditing.EnsureInputs(Form, Options);
+        if (!Editable || !HasMiningBonus)
+        {
+            return;
+        }
+        SkillBonusEditing.RemoveMining(Form, Options);
         await Changed.InvokeAsync();
     }
 
-    private async Task AddEffect()
-    {
-        Form.Effects.Add(new());
-        await Changed.InvokeAsync();
-    }
-
-    private async Task AddAttribute()
-    {
-        Form.Attributes.Add(new());
-        await Changed.InvokeAsync();
-    }
-
-    private async Task Remove(SkillForm.EffectInput effect)
-    {
-        Form.Effects.Remove(effect);
-        await Changed.InvokeAsync();
-    }
-
-    private async Task Remove(SkillForm.AttributeInput attribute)
-    {
-        Form.Attributes.Remove(attribute);
-        await Changed.InvokeAsync();
-    }
+    private Task ValueChanged() => Changed.InvokeAsync();
 }
