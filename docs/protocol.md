@@ -35,6 +35,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Agent conversation header correction, November 9, 2026](protocol/agents.md#agent-conversation-header-correction--november-9-2026)
 
+- [Targeted stack merging, November 9, 2026](protocol/inventory.md#targeted-stack-merging-november-9-2026)
+
 - [CPU and power-grid skill budgets, November 9, 2026](protocol/fitting.md#cpu-and-power-grid-skill-budgets-november-9-2026)
 
 - [Ordinary agent missions, November 9, 2026](protocol/agents.md#ordinary-agent-missions--november-9-2026)

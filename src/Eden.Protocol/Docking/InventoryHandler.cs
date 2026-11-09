@@ -203,6 +203,44 @@ internal sealed class InventoryHandler(
             : transfers.Move(context, destination, new([itemId], item.LocationId, item.FlagId, (int)quantity));
     }
 
+    private PilotCallResult MergeFromWire(PilotCallContext context, long destination, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        try
+        {
+            // Build 3662168 invCacheContainer.MultiMerge sends a list of
+            // (source item ID, retained target item ID, quantity) tuples and the source container.
+            if (args is not [List<object?> rows, long source] || keywords is { Count: > 0 })
+            {
+                throw new InvalidDataException("Choose source stacks, destination stacks and quantities to merge.");
+            }
+            var operations = rows.Select(row =>
+                {
+                    var tuple = BlueRead.Tuple(row, 3);
+                    return tuple is [long sourceId, long targetId, long quantity] && quantity is > 0 and <= int.MaxValue
+                        ? new InventoryStackMerge(sourceId, targetId, (int)quantity)
+                        : throw new InvalidDataException("Invalid stack merge operation.");
+                })
+                .ToArray();
+            foreach (var change in stacks.Merge(context.Pilot.PilotId, source, destination, operations))
+            {
+                InventoryChangesWire.NotifyItemChange(context, change);
+            }
+            return PilotCallResult.None;
+        }
+        catch (CargoCapacityException error)
+        {
+            return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+        catch (OverflowException)
+        {
+            return new PilotCallResult.Failure("The combined stack exceeds the supported quantity.");
+        }
+    }
+
     public PilotCallResult Call(
         PilotCallContext context,
         string service,
@@ -221,6 +259,10 @@ internal sealed class InventoryHandler(
     {
         var pilot = context.Pilot;
         long container = ShipContainer(service, pilot);
+        if (method == "MultiMerge" && (service == "@hangar" || container != 0))
+        {
+            return MergeFromWire(context, service == "@hangar" ? pilot.StationId : container, args, keywords);
+        }
         if (method == "StackAll" && (service == "@hangar" || container != 0))
         {
             try

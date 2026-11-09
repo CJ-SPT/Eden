@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Targeted stack merging, November 9, 2026](#targeted-stack-merging-november-9-2026)
+
 - [Trashing personal items and ships (November 8, 2026)](#trashing-personal-items-and-ships-november-8-2026)
 - [Personal Assets window (November 8, 2026)](#personal-assets-window-november-8-2026)
 - [Capsule retirement on boarding (November 6, 2026)](#capsule-retirement-on-boarding-november-6-2026)
@@ -224,3 +226,23 @@ References: [EVE University: Managing Your Assets](https://wiki.eveuniversity.or
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** With the updated server, reopen Personal Assets, expand a remote station and search for an owned item; confirm location filters/sorting and the empty Asset Safety tab. Wait for the native cache expiry when inspecting recent asset changes.
+
+## Targeted stack merging, November 9, 2026
+
+A user-provided screenshot showed two ammunition stacks (560 and 80 units) in the active ship's inventory while the fitting window was open. Drag-merging them failed with `Unsupported local call @ship:200000003700.MultiMerge`. Eden supported `StackAll`, but had no handler for selected-stack merges. The ship binding is a saved inventory container, even when a fitting simulation is visible; simulation does not grant access to another ship's inventory.
+
+Added selected-pilot `MultiMerge([(sourceItemID, targetItemID, quantity), ...], sourceContainerID)` for the current personal station hangar and active ship holds, including item-specific `@ship:<id>` bindings. The exact target ID survives; unselected compatible stacks remain separate. Full merges remove only exhausted sources; partial merges retain the source remainder. The entire batch commits atomically, then emits normal `OnItemChange` updates. Exhausted sources use the existing graveyard-location representation with their former quantity so the native inventory cache can remove the tile. Temporary split/move rows never appear in notifications.
+
+Typed Gameplay rules validate compatible packaged stacks, positive available quantities, overflow and distinct non-chained selections. World operations validate both owners, declared source/destination locations, supported flags, volume overrides, crystal wear, occupied containers and installed blueprints. A same-hold merge adds no capacity and is valid even when that hold is already over capacity; cross-container/hold merges reuse ordinary movement, capacity, hold-eligibility and docking checks inside the same transaction. Unsupported/remote/inactive ship inventories, malformed tuples/lists, duplicate sources, self/chained merges, foreign items and any later batch failure leave inventory unchanged. Corporate stack merging and loaded-ammunition tuple sublocations are outside this handler; the native client routes loaded ammunition through its dogma unload path before issuing ordinary inventory merges.
+
+**Pinned-client evidence.** Inert inspection of build **3662168** `code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, confirms `BaseInvContainer.MultiMerge` converts drag data into a Python list of three-field tuples. `invCacheContainer.MultiMerge` locks source items, separately handles tuple-key loaded ammunition via `UnloadAmmoToContainer`, and sends the remaining operations and source container ID to the bound inventory. The call returns Python None. [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) remains the list/tuple/None representation reference; no codec changes are needed. [EVE University: Assembling and repackaging](https://wiki.eveuniversity.org/Assembling_and_Repackaging) documents packaged stackability, and [Neocom inventory](https://wiki.eveuniversity.org/Neocom#Inventory) describes station and active-ship hold access. These gameplay references do not define the build-specific RPC.
+
+**Automated validation.** Development started with the exact method filter `FullyQualifiedName=Eden.Protocol.Tests.Persistence.InventoryStackMergeTests.NativeMultiMergeRetainsChosenTargetAndPublishesPersistentQuantities`. Four cases passed and two station cases exposed a test assertion that included unrelated starter items in its quantity total; the assertion was scoped to the selected and deliberately unselected test stacks. The combined filter `FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackMergeTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackSplitTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ProductionInventoryTests` then passed **52 cases** (6.86 seconds build, 17.43 seconds test command). Final affected validation passed **366 cases** in 19.13 seconds. Tool restore (0.18 seconds), solution restore (0.66 seconds), solution build (4.84 seconds, zero warnings/errors), catalog policy (8 cases, 1.32 seconds), formatting policy (9 cases, 0.28 seconds), and `Format.ps1 -Check` (18.35 seconds) passed. The final sequence took 44.76 seconds; the full .NET suite was not run. The final affected filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackMergeTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackSplitTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ProductionInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryOwnershipTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipInventoryRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Docking.TypedInventoryTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled. Native drag/drop interaction and inventory repaint remain unverified.
+
+**Optional maintainer checks.** After updating the server and reconnecting, drag the 80-round stack onto the 560-round stack and confirm one 640-round stack; repeat with a chosen partial quantity if desired.
