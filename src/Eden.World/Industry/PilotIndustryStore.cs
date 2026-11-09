@@ -22,6 +22,7 @@ using Eden.World.Docking;
 using Eden.World.Economy;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Market;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -572,6 +573,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         job.CompletedAt = Now;
         if (!cancel)
         {
+            MarketProgressionStore.Claim(world, catalog, job);
             PilotTaskTrackingStore.Record(world, catalog, pilotId, job.CompletedAt.Value, TaskEvents.IndustryDelivered);
         }
         world.SaveChanges();

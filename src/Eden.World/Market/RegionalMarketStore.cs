@@ -3,7 +3,6 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
-using Eden.World.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,15 +18,14 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
     {
         long elapsed = activity?.Read().ElapsedTicks ?? world.Set<Eden.Data.World.Capsuleers.SavedCapsuleerClock>().Single().ElapsedTicks;
         var profiles = RegionalMarketCatalog.Read(catalog);
-        var prices = EconomicStore.Prices(world);
-        foreach (int type in profiles.Products.SelectMany(p => p.Materials.Keys).Distinct().Where(t => !prices.ContainsKey(t)))
-        {
-            var reference = catalog.Read(CatalogData.Client.Types, (long)type)?.BasePrice;
-            if (reference is > 0 && double.IsFinite(reference.Value))
-            {
-                prices[type] = (decimal)reference.Value;
-            }
-        }
+        var products = world
+            .Set<SavedMarketUnlock>()
+            .AsNoTracking()
+            .Select(u => u.TypeId)
+            .ToArray()
+            .Select(type => RegionalMarketCatalog.Product(catalog, type))
+            .OfType<RegionalProduct>()
+            .ToArray();
         var orders = world
             .Set<NpcMarketOrder>()
             .Where(o => o.StationId == stationId && o.Kind == NpcMarketKind.Regional)
@@ -36,27 +34,38 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
             .Set<SavedRegionalMarketStock>()
             .Where(s => world.Set<NpcMarketOrder>().Any(o => o.Id == s.OrderId && o.StationId == stationId))
             .ToDictionary(s => s.OrderId);
+        var profile = profiles.Stations.SingleOrDefault(s => s.Station.Id == stationId);
+        var stocked = products
+            .Where(p => profile is not null && RegionalMarketRules.Stocks(p.TypeId, p.Category, profile.Role))
+            .Where(p => MarketSnapshotCatalog.Quotes.ContainsKey(p.TypeId))
+            .ToDictionary(p => p.TypeId);
+        foreach (
+            var retired in orders.Values.Where(o =>
+                !stocked.ContainsKey(o.TypeId)
+                || (o.Bid ? MarketSnapshotCatalog.Quotes[o.TypeId].BuyCents : MarketSnapshotCatalog.Quotes[o.TypeId].SellCents) is null
+            )
+        )
+        {
+            retired.Remaining = 0;
+        }
         foreach (var station in profiles.Stations.Where(s => s.Station.Id == stationId))
         {
-            foreach (var product in profiles.Products.Where(p => elapsed >= TimeSpan.FromHours(p.UnlockHours).Ticks))
+            foreach (var product in stocked.Values)
             {
-                if (
-                    product.Materials.Keys.Any(t => !prices.ContainsKey(t))
-                    || product.Category == InventoryCategory.Ship && station.Role != RegionalMarketRole.Hub
-                    || product.UnlockHours > 0 && station.Role == RegionalMarketRole.Mining
-                )
-                {
-                    continue;
-                }
-                decimal value = product.Materials.Sum(m => m.Value * prices[m.Key]) * MarketDefinitions.CentsPerIsk;
+                var quote = MarketSnapshotCatalog.Quotes[product.TypeId];
                 foreach (bool bid in new[] { false, true })
                 {
-                    if (product.Category == InventoryCategory.Asteroid && !bid)
+                    long? reference = bid ? quote.BuyCents : quote.SellCents;
+                    if (reference is null)
                     {
                         continue;
                     }
-                    long anchor = RegionalMarketRules.Anchor(value, station.Role, product.Category, bid);
-                    int capacity = RegionalMarketRules.Capacity(product.Quantity, elapsed);
+                    long anchor = RegionalMarketRules.SnapshotAnchor(reference.Value, station.Role, bid);
+                    int initial =
+                        station.Role == RegionalMarketRole.Hub
+                            ? product.Quantity
+                            : Math.Max(1, product.Quantity / RegionalMarketRules.SecondaryStockDivisor);
+                    int capacity = RegionalMarketRules.Capacity(initial, elapsed);
                     var key = (station.Station.Id, product.TypeId, bid);
                     if (!orders.TryGetValue(key, out var order))
                     {
@@ -87,6 +96,11 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
                         orders.Add(key, order);
                     }
                     var state = states[order.Id];
+                    if (order.Issued == 0)
+                    {
+                        order.Remaining = capacity;
+                        state.RefreshedTicks = elapsed;
+                    }
                     var recovered = RegionalMarketRules.Recover(
                         new(order.Remaining, order.Entered, state.RefreshedTicks),
                         capacity,

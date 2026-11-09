@@ -12,6 +12,8 @@
 
 ## Development
 
+[Production-driven market progression](protocol/industry.md#production-driven-market-progression--november-8-2026) records claimed-production unlocks, high-security regional hubs, dated price snapshots and migration behavior.
+
 Directional scanner behavior, off-grid names and automated coverage are recorded in [directional scanning](protocol/information.md#directional-scanning-completion-november-8-2026).
 
 Native loyalty store behavior, offline offer provenance and exclusions are recorded in [LP stores](protocol/industry.md#loyalty-point-stores-november-8-2026).

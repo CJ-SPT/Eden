@@ -10,6 +10,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
@@ -245,6 +246,83 @@ public sealed class IndustryTests
     }
 
     [Fact]
+    public void ClaimedProductionUnlocksSnapshotSupplyForOtherPlayersAndSurvivesMigration()
+    {
+        using Fixture f = new();
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{\"securityStatus\":1.0}}')"
+            );
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<SavedWorldEconomy>().Single().TestingMarket = false;
+            world.SaveChanges();
+        }
+        var market = f.Db.Services.GetRequiredService<IPilotMarket>();
+        var job = f.Store.Install(f.Pilot.PilotId, f.Request());
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(288));
+        Assert.Empty(market.Orders(f.Pilot.PilotId, 215));
+        f.Store.Deliver(f.Pilot.PilotId, job.Job.Id, f.Pilot.SystemId);
+        var orders = market.Orders(f.Db.Store.FindPilot(1000002)!.PilotId, 215);
+        Assert.Contains(orders, o => !o.Bid && o.PriceCents == MarketSnapshotCatalog.Quotes[215].SellCents);
+        Assert.Contains(orders, o => o.Bid && o.PriceCents == MarketSnapshotCatalog.Quotes[215].BuyCents);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Database.ExecuteSqlRaw("DROP TABLE WorldMarketUnlock; PRAGMA user_version=121;");
+        }
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        using WorldDbContext reopened = new(f.Db.Path);
+        var unlock = Assert.Single(reopened.Set<SavedMarketUnlock>());
+        Assert.Equal(job.Job.Id, unlock.JobId);
+        Assert.Equal(f.Pilot.PilotId, unlock.PilotId);
+        Assert.Contains(market.Orders(f.Pilot.PilotId, 215), o => !o.Bid && o.Remaining > 0);
+    }
+
+    [Fact]
+    public void FailedClaimRollsBackDeliveryAndRetryUnlocksExactlyOnce()
+    {
+        using Fixture f = new();
+        var job = f.Store.Install(f.Pilot.PilotId, f.Request());
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(288));
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                CREATE TRIGGER RejectMarketUnlock BEFORE INSERT ON WorldMarketUnlock
+                BEGIN SELECT RAISE(ABORT,'unlock failure'); END;
+                """
+            );
+        }
+        Assert.Throws<DbUpdateException>(() => f.Store.Deliver(f.Pilot.PilotId, job.Job.Id, f.Pilot.SystemId));
+        Assert.Equal(0, f.Quantity(215));
+        Assert.Equal(IndustryJobStatus.Ready, f.Store.Job(f.Pilot.PilotId, job.Job.Id).Status);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Empty(world.Set<SavedMarketUnlock>());
+            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectMarketUnlock");
+        }
+        f.Store.Deliver(f.Pilot.PilotId, job.Job.Id, f.Pilot.SystemId);
+        Assert.Empty(f.Store.Deliver(f.Pilot.PilotId, job.Job.Id, f.Pilot.SystemId).Changes);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Single(saved.Set<SavedMarketUnlock>());
+        Assert.Equal(100, f.Quantity(215));
+    }
+
+    [Fact]
+    public void CancelledProductionDoesNotUnlockSupply()
+    {
+        using Fixture f = new();
+        var job = f.Store.Install(f.Pilot.PilotId, f.Request());
+        f.Store.Cancel(f.Pilot.PilotId, job.Job.Id, f.Pilot.SystemId);
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.Empty(world.Set<SavedMarketUnlock>());
+        Assert.Equal(0, f.Quantity(215));
+    }
+
+    [Fact]
     public void ManufacturedAmmunitionCanBeListedByAnOfflinePilotAndPurchasedAfterReopen()
     {
         using Fixture f = new();
@@ -294,6 +372,10 @@ public sealed class IndustryTests
         Assert.Equal(result.Job.Id, f.Store.Blueprint(f.Pilot.PilotId, Fixture.BlueprintId).JobId);
         Assert.True(f.Store.Blueprint(f.Pilot.PilotId, Fixture.BlueprintId).Item.Singleton);
         Assert.Throws<InvalidDataException>(() => f.Store.Deliver(f.Pilot.PilotId, result.Job.Id, f.Pilot.SystemId));
+        using (WorldDbContext unclaimed = new(f.Db.Path))
+        {
+            Assert.Empty(unclaimed.Set<SavedMarketUnlock>());
+        }
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(result.Job, f.Store.Job(f.Pilot.PilotId, result.Job.Id));
         f.Clock.UtcNow = f.Clock.UtcNow.AddSeconds(288);
@@ -301,6 +383,13 @@ public sealed class IndustryTests
         var delivered = f.Store.Deliver(f.Pilot.PilotId, result.Job.Id, f.Pilot.SystemId);
         Assert.Equal(IndustryJobStatus.Delivered, delivered.Job.Status);
         Assert.Equal(100, f.Quantity(215));
+        using (WorldDbContext claimed = new(f.Db.Path))
+        {
+            var unlock = Assert.Single(claimed.Set<SavedMarketUnlock>());
+            Assert.Equal(215, unlock.TypeId);
+            Assert.Equal(result.Job.Id, unlock.JobId);
+            Assert.Equal(f.Pilot.PilotId, unlock.PilotId);
+        }
         Assert.Equal(100, Assert.Single(delivered.Changes).Item.Quantity);
         Assert.Null(f.Store.Blueprint(f.Pilot.PilotId, Fixture.BlueprintId).JobId);
         Assert.Empty(f.Store.Deliver(f.Pilot.PilotId, result.Job.Id, f.Pilot.SystemId).Changes);

@@ -97,6 +97,11 @@ internal static class Program
             return;
         }
         bool economyWorld = args.Contains("--economy-world");
+        bool testingMarket = args.Contains("--testing-market");
+        if (testingMarket && (economyWorld || File.Exists(worldPath)))
+        {
+            throw new InvalidDataException("--testing-market requires a new world without --economy-world.");
+        }
         if (economyWorld && File.Exists(worldPath))
         {
             throw new InvalidDataException("--economy-world requires a new world path.");
@@ -140,11 +145,10 @@ internal static class Program
             Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
             using FileStream startupOwnership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             long reconciliationStarted = Stopwatch.GetTimestamp();
-            WorldInitialization.Initialize(
-                database,
-                economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null,
-                economics: economicConfiguration
-            );
+            Eden.Gameplay.Market.WorldEconomySettings? startingEconomy = File.Exists(worldPath)
+                ? null
+                : new(testingMarket, !economyWorld, npcStock);
+            WorldInitialization.Initialize(database, economy: startingEconomy, economics: economicConfiguration);
             ServerLog.Console.Information(
                 $"World reconciliation completed in {Stopwatch.GetElapsedTime(reconciliationStarted).TotalSeconds:F2}s."
             );

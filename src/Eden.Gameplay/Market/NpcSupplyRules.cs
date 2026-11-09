@@ -9,13 +9,12 @@ public enum NpcMarketKind
     Regional,
 }
 
-public sealed record NpcSupplyType(int TypeId, InventoryCategory Category, bool Published, decimal BasePriceIsk, bool Offered);
+public sealed record NpcSupplyType(int TypeId, InventoryCategory Category, bool Published, decimal ReferencePriceIsk, bool Offered);
 
 public static class NpcSupplyRules
 {
-    // The client exports corporation/type eligibility and base prices, but not
-    // live server quantities or dynamic NPC price adjustments. Use an explicit,
-    // replenishing institutional stock policy; never seed finished products here.
+    // Corporation/type eligibility comes from the pinned catalog. Prices come
+    // from an explicitly captured market snapshot; quantity is Eden policy.
     public const int Stock = 1000;
     public const int MaximumStock = 1_000_000;
 
@@ -33,14 +32,14 @@ public static class NpcSupplyRules
             type.TypeId <= 0
             || !type.Offered
             || !type.Published
-            || type.Category is not (InventoryCategory.Blueprint or InventoryCategory.Skill)
-            || type.BasePriceIsk <= 0
-            || type.BasePriceIsk > MarketDefinitions.MaximumOrderPrice
+            || type.Category is InventoryCategory.Station or InventoryCategory.ShipSkin or InventoryCategory.Personalization
+            || type.ReferencePriceIsk <= 0
+            || type.ReferencePriceIsk > MarketDefinitions.MaximumOrderPrice
         )
         {
             return null;
         }
-        long cents = PersonalMarketRules.Round(type.BasePriceIsk * MarketDefinitions.CentsPerIsk);
+        long cents = PersonalMarketRules.Round(type.ReferencePriceIsk * MarketDefinitions.CentsPerIsk);
         return cents > 0 ? cents : null;
     }
 }

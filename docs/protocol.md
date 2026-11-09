@@ -34,6 +34,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Native Type Browser item creation, November 8, 2026](protocol/navigation.md#native-type-browser-item-creation-november-8-2026)
 
+- [Production-driven market progression, November 8, 2026](protocol/industry.md#production-driven-market-progression--november-8-2026)
+
 - [LP-store Resource Wars presence read, November 8, 2026](protocol/industry.md#lp-store-resource-wars-presence-read-november-8-2026)
 
 - [Loyalty point stores, November 8, 2026](protocol/industry.md#loyalty-point-stores-november-8-2026)

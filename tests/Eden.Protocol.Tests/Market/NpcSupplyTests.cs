@@ -12,16 +12,60 @@ namespace Eden.Protocol.Tests.Market;
 
 public sealed class NpcSupplyTests
 {
+    [Fact]
+    public void StartupUsesCatalogNpcOffersAndSnapshotPricesWithoutInventedBlueprintsOrUnclaimedGoods()
+    {
+        using TestWorld f = new();
+        WorldDatabase database = new(f.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemCategory VALUES(9,'Blueprint'),(17,'Commodity');
+                INSERT OR IGNORE INTO ItemGroup VALUES(31,'Shuttle',6),(280,'General',17),(134,'Mining Laser Blueprint',9);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES(672,'Caldari Shuttle',31),(41,'Garbage',280),
+                    (43,'Antibiotics',280),(785,'Miner I Blueprint',134),(1130,'Synthetic invented blueprint',134);
+                INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES(422,'techLevel');
+                INSERT OR REPLACE INTO TypeAttribute VALUES(1130,422,2);
+                INSERT OR REPLACE INTO SourceRecord VALUES
+                    ('client/stationoperations','14','{{"services":[7]}}'),
+                    ('client/types','672','{{"published":1,"marketGroupID":1}}'),
+                    ('client/types','41','{{"published":1,"marketGroupID":1}}'),
+                    ('client/types','43','{{"published":1,"marketGroupID":1}}'),
+                    ('client/types','785','{{"published":1,"marketGroupID":1}}'),
+                    ('client/types','1130','{{"published":1,"marketGroupID":1}}'),
+                    ('client/npccorporations','1000035','{{"corporationTrades":{{"672":1,"41":-1,"43":1,"785":1,"1130":1}}}}');
+                """
+            );
+        }
+        using (WorldDbContext world = new(f.Path))
+        {
+            world.Set<SavedWorldEconomy>().Single().TestingMarket = false;
+            world.SaveChanges();
+        }
+        var pilot = f.Store.FindPilot(1000001)!;
+        var market = f.Services.GetRequiredService<IPilotMarket>();
+        var offers = market.Orders(pilot.PilotId);
+        Assert.Contains(offers, o => o.TypeId == 672 && !o.Bid && o.PriceCents == MarketSnapshotCatalog.Quotes[672].SellCents);
+        Assert.Contains(offers, o => o.TypeId == 41 && o.Bid && o.PriceCents == MarketSnapshotCatalog.Quotes[41].BuyCents);
+        Assert.Contains(offers, o => o.TypeId == 43 && !o.Bid);
+        Assert.Contains(offers, o => o.TypeId == 785 && !o.Bid && o.PriceCents == MarketSnapshotCatalog.Quotes[785].SellCents);
+        Assert.DoesNotContain(offers, o => o.TypeId == 1130 || o.TypeId == 603);
+        using WorldDbContext saved = new(f.Path);
+        Assert.Empty(saved.Set<SavedMarketUnlock>());
+        Assert.All(saved.Set<NpcMarketOrder>(), o => Assert.Equal(NpcMarketKind.Institutional, o.Kind));
+    }
+
     [Theory]
     [InlineData(InventoryCategory.Blueprint, true, true, 10L, 1000L)]
     [InlineData(InventoryCategory.Skill, true, true, 10L, 1000L)]
-    [InlineData(InventoryCategory.Module, true, true, 10, null)]
-    [InlineData(InventoryCategory.Ship, true, true, 10, null)]
-    [InlineData(InventoryCategory.Material, true, true, 10, null)]
+    [InlineData(InventoryCategory.Module, true, true, 10L, 1000L)]
+    [InlineData(InventoryCategory.Ship, true, true, 10L, 1000L)]
+    [InlineData(InventoryCategory.Material, true, true, 10L, 1000L)]
     [InlineData(InventoryCategory.Blueprint, false, true, 10, null)]
     [InlineData(InventoryCategory.Blueprint, true, false, 10, null)]
     [InlineData(InventoryCategory.Blueprint, true, true, 0, null)]
-    public void OnlyPublishedCatalogOfferedBooksAndBlueprintsAreEligible(
+    public void OnlyPublishedCatalogOfferedPhysicalTypesWithValidPricesAreEligible(
         InventoryCategory category,
         bool published,
         bool offered,

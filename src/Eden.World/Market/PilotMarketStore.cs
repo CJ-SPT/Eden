@@ -151,15 +151,21 @@ internal sealed partial class PilotMarketStore(
             NpcSupplyRules.ValidateStock(stock);
             long institutionalCutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
             long issued = Now;
-            orders
-                .Where(o => o.Kind == NpcMarketKind.Institutional && !o.Bid)
+            var refreshed = orders
+                .Where(o => o.Kind == NpcMarketKind.Institutional && !o.Bid && o.Issued > 0)
                 .Where(o => o.Remaining != stock || o.Entered != stock || o.Issued <= institutionalCutoff)
-                .ExecuteUpdate(setters =>
-                    setters
-                        .SetProperty(o => o.Remaining, stock)
-                        .SetProperty(o => o.Entered, stock)
-                        .SetProperty(o => o.Issued, o => o.Issued <= institutionalCutoff ? issued : o.Issued)
-                );
+                .AsTracking()
+                .ToArray();
+            foreach (var order in refreshed)
+            {
+                order.Remaining = stock;
+                order.Entered = stock;
+                if (order.Issued <= institutionalCutoff)
+                {
+                    order.Issued = issued;
+                }
+            }
+            world.SaveChanges();
             return;
         }
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
@@ -232,6 +238,7 @@ internal sealed partial class PilotMarketStore(
                 .Stations.SingleOrDefault(s => s.Station.RegionId == region && s.Role == RegionalMarketRole.Hub);
             foreach (int known in knownStations.Append(hub?.Station.Id ?? station.Id).Distinct().Where(id => id != station.Id))
             {
+                SeedInstitutional(world, catalog, catalog.RequireStation(known));
                 regional.Advance(world, catalog, region, known, Now);
             }
         }

@@ -16,11 +16,45 @@ public static class RegionalMarketRules
     // Eden economic policy, measured in shared human-active time.
     public static readonly long RecoveryIntervalTicks = TimeSpan.FromMinutes(10).Ticks;
     public const int RecoveryIntervals = 6;
-    public const int IndustryHours = 4;
-    public const int FirstHullHours = 8;
-    public const int CombatHullHours = 16;
-    public const int HaulerHours = 24;
     public const decimal MaximumPriceResponse = 0.15m;
+
+    // Build 3662168 inventory groups: regular capitals deliberately remain eligible.
+    private const int TitanGroup = 30;
+    private const int SupercarrierGroup = 659;
+    private const int HubHullStock = 5;
+    private const int HubChargeStock = 5000;
+    private const int HubItemStock = 50;
+    private const int SecondaryAssortmentDivisor = 2;
+    public const int SecondaryStockDivisor = 5;
+    private const decimal SecondaryPriceMargin = 0.05m;
+
+    public static bool CanUnlock(InventoryCategory category, int groupId, bool published, bool onMarket) =>
+        published && onMarket && category != InventoryCategory.Blueprint && groupId is not (TitanGroup or SupercarrierGroup);
+
+    public static int InitialStock(InventoryCategory category) =>
+        category switch
+        {
+            InventoryCategory.Ship => HubHullStock,
+            InventoryCategory.Charge => HubChargeStock,
+            _ => HubItemStock,
+        };
+
+    public static bool Stocks(int typeId, InventoryCategory category, RegionalMarketRole role) =>
+        role == RegionalMarketRole.Hub
+        || role == RegionalMarketRole.Industry && category != InventoryCategory.Ship && typeId % SecondaryAssortmentDivisor == 1;
+
+    public static long SnapshotAnchor(long cents, RegionalMarketRole role, bool bid) =>
+        Math.Max(
+            1,
+            PersonalMarketRules.Round(
+                cents
+                    * (
+                        role == RegionalMarketRole.Hub ? 1m
+                        : bid ? 1m - SecondaryPriceMargin
+                        : 1m + SecondaryPriceMargin
+                    )
+            )
+        );
 
     public static int Capacity(int initial, long elapsedTicks)
     {
@@ -28,24 +62,6 @@ public static class RegionalMarketRules
         const int maximumGrowthStages = 3;
         int stage = (int)Math.Min(maximumGrowthStages, elapsedTicks / TimeSpan.FromHours(growthHours).Ticks);
         return checked(initial * (1 + stage));
-    }
-
-    public static long Anchor(decimal valueCents, RegionalMarketRole role, InventoryCategory category, bool bid)
-    {
-        decimal multiplier = category switch
-        {
-            InventoryCategory.Asteroid => role == RegionalMarketRole.Mining ? 0.75m : 1.10m,
-            InventoryCategory.Material => bid
-                ? role == RegionalMarketRole.Mining
-                    ? 0.60m
-                    : 1.25m
-                : role == RegionalMarketRole.Mining
-                    ? 1.00m
-                    : 1.65m,
-            _ => bid ? 0.75m : 1.50m,
-        };
-        // Retain a positive spread even for references below one ISK cent.
-        return Math.Max(bid ? 1 : 2, PersonalMarketRules.Round(valueCents * multiplier));
     }
 
     public static RegionalStock Recover(RegionalStock stock, int capacity, long elapsedTicks)
