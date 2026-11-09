@@ -40,7 +40,8 @@ internal sealed partial class PilotMissionStore
                 && (storyline || p.Kind == kind)
                 && (p.EnemyFaction == 0 || p.EnemyFaction != agent.FactionId)
             )
-            .OrderBy(p => p.Definition.MissionId)
+            .OrderBy(p => p.Definition.Gates.IsEmpty ? 0 : 1)
+            .ThenBy(p => p.Definition.MissionId)
             .ToArray();
         if (profiles.Length == 0)
         {

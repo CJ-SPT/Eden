@@ -36,23 +36,48 @@ internal sealed partial class PilotMissionStore
             {
                 Expire(world, row, Now);
             }
-            var sites = rows.Where(m => m.State == MissionState.Accepted && !m.ObjectiveComplete)
+            var sites = rows.Where(m => m.State == MissionState.Accepted)
                 .Where(m => MissionCatalog.Find(catalog, m.MissionId).Kind == MissionKind.Combat)
-                .Select(m =>
+                .SelectMany(m =>
                 {
                     var profile = MissionCatalog.Find(catalog, m.MissionId);
                     var position = new SpacePosition(m.X, m.Y, m.Z);
-                    var objects = profile
-                        .Objects.Select(
-                            (o, i) =>
-                                o with
+                    var progress = world.Set<SavedMissionRoom>().Where(r => r.MissionId == m.Id).ToDictionary(r => r.RoomId);
+                    int objectIndex = 0;
+                    return profile
+                        .Rooms.Select(room =>
+                        {
+                            var objects = room
+                                .Objects.Select(o =>
+                                    o with
+                                    {
+                                        Id = checked(MissionRules.FirstObjectId + m.Id * MissionRules.NpcsPerMission + objectIndex++),
+                                        Position = position + o.Position,
+                                    }
+                                )
+                                .ToArray();
+                            var gates = room
+                                .Gates.Select(g =>
                                 {
-                                    Id = checked(MissionRules.FirstObjectId + m.Id * MissionRules.NpcsPerMission + i),
-                                    Position = position + o.Position,
-                                }
-                        )
+                                    int index = Array.FindIndex(room.Objects.ToArray(), o => o.Id == g.ObjectId);
+                                    var item = objects[index];
+                                    var destination = position + profile.Rooms.Single(r => r.Id == g.DestinationRoomId).Position;
+                                    return new MissionGate(item.Id, item.Position, item.Radius, destination, g.RequiresClear);
+                                })
+                                .ToArray();
+                            bool started =
+                                m.ObjectiveComplete
+                                || !profile.Definition.Waves.Any((w) => w.RoomId == room.Id || w.RoomId == 0)
+                                || progress.ContainsKey(room.Id)
+                                || profile.Rooms.Length == 1 && m.Wave >= 0;
+                            return new MissionSite(m.Id, m.PilotId, m.SystemId, position + room.Position, started, objects)
+                            {
+                                RoomId = room.Id,
+                                Entrance = position,
+                                Gates = gates,
+                            };
+                        })
                         .ToArray();
-                    return new MissionSite(m.Id, m.PilotId, m.SystemId, position, m.Wave >= 0, objects);
                 })
                 .ToArray();
             world.SaveChanges();
@@ -80,9 +105,14 @@ internal sealed partial class PilotMissionStore
             foreach (var site in pending)
             {
                 var row = world.Set<SavedMission>().Find(site.Id)!;
-                if (row.State == MissionState.Accepted && row.Wave < 0 && !Expire(world, row, Now))
+                if (row.State == MissionState.Accepted && !row.ObjectiveComplete && !Expire(world, row, Now))
                 {
-                    Spawn(world, catalog, row, 0, Now);
+                    var profile = MissionCatalog.Find(catalog, row.MissionId);
+                    if (world.Set<SavedMissionRoom>().Find(row.Id, site.RoomId) is null && !(profile.Rooms.Length == 1 && row.Wave >= 0))
+                    {
+                        int wave = Enumerable.Range(0, profile.Definition.Waves.Length).First(w => profile.WaveRoom(w) == site.RoomId);
+                        Spawn(world, catalog, row, wave, Now);
+                    }
                 }
             }
             world.SaveChanges();
@@ -104,12 +134,12 @@ internal sealed partial class PilotMissionStore
             return;
         }
         var member = world.Set<SavedMissionMember>().Find(npc.Id)!;
-        if (member.CompletesMission)
-        {
-            mission.ObjectiveComplete = true;
-            return;
-        }
-        var members = world.Set<SavedMissionMember>().Where(m => m.MissionId == mission.Id).ToArray();
+        _ = world.Set<SavedMissionMember>().Where(m => m.MissionId == mission.Id).ToArray();
+        var members = world
+            .Set<SavedMissionMember>()
+            .Local.Where(m => m.MissionId == mission.Id)
+            .Select(m => new MissionEnemyProgress(m.NpcId, m.Wave, m.Trigger, m.Required, m.CompletesMission))
+            .ToArray();
         var alive = world
             .Set<WorldNpc>()
             .Where(n =>
@@ -124,17 +154,46 @@ internal sealed partial class PilotMissionStore
             .Select(n => n.Id)
             .ToHashSet();
         var profile = MissionCatalog.Find(catalog, mission.MissionId);
-        if (member.Wave == mission.Wave && mission.Wave + 1 < profile.Definition.Waves.Length)
+        int roomId = profile.WaveRoom(member.Wave);
+        var progress = world.Set<SavedMissionRoom>().Find(mission.Id, roomId);
+        int currentWave = progress?.Wave ?? mission.Wave;
+        int nextWave = Enumerable
+            .Range(currentWave + 1, profile.Definition.Waves.Length - currentWave - 1)
+            .FirstOrDefault(w => profile.WaveRoom(w) == roomId, -1);
+        bool allRequiredSpawned = Enumerable
+            .Range(0, profile.Definition.Waves.Length)
+            .Where(w => profile.Definition.Waves[w].Groups.Any(g => g.Required))
+            .All(w =>
+                (
+                    world.Set<SavedMissionRoom>().Find(mission.Id, profile.WaveRoom(w))?.Wave
+                    ?? (profile.Rooms.Length == 1 ? mission.Wave : -1)
+                ) >= w
+            );
+        alive.UnionWith(
+            world
+                .Set<WorldNpc>()
+                .Local.Where(n =>
+                    n.AnchorKind == NpcAnchorKind.Mission
+                    && n.EncounterId == MissionRules.FirstSiteId + mission.Id
+                    && n.Id != npc.Id
+                    && n.DestroyedAt == null
+                    && n.RetiredAt == null
+                )
+                .Select(n => n.Id)
+        );
+        var decision = MissionEncounterRules.Killed(
+            members.Single(m => m.Id == member.NpcId),
+            currentWave,
+            nextWave < 0 ? null : nextWave,
+            members,
+            alive,
+            allRequiredSpawned
+        );
+        if (decision.SpawnNextWave)
         {
-            var waveMembers = members.Where(m => m.Wave == mission.Wave).ToArray();
-            bool triggers = waveMembers.Any(m => m.Trigger);
-            if (!waveMembers.Any(m => (triggers ? m.Trigger : m.Required) && alive.Contains(m.NpcId)))
-            {
-                Spawn(world, catalog, mission, mission.Wave + 1, now);
-                return;
-            }
+            Spawn(world, catalog, mission, nextWave, now);
         }
-        if (mission.Wave + 1 == profile.Definition.Waves.Length && !members.Any(m => m.Required && alive.Contains(m.NpcId)))
+        if (decision.Complete)
         {
             mission.ObjectiveComplete = true;
         }
@@ -143,6 +202,8 @@ internal sealed partial class PilotMissionStore
     private static void Spawn(WorldDbContext world, CatalogDbContext catalog, SavedMission mission, int wave, long now)
     {
         var profile = MissionCatalog.Find(catalog, mission.MissionId);
+        int roomId = profile.WaveRoom(wave);
+        var room = profile.Rooms.Single(r => r.Id == roomId);
         int slot = 0;
         foreach (var group in profile.Definition.Waves[wave].Groups)
         {
@@ -158,7 +219,11 @@ internal sealed partial class PilotMissionStore
                 long id = checked(
                     MissionRules.FirstNpcId + mission.Id * MissionRules.NpcsPerMission + wave * MissionRules.MembersPerWave + slot
                 );
-                var p = new SpacePosition(mission.X + group.Range, mission.Y + slot * NpcSpawnRules.MemberSpacing, mission.Z);
+                var p = new SpacePosition(
+                    mission.X + room.Position.X + group.Range,
+                    mission.Y + room.Position.Y + slot * NpcSpawnRules.MemberSpacing,
+                    mission.Z + room.Position.Z
+                );
                 world.Add(
                     new WorldNpc
                     {
@@ -197,6 +262,10 @@ internal sealed partial class PilotMissionStore
                 slot++;
             }
         }
-        mission.Wave = wave;
+        var progress =
+            world.Set<SavedMissionRoom>().Find(mission.Id, roomId)
+            ?? world.Add(new SavedMissionRoom { MissionId = mission.Id, RoomId = roomId }).Entity;
+        progress.Wave = wave;
+        mission.Wave = Math.Max(mission.Wave, wave);
     }
 }

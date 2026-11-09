@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
@@ -37,7 +38,8 @@ internal sealed class FlightSession(
     IPilotGateTravel? gates = null,
     IHumanPresence? presence = null,
     IHumanPresenceLease? humanPresenceLease = null,
-    ICapsuleerPresentation? presentation = null
+    ICapsuleerPresentation? presentation = null,
+    IPilotMissions? missions = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -55,6 +57,7 @@ internal sealed class FlightSession(
     private ShipDirtState? _dirt;
     private bool _disconnecting;
     private bool _destroying;
+    private bool _accelerationGateWarp;
     private int _simulatedStamp = space.Stamp(clock);
     private readonly FlightTravel _travel = new();
 
@@ -318,7 +321,8 @@ internal sealed class FlightSession(
             return;
         }
         ApplyFlightProperties();
-        if (ModuleEffects.WarpBlocked && _navigation.WarpDestination is not null)
+        bool blocked = ModuleEffects.WarpBlocked || _accelerationGateWarp && ModuleEffects.IncomingTackle.Any(t => t.Module.Strength > 0);
+        if (blocked && _navigation.WarpDestination is not null)
         {
             _navigation.CancelAlignment();
             _navigation.Stop();
@@ -561,6 +565,7 @@ internal sealed class FlightSession(
     {
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
+        _accelerationGateWarp = false;
         if (_disconnecting)
         {
             tackle?.Disconnect(Pilot.PilotId, Pilot.ShipId);
@@ -866,14 +871,18 @@ internal sealed class FlightSession(
     // SubwayService completes the gate transition. JumpIn supplies the ship flash.
     private void ArrivalEffect(long shipId) => Effects.ArrivalEffect(shipId);
 
-    private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null)
+    private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null, bool accelerationGate = false)
     {
+        if (!double.IsFinite(range) || range is < 0 or > NavigationState.MaximumWarpRange)
+        {
+            return PilotCallResult.Unsupported;
+        }
         if (TravelFailure(CrimewatchTravel.Warp) is { } blocked)
         {
             return blocked;
         }
         RefreshTackle(true);
-        if (ModuleEffects.WarpBlocked)
+        if (ModuleEffects.WarpBlocked || accelerationGate && ModuleEffects.IncomingTackle.Any(t => t.Module.Strength > 0))
         {
             return new PilotCallResult.Failure("Warp disruption is stronger than your ship's warp core strength.");
         }
@@ -881,6 +890,32 @@ internal sealed class FlightSession(
         if (body is null && coordinates is null)
         {
             return PilotCallResult.Unsupported;
+        }
+        if (!accelerationGate && missions is not null)
+        {
+            try
+            {
+                var requested = coordinates ?? CelestialWarpPoint.Resolve(body!, Pilot.Position!);
+                var destination = missions.WarpDestination(Pilot.SystemId, Pilot.Position!, requested);
+                if (destination == requested)
+                {
+                    var landing = WarpCourse.LandingPoint(Pilot.ShipId, Pilot.Flight.ShipRadius, Pilot.Position!, requested, range);
+                    var checkedLanding = missions.WarpDestination(Pilot.SystemId, Pilot.Position!, landing);
+                    if (checkedLanding != landing)
+                    {
+                        destination = checkedLanding;
+                    }
+                }
+                if (destination != requested)
+                {
+                    coordinates = destination;
+                    range = 0;
+                }
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
         }
         if (
             !InBallpark
@@ -897,6 +932,7 @@ internal sealed class FlightSession(
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         var contact = CreateContact();
         ApplyCourse(contact);
+        _accelerationGateWarp = accelerationGate;
         // WarpLoop prepares the tunnel while aligning, then observes Destiny's positive
         // effect stamp to trigger the camera and acceleration sequence on the client.
         WarpEffect(Pilot.ShipId, true);
@@ -963,10 +999,28 @@ internal sealed class FlightSession(
             {
                 return _navigation.WarpOrder == (pointRetry.OrderId, pointRetry.Range) ? PilotCallResult.None : PilotCallResult.Unsupported;
             }
+            if (_travel.Gate is null && command is FlightCommand.ActivateAccelerationGate gateRetry)
+            {
+                return _navigation.WarpOrder == (gateRetry.GateId, 0d) ? PilotCallResult.None : PilotCallResult.Unsupported;
+            }
             return PilotCallResult.Unsupported;
         }
         switch (command)
         {
+            case FlightCommand.ActivateAccelerationGate gate when missions is not null:
+                try
+                {
+                    if (!CanTarget)
+                    {
+                        return new PilotCallResult.Failure("Wait until your ship can navigate before activating the gate.");
+                    }
+                    var destination = missions.Gate(Pilot.PilotId, gate.GateId);
+                    return StartWarp(gate.GateId, 0, destination.Destination, accelerationGate: true);
+                }
+                catch (InvalidDataException error)
+                {
+                    return new PilotCallResult.Failure(error.Message);
+                }
             case FlightCommand.WarpTo warp:
                 return StartWarp(warp.TargetId, warp.Range);
             case FlightCommand.WarpToPoint point:

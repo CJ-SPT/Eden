@@ -126,7 +126,14 @@ public sealed record MissionSite(
     SpacePosition Position,
     bool Started,
     IReadOnlyList<StaticSpaceObject> Objects
-);
+)
+{
+    public int RoomId { get; init; }
+    public SpacePosition Entrance { get; init; } = Position;
+    public IReadOnlyList<MissionGate> Gates { get; init; } = [];
+}
+
+public sealed record MissionGate(long Id, SpacePosition Position, float Radius, SpacePosition Destination, bool RequiresClear);
 
 public interface IPilotMissions
 {
@@ -136,6 +143,8 @@ public interface IPilotMissions
     MissionUpdate Act(long pilotId, long agentId, MissionAction action, long? offerId = null);
     IReadOnlyList<MissionSite> Sites(int systemId);
     void Arrive(int systemId, SpacePosition position);
+    MissionGate Gate(long pilotId, long gateId);
+    SpacePosition WarpDestination(int systemId, SpacePosition origin, SpacePosition destination);
 }
 
 public static class MissionRules

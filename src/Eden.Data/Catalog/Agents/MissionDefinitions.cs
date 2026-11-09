@@ -11,7 +11,11 @@ public sealed record MissionSpawnGroup(
     bool Required = true
 );
 
-public sealed record MissionWave(ImmutableArray<MissionSpawnGroup> Groups);
+public sealed record MissionWave(ImmutableArray<MissionSpawnGroup> Groups, int RoomId = 0);
+
+public sealed record MissionRoomDefinition(int RoomId, long EntryObjectId);
+
+public sealed record MissionGateDefinition(long FromObjectId, int DestinationRoomId, bool RequiresClear = false);
 
 public sealed record MissionDefinition(
     int MissionId,
@@ -21,6 +25,10 @@ public sealed record MissionDefinition(
     string Source,
     string SourceRevision,
     ImmutableArray<MissionWave> Waves
-);
+)
+{
+    public ImmutableArray<MissionRoomDefinition> Rooms { get; init; } = [];
+    public ImmutableArray<MissionGateDefinition> Gates { get; init; } = [];
+}
 
 public sealed record MissionContent(int Build, ImmutableArray<MissionDefinition> Missions);

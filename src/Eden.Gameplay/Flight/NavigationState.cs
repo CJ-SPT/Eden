@@ -4,6 +4,7 @@ namespace Eden.Gameplay.Flight;
 
 public sealed class NavigationState
 {
+    public const double MaximumWarpRange = 100_000;
     public SpacePosition LastHeading { get; private set; } = new(1, 0, 0);
     public SpacePosition? Direction { get; private set; }
     public SpacePosition Velocity { get; private set; } = new(0, 0, 0);
@@ -85,7 +86,7 @@ public sealed class NavigationState
     {
         if (
             !double.IsFinite(range)
-            || range is < 0 or > 100_000
+            || range is < 0 or > MaximumWarpRange
             || !double.IsFinite(anchor.X)
             || !double.IsFinite(anchor.Y)
             || !double.IsFinite(anchor.Z)
@@ -98,8 +99,7 @@ public sealed class NavigationState
             return false;
         }
         var toward = (anchor - origin).Unit;
-        double standOff = range + hull.ShipRadius + (shipId % 2 == 0 ? 1500 : 500);
-        var end = anchor - toward * standOff;
+        var end = WarpCourse.LandingPoint(shipId, hull.ShipRadius, origin, anchor, range);
         if (origin.DistanceTo(end) < 101_000)
         {
             return false;

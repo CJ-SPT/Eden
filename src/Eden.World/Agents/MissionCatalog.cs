@@ -20,11 +20,22 @@ internal sealed record MissionProfile(
     int CargoType,
     int CargoQuantity,
     double CargoVolume,
-    ImmutableArray<StaticSpaceObject> Objects
+    ImmutableArray<MissionRoomProfile> Rooms
 )
 {
+    internal int WaveRoom(int wave) => Definition.Waves[wave].RoomId == 0 ? Rooms[0].Id : Definition.Waves[wave].RoomId;
+
     internal MissionKind Kind => DungeonId.HasValue ? MissionKind.Combat : MissionKind.Courier;
 }
+
+internal sealed record MissionRoomProfile(
+    int Id,
+    SpacePosition Position,
+    ImmutableArray<StaticSpaceObject> Objects,
+    ImmutableArray<MissionRoomGate> Gates
+);
+
+internal sealed record MissionRoomGate(long ObjectId, int DestinationRoomId, bool RequiresClear);
 
 internal static class MissionCatalog
 {
@@ -75,51 +86,15 @@ internal static class MissionCatalog
             int? dungeonId = checked((int?)mission.KillMission?.DungeonID);
             int faction = 0;
             int corporation = 0;
-            List<StaticSpaceObject> objects = [];
+            ImmutableArray<MissionRoomProfile> rooms = [];
             if (dungeonId is int id)
             {
                 var dungeon = catalog.Require(CatalogData.Client.Dungeons, (long)id);
-                if (dungeon.Rooms is not { Count: 1 } || definition.Waves.IsDefaultOrEmpty)
-                {
-                    throw new InvalidDataException($"Mission {definition.MissionId} needs unsupported room handling.");
-                }
                 faction = checked((int)(dungeon.FactionID ?? 0));
                 corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
-                var room = dungeon.Rooms.Single().Value;
-                var entry = room.Objects!.Values.Single(o => o.ObjectID == dungeon.EntryObjectID);
-                var origin = Position(entry.Position!);
-                foreach (var item in room.Objects.Values.Where(o => o.TypeID.HasValue && o.Position is not null))
-                {
-                    var type = catalog.FittingType(item.TypeID!.Value);
-                    // NPC containers, gates and destructible structures need their own mechanics.
-                    // Keep inert scenery only; authored NPC groups are spawned separately.
-                    if (
-                        type is null
-                        || type.CategoryId is not (2 or 25)
-                        || type.GroupId == InvisibleBeaconGroup
-                        || item.ObjectID == dungeon.EntryObjectID
-                        || item.Entities is { Count: > 0 }
-                    )
-                    {
-                        continue;
-                    }
-                    objects.Add(
-                        new(
-                            item.ObjectID!.Value,
-                            type.Id,
-                            type.GroupId,
-                            type.CategoryId,
-                            corporation,
-                            Position(item.Position!) - origin,
-                            (float)(item.Radius ?? type.Radius ?? 0)
-                        )
-                        {
-                            IsGlobal = false,
-                            Solid = type.GroupId is not (CloudGroup or EnvironmentGroup),
-                        }
-                    );
-                }
+                rooms = Rooms(catalog, definition, dungeon, corporation);
             }
+
             int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? 0));
             int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? 0));
             double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
@@ -128,23 +103,121 @@ internal static class MissionCatalog
                 continue;
             }
             profiles.Add(
-                new(
-                    definition,
-                    name,
-                    nameId,
-                    briefingId,
-                    briefing,
-                    dungeonId,
-                    faction,
-                    corporation,
-                    cargoType,
-                    quantity,
-                    volume,
-                    objects.ToImmutableArray()
-                )
+                new(definition, name, nameId, briefingId, briefing, dungeonId, faction, corporation, cargoType, quantity, volume, rooms)
             );
         }
         return profiles.ToImmutableArray();
+    }
+
+    private static ImmutableArray<MissionRoomProfile> Rooms(
+        CatalogDbContext catalog,
+        MissionDefinition definition,
+        ClientDungeons dungeon,
+        int corporation
+    )
+    {
+        var source = dungeon.Rooms ?? throw new InvalidDataException("Mission dungeon has no rooms.");
+        var bindings = definition.Rooms.IsEmpty
+            ? new[]
+            {
+                new MissionRoomDefinition(
+                    int.Parse(source.Single().Key, System.Globalization.CultureInfo.InvariantCulture),
+                    dungeon.EntryObjectID!.Value
+                ),
+            }
+            : definition.Rooms.ToArray();
+        if (
+            bindings.Length != source.Count
+            || bindings.Select(r => r.RoomId).Distinct().Count() != bindings.Length
+            || bindings[0].EntryObjectId != dungeon.EntryObjectID
+            || definition.Waves.IsDefaultOrEmpty
+            || definition.Waves.Length * MissionRules.MembersPerWave > MissionRules.NpcsPerMission
+        )
+        {
+            throw new InvalidDataException("Mission room bindings or NPC identity budget are invalid.");
+        }
+        var catalogGates = dungeon.Connections?.Select(g => g.FromObjectID).ToHashSet() ?? [];
+        if (
+            dungeon.Connections?.Any(g =>
+                g.AllowedShipsList.HasValue || g.DisallowedFittedTypesList.HasValue || g.AllowedShipRaces is { Length: > 0 }
+            ) == true
+        )
+        {
+            throw new InvalidDataException("This mission needs unsupported catalog gate restrictions.");
+        }
+        if (!catalogGates.SetEquals(definition.Gates.Select(g => (long?)g.FromObjectId)))
+        {
+            throw new InvalidDataException("Every catalog gate needs an explicit destination binding.");
+        }
+        List<MissionRoomProfile> rooms = [];
+        for (int index = 0; index < bindings.Length; index++)
+        {
+            var binding = bindings[index];
+            var room = source[binding.RoomId.ToString(System.Globalization.CultureInfo.InvariantCulture)];
+            var entry = room.Objects!.Values.Single(o => o.ObjectID == binding.EntryObjectId);
+            var origin = Position(entry.Position!);
+            var offset = new SpacePosition(index * MissionGateRules.RoomSpacing, 0, 0);
+            List<StaticSpaceObject> objects = [];
+            foreach (var item in room.Objects.Values.Where(o => o.TypeID.HasValue && o.Position is not null))
+            {
+                var type = catalog.FittingType(item.TypeID!.Value);
+                bool gate = definition.Gates.Any(g => g.FromObjectId == item.ObjectID);
+                if (
+                    type is null
+                    || type.CategoryId is not (2 or 25)
+                    || type.GroupId == InvisibleBeaconGroup
+                    || item.ObjectID == binding.EntryObjectId
+                    || !gate && item.Entities is { Count: > 0 }
+                )
+                {
+                    continue;
+                }
+                if (type.GroupId == MissionGateRules.AccelerationGateGroup && !gate)
+                {
+                    throw new InvalidDataException("Unbound acceleration gate in mission room.");
+                }
+                objects.Add(
+                    new(
+                        item.ObjectID!.Value,
+                        type.Id,
+                        type.GroupId,
+                        type.CategoryId,
+                        corporation,
+                        offset + Position(item.Position!) - origin,
+                        (float)(item.Radius ?? type.Radius ?? 0)
+                    )
+                    {
+                        IsGlobal = false,
+                        Solid = !gate && type.GroupId is not (CloudGroup or EnvironmentGroup),
+                    }
+                );
+            }
+            var gates = definition
+                .Gates.Where(g => room.Objects.Values.Any(o => o.ObjectID == g.FromObjectId))
+                .Select(g => new MissionRoomGate(g.FromObjectId, g.DestinationRoomId, g.RequiresClear))
+                .ToImmutableArray();
+            if (
+                gates.Any(g =>
+                    !objects.Any(o => o.Id == g.ObjectId && o.GroupId == MissionGateRules.AccelerationGateGroup)
+                    || !bindings.Any(r => r.RoomId == g.DestinationRoomId)
+                )
+            )
+            {
+                throw new InvalidDataException(
+                    $"Mission {definition.MissionId}, room {binding.RoomId}: invalid gate source or destination."
+                );
+            }
+            rooms.Add(new(binding.RoomId, offset, objects.ToImmutableArray(), gates));
+        }
+        if (definition.Waves.Any(w => w.RoomId != 0 && !bindings.Any(r => r.RoomId == w.RoomId)))
+        {
+            throw new InvalidDataException("Mission wave refers to an unavailable room.");
+        }
+        if (rooms.Sum(r => r.Objects.Length) > MissionRules.NpcsPerMission)
+        {
+            throw new InvalidDataException("Mission objects exceed their reserved identity range.");
+        }
+        return rooms.ToImmutableArray();
     }
 
     private static SpacePosition Position(ClientAtomsParametersInputsItemDefaultValueObject position) =>

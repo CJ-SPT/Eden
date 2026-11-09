@@ -140,7 +140,7 @@ internal sealed class MissionFixture : IDisposable
             1000001,
             pilot.Account,
             [pilot],
-            p => new FlightSession(Db.Store, p, Clock, new(), Db.Objects),
+            p => new FlightSession(Db.Store, p, Clock, new(), Db.Objects, missions: Missions),
             42,
             SignedSettings.Empty
         );

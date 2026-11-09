@@ -38,6 +38,13 @@ public sealed class SavedMissionMember
     public bool Required { get; set; }
 }
 
+public sealed class SavedMissionRoom
+{
+    public long MissionId { get; set; }
+    public int RoomId { get; set; }
+    public int Wave { get; set; } = -1;
+}
+
 public sealed class SavedMissionProgress
 {
     public long PilotId { get; set; }

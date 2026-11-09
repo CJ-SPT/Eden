@@ -21,6 +21,8 @@ internal static class MissionSchema
             .HasForeignKey(m => m.MissionId)
             .OnDelete(DeleteBehavior.Cascade);
         model.Entity<SavedMissionMember>().HasIndex(m => new { m.MissionId, m.Wave });
+        model.Entity<SavedMissionRoom>().ToTable("WorldMissionRoom").HasKey(r => new { r.MissionId, r.RoomId });
+        model.Entity<SavedMissionRoom>().HasOne<SavedMission>().WithMany().HasForeignKey(r => r.MissionId).OnDelete(DeleteBehavior.Cascade);
         model
             .Entity<SavedMissionProgress>()
             .ToTable("WorldMissionProgress")
@@ -53,6 +55,9 @@ internal static class MissionSchema
                 NpcId INTEGER PRIMARY KEY, MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
                 Wave INTEGER NOT NULL, Trigger INTEGER NOT NULL, CompletesMission INTEGER NOT NULL, Required INTEGER NOT NULL);
             CREATE INDEX IF NOT EXISTS IX_WorldMissionMember_MissionId_Wave ON WorldMissionMember(MissionId,Wave);
+            CREATE TABLE IF NOT EXISTS WorldMissionRoom (
+                MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
+                RoomId INTEGER NOT NULL, Wave INTEGER NOT NULL, PRIMARY KEY(MissionId,RoomId));
             CREATE TABLE IF NOT EXISTS WorldMissionProgress (
                 PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, FactionId INTEGER NOT NULL,
                 Level INTEGER NOT NULL, Completed INTEGER NOT NULL, PRIMARY KEY(PilotId,FactionId,Level));

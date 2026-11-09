@@ -4,6 +4,15 @@ namespace Eden.Gameplay.Flight;
 
 public sealed class WarpCourse
 {
+    private const double EvenShipLandingOffset = 1500;
+    private const double OddShipLandingOffset = 500;
+
+    public static SpacePosition LandingPoint(long shipId, float shipRadius, SpacePosition origin, SpacePosition anchor, double range)
+    {
+        double standOff = range + shipRadius + (shipId % 2 == 0 ? EvenShipLandingOffset : OddShipLandingOffset);
+        return anchor - (anchor - origin).Unit * standOff;
+    }
+
     private readonly SpacePosition _origin;
     private readonly SpacePosition _direction;
     private readonly double _entrySpeed;

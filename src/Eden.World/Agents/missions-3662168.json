@@ -294,6 +294,300 @@
       ]
     },
     {
+      "missionId": 875,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=GuristaSpies1",
+      "sourceRevision": "2012-07-14 06:31 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16981
+              ],
+              "count": 4,
+              "range": 20000
+            },
+            {
+              "types": [
+                16981
+              ],
+              "count": 3,
+              "range": 60000
+            },
+            {
+              "types": [
+                16997
+              ],
+              "count": 1,
+              "range": 60000
+            }
+          ],
+          "roomId": 2710
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2711,
+          "entryObjectId": 53017
+        },
+        {
+          "roomId": 2710,
+          "entryObjectId": 53011
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53016,
+          "destinationRoomId": 2710
+        }
+      ]
+    },
+    {
+      "missionId": 2537,
+      "level": 4,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=Assault4gu",
+      "sourceRevision": "2017-10-16 08:49 UTC; completion clarification 2018-03-01 04:27 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24048,
+                24047
+              ],
+              "count": 2,
+              "range": 31000,
+              "required": false
+            },
+            {
+              "types": [
+                24147
+              ],
+              "count": 1,
+              "range": 31000,
+              "trigger": true,
+              "required": false
+            },
+            {
+              "types": [
+                16984,
+                16988,
+                24145
+              ],
+              "count": 3,
+              "range": 31000,
+              "required": false
+            },
+            {
+              "types": [
+                24096,
+                24095
+              ],
+              "count": 4,
+              "range": 85000,
+              "required": false
+            },
+            {
+              "types": [
+                24016,
+                24015
+              ],
+              "count": 3,
+              "range": 85000,
+              "required": false
+            }
+          ],
+          "roomId": 17284
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24016,
+                24014,
+                24001,
+                24018
+              ],
+              "count": 4,
+              "range": 120000,
+              "required": false
+            },
+            {
+              "types": [
+                24148,
+                24145,
+                24146,
+                24147
+              ],
+              "count": 4,
+              "range": 120000,
+              "required": false
+            }
+          ],
+          "roomId": 17284
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16985,
+                16983
+              ],
+              "count": 2,
+              "range": 60000
+            },
+            {
+              "types": [
+                24098,
+                24097
+              ],
+              "count": 2,
+              "range": 60000
+            },
+            {
+              "types": [
+                16984,
+                17005
+              ],
+              "count": 3,
+              "range": 60000
+            },
+            {
+              "types": [
+                24093,
+                24091,
+                24092,
+                24094
+              ],
+              "count": 2,
+              "range": 70000
+            },
+            {
+              "types": [
+                24148
+              ],
+              "count": 1,
+              "range": 70000,
+              "trigger": true,
+              "required": true
+            },
+            {
+              "types": [
+                17005,
+                24147,
+                24145
+              ],
+              "count": 4,
+              "range": 70000,
+              "required": true
+            },
+            {
+              "types": [
+                16983,
+                16985
+              ],
+              "count": 2,
+              "range": 110000
+            },
+            {
+              "types": [
+                23986,
+                23985
+              ],
+              "count": 3,
+              "range": 110000
+            },
+            {
+              "types": [
+                24015,
+                24014
+              ],
+              "count": 3,
+              "range": 110000
+            },
+            {
+              "types": [
+                24146,
+                17005,
+                24147,
+                24148
+              ],
+              "count": 2,
+              "range": 110000
+            }
+          ],
+          "roomId": 17285
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24087,
+                16991,
+                16995,
+                24088
+              ],
+              "count": 4,
+              "range": 40000
+            },
+            {
+              "types": [
+                24145,
+                24146,
+                24148
+              ],
+              "count": 4,
+              "range": 40000
+            }
+          ],
+          "roomId": 17285
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24087,
+                16991,
+                16995
+              ],
+              "count": 2,
+              "range": 40000
+            }
+          ],
+          "roomId": 17285
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17283,
+          "entryObjectId": 761873
+        },
+        {
+          "roomId": 17284,
+          "entryObjectId": 761876
+        },
+        {
+          "roomId": 17285,
+          "entryObjectId": 761945
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 761874,
+          "destinationRoomId": 17284
+        },
+        {
+          "fromObjectId": 761944,
+          "destinationRoomId": 17285
+        }
+      ]
+    },
+    {
       "missionId": 2912,
       "level": 1,
       "difficulty": 500,

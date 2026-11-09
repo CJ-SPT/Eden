@@ -2,6 +2,48 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Multi-room missions and acceleration gates — November 9, 2026
+
+Added saved, independently advancing mission rooms and native acceleration-gate travel. This supersedes the single-room admission boundary in the original mission record below. The supported pool now contains nine combat definitions, four courier definitions and four delivery storylines. Existing single-room missions retain their saved identities, NPCs, progress and reward quotes.
+
+### Content and gameplay
+
+| Added content | Level | Mission / dungeon | Rooms |
+| --- | --- | --- | --- |
+| The Guristas Spies | 1 | 875 / 213 | Empty entrance 2711, then combat room 2710 |
+| The Assault, Guristas | 4 | 2537 / 888 | Empty lobby 17283, combat rooms 17284 and 17285 |
+
+Geometry, gate types/radii, room entry beacons and NPC combat profiles come from build 3662168. The catalog connections identify only their source objects; `missions-3662168.json` therefore binds each gate explicitly to a destination room and its catalog entry beacon. Room ordering/destinations are authored bindings, not a recovered destination field. Eden places consecutive rooms 50,000 km apart on separate grids, preserving local geometry relative to each entry beacon. This spacing and axis are Eden placement policy; catalog editor coordinates and gate orientation are not presented as exact live topology. Gate objects with NPC anchor metadata remain visible; their encounter roster is spawned separately.
+
+The [Guristas Spies report](https://eve-survival.org/?wakka=GuristaSpies1), edited July 14, 2012, supplies eight frigates in its combat pocket. [The Assault report](https://eve-survival.org/wikka.php?wakka=Assault4gu), edited October 16, 2017, supplies its two combat rosters and reinforcements. The March 1, 2018 04:27 UTC completion clarification on that report supersedes its older group-three blitz advice: Eden requires the final room's initial enemies and its two reinforcement waves. The first combat room is optional. Variable reinforcement quantities use the report's upper bounds; a highest-bounty candidate is fixed as the trigger and the remaining alternatives exclude it. These deterministic choices are Eden reconstruction policy. The first room has 13 initial enemies and eight reinforcements; the final room has 24 initial enemies, eight reinforcements and two final cruisers. Trigger deaths advance only their own room, including when a later room has already started.
+
+The [EVE University acceleration-gate reference](https://wiki.eveuniversity.org/Acceleration_gate) supports the 2,500 m activation range, disruption rejection and ship/kill locks. Eden measures the range between surfaces, using the catalog gate radius and current ship radius. The admitted gates have no key or narrower ship-list requirement; Eden's default admission policy rejects capsules and capital ship groups. A typed room-clear lock exists for future authored bindings. Catalog gates with additional ship/race/fitting restrictions reject admission until implemented. Key consumption, keyed missions, restricted ship lists, branching content and structure-controlled reinforcement suppression remain unsupported. The Assault's optional structure/loot interactions, exact group aggro scripts and native gate orientation are not reconstructed.
+
+The [deadspace reference](https://wiki.eveuniversity.org/Deadspace) supports entry redirection and blocked internal warps. All ordinary point, object, bookmark and fleet warp commands share the flight-owner check: an external target inside an active mission pocket redirects to its entrance, and intra-complex warp attempts reject. Warp-out remains available. Pocket boundaries use the existing 250 km contact radius; this is Eden's finite-grid approximation. Gates use the existing aligned warp course and native warp effects rather than a teleport. Positive disruption also rejects a stabilized ship's gate activation and cancels a gate's alignment. Normal warp-core behavior remains owned by the existing tackle rules.
+
+World version 124 adds `WorldMissionRoom`, keyed by mission and catalog room ID. Arrival starts only that room once; waves and killed members survive reconnects, checkpoints and restart. Legacy single-room progress falls back to its existing `WorldMission.Wave` without recreating NPCs. Completed objectives retain gates, scenery and deadspace access until mission turn-in, quit or expiry; closing the mission removes its scenery and retires remaining mission NPCs through the existing owner. Wrecks keep their normal lifecycle. Mission-site caches depend on both mission and room rows, preserving warm reads without SQL or fitting work.
+
+### Native protocol evidence
+
+Inert disassembly of build-3662168 `code.ccp`, SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**, confirmed `eve/client/script/ui/services/menuSvcExtras/movementFunctions.pyj`, `RealActivateAccelerationGate`, calls `keeper.ActivateAccelerationGate(itemID)`. `violateSafetyTimer=1` belongs to the enclosing local `sessionMgr.PerformSessionChange` call, not the remote method. Valid activation returns Python None and queues existing Destiny `WarpTo` and warp-effect commands. Repeated activation of the same active course acknowledges without restarting it; malformed arguments, keywords, missing/wrong-system/distant gates and unavailable ships reject.
+
+Consulted [Carbon Destiny Ball.cpp at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ball.cpp), `IsWarpish`, `IsAligningForWarp`, `IsWarping` and `IsAlignedForWarp`, for alignment/effect-stamp semantics. Gate travel reuses Eden's existing implementation; no Destiny binary layout or Blue codec changed. No client was launched.
+
+### Automated validation
+
+Exact starting filter: `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionGateTests.GatedMissionKeepsEntranceEmptyAndStartsCombatOnlyInDestinationRoom`. It exposed the NPC-anchored gate exclusion; the corrected exact test passed. Further focused cases cover native scene publication and None/warp replies, repeated activation, wrong-system/distant/closed gates, capsule rejection, disruption before and during alignment with and without stabilization, independently advancing rooms, delayed earlier-room triggers, final-room completion, exactly-once rewards, checkpoint reopen, legacy world upgrade and warm read counters. Boundary tests verify that a stand-off landing inside a pocket redirects even when its requested anchor is outside. Development fixture/system/clock expectations were corrected. One overlapping development rebuild hit the already-running testhost's file lock and ran no tests; the final sequence below ran sequentially.
+
+Final tool restore, solution restore and solution build passed with zero warnings/errors; solution build took **5.10 seconds**. The combined filter `FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~Eden.Protocol.Tests.Fleets|FullyQualifiedName~Eden.Protocol.Tests.Bookmarks|FullyQualifiedName~TackleTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~CombatAnomaly|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~TypedCallResultTests` passed **475/475 tests in 152.79 seconds**, covering the final code. Both mission exporters reproduced their checked-in outputs exactly apart from platform newlines: **17 definitions, 185 types and 767 source records**. The Python catalog and formatting policy suites passed **8/8** and **9/9** cases in **0.757 seconds** combined. Formatting verification, the 140-column check, changed-file UTF-8/final-newline validation, documentation links and `git diff --check` passed. Policy plus formatting verification took **20.39 seconds**. No full .NET suite was requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native gate presentation, input and camera feel remain unverified.
+
+### Optional maintainer checks
+
+- Restart the updated server, accept The Guristas Spies (level 1), and activate the entrance gate; verify the gate model, warp camera and destination overview.
+- In The Assault (level 4), traverse both gates and return after docking/reconnecting; verify completed rooms retain their progress and final-room completion allows one reward payment.
+
 ## Mission-tracker refresh compatibility — November 9, 2026
 
 The maintainer supplied an accepted-mission conversation screenshot showing **"Invalid mission tracker request."** The earlier handler recognized only `GetMissionInfoItems(agentID)` while claiming the entire `missionTrackerMgr` service. Inert inspection of the pinned build-3662168 archive (SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**) established four native calls in `missions/client/missionObjectivesTracker.pyj`: `UpdateAllMissions(agentList)` takes one Python list, while `GetMissionInfoItems`, `GetAllMissionObjectives` and `IsInActiveDungeonID` each take one agent ID. The info-panel consumer enumerates all-objective replies, so None is not valid for that collection read.

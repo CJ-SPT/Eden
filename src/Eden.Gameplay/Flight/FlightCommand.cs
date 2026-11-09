@@ -16,6 +16,8 @@ public abstract record FlightCommand
 
     public sealed record WarpToPoint(long OrderId, SpacePosition Position, double Range) : FlightCommand;
 
+    public sealed record ActivateAccelerationGate(long GateId) : FlightCommand;
+
     public sealed record RefreshState : FlightCommand;
 
     public sealed record Heading(double X, double Y, double Z) : FlightCommand;

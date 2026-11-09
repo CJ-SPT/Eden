@@ -158,7 +158,6 @@ internal sealed class MissionHandler(
                     || BlueMarshal.Text(args[0]) != "dungeon"
                     || offer is not { Kind: MissionKind.Combat, State: MissionState.Accepted }
                     || offer.SystemId != context.Pilot.SystemId
-                    || offer.ObjectiveComplete
                     || context.Pilot.Position is null
                 )
                 {

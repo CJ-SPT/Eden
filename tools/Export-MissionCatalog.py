@@ -50,6 +50,50 @@ def export(catalog, output):
         [group('Pithi Arrogator', 6, 115000), group('Pithi Despoiler/Pithi Saboteur', 1, 115000, trigger=True)],
         [group('Pithi Imputor/Pithi Arrogator', 8, 100000), group('Pithi Saboteur/Pithi Despoiler', 1, 100000, trigger=True)],
         [group('Pithi Saboteur/Pithi Despoiler', 4, 100000), group('Pithi Plunderer', 1, 100000, completesMission=True)]])
+    combat(875, 1, 500, 'GuristaSpies1', '2012-07-14 06:31 UTC',
+           [[group('Pithi Arrogator', 4, 20000), group('Pithi Arrogator', 3, 60000), group('Pithi Invader', 1, 60000)]])
+    missions[-1]['rooms'] = [dict(roomId=2711, entryObjectId=53017), dict(roomId=2710, entryObjectId=53011)]
+    missions[-1]['gates'] = [dict(fromObjectId=53016, destinationRoomId=2710)]
+    missions[-1]['waves'][0]['roomId'] = 2710
+
+    # The dated report describes variable reinforcement quantities. Use its upper bounds.
+    # Select a highest-bounty battleship as the trigger deterministically, then bind that
+    # identity explicitly rather than treating every alternative as a separate trigger.
+    def trigger(names, count, distance, required=True):
+        roster = group(names, count, distance, required=required)
+        bounty_attribute = 481
+        ids = roster['types']
+        highest = max(ids, key=lambda tid: db.execute(
+            'SELECT Value FROM TypeAttribute WHERE ItemTypeId=? AND AttributeId=?', (tid, bounty_attribute)).fetchone()[0])
+        return [dict(types=[highest], count=1, range=distance, trigger=True, required=required),
+                dict(types=[tid for tid in ids if tid != highest], count=count-1, range=distance, required=required)]
+
+    combat(2537, 4, 1000, 'Assault4gu', '2017-10-16 08:49 UTC; completion clarification 2018-03-01 04:27 UTC', [
+        [group('Dire Pithi Wrecker/Dire Pithi Plunderer', 2, 31000, required=False),
+         *trigger('Pith Dismantler/Pith Obliterator/Pith Destroyer/Pith Eliminator', 4, 31000, required=False),
+         group('Dire Pithum Inferno/Dire Pithum Mortifier', 4, 85000, required=False),
+         group('Pithatis Assassin/Pithatis Assaulter', 3, 85000, required=False)],
+        [group('Pithatis Assassin/Pithatis Enforcer/Pithatis Executor/Pithatis Revolter', 4, 120000, required=False),
+         group('Pith Conquistador/Pith Eliminator/Pith Exterminator/Pith Destroyer', 4, 120000, required=False)],
+        [group('Dire Pithi Invader/Dire Pithi Infiltrator', 2, 60000),
+         group('Dire Pithum Abolisher/Dire Pithum Eraser', 2, 60000),
+         group('Pith Dismantler/Pith Extinguisher', 3, 60000),
+         group('Dire Pithum Annihilator/Dire Pithum Killer/Dire Pithum Murderer/Dire Pithum Nullifier', 2, 70000),
+         *trigger('Pith Extinguisher/Pith Destroyer/Pith Eliminator/Pith Conquistador', 5, 70000),
+         group('Dire Pithi Infiltrator/Dire Pithi Invader', 2, 110000),
+         group('Pithior Guerilla/Pithior Renegade', 3, 110000),
+         group('Pithatis Assaulter/Pithatis Enforcer', 3, 110000),
+         group('Pith Exterminator/Pith Extinguisher/Pith Destroyer/Pith Conquistador', 2, 110000)],
+        [group('Pithum Eraser/Pithum Inferno/Pithum Mortifier/Pithum Abolisher', 4, 40000),
+         group('Pith Eliminator/Pith Exterminator/Pith Conquistador', 4, 40000)],
+        [group('Pithum Eraser/Pithum Inferno/Pithum Mortifier', 2, 40000)]])
+    missions[-1]['rooms'] = [dict(roomId=17283, entryObjectId=761873), dict(roomId=17284, entryObjectId=761876),
+                             dict(roomId=17285, entryObjectId=761945)]
+    missions[-1]['gates'] = [dict(fromObjectId=761874, destinationRoomId=17284),
+                             dict(fromObjectId=761944, destinationRoomId=17285)]
+    for index, wave in enumerate(missions[-1]['waves']):
+        wave['roomId'] = 17284 if index < 2 else 17285
+
     for level, mid in enumerate([2912, 2913, 2914, 2915], 1):
         missions.append(dict(missionId=mid, level=level, difficulty=500, storyline=False,
                              source='build-3662168 client/missions; Eden courier offer policy', sourceRevision='3662168', waves=[]))
@@ -64,7 +108,7 @@ def export(catalog, output):
         if m['waves']:
             dungeon = json.loads(db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/dungeons' AND Key=?",
                                            (str(data['killMission']['dungeonID']),)).fetchone()[0])
-            if len(dungeon['rooms']) != 1 or dungeon['difficulty'] != m['level']:
+            if len(dungeon['rooms']) != len(m.get('rooms', [None])) or dungeon['difficulty'] != m['level']:
                 raise ValueError(f'Mission {m["missionId"]} needs unsupported room or level handling')
         elif not data.get('courierMission'):
             raise ValueError(f'Mission {m["missionId"]} is not a courier mission')
