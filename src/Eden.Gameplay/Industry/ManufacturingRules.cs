@@ -1,3 +1,6 @@
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Economy;
+
 namespace Eden.Gameplay.Industry;
 
 public sealed record ManufacturingMaterial(long? TypeId, long? Quantity);
@@ -9,27 +12,36 @@ public sealed record ManufacturingInputs(
     int InstalledJobs,
     IReadOnlyList<IndustryCharacterBonus> Bonuses,
     IReadOnlyList<ManufacturingSkillTimeBonus> SkillTimeBonuses,
-    IReadOnlyList<ManufacturingMaterial> Materials
+    IReadOnlyList<ManufacturingMaterial> Materials,
+    BlueprintResearch? Blueprint = null
 );
 
 public sealed record ManufacturingPlan(long DurationSeconds, IReadOnlyDictionary<int, int> Materials);
 
 public static class ManufacturingRules
 {
-    public static ManufacturingPlan Plan(ManufacturingRequest request, ManufacturingInputs inputs)
+    public static ManufacturingPlan Plan(IndustryRequest request, ManufacturingInputs inputs)
     {
         if (request.Runs <= 0)
         {
             throw new InvalidDataException("Choose an available blueprint and positive run count at this station.");
         }
         var bonuses = inputs.Bonuses;
-        int slots = checked(IndustryDefinitions.BaseManufacturingSlots + (int)bonuses.Where(b => b.Additive).Sum(b => b.Value));
+        int slots = checked(
+            IndustryDefinitions.BaseManufacturingSlots
+            + (int)bonuses.Where(b => b.Additive && b.Attribute == DogmaAttributeId.ManufactureSlotLimit).Sum(b => b.Value)
+        );
         if (inputs.InstalledJobs >= slots)
         {
             throw new InvalidDataException("Deliver or cancel an existing job to free a manufacturing slot.");
         }
-        double seconds = inputs.BaseSeconds * (double)request.Runs;
-        foreach (var bonus in bonuses.Where(b => !b.Additive))
+        var blueprint = inputs.Blueprint ?? new BlueprintResearch();
+        if (blueprint.Copy && request.Runs > blueprint.RunsRemaining)
+        {
+            throw new InvalidDataException("There are not enough blueprint copy runs remaining.");
+        }
+        double seconds = inputs.BaseSeconds * request.Runs * (1 - blueprint.TimeEfficiency / 100d);
+        foreach (var bonus in bonuses.Where(b => !b.Additive && b.Attribute == DogmaAttributeId.ManufactureTimeMultiplier))
         {
             seconds *= 1 + bonus.Value / 100;
         }
@@ -51,32 +63,17 @@ public static class ManufacturingRules
         {
             throw new InvalidDataException("The job exceeds the manufacturing run-length limit.");
         }
-        long duration = checked((long)Math.Round(seconds, IndustryDefinitions.ManufacturingTimePrecision, MidpointRounding.ToEven));
+        long duration = EconomicRules.ClientRound(seconds, IndustryDefinitions.ManufacturingTimePrecision);
         if (duration <= 0 || !double.IsFinite(request.QuotedSeconds) || request.QuotedSeconds != duration)
         {
             throw new InvalidDataException("Manufacturing time changed; reopen the blueprint to refresh the quote.");
         }
-        Dictionary<int, int> materials = [];
-        foreach (var material in inputs.Materials)
+        var materials = IndustryMaterials.Calculate(inputs.Materials, request.Runs, blueprint.MaterialEfficiency);
+        if (materials.Count == 0)
         {
-            if (
-                material.TypeId is not > 0 or > int.MaxValue
-                || material.Quantity is not > 0
-                || materials.ContainsKey((int)material.TypeId.Value)
-            )
-            {
-                throw new InvalidDataException("Invalid manufacturing material recipe.");
-            }
-            materials.Add((int)material.TypeId.Value, checked((int)(material.Quantity.Value * request.Runs)));
+            throw new InvalidDataException("Missing manufacturing materials.");
         }
-        if (
-            materials.Count == 0
-            || materials.Count != request.QuotedMaterials.Count
-            || materials.Any(m => request.QuotedMaterials.GetValueOrDefault(m.Key) != m.Value)
-        )
-        {
-            throw new InvalidDataException("Manufacturing materials changed; reopen the blueprint to refresh the quote.");
-        }
+        IndustryMaterials.CheckQuote(materials, request.QuotedMaterials);
         return new(duration, materials);
     }
 }

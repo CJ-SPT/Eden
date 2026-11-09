@@ -14,5 +14,6 @@ internal static class InventoryWireDefinitions
 {
     public const string OnlineEffectName = "online";
     public const int AssembledQuantity = -1;
+    public const int BlueprintCopyQuantity = -2;
     public const int InfiniteEffectDuration = -1;
 }

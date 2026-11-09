@@ -14,8 +14,14 @@ public sealed record InventoryItem(
     double Volume,
     bool Singleton = false,
     bool Online = false,
-    double CrystalDamage = 0
-);
+    double CrystalDamage = 0,
+    int BlueprintRuns = -1,
+    int MaterialEfficiency = 0,
+    int TimeEfficiency = 0
+)
+{
+    public bool BlueprintCopy => BlueprintRuns >= 0;
+}
 
 public sealed record InventoryChange(InventoryItem Item, InventoryItem? Previous);
 

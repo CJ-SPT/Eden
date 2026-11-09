@@ -70,10 +70,10 @@ internal sealed record ContractItemRow(ContractItem Item) : BlueModel
                 ["parentID"] = Item.ParentId,
                 ["flagID"] = Item.FlagId,
                 ["singleton"] = Item.Singleton,
-                ["copy"] = false,
-                ["licensedProductionRunsRemaining"] = -1,
-                ["materialLevel"] = 0,
-                ["productivityLevel"] = 0,
+                ["copy"] = Item.BlueprintRuns >= 0,
+                ["licensedProductionRunsRemaining"] = Item.BlueprintRuns,
+                ["materialLevel"] = Item.MaterialEfficiency,
+                ["productivityLevel"] = Item.TimeEfficiency,
                 ["damage"] = Item.Damage,
             }
         );

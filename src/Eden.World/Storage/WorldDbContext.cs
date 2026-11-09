@@ -19,6 +19,7 @@ using Eden.Data.World.Repair;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.World.Bookmarks;
@@ -353,6 +354,16 @@ public sealed partial class WorldDbContext(string path) : DbContext
                         "Runs > 0 AND OutputQuantity > 0 AND DurationSeconds > 0 AND EndTime > StartTime"
                     )
             );
+        model.Entity<SavedContractItem>().Property(i => i.BlueprintRuns).HasDefaultValue(-1);
+        model.Entity<SavedContractItem>().Property(i => i.MaterialEfficiency).HasDefaultValue(0);
+        model.Entity<SavedContractItem>().Property(i => i.TimeEfficiency).HasDefaultValue(0);
+        model.Entity<IndustryJob>().Property(j => j.Activity).HasDefaultValue(IndustryActivity.Manufacturing);
+        model.Entity<IndustryJob>().Property(j => j.LicensedRuns).HasDefaultValue(0);
+        model.Entity<IndustryJob>().Property(j => j.BlueprintCopy).HasDefaultValue(false);
+        model.Entity<IndustryJob>().Property(j => j.MaterialEfficiency).HasDefaultValue(0);
+        model.Entity<IndustryJob>().Property(j => j.TimeEfficiency).HasDefaultValue(0);
+        model.Entity<IndustryJob>().Property(j => j.OutputRuns).HasDefaultValue(0);
+        model.Entity<IndustryJob>().Property(j => j.Probability).HasDefaultValue(1d);
         model.Entity<IndustryJob>().HasOne<Pilot>().WithMany().HasForeignKey(j => j.PilotId);
         model.Entity<IndustryJob>().HasIndex(j => new { j.PilotId, j.Status });
         model.Entity<IndustryJob>().HasIndex(j => j.BlueprintId);
@@ -521,6 +532,9 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldAsteroid>().HasIndex(a => a.BeltId);
         model.Entity<OwnedItem>().ToTable("WorldItem", t => t.HasCheckConstraint("CK_Item_Quantity", "Quantity > 0"));
         model.Entity<OwnedItem>().Property(i => i.CrystalDamage).HasDefaultValue(0d);
+        model.Entity<OwnedItem>().Property(i => i.MaterialEfficiency).HasDefaultValue(0);
+        model.Entity<OwnedItem>().Property(i => i.TimeEfficiency).HasDefaultValue(0);
+        model.Entity<OwnedItem>().Property(i => i.BlueprintRuns).HasDefaultValue(-1);
         model.Entity<OwnedItem>().Property(i => i.Singleton).HasDefaultValue(false);
         model.Entity<OwnedItem>().Property(i => i.Online).HasDefaultValue(false);
         model.Entity<OwnedItem>().HasOne<InventoryOwner>().WithMany().HasForeignKey(i => i.OwnerId).OnDelete(DeleteBehavior.Restrict);

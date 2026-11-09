@@ -127,7 +127,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         }
         if (items.Any(i => PilotIndustryStore.IsInstalled(world, i.Id)))
         {
-            throw new InvalidDataException("Deliver or cancel the manufacturing job before moving its blueprint.");
+            throw new InvalidDataException("Deliver or cancel the industry job before moving its blueprint.");
         }
         if (sourceId == destinationId && destinationId == ship.StationId && storedShips.Length > 0)
         {
@@ -316,7 +316,10 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             item.VolumeOverride ?? Volume(catalog, item.TypeId, item.Singleton, type),
             item.Singleton,
             item.Online,
-            item.CrystalDamage
+            item.CrystalDamage,
+            item.BlueprintRuns,
+            item.MaterialEfficiency,
+            item.TimeEfficiency
         );
     }
 

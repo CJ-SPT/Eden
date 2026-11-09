@@ -123,7 +123,10 @@ public sealed record ContractItem(
     bool Singleton,
     double Damage,
     int GroupId,
-    int CategoryId
+    int CategoryId,
+    int BlueprintRuns = -1,
+    int MaterialEfficiency = 0,
+    int TimeEfficiency = 0
 );
 
 public sealed record ContractDetails(PersonalContract Contract, IReadOnlyList<ContractItem> Items, IReadOnlyList<ContractBid>? Bids = null);

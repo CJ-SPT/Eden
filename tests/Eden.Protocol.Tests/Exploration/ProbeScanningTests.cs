@@ -423,7 +423,7 @@ public sealed class ProbeScanningTests
         {
             f.Grant(type, amount);
         }
-        PilotIndustryStore industry = new(new(f.Db.Path), f.Clock);
+        PilotIndustryStore industry = new(new(f.Db.Path), f.Clock, new IndustryRandom());
         Assert.Contains(product, industry.ProductTypes());
         var installed = industry.Install(f.PilotId, new(blueprintId, blueprintType, (int)f.StationId, 1, product, seconds, materials));
         f.Clock.Milliseconds += installed.Job.DurationSeconds * 1000;

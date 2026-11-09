@@ -21,7 +21,7 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Corporations](protocol/corporations.md) | Creation, membership, administration, roles, wallets, ownership and shares. |
 | [Personal contracts](protocol/contracts.md) | Wizard compatibility, item exchange, courier contracts, auctions and bulk offers. |
 | [Inventory and ship ownership](protocol/inventory.md) | Stacks, personal holds, assembled ships, insurance, dirt and recovery hulls. |
-| [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, testing markets and loyalty balances. |
+| [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, science jobs, testing markets and loyalty balances. |
 | [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, [combat anomalies](protocol/combat.md#combat-anomaly-foundation-november-8-2026), NPC populations, [mining fleet corrections](protocol/combat.md#mining-fleet-warp-response-and-name-corrections-november-6-2026), [jamming and bracket cleanup](protocol/combat.md#npc-jamming-scan-cancellation-and-bracket-cleanup-november-6-2026), losses, wrecks and repairs. |
 | [Fitting and module families](protocol/fitting.md) | Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle. |
 | [Information modules and salvage](protocol/information.md) | [Probe scanning and combat signatures](protocol/information.md#probe-scanning-and-combat-signatures-november-9-2026), cargo/ship and mining scans, [directional scanning completion](protocol/information.md#directional-scanning-completion-november-8-2026) and [first-open range correction](protocol/information.md#directional-scanner-first-open-range-correction-november-8-2026), targeting, tractors and saved salvage. |
@@ -32,6 +32,8 @@ Historical native observations apply only to the recorded revision and actions. 
 | [Compatibility and route audits](protocol/compatibility.md) | RPC inventory, placeholder routes, localization settings and native rejection dialogs. |
 
 ## Record index
+
+- [Science integration on main, November 9, 2026](protocol/industry.md#science-integration-on-main-november-9-2026)
 
 - [Multifit item-creation capability, November 9, 2026](protocol/fitting.md#multifit-item-creation-capability-november-9-2026)
 
@@ -367,6 +369,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="inventory-refresh-during-capsule-adoption-november-2-2026"></a>[Inventory refresh during capsule adoption, November 2, 2026](protocol/inventory.md#inventory-refresh-during-capsule-adoption-november-2-2026)
 
 ### Mining, industry and markets
+
+- [Science jobs (November 8, 2026)](protocol/industry.md#science-jobs-november-8-2026)
 
 - [PLEX history and multibuy structure discovery (November 8, 2026)](protocol/industry.md#plex-history-and-multibuy-structure-discovery-november-8-2026)
 

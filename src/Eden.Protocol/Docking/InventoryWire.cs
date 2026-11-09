@@ -26,7 +26,9 @@ internal sealed record InventoryRow(
             item.Singleton
                 ? item.TypeId == CourierRules.PackageType
                     ? -CourierRules.VolumeUnits(item.Volume)
-                    : InventoryWireDefinitions.AssembledQuantity
+                    : item.BlueprintCopy
+                        ? InventoryWireDefinitions.BlueprintCopyQuantity
+                        : InventoryWireDefinitions.AssembledQuantity
                 : item.Quantity,
             item.GroupId,
             item.CategoryId

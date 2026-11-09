@@ -30,17 +30,24 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Industry;
 
 [Injectable]
-internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider clock) : IPilotIndustry
+internal sealed partial class PilotIndustryStore(WorldDatabase database, TimeProvider clock, IIndustryRandom random) : IPilotIndustry
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     private static Pilot Pilot(WorldDbContext world, long id) =>
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == id);
 
-    private static IndustryFacility ReadFacility(CatalogStationDefinition station) =>
-        new(station.Id, station.TypeId, station.OwnerId, station.SolarSystemId);
+    private static IndustryFacility ReadFacility(CatalogDbContext catalog, CatalogStationDefinition station) =>
+        new(
+            station.Id,
+            station.TypeId,
+            station.OwnerId,
+            station.SolarSystemId,
+            Manufacturing: HasService(catalog, station),
+            Laboratory: HasService(catalog, station, StationService.Laboratory)
+        );
 
-    private IndustryFacility PricedFacility(CatalogStationDefinition station)
+    private IndustryFacility PricedFacility(CatalogDbContext catalog, CatalogStationDefinition station)
     {
         using WorldDbContext world = new(database.Path);
         bool enabled = EconomicStore.Enabled(world);
@@ -50,7 +57,9 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             station.OwnerId,
             station.SolarSystemId,
             enabled ? (double)EconomicStore.Index(world, station.SolarSystemId) : 1,
-            enabled ? (double)EconomicRules.NpcFacilityTax : 0
+            enabled ? (double)EconomicRules.NpcFacilityTax : 0,
+            HasService(catalog, station),
+            HasService(catalog, station, StationService.Laboratory)
         );
     }
 
@@ -92,7 +101,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         var pilot = Pilot(world, pilotId);
         if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != stationId)
         {
-            throw new InvalidDataException("Use manufacturing from your current station while docked.");
+            throw new InvalidDataException("Use industry from your current station while docked.");
         }
         return Station(catalog, stationId, service);
     }
@@ -101,7 +110,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = CurrentStation(world, catalog, pilotId, stationId);
+        _ = CurrentStation(world, catalog, pilotId, stationId, null);
     }
 
     public void CheckAccess(long pilotId, int stationId)
@@ -119,7 +128,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         using WorldDbContext world = new(database.Path);
         _ = Pilot(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return PricedFacility(Station(catalog, stationId));
+        return PricedFacility(catalog, Station(catalog, stationId, null));
     }
 
     public IReadOnlyList<IndustryFacility> Facilities(long pilotId)
@@ -133,8 +142,8 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             .Definitions.Stations.Values.Where(s => catalog.Definitions.Systems[s.SolarSystemId].RegionId == regionId)
             .OrderBy(s => s.Id)
             .AsEnumerable()
-            .Where(s => HasService(catalog, s))
-            .Select(PricedFacility)
+            .Where(s => HasService(catalog, s) || HasService(catalog, s, StationService.Laboratory))
+            .Select(s => PricedFacility(catalog, s))
             .ToArray();
     }
 
@@ -180,6 +189,12 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             );
     }
 
+    public IReadOnlyList<int> ScienceProductCategories()
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return catalog.Definitions.Items.Values.Select(t => t.CategoryId).Distinct().Order().ToArray();
+    }
+
     public IReadOnlyList<int> ProductTypes()
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -221,13 +236,13 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         }
         var station =
             catalog.Definitions.FindStation(item.LocationId) ?? throw new InvalidDataException("The blueprint is not in a station hangar.");
-        var facility = ReadFacility(station);
+        var facility = ReadFacility(catalog, station);
         long? job = world
             .Set<IndustryJob>()
             .Where(j => j.BlueprintId == item.Id && j.Status == IndustryJobStatus.Installed)
             .Select(j => (long?)j.Id)
             .SingleOrDefault();
-        return new(inventory, facility, job);
+        return new(inventory, facility, job, item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns);
     }
 
     public IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, int? stationId = null)
@@ -268,7 +283,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = CurrentStation(world, catalog, pilotId, stationId);
+        _ = CurrentStation(world, catalog, pilotId, stationId, null);
         return world
             .Set<OwnedItem>()
             .Where(i => i.OwnerId == pilotId && i.LocationId == stationId && i.FlagId == (int)InventoryFlag.Hangar && !i.Singleton)
@@ -287,6 +302,40 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             var (skill, source, target, additive) in new[]
             {
                 (IndustrySkill.Industry, DogmaAttributeId.ManufacturingTimeBonus, DogmaAttributeId.ManufactureTimeMultiplier, false),
+                (IndustrySkill.Science, DogmaAttributeId.CopySpeedBonus, DogmaAttributeId.CopySpeedPercent, false),
+                (
+                    IndustrySkill.Research,
+                    DogmaAttributeId.BlueprintManufactureTimeBonus,
+                    DogmaAttributeId.ManufacturingTimeResearchSpeed,
+                    false
+                ),
+                (IndustrySkill.Metallurgy, DogmaAttributeId.MineralNeedResearchBonus, DogmaAttributeId.MineralNeedResearchSpeed, false),
+                (IndustrySkill.LaboratoryOperation, DogmaAttributeId.LaboratorySlotsBonus, DogmaAttributeId.MaximumLaboratorySlots, true),
+                (
+                    IndustrySkill.AdvancedLaboratoryOperation,
+                    DogmaAttributeId.LaboratorySlotsBonus,
+                    DogmaAttributeId.MaximumLaboratorySlots,
+                    true
+                ),
+                (IndustrySkill.AdvancedIndustry, DogmaAttributeId.AdvancedIndustryTimeBonus, DogmaAttributeId.CopySpeedPercent, false),
+                (
+                    IndustrySkill.AdvancedIndustry,
+                    DogmaAttributeId.AdvancedIndustryTimeBonus,
+                    DogmaAttributeId.ManufacturingTimeResearchSpeed,
+                    false
+                ),
+                (
+                    IndustrySkill.AdvancedIndustry,
+                    DogmaAttributeId.AdvancedIndustryTimeBonus,
+                    DogmaAttributeId.MineralNeedResearchSpeed,
+                    false
+                ),
+                (
+                    IndustrySkill.AdvancedIndustry,
+                    DogmaAttributeId.AdvancedIndustryTimeBonus,
+                    DogmaAttributeId.InventionResearchSpeed,
+                    false
+                ),
                 (
                     IndustrySkill.AdvancedIndustry,
                     DogmaAttributeId.AdvancedIndustryTimeBonus,
@@ -324,13 +373,13 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         return Bonuses(world, catalog, pilotId);
     }
 
-    private ManufacturingJob ReadJob(CatalogDbContext catalog, IndustryJob job) =>
+    private IndustryJobDetails ReadJob(CatalogDbContext catalog, IndustryJob job) =>
         new(
             job.Id,
             job.PilotId,
             job.BlueprintId,
             job.BlueprintTypeId,
-            ReadFacility(Station(catalog, job.StationId)),
+            ReadFacility(catalog, Station(catalog, job.StationId, null)),
             job.ProductTypeId,
             job.Runs,
             job.OutputQuantity,
@@ -339,10 +388,16 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             job.DurationSeconds,
             Active(job) && Now >= job.EndTime ? IndustryJobStatus.Ready : job.Status,
             job.CompletedAt,
-            job.CostCents
+            job.CostCents,
+            job.Activity,
+            job.LicensedRuns,
+            job.BlueprintCopy,
+            job.Probability,
+            job.Status == IndustryJobStatus.Delivered ? job.SuccessfulRuns ?? job.Runs : null,
+            job.OptionalTypeId
         );
 
-    public IReadOnlyList<ManufacturingJob> Jobs(long pilotId, bool includeCompleted)
+    public IReadOnlyList<IndustryJobDetails> Jobs(long pilotId, bool includeCompleted)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -356,7 +411,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             .ToArray();
     }
 
-    public ManufacturingJob Job(long pilotId, long jobId)
+    public IndustryJobDetails Job(long pilotId, long jobId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -365,10 +420,18 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
 
     private static IndustryJob OwnedJob(WorldDbContext world, long pilotId, long jobId) =>
         world.Set<IndustryJob>().SingleOrDefault(j => j.Id == jobId && j.PilotId == pilotId)
-        ?? throw new InvalidDataException("The manufacturing job is unavailable or belongs to another pilot.");
+        ?? throw new InvalidDataException("The industry job is unavailable or belongs to another pilot.");
 
-    public IndustryResult Install(long pilotId, ManufacturingRequest request)
+    public IndustryResult Install(long pilotId, IndustryRequest request)
     {
+        if (request.Activity != IndustryActivity.Manufacturing)
+        {
+            return InstallScience(pilotId, request);
+        }
+        if (request.LicensedRuns != 0)
+        {
+            throw new InvalidDataException("Manufacturing does not accept licensed copy runs.");
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -416,7 +479,11 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             request,
             new(
                 recipe.Time.Value,
-                world.Set<IndustryJob>().Count(j => j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed),
+                world
+                    .Set<IndustryJob>()
+                    .Count(j =>
+                        j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed && j.Activity == IndustryActivity.Manufacturing
+                    ),
                 Bonuses(world, catalog, pilotId),
                 (recipe.Skills ?? [])
                     .Select(skill => new ManufacturingSkillTimeBonus(
@@ -424,70 +491,15 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                         Level(world, catalog, pilotId, (int)skill.TypeID.Value)
                     ))
                     .ToArray(),
-                (recipe.Materials ?? []).Select(material => new ManufacturingMaterial(material.TypeID, material.Quantity)).ToArray()
+                (recipe.Materials ?? []).Select(material => new ManufacturingMaterial(material.TypeID, material.Quantity)).ToArray(),
+                new(item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns)
             )
         );
         long duration = calculation.DurationSeconds;
         var materials = calculation.Materials;
         List<InventoryChange> changes = [];
-        foreach (var material in materials)
-        {
-            var stacks = world
-                .Set<OwnedItem>()
-                .Where(i =>
-                    i.OwnerId == pilotId
-                    && i.LocationId == request.FacilityId
-                    && i.FlagId == (int)InventoryFlag.Hangar
-                    && i.TypeId == material.Key
-                    && !i.Singleton
-                )
-                .OrderBy(i => i.Id)
-                .ToArray();
-            if (stacks.Sum(i => (long)i.Quantity) < material.Value)
-            {
-                throw new InvalidDataException("There are not enough manufacturing materials in Item Hangar.");
-            }
-            int remaining = material.Value;
-            foreach (var stack in stacks)
-            {
-                if (remaining == 0)
-                {
-                    break;
-                }
-                var before = PilotInventoryStore.Read(catalog, stack);
-                int taken = Math.Min(stack.Quantity, remaining);
-                remaining -= taken;
-                stack.Quantity -= taken;
-                changes.Add(new(before with { Quantity = stack.Quantity }, before));
-                if (stack.Quantity == 0)
-                {
-                    world.Remove(stack);
-                }
-            }
-        }
-        InventoryItem? original = PilotInventoryStore.Read(catalog, item);
-        if (item.Quantity > 1)
-        {
-            item.Quantity--;
-            changes.Add(new(PilotInventoryStore.Read(catalog, item), original));
-            item = world
-                .Set<OwnedItem>()
-                .Add(
-                    new()
-                    {
-                        Id = InventoryPersistence.NextId(world),
-                        OwnerId = pilotId,
-                        TypeId = item.TypeId,
-                        LocationId = item.LocationId,
-                        FlagId = item.FlagId,
-                        Quantity = 1,
-                    }
-                )
-                .Entity;
-            original = null;
-        }
-        item.Singleton = true;
-        changes.Add(new(PilotInventoryStore.Read(catalog, item), original));
+        ConsumeMaterials(world, catalog, pilotId, request.FacilityId, materials, changes);
+        item = ReserveBlueprint(world, catalog, item, changes);
         long now = Now;
         var job = world
             .Set<IndustryJob>()
@@ -495,6 +507,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                 new()
                 {
                     PilotId = pilotId,
+                    BlueprintCopy = blueprint.RunsRemaining >= 0,
                     BlueprintId = item.Id,
                     BlueprintTypeId = item.TypeId,
                     StationId = request.FacilityId,
@@ -514,7 +527,11 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         {
             throw new InvalidDataException("Missing catalog industry security classification.");
         }
-        var charge = EconomicStore.Manufacturing(world, pilotId, station.SolarSystemId, materials, security ?? 0);
+        var baseMaterials = IndustryMaterials.Calculate(
+            (recipe.Materials ?? []).Select(m => new ManufacturingMaterial(m.TypeID, m.Quantity)).ToArray(),
+            request.Runs
+        );
+        var charge = EconomicStore.Manufacturing(world, pilotId, station.SolarSystemId, baseMaterials, security ?? 0);
         if (request.QuotedCharge is { } quoted && (quoted.CostCents != charge.CostCents || quoted.TaxCents != charge.TaxCents))
         {
             throw new InvalidDataException("Manufacturing price changed; reopen the blueprint to refresh the quote.");
@@ -541,7 +558,7 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var job = OwnedJob(world, pilotId, jobId);
-        var station = CurrentStation(world, catalog, pilotId, job.StationId);
+        var station = CurrentStation(world, catalog, pilotId, job.StationId, null);
         if (station.SolarSystemId != systemId)
         {
             throw new InvalidDataException("The job belongs to a different solar system.");
@@ -553,10 +570,14 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
         }
         if (!Active(job) || !cancel && Now < job.EndTime)
         {
-            throw new InvalidDataException("This manufacturing job cannot be completed yet.");
+            throw new InvalidDataException("This industry job cannot be completed yet.");
         }
         List<InventoryChange> changes = [];
-        if (!cancel)
+        if (!cancel && job.Activity != IndustryActivity.Manufacturing)
+        {
+            DeliverScience(world, catalog, job, changes);
+        }
+        else if (!cancel)
         {
             changes.Add(
                 InventoryPersistence.MergeOutput(
@@ -570,11 +591,26 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
                 )
             );
         }
+        var source = world.Set<OwnedItem>().Find(job.BlueprintId);
+        if (job.BlueprintCopy)
+        {
+            if (source is null || source.BlueprintRuns < job.Runs)
+            {
+                throw new InvalidDataException("The installed copy no longer has its reserved runs.");
+            }
+            source.BlueprintRuns -= job.Runs;
+        }
+        if (source is { BlueprintRuns: 0 })
+        {
+            var before = PilotInventoryStore.Read(catalog, source);
+            changes.Add(new(before with { Quantity = 0 }, before));
+            world.Remove(source);
+        }
         // Cancellation releases the blueprint and slot, but consumes the paid
         // materials. A completed job delivers once, even after reconnect/retry.
         job.Status = status;
         job.CompletedAt = Now;
-        if (!cancel)
+        if (!cancel && job.Activity == IndustryActivity.Manufacturing)
         {
             MarketProgressionStore.Claim(world, catalog, job);
             PilotTaskTrackingStore.Record(world, catalog, pilotId, job.CompletedAt.Value, TaskEvents.IndustryDelivered);
