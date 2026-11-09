@@ -203,7 +203,7 @@ internal sealed partial class LiveCombatRuntime
             .Set<PendingLocalRepair>()
             .Where(r => r.ShipId == pilot.ActiveShipId)
             .ToArray()
-            .Select(r => new LiveRepair(r.ModuleId, r.CompletesAt, r.Amount, r.Layer))
+            .Select(r => new LiveRepair(r.ModuleId, r.CompletesAt, r.Amount, r.Layer, r.StartedAt))
             .ToArray();
         LiveCombatShip result = new(
             pilotId,
@@ -232,7 +232,13 @@ internal sealed partial class LiveCombatRuntime
             attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
             Contributions(world, pilot.ActiveShipId),
             world.Set<SavedCrimewatch>().Find(pilotId)?.Timers().Npc ?? new CombatTimer()
-        );
+        )
+        {
+            LocalCooldowns = world
+                .Set<ModuleCooldown>()
+                .Where(cooldown => fitted.Select(item => item.Id).Contains(cooldown.ModuleId))
+                .ToDictionary(cooldown => cooldown.ModuleId, cooldown => cooldown.ReadyAt),
+        };
         _shipPilots[pilot.ActiveShipId] = pilotId;
         transaction.Commit();
         return result;
@@ -247,7 +253,7 @@ internal sealed partial class LiveCombatRuntime
         var energy = world.Set<ShipEnergy>().Find(ship.ShipId);
         var position = world.Positions.Find(ship.ShipId);
         var repairs = world.Set<PendingLocalRepair>().Where(r => r.ShipId == ship.ShipId).ToArray();
-        var ids = ship.Turrets.Keys.ToArray();
+        var ids = ship.Turrets.Keys.Concat(ship.LocalCooldowns.Keys).Distinct().ToArray();
         var charges = world.Set<OwnedItem>().Where(i => ids.Contains(i.LocationId)).ToDictionary(i => i.LocationId);
         var cooldowns = world.Set<ModuleCooldown>().Where(c => ids.Contains(c.ModuleId)).ToDictionary(c => c.ModuleId);
         var defense = ship.Health.Defense;
@@ -286,8 +292,9 @@ internal sealed partial class LiveCombatRuntime
                 ArmorDamage: health?.ArmorDamage,
                 StructureDamage: health?.StructureDamage
             ),
-            Repairs = repairs.Select(r => new LiveRepair(r.ModuleId, r.CompletesAt, r.Amount, r.Layer)).ToArray(),
+            Repairs = repairs.Select(r => new LiveRepair(r.ModuleId, r.CompletesAt, r.Amount, r.Layer, r.StartedAt)).ToArray(),
             Turrets = turrets,
+            LocalCooldowns = cooldowns.ToDictionary(pair => pair.Key, pair => pair.Value.ReadyAt),
             Contributions = contributions,
             NpcAggression = world.Set<SavedCrimewatch>().Find(ship.PilotId)?.Timers().Npc ?? ship.NpcAggression,
         };

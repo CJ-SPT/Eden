@@ -46,7 +46,11 @@ public sealed record MinerProgress(
     long ActiveTicks = 0,
     long DueTicks = 0,
     long ClockOffsetTicks = 0
-);
+)
+{
+    public CapsuleerDefenseState? Defense { get; init; }
+    public int LastMotionStamp { get; init; } = int.MinValue;
+}
 
 public sealed record MinerObservation(DockedPilot Pilot, MinerProgress Work, InventoryItem? Laser, string? WaitingReason)
 {

@@ -12,6 +12,7 @@ internal static class TrafficSchema
         identity.ToTable("WorldTrafficIdentity").HasKey(value => value.PilotId);
         // No cascading FK: a deleted pilot must not release a real character for reuse.
         identity.HasIndex(value => value.CharacterId).IsUnique();
+        model.Entity<SavedCapsuleerSupplies>().ToTable("WorldCapsuleerSupplies").HasKey(value => value.PilotId);
     }
 
     internal static void Upgrade(WorldDbContext world)
@@ -21,6 +22,7 @@ internal static class TrafficSchema
             CREATE TABLE IF NOT EXISTS WorldTrafficIdentity(
                 PilotId INTEGER PRIMARY KEY, CharacterId INTEGER NOT NULL UNIQUE,
                 KillId INTEGER NOT NULL, SnapshotId TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerSupplies(PilotId INTEGER PRIMARY KEY, ShipId INTEGER NOT NULL);
             """
         );
     }

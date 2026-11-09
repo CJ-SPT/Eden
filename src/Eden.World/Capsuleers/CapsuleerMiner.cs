@@ -37,7 +37,8 @@ internal sealed class CapsuleerMinerFactory(
     INpcElectronicWarfare warfare,
     IPilotTackle tackle,
     IPilotHealth health,
-    MarketChangeSignal marketSignal
+    MarketChangeSignal marketSignal,
+    CapsuleerDefense defense
 )
 {
     internal CapsuleerMiner Create(long pilotId) =>
@@ -56,7 +57,8 @@ internal sealed class CapsuleerMinerFactory(
             warfare,
             tackle,
             health,
-            marketSignal
+            marketSignal,
+            defense
         );
 }
 
@@ -75,7 +77,8 @@ internal sealed class CapsuleerMiner(
     INpcElectronicWarfare warfare,
     IPilotTackle tackle,
     IPilotHealth health,
-    MarketChangeSignal marketSignal
+    MarketChangeSignal marketSignal,
+    CapsuleerDefense defense
 )
 {
     private const int RetrySeconds = 60;
@@ -186,6 +189,14 @@ internal sealed class CapsuleerMiner(
         {
             RefreshTackle();
         }
+        var defended = defense.Advance(Pilot, _navigation, Work.Defense, Now, destinyStamp, _obstacles, escapeFirst: true);
+        _pilot = defended.Pilot;
+        _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
+        _work = Work with { Defense = defended.State, LastMotionStamp = defended.HoldsNavigation ? destinyStamp : Work.LastMotionStamp };
+        if (defended.Escape)
+        {
+            ObserveAggression(Pilot.ShipId);
+        }
         if (
             Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
             && Pilot.Position is not null
@@ -226,7 +237,10 @@ internal sealed class CapsuleerMiner(
             {
                 throw new InvalidDataException("Warp disruption interrupts the miner's alignment.");
             }
-            Step();
+            if (!defended.HoldsNavigation)
+            {
+                Step();
+            }
             var next = Commit(job);
             _resumeCount = resumes;
             return next;
@@ -302,11 +316,13 @@ internal sealed class CapsuleerMiner(
         var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
         if (
             _background
+            && Work.Defense is null
             && CapsuleerScheduleRules.WarpDeadline(Work.Navigation, Pilot.Flight, Work.ClockOffsetTicks, Work.ActiveTicks) is { } exit
         )
         {
             schedule = schedule with { DueTicks = exit };
         }
+        schedule = schedule with { DueTicks = CapsuleerDefenseRules.NextDeadline(Work.Defense, Now, Work.ActiveTicks, schedule.DueTicks) };
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
         return next;
@@ -381,10 +397,6 @@ internal sealed class CapsuleerMiner(
                 Load();
                 return;
             }
-        }
-        if (attackers.Length > 0 && Work.Activity != MinerActivity.Returning)
-        {
-            _work = Work with { Activity = MinerActivity.ReadyToReturn };
         }
     }
 
@@ -506,6 +518,12 @@ internal sealed class CapsuleerMiner(
         {
             throw new InvalidDataException("Waiting for a replacement mining ship.");
         }
+        CapsuleerSupplyStore.Ensure(
+            _operation.World,
+            _operation.Catalog,
+            pilotId,
+            _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!.FounderShipId
+        );
         var aboard = PilotInventoryStore.List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId);
         var ore = aboard.Where(i => i.CategoryId == AsteroidDefinitions.Category && ShipHoldRules.IsHold(i.FlagId)).ToArray();
         if (ore.Length > 0)
@@ -589,6 +607,11 @@ internal sealed class CapsuleerMiner(
 
     private void Move()
     {
+        if (Work.LastMotionStamp == Work.Stamp)
+        {
+            return;
+        }
+        _work = Work with { LastMotionStamp = Work.Stamp };
         bool wasWarping = _navigation.Warp is not null;
         var tick = _navigation.Advance(
             Pilot.ShipId,

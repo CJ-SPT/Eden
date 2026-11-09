@@ -187,6 +187,16 @@ internal sealed class PilotCombatStore(
         {
             return resident;
         }
+        if (
+            playerTarget is not null
+            && LiveCombatRuntime
+                .Find(database.Path)
+                ?.FirePilot(pilotId, moduleId, playerTarget, velocity, now, roll, activation, crystalRoll, banked, overloaded, damageEvents)
+                is { } residentPilot
+        )
+        {
+            return residentPilot;
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);

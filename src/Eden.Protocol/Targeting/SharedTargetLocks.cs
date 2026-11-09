@@ -1,9 +1,10 @@
+using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 
 namespace Eden.Protocol.Targeting;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class SharedTargetLocks
+internal sealed class SharedTargetLocks : IPilotTargetLocks
 {
     private readonly Lock _gate = new();
     private readonly HashSet<(long Ship, long Target)> _locks = [];

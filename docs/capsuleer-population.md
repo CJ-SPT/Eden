@@ -20,13 +20,42 @@ Selection prefers the route's region and security band, then the same security b
 
 Every selected hull must be published and admitted by build 3662168's existing support policy. A complete fit must reproduce every fitted module, rig, subsystem and loaded charge at its recorded slot. Unsupported subsystems and other equipment reject their entire record. Normal fitting rules check skills, slots, hardpoints, CPU, power, calibration, module limits and ammunition compatibility. Required skills and supported fitting/navigation skills are granted at level V. Every module must remain legally online; rigs apply their normal fitted effects. No equipment is substituted or omitted.
 
-Imported travelers receive no starter ore or recorded cargo, drones, implants, corporations or alliances. Fitted passive effects alter ordinary ship statistics. Travelers retain existing travel and retreat behavior; they do not activate weapons or other combat equipment. True capitals cannot use routes entering high security, and supercapitals are excluded. Existing build support restrictions can narrow this pool further.
+Imported travelers receive no recorded cargo, drones, implants, corporations or alliances. Supported fitted equipment retains its normal statistics. Travelers now defend themselves with that equipment and receive the finite starter supplies described below. True capitals cannot use routes entering high security, and supercapitals are excluded. Existing build support restrictions can narrow this pool further.
 
 Schema 121 saves each imported pilot's source character, kill and snapshot identity. Untouched generated Badger traffic can convert once while docked and undamaged, preserving the pilot and ship IDs, wallet, owned cargo, route and saved timing. Customized names, altered equipment and lost ships are retained. A smaller hull is deferred when existing cargo cannot fit. Grants, conversion and source reservation share the owning transaction. Miners and traffic density remain unchanged.
 
 See the [implementation and automated evidence](protocol/capsuleers.md#zkill-backed-traffic--november-8-2026).
 
 ## Galaxy-wide station and gate traffic
+
+### Self-defense and finite supplies
+
+Simulated pilots respond to committed attacks, including misses, offensive launches, tackle and electronic warfare.
+Targeting alone does not provoke them. Combat ships engage on their current grid. Miners and transports escape first
+and use offensive defenses while warp disrupted. An active tackler has priority, followed by the most recent attacker
+and stable ship identity. They stop when the attacking ship leaves or is lost; they do not follow gates or attack its capsule.
+
+Defense uses actual usable fitted turrets, launchers, mobile combat drones, tackle, electronic and capacitor warfare,
+propulsion, local repairs, hardeners, boosters, emergency defenses and local targeting/tracking support. Ordinary locks,
+range, jamming, legality, timers, capacitor, cooldowns, ammunition, damage and loss settlement apply. Shared target locks
+and native module contacts keep observers coherent. Unsupported or unpaid actions are rejected by their existing owners.
+
+Local repairs begin below 80% of their layer; boosters below 30% capacitor; emergency defenses below 40% of the selected
+tank layer. Defense and escape precede optional offensive support. Combat ships retreat below 35% effective health,
+below 75% structure, or after exhausting usable damage sources. Offensive repeats stop on retreat. Drones return as
+individual owned items, with at most ten seconds of waiting before an available escape takes priority.
+
+At creation, or an existing original ship's next dock, one durable grant provides up to five magazines of loaded consumable
+combat charges and one legal homogeneous flight of supported T1 mobile combat drones. Available cargo, bay, bandwidth
+and control limits bound grants. Existing cargo and drones remain owned and are preserved. No subsequent restocking or
+replacement ships are granted. Losses, abandoned drones and charge consumption remain real. Ordinary restart behavior
+clears sustained bonuses; saved paid deadlines prevent another charge before a new cycle is due.
+
+Peaceful reads, ordinary navigation, turret/drone combat, standard local repair cycles and sustained local-module renewal
+use resident state. Initial activations, ammunition loading, missile operations and remote module operations reuse their
+established transaction owners. Fitting profiles are cached per pilot and invalidated by the actual fitting dependencies.
+The [defense validation record](protocol/capsuleers.md#simulated-pilot-retaliation--november-9-2026) records complete-frame
+database counts, timings and checkpoint costs. Automated evidence does not establish native rendering or gameplay feel.
 
 On the first human visit, Eden looks for real stations and usable reciprocal gates in the build-3662168 catalog. Routes connect real stations in one system or across reciprocal gates. Stationless transit systems can carry through-travelers. Stationless dead ends stay quiet. All security bands use the same traffic policy. Isolated systems need at least two usable stations for local traffic. Gate-free systems with no station pair stay quiet.
 
@@ -66,7 +95,7 @@ A watched reciprocal gate pair introduces at most four durable visitors with sta
 
 Established travelers continue on the shared human play clock through unobserved systems. Background alignment, analytic warp, approach, docking and gate-transfer deadlines retain the same navigation and ownership checks. Observed systems use ordinary flight samples. Empty worlds pause the shared clock. A witnessed departure completes once. Tackle, retreat, loss, cargo and equipment retain their normal effects.
 
-Locals wait 135–165 seconds at stations. Visitors wait 615–645 seconds. First departures use the busy/quiet gate cadence to stagger the four visitors across successive intervals. The first arrival includes the actual station-to-gate flight. Waiting and navigation progress survive restarts.
+Locals wait 135â€“165 seconds at stations. Visitors wait 615â€“645 seconds. First departures use the busy/quiet gate cadence to stagger the four visitors across successive intervals. The first arrival includes the actual station-to-gate flight. Waiting and navigation progress survive restarts.
 
 Journey metadata lives in the existing version-125 hauler checkpoint payload. Existing pilots finish their current route to a safe dock before selecting a new destination. A roster's paused legacy travelers resume on system activation. Previously misassigned locals return to their community before beginning local trips. Legacy paused arrivals preserve their remaining delay when enrolled into continuous travel. Provisioning policy version 4 refreshes visited-system eligibility while retaining roster slots and assets.
 

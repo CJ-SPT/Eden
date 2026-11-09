@@ -11,6 +11,29 @@ internal sealed partial class LiveCombatRuntime
 {
     internal static void ProjectShip(WorldDbContext world, LiveCombatShip before, LiveCombatShip after)
     {
+        foreach (var (module, ready) in after.LocalCooldowns)
+        {
+            if (before.LocalCooldowns.GetValueOrDefault(module) != ready)
+            {
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldWeaponCooldown(ModuleId,ReadyAt,Kind) VALUES({module},{ready},{(int)ModuleCooldownKind.Cycle})
+                    ON CONFLICT(ModuleId) DO UPDATE SET ReadyAt=excluded.ReadyAt,Kind=excluded.Kind
+                    """
+                );
+            }
+        }
+        foreach (var repair in after.Repairs.Where(repair => !before.Repairs.Contains(repair)))
+        {
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldArmorRepair(ModuleId,ShipId,StartedAt,CompletesAt,Amount,Layer)
+                VALUES({repair.ModuleId},{after.ShipId},{repair.StartedAt},{repair.CompletesAt},{repair.Amount},{(int)repair.Layer})
+                ON CONFLICT(ModuleId) DO UPDATE SET ShipId=excluded.ShipId,StartedAt=excluded.StartedAt,
+                    CompletesAt=excluded.CompletesAt,Amount=excluded.Amount,Layer=excluded.Layer
+                """
+            );
+        }
         if (before.NpcAggression != after.NpcAggression && after.NpcAggression is { } npcTimer)
         {
             CrimewatchPersistence.Npc(world, after.PilotId, after.SystemId, npcTimer.ActiveUntil);

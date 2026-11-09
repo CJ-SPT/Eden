@@ -145,23 +145,8 @@ internal sealed partial class LiveCombatRuntime
         long now
     )
     {
-        if (!_droneAttackers.TryGetValue(ship.ShipId, out var attackers))
-        {
-            attackers = Loading(() =>
-            {
-                using WorldDbContext world = new(database.Path);
-                return world
-                    .Set<SavedPilotHostility>()
-                    .Where(h => h.TargetShipId == ship.ShipId)
-                    .AsEnumerable()
-                    .Select(h => new DronePilotHostility(h.SourceShipId, h.TargetShipId, h.LastAttackAt, h.ExpiresAt))
-                    .ToArray();
-            });
-            _droneAttackers[ship.ShipId] = attackers;
-        }
         foreach (
-            var attack in attackers
-                .Concat(_droneHostilities.Values.Where(h => h.TargetShipId == ship.ShipId))
+            var attack in PlayerAttacks(ship.ShipId, now)
                 .Where(h => h.LastAttackAt > commanded && h.ExpiresAt > now)
                 .DistinctBy(h => h.SourceShipId)
         )
@@ -177,6 +162,30 @@ internal sealed partial class LiveCombatRuntime
                 yield return attack.SourceShipId;
             }
         }
+    }
+
+    private readonly Dictionary<long, Dictionary<long, DronePilotHostility>> _residentAttackers = [];
+
+    private IEnumerable<DronePilotHostility> PlayerAttacks(long shipId, long now)
+    {
+        if (!_droneAttackers.TryGetValue(shipId, out var attackers))
+        {
+            attackers = Loading(() =>
+            {
+                using WorldDbContext world = new(database.Path);
+                return world
+                    .Set<SavedPilotHostility>()
+                    .Where(h => h.TargetShipId == shipId && h.ExpiresAt > now)
+                    .AsEnumerable()
+                    .Select(h => new DronePilotHostility(h.SourceShipId, h.TargetShipId, h.LastAttackAt, h.ExpiresAt))
+                    .ToArray();
+            });
+            _droneAttackers[shipId] = attackers;
+        }
+        return attackers
+            .Concat(_residentAttackers.TryGetValue(shipId, out var pending) ? pending.Values : [])
+            .GroupBy(attack => attack.SourceShipId)
+            .Select(group => group.MaxBy(attack => attack.LastAttackAt)!);
     }
 
     private void RecordDroneAttack(DronePlayer source, DronePlayer victim, int system, AggressionDecision decision, long now, long end)
@@ -211,6 +220,12 @@ internal sealed partial class LiveCombatRuntime
             Math.Max(prior?.LastAttackAt ?? 0, now),
             Math.Max(prior?.ExpiresAt ?? 0, checked(end + CrimewatchRules.PvpDuration.Ticks))
         );
+        if (!_residentAttackers.TryGetValue(victim.ShipId, out var attackers))
+        {
+            attackers = [];
+            _residentAttackers[victim.ShipId] = attackers;
+        }
+        attackers[source.ShipId] = _droneHostilities[key];
     }
 
     internal CrimewatchSnapshot DroneCrimewatch(long pilot, int system, CrimewatchSnapshot snapshot)
@@ -314,6 +329,7 @@ internal sealed partial class LiveCombatRuntime
         _droneTimers.Clear();
         _droneEngagements.Clear();
         _droneHostilities.Clear();
+        _residentAttackers.Clear();
         ClearDronePlayers();
     }
 }

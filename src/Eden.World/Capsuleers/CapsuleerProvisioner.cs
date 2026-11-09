@@ -354,6 +354,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             PilotFittingStore.SetOnline(world, catalog, pilot, ship, module, true, now);
         }
         CapsuleerPopulationStore.AddAgent(world, new(pilot, site.SystemId, career, ship, module, cents, slot));
+        CapsuleerSupplyStore.Ensure(world, catalog, pilot, ship);
         long elapsed =
             LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ElapsedTicks ?? world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
         var action = CapsuleerAction.Prepare;

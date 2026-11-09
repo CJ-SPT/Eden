@@ -3,7 +3,9 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Docking;
 
 namespace Eden.Protocol.Flight;
@@ -90,7 +92,8 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                 observation.Laser,
                 observation.Work.TargetId,
                 observation.Work.DueStamp,
-                observation.Work.CycleSeconds
+                observation.Work.CycleSeconds,
+                Defense: observation.Work.Defense
             )
         );
 
@@ -104,7 +107,8 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                 DepartureGate: observation.Work.Activity == HaulerActivity.Jumping ? observation.Work.TargetId : null,
                 Arriving: observation.Work.Stamp < observation.Work.ArrivalUntil,
                 GateArrival: observation.Work is { ArrivalGateId: long gate, ArrivalAt: long arrived } ? new(gate, arrived) : null,
-                DepartureAt: observation.Work.DepartureAt
+                DepartureAt: observation.Work.DepartureAt,
+                Defense: observation.Work.Defense
             )
         );
 
@@ -135,7 +139,8 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
         long? DepartureGate = null,
         bool Arriving = false,
         GateArrivalContact? GateArrival = null,
-        long? DepartureAt = null
+        long? DepartureAt = null,
+        CapsuleerDefenseState? Defense = null
     );
 
     private sealed class PilotScene(SharedSpace space, TimeProvider clock)
@@ -211,6 +216,21 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                 {
                     _mining = null;
                 }
+                long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+                var cycles =
+                    observation
+                        .Defense?.Cycles.Where(cycle =>
+                            cycle.Effect != DogmaEffect.Online
+                            && (
+                                cycle.ControlSchedule is not null ? cycle.ControlSchedule.ExpiresAt > now
+                                : cycle.SuppressionSchedule is not null ? cycle.SuppressionSchedule.ExpiresAt > now
+                                : cycle.ReadyAt > now
+                            )
+                        )
+                        .ToArray()
+                    ?? [];
+                double Duration(CapsuleerModuleCycle cycle) => (cycle.ReadyAt - cycle.StartedAt) / (double)TimeSpan.TicksPerMillisecond;
+                var activeModules = cycles.Select(cycle => new FittedSpaceModule(cycle.ModuleId, cycle.TypeId, cycle.FlagId));
                 var contact = new ShipContact(
                     PilotContact.From(pilot),
                     nav.Velocity,
@@ -224,13 +244,81 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                     nav.FollowTarget?.Id ?? 0,
                     DepartureGate: observation.DepartureGate,
                     Arriving: observation.Arriving,
-                    Modules: laser is null ? [] : [new(laser.Id, laser.TypeId, laser.FlagId)],
+                    Modules: activeModules
+                        .Concat(laser is null ? [] : new FittedSpaceModule[] { new(laser.Id, laser.TypeId, laser.FlagId) })
+                        .DistinctBy(module => module.ItemId)
+                        .ToArray(),
                     Mining: _mining is null ? [] : [_mining],
                     Health: observation.Health,
                     FollowMode: nav.FollowMode,
                     Stamp: stamp,
                     GateArrival: observation.GateArrival,
-                    DepartureAt: observation.DepartureAt
+                    DepartureAt: observation.DepartureAt,
+                    Weapons: cycles
+                        .Where(cycle => cycle.Effect is DogmaEffect.LaserFired or DogmaEffect.ProjectileFired)
+                        .Select(cycle => new WeaponContact(
+                            cycle.ModuleId,
+                            cycle.TypeId,
+                            cycle.ChargeTypeId,
+                            cycle.TargetId,
+                            cycle.StartedAt,
+                            Duration(cycle),
+                            cycle.Effect == DogmaEffect.LaserFired ? "effects.Laser" : "effects.ProjectileFired"
+                        ))
+                        .ToArray(),
+                    ShieldBoosts: cycles
+                        .Where(cycle => cycle.Effect is DogmaEffect.ShieldBoosting or DogmaEffect.AncillaryShieldBoosting)
+                        .Select(cycle => new ShieldBoostContact(cycle.ModuleId, cycle.TypeId, cycle.StartedAt, Duration(cycle)))
+                        .ToArray(),
+                    LocalRepairs: cycles
+                        .Where(cycle =>
+                            cycle.Effect is DogmaEffect.ArmorRepair or DogmaEffect.AncillaryArmorRepair or DogmaEffect.StructureRepair
+                        )
+                        .Select(cycle => new LocalRepairContact(
+                            cycle.ModuleId,
+                            cycle.TypeId,
+                            cycle.StartedAt,
+                            Duration(cycle),
+                            cycle.Effect == DogmaEffect.StructureRepair ? RepairLayer.Hull : RepairLayer.Armor
+                        ))
+                        .ToArray(),
+                    Hardeners: cycles
+                        .Where(cycle => cycle.Hardener is not null)
+                        .Select(cycle => new HardenerContact(cycle.Hardener!, cycle.StartedAt))
+                        .ToArray(),
+                    Propulsion: cycles.FirstOrDefault(cycle => cycle.Propulsion is not null) is { } speed
+                        ? new(speed.Propulsion!, speed.StartedAt)
+                        : null,
+                    Tackle: cycles
+                        .Where(cycle => cycle.Tackle is not null && cycle.Effect != DogmaEffect.WarpCoreStabilizer)
+                        .Select(cycle => new TackleContact(cycle.Tackle!, cycle.TargetId, cycle.StartedAt))
+                        .ToArray(),
+                    ElectronicWarfare: cycles
+                        .SelectMany(cycle => cycle.ElectronicWarfare)
+                        .Select(effect => new ElectronicWarfareSpaceContact(effect.Module, effect.Target.Id, effect.StartedAt))
+                        .ToArray(),
+                    CapacitorEffects: cycles.Where(cycle => cycle.Capacitor is not null).Select(cycle => cycle.Capacitor!).ToArray(),
+                    Support: cycles
+                        .Where(cycle =>
+                            cycle.Effect
+                                is DogmaEffect.SensorBooster
+                                    or DogmaEffect.TrackingComputer
+                                    or DogmaEffect.MissileGuidanceComputer
+                                    or DogmaEffect.OmnidirectionalTrackingLink
+                        )
+                        .Select(cycle => new SupportContact(
+                            new(cycle.ModuleId, cycle.TypeId, cycle.Effect, Duration(cycle), 0),
+                            cycle.StartedAt
+                        ))
+                        .ToArray(),
+                    SignatureSuppressions: cycles
+                        .Where(cycle => cycle.SignatureSuppression is not null)
+                        .Select(cycle => new SignatureSuppressionContact(cycle.SignatureSuppression!, cycle.SuppressionSchedule!))
+                        .ToArray(),
+                    AssaultDamageControls: cycles
+                        .Where(cycle => cycle.AssaultDamageControl is not null)
+                        .Select(cycle => new AssaultDamageControlContact(cycle.AssaultDamageControl!, cycle.ControlSchedule!))
+                        .ToArray()
                 );
                 long id = pilot.ShipId;
                 if (contact.AlignTo is { } end && _previous?.AlignTo != end)
