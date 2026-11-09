@@ -23,14 +23,12 @@ internal sealed partial class PilotInformationStore
 {
     public IReadOnlyList<DirectionalScanContact> Directional(long pilotId, double angle, double range, SpacePosition direction, long now)
     {
+        range = InformationRules.DirectionalRange(range, InformationRules.MaximumDirectionalRange);
         _ = InformationRules.InCone(SpacePosition.Zero, SpacePosition.Zero, direction, angle, range);
         var live = LiveWorld.Find(database.Path);
         using var ownership = live?.Enter();
         var observer = live?.Reads?.DirectionalObserver(pilotId, () => LoadObserver(pilotId)) ?? LoadObserver(pilotId);
-        if (range > observer.MaximumRange)
-        {
-            throw new InvalidDataException("The requested scan exceeds this ship's directional range.");
-        }
+        range = InformationRules.DirectionalRange(range, observer.MaximumRange);
         var contacts =
             live?.Reads?.DirectionalContacts(observer.SystemId, () => LoadDirectional(observer.SystemId))
             ?? LoadDirectional(observer.SystemId);

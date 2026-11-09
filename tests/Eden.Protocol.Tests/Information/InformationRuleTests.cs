@@ -5,6 +5,26 @@ namespace Eden.Protocol.Tests.Information;
 
 public sealed class InformationRuleTests
 {
+    [Theory]
+    [InlineData(0, 500, 0)]
+    [InlineData(100, 500, 100)]
+    [InlineData(500, 500, 500)]
+    [InlineData(501, 500, 500)]
+    [InlineData(double.MaxValue, 500, 500)]
+    [InlineData(double.MaxValue, double.MaxValue, InformationRules.MaximumDirectionalRange)]
+    public void DirectionalRangeCapsFiniteRequestsWithoutIncreasingShortScans(double requested, double maximum, double expected) =>
+        Assert.Equal(expected, InformationRules.DirectionalRange(requested, maximum));
+
+    [Theory]
+    [InlineData(-1, 500)]
+    [InlineData(double.NaN, 500)]
+    [InlineData(double.PositiveInfinity, 500)]
+    [InlineData(500, -1)]
+    [InlineData(500, double.NaN)]
+    [InlineData(500, double.PositiveInfinity)]
+    public void DirectionalRangeRejectsInvalidRequestsAndShipLimits(double requested, double maximum) =>
+        Assert.Throws<InvalidDataException>(() => InformationRules.DirectionalRange(requested, maximum));
+
     [Fact]
     public void DirectionalConeIncludesExactEdgesAndRejectsInvalidRequests()
     {

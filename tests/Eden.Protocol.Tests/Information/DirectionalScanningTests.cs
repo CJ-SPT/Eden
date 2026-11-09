@@ -26,6 +26,35 @@ public sealed partial class InformationTests
 {
     private static object?[] Cone(double angle = Math.Tau, double range = 2_000_000, double x = 1) => [angle, range, x, 0d, 0d];
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DirectionalFirstOpenClientRangeIsCappedToTheShipLimit(bool resident)
+    {
+        using Fixture f = Prepare();
+        Space(f);
+        var origin = f.Db.Store.FindPilot(1000001)!.Position!;
+        long target = Target(f);
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
+        using var source = Client(f, 1000001);
+        using var scope = f.Db.Services.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<DirectionalScanHandler>();
+        // Build 3662168 GetScanRange defaults to AU * GetMaxRangeAU in metres,
+        // then GetScanRangeInMeters multiplies that value by 1000 once more.
+        const double metresPerKilometre = 1000;
+        double allowed = f.Fitting.ShipAttributes(f.PilotId)[DogmaAttributeId.MaxDirectionalScanRange];
+        double clientDefaultRange = allowed * metresPerKilometre;
+        var request = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(Cone(Math.PI / 2, clientDefaultRange))));
+        f.Db.Store.SetPosition(target, origin + new SpacePosition(allowed, 0, 0));
+        var success = Assert.IsType<PilotCallResult.Success>(handler.Call(source, "@systemScan", "ConeScan", request));
+        var contacts = Assert.IsType<DirectionalScanReply>(success.Reply).Contacts;
+        Assert.Contains(contacts, contact => contact.Id == target);
+        f.Db.Store.SetPosition(target, origin + new SpacePosition(allowed + 1, 0, 0));
+        f.Clock.Milliseconds += (long)InformationRules.DirectionalScanCooldown.TotalMilliseconds;
+        success = Assert.IsType<PilotCallResult.Success>(handler.Call(source, "@systemScan", "ConeScan", request));
+        Assert.DoesNotContain(Assert.IsType<DirectionalScanReply>(success.Reply).Contacts, contact => contact.Id == target);
+    }
+
     [Fact]
     public void DirectionalNativeBindingResolvesOffGridNamesWithoutCoordinatesAndExpiresWithLocation()
     {
@@ -341,7 +370,7 @@ public sealed partial class InformationTests
                 """
             );
         }
-        Assert.Throws<InvalidDataException>(() => store.Directional(f.PilotId, Math.Tau, 501, new(1, 0, 0), f.Clock.Now));
+        Assert.Empty(store.Directional(f.PilotId, Math.Tau, 501, new(1, 0, 0), f.Clock.Now));
         Assert.Empty(store.Directional(f.PilotId, Math.Tau, 500, new(1, 0, 0), f.Clock.Now));
     }
 

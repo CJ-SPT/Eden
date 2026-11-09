@@ -105,6 +105,18 @@ public static class InformationRules
         return module;
     }
 
+    public static double DirectionalRange(double requested, double shipMaximum)
+    {
+        if (!double.IsFinite(requested) || requested < 0 || !double.IsFinite(shipMaximum) || shipMaximum < 0)
+        {
+            throw new InvalidDataException("Invalid directional scan range.");
+        }
+        // Build 3662168's unset dir_scanrange default is already in metres, but
+        // GetScanRangeInMeters multiplies it by 1000 again. Cap oversized requests
+        // without allowing that client default to expand authoritative visibility.
+        return Math.Min(requested, Math.Min(shipMaximum, MaximumDirectionalRange));
+    }
+
     public static bool InCone(SpacePosition origin, SpacePosition position, SpacePosition direction, double angle, double range)
     {
         double length = direction.DistanceTo(SpacePosition.Zero);

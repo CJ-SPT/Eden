@@ -82,3 +82,21 @@ Final filter: `FullyQualifiedName~Eden.Protocol.Tests.Information`. The broader 
 Live acceptance: **Not performed; agent client testing is disabled.**
 
 Optional maintainer checks: open Alt+D, compare narrow and full scans against a named off-grid ship, then repeat during warp and after changing systems. Confirm the name appears and off-grid distance remains unavailable.
+
+## Directional scanner first-open range correction, November 8, 2026
+
+The maintainer reported that the native scanner still displayed **Invalid directional scan cone.**, with a screenshot after the previous completion checkpoint. That observation supersedes any implication that the earlier automated checks established a usable first-open client flow.
+
+Hash-verified build **3662168** (`code.ccp` SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**) explains the failure. In `directionalScanUtil.pyj`, `GetScanRange` reads `dir_scanrange` with default `const.AU * GetMaxRangeAU()`, already a metre value. `GetScanRangeInMeters` multiplies it by **1000** again, because the saved setting otherwise uses kilometres. With an unset setting, the resulting first-open request is therefore **1000 times the allowed range**. The stock `DirectionalScannerPalette.ApplyAttributes` can scan immediately on opening. The prior synthetic tests supplied valid ranges and missed this native fallback. Inert inspection also reconfirmed `GetMaxRangeM`, `GetMaxRangeKM`, `ConvertKmToAu` and `ConvertAuToKm`; no client code was executed and no settings or client installation was changed.
+
+Typed Gameplay range rules now cap every finite, nonnegative request at the lesser of the ship limit and Eden's global directional limit, before cone geometry is evaluated. The world operation applies that rule before validation and again with its authoritative fitted ship limit. A huge client value can no longer cause this rejection or reveal a contact beyond legal range. Shorter requested ranges are retained. Negative and nonfinite requests, invalid angles and invalid directions remain rejected. This corrects first-open compatibility without interpreting oversized requests as a request for privileged visibility.
+
+The regression sends the pinned first-open range through Blue encode/decode and the native handler, checks an off-grid target exactly at the ship maximum, then checks one metre beyond it after the next cooldown boundary. It runs against both database and resident reads. It failed against the original implementation and passed after the correction. Pure rules cover short/equal/oversized requests, the global ceiling, huge finite values and invalid request/ship limits. The existing catalog-change test now verifies that oversized scans are capped when a hull limit changes.
+
+Gameplay reference: [EVE University directional scanning](https://wiki.eveuniversity.org/Directional_scanning), including finite scan radius and cone selection. This correction changes no Blue codec, transport or Destiny simulation behavior; the previously recorded Carbon revision remains the reference for the unchanged movement owner.
+
+Automated validation: **96 affected .NET cases passed in 30.69 s** using `FullyQualifiedName~Eden.Protocol.Tests.Information|FullyQualifiedName~Eden.Protocol.Tests.Exploration.CombatAnomalyTests`. Tool and solution restore, solution build, both Python policy suites (**8 + 9 cases**, **0.860 + 0.027 s**), formatting and **358 local documentation links** passed. The exact development filter was `FullyQualifiedName=Eden.Protocol.Tests.Information.InformationTests.DirectionalFirstOpenClientRangeIsCappedToTheShipLimit`; both database/resident cases passed in **6.52 s** after reproducing the pre-fix rejection. Full .NET regression testing was not requested.
+
+Live acceptance: **Not performed; agent client testing is disabled.** The maintainer's attached rejection screenshot is failure evidence for the previous revision, not acceptance of this fix.
+
+Optional maintainer check: after updating/restarting the server, reopen Alt+D using the same client profile and verify that first-open scanning and subsequent range changes show results without the rejection dialog.
