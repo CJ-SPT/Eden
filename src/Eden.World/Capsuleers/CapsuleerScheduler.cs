@@ -1,5 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -33,6 +34,7 @@ internal sealed partial class CapsuleerScheduler(
     private readonly HashSet<int> _visited = [];
     private readonly HashSet<long> _legacyTravelers = [];
     private long _presentationRevision;
+    private CapsuleerBatch? _lastPresentation;
     private long _settledTicks;
     private int _destinyStamp;
     private CapsuleerRuntimeSummary _diagnostics = CapsuleerRuntimeSummary.Empty;
@@ -327,7 +329,8 @@ internal sealed partial class CapsuleerScheduler(
                         return next;
                     },
                     clock,
-                    pilots
+                    pilots,
+                    useCanonicalQueue: true
                 );
                 Reconcile(activity);
                 if (turn.OldestDueTicks is null)
@@ -402,6 +405,7 @@ internal sealed partial class CapsuleerScheduler(
                     if (!_running.Contains(pilot) && legacy.Read()!.Work.Activity != HaulerActivity.Jumping)
                     {
                         Current[pilot] = legacy.Resume(Current[pilot], activity.ElapsedTicks);
+                        _queue.Publish(Current[pilot]);
                     }
                     _travelers.Add(pilot);
                     _legacyTravelers.Remove(pilot);
@@ -472,12 +476,12 @@ internal sealed partial class CapsuleerScheduler(
                 _haulers[pilot] = haulers.Create(pilot);
             }
         }
-        _nextRunning = _running;
-        _running = running;
-        foreach (long pilot in _running)
+        foreach (long pilot in running.Except(_running))
         {
             _queue.Publish(Current[pilot]);
         }
+        _nextRunning = _running;
+        _running = running;
     }
 
     private void Settle(long throughTicks)
@@ -505,6 +509,7 @@ internal sealed partial class CapsuleerScheduler(
         lock (synchronization.Gate)
         {
             action();
+            using var reconciliation = SessionLatency.Measure(SessionLatencyPhase.TrafficReconcile);
             Load();
             var activity = presence.Read();
             Reconcile(activity);
@@ -558,11 +563,32 @@ internal sealed partial class CapsuleerScheduler(
                 _pendingHaulers.Values.ToArray()
             )
             {
-                Revision = checked(++_presentationRevision),
+                Revision = _presentationRevision,
                 Systems = _systems.Observed(),
             };
             _pendingMiners.Clear();
             _pendingHaulers.Clear();
+            // Health reads retain exact recharge and expiry. Reuse only equal visible snapshots.
+            if (
+                _lastPresentation is { } previous
+                && previous.Miners.SequenceEqual(batch.Miners)
+                && previous.Haulers.SequenceEqual(batch.Haulers)
+                && previous
+                    .Systems.Select(s => (s.SystemId, s.Mode, s.Generation))
+                    .SequenceEqual(batch.Systems.Select(s => (s.SystemId, s.Mode, s.Generation)))
+            )
+            {
+                if (previous.Systems.SequenceEqual(batch.Systems))
+                {
+                    return previous;
+                }
+                batch = batch with { Revision = previous.Revision };
+            }
+            else
+            {
+                batch = batch with { Revision = checked(++_presentationRevision) };
+            }
+            _lastPresentation = batch;
             return batch;
         }
     }

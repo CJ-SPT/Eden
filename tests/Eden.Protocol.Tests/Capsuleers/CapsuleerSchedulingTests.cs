@@ -7,6 +7,51 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed class CapsuleerSchedulingTests(ITestOutputHelper output)
 {
     [Fact]
+    public void CanonicalQueuePreservesOrderingAndWithdrawsCompletedTravelersWithoutRebuildingCandidates()
+    {
+        const int Population = 1804;
+        long Measure(bool canonical)
+        {
+            CapsuleerJobQueue queue = new();
+            queue.Restore(Enumerable.Range(1, Population).Select(id => new CapsuleerJob(id, 0, 0, 0, CapsuleerAction.Arrival)));
+            HashSet<long> running = Enumerable.Range(1, Population).Select(id => (long)id).ToHashSet();
+            long allocated = GC.GetAllocatedBytesForCurrentThread();
+            for (int turn = 0; turn < 20; turn++)
+            {
+                var result = queue.Run(0, job => job.Next(100, CapsuleerAction.Arrival), new TestClock(), running, canonical);
+                Assert.Equal(CapsuleerJobQueue.ActionsPerTurn, result.Completed);
+            }
+            return GC.GetAllocatedBytesForCurrentThread() - allocated;
+        }
+        _ = Measure(true);
+        long scoped = Measure(false);
+        long canonical = Measure(true);
+        output.WriteLine($"Due queue allocations scoped/canonical: {scoped}/{canonical} bytes.");
+        Assert.True(canonical < scoped / 2);
+        CapsuleerJobQueue queue = new();
+        queue.Restore([new(1, 0, 0, 0, CapsuleerAction.GateTransfer), new(2, 0, 0, 0, CapsuleerAction.Arrival)]);
+        HashSet<long> pilots = [1, 2];
+        Assert.Throws<IOException>(() => queue.Run(0, _ => throw new IOException(), new TestClock(), pilots, true));
+        List<long> order = [];
+        queue.Run(
+            0,
+            job =>
+            {
+                order.Add(job.PilotId);
+                pilots.Remove(job.PilotId);
+                return job.Next(1, CapsuleerAction.Arrival);
+            },
+            new TestClock(),
+            pilots,
+            true
+        );
+        Assert.Equal(new long[] { 1, 2 }, order);
+        Assert.Equal(0, queue.Run(1, _ => throw new InvalidOperationException(), new TestClock()).Completed);
+        Assert.True(queue.Publish(new(1, 1, 1, 1, CapsuleerAction.Arrival)));
+        Assert.Equal(1, queue.Run(1, job => job.Next(2, CapsuleerAction.Arrival), new TestClock()).Completed);
+    }
+
+    [Fact]
     public void RoleDeadlinesPreserveRemainingWorkAndDockedRetriesSleepUntilDue()
     {
         long elapsed = TimeSpan.FromMilliseconds(12345).Ticks;

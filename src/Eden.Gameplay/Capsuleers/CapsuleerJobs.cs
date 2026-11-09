@@ -92,7 +92,8 @@ public sealed class CapsuleerJobQueue
         long throughTicks,
         Func<CapsuleerJob, CapsuleerJob> execute,
         TimeProvider clock,
-        IReadOnlySet<long>? pilots = null
+        IReadOnlySet<long>? pilots = null,
+        bool useCanonicalQueue = false
     )
     {
         ArgumentOutOfRangeException.ThrowIfNegative(throughTicks);
@@ -102,10 +103,12 @@ public sealed class CapsuleerJobQueue
         {
             return new(0, _jobs.Count, null, false);
         }
-        // A scoped barrier selects its relevant jobs once, preserving their deadline ordering.
-        var candidates = pilots is null
-            ? _queue
-            : new SortedSet<CapsuleerJob>(pilots.Where(_jobs.ContainsKey).Select(p => _jobs[p]), _queue.Comparer);
+        // The scheduler maintains exact active membership for canonical turns.
+        // Other scoped callers select their candidates without changing queue membership.
+        var candidates =
+            pilots is null || useCanonicalQueue
+                ? _queue
+                : new SortedSet<CapsuleerJob>(pilots.Where(_jobs.ContainsKey).Select(p => _jobs[p]), _queue.Comparer);
         while (candidates.Min is { } job && job.DueTicks <= throughTicks && completed < ActionsPerTurn)
         {
             if (completed > 0 && clock.GetElapsedTime(started) >= ExecutionBudget)
@@ -126,7 +129,14 @@ public sealed class CapsuleerJobQueue
             _queue.Remove(job);
             candidates.Remove(job);
             _jobs[job.PilotId] = next;
-            Enqueue(next);
+            if (useCanonicalQueue && pilots is not null && !pilots.Contains(next.PilotId))
+            {
+                _jobs.Remove(next.PilotId);
+            }
+            else
+            {
+                Enqueue(next);
+            }
             // A witnessed transfer can withdraw its pilot from this turn when
             // the destination is empty. Its next canonical job stays dormant.
             if (pilots is null || pilots.Contains(next.PilotId))

@@ -4,4 +4,5 @@ namespace Eden.Infrastructure.Operations;
 public interface IWorldSynchronization
 {
     object Gate { get; }
+    IDisposable Enter(string operation);
 }

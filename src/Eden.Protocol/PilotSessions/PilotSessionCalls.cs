@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Diagnostics;
@@ -26,10 +25,9 @@ internal sealed class PilotSessionCalls(
     ICapsuleerPresentation? presentation = null
 )
 {
-    private const int SlowCallMilliseconds = 250;
     private bool _initialStateSent;
 
-    public async Task ProcessAsync(object? incoming)
+    public async Task ProcessAsync(object? incoming, long? received = null)
     {
         using var operation = operations?.Begin();
         var packet = IncomingMachoPacket.Read(incoming);
@@ -62,30 +60,45 @@ internal sealed class PilotSessionCalls(
         string description = DescribeCall(service, method, call.Arguments);
         report($"Call {description}.");
         using var performance = SessionPerformance.Begin($"call {description}", diagnostics?.Trace ?? report);
-        long started = Stopwatch.GetTimestamp();
+        using var latency = new SessionLatency(
+            $"call {description}",
+            diagnostics?.Warning ?? report,
+            diagnostics?.Trace ?? report,
+            received
+        );
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
         PilotCallResult result = PilotCallResult.None;
-        TimeSpan dispatchTime = default;
         void Dispatch()
         {
-            presentation?.Refresh();
-            updates.ApplyPlayerDamage(context);
+            using (SessionLatency.Measure(SessionLatencyPhase.TrafficRefresh))
+            {
+                presentation?.Refresh();
+            }
+            using (SessionLatency.Measure(SessionLatencyPhase.PendingDamage))
+            {
+                updates.ApplyPlayerDamage(context);
+            }
+            using (SessionLatency.Measure(SessionLatencyPhase.Handler))
             using (SessionPerformance.Begin("dispatch", diagnostics?.Trace ?? report))
             {
                 result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
             }
-            dispatchTime = Stopwatch.GetElapsedTime(started);
             if (!selected && context.Selected)
             {
+                using var entryLatency = SessionLatency.Measure(SessionLatencyPhase.Entry);
                 using var entering = SessionPerformance.Begin("enter", diagnostics?.Trace ?? report);
                 updates.Enter(context);
             }
+            using (SessionLatency.Measure(SessionLatencyPhase.Updates))
             using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
             {
                 updates.Advance(context);
             }
-            presentation?.Refresh();
+            using (SessionLatency.Measure(SessionLatencyPhase.TrafficRefresh))
+            {
+                presentation?.Refresh();
+            }
         }
         if (handoff is not null && context.Selected)
         {
@@ -95,14 +108,7 @@ internal sealed class PilotSessionCalls(
         {
             Dispatch();
         }
-        var elapsed = Stopwatch.GetElapsedTime(started);
-        if (elapsed.TotalMilliseconds >= SlowCallMilliseconds)
-        {
-            (diagnostics?.Warning ?? report)(
-                $"Slow call {description}: {elapsed.TotalMilliseconds:F0} ms before reply; "
-                    + $"{dispatchTime.TotalMilliseconds:F0} ms dispatch, {(elapsed - dispatchTime).TotalMilliseconds:F0} ms updates."
-            );
-        }
+        using var outputLatency = SessionLatency.Measure(SessionLatencyPhase.Output);
         using var outputPerformance = SessionPerformance.Begin("output", diagnostics?.Trace ?? report);
         // A timer-driven loss can happen while rejecting an unrelated RPC.
         // Its durable capsule transition still has to reach the client.
@@ -140,6 +146,7 @@ internal sealed class PilotSessionCalls(
             // exception stream. Named errors retain their client-specific handling,
             // including inventory's smaller-quantity retry for cargo capacity.
             await output.WriteAsync(packet.UserError(userError));
+            latency.ReplyWritten();
             await output.FlushFlightUpdatesAsync();
             await output.FlushNotificationsAsync();
             return;
@@ -147,6 +154,7 @@ internal sealed class PilotSessionCalls(
         if (result is PilotCallResult.UnsupportedCall)
         {
             await output.WriteAsync(packet.UnsupportedCall(service, method));
+            latency.ReplyWritten();
             await output.FlushFlightUpdatesAsync();
             await output.FlushNotificationsAsync();
             return;
@@ -169,6 +177,7 @@ internal sealed class PilotSessionCalls(
         else
         {
             await output.WriteAsync(packet.CallSucceeded(reply));
+            latency.ReplyWritten();
         }
         if (
             service == "beyonce"
@@ -183,7 +192,10 @@ internal sealed class PilotSessionCalls(
                     context.Pilot.SystemId,
                     () =>
                     {
-                        presentation?.Refresh();
+                        using (SessionLatency.Measure(SessionLatencyPhase.TrafficRefresh))
+                        {
+                            presentation?.Refresh();
+                        }
                         context.Flight.Snapshot();
                     }
                 );

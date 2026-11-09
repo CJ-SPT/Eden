@@ -109,7 +109,7 @@ internal sealed class PilotServices(
             }
             var arrived = await incoming;
             SessionPerformance.ReportQueue(arrived.Received, diagnostics?.Trace ?? report);
-            await calls.ProcessAsync(arrived.Packet);
+            await calls.ProcessAsync(arrived.Packet, arrived.Received);
         }
     }
 }

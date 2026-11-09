@@ -16,7 +16,8 @@ internal sealed class CapsuleerMaintenance(
     ChatRuntime chat,
     TimeProvider clock,
     IWorldSynchronization synchronization,
-    ICapsuleerUpdateDiagnostics updateDiagnostics
+    ICapsuleerUpdateDiagnostics updateDiagnostics,
+    IPilotOperationScope? operations = null
 ) : IDisposable, ICapsuleerPresentation
 {
     private PeriodicTimer? _timer;
@@ -25,6 +26,7 @@ internal sealed class CapsuleerMaintenance(
     private volatile bool _stopping;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
     private CapsuleerBatch? _retryPresentation;
+    private CapsuleerBatch? _publishedPresentation;
 
     internal void Start()
     {
@@ -61,8 +63,9 @@ internal sealed class CapsuleerMaintenance(
 
     internal MinerObservation? Tick()
     {
+        using var operation = operations?.Begin();
         long started = clock.GetTimestamp();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("traffic maintenance"))
         {
             try
             {
@@ -91,9 +94,14 @@ internal sealed class CapsuleerMaintenance(
 
     public void Refresh()
     {
-        lock (synchronization.Gate)
+        using var operation = operations?.Begin();
+        using (synchronization.Enter("traffic presentation"))
         {
             var batch = handoff.Capture();
+            if (_retryPresentation is null && batch.Revision == _publishedPresentation?.Revision)
+            {
+                return;
+            }
             if (_retryPresentation is { } retry)
             {
                 batch = batch with
@@ -112,6 +120,7 @@ internal sealed class CapsuleerMaintenance(
             {
                 PublishPresence(observation.Pilot);
             }
+            _publishedPresentation = batch;
             _retryPresentation = null;
         }
     }

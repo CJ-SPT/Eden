@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Diagnostics;
@@ -236,10 +237,10 @@ internal sealed class LiveWorld : IDisposable
 
     internal static LiveWorld? Find(string path) => s_worlds.GetValueOrDefault(Path.GetFullPath(path));
 
-    internal IDisposable Enter()
+    internal IDisposable Enter([CallerMemberName] string operation = "")
     {
         bool nested = Monitor.IsEntered(_gate);
-        Monitor.Enter(_gate);
+        var lease = Acquire(operation);
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -263,24 +264,56 @@ internal sealed class LiveWorld : IDisposable
                     _expiringTimedModules = false;
                 }
             }
-            return new Lease(_gate);
+            return lease;
         }
         catch
         {
-            Monitor.Exit(_gate);
+            lease.Dispose();
             throw;
         }
     }
 
-    private sealed class Lease(object gate) : IDisposable
+    private const int SlowOwnershipMilliseconds = 250;
+    private string? _ownerDescription;
+
+    private IDisposable Acquire(string operation)
     {
-        private object? _gate = gate;
+        bool nested = Monitor.IsEntered(_gate);
+        if (nested)
+        {
+            Monitor.Enter(_gate);
+            return new Lease(this, true, 0);
+        }
+        string? blocker = Volatile.Read(ref _ownerDescription);
+        long started = Stopwatch.GetTimestamp();
+        using (SessionLatency.Measure(SessionLatencyPhase.WorldWait))
+        {
+            Monitor.Enter(_gate);
+        }
+        SessionLatency.ObserveWorldWait(blocker, started);
+        Volatile.Write(ref _ownerDescription, SessionLatency.CurrentDescription ?? operation);
+        return new Lease(this, false, Stopwatch.GetTimestamp());
+    }
+
+    private sealed class Lease(LiveWorld world, bool nested, long started) : IDisposable
+    {
+        private LiveWorld? _world = world;
 
         public void Dispose()
         {
-            if (Interlocked.Exchange(ref _gate, null) is { } held)
+            if (Interlocked.Exchange(ref _world, null) is { } held)
             {
-                Monitor.Exit(held);
+                string? operation = held._ownerDescription;
+                if (!nested)
+                {
+                    Volatile.Write(ref held._ownerDescription, null);
+                }
+                Monitor.Exit(held._gate);
+                var elapsed = nested ? TimeSpan.Zero : Stopwatch.GetElapsedTime(started);
+                if (!nested && elapsed.TotalMilliseconds >= SlowOwnershipMilliseconds)
+                {
+                    ServerLog.Console.Warning($"Slow world owner {operation}: {elapsed.TotalMilliseconds:F2} ms held.");
+                }
             }
         }
     }
@@ -351,7 +384,7 @@ internal sealed class LiveWorld : IDisposable
     internal WorldSnapshot? CaptureSnapshot()
     {
         long started = Stopwatch.GetTimestamp();
-        lock (_gate)
+        using (Acquire("checkpoint capture"))
         {
             var wait = Stopwatch.GetElapsedTime(started);
             started = Stopwatch.GetTimestamp();

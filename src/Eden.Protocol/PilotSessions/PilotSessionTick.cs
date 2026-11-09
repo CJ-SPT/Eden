@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Mining;
@@ -21,8 +20,6 @@ internal sealed class PilotSessionTick(
     ICapsuleerPresentation? presentation = null
 )
 {
-    private const int SlowUpdateMilliseconds = 250;
-
     public async Task AdvanceAsync(
         PilotCallContext context,
         PilotSessionOutput output,
@@ -33,10 +30,17 @@ internal sealed class PilotSessionTick(
     {
         using var operation = operations?.Begin();
         using var performance = SessionPerformance.Begin("tick", diagnostics?.Trace ?? report);
-        long started = Stopwatch.GetTimestamp();
+        using var latency = new SessionLatency("tick", diagnostics?.Warning ?? report, diagnostics?.Trace ?? report);
         if (handoff is not null && context.Selected)
         {
-            await handoff.SynchronizeAsync(context.Pilot.SystemId, () => presentation?.Refresh());
+            await handoff.SynchronizeAsync(
+                context.Pilot.SystemId,
+                () =>
+                {
+                    using var refresh = SessionLatency.Measure(SessionLatencyPhase.TrafficRefresh);
+                    presentation?.Refresh();
+                }
+            );
         }
         if (!context.Selected)
         {
@@ -46,7 +50,10 @@ internal sealed class PilotSessionTick(
         }
         var flight = context.Flight;
         var beforePlayerDamage = flight.Pilot;
-        updates.ApplyPlayerDamage(context);
+        using (SessionLatency.Measure(SessionLatencyPhase.PendingDamage))
+        {
+            updates.ApplyPlayerDamage(context);
+        }
         if (beforePlayerDamage.ShipId != context.Pilot.ShipId)
         {
             await output.AnnounceTransitionAsync(beforePlayerDamage);
@@ -56,6 +63,7 @@ internal sealed class PilotSessionTick(
             skills.Advance(context);
             await output.FlushNotificationsAsync();
         }
+        using (SessionLatency.Measure(SessionLatencyPhase.Motion))
         using (SessionPerformance.Begin("motion", diagnostics?.Trace ?? report))
         {
             flight.Checkpoint();
@@ -78,6 +86,7 @@ internal sealed class PilotSessionTick(
             report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
         anomalies?.Advance(context);
+        using (SessionLatency.Measure(SessionLatencyPhase.Contacts))
         using (SessionPerformance.Begin("contacts", diagnostics?.Trace ?? report))
         {
             if (flight.InBallpark)
@@ -91,6 +100,7 @@ internal sealed class PilotSessionTick(
         }
 
         DockedPilot? beforeAttack;
+        using (SessionLatency.Measure(SessionLatencyPhase.Updates))
         using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
         {
             beforeAttack = updates.Advance(context);
@@ -109,13 +119,9 @@ internal sealed class PilotSessionTick(
         {
             await output.AnnounceTransitionAsync(beforeAttack);
         }
+        using var outputLatency = SessionLatency.Measure(SessionLatencyPhase.Output);
         using var outputPerformance = SessionPerformance.Begin("output", diagnostics?.Trace ?? report);
         await output.FlushFlightUpdatesAsync();
         await output.FlushNotificationsAsync();
-        var elapsed = Stopwatch.GetElapsedTime(started);
-        if (elapsed.TotalMilliseconds >= SlowUpdateMilliseconds)
-        {
-            (diagnostics?.Warning ?? report)($"Slow pilot update: {elapsed.TotalMilliseconds:F0} ms.");
-        }
     }
 }
