@@ -11,6 +11,15 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
 {
     private void Before(DbCommand command, CommandEventData data)
     {
+        // Directional reads overlay resident positions under the owner. They never read
+        // mutable combat resources, and must not force projection for a name/membership query.
+        if (
+            data.Context is WorldDbContext { ReadsDirectionalPositions: true }
+            && command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase)
+        )
+        {
+            return;
+        }
         if (data.Context?.Database.CurrentTransaction is null)
         {
             LiveCombatRuntime.Find(path)?.BeforeSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });

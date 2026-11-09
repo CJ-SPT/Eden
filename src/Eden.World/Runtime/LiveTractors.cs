@@ -38,6 +38,8 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
 
     private readonly ConditionalWeakTable<IReadOnlyList<WreckContact>, View> _views = new();
 
+    internal SpacePosition? Position(long id) => _positions.GetValueOrDefault(id);
+
     internal void Start(InformationCycle cycle, SpacePosition source, SpacePosition wreck, double radii, ICooperativeFleets? fleets)
     {
         using var ownership = owner.Enter();

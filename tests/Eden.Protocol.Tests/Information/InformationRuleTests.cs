@@ -20,6 +20,48 @@ public sealed class InformationRuleTests
     }
 
     [Theory]
+    [InlineData(5)]
+    [InlineData(15)]
+    [InlineData(30)]
+    [InlineData(60)]
+    [InlineData(90)]
+    [InlineData(180)]
+    [InlineData(360)]
+    public void DirectionalNativeAnglesUseTheFullConeOpeningAndIncludeTheRangeBoundary(double degrees)
+    {
+        double angle = degrees * Math.PI / 180;
+        SpacePosition direction = new(3, 0, 0);
+        SpacePosition edge = new(100 * Math.Cos(angle / 2), 100 * Math.Sin(angle / 2), 0);
+        Assert.True(InformationRules.InCone(SpacePosition.Zero, edge, direction, angle, 100.0000001));
+        Assert.False(InformationRules.InCone(SpacePosition.Zero, new(100.1, 0, 0), direction, angle, 100));
+        Assert.True(InformationRules.InCone(SpacePosition.Zero, SpacePosition.Zero, direction, angle, 0));
+        Assert.True(
+            InformationRules.InCone(
+                SpacePosition.Zero,
+                new(InformationRules.MaximumDirectionalRange, 0, 0),
+                direction,
+                angle,
+                InformationRules.MaximumDirectionalRange
+            )
+        );
+    }
+
+    [Theory]
+    [InlineData(0, 100)]
+    [InlineData(-1, 100)]
+    [InlineData(7, 100)]
+    [InlineData(double.NaN, 100)]
+    [InlineData(double.PositiveInfinity, 100)]
+    [InlineData(1, -1)]
+    [InlineData(1, double.NaN)]
+    [InlineData(1, double.PositiveInfinity)]
+    [InlineData(1, InformationRules.MaximumDirectionalRange + 1)]
+    public void DirectionalInvalidAngleOrRangeFailsBeforeReadingAWorld(double angle, double range) =>
+        Assert.Throws<InvalidDataException>(() =>
+            InformationRules.InCone(SpacePosition.Zero, SpacePosition.Zero, new(1, 0, 0), angle, range)
+        );
+
+    [Theory]
     [InlineData(15, 30, 0.45)]
     [InlineData(35, -20, 0.15)]
     [InlineData(15, -20, 0)]

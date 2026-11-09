@@ -35,6 +35,9 @@ public sealed record InformationModule(
 
 public static class InformationRules
 {
+    // Build 3662168 directionalScanSvc.pyj THROTTLE_TIME is 1500 milliseconds.
+    public static readonly TimeSpan DirectionalScanCooldown = TimeSpan.FromMilliseconds(1500);
+
     public const double MaximumDirectionalRange = 2_147_483_648_000;
     public const double TractorStopDistance = 1500;
     public const double MiningScanRange = 250_000;

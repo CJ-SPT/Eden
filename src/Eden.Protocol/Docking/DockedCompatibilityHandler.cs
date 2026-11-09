@@ -1,13 +1,14 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Information;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class DockedCompatibilityHandler(IPilotFleet fleet) : ISelectedPilotCallHandler
+internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, DirectionalScanHandler scanner) : ISelectedPilotCallHandler
 {
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
 
@@ -92,6 +93,8 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet) : ISelectedP
                             .Flight.VisibleWrecks.Where(w => ids.Contains(w.Id))
                             .Select(w => new LocationRow(w.Id, w.Name, w.SystemId, w.Position.X, w.Position.Y, w.Position.Z))
                     )
+                    .Concat(scanner.Names(context, ids.OfType<long>().ToHashSet()))
+                    .DistinctBy(location => location.Id)
                     .ToArray()
             ),
             ("shipCosmeticsMgr", "GetEnabledCosmetics") => BlueEmpty.Dictionary,

@@ -267,8 +267,7 @@ internal sealed class InformationHandler(
     )
     {
         bool survey = service == "miningScanMgr" && method == "perform_scan" && args.Length == 0;
-        bool directional = service == "@systemScan" && method == "ConeScan" && args.Length == 5;
-        if (!survey && !directional)
+        if (!survey)
         {
             return PilotCallResult.Unsupported;
         }
@@ -279,23 +278,7 @@ internal sealed class InformationHandler(
             {
                 return new PilotCallResult.Failure("Use scanners in space and outside warp.");
             }
-            if (survey)
-            {
-                return new MiningSurveyReply(information.Survey(context.Pilot.PilotId, Now));
-            }
-            if (args.Any(a => a is not (long or double)))
-            {
-                return new PilotCallResult.Failure("Invalid directional scan arguments.");
-            }
-            return new DirectionalScanReply(
-                information.Directional(
-                    context.Pilot.PilotId,
-                    Convert.ToDouble(args[0]),
-                    Convert.ToDouble(args[1]),
-                    new(Convert.ToDouble(args[2]), Convert.ToDouble(args[3]), Convert.ToDouble(args[4])),
-                    Now
-                )
-            );
+            return new MiningSurveyReply(information.Survey(context.Pilot.PilotId, Now));
         }
         catch (Exception error) when (error is InvalidDataException or OverflowException)
         {

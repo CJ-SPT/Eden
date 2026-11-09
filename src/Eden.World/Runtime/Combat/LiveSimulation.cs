@@ -106,6 +106,11 @@ internal sealed partial class LiveCombatRuntime
 
     internal SpacePosition? InformationPosition(long shipId) => _positions.GetValueOrDefault(shipId)?.Position;
 
+    internal SpacePosition? DirectionalPosition(long id) =>
+        InformationPosition(id)
+        ?? _liveDrones.GetValueOrDefault(id)?.Contact.Position
+        ?? (_staleNpcs.Contains(id) ? null : _npcs.GetValueOrDefault(id)?.Position);
+
     private LiveCombatNpc[] SystemNpcs(int system, long now)
     {
         if (!_systemNpcs.TryGetValue(system, out var ids))

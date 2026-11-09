@@ -47,7 +47,7 @@ public sealed partial class InformationTests
         WorldInitialization.Initialize(new(f.Db.Path));
         using WorldDbContext verify = new(f.Db.Path);
         Assert.Equal(manifest, verify.Set<WorldWreck>().Find(wreck)!.SalvageJson);
-        Assert.Equal(113, verify.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, verify.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         Assert.Empty(verify.Set<SavedInformationCycle>());
     }
 
