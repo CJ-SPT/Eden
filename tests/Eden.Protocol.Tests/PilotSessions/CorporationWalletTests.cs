@@ -3,6 +3,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
@@ -224,6 +225,7 @@ public sealed class CorporationWalletTests
             Assert.Equal(25000000, killed.Reward!.AmountCents);
             Assert.Equal(2500000, killed.Reward.TaxCents);
             Assert.Equal(862520000, killed.Reward.BalanceCents);
+            Assert.Equal(625, Assert.Single(saved.Set<SavedFreeSkillPoints>().Local).Points);
             saved.SaveChanges();
             transaction.Commit();
             Assert.Throws<InvalidDataException>(() =>

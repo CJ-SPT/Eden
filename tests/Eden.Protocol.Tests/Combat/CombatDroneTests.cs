@@ -6,6 +6,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
@@ -400,6 +401,10 @@ public sealed class CombatDroneTests
         Assert.Empty(f.Drones.Advance(f.Pilot, f.Now, 40).Hits);
         using WorldDbContext world = new(f.Base.Db.Path);
         Assert.Single(world.Set<NpcBounty>().Where(b => b.NpcId == f.Npc.Id));
+        var points = Assert.Single(world.Set<SavedFreeSkillPoints>());
+        Assert.Equal(f.Pilot, points.PilotId);
+        Assert.Equal(7, points.Points);
+        Assert.Equal(1, points.Revision);
         Assert.Single(world.Set<WorldWreck>().Where(w => w.NpcId == f.Npc.Id));
         Assert.NotEqual(start, f.Drones.List(SystemId, f.Now).First().Position);
         Assert.All(f.Drones.List(SystemId, f.Now), d => Assert.Equal(DroneActivity.Idle, d.Activity));

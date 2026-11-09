@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [NPC bounty skill point rewards, November 9, 2026](protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026)
+
 - [Mission-tracker refresh compatibility, November 9, 2026](protocol/agents.md#mission-tracker-refresh-compatibility--november-9-2026)
 
 - [LP-wallet nearest-station lookup, November 9, 2026](protocol/industry.md#lp-wallet-nearest-station-lookup-november-9-2026)

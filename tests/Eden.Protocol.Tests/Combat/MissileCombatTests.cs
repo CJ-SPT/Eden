@@ -5,6 +5,7 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
@@ -267,6 +268,10 @@ public sealed class MissileCombatTests
         var wreck = Assert.Single(world.Set<WorldWreck>());
         Assert.Equal(f.PilotId, wreck.OwnerId);
         Assert.Equal(300000, world.Set<PilotWallet>().Single(w => w.PilotId == f.PilotId).Cents);
+        var points = Assert.Single(world.Set<SavedFreeSkillPoints>());
+        Assert.Equal(f.PilotId, points.PilotId);
+        Assert.Equal(7, points.Points);
+        Assert.Equal(1, points.Revision);
         Assert.Equal(100, world.Set<OwnedItem>().Single(i => i.LocationId == wreck.Id).Quantity);
         Assert.Equal(4, world.Set<OwnedItem>().Where(i => i.TypeId == LightMissile && i.OwnerId == f.PilotId).Sum(i => i.Quantity));
     }

@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [NPC bounty skill point rewards, November 9, 2026](#npc-bounty-skill-point-rewards-november-9-2026)
+
 - [Capsule destruction and home-station respawn, November 7, 2026](#capsule-destruction-and-home-station-respawn-november-7-2026)
 - [Offline missile contact reads, November 7, 2026](#offline-missile-contact-reads-november-7-2026)
 - [Pilot missile combat and automatic retaliation (November 6, 2026)](#pilot-missile-combat-and-automatic-retaliation-november-6-2026)
@@ -1072,3 +1074,66 @@ site screenshot around 180 FPS, with clouds still visible and a flat frame graph
 of the recurring dips in that scene; it is not an all-layout rendering benchmark.
 
 Optional maintainer checks: none required for this correction; the reported site retest is recorded above.
+
+## NPC bounty skill point rewards (November 9, 2026)
+
+Eden now grants the pilot receiving an NPC kill bounty an additional **0.25% of the gross ISK bounty
+as unallocated skill points**. The full ISK bounty and normal corporation tax remain unchanged. A
+150,000 ISK bounty grants **375 SP**; a 3,000 ISK bounty grants **7 SP**. Whole points are calculated
+from the settled bounty in cents with integer division by 40,000. Fractional points are discarded per
+kill, with no minimum reward or carried remainder. This is an explicit Eden progression policy,
+including its rounding and pre-tax basis; it is not an extracted EVE bounty mechanic.
+
+`NpcSkillPointRewards` owns the typed calculation. The common NPC damage settlement credits the
+killer's existing `WorldFreeSkillPoints` balance and increments its saved revision in the same
+transaction as destruction, bounty/tax, wreck creation and combat history. Turrets, missiles and
+combat drones all use that settlement. Existing bounty role eligibility applies. Nonfatal damage,
+zero/sub-point bounties, non-bounty NPC roles and player kills grant no SP. The existing final-blow
+recipient also receives the SP; fleet sharing is unchanged. Repeated or competing kill attempts cannot
+pay the reward again. Invalid/overflowing point state rejects and rolls back the entire settlement.
+The credit changes only the unallocated pool; it does not train a skill or rebuild a training queue
+during combat. Existing skill-point spending rules remain authoritative.
+
+The existing selected-pilot revision monitor observes the committed pool and sends native
+`OnFreeSkillPointsChanged(newBalance)` on its next poll, at most one second later. Balance/queue reads
+can also refresh it. Saved revisions invalidate resident point snapshots and survive checkpoints and
+reopening. There is no new RPC, wire model, schema migration or client modification. The pinned
+build-3662168 skill notification and queue contract is documented in
+[unallocated skill points](characters.md#persistent-unallocated-skill-points).
+
+References: [EVE University ratting](https://wiki.eveuniversity.org/Ratting) describes NPC type bounties
+and final-blow attribution; [skills and learning](https://wiki.eveuniversity.org/Skills_and_learning)
+describes applying unallocated SP. These informed the existing systems; neither establishes this new
+0.25% rule. Consulted [Carbon Blue Marshal.cpp revision
+af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+for the reused integer/tuple encoding. Blue and Destiny behavior are unchanged. Native service
+evidence remains the pinned client inspection recorded in the character/skill notes; no new client
+inspection or live observation is claimed.
+
+**Automated validation.** Final affected filter passed **458 cases**, zero failures/skips, in
+**186.09 seconds** including test-runner startup (reported test duration: 3 minutes 3 seconds):
+
+```text
+FullyQualifiedName~NpcSkillPointRewardTests|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~MissileCombatTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~FreeSkillPoint|FullyQualifiedName~SkillPointReward|FullyQualifiedName~SkillInjector|FullyQualifiedName~DroneDelegationSettlementTests|FullyQualifiedName~CombatAnomalyTests
+```
+
+Tool restore, solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog cases in 0.588 seconds; 9 formatting cases in 0.016 seconds) and formatting verification
+(1,334 files, maximum 140 characters) passed. The complete ordered validation took **207.83 seconds**.
+Changed documentation UTF-8/newline/whitespace checks, all four added local links/anchors and
+`git diff --check` passed. The full .NET suite was not requested or run. TRX evidence is retained at
+`artifacts/feature-tests/results/bounty-sp-final/bounty-sp-final.trx`.
+
+Initial exact-method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcSkillPointRewardTests.GrossBountyAwardsWholePointsAtOneQuarterPercent`
+passed 10 cases (3.53-second build, 2.10-second test invocation). Development integration passed
+48 cases (3.57-second build, 11.88-second test invocation), covering reward boundaries, addition to
+existing balances, both resident and SQL persistence, checkpoints/reopening, recipient isolation,
+native notification encoding/deduplication, competing turret/missile settlements, drone kills,
+corporation tax independence, and invalid/overflowing balance/revision rollback. An initial compile
+failure was a missing test import and was corrected before these successful runs.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Kill a bounty NPC with the skill window open and confirm the displayed
+unallocated SP increases by the documented amount.

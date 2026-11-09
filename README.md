@@ -41,6 +41,8 @@ See [feature implementation notes](docs/feature-notes.md) for catalog coverage, 
 
 The [ship and module completion program](docs/feature-notes.md#ship-and-module-completion-program) tracks remaining ordinary static content by operational role, with a reproducible inventory separating fitting admission, missing capabilities and external dependencies. [Milestone 6 heating](docs/protocol/fitting.md#complete-overheating-and-native-controls-november-8-2026) implements native module/rack controls, paid overload cycles for all 1,826 admitted heatable profiles, adjacent heat damage, burnout cancellation, saved module condition, station repairs and cargo-funded nanite repairs with partial material settlement. Burnout preserves shield and capacitor charge fractions. Automated validation establishes this scope; native presentation remains unverified.
 
+[NPC bounty skill points](docs/protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026) award the killer an additional **0.25% of the gross ISK bounty as unallocated SP**, rounded down per kill. A **150,000 ISK** bounty grants **375 SP** alongside its normal ISK payment.
+
 ## Local game data
 
 Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions and health, item stacks in cargo or station hangars, asteroid fields, wallets, market orders, trade records and manufacturing jobs. Both files are generated locally.
