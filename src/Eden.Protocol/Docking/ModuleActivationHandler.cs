@@ -35,7 +35,8 @@ internal sealed class ModuleActivationHandler(
     SignatureSuppressionHandler? signatureSuppression = null,
     AssaultDamageControlHandler? assaultDamageControl = null,
     InformationHandler? information = null,
-    SharedTargetLocks? targetLocks = null
+    SharedTargetLocks? targetLocks = null,
+    Eden.Protocol.Exploration.ProbeScanningHandler? probes = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -51,6 +52,10 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        if (effectName == MissileHandler.EffectName && probes?.CallModule(context, method, args) is { } probeResult)
+        {
+            return probeResult;
+        }
         var result = effectName switch
         {
             var name when InformationWire.Effect(name) is not null => information?.CallModule(context, method, args)

@@ -3,6 +3,11 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    ProbeBaseRange = 1370,
+    ProbeStrength = 1371,
+    ProbeDeviation = 1372,
+    ProbeRangeFactor = 1373,
+    ProbeCanScanShips = 1413,
     ShipScanRange = 125,
     CargoScanRange = 126,
     TargetHostileRange = 143,

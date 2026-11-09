@@ -12,6 +12,8 @@
 
 ## Development
 
+[Probe scanning and combat signatures](protocol/information.md#probe-scanning-and-combat-signatures-november-9-2026) covers native probes, progressive discovery, the basic explorer production chain and distinct scanner IDs.
+
 [Multifit capability discovery](protocol/fitting.md#multifit-item-creation-capability-november-9-2026) and [directional scanner restoration during undocking](protocol/information.md#directional-scanner-during-undocking-november-9-2026) record the fitting-window and undocking dialog corrections.
 
 [CONCORD criminal response](protocol/combat.md#concord-criminal-response--november-9-2026) records persistent high-security enforcement, response timing approximations, capsule immunity and insurance exclusion.

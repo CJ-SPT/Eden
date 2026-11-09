@@ -42,6 +42,7 @@ public sealed class CombatAnomalyTests
         world.Set<WorldCombatAnomaly>().Find(site.Id)!.DefinitionVersion = 0;
         world.SaveChanges();
         CombatAnomalyStore.Invalidate(world);
+        _ = sites.Signatures(CombatAnomalyRules.SystemId, f.Clock.Now);
         return sites;
     }
 
@@ -66,7 +67,7 @@ public sealed class CombatAnomalyTests
         {
             using (WorldDbContext world = new(f.Db.Path))
             {
-                Assert.Equal(wave, world.Set<WorldCombatAnomaly>().Single().Wave);
+                Assert.Equal(wave, world.Set<WorldCombatAnomaly>().Single(s => !s.IsSignature).Wave);
                 Assert.Equal(
                     CombatAnomalyRules.Wave(site.Id, wave).Count,
                     world.Set<WorldNpc>().Count(n => n.EncounterId == site.Id && n.DestroyedAt == null)
@@ -163,7 +164,7 @@ public sealed class CombatAnomalyTests
         }
         Assert.True(Assert.Single(sites.List(site.SystemId, f.Clock.Now)).Started);
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(0, saved.Set<WorldCombatAnomaly>().Single().Wave);
+        Assert.Equal(0, saved.Set<WorldCombatAnomaly>().Single(s => !s.IsSignature).Wave);
         Assert.Equal(
             CombatAnomalyRules.Wave(site.Id, 0).Count,
             saved.Set<WorldNpc>().Count(n => n.EncounterId == site.Id && n.DestroyedAt == null)
@@ -262,7 +263,7 @@ public sealed class CombatAnomalyTests
         await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() => sites.Arrive(site.SystemId, site.Position, f.Clock.Now))));
         using WorldDbContext world = new(f.Db.Path);
         Assert.Equal(CombatAnomalyRules.Wave(site.Id, 0).Count, world.Set<WorldNpc>().Count(n => n.EncounterId == site.Id));
-        Assert.Equal(0, world.Set<WorldCombatAnomaly>().Single().Wave);
+        Assert.Equal(0, world.Set<WorldCombatAnomaly>().Single(s => !s.IsSignature).Wave);
     }
 
     [Fact]
@@ -340,7 +341,7 @@ public sealed class CombatAnomalyTests
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Single(saved.Set<WorldWreck>());
         Assert.Single(saved.Set<NpcBounty>());
-        Assert.Equal(1, saved.Set<WorldCombatAnomaly>().Single().Wave);
+        Assert.Equal(1, saved.Set<WorldCombatAnomaly>().Single(s => !s.IsSignature).Wave);
         Assert.Equal(
             CombatAnomalyRules.Wave(site.Id, 1).Count,
             saved.Set<WorldNpc>().Count(n => n.EncounterId == site.Id && n.DestroyedAt == null)

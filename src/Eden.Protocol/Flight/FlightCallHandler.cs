@@ -13,7 +13,8 @@ internal sealed class FlightCallHandler(
     IPilotBookmarks bookmarks,
     CooperativeFleetHandler fleets,
     ICombatAnomalies anomalies,
-    TimeProvider clock
+    TimeProvider clock,
+    IPilotProbeScanning? scanning = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -54,6 +55,7 @@ internal sealed class FlightCallHandler(
         {
             var site = anomalies
                 .List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                .Concat(anomalies.Signatures(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
                 .SingleOrDefault(s =>
                     command is FlightCommand.WarpToScan scan
                         ? scan.TargetId == s.TargetId
@@ -62,6 +64,14 @@ internal sealed class FlightCallHandler(
             if (site is null)
             {
                 return new PilotCallResult.Failure("This combat anomaly is no longer available in this system.");
+            }
+            if (
+                site.IsSignature
+                && scanning?.Resolved(context.Pilot.PilotId, site.Id, context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                    != true
+            )
+            {
+                return new PilotCallResult.Failure("Resolve this cosmic signature to 100% before warping to it.");
             }
             double range = command is FlightCommand.WarpToScan scanWarp ? scanWarp.Range : ((FlightCommand.WarpTo)command).Range;
             command = new FlightCommand.WarpToPoint(site.Id, site.Position, range);

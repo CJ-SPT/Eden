@@ -6,6 +6,7 @@ public sealed class WorldCombatAnomaly
     public int SystemId { get; set; }
     public int DungeonId { get; set; } = 2134;
     public int Slot { get; set; }
+    public bool IsSignature { get; set; }
     public int DefinitionVersion { get; set; }
     public int Wave { get; set; } = -1;
     public double X { get; set; }

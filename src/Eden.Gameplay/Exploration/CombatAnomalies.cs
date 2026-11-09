@@ -12,7 +12,8 @@ public sealed record CombatAnomaly(
     SpacePosition Position,
     bool Started,
     IReadOnlyList<StaticSpaceObject> Objects,
-    int FactionId = 500010
+    int FactionId = 500010,
+    bool IsSignature = false
 );
 
 public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomaly> Sites);
@@ -20,6 +21,7 @@ public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomal
 public interface ICombatAnomalies
 {
     IReadOnlyList<CombatAnomaly> List(int systemId, long now);
+    IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now) => [];
     void Arrive(int systemId, SpacePosition position, long now);
     IReadOnlyList<AnomalySystemSites> Directory(long now);
 }

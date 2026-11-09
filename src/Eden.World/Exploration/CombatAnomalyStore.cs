@@ -28,7 +28,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
     );
 
     private static readonly ConcurrentDictionary<(string Path, int System), long> s_versions = new();
-    private readonly Dictionary<int, View> _views = [];
+    private readonly Dictionary<(int System, bool Signature), View> _views = [];
     private CatalogProvider? _catalog;
     private bool _directoryMajorThreat;
     private bool _directoryPirates;
@@ -44,8 +44,13 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
     private long Version(int systemId) =>
         s_versions.GetValueOrDefault((database.Path, 0)) + s_versions.GetValueOrDefault((database.Path, systemId));
 
-    public IReadOnlyList<CombatAnomaly> List(int systemId, long now)
+    public IReadOnlyList<CombatAnomaly> List(int systemId, long now) => ListCore(systemId, now, false);
+
+    public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now) => ListCore(systemId, now, true);
+
+    private IReadOnlyList<CombatAnomaly> ListCore(int systemId, long now, bool signature)
     {
+        var key = (systemId, signature);
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
@@ -56,7 +61,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
             bool majorThreat = database.Settings.NpcPopulation.MajorThreatAnomalies;
             bool pirates = database.Settings.NpcPopulation.Pirates;
             if (
-                _views.TryGetValue(systemId, out var view)
+                _views.TryGetValue(key, out var view)
                 && view.Version == version
                 && view.Catalog == provider.Identity.Generation
                 && now < view.Deadline
@@ -76,22 +81,26 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
             var faction = system is null ? null : NpcRegions.Pirates(system.RegionId);
             if (faction is null || _definitions.IsEmpty)
             {
-                _views[systemId] = new(version, provider.Identity.Generation, long.MaxValue, [], majorThreat, pirates);
-                return _views[systemId].Sites;
+                _views[key] = new(version, provider.Identity.Generation, long.MaxValue, [], majorThreat, pirates);
+                return _views[key].Sites;
             }
             double security = catalog.Read(CatalogData.Client.Systems, (long)systemId)?.SecurityStatus ?? 0.7;
             var eligible = _definitions
                 .Where(d =>
                     (d.Faction == faction || d.Faction == NpcPirateFaction.RogueDrones)
                     && (!d.RequiresMajorThreat || majorThreat)
-                    && AnomalyEncounterRules.Allows(d.Name, security)
+                    && (
+                        signature
+                            ? d.Difficulty <= ProbeScanRules.MaximumSignatureDifficulty
+                            : AnomalyEncounterRules.Allows(d.Name, security)
+                    )
                 )
                 .OrderBy(d => d.DungeonId)
                 .ToArray();
             if (eligible.Length == 0)
             {
-                _views[systemId] = new(version, provider.Identity.Generation, long.MaxValue, [], majorThreat, pirates);
-                return _views[systemId].Sites;
+                _views[key] = new(version, provider.Identity.Generation, long.MaxValue, [], majorThreat, pirates);
+                return _views[key].Sites;
             }
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();
@@ -99,10 +108,13 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
                 .Set<WorldCombatAnomaly>()
                 .Where(s =>
                     s.SystemId == systemId
-                    && !world.Set<WorldCombatAnomaly>().Any(n => n.SystemId == systemId && n.Slot == s.Slot && n.Id > s.Id)
+                    && s.IsSignature == signature
+                    && !world
+                        .Set<WorldCombatAnomaly>()
+                        .Any(n => n.SystemId == systemId && n.Slot == s.Slot && n.IsSignature == signature && n.Id > s.Id)
                 )
                 .ToDictionary(s => s.Slot);
-            int slots = Math.Min(AnomalyEncounterRules.SitesPerSystem, eligible.Length);
+            int slots = Math.Min(signature ? ProbeScanRules.SignaturesPerSystem : AnomalyEncounterRules.SitesPerSystem, eligible.Length);
             long nextId = Math.Max(
                 CombatAnomalyRules.FirstSiteId,
                 (world.Set<WorldCombatAnomaly>().Max(s => (long?)s.Id) ?? CombatAnomalyRules.FirstSiteId - 1) + 1
@@ -122,12 +134,13 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
                 uint choice = NpcSpawnRules.Seed(systemId, slot, checked((int)(nextId - CombatAnomalyRules.FirstSiteId)));
                 var definition = eligible[(int)(choice % eligible.Length)];
                 var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).First();
-                double offset = CombatAnomalyRules.PlacementOffset * (slot + 1);
+                double offset = CombatAnomalyRules.PlacementOffset * (slot + (signature ? AnomalyEncounterRules.SitesPerSystem : 0) + 1);
                 site = new()
                 {
                     Id = nextId++,
                     SystemId = systemId,
                     Slot = slot,
+                    IsSignature = signature,
                     DungeonId = definition.DungeonId,
                     DefinitionVersion = 1,
                     X = anchor.X + offset,
@@ -172,7 +185,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
                 .OrderBy(s => s.Id)
                 .Select(s => Contact(s, _definitions.Single(d => d.DungeonId == s.DungeonId)))
                 .ToArray();
-            _views[systemId] = new(version, provider.Identity.Generation, deadline, sites, majorThreat, pirates);
+            _views[key] = new(version, provider.Identity.Generation, deadline, sites, majorThreat, pirates);
             return sites;
         }
     }
@@ -196,7 +209,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
             .ToArray();
         return new(
             site.Id,
-            $"EDN-{site.Id - CombatAnomalyRules.FirstSiteId + 1:000}",
+            ScannerTargetIds.FromSequence(site.Id - CombatAnomalyRules.FirstSiteId),
             site.SystemId,
             site.DungeonId,
             definition.NameId,
@@ -204,7 +217,8 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
             position,
             site.Wave >= 0,
             objects,
-            (int)definition.Faction
+            (int)definition.Faction,
+            site.IsSignature
         );
     }
 
@@ -216,6 +230,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
         lock (database.MotionLock)
         {
             var nearby = List(systemId, now)
+                .Concat(Signatures(systemId, now))
                 .Where(s => !s.Started && position.DistanceTo(s.Position) <= CombatAnomalyRules.ArrivalRange)
                 .ToArray();
             if (nearby.Length == 0)
@@ -316,7 +331,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
                 systems = world.Set<WorldCombatAnomaly>().Select(s => s.SystemId).Distinct().ToArray();
             }
             _directory = systems.Order().Select(id => new AnomalySystemSites(id, List(id, now))).ToArray();
-            _directoryDeadline = systems.Select(id => _views[id].Deadline).DefaultIfEmpty(long.MaxValue).Min();
+            _directoryDeadline = systems.Select(id => _views[(id, false)].Deadline).DefaultIfEmpty(long.MaxValue).Min();
             _directoryVersion = Version(-1);
             _directoryCatalog = database.Catalog.Identity.Generation;
             _directoryMajorThreat = database.Settings.NpcPopulation.MajorThreatAnomalies;

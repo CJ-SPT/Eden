@@ -35,6 +35,7 @@
     <EmbeddedResource Include="Fixtures/NaniteRepairReference.json" />
     <EmbeddedResource Include="Fixtures/RemoteAssistanceCatalog.json" />
     <EmbeddedResource Include="Fixtures/InformationCatalog.json" />
+    <EmbeddedResource Include="Fixtures/ProbeCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />
     <EmbeddedResource Include="../../docs/starter-production.json" LogicalName="Eden.Protocol.Tests.Fixtures.StarterProductionAudit.json" />

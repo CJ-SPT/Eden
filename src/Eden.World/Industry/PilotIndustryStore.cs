@@ -161,7 +161,10 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             return false;
         }
         return BuildContentPolicy.Current.Manufacturing.UtilityTypes.Contains(type.Id)
-                && FittingCatalog.Definition(catalog, type.Id) is not null
+                && (
+                    FittingCatalog.Definition(catalog, type.Id) is not null
+                    || Eden.World.Exploration.ProbeCatalog.Probe(catalog, type.Id, type.GroupId)
+                )
             || type.GroupId == AmmunitionDefinitions.HybridChargeGroup
                 && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
             || (

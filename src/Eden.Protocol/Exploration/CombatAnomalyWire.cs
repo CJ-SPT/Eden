@@ -31,23 +31,26 @@ internal sealed record AnomalyMap(IReadOnlyList<CombatAnomaly> Sites) : BlueMode
     public override object ToBlue() => Sites.ToDictionary(s => s.Id, s => (object?)new AnomalySiteInfo(s));
 }
 
-internal sealed record SignalTrackerState(IReadOnlyList<CombatAnomaly> Sites) : BlueModel
+internal sealed record SignalTrackerState(IReadOnlyList<CombatAnomaly> Sites, IReadOnlyList<CombatAnomaly>? Signatures = null) : BlueModel
 {
     // Build 3662168 unpacks anomalies, signatures, static sites, structures.
     public override object ToBlue() =>
         new object[]
         {
             new AnomalyMap(Sites),
-            new Dictionary<long, object?>(),
+            new SignatureMap(Signatures ?? []),
             new Dictionary<long, object?>(),
             new Dictionary<long, object?>(),
         };
 }
 
-internal sealed record SignalTrackerFullState(int SystemId, IReadOnlyList<CombatAnomaly> Sites)
-    : PilotNotification("OnSignalTrackerFullState")
+internal sealed record SignalTrackerFullState(
+    int SystemId,
+    IReadOnlyList<CombatAnomaly> Sites,
+    IReadOnlyList<CombatAnomaly>? Signatures = null
+) : PilotNotification("OnSignalTrackerFullState")
 {
-    public override object?[] Arguments => [SystemId, new SignalTrackerState(Sites), true];
+    public override object?[] Arguments => [SystemId, new SignalTrackerState(Sites, Signatures), true];
 }
 
 internal sealed record SignalTrackerAnomalyUpdate(int SystemId, IReadOnlyList<CombatAnomaly> Added, IReadOnlyList<long> Removed)

@@ -6,6 +6,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
@@ -14,6 +15,7 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Weapons;
+using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Repair;
@@ -83,7 +85,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             throw new InvalidDataException("The loaded ammunition is unavailable.");
         }
         int group = catalog.RequireItem(charge.TypeId).GroupId;
-        return MissileDefinitions.ChargeGroups.Contains(group)
+        return (group == ProbeScanRules.ProbeGroup || MissileDefinitions.ChargeGroups.Contains(group))
             ? FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(charge.Id)
             : Attributes(catalog, charge.TypeId);
     }
@@ -135,6 +137,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             int group = catalog.RequireItem(module.TypeId).GroupId;
             if (
                 !(WeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                && !(ProbeCatalog.Launcher(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(RemoteAssistanceCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
@@ -282,7 +285,8 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             var attributes = Attributes(catalog, module.TypeId);
             int moduleGroup = catalog.RequireItem(module.TypeId).GroupId;
             bool compatible =
-                AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
+                chargeType.GroupId == ProbeScanRules.ProbeGroup ? ProbeCatalog.Compatible(attributes, chargeAttributes)
+                : AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
                     ? AncillaryRepairRules.Compatible(ancillary, chargeType.GroupId, attributes, chargeAttributes)
                 : RemoteRepairRules.AncillaryKind(moduleGroup) is { } remoteAncillary
                     ? AncillaryRepairRules.Compatible(

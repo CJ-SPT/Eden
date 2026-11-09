@@ -3,17 +3,21 @@
   "manufacturing": {
     "hullTypes": [
       603,
+      605,
       648,
       32880
     ],
     "utilityTypes": [
       1317,
-      2046
+      2046,
+      17938,
+      30013
     ]
   },
   "insurance": {
     "materialValuedHullTypes": [
       603,
+      605,
       648,
       32880
     ]

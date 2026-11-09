@@ -397,6 +397,7 @@ internal sealed record FittingCalculation(
             if (
                 !PassiveCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
                 && !Eden.World.Information.InformationCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
+                && !Eden.World.Exploration.ProbeCatalog.Launcher(catalog, module.Item.TypeId, module.GroupId)
             )
             {
                 continue;
@@ -419,6 +420,7 @@ internal sealed record FittingCalculation(
         var hullSkills = HullCatalog.Skills(catalog, ship.TypeId).Where(skill => !MiningDefinitions.OwnsYieldSkill(skill)).ToHashSet();
         var relevantSkills = PassiveModules
             .Skills.Concat(MissileDefinitions.Skills)
+            .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
             .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))

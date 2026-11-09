@@ -124,6 +124,12 @@ internal static class PassiveCatalog
                 || (
                     !rig
                     && !MissileDefinitions.SupportsOwnerSkill(ownerSkill)
+                    && !(
+                        ownerSkill
+                            is Eden.Gameplay.Exploration.ProbeScanRules.AstrometricsSkill
+                                or Eden.Gameplay.Exploration.ProbeScanRules.ScienceSkill
+                        && modifier.ModifiedAttributeID is (int)DogmaAttributeId.ProbeStrength or (int)DogmaAttributeId.ProbeDeviation
+                    )
                     && !(hull && DroneRules.SupportsOwnerSkill(ownerSkill))
                     && !DroneEquipmentRules.SupportsOwnerModifier(ownerSkill, (DogmaAttributeId)modifier.ModifiedAttributeID.Value)
                 )

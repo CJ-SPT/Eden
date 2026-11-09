@@ -42,6 +42,8 @@ public sealed record FittingSkillBonus(int SkillId, PassiveModifier Modifier, do
 // Build 3662168 inventory groups and skill types.
 public enum PassiveModuleGroup
 {
+    ScanPinpointingAndRangefinding = 1223,
+    ScanAcquisition = 1238,
     ShieldExtender = 38,
     ShieldRecharger = 39,
     CapacitorRecharger = 43,

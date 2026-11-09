@@ -20,6 +20,15 @@ internal static class CombatAnomalySchema
                 s.Id,
             });
         model.Entity<WorldCombatAnomaly>().HasIndex(s => new { s.SystemId, s.CompletedAt });
+        model
+            .Entity<WorldCombatAnomaly>()
+            .HasIndex(s => new
+            {
+                s.SystemId,
+                s.IsSignature,
+                s.Slot,
+                s.Id,
+            });
     }
 
     internal static void Upgrade(WorldDbContext world)
@@ -37,6 +46,10 @@ internal static class CombatAnomalySchema
             """
         );
         var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCombatAnomaly')").ToHashSet();
+        if (!columns.Contains("IsSignature"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN IsSignature INTEGER NOT NULL DEFAULT 0");
+        }
         if (!columns.Contains("DungeonId"))
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN DungeonId INTEGER NOT NULL DEFAULT 2134");
@@ -62,7 +75,8 @@ internal static class CombatAnomalySchema
             "CREATE INDEX IF NOT EXISTS IX_WorldNpc_EncounterId_DestroyedAt_RetiredAt " + "ON WorldNpc(EncounterId,DestroyedAt,RetiredAt)"
         );
         world.Database.ExecuteSqlRaw(
-            "CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_SystemId_Slot_Id ON WorldCombatAnomaly(SystemId,Slot,Id)"
+            "CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_SystemId_IsSignature_Slot_Id "
+                + "ON WorldCombatAnomaly(SystemId,IsSignature,Slot,Id)"
         );
     }
 }

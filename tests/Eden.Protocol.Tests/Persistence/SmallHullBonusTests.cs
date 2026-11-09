@@ -4,6 +4,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
@@ -110,6 +111,16 @@ public sealed class SmallHullBonusTests
         )
         {
             PassiveCatalogFixture.LoadInformation(f.CatalogPath);
+        }
+        if (
+            modifiers.Any(m =>
+                m.SelectionId is ProbeScanRules.AstrometricsSkill or ProbeScanRules.ScienceSkill
+                || m.Selector == ModifierSelector.Group && m.SelectionId == ProbeScanRules.LauncherGroup
+            )
+        )
+        {
+            PassiveCatalogFixture.LoadProbes(f.CatalogPath);
+            f.Train(ProbeScanRules.ScienceSkill, 5);
         }
         foreach (var probe in modifiers.Select(modifier => ProbeFor(modifier, stripMiner)).Distinct())
         {
@@ -242,6 +253,8 @@ public sealed class SmallHullBonusTests
                     _ => 2488,
                 }
             ),
+            ModifierSelector.OwnerRequiredSkill
+                when modifier.SelectionId is ProbeScanRules.AstrometricsSkill or ProbeScanRules.ScienceSkill => new(17938, 30013),
             ModifierSelector.OwnerRequiredSkill => (MissileSkill?)modifier.SelectionId switch
             {
                 MissileSkill.MissileLauncherOperation or MissileSkill.LightMissiles => new(499, 210),
@@ -253,6 +266,7 @@ public sealed class SmallHullBonusTests
             },
             ModifierSelector.Group => (HullBonusEquipmentGroup?)modifier.SelectionId switch
             {
+                HullBonusEquipmentGroup.ScanProbeLauncher => new(17938),
                 HullBonusEquipmentGroup.ProjectileWeapon => new(484),
                 HullBonusEquipmentGroup.TractorBeam => new(24348),
                 HullBonusEquipmentGroup.WarpScrambler => new(447),
@@ -281,6 +295,7 @@ public sealed class SmallHullBonusTests
             },
             ModifierSelector.RequiredSkill => (HullBonusSkill?)modifier.SelectionId switch
             {
+                HullBonusSkill.Astrometrics => new(17938),
                 HullBonusSkill.SmallHybridTurret => new(561),
                 HullBonusSkill.SmallProjectileTurret => new(484),
                 HullBonusSkill.SmallEnergyTurret => new(450),

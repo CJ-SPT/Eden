@@ -5,11 +5,16 @@ using Eden.Protocol.PilotSessions;
 namespace Eden.Protocol.Exploration;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, Eden.Gameplay.Agents.IPilotMissions missions, TimeProvider clock)
-    : ISelectedPilotCallHandler
+internal sealed class CombatAnomalyHandler(
+    ICombatAnomalies sites,
+    Eden.Gameplay.Agents.IPilotMissions missions,
+    TimeProvider clock,
+    ProbeScanningHandler? probes = null
+) : ISelectedPilotCallHandler
 {
     private int? _system;
     private IReadOnlyList<CombatAnomaly> _known = [];
+    private IReadOnlyList<CombatAnomaly> _signatures = [];
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     public PilotCallResult Call(
@@ -36,7 +41,9 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, Eden.Gameplay
         {
             _system = context.Pilot.SystemId;
             _known = sites.List(_system.Value, Now);
-            context.Notifications.Add(new SignalTrackerFullState(_system.Value, _known));
+            _signatures = sites.Signatures(_system.Value, Now);
+            context.Notifications.Add(new SignalTrackerFullState(_system.Value, _known, _signatures));
+            probes?.Enter(context);
             return PilotCallResult.None;
         }
         if (service == "scanMgr" && method == "GetSystemScanMgr" && args.Length == 0)
@@ -45,7 +52,8 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, Eden.Gameplay
         }
         if (service == "@systemScan" && method == "GetFullState" && args.Length == 0)
         {
-            return new SignalTrackerState(sites.List(context.Pilot.SystemId, Now));
+            probes?.Enter(context);
+            return new SignalTrackerState(sites.List(context.Pilot.SystemId, Now), sites.Signatures(context.Pilot.SystemId, Now));
         }
         return PilotCallResult.Unsupported;
     }
@@ -56,6 +64,7 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, Eden.Gameplay
         {
             return;
         }
+        probes?.Advance(context);
         int system = context.Pilot.SystemId;
         if (context.Flight.CanTarget && context.Pilot.Position is { } arrival)
         {
@@ -63,9 +72,11 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, Eden.Gameplay
             missions.Arrive(system, arrival);
         }
         var current = sites.List(system, Now);
+        var signatures = sites.Signatures(system, Now);
         var position = context.Pilot.Position;
         context.Flight.RefreshAnomalies(
             current
+                .Concat(signatures)
                 .SelectMany(s => s.Objects)
                 .Concat(missions.Sites(system).SelectMany(s => s.Objects))
                 .Where(o =>
@@ -76,6 +87,7 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, Eden.Gameplay
         if (_system != system)
         {
             _known = [];
+            _signatures = [];
             _system = null;
             return;
         }
@@ -85,6 +97,13 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, Eden.Gameplay
         {
             context.Notifications.Add(new SignalTrackerAnomalyUpdate(system, added, removed));
         }
+        var signatureAdded = signatures.ExceptBy(_signatures.Select(s => s.Id), s => s.Id).ToArray();
+        var signatureRemoved = _signatures.ExceptBy(signatures.Select(s => s.Id), s => s.Id).Select(s => s.Id).ToArray();
+        if (signatureAdded.Length > 0 || signatureRemoved.Length > 0)
+        {
+            context.Notifications.Add(new SignalTrackerSignatureUpdate(system, signatureAdded, signatureRemoved));
+        }
+        _signatures = signatures;
         _known = current;
     }
 }

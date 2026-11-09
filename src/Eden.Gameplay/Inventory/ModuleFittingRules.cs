@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -51,7 +52,8 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            Enum.IsDefined((InformationGroup)groupId)
+            groupId == ProbeScanRules.LauncherGroup && effects.Contains(DogmaEffect.UseMissiles)
+            || Enum.IsDefined((InformationGroup)groupId)
                 && (InformationRules.Effect(groupId) is { } information ? effects.Contains(information) : true)
             || groupId == AssaultDamageControlRules.Group && effects.Contains(DogmaEffect.AssaultDamageControl)
             || groupId == SignatureSuppressionRules.Group && effects.Contains(DogmaEffect.SignatureSuppression)
