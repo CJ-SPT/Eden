@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
@@ -10,6 +11,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
+using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
@@ -85,6 +87,26 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             throw new InvalidDataException("Use an online mining laser on an available asteroid while in space.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        if (PilotAmmunitionStore.Contents(world, moduleId) is { } crystal)
+        {
+            var crystalType = catalog.RequireItem(crystal.TypeId);
+            var crystalAttributes = catalog.FittingAttributes(crystal.TypeId);
+            var targetTypes = CatalogTypeLists.Read(
+                catalog,
+                checked((long)crystalAttributes.GetValueOrDefault(DogmaAttributeId.MiningCrystalTypeList))
+            );
+            var target = catalog.RequireItem(asteroid.TypeId);
+            if (
+                crystal.OwnerId != pilotId
+                || crystal.Quantity != 1
+                || !MiningCrystalCatalog.Supported(catalog, crystal.TypeId, crystalType.GroupId)
+                || !targetTypes.Contains(target.Id, target.GroupId, target.CategoryId)
+            )
+            {
+                throw new InvalidDataException("The fitted mining crystal does not match this resource.");
+            }
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, crystal.TypeId);
+        }
         NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
         PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
@@ -174,6 +196,10 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
     )
     {
         var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        if (world.Set<ModuleCooldown>().Find(moduleId) is { } existing && existing.ReadyAt > now)
+        {
+            throw new InvalidDataException("Wait for the mining cycle or crystal reload to finish.");
+        }
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
         double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
@@ -220,6 +246,10 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
     )
     {
         var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        if (world.Set<ModuleCooldown>().Find(moduleId) is not { Kind: ModuleCooldownKind.Cycle })
+        {
+            throw new InvalidDataException("There is no paid mining cycle to collect.");
+        }
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId);
         double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
         double oreVolume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
@@ -234,6 +264,19 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             laser,
             collection
         );
+        Magazine? crystalState = null;
+        if (PilotAmmunitionStore.Contents(world, moduleId) is { } crystal)
+        {
+            var wear = CrystalRules.Use(catalog.FittingAttributes(crystal.TypeId), crystal.CrystalDamage, collection.Rolls.Crystal);
+            crystal.CrystalDamage = wear.Damage;
+            crystal.Quantity = wear.Destroyed ? 0 : 1;
+            var module = world.Set<OwnedItem>().Find(moduleId)!;
+            crystalState = new(moduleId, pilot.ActiveShipId, module.FlagId, crystal.TypeId, crystal.Quantity, 0, wear.Damage);
+            if (wear.Destroyed)
+            {
+                world.Remove(crystal);
+            }
+        }
         int extracted = collected.Extracted;
         int bonus = collected.CriticalBonus;
         InventoryChange? change = null;
@@ -257,7 +300,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         }
         world.Set<ModuleCooldown>().Where(c => c.ModuleId == moduleId && c.Kind == ModuleCooldownKind.Cycle).ExecuteDelete();
         world.SaveChanges();
-        return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, asteroid.Quantity == 0, collected.CargoFull);
+        return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, asteroid.Quantity == 0, collected.CargoFull, crystalState);
     }
 
     public void Stop(long pilotId, long moduleId, long expectedCompletesAt)

@@ -8,6 +8,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
@@ -18,6 +19,7 @@ using Eden.World.Combat.Weapons;
 using Eden.World.Exploration;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Mining;
 using Eden.World.Repair;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -137,6 +139,11 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             int group = catalog.RequireItem(module.TypeId).GroupId;
             if (
                 !(WeaponCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                && !(
+                    group == InventoryDefinitions.ModulatedMinerGroup
+                    && MiningLaserCatalog.Supported(catalog, module.TypeId, group)
+                    && InventoryDefinitions.IsHighSlot(module.FlagId)
+                )
                 && !(ProbeCatalog.Launcher(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
@@ -285,7 +292,9 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             var attributes = Attributes(catalog, module.TypeId);
             int moduleGroup = catalog.RequireItem(module.TypeId).GroupId;
             bool compatible =
-                chargeType.GroupId == ProbeScanRules.ProbeGroup ? ProbeCatalog.Compatible(attributes, chargeAttributes)
+                chargeType.GroupId is MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup
+                    ? MiningCrystalRules.Compatible(attributes, chargeType.GroupId)
+                : chargeType.GroupId == ProbeScanRules.ProbeGroup ? ProbeCatalog.Compatible(attributes, chargeAttributes)
                 : AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
                     ? AncillaryRepairRules.Compatible(ancillary, chargeType.GroupId, attributes, chargeAttributes)
                 : RemoteRepairRules.AncillaryKind(moduleGroup) is { } remoteAncillary

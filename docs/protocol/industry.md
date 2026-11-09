@@ -4,6 +4,69 @@
 
 Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP stores.
 
+## Modulated ore mining and crystals (November 9, 2026)
+
+The three published static modulated miners (17912, 18068 and 24305) now fit and mine ordinary ore.
+All **66 published ordinary mining crystals** in group 482 use their build-3662168 type lists and
+fitted modifiers: yield, duration, capacitor cost and residue. A loaded crystal must match the
+target's type list at activation and collection. A miner may operate without a crystal at its
+lower base yield. Ship restrictions, skills, cargo capacity, shared finite deposits and safety
+checks retain their owning operations.
+
+Crystals use the existing real ammunition inventory and native sublocations. Loading consumes
+one crystal from the selected owned stack; unloading preserves singleton identity and condition.
+Successful full cycles and manual short cycles apply catalog volatility and damage. Shattering
+removes the saved charge and sends its final damage before quantity zero. Mining information and
+loaded-charge changes expose the modified attributes. Paid cycles reject duplicate starts,
+collection replay and crystal changes during an active cycle or reload.
+
+This checkpoint does not enable Mercoxit, its group-663 crystals, standalone deep-core lasers,
+cloud hazards, mining drones, gas or ice. The two modulated deep-core tools can mine ordinary ore;
+their Mercoxit role remains pending. Manufacturing admission does not grant materials or equipment.
+
+References: [UniWiki Mining yield](https://wiki.eveuniversity.org/Mining_yield),
+[Crystal damage](https://wiki.eveuniversity.org/Crystal_damage), pinned catalog effects 804/1200/1212/8206
+and type-list attribute 3148. The local evejs 261108.1 mining-family, crystal-target and wear paths
+informed the comparison; no evejs code or content is imported. Existing tuple, float and notification
+encoding was checked against [Carbon Blue at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
+The read-only `tools/Export-MiningCatalog.py` reproduces the 144-type automated fixture from the
+pinned catalog, including required skills, crystal lists and exact effects.
+
+**Automated validation:** Exact development filters were
+`FullyQualifiedName=Eden.Protocol.Tests.Mining.MiningCrystalTests.MatchingCrystalChangesYieldAndPersistsWearAcrossShortCycleAndReload`
+and `FullyQualifiedName=Eden.Protocol.Tests.Mining.MiningTests.ModulatedMiningManualStopPublishesNativeCrystalDamageAndRemovesShatteredCharge`.
+Both passed. Development corrections addressed missing imports, the modulated miner's turret effect,
+the distinction between volatility chance and damage, and an old capacitor test that started
+overlapping cycles. The focused mining filter then passed 58 tests in 23 seconds, before the final
+additional rejection and native notification coverage. Final milestone checks are recorded below.
+
+Tool restore, solution restore and solution build passed with zero warnings/errors (build 6.07 seconds).
+The affected mining, ammunition, asteroid renewal, catalog fitting, fitting constraints/capabilities,
+ship coverage, small-hull bonuses, typed inventory and hosting filter passed **290/290 tests in
+199.63 seconds**. This precedes the final audit-only correction marking the two modulated deep-core
+tools partial; its focused follow-up is recorded with the remaining checks below. The regenerated
+ship-content report also refreshes previously implemented probe and hacking coverage; those are not
+new mining features.
+
+Final audit follow-up filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningCrystalTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests`.
+It passed **18/18 tests in 11.55 seconds**, following a clean solution build in 4.76 seconds.
+The broader filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningCrystalTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTierTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.AsteroidFieldTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.ResourceRenewalTests|FullyQualifiedName~Eden.Protocol.Tests.Ammunition|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogFittingReadTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingCapabilityRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SmallHullBonusTests|FullyQualifiedName~Eden.Protocol.Tests.Docking.TypedInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+Both Python policy suites passed (8 catalog cases in 0.772 seconds and 9 formatting cases in
+0.019 seconds). Formatting and the 140-column check passed for 1,450 files. The fixture and
+production coverage exports were regenerated, added documentation targets and diff whitespace checks
+passed. No full .NET regression suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect loaded-crystal mining attributes; short-cycle a modulated
+miner and inspect crystal condition; inspect the native charge removal after a crystal shatters.
+
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
 ## Contents

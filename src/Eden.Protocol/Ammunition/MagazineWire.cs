@@ -2,6 +2,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -14,7 +15,8 @@ internal sealed class MagazineWire(
     IPilotFitting fitting,
     IPilotCombat combat,
     IPilotInventory inventory,
-    IPilotAmmunition? ammunition = null
+    IPilotAmmunition? ammunition = null,
+    IPilotMining? mining = null
 )
 {
     internal static DogmaItemKey.Charge Key(Magazine magazine) => new(magazine.ShipId, magazine.FlagId, magazine.TypeId);
@@ -98,9 +100,11 @@ internal sealed class MagazineWire(
                 continue;
             }
             var attributes =
-                InventoryDefinitions.IsHighSlot(module.FlagId) && !MissileDefinitions.LauncherGroups.Contains(module.GroupId)
+                InventoryDefinitions.IsOreMiningGroup(module.GroupId)
+                    ? mining?.ModuleAttributes(context.Pilot.PilotId, module) ?? fitting.ModuleAttributes(context.Pilot.PilotId, module)
+                : InventoryDefinitions.IsHighSlot(module.FlagId) && !MissileDefinitions.LauncherGroups.Contains(module.GroupId)
                     ? combat.ModuleAttributes(context.Pilot.PilotId, module)
-                    : fitting.ModuleAttributes(context.Pilot.PilotId, module);
+                : fitting.ModuleAttributes(context.Pilot.PilotId, module);
             var values = new[]
             {
                 DogmaAttributeId.MaxRange,
@@ -109,6 +113,17 @@ internal sealed class MagazineWire(
                 DogmaAttributeId.CapacitorNeed,
                 DogmaAttributeId.NextActivationTime,
             }
+                .Concat(
+                    InventoryDefinitions.IsOreMiningGroup(module.GroupId)
+                        ?
+                        [
+                            DogmaAttributeId.MiningAmount,
+                            DogmaAttributeId.Duration,
+                            DogmaAttributeId.MiningResidueChance,
+                            DogmaAttributeId.MiningResidueMultiplier,
+                        ]
+                        : Array.Empty<DogmaAttributeId>()
+                )
                 .Concat(SupportModuleDefinitions.Effect(module.GroupId) is not null ? SupportModuleDefinitions.BonusAttributes : [])
                 .Select(attribute => new ModuleAttributeChange(
                     context.Pilot.PilotId,

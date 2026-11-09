@@ -8,6 +8,9 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Topics
 
+[Modulated ore mining and crystals, November 9, 2026](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
+records loaded-crystal modifiers, target compatibility, persistent wear and native shattering updates.
+
 | Topic | Coverage |
 | --- | --- |
 | [Startup and authentication](protocol/startup.md) | Handshake, encryption, launcher accounts, character selection and initial sessions. |

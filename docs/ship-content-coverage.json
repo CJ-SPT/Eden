@@ -6,12 +6,12 @@
     {
       "category": "Ship",
       "state": "Complete",
-      "count": 121
+      "count": 130
     },
     {
       "category": "Ship",
       "state": "Partial",
-      "count": 114
+      "count": 105
     },
     {
       "category": "Ship",
@@ -26,17 +26,17 @@
     {
       "category": "Module",
       "state": "Complete",
-      "count": 3265
+      "count": 3318
     },
     {
       "category": "Module",
       "state": "Partial",
-      "count": 175
+      "count": 153
     },
     {
       "category": "Module",
       "state": "Planned",
-      "count": 432
+      "count": 401
     },
     {
       "category": "Module",
@@ -61,12 +61,12 @@
     {
       "category": "Charge",
       "state": "Complete",
-      "count": 801
+      "count": 873
     },
     {
       "category": "Charge",
       "state": "Planned",
-      "count": 158
+      "count": 86
     },
     {
       "category": "Charge",
@@ -6057,7 +6057,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4166,
         5051,
@@ -6087,7 +6087,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -6101,7 +6101,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -6892,7 +6892,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4165,
         5045,
@@ -6922,7 +6922,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -6936,7 +6936,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -7025,7 +7025,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4167,
         5048,
@@ -7055,7 +7055,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -7069,7 +7069,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -13175,8 +13175,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -13187,9 +13187,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -19181,8 +19188,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -19191,9 +19198,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -19800,7 +19814,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -21141,8 +21155,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -21154,9 +21168,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -21170,8 +21191,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -21183,9 +21204,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -89190,8 +89218,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -89201,9 +89229,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -89763,8 +89798,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -89775,9 +89810,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -89817,8 +89859,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -89829,9 +89871,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "Ordinary ore and crystals work; Mercoxit extraction and cloud hazards remain unavailable.",
+          "role": "DeepCoreMining"
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -89937,8 +89993,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -89949,9 +90005,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -117767,8 +117830,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -117777,9 +117840,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -117793,8 +117863,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -117803,9 +117873,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -126392,8 +126469,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Partial",
       "effects": [
         12,
         16,
@@ -126403,9 +126480,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "ConsumerCoverage",
+          "implemented": false,
+          "milestone": "Mining",
+          "evidence": "Ordinary ore and crystals work; Mercoxit extraction and cloud hazards remain unavailable.",
+          "role": "DeepCoreMining"
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Mining",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -129568,7 +129659,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2848,
@@ -129591,9 +129682,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -129608,7 +129699,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2849,
@@ -129631,9 +129722,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -129680,7 +129771,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         4162
@@ -129702,9 +129793,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Scanning rig modifiers feed authoritative probe strength and deviation.",
           "role": null
         }
       ],
@@ -131357,7 +131448,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -132407,7 +132498,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2848,
@@ -132430,9 +132521,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -132480,7 +132571,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2849,
@@ -132503,9 +132594,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -132552,7 +132643,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         4162
@@ -132574,9 +132665,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Scanning rig modifiers feed authoritative probe strength and deviation.",
           "role": null
         }
       ],
@@ -132788,7 +132879,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -140573,8 +140664,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -140586,9 +140677,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -140602,8 +140700,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -140615,9 +140713,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -141309,7 +141414,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5036,
         5119,
@@ -141339,7 +141444,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -141353,7 +141458,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -141918,15 +142023,15 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         3793
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -141942,15 +142047,15 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         3793
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -142171,15 +142276,15 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         3793
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -142195,15 +142300,15 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         3793
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -142219,8 +142324,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -142229,9 +142334,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -142245,8 +142357,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -142255,9 +142367,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -145692,7 +145811,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2848,
@@ -145715,9 +145834,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -145732,7 +145851,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2848,
@@ -145755,9 +145874,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -145772,7 +145891,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2848,
@@ -145795,9 +145914,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -145812,7 +145931,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2848,
@@ -145835,9 +145954,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -145852,7 +145971,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2848,
@@ -145875,9 +145994,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -145892,7 +146011,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2848,
@@ -145915,9 +146034,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -145932,7 +146051,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         4162
@@ -145954,9 +146073,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Scanning rig modifiers feed authoritative probe strength and deviation.",
           "role": null
         }
       ],
@@ -145971,7 +146090,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         4162
@@ -145993,9 +146112,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Scanning rig modifiers feed authoritative probe strength and deviation.",
           "role": null
         }
       ],
@@ -146010,7 +146129,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         4162
@@ -146032,9 +146151,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Scanning rig modifiers feed authoritative probe strength and deviation.",
           "role": null
         }
       ],
@@ -146049,7 +146168,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         4162
@@ -146071,9 +146190,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Scanning rig modifiers feed authoritative probe strength and deviation.",
           "role": null
         }
       ],
@@ -146088,7 +146207,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         4162
@@ -146110,9 +146229,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Scanning rig modifiers feed authoritative probe strength and deviation.",
           "role": null
         }
       ],
@@ -146127,7 +146246,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         4162
@@ -146149,9 +146268,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Scanning rig modifiers feed authoritative probe strength and deviation.",
           "role": null
         }
       ],
@@ -146358,7 +146477,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2849,
@@ -146381,9 +146500,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -146398,7 +146517,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2849,
@@ -146421,9 +146540,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -146438,7 +146557,7 @@
       "techLevel": 1,
       "metaGroup": 1,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2849,
@@ -146461,9 +146580,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -146478,7 +146597,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2849,
@@ -146501,9 +146620,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -146518,7 +146637,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2849,
@@ -146541,9 +146660,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -146558,7 +146677,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2663,
         2849,
@@ -146581,9 +146700,9 @@
         },
         {
           "operation": "ConsumerCoverage",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Analyzer rigs feed the authoritative hacking virus profile.",
           "role": null
         }
       ],
@@ -147643,7 +147762,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147683,7 +147802,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147723,7 +147842,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147763,7 +147882,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147803,7 +147922,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -147843,7 +147962,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Exploration",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -158886,15 +159005,15 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         3793
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -160289,7 +160408,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Mining",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -160328,7 +160447,7 @@
           "operation": "ConsumerCoverage",
           "implemented": false,
           "milestone": "Mining",
-          "evidence": "Rig fitting/modifiers work; the owning mining, scanning or hacking consumer remains unfinished.",
+          "evidence": "Rig fitting/modifiers work; the owning mining consumer remains unfinished.",
           "role": null
         }
       ],
@@ -162077,8 +162196,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -162087,9 +162206,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -162103,8 +162229,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -162113,9 +162239,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -162129,8 +162262,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -162139,9 +162272,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -162155,8 +162295,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -162165,9 +162305,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -162181,8 +162328,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -162191,9 +162338,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -162207,8 +162361,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -162217,9 +162371,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -163290,7 +163451,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -163304,7 +163465,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -164230,7 +164391,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -164244,7 +164405,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -164310,7 +164471,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -164324,7 +164485,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -164412,7 +164573,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -164426,7 +164587,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -164551,7 +164712,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -164565,7 +164726,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -184860,8 +185021,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -184870,9 +185031,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -184886,8 +185054,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -184896,9 +185064,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -186025,7 +186200,7 @@
       "techLevel": 1,
       "metaGroup": null,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1218,
         2215,
@@ -186073,7 +186248,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -192105,8 +192280,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192115,7 +192290,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192131,8 +192306,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192141,7 +192316,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192157,8 +192332,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192167,7 +192342,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192183,8 +192358,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192193,7 +192368,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192209,8 +192384,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192219,7 +192394,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192235,8 +192410,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192245,7 +192420,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192261,8 +192436,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192271,7 +192446,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192287,8 +192462,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192297,7 +192472,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192313,8 +192488,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192323,7 +192498,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -192339,8 +192514,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -192349,7 +192524,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -195567,7 +195742,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -201132,8 +201307,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 19,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -201142,9 +201317,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -204252,8 +204434,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204262,7 +204444,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204278,8 +204460,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204288,7 +204470,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204304,8 +204486,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204314,7 +204496,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204330,8 +204512,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204340,7 +204522,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204356,8 +204538,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204366,7 +204548,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204382,8 +204564,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204392,7 +204574,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204408,8 +204590,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204418,7 +204600,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204434,8 +204616,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204444,7 +204626,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204460,8 +204642,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204470,7 +204652,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204486,8 +204668,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204496,7 +204678,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204512,8 +204694,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204522,7 +204704,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204538,8 +204720,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204548,7 +204730,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204564,8 +204746,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204574,7 +204756,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204590,8 +204772,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204600,7 +204782,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204616,8 +204798,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204626,7 +204808,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204642,8 +204824,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204652,7 +204834,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204668,8 +204850,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204678,7 +204860,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204694,8 +204876,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204704,7 +204886,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204720,8 +204902,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204730,7 +204912,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204746,8 +204928,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204756,7 +204938,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204772,8 +204954,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204782,7 +204964,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204798,8 +204980,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204808,7 +204990,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204824,8 +205006,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204834,7 +205016,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204850,8 +205032,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204860,7 +205042,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204876,8 +205058,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204886,7 +205068,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204902,8 +205084,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204912,7 +205094,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204928,8 +205110,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204938,7 +205120,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204954,8 +205136,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204964,7 +205146,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -204980,8 +205162,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -204990,7 +205172,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205006,8 +205188,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205016,7 +205198,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205554,8 +205736,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205564,7 +205746,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205580,8 +205762,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205590,7 +205772,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205606,8 +205788,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205616,7 +205798,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205632,8 +205814,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205642,7 +205824,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205658,8 +205840,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205668,7 +205850,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205684,8 +205866,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205694,7 +205876,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205710,8 +205892,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205720,7 +205902,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205736,8 +205918,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205746,7 +205928,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205762,8 +205944,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205772,7 +205954,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205788,8 +205970,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205798,7 +205980,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205814,8 +205996,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205824,7 +206006,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205840,8 +206022,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205850,7 +206032,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205866,8 +206048,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205876,7 +206058,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205892,8 +206074,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205902,7 +206084,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205918,8 +206100,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205928,7 +206110,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205944,8 +206126,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205954,7 +206136,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205970,8 +206152,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -205980,7 +206162,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -205996,8 +206178,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -206006,7 +206188,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -206022,8 +206204,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -206032,7 +206214,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -206048,8 +206230,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -206058,7 +206240,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -206858,7 +207040,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4166,
         5460,
@@ -206889,14 +207071,14 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -206913,7 +207095,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4165,
         5460,
@@ -206944,14 +207126,14 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -206968,7 +207150,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         514,
         5119,
@@ -206999,14 +207181,14 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -207023,7 +207205,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         4167,
         5087,
@@ -207063,14 +207245,14 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -207945,7 +208127,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -207959,7 +208141,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -213470,15 +213652,15 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         3793
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -213494,8 +213676,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -213504,9 +213686,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -213520,8 +213709,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -213530,9 +213719,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -213546,8 +213742,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -213556,9 +213752,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -213572,8 +213775,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -213582,9 +213785,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -213807,8 +214017,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -213819,9 +214029,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -214649,7 +214866,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Probes"
@@ -214670,7 +214887,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Hacking"
@@ -215245,8 +215462,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -215255,7 +215472,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -215271,8 +215488,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -215281,7 +215498,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -215297,8 +215514,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -215307,7 +215524,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -215323,8 +215540,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -215333,7 +215550,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -215349,8 +215566,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -215359,7 +215576,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -215375,8 +215592,8 @@
       "category": "Charge",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         1200,
@@ -215385,7 +215602,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Mining",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -216502,8 +216719,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -216515,9 +216732,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "ProbeScanning",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "ProbeScanning",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -217719,8 +217943,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         13,
         16,
@@ -217729,9 +217953,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "Exploration",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "Exploration",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],

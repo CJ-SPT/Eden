@@ -25,6 +25,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
 using Eden.World.Defenses;
 using Eden.World.Inventory;
+using Eden.World.Mining;
 using Eden.World.Propulsion;
 using Eden.World.Repair;
 using Eden.World.Skills;
@@ -173,6 +174,36 @@ internal sealed record FittingCalculation(
             ];
         }
         List<DogmaModifier> modifiers = [];
+        foreach (var charge in charges.Where(c => c.GroupId is MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup))
+        {
+            var parent = modules.Single(m => m.Item.Id == charge.Item.LocationId);
+            if (
+                !MiningLaserCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
+                || !MiningCrystalCatalog.Supported(catalog, charge.Item.TypeId, charge.GroupId)
+                || !MiningCrystalRules.Compatible(moduleAttributes[parent.Item.TypeId], charge.GroupId)
+                || charge.Item.Quantity != 1
+            )
+            {
+                throw new InvalidDataException("Invalid fitted mining crystal.");
+            }
+            foreach (var modifier in MiningCrystalRules.Modifiers)
+            {
+                // Older crystal definitions omit the duration program.
+                if (!FittingCatalog.Effects(catalog, charge.Item.TypeId).Contains((DogmaEffect)modifier.EffectId))
+                {
+                    continue;
+                }
+                modifiers.Add(
+                    new(
+                        parent.Item.Id,
+                        modifier.Attribute,
+                        modifier.Operation,
+                        new DogmaValue.Attribute(charge.Item.Id, modifier.Source),
+                        true
+                    )
+                );
+            }
+        }
         foreach (var charge in charges.Where(c => SupportModuleDefinitions.IsScript(c.GroupId)))
         {
             var parent = modules.Single(m => m.Item.Id == charge.Item.LocationId);

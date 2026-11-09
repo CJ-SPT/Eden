@@ -22,6 +22,9 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 ## Current status
 
+[Modulated ore mining](docs/protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026) supports the three static modulated miners
+and 66 ordinary mining crystals, with matching ore lists, fitted bonuses, persistent wear and native shattering updates.
+
 | Area | Implemented scope and limits |
 | --- | --- |
 | Accounts and characters | Launcher registration/login, three character slots, persistent biomass preparation/cancellation and final deletion, profiles, skill training, remapping, learning implants/boosters, skill injectors/extraction, redemption and personal clones. |

@@ -11,15 +11,17 @@ public sealed record InventoryTypeList(
 {
     // Native GetTypeIDsFromTypeList applies exclusions at each level before
     // unioning the next, more specific inclusion set.
-    public bool Contains(InventoryItem item) =>
-        !ExcludedTypes.Contains(item.TypeId)
+    public bool Contains(InventoryItem item) => Contains(item.TypeId, item.GroupId, item.CategoryId);
+
+    public bool Contains(int typeId, int groupId, int categoryId) =>
+        !ExcludedTypes.Contains(typeId)
         && (
-            IncludedTypes.Contains(item.TypeId)
+            IncludedTypes.Contains(typeId)
             || (
-                !ExcludedGroups.Contains(item.GroupId)
+                !ExcludedGroups.Contains(groupId)
                 && (
-                    IncludedGroups.Contains(item.GroupId)
-                    || (IncludedCategories.Contains(item.CategoryId) && !ExcludedCategories.Contains(item.CategoryId))
+                    IncludedGroups.Contains(groupId)
+                    || (IncludedCategories.Contains(categoryId) && !ExcludedCategories.Contains(categoryId))
                 )
             )
         );

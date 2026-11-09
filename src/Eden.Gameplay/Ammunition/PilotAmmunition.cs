@@ -1,5 +1,6 @@
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 
 namespace Eden.Gameplay.Ammunition;
 
@@ -97,7 +98,13 @@ public static class AmmunitionDefinitions
                 or AdvancedAutocannonChargeGroup
                 or AdvancedArtilleryChargeGroup;
 
-    public static bool IsCrystalGroup(int group) => group is FrequencyCrystalGroup or AdvancedBeamCrystalGroup or AdvancedPulseCrystalGroup;
+    public static bool IsCrystalGroup(int group) =>
+        group
+            is FrequencyCrystalGroup
+                or AdvancedBeamCrystalGroup
+                or AdvancedPulseCrystalGroup
+                or MiningCrystalRules.Group
+                or MiningCrystalRules.MercoxitGroup;
 
     public static bool CompatibleTurretCharge(
         IReadOnlyDictionary<DogmaAttributeId, double> weapon,

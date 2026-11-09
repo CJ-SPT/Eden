@@ -113,6 +113,11 @@ public static class MiningRules
                         / 100
                 );
         }
+        if (inputs.GroupId == InventoryDefinitions.ModulatedMinerGroup)
+        {
+            // Effect 1212 mirrors the effective mining amount for native information panels.
+            attributes[DogmaAttributeId.MiningSpecialtyAmount] = attributes[DogmaAttributeId.MiningAmount];
+        }
         return attributes;
     }
 }

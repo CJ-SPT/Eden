@@ -8,6 +8,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.World.Ammunition;
@@ -285,6 +286,23 @@ internal static class ShipContentAudit
         if (!admitted)
         {
             return false;
+        }
+        if (
+            type.GroupId == InventoryDefinitions.ModulatedMinerGroup
+            && InventoryDefinitions.RequiredSkills.Any(p =>
+                catalog.FittingAttributes(type.Id).GetValueOrDefault(p.Skill) == MiningDefinitions.DeepCoreMiningSkill
+            )
+        )
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    false,
+                    ShipContentMilestone.Mining,
+                    "Ordinary ore and crystals work; Mercoxit extraction and cloud hazards remain unavailable.",
+                    HullCapability.DeepCoreMining
+                )
+            );
         }
         var effects = PassiveCatalog.Effects(catalog, type.Id);
         bool rig = RigRules.Groups.Contains(type.GroupId);

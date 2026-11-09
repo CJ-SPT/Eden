@@ -36,6 +36,65 @@ namespace Eden.Protocol.Tests.Mining;
 public sealed class MiningTests
 {
     [Fact]
+    public void ModulatedMiningManualStopPublishesNativeCrystalDamageAndRemovesShatteredCharge()
+    {
+        using Fixture fixture = new();
+        string catalogPath = new WorldDatabase(fixture.Db.Path).CatalogPath;
+        PassiveCatalogFixture.LoadMining(catalogPath);
+        const int CrystalType = 60276;
+        long pilot = fixture.Db.Store.FindPilot(1000001)!.PilotId;
+        using (CatalogDbContext catalog = new(catalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql($"UPDATE TypeAttribute SET Value=1 WHERE ItemTypeId={CrystalType} AND AttributeId=783");
+            using WorldDbContext world = new(fixture.Db.Path);
+            foreach (int skill in new[] { 3386, 11395, 60377 })
+            {
+                var row =
+                    world.Set<PilotSkill>().Find(pilot, skill)
+                    ?? world.Set<PilotSkill>().Add(new() { PilotId = pilot, TypeId = skill }).Entity;
+                double rank = catalog.Set<TypeAttribute>().Find(skill, (int)DogmaAttributeId.SkillTimeConstant)!.Value;
+                row.Points = TrainedSkill.PointsForLevel(rank, 5);
+            }
+            world.SaveChanges();
+        }
+        var (context, _, mining, module) = fixture.Client(laser: (MiningLaserType)18068);
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world
+                .Set<OwnedItem>()
+                .Add(
+                    new()
+                    {
+                        Id = InventoryPersistence.NextId(world),
+                        OwnerId = pilot,
+                        TypeId = CrystalType,
+                        LocationId = module,
+                        FlagId = (int)InventoryFlag.Cargo,
+                        Quantity = 1,
+                        Singleton = true,
+                        CrystalDamage = .975,
+                    }
+                );
+            world.SaveChanges();
+        }
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        fixture.Clock.Milliseconds += 1000;
+        context.Notifications.Clear();
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
+        var charge = context
+            .Notifications.OfType<ModuleAttributesChanged>()
+            .SelectMany(n => n.Changes)
+            .Where(c => c.Item is DogmaItemKey.Charge)
+            .ToArray();
+        Assert.Equal(new[] { DogmaAttributeId.Damage, DogmaAttributeId.Quantity }, charge.Select(c => c.Attribute));
+        Assert.Equal(1, charge[0].Value);
+        Assert.Equal(0, charge[1].Value);
+        Assert.Single(context.Notifications.OfType<OreMined>());
+        using WorldDbContext saved = new(fixture.Db.Path);
+        Assert.DoesNotContain(saved.Set<OwnedItem>(), i => i.LocationId == module);
+    }
+
+    [Fact]
     public void PaidMiningCycleHasAnAuthoritativeDeadlineForRepairExclusion()
     {
         using Fixture f = new();
@@ -544,6 +603,8 @@ public sealed class MiningTests
         }
         var (pilot, _, _, module) = fixture.Client();
         var (wing, _, _, wingModule) = fixture.Client(1000002);
+        fixture.Store.Begin(pilot.Pilot.PilotId, module, Fixture.Asteroid, fixture.Clock.Now);
+        fixture.Store.Begin(wing.Pilot.PilotId, wingModule, Fixture.Asteroid, fixture.Clock.Now);
         using (WorldDbContext world = new(fixture.Db.Path))
         {
             world.Database.ExecuteSqlRaw("UPDATE WorldAsteroid SET Quantity=100");
@@ -659,7 +720,12 @@ public sealed class MiningTests
         long now = fixture.Clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         for (int cycle = 0; cycle < 26; cycle++)
         {
-            fixture.Store.Begin(context.Pilot.PilotId, module, Fixture.Asteroid, now);
+            var paid = fixture.Store.Begin(context.Pilot.PilotId, module, Fixture.Asteroid, now);
+            fixture.Store.Stop(
+                context.Pilot.PilotId,
+                module,
+                checked(now + (long)Math.Ceiling(paid.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond))
+            );
         }
         Assert.Equal(
             0,

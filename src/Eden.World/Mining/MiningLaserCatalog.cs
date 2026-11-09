@@ -12,6 +12,7 @@ internal static class MiningLaserCatalog
     private const int AbyssalMetaGroup = 15;
     private const int LaserEffectCount = 4;
     private const int StripMinerEffectCount = 3;
+    private const int ModulatedMinerEffectCount = 4;
 
     private static readonly CatalogTypeRule s_support = new(typeof(MiningLaserCatalog).FullName!, ValidateSupport);
 
@@ -26,7 +27,10 @@ internal static class MiningLaserCatalog
             || (group == InventoryDefinitions.StripMinerGroup && !MiningDefinitions.IsOrdinaryStripMiner(attributes))
             || type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
-            || (group != InventoryDefinitions.StripMinerGroup && InventoryDefinitions.RequiresSpecificShip(attributes))
+            || (
+                group is not (InventoryDefinitions.StripMinerGroup or InventoryDefinitions.ModulatedMinerGroup)
+                && InventoryDefinitions.RequiresSpecificShip(attributes)
+            )
             // Deep-core lasers need Mercoxit cloud hazards before being enabled.
             || attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) != 0
         )
@@ -34,7 +38,12 @@ internal static class MiningLaserCatalog
             return false;
         }
         var effects = PassiveCatalog.Effects(catalog, typeId);
-        return effects.Count == (group == InventoryDefinitions.StripMinerGroup ? StripMinerEffectCount : LaserEffectCount)
+        int expected = group == InventoryDefinitions.StripMinerGroup ? StripMinerEffectCount : LaserEffectCount;
+        if (group == InventoryDefinitions.ModulatedMinerGroup)
+        {
+            expected = ModulatedMinerEffectCount + (effects.Any(e => e.EffectID == (int)DogmaEffect.TurretFitted) ? 1 : 0);
+        }
+        return effects.Count == expected
             && effects.Count == FittingCatalog.Effects(catalog, typeId).Count
             && effects.Any(effect =>
                 effect.EffectID == (int)DogmaEffect.MiningLaser
@@ -50,7 +59,18 @@ internal static class MiningLaserCatalog
                         or (int)DogmaEffect.HighPower
                         or (int)DogmaEffect.TurretFitted
                         or (int)DogmaEffect.MiningLaser
-                && (effect.ModifierInfo ?? []).Length == 0
+                        or (int)DogmaEffect.MiningCrystalInformation
+                && (
+                    effect.EffectID == (int)DogmaEffect.MiningCrystalInformation
+                        ? group == InventoryDefinitions.ModulatedMinerGroup
+                            && effect.EffectCategory == (int)PassiveEffectPhase.Fitted
+                            && effect.ModifierInfo is { Length: 1 }
+                            && effect.ModifierInfo.Value[0] is { Domain: "itemID", Func: "ItemModifier" } info
+                            && info.ModifiedAttributeID == (int)DogmaAttributeId.MiningSpecialtyAmount
+                            && info.ModifyingAttributeID == (int)DogmaAttributeId.MiningAmount
+                            && info.Operation == (int)DogmaOperation.PreAssignment
+                        : (effect.ModifierInfo ?? []).Length == 0
+                )
             );
     }
 }

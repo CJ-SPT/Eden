@@ -14,6 +14,9 @@
 
 ## Development
 
+[Modulated ore mining and crystals](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
+covers the three static modulated miners, 66 ordinary crystals, matching ore lists and saved crystal wear.
+
 [Insider tools and item creation](protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026) covers Skill Tool profiles,
 command discovery, skill injectors and correct reward destinations. The
 [redemption correction](protocol/characters.md#native-redemption-pairs-and-batched-training-queues-november-9-2026) fixes native claim

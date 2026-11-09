@@ -4,6 +4,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -100,11 +101,15 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             context.Pilot.PilotId,
             cycle.Laser.ItemId,
             cycle.Target,
-            new(fraction, completed, new(Roll(), Roll(), Roll(), Roll(), Roll()))
+            new(fraction, completed, new(Roll(), Roll(), Roll(), Roll(), Roll(), Roll()))
         );
         if (result.Cargo is { } change)
         {
             InventoryChangesWire.NotifyItemChange(context, change);
+        }
+        if (result.Crystal is { } crystal)
+        {
+            MagazineWire.NotifyState(context, crystal, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         }
         if (result.Extracted > 0 || result.Residue > 0)
         {

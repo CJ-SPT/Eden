@@ -1,3 +1,4 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 
@@ -18,7 +19,14 @@ public sealed record MiningLaser(
 
 public sealed record MiningStart(MiningLaser Laser, double Capacitor);
 
-public sealed record MiningRolls(double Yield, double Critical, double CriticalYield, double Residue, double ResidueYield);
+public sealed record MiningRolls(
+    double Yield,
+    double Critical,
+    double CriticalYield,
+    double Residue,
+    double ResidueYield,
+    double Crystal = .5
+);
 
 public sealed record MiningCollection(double Fraction, bool Completed, MiningRolls Rolls);
 
@@ -29,7 +37,8 @@ public sealed record MiningYield(
     int CriticalBonus,
     int Residue,
     bool Depleted,
-    bool CargoFull
+    bool CargoFull,
+    Magazine? Crystal = null
 );
 
 public interface IPilotMining
