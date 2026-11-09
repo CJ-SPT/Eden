@@ -29,7 +29,6 @@ internal sealed class PilotSessionCalls(
 
     public async Task ProcessAsync(object? incoming, long? received = null)
     {
-        using var operation = operations?.Begin();
         var packet = IncomingMachoPacket.Read(incoming);
         if (packet.Name == PacketNamespace + "PingReq")
         {
@@ -57,6 +56,10 @@ internal sealed class PilotSessionCalls(
         }
         string service = router.ResolveService(context, packet.Destination(), call.ObjectId);
         string method = call.Method;
+        // Trusted plugin code runs outside the world owner. Its typed services acquire their own operation scopes.
+        PilotCallResult? modResult =
+            service == "edenMods" ? router.Call(context, service, method, call.Arguments, report, call.Keywords) : null;
+        using var operation = operations?.Begin();
         string description = DescribeCall(service, method, call.Arguments);
         report($"Call {description}.");
         using var performance = SessionPerformance.Begin($"call {description}", diagnostics?.Trace ?? report);
@@ -82,7 +85,7 @@ internal sealed class PilotSessionCalls(
             using (SessionLatency.Measure(SessionLatencyPhase.Handler))
             using (SessionPerformance.Begin("dispatch", diagnostics?.Trace ?? report))
             {
-                result = router.Call(context, service, method, call.Arguments, report, call.Keywords);
+                result = modResult ?? router.Call(context, service, method, call.Arguments, report, call.Keywords);
             }
             if (!selected && context.Selected)
             {

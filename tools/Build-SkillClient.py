@@ -5,6 +5,7 @@ No game module bodies run. Original client files are read only; output must be e
 import argparse
 import ctypes
 import hashlib
+import json
 import os
 from pathlib import Path
 import tempfile
@@ -42,6 +43,56 @@ def CloneGradeStorage():
 }
 
 
+NEOCOM_MODULE = 'eve/client/script/ui/shared/neocom/neocom/neocomSvc.pyj'
+MOD_WRAPPERS = [
+    ('Run', """
+def Run(self):
+    def _eden_original(self):
+        pass
+    result = _eden_original(self)
+    import eden_mod_loader
+    eden_mod_loader.start(self)
+    return result
+"""),
+    ('GetMenu', """
+def GetMenu(self):
+    def _eden_original(self):
+        pass
+    import eden_mod_loader
+    return eden_mod_loader.menu(_eden_original(self))
+"""),
+]
+
+
+def mod_sources(root):
+    modules = {}
+    entries = []
+    if root is not None and root.exists():
+        order_path = root / '.order.json'
+        order = json.loads(order_path.read_text(encoding='utf-8')) if order_path.exists() else []
+        positions = dict((name, index) for index, name in enumerate(order))
+        for folder in sorted((path for path in root.iterdir() if path.is_dir()),
+                             key=lambda path: (positions.get(path.name, len(order)), path.name)):
+            manifest = json.loads((folder / 'manifest.json').read_text(encoding='utf-8'))
+            if manifest.get('clientEntry') is None:
+                continue
+            namespace = 'eden_mod_' + hashlib.sha256(manifest['id'].encode('utf-8')).hexdigest()[:16]
+            modules[namespace + '/__init__.pyj'] = ''
+            for path in sorted((folder / 'client').rglob('*.py')):
+                relative = path.relative_to(folder / 'client').as_posix()
+                parts = relative.split('/')
+                for count in range(1, len(parts)):
+                    modules.setdefault(namespace + '/' + '/'.join(parts[:count]) + '/__init__.pyj', '')
+                modules[namespace + '/' + relative[:-3] + '.pyj'] = path.read_text(encoding='utf-8')
+            entry = manifest['clientEntry'][len('client/'):-3].replace('/', '.')
+            entries.append({'id': manifest['id'], 'module': namespace + '.' + entry})
+    if entries:
+        source = 'MODS = ' + repr(entries) + '\n'
+        source += Path(__file__).with_name('mod_client_loader.py').read_text(encoding='utf-8')
+        modules['eden_mod_loader.pyj'] = source
+    return modules
+
+
 def build(root, overlay, output, mods=None):
     root, overlay, output = root.resolve(), overlay.resolve(), output.resolve()
     if output.is_relative_to(root):
@@ -56,6 +107,7 @@ def build(root, overlay, output, mods=None):
         raise ValueError('The source Python runtime does not match build 3662168')
     source = 'DATA_JSON = ' + repr(overlay.read_text(encoding='utf-8')) + '\n'
     source += Path(__file__).with_name('skill_client_overlay.py').read_text(encoding='utf-8')
+    extra_sources = mod_sources(mods)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='eden-skill-compile-', dir=output.parent) as folder:
         work = Path(folder)
@@ -65,6 +117,11 @@ def build(root, overlay, output, mods=None):
                 path = work / (name.replace('/', '_'))
                 path.write_bytes(zlib.decompress(original.read(name)))
                 jobs.append((str(path), function, wrapper))
+            if extra_sources:
+                path = work / NEOCOM_MODULE.replace('/', '_')
+                path.write_bytes(zlib.decompress(original.read(NEOCOM_MODULE)))
+                for function, wrapper in MOD_WRAPPERS:
+                    jobs.append((str(path), function, wrapper))
         worker = '''import marshal
 def replace(code, constants):
     return type(code)(code.co_argcount,code.co_nlocals,code.co_stacksize,code.co_flags,
@@ -91,9 +148,16 @@ for path, name, source in JOBS:
     open(path,'wb').write(header+marshal.dumps(code,0))
 module=compile(MODULE_SOURCE,'eden_skill_overlay.py','exec')
 open(MODULE_OUTPUT,'wb').write(header+marshal.dumps(module,0))
+for path, name, source in EXTRA_COMPILATIONS:
+    module=compile(source,name,'exec')
+    open(path,'wb').write(header+marshal.dumps(module,0))
 '''
         worker = worker.replace('JOBS', repr(jobs)).replace('MODULE_SOURCE', repr(source))
         worker = worker.replace('MODULE_OUTPUT', repr(str(work / 'eden_skill_overlay.pyj')))
+        extras = [(str(work / ('extra-' + str(index))), name,
+                   ('# coding: utf-8\n' + module).encode('utf-8'))
+                  for index, (name, module) in enumerate(sorted(extra_sources.items()))]
+        worker = worker.replace('EXTRA_COMPILATIONS', repr(extras))
         with os.add_dll_directory(str(binaries)):
             runtime = ctypes.CDLL(str(binaries / 'python27.dll'))
             ctypes.c_int.in_dll(runtime, 'Py_NoSiteFlag').value = 1
@@ -105,8 +169,13 @@ open(MODULE_OUTPUT,'wb').write(header+marshal.dumps(module,0))
                 if name == 'eden_skill_overlay.pyj':
                     raise ValueError('The original archive already contains an Eden overlay')
                 path = work / name.replace('/', '_')
-                data = zlib.compress(path.read_bytes()) if name in WRAPPERS else original.read(name)
+                data = zlib.compress(path.read_bytes()) if name in WRAPPERS or (extra_sources and name == NEOCOM_MODULE) else original.read(name)
                 target.writestr(zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0)), data)
+            for path, name, module in extras:
+                if name in original.namelist():
+                    raise ValueError('A mod module overlaps the original archive')
+                target.writestr(zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0)),
+                                zlib.compress(Path(path).read_bytes()))
             target.writestr(zipfile.ZipInfo('eden_skill_overlay.pyj', (1980, 1, 1, 0, 0, 0)),
                             zlib.compress((work / 'eden_skill_overlay.pyj').read_bytes()))
     print('Skill client archive compiled successfully')

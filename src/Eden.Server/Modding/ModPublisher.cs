@@ -37,6 +37,12 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
             if (!Directory.Exists(final))
             {
                 await File.WriteAllTextAsync(Path.Combine(temporary, "overlay.json"), overlay, cancellation);
+                Directory.CreateDirectory(Path.Combine(temporary, "mods"));
+                await File.WriteAllTextAsync(
+                    Path.Combine(temporary, "mods", ".order.json"),
+                    JsonSerializer.Serialize(packages.Select(value => value.Manifest.Id), ModFormat.Json),
+                    cancellation
+                );
                 foreach (var installed in packages)
                 {
                     string destination = Path.Combine(temporary, "mods", installed.Manifest.Id);

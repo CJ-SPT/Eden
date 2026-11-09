@@ -212,6 +212,7 @@ internal static class Program
             Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
             return;
         }
+        services.GetRequiredService<Eden.Server.Modding.ModRuntime>().Start();
         services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
         services.GetRequiredService<CatalogProvider>().PreloadCore();
         int administrationPort = Value("--admin-port") is { } adminPort

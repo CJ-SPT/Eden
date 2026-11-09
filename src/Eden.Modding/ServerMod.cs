@@ -53,3 +53,8 @@ public interface IModCommands
 {
     ModCommandReply Execute(string modId, string command, ModCommandContext context);
 }
+
+public interface IModSessionEvents
+{
+    void Publish(ModEvent notification);
+}

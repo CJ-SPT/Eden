@@ -10,11 +10,15 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Eden.Server;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptions? options = null)
+internal sealed class LoopbackServer(
+    ConnectionRunner connections,
+    LauncherOptions? options = null,
+    Eden.Server.Modding.ModRuntime? mods = null
+)
 {
     public async Task RunAsync(long? startupStarted = null)
     {
-        using CancellationTokenSource shutdown = new();
+        using var shutdown = CancellationTokenSource.CreateLinkedTokenSource(mods?.FailureToken ?? CancellationToken.None);
         void OnCancel(object? sender, ConsoleCancelEventArgs args)
         {
             args.Cancel = true;

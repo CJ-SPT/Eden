@@ -31,6 +31,7 @@ internal static class ServerServices
         .. ImplementationAssemblies,
         typeof(IPilotHealth).Assembly,
         typeof(IPilotOperationScope).Assembly,
+        typeof(Eden.Modding.IServerMod).Assembly,
     ];
 
     public static ServiceProvider Build(

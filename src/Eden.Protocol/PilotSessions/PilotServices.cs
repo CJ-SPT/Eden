@@ -28,7 +28,8 @@ internal sealed class PilotServices(
     ChatHandler? chat = null,
     SessionDiagnostics? diagnostics = null,
     ICapsuleerHandoff? handoff = null,
-    ICapsuleerPresentation? presentation = null
+    ICapsuleerPresentation? presentation = null,
+    Eden.Modding.IModSessionEvents? modEvents = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -56,6 +57,7 @@ internal sealed class PilotServices(
         {
             Roles = identity.ReadRoles(accountId),
         };
+        using var modSession = new Eden.Protocol.Modding.ModSessionObserver(context, modEvents);
         PilotSessionOutput output = new(context, accountId, clientId, write, report, diagnostics);
         PilotSessionCalls calls = new(
             context,
@@ -99,6 +101,7 @@ internal sealed class PilotServices(
                 {
                     await checkpoint;
                     await tick.AdvanceAsync(context, output, report, accountId, clientId);
+                    modSession.Observe();
                     schedule.Complete();
                     checkpoint = null;
                 }
@@ -110,6 +113,7 @@ internal sealed class PilotServices(
             var arrived = await incoming;
             SessionPerformance.ReportQueue(arrived.Received, diagnostics?.Trace ?? report);
             await calls.ProcessAsync(arrived.Packet, arrived.Received);
+            modSession.Observe();
         }
     }
 }

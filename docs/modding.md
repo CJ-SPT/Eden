@@ -2,8 +2,7 @@
 
 The modding implementation is delivered in milestones. The foundation provides version-1 `.edenmod` archives,
 exact dependency resolution, explicit skill overrides, permanent per-world custom skill identities, offline
-reference export and immutable composed catalog/client packages. The Avalonia SDK now authors offline projects and generates C# server projects; plugin execution and launcher
-cutover follow in the next milestones. This page records each completed boundary.
+reference export and immutable composed catalog/client packages. The Avalonia SDK now authors offline projects and generates C# server projects; trusted plugin execution and native-client extensions are available; launcher cutover follows in the final milestone. This page records each completed boundary.
 
 ## Host commands
 
@@ -86,3 +85,40 @@ project history/reopen, stale saves, prerequisites, draft retention and explicit
 Live acceptance: Not performed; agent client testing is disabled.
 
 Optional maintainer checks: inspect the SDK forms at preferred desktop scaling and confirm the two bonus modes read clearly.
+
+## Working server and client extensions — November 9, 2026
+
+Trusted server plugins implement `IServerMod`. Registration supplies namespaced commands and lifecycle/pilot events.
+Plugin assemblies and their managed dependencies are loaded into individual collectible dependency contexts,
+sharing Eden.Modding and Eden.Gameplay contract identity. Managed assemblies load from streams so immutable package
+files are not retained as Windows mappings. Registration closes after startup; plugin assemblies cannot replace
+internal DI services through the supported registration API.
+
+Mod commands run outside the simulation owner; catalog reads use the startup snapshot, and skill reads/redemption
+operations enter the existing operation scope. State keys and reward references are scoped to the calling mod.
+Command exceptions and invalid/oversized JSON replies return structured errors. Plugin event exceptions request
+clean server shutdown, including cancellation of active native connections. Events observe committed session
+membership after the operation scope completes. Plugins must synchronize their own mutable state across callbacks.
+
+The pinned Python compiler adds namespaced modules and one Eden bootstrap. It wraps NeocomSvc.Run/GetMenu at
+uniquely matched code objects, preserving original function bodies, and adds **Eden Mods** to the Neocom context
+menu. Client `register(api)` exposes menu/window/session/command helpers. Window rendering uses the pinned native
+Window, Button and EveLabelMedium APIs. The bridge calls `edenMods.Execute(modId, command, arguments)` and receives
+`success`, JSON text and optional error fields. Selection and command roles are enforced by the server.
+
+Client module composition follows resolved mod order and never imports game or mod module bodies while building.
+Static inspection used build-3662168 code archive SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Blue serialization remains unchanged;
+Carbon Blue `af0d65b29f951260ea09140ca11adf5d40566997` remains the reference.
+
+Automated validation: 95 focused .NET tests passed without skips (23 seconds in the runner; 26.26 seconds including
+setup, preceded by a 5.21-second feature build). Filter covered ModRuntimeTests, ModFoundationTests,
+GameplayDependenciesTests, ServerServicesTests, ConnectionOwnershipTests, PilotServicesTests, TypedSessionTests and
+RedemptionTests. Two inert Python client-adapter tests passed. The pinned skill adapter test passed its 11 assertions
+in 1.963 seconds without starting the game. Tool/solution restore, zero-warning build, both policy suites (8 and 9)
+and formatting verification passed. Initial development checks exposed worker-token substitution and Windows DLL
+mapping issues; both were corrected before this final validation. The full .NET suite was not run.
+
+Live acceptance: Not performed; agent client testing is disabled. Native window/menu rendering and input remain unverified.
+
+Optional maintainer checks: after launcher cutover, inspect the example mod's Neocom menu/window and invoke its hello command.

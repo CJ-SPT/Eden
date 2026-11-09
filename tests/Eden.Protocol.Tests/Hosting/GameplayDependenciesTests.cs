@@ -27,7 +27,7 @@ public sealed class GameplayDependenciesTests
     public void WorldAndProtocolReferenceOnlyTheirSharedBoundaries()
     {
         AssertAdapter(typeof(WorldDatabase).Assembly, "Eden.Data", "Eden.Gameplay", "Eden.Infrastructure", "Eden.Modding");
-        AssertAdapter(typeof(BlueModel).Assembly);
+        AssertAdapter(typeof(BlueModel).Assembly, "Eden.Gameplay", "Eden.Infrastructure", "Eden.Modding");
     }
 
     [Theory]

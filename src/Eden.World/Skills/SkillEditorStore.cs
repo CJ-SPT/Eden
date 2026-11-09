@@ -283,10 +283,10 @@ public sealed partial class SkillEditorStore(WorldDatabase database, TimeProvide
         transaction.Commit();
     }
 
-    public static ImmutableDictionary<int, SkillDefinition> LoadOriginal(WorldDatabase database)
+    public static ImmutableDictionary<int, SkillDefinition> LoadOriginal(WorldDatabase database, bool active = false)
     {
         using var scope = new CatalogConnectionScope().Begin();
-        var catalog = CatalogProvider.Open(database.OriginalCatalogPath);
+        var catalog = CatalogProvider.Open(active ? database.CatalogPath : database.OriginalCatalogPath);
         var items = catalog.Items.Values.Where(item => item.CategoryId == SkillCategory).ToArray();
         var ids = items.Select(item => (long)item.Id).ToArray();
         var types = catalog.FindMany(CatalogData.Client.Types, ids);

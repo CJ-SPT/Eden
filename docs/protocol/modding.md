@@ -18,3 +18,17 @@ Skill validation, bonus composition and search are shared Gameplay APIs. Offline
 protection and export portable logical references. Migrated projects retain numeric identities through a world-bound
 map; another world cannot admit it. No new native wire calls are introduced in this authoring milestone.
 See the [SDK and migration record](../modding.md#offline-sdk-and-skill-migration--november-9-2026) for validation.
+
+## Native mod command bridge — November 9, 2026
+
+`edenMods.Execute` is selected-pilot only and accepts exactly three text arguments: mod identity, command and argument
+text. Replies use an explicit Blue dictionary adapter with `success` boolean, `json` text and nullable `error` text.
+UTF-8 command/reply data is bounded at 64 KiB; command-role requirements are authoritative. Unknown or malformed calls
+return structured errors, and other service/method pairs remain unsupported by this handler.
+
+Neocom.Run/GetMenu adapters are inertly compiled against uniquely matched build-3662168 functions. Session notifications
+use the inspected native service manager's RegisterNotify path. This milestone changes no Blue codecs or Destiny rules.
+See the [runtime record](../modding.md#working-server-and-client-extensions--november-9-2026) for pinned source identity,
+Carbon references, validation filters and limitations.
+
+Live acceptance: Not performed; agent client testing is disabled.
