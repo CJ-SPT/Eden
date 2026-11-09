@@ -16,8 +16,13 @@ public sealed record FittedResourceUsage(
 
 public sealed record RookieResistanceModifier(DogmaAttributeId Bonus, DogmaAttributeId Resonance);
 
+public sealed record FittingOutputSkill(FittingSkill Skill, DogmaAttributeId Attribute);
+
 public static class FittingRules
 {
+    public static IReadOnlyList<FittingOutputSkill> ResourceOutputSkills { get; } =
+    [new(FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput), new(FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput)];
+
     // Corvette roles are exempt graph modifiers, before any final resistance override.
     public static IReadOnlyList<RookieResistanceModifier> RookieResistanceModifiers { get; } =
     [
@@ -39,11 +44,15 @@ public static class FittingRules
     {
         var attributes = basis.ToDictionary();
         // These skills each grant five percent per trained level to their hull attribute.
+        foreach (var bonus in ResourceOutputSkills)
+        {
+            attributes[bonus.Attribute] =
+                attributes.GetValueOrDefault(bonus.Attribute)
+                * (1 + InventoryDefinitions.OutputBonusPerSkillLevel * levels.GetValueOrDefault((int)bonus.Skill));
+        }
         foreach (
             var (skill, output) in new[]
             {
-                ((int)FittingSkill.CpuManagement, DogmaAttributeId.CpuOutput),
-                ((int)FittingSkill.PowerGridManagement, DogmaAttributeId.PowerOutput),
                 ((int)FittingSkill.CapacitorManagement, DogmaAttributeId.CapacitorCapacity),
                 ((int)TargetingSkill.LongRangeTargeting, DogmaAttributeId.MaxTargetRange),
                 ((int)TargetingSkill.SignatureAnalysis, DogmaAttributeId.ScanResolution),

@@ -34,6 +34,19 @@ internal sealed class PilotBrain(
     public PilotBrainState Read(long pilotId, long shipId)
     {
         var levels = skills.ReadSkills(pilotId).ToDictionary(skill => skill.TypeId, skill => skill.Level);
+        // Docked OnlineModule activates the local graph before calling the server.
+        // Absolute Godma output values alone do not supply its earned fitting budget.
+        var resourceEffects = FittingRules
+            .ResourceOutputSkills.Where(bonus => levels.GetValueOrDefault((int)bonus.Skill) > 0)
+            .Select(bonus => new BrainEffect(
+                shipId,
+                BrainModifier.Item,
+                bonus.Attribute,
+                BrainOperation.PostPercent,
+                [],
+                [(int)bonus.Skill],
+                Percent * InventoryDefinitions.OutputBonusPerSkillLevel * levels[(int)bonus.Skill]
+            ));
         var effects = CombatDefinitions
             .SkillModifiers.Where(modifier => levels.GetValueOrDefault((int)modifier.Skill) > 0)
             .Select(modifier => new BrainEffect(
@@ -46,6 +59,7 @@ internal sealed class PilotBrain(
                 Percent * modifier.PerLevel * levels[(int)modifier.Skill]
             ))
             .ToList();
+        effects.AddRange(resourceEffects);
         effects.AddRange(
             MiningDefinitions
                 .SkillModifiers.Where(modifier => levels.GetValueOrDefault((int)modifier.Skill) > 0)

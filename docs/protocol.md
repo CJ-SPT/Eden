@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [CPU and power-grid skill budgets, November 9, 2026](protocol/fitting.md#cpu-and-power-grid-skill-budgets-november-9-2026)
+
 - [Ordinary agent missions, November 9, 2026](protocol/agents.md#ordinary-agent-missions--november-9-2026)
 
 - [Trashing personal items and ships, November 8, 2026](protocol/inventory.md#trashing-personal-items-and-ships-november-8-2026)

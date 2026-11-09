@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [CPU and power-grid skill budgets, November 9, 2026](#cpu-and-power-grid-skill-budgets-november-9-2026)
+
 - [Paid nanite repair runtime, November 7, 2026](#paid-nanite-repair-runtime-november-7-2026)
 
 - [Nanite repair calculations and character skills, November 7, 2026](#nanite-repair-calculations-and-character-skills-november-7-2026)
@@ -1923,3 +1925,21 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 Observe module/rack pending lights and heat gauges through a normal cycle, a hot cycle and burnout. Confirm the repaired cargo quantity after stopping a partial nanite repair. Native rendering, input and gameplay feel remain unverified by automation.
+
+## CPU and power-grid skill budgets, November 9, 2026
+
+The reported Catalyst fit showed **49.5 / 222.5 CPU remaining**, while the online rejection used **5 / 178** and required **15 CPU** for a 1MN Afterburner II. Both views imply 173 CPU already used. The missing 44.5 CPU is precisely CPU Management V's 25% bonus on 178. This screenshot is user-provided evidence, not agent live acceptance.
+
+Eden applied CPU Management and Power Grid Management in its authoritative `FittingRules.Apply` and sent the resulting absolute output attributes to Godma, but omitted those skills from `PilotBrain` ship effects. Static inspection confirms that `clientDogmaLocation.OnlineModule` calls local `Activate` before remote `SetModuleOnline`. The local graph therefore rejected a legal fit before the request reached Eden. `ClientDogmaInstanceManager.GetFittingDogmaLocation` supplies `_GetBrainForGhostFitting` to the simulator; that method reuses the current character brain or reads `GetAllInfo.charInfo`. Simulation had the same missing budgets.
+
+The two resource-output skills now share named Gameplay definitions between authoritative calculations and native brain generation. Earned levels emit one ship item modifier (`M`, post-percent operation 6, no extras, source skill ID) per trained skill, at 5% per level. Zero-level skills emit no bonus. Existing `GetAllInfo` and versioned `OnServerBrainUpdated` paths carry these effects. No saved skills, module costs or resource limits are changed, and genuine overload remains rejected.
+
+Pinned catalog types **3426 / CPU Management** and **3413 / Power Grid Management** supply 5 through attributes **424 / 313**; effects **368 / 218** multiply those sources by skill level, and effects **397 / 490** apply ship item post-percent modifiers to output attributes **48 / 11**.
+
+Sources: inert inspection of staged build-3662168 `code.ccp`, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, specifically `clientDogmaLocation.OnlineModule` / `Activate`, `baseDogmaLocation._StartModuleOnlineEffect`, and `clientDogmaIM.GetFittingDogmaLocation` / `_GetBrainForGhostFitting`. The [EVE University fitting guide](https://wiki.eveuniversity.org/Fitting_ships) and [support skills reference](https://wiki.eveuniversity.org/Support_skills) confirm whole-ship CPU and power-grid bonuses; the pinned implementation remains the build-specific reference. Consulted [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) for the existing NEWOBJ/dictionary representation. This fix reuses that adapter and changes no codec or movement behavior.
+
+**Automated validation.** The exact-method filter `FullyQualifiedName=Eden.Protocol.Tests.Persistence.PilotBrainTests.EarnedFittingOutputSkillsMatchTheAuthoritativeBudget|FullyQualifiedName=Eden.Protocol.Tests.Persistence.PilotFittingTests.NativeFittingBudgetAllowsEarnedCapacityAndRejectsRealOverload` passed all **12 cases** (4.23 seconds build, 9.17 seconds test command). Coverage includes earned levels 0 through V, encoded gray-matter round trips, real-world GetAllInfo budgets, successful online notifications, true CPU/power-grid rejection without state changes, and reopened online state. An initial test assertion used CLR integer/string types for decoded Blue values; it was corrected to assert their actual wire representations before the passing run. Final affected validation passed **74 cases** in 32.33 seconds. The OR-combined filter selected `FullyQualifiedName~Eden.Protocol.Tests.Persistence.` with each of `PilotBrainTests`, `PilotFittingTests`, `PassiveFittingTests`, `EquipmentBonusTests`, `ModuleFittingTests`, `CatalogFittingReadTests`, `ShipRigTests`, and `FittingConstraintTests`, plus `FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.FreeSkillPointServiceTests`. Tool restore (0.25 seconds), solution restore (0.68 seconds), build (5.26 seconds, zero warnings/errors), catalog policy (8 cases, 1.42 seconds), formatting policy (9 cases, 0.19 seconds), and direct `Format.ps1 -Check` (28.35 seconds) passed. The first formatting wrapper passed its switch as a positional string and did not execute verification; the direct invocation above completed it. The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. Native fitting and simulation presentation remain unverified.
+
+**Optional maintainer checks.** After updating the server and reconnecting, online the reported afterburner and reopen the same simulated fit to compare CPU/power-grid budgets.

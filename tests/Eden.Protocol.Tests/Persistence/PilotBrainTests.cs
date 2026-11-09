@@ -2,6 +2,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Serialization;
@@ -12,6 +13,49 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class PilotBrainTests
 {
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    public void EarnedFittingOutputSkillsMatchTheAuthoritativeBudget(int level)
+    {
+        const long shipId = 1000000000001;
+        Skills skills = new()
+        {
+            Values =
+            [
+                new((int)FittingSkill.CpuManagement, TrainedSkill.PointsForLevel(1, level), 1),
+                new((int)FittingSkill.PowerGridManagement, TrainedSkill.PointsForLevel(1, level), 1),
+            ],
+        };
+        var source = new PilotBrain(skills, new Clock(), skills, skills, skills);
+        var update = source.Update(90000001, shipId);
+        var matter = Assert.IsType<object?[]>(BlueMarshal.Decode(Assert.IsType<byte[]>(update.GrayMatter)));
+        var effects = Assert.IsType<List<object?>>(matter[1]).Select(State).ToArray();
+        Assert.Equal(level == 0 ? 0 : 2, effects.Length);
+        var basis = new Dictionary<DogmaAttributeId, double> { [DogmaAttributeId.CpuOutput] = 178, [DogmaAttributeId.PowerOutput] = 80 };
+        var authoritative = FittingRules.Apply(basis, skills.Values.ToDictionary(skill => skill.TypeId, skill => skill.Level), []);
+        foreach (var bonus in FittingRules.ResourceOutputSkills)
+        {
+            double percent = 0;
+            if (level > 0)
+            {
+                var effect = Assert.Single(effects, effect => Convert.ToInt32(effect["toAttribID"]) == (int)bonus.Attribute);
+                Assert.Equal(shipId, effect["toItemID"]);
+                Assert.Equal("M"u8.ToArray(), Assert.IsType<byte[]>(effect["modifierType"]));
+                Assert.Equal(6L, effect["operation"]);
+                Assert.Empty(Assert.IsType<object?[]>(effect["extras"]));
+                Assert.Equal((long)bonus.Skill, Assert.Single(Assert.IsType<List<object?>>(effect["skills"])));
+                percent = Assert.IsType<double>(effect["value"]);
+                Assert.Equal(5d * level, percent);
+            }
+            Assert.Equal(basis[bonus.Attribute] * (1 + percent / 100), authoritative[bonus.Attribute], 8);
+        }
+    }
+
     private sealed class Skills : IPilotSkillReader, IPilotIndustrySkills, IPilotNavigationSkills, IPilotJumpCloneSkills
     {
         public IReadOnlyList<TrainedSkill> Values { get; set; } = [];
