@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [LP-wallet nearest-station lookup (November 9, 2026)](#lp-wallet-nearest-station-lookup-november-9-2026)
 - [LP-store Resource Wars presence read (November 8, 2026)](#lp-store-resource-wars-presence-read-november-8-2026)
 - [Loyalty point stores (November 8, 2026)](#loyalty-point-stores-november-8-2026)
 - [PLEX history and multibuy structure discovery (November 8, 2026)](#plex-history-and-multibuy-structure-discovery-november-8-2026)
@@ -21,6 +22,26 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Manufacturing from mined minerals, November 2, 2026](#manufacturing-from-mined-minerals-november-2-2026)
 - [Tech I module manufacturing](#tech-i-module-manufacturing)
 - [Full catalog testing market (world version 28)](#full-catalog-testing-market-world-version-28)
+
+## LP-wallet nearest-station lookup (November 9, 2026)
+
+The maintainer supplied an LP-wallet screenshot showing `Unsupported local call stationSvc.GetStationsForOwner`. Inert inspection of the pinned build-3662168 archive (SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**) confirmed that `LPStoreSvc.GetNearestDockableWithLPStoreForCorp(corpID)` calls this method with one corporation ID, iterates attribute-bearing rows, groups `stationID` values by `solarSystemID`, and chooses a destination through the client's existing jump-count logic. The [EVE University LP guide](https://wiki.eveuniversity.org/Loyalty_Points) also describes the wallet's nearest-station display. Consulted [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) for native value preservation; no codec changed.
+
+The selected-pilot station-directory handler now returns matching catalog stations as a native `eve.common.script.sys.rowset.Rowset` with the consumed `stationID` and `solarSystemID` columns in stable station order. This public owner lookup is independent of pilot location and LP balance. An owner without catalog stations receives an empty rowset. Malformed/nonpositive/out-of-range owners, extra arguments and unexpected keywords reject. Player structures, Resource Wars station selection and pirate forward-operating bases retain their separate owners.
+
+### Automated validation
+
+Exact development filter: `FullyQualifiedName=Eden.Protocol.Tests.Docking.StationDirectoryTests.LpWalletCanReadIssuerStationsForNativeNearestStoreLookupWithoutChangingBalances`. The first executable regression reproduced the unsupported route; the correction passed **2/2 docked/space cases in 7.61 seconds**. Coverage follows LP-balance retrieval with the issuer-station lookup, verifies rowset columns and integer values, includes remote stations, excludes another owner in the same system, covers unknown owners/malformed calls, preserves selection gating, and verifies unchanged balances with no notifications.
+
+Final tool restore, solution restore and solution build passed with zero warnings/errors. The affected filter `FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~LoyaltyStoreTests|FullyQualifiedName~MarketReadCompatibilityTests|FullyQualifiedName~ContractServiceTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **96/96 tests in 32.84 seconds**. Both Python policy suites passed (**8/8** catalog and **9/9** formatting cases in **1.19 seconds** combined). Formatting verification, the 140-column check and `git diff --check` passed; policy plus formatting verification took **20.18 seconds**. No full .NET suite was requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The screenshot records the original failure; native wallet rendering and destination actions remain unverified in a running client.
+
+### Optional maintainer checks
+
+Restart the server with the updated build and reopen the LP-wallet overview; verify the corporation balance and nearest station display without the unsupported-call dialog.
 
 ## LP-store Resource Wars presence read (November 8, 2026)
 

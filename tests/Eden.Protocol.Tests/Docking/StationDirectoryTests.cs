@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Docking;
@@ -14,6 +15,90 @@ namespace Eden.Protocol.Tests.Docking;
 
 public sealed class StationDirectoryTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LpWalletCanReadIssuerStationsForNativeNearestStoreLookupWithoutChangingBalances(bool inSpace)
+    {
+        using TestWorld db = new();
+        TestCatalog.AddSchool(new WorldDatabase(db.Path).CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z)
+                    SELECT 60003761,TypeId,1000044,SolarSystemId,OperationId,OrbitId,X,Y,Z FROM Station WHERE Id=60003760;
+                """
+            );
+        }
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Add(
+                new SavedLoyaltyBalance
+                {
+                    PilotId = 90000001,
+                    IssuerCorporationId = 1000035,
+                    Points = 50,
+                }
+            );
+            world.SaveChanges();
+        }
+        using var scope = db.Services.CreateScope();
+        var pilot = db.Store.FindPilot(1000001)!;
+        if (inSpace)
+        {
+            pilot = pilot with { Position = new SpacePosition(1_000_000, 0, 0) };
+        }
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(db.Store, p, TimeProvider.System, new(), db.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        Assert.Same(
+            PilotCallResult.Unsupported,
+            router.Call(context, "stationSvc", "GetStationsForOwner", new object?[] { 1000035L }, _ => { })
+        );
+        context.Select(pilot);
+        var balancesBefore = Read("LPSvc", "GetAllMyCharacterWalletLPBalances", []);
+        var balance = BlueRead.Tuple(Assert.Single(Assert.IsType<List<object?>>(balancesBefore)), 2);
+        Assert.Equal(new object?[] { 1000035L, 50L }, balance);
+        var rowset = Assert.IsType<BlueInstance>(Read("stationSvc", "GetStationsForOwner", [balance[0]]));
+        Assert.Equal("eve.common.script.sys.rowset.Rowset", rowset.Name);
+        var fields = BlueRead.Fields(rowset.State);
+        Assert.Equal(new[] { "stationID", "solarSystemID" }, Assert.IsType<List<object?>>(fields["header"]).Select(BlueMarshal.Text));
+        var rows = Assert.IsType<List<object?>>(fields["lines"]).Select(value => BlueRead.Tuple(value, 2)).ToArray();
+        Assert.Equal(2, rows.Length);
+        Assert.Equal(new object?[] { 60003760L, 30000142L }, rows[0]);
+        Assert.Equal(new object?[] { 60015159L, 30001392L }, rows[1]);
+        var empty = BlueRead.Fields(Assert.IsType<BlueInstance>(Read("stationSvc", "GetStationsForOwner", [(long)int.MaxValue])).State);
+        Assert.Empty(Assert.IsType<List<object?>>(empty["lines"]));
+        foreach (object?[] args in new object?[][] { [], [0L], [-1L], [long.MaxValue], ["1000035"], [1000035L, 1000044L] })
+        {
+            Assert.IsType<PilotCallResult.Failure>(router.Call(context, "stationSvc", "GetStationsForOwner", args, _ => { }));
+        }
+        Assert.IsType<PilotCallResult.Failure>(
+            router.Call(
+                context,
+                "stationSvc",
+                "GetStationsForOwner",
+                new object?[] { 1000035L },
+                _ => { },
+                new() { ["ownerID"] = 1000044L }
+            )
+        );
+        Assert.Equal(BlueMarshal.Encode(balancesBefore), BlueMarshal.Encode(Read("LPSvc", "GetAllMyCharacterWalletLPBalances", [])));
+        Assert.Empty(context.Notifications);
+
+        object? Read(string service, string method, object?[] args) =>
+            BlueMarshal.Decode(
+                BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(router.Call(context, service, method, args, _ => { })).Reply)
+            );
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

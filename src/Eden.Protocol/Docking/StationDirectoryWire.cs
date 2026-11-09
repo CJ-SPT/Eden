@@ -3,6 +3,20 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
 
+internal sealed record OwnerStationsReply(IReadOnlyList<StationDirectoryEntry> Stations) : BlueModel
+{
+    public override object ToBlue() =>
+        new CompatibilityRowset(
+            ["stationID", "solarSystemID"],
+            Stations.Select(station => new OwnerStationRow(station)).ToArray()
+        ).ToBlue();
+}
+
+internal sealed record OwnerStationRow(StationDirectoryEntry Station) : BlueModel
+{
+    public override object ToBlue() => new object?[] { Station.Id, Station.SystemId };
+}
+
 internal sealed record StationDirectoryReply(StationDirectorySnapshot Directory) : BlueModel
 {
     private const int MaximumServiceBits = sizeof(long) * 8 - 1;
