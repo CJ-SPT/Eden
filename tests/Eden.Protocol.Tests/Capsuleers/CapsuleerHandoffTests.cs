@@ -267,7 +267,8 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
             new FailingScene(host.GetRequiredService<ICapsuleerScene>()),
             host.GetRequiredService<ChatRuntime>(),
             f.Clock,
-            host.GetRequiredService<IWorldSynchronization>()
+            host.GetRequiredService<IWorldSynchronization>(),
+            host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
         );
         f.Clock.Seconds++;
         Assert.Throws<InvalidOperationException>(() => maintenance.Tick());

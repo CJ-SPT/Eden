@@ -15,7 +15,8 @@ internal sealed class CapsuleerMaintenance(
     ICapsuleerScene scene,
     ChatRuntime chat,
     TimeProvider clock,
-    IWorldSynchronization synchronization
+    IWorldSynchronization synchronization,
+    ICapsuleerUpdateDiagnostics updateDiagnostics
 ) : IDisposable, ICapsuleerPresentation
 {
     private PeriodicTimer? _timer;
@@ -60,6 +61,7 @@ internal sealed class CapsuleerMaintenance(
 
     internal MinerObservation? Tick()
     {
+        long started = clock.GetTimestamp();
         lock (synchronization.Gate)
         {
             try
@@ -71,7 +73,18 @@ internal sealed class CapsuleerMaintenance(
             }
             finally
             {
-                Refresh();
+                long presentationStarted = clock.GetTimestamp();
+                try
+                {
+                    Refresh();
+                }
+                finally
+                {
+                    long completed = clock.GetTimestamp();
+                    updateDiagnostics.RecordUpdate(
+                        new(clock.GetElapsedTime(started, completed), clock.GetElapsedTime(presentationStarted, completed))
+                    );
+                }
             }
         }
     }

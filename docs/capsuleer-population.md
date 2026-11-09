@@ -26,6 +26,8 @@ Gate pilots follow their saved station route after crossing. When both gate endp
 
 New inbound waits vary within the existing busy/quiet ranges, and station layovers vary from 15 to 45 seconds between visits. Each pilot saves a wait sequence and the chosen deadline. Pausing, reconnecting and restarting retain the remaining wait; they do not choose another delay. Existing saved waits keep their deadlines.
 
+The administration performance page reports the last complete traffic update, simulation/preparation and scene/Local publication separately. The complete update includes gate watching and presentation capture. Checkpoint capture, projection and writing remain separate measurements.
+
 World schema 120 retains prior pilots in their original roster slots. Generated names get natural replacements and custom pilot or ship names are preserved. Missing roster members are granted on visits. A gate or station count determines traffic independently of mining eligibility, local ore availability and regional market activity.
 
 See [implementation and validation](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic).

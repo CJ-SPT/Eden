@@ -76,7 +76,9 @@
             <div><dt>Jobs / due now</dt><dd>@capsuleers.Runtime.Jobs / @capsuleers.Runtime.DueJobs</dd></div>
             <div><dt>Oldest queue delay</dt><dd>@Milliseconds(TimeSpan.FromTicks(capsuleers.Runtime.OldestDelayTicks))</dd></div>
             <div><dt>Completed actions / failures</dt><dd>@capsuleers.Runtime.CompletedActions / @capsuleers.Runtime.Failures</dd></div>
-            <div><dt>Last simulation turn</dt><dd>@Milliseconds(capsuleers.Runtime.LastTurn)</dd></div>
+            <div><dt>Last complete traffic update</dt><dd>@Milliseconds(capsuleers.Runtime.LastUpdate)</dd></div>
+            <div><dt>Simulation and preparation</dt><dd>@Milliseconds(capsuleers.Runtime.LastTurn)</dd></div>
+            <div><dt>Scene and Local updates</dt><dd>@Milliseconds(capsuleers.Runtime.LastPresentation)</dd></div>
         </dl>
         @if (capsuleers.Runtime.LastFailure is { } failure)
         {

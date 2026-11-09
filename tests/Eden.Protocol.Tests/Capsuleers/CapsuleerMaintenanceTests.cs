@@ -3,12 +3,58 @@ using Eden.Infrastructure.Operations;
 using Eden.Server;
 using Eden.Server.Chat;
 using Eden.Server.Maintenance;
+using Eden.World.Capsuleers;
+using Eden.World.Market;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed class CapsuleerMaintenanceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CompleteUpdateIncludesInitialReconciliationCaptureAndPresentationEvenOnFailure(bool failPresentation)
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        CapsuleerScheduler scheduler = new(
+            f.Database,
+            host.GetRequiredService<CapsuleerActivitySource>(),
+            host.GetRequiredService<ICapsuleerPopulation>(),
+            host.GetRequiredService<IWorldSynchronization>(),
+            f.Clock,
+            host.GetRequiredService<CapsuleerMinerFactory>(),
+            host.GetRequiredService<CapsuleerHaulerFactory>(),
+            new TimedGateWatch(f.Clock),
+            host.GetRequiredService<MarketChangeSignal>()
+        );
+        using CapsuleerMaintenance maintenance = new(
+            scheduler,
+            new TimedHandoff(scheduler, f.Clock),
+            new TimedScene(host.GetRequiredService<ICapsuleerScene>(), f.Clock, failPresentation),
+            host.GetRequiredService<ChatRuntime>(),
+            f.Clock,
+            host.GetRequiredService<IWorldSynchronization>(),
+            scheduler
+        );
+        if (failPresentation)
+        {
+            Assert.Throws<InvalidOperationException>(() => maintenance.Tick());
+        }
+        else
+        {
+            Assert.Null(maintenance.Tick());
+        }
+        var timing = scheduler.Read();
+        Assert.Equal(TimeSpan.FromMilliseconds(11), timing.LastTurn);
+        Assert.Equal(TimeSpan.FromMilliseconds(10), timing.LastPresentation);
+        Assert.Equal(TimeSpan.FromMilliseconds(21), timing.LastUpdate);
+        scheduler.Run(0);
+        Assert.Equal(timing.LastUpdate, scheduler.Read().LastUpdate);
+        Assert.Equal(timing.LastPresentation, scheduler.Read().LastPresentation);
+    }
+
     [Fact]
     public async Task OneWakeDrainsMultipleBoundedTurnsWithoutWaitingForAnotherTimerTick()
     {
@@ -22,7 +68,8 @@ public sealed class CapsuleerMaintenanceTests
             host.GetRequiredService<ICapsuleerScene>(),
             host.GetRequiredService<ChatRuntime>(),
             clock,
-            host.GetRequiredService<IWorldSynchronization>()
+            host.GetRequiredService<IWorldSynchronization>(),
+            host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
         );
         maintenance.Start();
         clock.Wake();
@@ -50,6 +97,58 @@ public sealed class CapsuleerMaintenanceTests
         public MinerObservation? Miner(long pilotId) => null;
 
         public HaulerObservation? Hauler(long pilotId) => null;
+    }
+
+    private sealed class TimedGateWatch(TestClock clock) : ICapsuleerGateWatch
+    {
+        private bool _prepared;
+
+        public IReadOnlyList<WatchedTrafficGate> Read(HumanActivitySnapshot activity)
+        {
+            if (!_prepared)
+            {
+                clock.Milliseconds += 11;
+                _prepared = true;
+            }
+            return [];
+        }
+    }
+
+    private sealed class TimedHandoff(ICapsuleerHandoff actual, TestClock clock) : ICapsuleerHandoff
+    {
+        public IReadOnlyList<SystemSimulationState> Systems() => actual.Systems();
+
+        public void Synchronize(Action action) => actual.Synchronize(action);
+
+        public ValueTask SynchronizeAsync(Action action, CancellationToken cancellationToken = default) =>
+            actual.SynchronizeAsync(action, cancellationToken);
+
+        public CapsuleerBatch Capture()
+        {
+            clock.Milliseconds += 3;
+            return actual.Capture();
+        }
+    }
+
+    private sealed class TimedScene(ICapsuleerScene actual, TestClock clock, bool fail) : ICapsuleerScene
+    {
+        public int Stamp => actual.Stamp;
+
+        public int MaterializedPilots => actual.MaterializedPilots;
+
+        public void Publish(MinerObservation observation) => actual.Publish(observation);
+
+        public void Publish(HaulerObservation observation) => actual.Publish(observation);
+
+        public void Apply(CapsuleerBatch batch)
+        {
+            clock.Milliseconds += 7;
+            if (fail)
+            {
+                throw new InvalidOperationException("Presentation failed after measured work.");
+            }
+            actual.Apply(batch);
+        }
     }
 
     private sealed class ManualWakeClock : TimeProvider

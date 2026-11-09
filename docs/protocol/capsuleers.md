@@ -226,9 +226,9 @@ Tool/solution restore, solution build (zero warnings/errors), both Python policy
 
 **Automated validation.** The exact method `CapsuleerInboundRuntimeTests.SavedWaitSequenceVariesTripsWithinBoundsAndRoundTripsThroughLegacyAndCurrentProgress` passed in 5.19 seconds including runner startup. The focused filter `FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerHaulerTests` passed 40 cases in 11.77 seconds including runner startup. It covers variation/bounds, old progress, reopened sequence/deadline, paused remaining time, real station docking, rollback, destruction and repeated observed arrivals. The copied-save gate check remains opt-in and was not exercised. No full .NET regression was run.
 
-**Live acceptance.** Not performed; agent client testing is disabled.
-
 Solution build (zero warnings/errors), both Python policy suites (eight catalog and nine formatting cases), formatting verification and diff checks also passed. Dependencies and tools are unchanged from the passing stage-1 restores.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** None; timing variation is established by the deterministic checks.
 
@@ -248,8 +248,22 @@ These small-fixture samples include forced diagnostic instrumentation and JIT ef
 
 **Automated validation.** The exact `CapsuleerTrafficPerformanceTests.WarmedMaintenanceIncludesSharedPresentationWithoutSqlOrFittingWork` method passed three cases before and after the optimization (6.97/6.64 seconds including runner startup). The final focused filter `FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerRuntimeTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerEncounterTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests` passed 54 cases in 18.10 seconds including runner startup. Coverage includes concurrency, committed-generation recovery, rollback, observer release/re-entry, deferred inbound work and the late witnessed transfer. Copied-save evidence remains opt-in and was not exercised. No full .NET regression was run.
 
+Solution build (zero warnings/errors), both Python policy suites (eight catalog and nine formatting cases), formatting verification and diff checks also passed. Dependencies and tools remain unchanged from the passing stage-1 restores.
+
 **Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for the scheduling correction.
+
+### Traffic improvement stage 4 — complete update diagnostics
+
+`CapsuleerMaintenance.Tick` now records the whole maintenance update, from before acquiring its operation gate through scheduler execution, presentation capture, shared scene application and Local publication. A common monotonic completion timestamp defines total and presentation durations, including failed presentation attempts. The scheduler's existing `LastTurn` now starts before initial loading/reconciliation and covers settlement and result construction. Initial preparation failures are included in its failure diagnostics. All elapsed calculations use the injected monotonic `TimeProvider`; gameplay clocks and deadlines are unchanged.
+
+The scheduler publishes immutable `LastUpdate` and `LastPresentation` values through the existing diagnostics snapshot, preserving them when a later simulation-only turn updates its counters. A narrow Gameplay diagnostics interface lets the Server maintenance owner supply these measurements. The performance page labels the complete traffic update, simulation/preparation and scene/Local costs separately. Checkpoint timings remain separate. Administration reads still consume the published snapshot without entering the world owner or opening SQLite.
+
+**Automated validation.** The exact `CapsuleerMaintenanceTests.CompleteUpdateIncludesInitialReconciliationCaptureAndPresentationEvenOnFailure` method passed success and failure cases in 5.66 seconds including runner startup. Its simulated preparation/capture/scene costs of 11/3/7 ms produce an 11 ms scheduler turn, 10 ms presentation and 21 ms complete update, including when scene publication throws. The final focused filter `FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerRuntimeTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.ServerPerformanceTests|FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.PerformanceRequiresAdministratorAndServesLiveProcessDiagnosticsInDarkEditor|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests` passed 28 cases in 25.46 seconds including runner startup. It includes registered dependencies, failed-presentation recovery, concurrent job execution, warmed zero-SQL/fitting frames and the authenticated HTTP performance page with all three labels. No full .NET regression or copied-save run was performed.
 
 Solution build (zero warnings/errors), both Python policy suites (eight catalog and nine formatting cases), formatting verification and diff checks also passed. Dependencies and tools remain unchanged from the passing stage-1 restores.
 
-**Optional maintainer checks.** None required for the scheduling correction.
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** View the performance page while traffic is active to inspect the new readings; native gameplay presentation remains unverified.

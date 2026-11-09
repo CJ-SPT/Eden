@@ -16,7 +16,17 @@ public sealed record CapsuleerRuntimeSummary(
     string? LastFailure
 )
 {
+    public TimeSpan LastUpdate { get; init; }
+    public TimeSpan LastPresentation { get; init; }
+
     public static CapsuleerRuntimeSummary Empty { get; } = new(new(0, 0, 0, 0, 0), 0, 0, 0, 0, 0, 0, 0, TimeSpan.Zero, [], null);
+}
+
+public sealed record CapsuleerUpdateTiming(TimeSpan Total, TimeSpan Presentation);
+
+public interface ICapsuleerUpdateDiagnostics
+{
+    void RecordUpdate(CapsuleerUpdateTiming timing);
 }
 
 public interface ICapsuleerDiagnostics

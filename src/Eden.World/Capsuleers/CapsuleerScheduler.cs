@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Operations;
@@ -22,7 +21,7 @@ internal sealed partial class CapsuleerScheduler(
     CapsuleerHaulerFactory haulers,
     ICapsuleerGateWatch gateWatch,
     MarketChangeSignal marketSignal
-) : ICapsuleerScheduler, ICapsuleerSimulation, ICapsuleerHauling, ICapsuleerHandoff, ICapsuleerDiagnostics
+) : ICapsuleerScheduler, ICapsuleerSimulation, ICapsuleerHauling, ICapsuleerHandoff, ICapsuleerDiagnostics, ICapsuleerUpdateDiagnostics
 {
     private readonly SystemSimulationRegistry _systems = new();
     private readonly Dictionary<long, MinerObservation> _pendingMiners = [];
@@ -45,6 +44,14 @@ internal sealed partial class CapsuleerScheduler(
     private string? _lastFailure;
 
     public CapsuleerRuntimeSummary Read() => Volatile.Read(ref _diagnostics);
+
+    public void RecordUpdate(CapsuleerUpdateTiming timing)
+    {
+        lock (synchronization.Gate)
+        {
+            Volatile.Write(ref _diagnostics, _diagnostics with { LastUpdate = timing.Total, LastPresentation = timing.Presentation });
+        }
+    }
 
     private void Blocking(long pilot, string? reason)
     {
@@ -88,10 +95,14 @@ internal sealed partial class CapsuleerScheduler(
                 status.OldestDueTicks is { } due ? activity.ElapsedTicks - due : 0,
                 _completed,
                 _failures,
-                Stopwatch.GetElapsedTime(started),
+                clock.GetElapsedTime(started),
                 _blockingReasons,
                 _lastFailure
             )
+            {
+                LastUpdate = _diagnostics.LastUpdate,
+                LastPresentation = _diagnostics.LastPresentation,
+            }
         );
     }
 
@@ -243,24 +254,23 @@ internal sealed partial class CapsuleerScheduler(
 
     private CapsuleerBatch RunThrough(int destinyStamp, long? horizon, int? systemId = null)
     {
+        long started = clock.GetTimestamp();
         using var owner = Live?.Enter();
         lock (synchronization.Gate)
         {
             _destinyStamp = destinyStamp;
             var activity = presence.Read();
             long throughTicks = Math.Min(activity.ElapsedTicks, horizon ?? activity.ElapsedTicks);
-            Load();
-            Reconcile(activity);
             var pilots = _turnPilots;
-            pilots.Clear();
-            pilots.UnionWith(_running);
             Dictionary<long, MinerObservation> mining = [];
             Dictionary<long, HaulerObservation> hauling = [];
-            CapsuleerTurn turn;
-            long started = Stopwatch.GetTimestamp();
             try
             {
-                turn = _queue.Run(
+                Load();
+                Reconcile(activity);
+                pilots.Clear();
+                pilots.UnionWith(_running);
+                var turn = _queue.Run(
                     throughTicks,
                     job =>
                     {
@@ -312,6 +322,19 @@ internal sealed partial class CapsuleerScheduler(
                     pilots
                 );
                 Reconcile(activity);
+                if (turn.OldestDueTicks is null)
+                {
+                    if (systemId is { } settledSystem)
+                    {
+                        _systems.Settle(settledSystem, Math.Max(_systems.Get(settledSystem).SettledTicks, throughTicks));
+                    }
+                    else
+                    {
+                        // Local barriers may already have advanced individual systems.
+                        Settle(Math.Max(_settledTicks, throughTicks));
+                    }
+                }
+                return new(turn, mining.Values.ToArray(), hauling.Values.ToArray());
             }
             catch (Exception error)
             {
@@ -326,19 +349,6 @@ internal sealed partial class CapsuleerScheduler(
             {
                 PublishDiagnostics(activity, started);
             }
-            if (turn.OldestDueTicks is null)
-            {
-                if (systemId is { } settledSystem)
-                {
-                    _systems.Settle(settledSystem, Math.Max(_systems.Get(settledSystem).SettledTicks, throughTicks));
-                }
-                else
-                {
-                    // Local barriers may already have advanced individual systems.
-                    Settle(Math.Max(_settledTicks, throughTicks));
-                }
-            }
-            return new(turn, mining.Values.ToArray(), hauling.Values.ToArray());
         }
     }
 

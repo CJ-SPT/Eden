@@ -154,6 +154,9 @@ public sealed class AdministrationTests
         string html = await fixture.Client.GetStringAsync("/performance");
         Assert.Contains("Server performance", html);
         Assert.Contains("Memory in RAM", html);
+        Assert.Contains("Last complete traffic update", html);
+        Assert.Contains("Simulation and preparation", html);
+        Assert.Contains("Scene and Local updates", html);
         Assert.Contains("color-scheme: dark", html);
         Assert.Contains("--background: #0d141e", html);
         Assert.Contains("href=\"/performance\"", html);
