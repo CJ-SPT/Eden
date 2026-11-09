@@ -56,6 +56,9 @@ Bounty SP gains are silent; refresh the skill window to read the updated total.
 [Combat-site layout corrections](docs/protocol/combat.md#combat-site-layout-corrections--november-9-2026) use native initial/reinforcement
 anchors and fixed battery positions across the existing anomaly pool, correct 19 physical variant bindings, and preserve started encounters.
 
+[Mission layout corrections](docs/protocol/agents.md#mission-layout-corrections--november-9-2026) apply room-local NPC anchors,
+individual battery positions, restored scenery and corrected collision sizes to the 50 existing combat mission definitions.
+
 Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions and health, item stacks in cargo or station hangars, asteroid fields, wallets, market orders, trade records and manufacturing jobs. Both files are generated locally.
 
 On Windows, install 64-bit Python 3.11 or later and the pinned .NET SDK. Stage the matching client and resource cache, then run the setup command from the repository root.

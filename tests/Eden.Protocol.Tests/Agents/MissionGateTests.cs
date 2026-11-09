@@ -47,7 +47,8 @@ public sealed class MissionGateTests
             Assert.Equal(8, world.Set<SavedMissionMember>().Count(m => m.MissionId == mission.Id));
             Assert.All(
                 world.Set<WorldNpc>().Where(n => n.AnchorKind == NpcAnchorKind.Mission),
-                n => Assert.InRange(new SpacePosition(n.X, n.Y, n.Z).DistanceTo(room.Position), 19000, 61000)
+                // Pinned anchors are approximately 22 km and 63 km from this room's entry.
+                n => Assert.InRange(new SpacePosition(n.X, n.Y, n.Z).DistanceTo(room.Position), 19000, 65000)
             );
         }
         Assert.False(f.Missions.Current(MissionFixture.PilotId, MissionFixture.AgentId)!.ObjectiveComplete);

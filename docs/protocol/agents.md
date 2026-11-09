@@ -396,3 +396,81 @@ Not performed; agent client testing is disabled. Native window rendering, object
 1. Restart the server with the updated build. On a developer pilot use `/tr me 60003754` to dock at **Perimeter II - Moon 1 - Caldari Navy Assembly Plant**; open level-one Security agent **Ogyura Unao (3012018)** from the station Agents list. Level-one access has no standing prerequisite.
 2. Accept and complete a combat mission; verify the objective location, NPCs, completion, ISK/LP and standing history in native windows.
 3. Complete a courier mission through real cargo movement and verify the offer/progress survives reconnecting.
+
+## Mission layout corrections — November 9, 2026
+
+All 50 admitted combat mission definitions have matching templates in the local evejs Security mission
+packs. Their separation of native room geometry, entity anchors, fixed batteries and reconstructed
+populations identified unused fields in Eden's own build-3662168 catalog. This milestone corrects the
+existing mission pool; it does not admit additional mission definitions or import evejs authored
+rosters, rewards, gate inference or JavaScript.
+
+The reference packs were compiled from dungeon build 3579973 against server SDE 3396210. Local source
+fingerprints, with no Git metadata available in the supplied release:
+
+| Pack | SHA-256 |
+| --- | --- |
+| `evejs-security-missions-level-1-1.1.10.json` | `aac8b94379e9315aa08d98cc70c3e2c119fd43403c488899a39fd91f0f55ae6f` |
+| `evejs-security-missions-level-2-1.1.9.json` | `04765eddeb4a5825e32d98347babccee1463b5cd5b73a56c6e7af874c4d05df5` |
+| `evejs-security-missions-level-3-1.1.9.json` | `f59bcb999336ddd52045af6ab9e82701431fdefaaf2508871aa8f51d0cb42fd1` |
+| `evejs-security-missions-level-4-1.1.9.json` | `351fe341993c14c2dc039ce9e4f7549175ad07e9950d8d423425dd16dda56376` |
+
+Previously a group's reported distance became its positive-X position, and the global wave slot
+became its Y coordinate. Every wave therefore formed a vertical line, ignoring native directions and
+battery locations. `MissionCatalog` now retains room-local anchors, initial/reinforcement flags and
+per-anchor aggression ranges. Positions are measured from that room's explicitly bound entry object,
+then translated by its existing room offset and the saved mission location. This avoids applying a
+lobby origin to destination-room coordinates.
+
+Fixed batteries with a matching native type and spawn stage use their individual positions without
+formation offsets. Mobile groups select eligible native anchors by proximity to their reported range;
+anchors within 1,500 metres of the best range match share groups in stable object-ID order. Members
+are spaced in 1,500-metre rings, with shared-anchor counts preventing two groups from occupying the
+same starting points. Each room's first authored wave is treated as initial even when its global wave
+index is nonzero. Missing stage metadata falls back to the room's mobile anchors; missing or exhausted
+battery matches retain the report-distance fallback. These association and spacing rules are explicit
+Eden policies, since native `npcGroupingID` records do not disclose their rosters.
+
+Native scenery is no longer dropped merely because an NPC group is attached to it. Existing category
+and invisible-beacon filters remain in effect. Mission objects also use the shared
+[dungeon collision geometry correction](combat.md#anomaly-warp-in-collision-correction--november-9-2026),
+so ore quantities and authored visual bounds do not become giant solid spheres, and non-interactable
+decorations remain non-solid. Objective structures, containers and gate ownership/lifecycle retain
+their existing explicit bindings.
+
+NPC type selection, member identities, wave/room progress, required/optional groups, triggers, cargo
+carriers and reward settlement are unchanged. Saved NPC positions are not relocated or rerolled;
+newly started rooms and future waves use the corrected placement. No schema migration or reset is
+required. Courier and storyline delivery placement is unaffected.
+
+Independent gameplay references are [Duo of Death (Guristas, level 3)](https://wiki.eveuniversity.org/Duo_of_Death_%28Guristas_Pirates%29_%28Level_3%29)
+and [Dread Pirate Scarlet](https://wiki.eveuniversity.org/Dread_Pirate_Scarlet). Catalog positions take
+precedence over approximate report distances. Existing wire serialization and movement remain based
+on [Carbon Destiny Thunkers.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp);
+this change does not alter Blue, transport or Destiny formats.
+
+**Automated validation.** The Duo of Death battery-position regression failed before implementation
+and passed after correction. Focused coverage checks all 50 existing combat definitions, native
+scenery and room transforms, fixed batteries in five mission variants, separated Guristas Spies
+groups, initial/reinforcement selection, invalid range rejection, transaction rollback, repeated
+arrival and resident checkpoint/reopen without relocation. Every combat-room entry is also checked
+against solid geometry with a 500-metre-radius hull. The development filter
+`FullyQualifiedName~Eden.Protocol.Tests.Agents` passed **457 cases** (267-second test duration;
+269.62-second invocation). It completed before a requested stop took effect, so it was not interrupted.
+
+After adding the entry-clearance and later-room regressions, final root validation passed **154
+focused .NET cases** (81-second duration) with this filter:
+`(FullyQualifiedName~Eden.Protocol.Tests.Agents&FullyQualifiedName!~Eden.Protocol.Tests.Agents.MissionContentTests)|FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters`.
+The delivery/expansion matrix already covered by the broad run was not repeated. Tool restore,
+solution restore and build (zero warnings/errors), the catalog policy suite (8 cases, 0.729 seconds),
+formatting policy suite (9 cases, 0.015 seconds), mission content suite (5 cases, 0.007 seconds),
+formatting verification (1,429 files, maximum 140 characters), source fingerprints, documentation
+links/encoding/whitespace and diff checks passed. Ordered final validation took **108.69 seconds**.
+No full .NET suite was requested or run. Final TRX:
+`artifacts/feature-tests/results/mission-layout-final/mission-layouts.trx`; broad development TRX:
+`artifacts/feature-tests/results/6deca9f2204e48e4a7bb107b05540c85/tests.trx`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect Guristas Spies and a Duo of Death destination pocket for
+separated groups, native battery positions, scenery and stable arrival.
