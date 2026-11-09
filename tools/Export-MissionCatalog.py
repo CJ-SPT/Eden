@@ -9,15 +9,17 @@ import argparse
 import json
 import pathlib
 import sqlite3
+from mission_content import extend, write_audit
 
 
-def export(catalog, output):
+def export(catalog, output, audit_output):
     db = sqlite3.connect(catalog.resolve().as_uri() + '?mode=ro', uri=True)
 
-    def group(names, count, distance, **flags):
+    def group(names, count, distance, npc_group=None, **flags):
         ids = []
         for name in names.split('/'):
-            rows = db.execute('SELECT Id FROM ItemType WHERE Name=?', (name,)).fetchall()
+            rows = db.execute('SELECT Id FROM ItemType WHERE Name=? AND (? IS NULL OR GroupId=?)',
+                              (name, npc_group, npc_group)).fetchall()
             if len(rows) != 1:
                 raise ValueError(f'NPC name must resolve unambiguously: {name}: {rows}')
             ids.append(rows[0][0])
@@ -39,9 +41,9 @@ def export(catalog, output):
     combat(892, 4, 500, 'AngelCartelSpies4', '2017-04-12 02:00 UTC',
            [[group('Angel Stasis Tower', 1, 50000, required=False), group('Angel Heavy Missile Battery', 2, 50000, required=False),
              group('Gistatis Praefectus/Gistatis Tribunus', 4, 50000), group('Gist Warlord/Gist Saint/Gist Nephilim', 3, 50000)]])
-    combat(916, 1, 0, 'EliminateaPirateNuisance1an', '2012-07-14 06:24 UTC',
+    combat(920, 1, 0, 'EliminateaPirateNuisance1an', '2012-07-14 06:24 UTC',
            [[group('Gistii Nomad/Gistii Hijacker', 2, 20000)]])
-    combat(920, 1, 0, 'EliminateaPirateNuisance1gu', '2017-11-17 13:40 UTC',
+    combat(916, 1, 0, 'EliminateaPirateNuisance1gu', '2017-11-17 13:40 UTC',
            [[group('Pithi Arrogator', 1, 45000), group('Pithi Imputor', 1, 45000)]])
     combat(2924, 1, 1000, 'Blockade1gu', '2017-10-16 08:49 UTC', [
         [group('Minmatar Stasis Tower', 1, 25000, required=False), group('Pithi Arrogator', 4, 25000),
@@ -168,6 +170,9 @@ def export(catalog, output):
     for level, mid in enumerate([2919, 2920, 2921, 2922], 1):
         missions.append(dict(missionId=mid, level=level, difficulty=500, storyline=True,
                              source='build-3662168 client/missions; Eden storyline offer policy', sourceRevision='3662168', waves=[]))
+    audit = extend(db, missions, group)
+    if len({m['missionId'] for m in missions}) != len(missions):
+        raise ValueError('Duplicate mission definitions')
     for m in missions:
         row = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/missions' AND Key=?", (str(m['missionId']),)).fetchone()
         if not row:
@@ -182,6 +187,7 @@ def export(catalog, output):
             raise ValueError(f'Mission {m["missionId"]} is not a courier mission')
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(dict(build=3662168, missions=missions), indent=2) + '\n', encoding='utf-8')
+    write_audit(audit_output, audit)
     print(f'Exported {len(missions)} mission definitions')
 
 
@@ -189,5 +195,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--catalog', required=True, type=pathlib.Path)
     parser.add_argument('--output', type=pathlib.Path, default=pathlib.Path('src/Eden.World/Agents/missions-3662168.json'))
+    parser.add_argument('--audit-output', type=pathlib.Path, default=pathlib.Path('docs/data/mission-support-3662168.csv'))
     args = parser.parse_args()
-    export(args.catalog, args.output)
+    export(args.catalog, args.output, args.audit_output)

@@ -2,6 +2,37 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Supported mission content expansion — November 9, 2026
+
+Expanded the ordinary mission pool from **20 to 311 definitions**: **50 combat encounters, 177 ordinary deliveries and 84 delivery storylines**. The [content guide](../missions.md) lists combat families, reconstruction choices and delivery policy. The reproducible [catalog audit](../data/mission-support-3662168.csv) accounts for every one of the **2,892** pinned mission records. Its **2,581** blocked records distinguish specialized lifecycles, chains, missing roster/trigger research, singleton cargo, differing deadlines and known scripting gaps. Missing content remains a blocker even when the engine could represent the eventual verified encounter; this is not a claim that all historical mechanically feasible encounters have been reconstructed.
+
+Added all remaining Hidden Stash level-one/two faction variants, all ten Duo of Death level-three/four variants, the remaining Pirate Nuisance factions, Serpentis Spies level two, four verified Pirate Campers variants, eight Seek and Destroy variants plus two supplier-specific catalog twins, and the second Scarlet template sharing its reviewed dungeon. NPC names resolve against pinned catalog types; optional/required groups, exact objective cargo and explicit room/gate identities retain the existing gameplay systems. Two old Pirate Nuisance rosters were swapped relative to their dungeon factions; **916 now uses Guristas and 920 Angel**. Scarlet retains the previously documented final-boss reconstruction and early escape/implant exclusions.
+
+Admitted every catalog-complete standalone stack delivery in the ordinary/basic and generic-storyline lifecycles. Cargo volume supplies explicit Eden level bands because the client does not publish level assignments: **≤320 m³ level 1, ≤1,000 level 2, ≤5,000 level 3, larger level 4**. Original eight delivery assignments remain unchanged. Native names and English briefings, exact quantities and supplier faction/corporation metadata are retained. The existing route/reward/deadline policies remain explicit Eden choices. Legacy offers retain priority so expansion does not reorder the original cohort. Faction/corporation restrictions now filter offer generation and saved-offer acceptance, with rejection before cargo/state changes.
+
+The [EVE University distribution reports](https://wiki.eveuniversity.org/Distribution_mission_reports) and [agent guide](https://wiki.eveuniversity.org/Agent) describe the delivery, division and storyline boundaries. Each added encounter records its specific University URL and revision in the embedded manifest; full export inputs and reconciliation notes are linked from the content guide. Corpus generation uses read-only build-3662168 catalog records and has no runtime network dependency. No protocol packets or schema changed: the save version remains **127**. The native client and Carbon source evidence in the preceding implementation records still apply to these reused mechanisms; no new Destiny/Blue behavior is inferred.
+
+### Automated validation
+
+Initial exact filter `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionEncounterTests.EveryAuthoredNpcAlternativeHasACompletePinnedCombatProfile` passed **1/1 in 9.04 seconds**. The new manifest/faction exact filter passed **1/1 in 6.88 seconds** after correcting test imports and API names. The first combat matrix passed 36/38: its test expected every Scarlet wave to spawn immediately, and the offline fixture lacked the Blood battleship crystal loot dependency. The assertion now counts initial waves per room, and the exporter derives all ordinary loot enum dependencies. The corrected exact combat filter passed **38/38 in 37.01 seconds**.
+
+The exact delivery filter `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce` passed **261/261 in 212.86 seconds**, covering every admitted ordinary delivery and generic storyline, saved cargo hand-in, reopen and duplicate-payment rejection. Storyline cases seed fifteen previous completions, then complete a real courier to cross the sixteen-completion threshold. The exact supplier-restriction filter passed **5/5 in 16.97 seconds**, including unchanged saved-offer state and cargo after rejection. These preliminary results precede integration of traffic change **df0aecc6** and the final validation below.
+
+Integrated **df0aecc6** into the clean task checkout while preserving its traffic changes and these mission edits. Final tool restore, solution restore and solution build passed; the build took **10.53 seconds**, with zero warnings/errors. The affected selection passed **510/510 in 298.54 seconds**, including all **305 new content cases**, the existing mission/gate/container/structure/protocol coverage, NPC combat, wreck settlement and service registration:
+
+`FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~Eden.Protocol.Tests.Loot.WreckTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~TypedCallResultTests`
+
+The Python catalog policy, formatting policy and new mission admission suites passed **8/8, 9/9 and 5/5** in **3.11 seconds** for the commands. Formatting verification checked **1,387 files**, and the 140-column check and `git diff --check` passed. Both exporters reproduced the manifest, audit and fixture byte-for-byte: **311 definitions, 2,892 audited records, 553 types and 3,472 fixture source records**. Documentation links, final newlines and historical protocol records were verified. No full .NET suite was requested or run. Automated validation establishes this content milestone; live acceptance remains separate.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native presentation and gameplay feel remain unverified.
+
+### Optional maintainer checks
+
+- Accept an expanded Hidden Stash or Duo of Death offer, recover its objective cargo and turn it in.
+- Cycle a distribution agent's offers and inspect an expanded delivery's name, briefing, cargo quantity and destination.
+
 ## Destructible mission structures and objectives — November 9, 2026
 
 Authored mission structures are now real combat targets with catalog shield, armor, hull, resistances and signature radius. Their destruction can be required alongside enemy clearance, complete a designated objective directly, and release mission-owned recovery cargo. Added **The Hidden Stash (Angel Cartel), level 1**, mission **1226**, dungeon **314**. The ordinary pool now contains **twelve combat definitions**, four couriers and four delivery storylines. This supersedes earlier exclusions for authored destructible structures and destruction-released objective containers.

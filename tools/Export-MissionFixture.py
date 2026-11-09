@@ -11,13 +11,16 @@ def export(catalog, output):
     content = json.loads((root / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
     db = sqlite3.connect(catalog.resolve().as_uri() + '?mode=ro', uri=True)
     records = {}
+    factions = set()
+    corporations = set()
     pending = {i for m in content['missions'] for w in m['waves'] for g in w['groups'] for i in g['types']}
     pending.update([23, 2076, 670, 3355, 3356, 3357, 3359, 3361, 3894, 3895])
     # Existing NPC loss settlement uses the shared Eden ordinary/commander loot policy.
     pending.update([222, 230, 238, 185, 193, 201, 246, 250, 254, 210, 209, 203, 399, 10836, 10838,
                     523, 3528, 3538, 520, 9944, 2363, 12274, 1195, 15331])
-    rewards = (root / 'src/Eden.Gameplay/Combat/NpcCommanderLootRules.cs').read_text(encoding='utf-8')
-    pending.update(int(v) for v in re.findall(r'^    \w+ = (\d+)', rewards, re.MULTILINE))
+    for rules in ['NpcLootRules.cs', 'NpcCommanderLootRules.cs']:
+        rewards = (root / 'src/Eden.Gameplay/Combat' / rules).read_text(encoding='utf-8')
+        pending.update(int(v) for v in re.findall(r'^    \w+ = (\d+)', rewards, re.MULTILINE))
 
     def read(dataset, key):
         row = db.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, str(key))).fetchone()
@@ -29,7 +32,14 @@ def export(catalog, output):
     read('client/typelist', 459)  # Native ship-list expansion used by gate restriction tests.
     for definition in content['missions']:
         mission = read('client/missions', definition['missionId'])
-        read('sde/missions', definition['missionId'])
+        if mission.get('factionID'):
+            factions.add(mission['factionID'])
+        if mission.get('corporationID'):
+            corporations.add(mission['corporationID'])
+        sde = read('sde/missions', definition['missionId'])
+        # World uses this record only for its English name fallback. Localized
+        # client messages below retain the actual offer and briefing payloads.
+        records['sde/missions', definition['missionId']] = dict(name=dict(en=sde['name']['en']))
         for key in [mission['nameID'], *mission.get('messages', {}).values()]:
             read('client/localization_fsd_en-us', key)
         if mission.get('courierMission'):
@@ -38,6 +48,8 @@ def export(catalog, output):
             if mission['killMission'].get('objectiveTypeID'):
                 pending.add(mission['killMission']['objectiveTypeID'])
             dungeon = read('client/dungeons', mission['killMission']['dungeonID'])
+            factions.add(dungeon['factionID'])
+            factions.update(g['enemyFaction'] for w in definition['waves'] for g in w['groups'] if g.get('enemyFaction'))
             pending.update(o['typeID'] for r in dungeon['rooms'].values() for o in r['objects'].values())
             containers = {c['objectId'] for c in definition.get('containers', [])}
             containers.update(s['objectId'] for s in definition.get('structures', []))
@@ -72,11 +84,13 @@ def export(catalog, output):
         pending.update(int(v['value']) for v in values if v['id'] == 507 and v['value'])
     for key in attributes:
         read('client/dogmaattributes', key)
-    for faction in [500010, 500011, 500012, 500020, 500021]:
+    for faction in sorted(factions):
         data = read('client/factions', faction)
         if data.get('corporationID'):
-            read('client/npccorporations', data['corporationID'])
-            read('sde/npcCorporations', data['corporationID'])
+            corporations.add(data['corporationID'])
+    for corporation in sorted(corporations):
+        read('client/npccorporations', corporation)
+        read('sde/npcCorporations', corporation)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(dict(build=3662168, types=[types[k] for k in sorted(types)], records=[
         dict(dataset=d, key=k, data=v) for (d, k), v in sorted(records.items())]), indent=2, ensure_ascii=False) + '\n', encoding='utf-8')

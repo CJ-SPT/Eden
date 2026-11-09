@@ -192,6 +192,10 @@ internal sealed partial class PilotMissionStore(
                     }
                     RequireStation(pilot, agent.StationId);
                     var profile = MissionCatalog.Find(catalog, row.MissionId);
+                    if (!profile.AvailableTo(agent) || profile.AttacksFaction(agent.FactionId))
+                    {
+                        throw new InvalidDataException("This mission is unavailable to this agent's corporation or faction.");
+                    }
                     row.State = MissionState.Accepted;
                     row.AcceptedAt = now;
                     row.ExpiresAt = checked(now + MissionRules.MissionLifetime.Ticks);

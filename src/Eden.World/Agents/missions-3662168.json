@@ -125,7 +125,7 @@
       ]
     },
     {
-      "missionId": 916,
+      "missionId": 920,
       "level": 1,
       "difficulty": 0,
       "storyline": false,
@@ -147,7 +147,7 @@
       ]
     },
     {
-      "missionId": 920,
+      "missionId": 916,
       "level": 1,
       "difficulty": 0,
       "storyline": false,
@@ -1145,6 +1145,4810 @@
       "difficulty": 500,
       "storyline": true,
       "source": "build-3662168 client/missions; Eden storyline offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 1227,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Serpentis)_(Level_1)",
+      "sourceRevision": "oldid=192024",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17121
+              ],
+              "count": 12,
+              "range": 15000,
+              "required": false
+            }
+          ],
+          "roomId": 14035
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14034,
+          "entryObjectId": 590135
+        },
+        {
+          "roomId": 14035,
+          "entryObjectId": 590136
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 590134,
+          "destinationRoomId": 14035
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 590181,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 590137
+        },
+        {
+          "objectId": 590142
+        },
+        {
+          "objectId": 590143
+        },
+        {
+          "objectId": 590144
+        }
+      ]
+    },
+    {
+      "missionId": 1228,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Guristas_Pirates)_(Level_1)",
+      "sourceRevision": "oldid=192019",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16981,
+                16994
+              ],
+              "count": 5,
+              "range": 20000,
+              "required": false
+            }
+          ],
+          "roomId": 14037
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14036,
+          "entryObjectId": 590183
+        },
+        {
+          "roomId": 14037,
+          "entryObjectId": 590184
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 590182,
+          "destinationRoomId": 14037
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 590229,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 590185
+        },
+        {
+          "objectId": 590190
+        },
+        {
+          "objectId": 590191
+        },
+        {
+          "objectId": 590192
+        }
+      ]
+    },
+    {
+      "missionId": 1229,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Blood_Raiders)_(Level_1)",
+      "sourceRevision": "oldid=192017",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16933,
+                16946
+              ],
+              "count": 4,
+              "range": 12000,
+              "required": false
+            }
+          ],
+          "roomId": 14039
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14038,
+          "entryObjectId": 590231
+        },
+        {
+          "roomId": 14039,
+          "entryObjectId": 590232
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 590230,
+          "destinationRoomId": 14039
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 590277,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 590233
+        },
+        {
+          "objectId": 590238
+        },
+        {
+          "objectId": 590239
+        },
+        {
+          "objectId": 590240
+        }
+      ]
+    },
+    {
+      "missionId": 1230,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Sansha's_Nation)_(Level_1)",
+      "sourceRevision": "oldid=192022",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17078
+              ],
+              "count": 12,
+              "range": 20000,
+              "required": false
+            }
+          ],
+          "roomId": 14041
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14040,
+          "entryObjectId": 590279
+        },
+        {
+          "roomId": 14041,
+          "entryObjectId": 590280
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 590278,
+          "destinationRoomId": 14041
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 590325,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 590281
+        },
+        {
+          "objectId": 590286
+        },
+        {
+          "objectId": 590287
+        },
+        {
+          "objectId": 590288
+        }
+      ]
+    },
+    {
+      "missionId": 1231,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Angel_Cartel)_(Level_2)",
+      "sourceRevision": "oldid=229335",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23974,
+                23975
+              ],
+              "count": 2,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                16889,
+                16898
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            }
+          ],
+          "roomId": 4061
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 4060,
+          "entryObjectId": 84371
+        },
+        {
+          "roomId": 4061,
+          "entryObjectId": 84372
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 84370,
+          "destinationRoomId": 4061
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 84417,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 84373
+        },
+        {
+          "objectId": 84378
+        },
+        {
+          "objectId": 84379
+        },
+        {
+          "objectId": 84380
+        }
+      ]
+    },
+    {
+      "missionId": 1232,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Guristas_Pirates)_(Level_2)",
+      "sourceRevision": "oldid=192021",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16987,
+                17002
+              ],
+              "count": 5,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                16980
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            }
+          ],
+          "roomId": 14033
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14032,
+          "entryObjectId": 590087
+        },
+        {
+          "roomId": 14033,
+          "entryObjectId": 590088
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 590086,
+          "destinationRoomId": 14033
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 590133,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 590089
+        },
+        {
+          "objectId": 590094
+        },
+        {
+          "objectId": 590095
+        },
+        {
+          "objectId": 590096
+        }
+      ]
+    },
+    {
+      "missionId": 1233,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Serpentis)_(Level_2)",
+      "sourceRevision": "oldid=192025",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23994,
+                23995
+              ],
+              "count": 5,
+              "range": 20000,
+              "required": false
+            }
+          ],
+          "roomId": 14042
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14043,
+          "entryObjectId": 590373
+        },
+        {
+          "roomId": 14042,
+          "entryObjectId": 590326
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 590372,
+          "destinationRoomId": 14042
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 590371,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 590327
+        },
+        {
+          "objectId": 590332
+        },
+        {
+          "objectId": 590333
+        },
+        {
+          "objectId": 590334
+        }
+      ]
+    },
+    {
+      "missionId": 1234,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Blood_Raiders)_(Level_2)",
+      "sourceRevision": "oldid=192018",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16947,
+                16935
+              ],
+              "count": 2,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                16927
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            }
+          ],
+          "roomId": 14045
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14044,
+          "entryObjectId": 590375
+        },
+        {
+          "roomId": 14045,
+          "entryObjectId": 590376
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 590374,
+          "destinationRoomId": 14045
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 590421,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 590377
+        },
+        {
+          "objectId": 590382
+        },
+        {
+          "objectId": 590383
+        },
+        {
+          "objectId": 590384
+        }
+      ]
+    },
+    {
+      "missionId": 1235,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Hidden_Stash_(Sansha's_Nation)_(Level_2)",
+      "sourceRevision": "oldid=192023",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17067,
+                17059,
+                17081,
+                17076
+              ],
+              "count": 7,
+              "range": 20000,
+              "required": false
+            }
+          ],
+          "roomId": 14047
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14046,
+          "entryObjectId": 590423
+        },
+        {
+          "roomId": 14047,
+          "entryObjectId": 590424
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 590422,
+          "destinationRoomId": 14047
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 590469,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 590425
+        },
+        {
+          "objectId": 590430
+        },
+        {
+          "objectId": 590431
+        },
+        {
+          "objectId": 590432
+        }
+      ]
+    },
+    {
+      "missionId": 1238,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Angel_Cartel)_(Level_3)",
+      "sourceRevision": "oldid=203789",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24008,
+                24007
+              ],
+              "count": 2,
+              "range": 50000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            }
+          ],
+          "roomId": 3278
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3277,
+          "entryObjectId": 62931
+        },
+        {
+          "roomId": 3278,
+          "entryObjectId": 62932
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 62930,
+          "destinationRoomId": 3278
+        }
+      ]
+    },
+    {
+      "missionId": 1239,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Angel_Cartel)_(Level_4)",
+      "sourceRevision": "oldid=209368",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24130
+              ],
+              "count": 2,
+              "range": 50000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            },
+            {
+              "types": [
+                16210
+              ],
+              "count": 2,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17574
+              ],
+              "count": 4,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 4990
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 4989,
+          "entryObjectId": 115031
+        },
+        {
+          "roomId": 4990,
+          "entryObjectId": 115038
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 115030,
+          "destinationRoomId": 4990
+        }
+      ]
+    },
+    {
+      "missionId": 1240,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Serpentis)_(Level_3)",
+      "sourceRevision": "oldid=191665",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24026,
+                24028
+              ],
+              "count": 2,
+              "range": 18000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            }
+          ],
+          "roomId": 3284
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3283,
+          "entryObjectId": 63023
+        },
+        {
+          "roomId": 3284,
+          "entryObjectId": 63073
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 63022,
+          "destinationRoomId": 3284
+        }
+      ]
+    },
+    {
+      "missionId": 1241,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Serpentis)_(Level_4)",
+      "sourceRevision": "oldid=191666",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24170
+              ],
+              "count": 2,
+              "range": 25000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            },
+            {
+              "types": [
+                16211
+              ],
+              "count": 2,
+              "range": 15000,
+              "required": false
+            },
+            {
+              "types": [
+                16747
+              ],
+              "count": 3,
+              "range": 63000,
+              "required": false
+            }
+          ],
+          "roomId": 4996
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 4995,
+          "entryObjectId": 115156
+        },
+        {
+          "roomId": 4996,
+          "entryObjectId": 115157
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 115155,
+          "destinationRoomId": 4996
+        }
+      ]
+    },
+    {
+      "missionId": 1242,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Blood_Raiders)_(Level_3)",
+      "sourceRevision": "oldid=191659",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24013,
+                24012
+              ],
+              "count": 2,
+              "range": 20000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            }
+          ],
+          "roomId": 3306
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3305,
+          "entryObjectId": 63604
+        },
+        {
+          "roomId": 3306,
+          "entryObjectId": 63605
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 63603,
+          "destinationRoomId": 3306
+        }
+      ]
+    },
+    {
+      "missionId": 1243,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Blood_Raiders)_(Level_4)",
+      "sourceRevision": "oldid=226697",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24140
+              ],
+              "count": 2,
+              "range": 55000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            },
+            {
+              "types": [
+                16210
+              ],
+              "count": 6,
+              "range": 55000,
+              "required": false
+            }
+          ],
+          "roomId": 5000
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 4999,
+          "entryObjectId": 115211
+        },
+        {
+          "roomId": 5000,
+          "entryObjectId": 115212
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 115210,
+          "destinationRoomId": 5000
+        }
+      ]
+    },
+    {
+      "missionId": 1245,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Guristas_Pirates)_(Level_3)",
+      "sourceRevision": "oldid=191661",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24017,
+                24018
+              ],
+              "count": 2,
+              "range": 55000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            },
+            {
+              "types": [
+                17153
+              ],
+              "count": 2,
+              "range": 55000,
+              "required": false
+            }
+          ],
+          "roomId": 3292
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3291,
+          "entryObjectId": 63290
+        },
+        {
+          "roomId": 3292,
+          "entryObjectId": 63291
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 63289,
+          "destinationRoomId": 3292
+        }
+      ]
+    },
+    {
+      "missionId": 1246,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Guristas_Pirates)_(Level_4)",
+      "sourceRevision": "oldid=215960",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24150
+              ],
+              "count": 2,
+              "range": 18000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            },
+            {
+              "types": [
+                16210
+              ],
+              "count": 2,
+              "range": 18000,
+              "required": false
+            },
+            {
+              "types": [
+                27638
+              ],
+              "count": 3,
+              "range": 18000,
+              "required": false
+            }
+          ],
+          "roomId": 4992
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 4991,
+          "entryObjectId": 115069
+        },
+        {
+          "roomId": 4992,
+          "entryObjectId": 115070
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 115068,
+          "destinationRoomId": 4992
+        }
+      ]
+    },
+    {
+      "missionId": 1247,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Sansha's_Nation)_(Level_3)",
+      "sourceRevision": "oldid=191663",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24022,
+                24023
+              ],
+              "count": 2,
+              "range": 18000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            },
+            {
+              "types": [
+                16210
+              ],
+              "count": 2,
+              "range": 18000,
+              "required": false
+            },
+            {
+              "types": [
+                17157
+              ],
+              "count": 2,
+              "range": 18000,
+              "required": false
+            }
+          ],
+          "roomId": 7393
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 7392,
+          "entryObjectId": 184233
+        },
+        {
+          "roomId": 7393,
+          "entryObjectId": 184243
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 184232,
+          "destinationRoomId": 7393
+        }
+      ]
+    },
+    {
+      "missionId": 1254,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Duo_of_Death_(Sansha's_Nation)_(Level_4)",
+      "sourceRevision": "oldid=229683",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24160
+              ],
+              "count": 2,
+              "range": 50000,
+              "lootTypeId": 11068,
+              "lootQuantity": 1
+            },
+            {
+              "types": [
+                16210
+              ],
+              "count": 2,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16746
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 7391
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 7390,
+          "entryObjectId": 184196
+        },
+        {
+          "roomId": 7391,
+          "entryObjectId": 184197
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 184195,
+          "destinationRoomId": 7391
+        }
+      ]
+    },
+    {
+      "missionId": 917,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_a_Pirate_Nuisance_(Blood_Raiders)",
+      "sourceRevision": "oldid=191668",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                18087
+              ],
+              "count": 1,
+              "range": 5000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                16947,
+                16936
+              ],
+              "count": 2,
+              "range": 5000
+            }
+          ],
+          "roomId": 2750
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2751,
+          "entryObjectId": 53241
+        },
+        {
+          "roomId": 2750,
+          "entryObjectId": 53230
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53240,
+          "destinationRoomId": 2750
+        }
+      ]
+    },
+    {
+      "missionId": 918,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_a_Pirate_Nuisance_(Sansha's_Nation)",
+      "sourceRevision": "oldid=218038",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                10995,
+                10993
+              ],
+              "count": 2,
+              "range": 25000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                3750
+              ],
+              "count": 1,
+              "range": 25000,
+              "enemyFaction": 500025
+            },
+            {
+              "types": [
+                17076,
+                17078,
+                17081
+              ],
+              "count": 2,
+              "range": 50000
+            }
+          ],
+          "roomId": 2428
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2429,
+          "entryObjectId": 46902
+        },
+        {
+          "roomId": 2428,
+          "entryObjectId": 46891
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 46901,
+          "destinationRoomId": 2428
+        }
+      ]
+    },
+    {
+      "missionId": 919,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_a_Pirate_Nuisance_(Serpentis)",
+      "sourceRevision": "oldid=191671",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17121
+              ],
+              "count": 2,
+              "range": 4000
+            },
+            {
+              "types": [
+                17118,
+                17279
+              ],
+              "count": 2,
+              "range": 40000
+            }
+          ],
+          "roomId": 2732
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2733,
+          "entryObjectId": 53130
+        },
+        {
+          "roomId": 2732,
+          "entryObjectId": 53120
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53129,
+          "destinationRoomId": 2732
+        }
+      ]
+    },
+    {
+      "missionId": 894,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Serpentis_Spies_(Level_2)",
+      "sourceRevision": "oldid=192058",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17118,
+                17121,
+                17113
+              ],
+              "count": 5,
+              "range": 20000
+            },
+            {
+              "types": [
+                17279
+              ],
+              "count": 3,
+              "range": 70000
+            }
+          ],
+          "roomId": 2744
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2745,
+          "entryObjectId": 53181
+        },
+        {
+          "roomId": 2744,
+          "entryObjectId": 53179
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53180,
+          "destinationRoomId": 2744
+        }
+      ]
+    },
+    {
+      "missionId": 2248,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_the_Pirate_Campers_(Sansha's_Nation)",
+      "sourceRevision": "oldid=203023",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17078,
+                17068
+              ],
+              "count": 6,
+              "range": 10000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2249,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_the_Pirate_Campers_(Serpentis)",
+      "sourceRevision": "oldid=203018",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17121,
+                17117,
+                17279,
+                17118
+              ],
+              "count": 4,
+              "range": 10000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2254,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_the_Pirate_Campers_(Thukker_tribe)",
+      "sourceRevision": "oldid=191677",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23955
+              ],
+              "count": 3,
+              "range": 10000
+            },
+            {
+              "types": [
+                23959
+              ],
+              "count": 4,
+              "range": 10000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2255,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Eliminate_the_Pirate_Campers_(Angel_Cartel)",
+      "sourceRevision": "oldid=203561",
+      "offerOrder": 1,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23974,
+                23969
+              ],
+              "count": 5,
+              "range": 5000
+            },
+            {
+              "types": [
+                16875,
+                16884,
+                16881,
+                16880
+              ],
+              "count": 3,
+              "range": 5000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 931,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Angel_Cartel)_(Level_1)",
+      "sourceRevision": "oldid=191907",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 6,
+              "range": 55000,
+              "required": true
+            },
+            {
+              "types": [
+                16877
+              ],
+              "count": 6,
+              "range": 95000,
+              "required": false
+            }
+          ],
+          "roomId": 17119
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17120,
+          "entryObjectId": 758914
+        },
+        {
+          "roomId": 17119,
+          "entryObjectId": 758908
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758913,
+          "destinationRoomId": 17119
+        }
+      ]
+    },
+    {
+      "missionId": 926,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Angel_Cartel)_(Level_2)",
+      "sourceRevision": "oldid=191908",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16874,
+                16885
+              ],
+              "count": 4,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                23969,
+                23974
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16877,
+                16886
+              ],
+              "count": 5,
+              "range": 67000,
+              "required": true
+            },
+            {
+              "types": [
+                16875,
+                16884
+              ],
+              "count": 1,
+              "range": 67000,
+              "required": true
+            }
+          ],
+          "roomId": 17121
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17122,
+          "entryObjectId": 758923
+        },
+        {
+          "roomId": 17121,
+          "entryObjectId": 758919
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758922,
+          "destinationRoomId": 17121
+        }
+      ]
+    },
+    {
+      "missionId": 928,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Blood_Raiders)_(Level_1)",
+      "sourceRevision": "oldid=191910",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16936
+              ],
+              "count": 5,
+              "range": 35000,
+              "required": true
+            },
+            {
+              "types": [
+                16936
+              ],
+              "count": 4,
+              "range": 70000,
+              "required": false
+            }
+          ],
+          "roomId": 17127
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17128,
+          "entryObjectId": 758945
+        },
+        {
+          "roomId": 17127,
+          "entryObjectId": 758933
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758944,
+          "destinationRoomId": 17127
+        }
+      ]
+    },
+    {
+      "missionId": 922,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Guristas_Pirates)_(Level_1)",
+      "sourceRevision": "oldid=191913",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16981
+              ],
+              "count": 3,
+              "range": 20000,
+              "required": true
+            },
+            {
+              "types": [
+                16981
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": true
+            }
+          ],
+          "roomId": 17564
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17565,
+          "entryObjectId": 776450
+        },
+        {
+          "roomId": 17564,
+          "entryObjectId": 776444
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 776449,
+          "destinationRoomId": 17564
+        }
+      ]
+    },
+    {
+      "missionId": 923,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Guristas_Pirates)_(Level_2)",
+      "sourceRevision": "oldid=191914",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17006,
+                17001
+              ],
+              "count": 4,
+              "range": 30000,
+              "required": true
+            },
+            {
+              "types": [
+                16982,
+                17004
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": true
+            }
+          ],
+          "roomId": 17117
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17118,
+          "entryObjectId": 758907
+        },
+        {
+          "roomId": 17117,
+          "entryObjectId": 758905
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758906,
+          "destinationRoomId": 17117
+        }
+      ]
+    },
+    {
+      "missionId": 925,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Sansha's_Nation)_(Level_1)",
+      "sourceRevision": "oldid=219387",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17078
+              ],
+              "count": 4,
+              "range": 35000,
+              "required": true
+            },
+            {
+              "types": [
+                17078
+              ],
+              "count": 5,
+              "range": 65000,
+              "required": false
+            }
+          ],
+          "roomId": 17129
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17130,
+          "entryObjectId": 758952
+        },
+        {
+          "roomId": 17129,
+          "entryObjectId": 758948
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758951,
+          "destinationRoomId": 17129
+        }
+      ]
+    },
+    {
+      "missionId": 932,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Sansha's_Nation)_(Level_2)",
+      "sourceRevision": "oldid=191917",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 4,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                17074,
+                17077
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": true
+            },
+            {
+              "types": [
+                17073,
+                17075
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": true
+            }
+          ],
+          "roomId": 17131
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17132,
+          "entryObjectId": 758959
+        },
+        {
+          "roomId": 17131,
+          "entryObjectId": 758955
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758958,
+          "destinationRoomId": 17131
+        }
+      ]
+    },
+    {
+      "missionId": 935,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Serpentis)_(Level_2)",
+      "sourceRevision": "oldid=191920",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17278,
+                17113
+              ],
+              "count": 4,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                17278,
+                17113,
+                17122,
+                17119
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": true
+            }
+          ],
+          "roomId": 17135
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17136,
+          "entryObjectId": 758977
+        },
+        {
+          "roomId": 17135,
+          "entryObjectId": 758969
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758976,
+          "destinationRoomId": 17135
+        }
+      ]
+    },
+    {
+      "missionId": 937,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Sansha's_Nation)_(Level_1)",
+      "sourceRevision": "oldid=219387",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17078
+              ],
+              "count": 4,
+              "range": 35000,
+              "required": true
+            },
+            {
+              "types": [
+                17078
+              ],
+              "count": 5,
+              "range": 65000,
+              "required": false
+            }
+          ],
+          "roomId": 17129
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17130,
+          "entryObjectId": 758952
+        },
+        {
+          "roomId": 17129,
+          "entryObjectId": 758948
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758951,
+          "destinationRoomId": 17129
+        }
+      ]
+    },
+    {
+      "missionId": 938,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Sansha's_Nation)_(Level_2)",
+      "sourceRevision": "oldid=191917",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 4,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                17074,
+                17077
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": true
+            },
+            {
+              "types": [
+                17073,
+                17075
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": true
+            }
+          ],
+          "roomId": 17131
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17132,
+          "entryObjectId": 758959
+        },
+        {
+          "roomId": 17131,
+          "entryObjectId": 758955
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758958,
+          "destinationRoomId": 17131
+        }
+      ]
+    },
+    {
+      "missionId": 2585,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2627,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2628,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2629,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2631,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2634,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2635,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2636,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2637,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2638,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2639,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2640,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2641,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2642,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2643,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2644,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2645,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2646,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2647,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2648,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2649,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2650,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2651,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2652,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2653,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2654,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2655,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2656,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2657,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2658,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2659,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2660,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2661,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2662,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2663,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2664,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2665,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2666,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2667,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2668,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2669,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2670,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2671,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2672,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2673,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2674,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2675,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2676,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2677,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2678,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2679,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2680,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2681,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2682,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2683,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2684,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2685,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2686,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2687,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2688,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2689,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2690,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2691,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2692,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2693,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2694,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2695,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2696,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2697,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2698,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2699,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2700,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2701,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2702,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2703,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2704,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2705,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2706,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2707,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2708,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2709,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2710,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2711,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2712,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2713,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2714,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2715,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2716,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2717,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2718,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2719,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2720,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2721,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2722,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2724,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2725,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2726,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2727,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2728,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2729,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2730,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2731,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2732,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2733,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2734,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2735,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2736,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2737,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2738,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2739,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2740,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2741,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2743,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2744,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2745,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2746,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2747,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2748,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2749,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2750,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2751,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2752,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2753,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2754,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2755,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2756,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2757,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2758,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2759,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2760,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2761,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2762,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2763,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2764,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2765,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2766,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2767,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2768,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2769,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2770,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2771,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2772,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2773,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2774,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2775,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2776,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2777,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2778,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2779,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2780,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2781,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2782,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2783,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2784,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2785,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2786,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2787,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2788,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2789,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2790,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2791,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 3258,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 3259,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 4832,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 4833,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 4834,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 4835,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15238,
+      "level": 4,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=DreadPirateScarlet4",
+      "sourceRevision": "2020-10-20 15:52 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24024
+              ],
+              "count": 3,
+              "range": 55000,
+              "required": false,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                17042
+              ],
+              "count": 2,
+              "range": 55000,
+              "required": false,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                24167,
+                24168
+              ],
+              "count": 4,
+              "range": 55000,
+              "required": false,
+              "enemyFaction": 500020,
+              "lootTypeId": 2076,
+              "lootQuantity": 1
+            }
+          ],
+          "roomId": 22286
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24014,
+                24017,
+                24018,
+                24016,
+                24001,
+                24015
+              ],
+              "count": 5,
+              "range": 60000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                24146,
+                24145
+              ],
+              "count": 4,
+              "range": 60000,
+              "required": false,
+              "enemyFaction": 500010
+            }
+          ],
+          "roomId": 22287
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                23998,
+                23997
+              ],
+              "count": 3,
+              "range": 33000,
+              "required": false,
+              "trigger": true,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                24148,
+                24149
+              ],
+              "count": 4,
+              "range": 33000,
+              "required": false,
+              "trigger": true,
+              "enemyFaction": 500010
+            }
+          ],
+          "roomId": 22288
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24145,
+                17005
+              ],
+              "count": 4,
+              "range": 35000,
+              "required": false,
+              "enemyFaction": 500010
+            }
+          ],
+          "roomId": 22288
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                2072
+              ],
+              "count": 1,
+              "range": 84000,
+              "completesMission": true,
+              "enemyFaction": 500021
+            },
+            {
+              "types": [
+                17574
+              ],
+              "count": 1,
+              "range": 84000,
+              "required": false,
+              "enemyFaction": 500011
+            },
+            {
+              "types": [
+                17594
+              ],
+              "count": 1,
+              "range": 84000,
+              "required": false,
+              "enemyFaction": 500012
+            },
+            {
+              "types": [
+                27638
+              ],
+              "count": 1,
+              "range": 84000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                17571
+              ],
+              "count": 1,
+              "range": 84000,
+              "required": false,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                16990
+              ],
+              "count": 2,
+              "range": 62000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                24098,
+                24093
+              ],
+              "count": 3,
+              "range": 62000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                24014,
+                24001
+              ],
+              "count": 4,
+              "range": 62000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                24024,
+                24003
+              ],
+              "count": 4,
+              "range": 112000,
+              "required": false,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                17038,
+                17037
+              ],
+              "count": 4,
+              "range": 112000,
+              "required": false,
+              "trigger": true,
+              "enemyFaction": 500020
+            }
+          ],
+          "roomId": 22289
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17036,
+                17034
+              ],
+              "count": 4,
+              "range": 105000,
+              "required": false,
+              "trigger": true,
+              "enemyFaction": 500020
+            }
+          ],
+          "roomId": 22289
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24169,
+                24168
+              ],
+              "count": 5,
+              "range": 106000,
+              "required": false,
+              "enemyFaction": 500020
+            }
+          ],
+          "roomId": 22289
+        }
+      ],
+      "deadspace": false,
+      "rooms": [
+        {
+          "roomId": 22286,
+          "entryObjectId": 969328
+        },
+        {
+          "roomId": 22287,
+          "entryObjectId": 969330
+        },
+        {
+          "roomId": 22288,
+          "entryObjectId": 969332
+        },
+        {
+          "roomId": 22289,
+          "entryObjectId": 969339
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 969329,
+          "destinationRoomId": 22287,
+          "key": {
+            "typeId": 2076,
+            "quantity": 1,
+            "consume": false
+          }
+        },
+        {
+          "fromObjectId": 969331,
+          "destinationRoomId": 22288
+        },
+        {
+          "fromObjectId": 969333,
+          "destinationRoomId": 22289
+        }
+      ],
+      "offerOrder": 1
+    },
+    {
+      "missionId": 15244,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15245,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15246,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15247,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15248,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15250,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15251,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15252,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15253,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15254,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15255,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15256,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15257,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15258,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15259,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15260,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15261,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15262,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15263,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15264,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15265,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15266,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15267,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15268,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15269,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15270,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15271,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15272,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15273,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15275,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15276,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15277,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15278,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15279,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15280,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15281,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15282,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15283,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15284,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15285,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15286,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15287,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15288,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15289,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15290,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15291,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15292,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15293,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15294,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15295,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15296,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15297,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15298,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15299,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15300,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15301,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15302,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15303,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15304,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15305,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15307,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15308,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15309,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15310,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15311,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15312,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15313,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15314,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15315,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15316,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15317,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15318,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15319,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15320,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15321,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15322,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15323,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15324,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15325,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15326,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15666,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15667,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15668,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15669,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15670,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 15671,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
       "sourceRevision": "3662168",
       "waves": []
     }
