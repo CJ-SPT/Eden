@@ -5,6 +5,7 @@ using Eden.Data.Catalog.Agents;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
 
 namespace Eden.World.Agents;
 
@@ -99,9 +100,13 @@ internal static class MissionCatalog
                 rooms = Rooms(catalog, definition, dungeon, corporation);
             }
 
-            int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? 0));
-            int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? 0));
+            int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? mission.KillMission?.ObjectiveTypeID ?? 0));
+            int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? mission.KillMission?.ObjectiveQuantity ?? 0));
             double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
+            if (dungeonId.HasValue && cargoType > 0 && (quantity <= 0 || volume <= 0))
+            {
+                throw new InvalidDataException("Combat retrieval objective has invalid catalog cargo.");
+            }
             if (!dungeonId.HasValue && (cargoType == 0 || quantity <= 0 || volume <= 0))
             {
                 continue;
@@ -158,12 +163,13 @@ internal static class MissionCatalog
             {
                 var type = catalog.FittingType(item.TypeID!.Value);
                 bool gate = definition.Gates.Any(g => g.FromObjectId == item.ObjectID);
+                bool container = definition.Containers.Any(c => c.ObjectId == item.ObjectID);
                 if (
                     type is null
-                    || type.CategoryId is not (2 or 25)
+                    || !container && type.CategoryId is not (2 or 25)
                     || type.GroupId == InvisibleBeaconGroup
                     || item.ObjectID == binding.EntryObjectId
-                    || !gate && item.Entities is { Count: > 0 }
+                    || !gate && !container && item.Entities is { Count: > 0 }
                 )
                 {
                     continue;
@@ -185,6 +191,11 @@ internal static class MissionCatalog
                     {
                         IsGlobal = false,
                         Solid = !gate && type.GroupId is not (CloudGroup or EnvironmentGroup),
+                        Name =
+                            container && item.ObjectNameID is long name
+                                ? catalog.Read(CatalogData.Client.LocalizationFsdEnUs, name)?.Text
+                                : null,
+                        StandingThresholds = container ? NpcProfileCatalog.ReadStandingThresholds(catalog, type.Id) : null,
                     }
                 );
             }
@@ -229,6 +240,21 @@ internal static class MissionCatalog
         if (rooms.Sum(r => r.Objects.Length) > MissionRules.NpcsPerMission)
         {
             throw new InvalidDataException("Mission objects exceed their reserved identity range.");
+        }
+        if (
+            definition.Containers.Length > MissionRules.NpcsPerMission
+            || definition.Containers.Select(c => c.ObjectId).Distinct().Count() != definition.Containers.Length
+        )
+        {
+            throw new InvalidDataException("Invalid mission container identities.");
+        }
+        foreach (var container in definition.Containers)
+        {
+            if (container.Quantity <= 0 || rooms.SelectMany(r => r.Objects).Count(o => o.Id == container.ObjectId) != 1)
+            {
+                throw new InvalidDataException("Mission container has invalid contents or geometry.");
+            }
+            _ = catalog.RequireItem(container.TypeId);
         }
         foreach (var group in definition.Waves.SelectMany(w => w.Groups))
         {

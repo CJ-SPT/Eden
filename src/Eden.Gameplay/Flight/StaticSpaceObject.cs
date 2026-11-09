@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 
 namespace Eden.Gameplay.Flight;
@@ -16,6 +17,8 @@ public sealed record StaticSpaceObject(
 {
     public bool Solid { get; init; } = true;
     public bool IsGlobal { get; init; } = true;
+    public string? Name { get; init; }
+    public NpcStandingThresholds? StandingThresholds { get; init; }
 }
 
 public interface ISystemObjects

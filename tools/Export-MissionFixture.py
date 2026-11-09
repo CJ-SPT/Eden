@@ -35,8 +35,15 @@ def export(catalog, output):
         if mission.get('courierMission'):
             pending.add(mission['courierMission']['objectiveTypeID'])
         if mission.get('killMission'):
+            if mission['killMission'].get('objectiveTypeID'):
+                pending.add(mission['killMission']['objectiveTypeID'])
             dungeon = read('client/dungeons', mission['killMission']['dungeonID'])
             pending.update(o['typeID'] for r in dungeon['rooms'].values() for o in r['objects'].values())
+            containers = {c['objectId'] for c in definition.get('containers', [])}
+            for room in dungeon['rooms'].values():
+                for obj in room['objects'].values():
+                    if obj.get('objectID') in containers and obj.get('objectNameID'):
+                        read('client/localization_fsd_en-us', obj['objectNameID'])
             for gate in dungeon.get('connections', []):
                 for field in ['allowedShipsList', 'disallowedFittedTypesList']:
                     if gate.get(field):

@@ -48,7 +48,7 @@ public sealed class NpcProfileCatalog(bool cache = true)
         };
     }
 
-    private static NpcStandingThresholds? ReadStandingThresholds(CatalogDbContext catalog, int typeId)
+    internal static NpcStandingThresholds? ReadStandingThresholds(CatalogDbContext catalog, int typeId)
     {
         var components = catalog.Read(CatalogData.Client.Spacecomponentsbytype, (long)typeId);
         if (components is null || !components.TryGetValue("entityStandings", out var standings))

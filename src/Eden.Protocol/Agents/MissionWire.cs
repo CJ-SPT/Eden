@@ -89,10 +89,11 @@ internal sealed record MissionKeywords(MissionOffer Offer) : BlueModel
             ["rewardQuantity"] = Offer.Rewards.IskCents / (double)MarketDefinitions.CentsPerIsk,
             ["player"] = Offer.PilotId,
             ["objectiveLocationID"] = Offer.Cargo?.DestinationStation ?? Offer.SystemId,
-            ["objectiveDestinationID"] = Offer.Cargo?.DestinationStation ?? Offer.SystemId,
+            ["objectiveDestinationID"] =
+                Offer.Cargo?.DestinationStation ?? (Offer.Retrieval is null ? Offer.SystemId : Offer.Agent.StationId),
             ["objectivePickupLocationID"] = Offer.Cargo?.PickupStation ?? Offer.Agent.StationId,
-            ["objectiveTypeID"] = Offer.Cargo?.TypeId,
-            ["objectiveQuantity"] = Offer.Cargo?.Quantity ?? 0,
+            ["objectiveTypeID"] = Offer.Cargo?.TypeId ?? Offer.Retrieval?.TypeId,
+            ["objectiveQuantity"] = Offer.Cargo?.Quantity ?? Offer.Retrieval?.Quantity ?? 0,
             ["agentID"] = Offer.Agent.Id,
             ["agentLocationID"] = Offer.Agent.StationId,
         };
@@ -155,6 +156,7 @@ internal sealed record MissionObjectives(MissionOffer Offer) : BlueModel
     {
         List<object?> objectives = [];
         List<object?> dungeons = [];
+        bool combatComplete = Offer.Retrieval is null ? Offer.ObjectiveComplete : Offer.CombatComplete;
         if (Offer.Cargo is { } cargo)
         {
             objectives.Add(
@@ -184,17 +186,48 @@ internal sealed record MissionObjectives(MissionOffer Offer) : BlueModel
             {
                 ["dungeonID"] = Offer.DungeonId,
                 ["location"] = new MissionLocation(Offer),
-                ["objectiveCompleted"] = Offer.ObjectiveComplete ? 1 : null,
+                ["objectiveCompleted"] = combatComplete ? 1 : null,
                 ["optional"] = false,
             };
             // Pinned agentDialogueUtil._ProcessDungeonData branches on key presence:
             // shipRestrictions must be an integer index, and completionStatus=0
             // marks a failed, struck-out site. Omit unavailable optional values.
-            if (Offer.ObjectiveComplete)
+            if (combatComplete)
             {
                 dungeon["completionStatus"] = 1;
             }
             dungeons.Add(dungeon);
+        }
+        if (Offer.Retrieval is { } retrieval)
+        {
+            // Build 3662168 agentDialogueUtil._ProcessObjectiveEntry unpacks fetch as
+            // (dropoffOwnerID, dropoffLocation, cargo), alongside a separate dungeon entry.
+            objectives.Add(
+                new object?[]
+                {
+                    "fetch",
+                    new object?[]
+                    {
+                        Offer.Agent.Id,
+                        new Dictionary<string, object?>
+                        {
+                            ["typeID"] = retrieval.StationTypeId,
+                            ["locationID"] = Offer.Agent.StationId,
+                            ["solarsystemID"] = Offer.Agent.SystemId,
+                            ["agentID"] = Offer.Agent.Id,
+                            ["locationType"] = "objective.destination",
+                            ["locationNumber"] = 0,
+                        },
+                        new Dictionary<string, object?>
+                        {
+                            ["typeID"] = retrieval.TypeId,
+                            ["quantity"] = retrieval.Quantity,
+                            ["volume"] = retrieval.Volume * retrieval.Quantity,
+                            ["hasCargo"] = retrieval.HasCargo,
+                        },
+                    },
+                }
+            );
         }
         return new Dictionary<string, object?>
         {

@@ -131,6 +131,26 @@ def export(catalog, output):
     for wave, room in zip(scarlet['waves'], [22286, 22287, 22288, 22288, 22289, 22289, 22289]):
         wave['roomId'] = room
 
+    # The updated University roster gives three elite frigates; the older report gives four.
+    combat(1770, 3, 700, 'SpyStash3gu', '2017-02-22 13:34 UTC; EVE University oldid=218641 (2024-09-07)', [
+        [group('Pithatis Assassin/Pithatis Death Dealer', 2, 35000, required=False),
+         group('Pithum Inferno/Pithum Mortifier', 2, 35000, required=False),
+         group('Dire Pithi Wrecker/Dire Pithi Plunderer', 3, 30000, required=False),
+         group('Pithior Terrorist/Pithior Guerilla', 3, 30000, required=False),
+         group('Guristas Light Missile Battery', 3, 35000, required=False)],
+        [group('Pithatis Assassin', 2, 40000), group('Pithum Murderer', 1, 40000),
+         group('Pithior Terrorist/Pithior Guerilla', 2, 35000),
+         group('Guristas Heavy Missile Battery', 2, 40000, required=False),
+         group('Tower Sentry Guristas II', 2, 40000, required=False)]])
+    stash = missions[-1]
+    stash['rooms'] = [dict(roomId=18410, entryObjectId=810929), dict(roomId=18411, entryObjectId=810931),
+                      dict(roomId=18412, entryObjectId=810941)]
+    stash['gates'] = [dict(fromObjectId=810928, destinationRoomId=18411),
+                      dict(fromObjectId=810930, destinationRoomId=18412)]
+    stash['containers'] = [dict(objectId=810942, typeId=22222, quantity=5, requiresClear=True)]
+    for wave, room in zip(stash['waves'], [18411, 18412]):
+        wave['roomId'] = room
+
     for level, mid in enumerate([2912, 2913, 2914, 2915], 1):
         missions.append(dict(missionId=mid, level=level, difficulty=500, storyline=False,
                              source='build-3662168 client/missions; Eden courier offer policy', sourceRevision='3662168', waves=[]))

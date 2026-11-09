@@ -22,7 +22,7 @@ internal sealed partial class PilotMissionStore(
     INpcDirectory directory,
     TimeProvider clock,
     PilotTrainingStore training
-) : IPilotMissions
+) : IPilotMissions, IPilotMissionContainers
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -209,6 +209,7 @@ internal sealed partial class PilotMissionStore(
                             )
                         );
                     }
+                    SeedContainers(world, catalog, row, profile);
                     eventName = "accepted";
                     break;
                 case MissionAction.Complete:
@@ -222,6 +223,10 @@ internal sealed partial class PilotMissionStore(
                     else if (!row.ObjectiveComplete)
                     {
                         throw new InvalidDataException("The mission's combat objective is not complete.");
+                    }
+                    if (mission.Kind == MissionKind.Combat && mission.CargoType > 0)
+                    {
+                        ConsumeCargo(world, catalog, pilot, row, mission, changes);
                     }
                     payment = Pay(world, pilot, agent, row, now, standings);
                     Close(world, row, MissionState.Completed, now);
@@ -309,9 +314,10 @@ internal sealed partial class PilotMissionStore(
                     PickupSystemId = agent.SystemId!.Value,
                 }
                 : null;
+        bool hasCargo = profile.CargoType > 0 && Cargo(world, pilot, row, profile).Sum(i => (long)i.Quantity) >= profile.CargoQuantity;
         bool complete =
-            row.ObjectiveComplete
-            || cargo is not null && Cargo(world, pilot, row, profile).Sum(i => (long)i.Quantity) >= profile.CargoQuantity;
+            row.State == MissionState.Completed
+            || (profile.Kind == MissionKind.Courier ? hasCargo : row.ObjectiveComplete && (profile.CargoType == 0 || hasCargo));
         return new(
             row.Id,
             row.MissionId,
@@ -336,6 +342,17 @@ internal sealed partial class PilotMissionStore(
             NameId = profile.NameId,
             BriefingId = profile.BriefingId,
             PilotId = row.PilotId,
+            CombatComplete = row.ObjectiveComplete,
+            Retrieval =
+                profile.Kind == MissionKind.Combat && profile.CargoType > 0
+                    ? new(
+                        profile.CargoType,
+                        profile.CargoQuantity,
+                        profile.CargoVolume,
+                        hasCargo || row.State == MissionState.Completed,
+                        catalog.RequireStation(agent.StationId!.Value).TypeId
+                    )
+                    : null,
         };
     }
 

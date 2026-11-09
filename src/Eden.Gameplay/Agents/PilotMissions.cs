@@ -81,6 +81,8 @@ public sealed record MissionCargo(int TypeId, int Quantity, double Volume, int P
     public int PickupSystemId { get; init; }
 }
 
+public sealed record MissionRetrieval(int TypeId, int Quantity, double Volume, bool HasCargo, int StationTypeId);
+
 public sealed record MissionOffer(
     long Id,
     int MissionId,
@@ -105,6 +107,8 @@ public sealed record MissionOffer(
     public int NameId { get; init; }
     public int BriefingId { get; init; }
     public long PilotId { get; init; }
+    public MissionRetrieval? Retrieval { get; init; }
+    public bool CombatComplete { get; init; }
 }
 
 public sealed record MissionStandingChange(long SourceId, double Before, double After);

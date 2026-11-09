@@ -51,7 +51,7 @@ internal sealed partial class PilotMissionStore
                                 .Objects.Select(o =>
                                     o with
                                     {
-                                        Id = checked(MissionRules.FirstObjectId + m.Id * MissionRules.NpcsPerMission + objectIndex++),
+                                        Id = SceneObjectId(profile, m.Id, o.Id, objectIndex++),
                                         Position = position + o.Position,
                                     }
                                 )

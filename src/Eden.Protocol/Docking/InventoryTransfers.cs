@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
@@ -16,6 +17,7 @@ internal sealed class InventoryTransfers(
     IPilotFitting fitting,
     IPilotAmmunition ammunition,
     IWrecks wrecks,
+    IPilotMissionContainers missionContainers,
     MagazineWire magazinesWire,
     FittingOperations fittingOperations,
     DeferredRefitPrimes refits,
@@ -42,14 +44,18 @@ internal sealed class InventoryTransfers(
                 context.Pilot.Position is not null
                 && destination == context.Pilot.ShipId
                 && ShipHoldRules.IsHold(flag)
-                && context.Flight.VisibleWrecks.Any(w => w.Id == source);
+                && (context.Flight.VisibleWrecks.Any(w => w.Id == source) || MissionContainerRules.IsContainer(source));
             if (looting && !context.Flight.CanTarget)
             {
-                return new PilotCallResult.Failure("Wreck contents cannot be transferred during warp or a system transition.");
+                return new PilotCallResult.Failure("Container contents cannot be transferred during warp or a system transition.");
             }
             if (looting)
             {
                 context.Flight.Checkpoint();
+                if (!context.Flight.CanTarget)
+                {
+                    return new PilotCallResult.Failure("Container contents cannot be transferred during warp or a system transition.");
+                }
             }
             var changes = TransferItems(context, request, destination, looting);
             var currentMagazines = ammunition.Read(context.Pilot.PilotId, context.Pilot.ShipId).ToDictionary(m => m.ModuleId);
@@ -140,7 +146,9 @@ internal sealed class InventoryTransfers(
     {
         if (looting)
         {
-            return LootWreck(context, request);
+            return MissionContainerRules.IsContainer(request.SourceId)
+                ? missionContainers.Take(context.Pilot.PilotId, context.Pilot.ShipId, request)
+                : LootWreck(context, request);
         }
         if (
             destination == context.Pilot.ShipId

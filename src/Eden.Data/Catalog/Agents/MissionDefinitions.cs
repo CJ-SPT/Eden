@@ -19,6 +19,8 @@ public sealed record MissionWave(ImmutableArray<MissionSpawnGroup> Groups, int R
 
 public sealed record MissionRoomDefinition(int RoomId, long EntryObjectId);
 
+public sealed record MissionContainerDefinition(long ObjectId, int TypeId, int Quantity, bool RequiresClear = false);
+
 public sealed record MissionGateDefinition(
     long FromObjectId,
     int DestinationRoomId,
@@ -38,6 +40,7 @@ public sealed record MissionDefinition(
 {
     public ImmutableArray<MissionRoomDefinition> Rooms { get; init; } = [];
     public ImmutableArray<MissionGateDefinition> Gates { get; init; } = [];
+    public ImmutableArray<MissionContainerDefinition> Containers { get; init; } = [];
     public bool Deadspace { get; init; } = true;
 }
 

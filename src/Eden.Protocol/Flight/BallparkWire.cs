@@ -81,6 +81,15 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.Name is { } name)
+        {
+            fields["name"] = new BlueUnicode(name);
+        }
+        if (Body.StandingThresholds is { } thresholds)
+        {
+            fields["hostile_response_threshold"] = thresholds.Hostile;
+            fields["friendly_response_threshold"] = thresholds.Friendly;
+        }
         if (Body.DestinationGateId.HasValue)
         {
             fields["destinationCorruptionStageAndMaximum"] = new object?[] { 0, 5 };

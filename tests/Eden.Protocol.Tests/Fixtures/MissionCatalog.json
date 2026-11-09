@@ -634,6 +634,122 @@
       ]
     },
     {
+      "id": 208,
+      "name": "Inferno Heavy Missile",
+      "groupId": 385,
+      "groupName": "Heavy Missile",
+      "categoryId": 8,
+      "mass": 1000.0,
+      "radius": 300.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 120.0
+        },
+        {
+          "id": 37,
+          "value": 4300.0
+        },
+        {
+          "id": 70,
+          "value": 0.00014449800378457667
+        },
+        {
+          "id": 108,
+          "value": 35.0
+        },
+        {
+          "id": 109,
+          "value": 1.0
+        },
+        {
+          "id": 110,
+          "value": 0.8
+        },
+        {
+          "id": 111,
+          "value": 1.0
+        },
+        {
+          "id": 113,
+          "value": 1.0
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 0.0
+        },
+        {
+          "id": 118,
+          "value": 149.0
+        },
+        {
+          "id": 137,
+          "value": 510.0
+        },
+        {
+          "id": 182,
+          "value": 3324.0
+        },
+        {
+          "id": 183,
+          "value": 3319.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 281,
+          "value": 6500.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 644,
+          "value": 1.0
+        },
+        {
+          "id": 653,
+          "value": 85.0
+        },
+        {
+          "id": 654,
+          "value": 140.0
+        },
+        {
+          "id": 655,
+          "value": 1500.0
+        },
+        {
+          "id": 1353,
+          "value": 0.682
+        }
+      ]
+    },
+    {
       "id": 209,
       "name": "Scourge Heavy Missile",
       "groupId": 385,
@@ -2817,6 +2933,28 @@
       ]
     },
     {
+      "id": 2894,
+      "name": "Invisible Cloud",
+      "groupId": 227,
+      "groupName": "Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 3073,
+      "name": "Rusty Cloud",
+      "groupId": 227,
+      "groupName": "Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 3355,
       "name": "Social",
       "groupId": 278,
@@ -3609,6 +3747,17 @@
       ]
     },
     {
+      "id": 10753,
+      "name": "Soft Cloud",
+      "groupId": 227,
+      "groupName": "Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 10754,
       "name": "Wispy Orange Cloud",
       "groupId": 227,
@@ -4011,6 +4160,22 @@
       ]
     },
     {
+      "id": 11209,
+      "name": "Barren Asteroid",
+      "groupId": 226,
+      "groupName": "Large Collidable Object",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 2200.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100000000.0
+        }
+      ]
+    },
+    {
       "id": 12274,
       "name": "Ballistic Control System I",
       "groupId": 367,
@@ -4123,6 +4288,22 @@
         {
           "id": 854,
           "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 13835,
+      "name": "Abandoned Drill - Ruined",
+      "groupId": 226,
+      "groupName": "Large Collidable Object",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 1979.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100000000.0
         }
       ]
     },
@@ -4669,6 +4850,182 @@
         {
           "id": 265,
           "value": 1000.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 5.0
+        },
+        {
+          "id": 457,
+          "value": 10.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16737,
+      "name": "Ruined Stargate",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 5991.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 150000.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 5.0
+        },
+        {
+          "id": 251,
+          "value": 10.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 5.0
+        },
+        {
+          "id": 265,
+          "value": 5000.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 5.0
+        },
+        {
+          "id": 457,
+          "value": 10.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16738,
+      "name": "Solar Harvester",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 4300.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 5000.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 5.0
+        },
+        {
+          "id": 251,
+          "value": 10.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 2500.0
+        },
+        {
+          "id": 265,
+          "value": 2500.0
         },
         {
           "id": 416,
@@ -5297,6 +5654,94 @@
         {
           "id": 457,
           "value": 1.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16847,
+      "name": "Asteroid Micro-Colony",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 1400.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 50000.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 5.0
+        },
+        {
+          "id": 251,
+          "value": 10.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 2000.0
+        },
+        {
+          "id": 265,
+          "value": 10000.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 5.0
+        },
+        {
+          "id": 457,
+          "value": 10.0
         },
         {
           "id": 479,
@@ -13141,6 +13586,394 @@
       ]
     },
     {
+      "id": 17000,
+      "name": "Pithum Murderer",
+      "groupId": 613,
+      "groupName": "Deadspace Guristas Cruiser",
+      "categoryId": 11,
+      "mass": 10100000.0,
+      "radius": 150.0,
+      "capacity": 235.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 1000.0
+        },
+        {
+          "id": 20,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 360.0
+        },
+        {
+          "id": 55,
+          "value": 1000000.0
+        },
+        {
+          "id": 64,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6000.0
+        },
+        {
+          "id": 103,
+          "value": 0.0
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 0.0
+        },
+        {
+          "id": 118,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 3.0
+        },
+        {
+          "id": 193,
+          "value": 1.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 24.0
+        },
+        {
+          "id": 217,
+          "value": 395.0
+        },
+        {
+          "id": 238,
+          "value": 2.0
+        },
+        {
+          "id": 239,
+          "value": 2.0
+        },
+        {
+          "id": 240,
+          "value": 2.0
+        },
+        {
+          "id": 241,
+          "value": 2.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 247,
+          "value": 92500.0
+        },
+        {
+          "id": 250,
+          "value": 1.0
+        },
+        {
+          "id": 252,
+          "value": 0.05625
+        },
+        {
+          "id": 263,
+          "value": 1300.0
+        },
+        {
+          "id": 265,
+          "value": 950.0
+        },
+        {
+          "id": 267,
+          "value": 0.47
+        },
+        {
+          "id": 268,
+          "value": 0.57
+        },
+        {
+          "id": 269,
+          "value": 0.77
+        },
+        {
+          "id": 270,
+          "value": 0.67
+        },
+        {
+          "id": 271,
+          "value": 0.47
+        },
+        {
+          "id": 272,
+          "value": 0.57
+        },
+        {
+          "id": 273,
+          "value": 0.77
+        },
+        {
+          "id": 274,
+          "value": 0.67
+        },
+        {
+          "id": 416,
+          "value": 25000.0
+        },
+        {
+          "id": 456,
+          "value": -4.0
+        },
+        {
+          "id": 457,
+          "value": 3.0
+        },
+        {
+          "id": 466,
+          "value": 0.54
+        },
+        {
+          "id": 475,
+          "value": 5325.0
+        },
+        {
+          "id": 476,
+          "value": 21300.0
+        },
+        {
+          "id": 479,
+          "value": 1000000.0
+        },
+        {
+          "id": 481,
+          "value": 51563.0
+        },
+        {
+          "id": 482,
+          "value": 675.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 497,
+          "value": 0.01
+        },
+        {
+          "id": 504,
+          "value": 0.0
+        },
+        {
+          "id": 506,
+          "value": 5750.0
+        },
+        {
+          "id": 507,
+          "value": 209.0
+        },
+        {
+          "id": 508,
+          "value": 180.0
+        },
+        {
+          "id": 512,
+          "value": 0.0
+        },
+        {
+          "id": 513,
+          "value": 0.0
+        },
+        {
+          "id": 514,
+          "value": 0.0
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 180.0
+        },
+        {
+          "id": 562,
+          "value": 0.0055
+        },
+        {
+          "id": 563,
+          "value": 5.0
+        },
+        {
+          "id": 564,
+          "value": 220.0
+        },
+        {
+          "id": 580,
+          "value": 10000.0
+        },
+        {
+          "id": 581,
+          "value": 0.1
+        },
+        {
+          "id": 582,
+          "value": 10000.0
+        },
+        {
+          "id": 583,
+          "value": 1.0
+        },
+        {
+          "id": 620,
+          "value": 0.0
+        },
+        {
+          "id": 630,
+          "value": 10000.0
+        },
+        {
+          "id": 631,
+          "value": 0.0
+        },
+        {
+          "id": 636,
+          "value": 5000.0
+        },
+        {
+          "id": 637,
+          "value": 75.0
+        },
+        {
+          "id": 638,
+          "value": 0.43
+        },
+        {
+          "id": 639,
+          "value": 0.43
+        },
+        {
+          "id": 640,
+          "value": 1.0
+        },
+        {
+          "id": 645,
+          "value": 1.594
+        },
+        {
+          "id": 646,
+          "value": 1.594
+        },
+        {
+          "id": 661,
+          "value": 2000.0
+        },
+        {
+          "id": 662,
+          "value": 0.25
+        },
+        {
+          "id": 665,
+          "value": 37500.0
+        },
+        {
+          "id": 798,
+          "value": 1.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        },
+        {
+          "id": 858,
+          "value": 0.8812
+        },
+        {
+          "id": 859,
+          "value": 1.2376
+        },
+        {
+          "id": 928,
+          "value": 0.0
+        },
+        {
+          "id": 929,
+          "value": 20000.0
+        },
+        {
+          "id": 930,
+          "value": 1.0
+        },
+        {
+          "id": 936,
+          "value": 50000.0
+        },
+        {
+          "id": 1007,
+          "value": 0.43
+        },
+        {
+          "id": 1010,
+          "value": 0.43
+        },
+        {
+          "id": 1648,
+          "value": 1.0
+        },
+        {
+          "id": 1650,
+          "value": 1.0
+        },
+        {
+          "id": 1651,
+          "value": 0.0
+        },
+        {
+          "id": 1652,
+          "value": 1.0
+        },
+        {
+          "id": 1656,
+          "value": 0.7
+        },
+        {
+          "id": 1766,
+          "value": 26.0
+        },
+        {
+          "id": 1855,
+          "value": 50.0
+        }
+      ]
+    },
+    {
       "id": 17001,
       "name": "Pithi Plunderer",
       "groupId": 615,
@@ -15977,6 +16810,222 @@
       ]
     },
     {
+      "id": 17153,
+      "name": "Tower Sentry Guristas II",
+      "groupId": 383,
+      "groupName": "Destructible Sentry Gun",
+      "categoryId": 11,
+      "mass": 1000.0,
+      "radius": 340.0,
+      "capacity": 1000.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 1600.0
+        },
+        {
+          "id": 51,
+          "value": 2500.0
+        },
+        {
+          "id": 54,
+          "value": 250000.0
+        },
+        {
+          "id": 55,
+          "value": 500000.0
+        },
+        {
+          "id": 64,
+          "value": 4.0
+        },
+        {
+          "id": 114,
+          "value": 1.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 8.0
+        },
+        {
+          "id": 118,
+          "value": 6.0
+        },
+        {
+          "id": 154,
+          "value": 250000.0
+        },
+        {
+          "id": 158,
+          "value": 50000.0
+        },
+        {
+          "id": 160,
+          "value": 0.02
+        },
+        {
+          "id": 192,
+          "value": 8.0
+        },
+        {
+          "id": 193,
+          "value": 1.0
+        },
+        {
+          "id": 208,
+          "value": 100.0
+        },
+        {
+          "id": 209,
+          "value": 100.0
+        },
+        {
+          "id": 210,
+          "value": 100.0
+        },
+        {
+          "id": 211,
+          "value": 100.0
+        },
+        {
+          "id": 245,
+          "value": 366.0
+        },
+        {
+          "id": 247,
+          "value": 250000.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 500.0
+        },
+        {
+          "id": 265,
+          "value": 1600.0
+        },
+        {
+          "id": 267,
+          "value": 0.4
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 272,
+          "value": 0.4
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 479,
+          "value": 500000.0
+        },
+        {
+          "id": 481,
+          "value": 50000.0
+        },
+        {
+          "id": 482,
+          "value": 1000.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 497,
+          "value": 0.05
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 200.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 620,
+          "value": 100.0
+        },
+        {
+          "id": 645,
+          "value": 1.5
+        },
+        {
+          "id": 646,
+          "value": 1.5
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 798,
+          "value": 1.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        },
+        {
+          "id": 1648,
+          "value": 1.0
+        },
+        {
+          "id": 1650,
+          "value": 1.0
+        },
+        {
+          "id": 1651,
+          "value": 0.0
+        },
+        {
+          "id": 1652,
+          "value": 1.0
+        },
+        {
+          "id": 1656,
+          "value": 0.5
+        }
+      ]
+    },
+    {
       "id": 17222,
       "name": "Domination Copper Tag",
       "groupId": 370,
@@ -16756,6 +17805,470 @@
         {
           "id": 507,
           "value": 207.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 150.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 620,
+          "value": 100.0
+        },
+        {
+          "id": 645,
+          "value": 1.5
+        },
+        {
+          "id": 646,
+          "value": 1.5
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 798,
+          "value": 1.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        },
+        {
+          "id": 1648,
+          "value": 1.0
+        },
+        {
+          "id": 1650,
+          "value": 1.0
+        },
+        {
+          "id": 1651,
+          "value": 0.0
+        },
+        {
+          "id": 1652,
+          "value": 1.0
+        },
+        {
+          "id": 1656,
+          "value": 0.5
+        }
+      ]
+    },
+    {
+      "id": 17597,
+      "name": "Guristas Light Missile Battery",
+      "groupId": 383,
+      "groupName": "Destructible Sentry Gun",
+      "categoryId": 11,
+      "mass": 1000.0,
+      "radius": 371.0,
+      "capacity": 1000.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 800.0
+        },
+        {
+          "id": 20,
+          "value": -75.0
+        },
+        {
+          "id": 51,
+          "value": 20000000.0
+        },
+        {
+          "id": 54,
+          "value": 250000.0
+        },
+        {
+          "id": 55,
+          "value": 500000.0
+        },
+        {
+          "id": 64,
+          "value": 3.5
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 0.0
+        },
+        {
+          "id": 118,
+          "value": 0.0
+        },
+        {
+          "id": 154,
+          "value": 250000.0
+        },
+        {
+          "id": 158,
+          "value": 50000.0
+        },
+        {
+          "id": 160,
+          "value": 0.04
+        },
+        {
+          "id": 192,
+          "value": 8.0
+        },
+        {
+          "id": 193,
+          "value": 3.0
+        },
+        {
+          "id": 208,
+          "value": 100.0
+        },
+        {
+          "id": 209,
+          "value": 100.0
+        },
+        {
+          "id": 210,
+          "value": 100.0
+        },
+        {
+          "id": 211,
+          "value": 100.0
+        },
+        {
+          "id": 212,
+          "value": 3.0
+        },
+        {
+          "id": 245,
+          "value": 372.0
+        },
+        {
+          "id": 247,
+          "value": 250000.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 250.0
+        },
+        {
+          "id": 265,
+          "value": 800.0
+        },
+        {
+          "id": 267,
+          "value": 0.4
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 272,
+          "value": 0.4
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 479,
+          "value": 500000.0
+        },
+        {
+          "id": 481,
+          "value": 25000.0
+        },
+        {
+          "id": 482,
+          "value": 1000.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 497,
+          "value": 0.15
+        },
+        {
+          "id": 506,
+          "value": 20000.0
+        },
+        {
+          "id": 507,
+          "value": 210.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 100.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 620,
+          "value": 100.0
+        },
+        {
+          "id": 645,
+          "value": 1.5
+        },
+        {
+          "id": 646,
+          "value": 1.5
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 798,
+          "value": 1.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        },
+        {
+          "id": 1648,
+          "value": 1.0
+        },
+        {
+          "id": 1650,
+          "value": 1.0
+        },
+        {
+          "id": 1651,
+          "value": 0.0
+        },
+        {
+          "id": 1652,
+          "value": 1.0
+        },
+        {
+          "id": 1656,
+          "value": 0.5
+        }
+      ]
+    },
+    {
+      "id": 17598,
+      "name": "Guristas Heavy Missile Battery",
+      "groupId": 383,
+      "groupName": "Destructible Sentry Gun",
+      "categoryId": 11,
+      "mass": 1000.0,
+      "radius": 371.0,
+      "capacity": 1000.0,
+      "attributes": [
+        {
+          "id": 6,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 800.0
+        },
+        {
+          "id": 20,
+          "value": -75.0
+        },
+        {
+          "id": 51,
+          "value": 20000000.0
+        },
+        {
+          "id": 54,
+          "value": 250000.0
+        },
+        {
+          "id": 55,
+          "value": 500000.0
+        },
+        {
+          "id": 64,
+          "value": 3.5
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 0.0
+        },
+        {
+          "id": 118,
+          "value": 0.0
+        },
+        {
+          "id": 154,
+          "value": 250000.0
+        },
+        {
+          "id": 158,
+          "value": 50000.0
+        },
+        {
+          "id": 160,
+          "value": 0.04
+        },
+        {
+          "id": 192,
+          "value": 8.0
+        },
+        {
+          "id": 193,
+          "value": 3.0
+        },
+        {
+          "id": 208,
+          "value": 100.0
+        },
+        {
+          "id": 209,
+          "value": 100.0
+        },
+        {
+          "id": 210,
+          "value": 100.0
+        },
+        {
+          "id": 211,
+          "value": 100.0
+        },
+        {
+          "id": 212,
+          "value": 3.0
+        },
+        {
+          "id": 245,
+          "value": 372.0
+        },
+        {
+          "id": 247,
+          "value": 250000.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 500.0
+        },
+        {
+          "id": 265,
+          "value": 1600.0
+        },
+        {
+          "id": 267,
+          "value": 0.4
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 272,
+          "value": 0.4
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 479,
+          "value": 500000.0
+        },
+        {
+          "id": 481,
+          "value": 40000.0
+        },
+        {
+          "id": 482,
+          "value": 1000.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 497,
+          "value": 0.1
+        },
+        {
+          "id": 506,
+          "value": 24000.0
+        },
+        {
+          "id": 507,
+          "value": 208.0
         },
         {
           "id": 525,
@@ -17800,6 +19313,94 @@
       ]
     },
     {
+      "id": 17787,
+      "name": "Starbase Storage Facility",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 1000000.0,
+      "radius": 700.0,
+      "capacity": 8850.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 700.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 5.0
+        },
+        {
+          "id": 251,
+          "value": 10.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 600.0
+        },
+        {
+          "id": 265,
+          "value": 500.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 5.0
+        },
+        {
+          "id": 457,
+          "value": 10.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 17831,
       "name": "Acceleration Gate",
       "groupId": 366,
@@ -18321,6 +19922,89 @@
       "radius": 1.0,
       "capacity": 0.0,
       "attributes": []
+    },
+    {
+      "id": 22222,
+      "name": "Classified Report - Station Defenses",
+      "groupId": 314,
+      "groupName": "Miscellaneous",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 22223,
+      "name": "Guristas Officer's Quarters Mission Spy Stash",
+      "groupId": 306,
+      "groupName": "Spawn Container",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 379.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 1000000.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 1.0
+        },
+        {
+          "id": 457,
+          "value": 3.0
+        },
+        {
+          "id": 470,
+          "value": 84600000.0
+        },
+        {
+          "id": 482,
+          "value": 2700.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 500.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        },
+        {
+          "id": 903,
+          "value": 1.0
+        }
+      ]
     },
     {
       "id": 23663,
@@ -19851,6 +21535,366 @@
         {
           "id": 859,
           "value": 1.1064
+        },
+        {
+          "id": 1006,
+          "value": 0.25
+        },
+        {
+          "id": 1009,
+          "value": 0.25
+        },
+        {
+          "id": 1648,
+          "value": 1.0
+        },
+        {
+          "id": 1650,
+          "value": 1.0
+        },
+        {
+          "id": 1651,
+          "value": 0.0
+        },
+        {
+          "id": 1652,
+          "value": 1.0
+        },
+        {
+          "id": 1656,
+          "value": 0.7
+        },
+        {
+          "id": 1766,
+          "value": 25.0
+        },
+        {
+          "id": 1855,
+          "value": 50.0
+        }
+      ]
+    },
+    {
+      "id": 23987,
+      "name": "Pithior Terrorist",
+      "groupId": 614,
+      "groupName": "Deadspace Guristas Destroyer",
+      "categoryId": 11,
+      "mass": 1650000.0,
+      "radius": 50.0,
+      "capacity": 235.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 225.0
+        },
+        {
+          "id": 20,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 400.0
+        },
+        {
+          "id": 51,
+          "value": 2750.0
+        },
+        {
+          "id": 54,
+          "value": 15000.0
+        },
+        {
+          "id": 55,
+          "value": 500000.0
+        },
+        {
+          "id": 64,
+          "value": 6.0
+        },
+        {
+          "id": 79,
+          "value": 2000.0
+        },
+        {
+          "id": 103,
+          "value": 0.0
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 6.0
+        },
+        {
+          "id": 118,
+          "value": 5.0
+        },
+        {
+          "id": 158,
+          "value": 6000.0
+        },
+        {
+          "id": 160,
+          "value": 0.07
+        },
+        {
+          "id": 192,
+          "value": 2.0
+        },
+        {
+          "id": 193,
+          "value": 1.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 15.0
+        },
+        {
+          "id": 217,
+          "value": 395.0
+        },
+        {
+          "id": 245,
+          "value": 565.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 247,
+          "value": 41250.0
+        },
+        {
+          "id": 250,
+          "value": 1.0
+        },
+        {
+          "id": 252,
+          "value": 0.02125
+        },
+        {
+          "id": 263,
+          "value": 300.0
+        },
+        {
+          "id": 265,
+          "value": 250.0
+        },
+        {
+          "id": 267,
+          "value": 0.6
+        },
+        {
+          "id": 268,
+          "value": 0.7
+        },
+        {
+          "id": 269,
+          "value": 0.9
+        },
+        {
+          "id": 270,
+          "value": 0.8
+        },
+        {
+          "id": 271,
+          "value": 0.6
+        },
+        {
+          "id": 272,
+          "value": 0.7
+        },
+        {
+          "id": 273,
+          "value": 0.9
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 416,
+          "value": 16500.0
+        },
+        {
+          "id": 456,
+          "value": -4.0
+        },
+        {
+          "id": 457,
+          "value": 3.0
+        },
+        {
+          "id": 466,
+          "value": 0.39
+        },
+        {
+          "id": 475,
+          "value": 6450.0
+        },
+        {
+          "id": 476,
+          "value": 25800.0
+        },
+        {
+          "id": 479,
+          "value": 2000000.0
+        },
+        {
+          "id": 481,
+          "value": 14625.0
+        },
+        {
+          "id": 482,
+          "value": 210.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 497,
+          "value": 0.0
+        },
+        {
+          "id": 504,
+          "value": 0.0
+        },
+        {
+          "id": 506,
+          "value": 1.0
+        },
+        {
+          "id": 507,
+          "value": 210.0
+        },
+        {
+          "id": 508,
+          "value": 200.0
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 89.0
+        },
+        {
+          "id": 562,
+          "value": 0.00325
+        },
+        {
+          "id": 563,
+          "value": 5.0
+        },
+        {
+          "id": 564,
+          "value": 475.0
+        },
+        {
+          "id": 580,
+          "value": 10000.0
+        },
+        {
+          "id": 581,
+          "value": 0.075
+        },
+        {
+          "id": 582,
+          "value": 10000.0
+        },
+        {
+          "id": 583,
+          "value": 1.0
+        },
+        {
+          "id": 620,
+          "value": 40.0
+        },
+        {
+          "id": 630,
+          "value": 10000.0
+        },
+        {
+          "id": 631,
+          "value": 0.0
+        },
+        {
+          "id": 636,
+          "value": 5000.0
+        },
+        {
+          "id": 637,
+          "value": 32.5
+        },
+        {
+          "id": 638,
+          "value": 0.25
+        },
+        {
+          "id": 639,
+          "value": 0.25
+        },
+        {
+          "id": 645,
+          "value": 1.2865
+        },
+        {
+          "id": 646,
+          "value": 1.2865
+        },
+        {
+          "id": 661,
+          "value": 3000.0
+        },
+        {
+          "id": 662,
+          "value": 0.05
+        },
+        {
+          "id": 665,
+          "value": 24750.0
+        },
+        {
+          "id": 798,
+          "value": 1.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        },
+        {
+          "id": 858,
+          "value": 0.9427
+        },
+        {
+          "id": 859,
+          "value": 1.1146
         },
         {
           "id": 1006,
@@ -31811,6 +33855,94 @@
       ]
     },
     {
+      "id": 24245,
+      "name": "Smuggler Stargate",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 1e+35,
+      "radius": 2933.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 5000.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 3.0
+        },
+        {
+          "id": 251,
+          "value": 4.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 1000.0
+        },
+        {
+          "id": 265,
+          "value": 5000.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 3.0
+        },
+        {
+          "id": 457,
+          "value": 4.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 24685,
       "name": "Stargate Minmatar 1",
       "groupId": 319,
@@ -36232,6 +38364,23 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 903,
+      "data": {
+        "stackable": 1,
+        "iconID": 0,
+        "description": "Whether a spawn container should refill itself when there are no guards assigned to it.",
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "attributeID": 903,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 9,
+        "name": "spawnWithoutGuardsToo"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 928,
       "data": {
         "stackable": 1,
@@ -38499,6 +40648,794 @@
         "useDefaultSpaceMusic": 0,
         "dungeonNameID": 113276,
         "dungeonID": 233
+      }
+    },
+    {
+      "dataset": "client/dungeons",
+      "key": 558,
+      "data": {
+        "entryTypeID": 10124,
+        "entryObjectID": 810929,
+        "archetypeID": 20,
+        "connections": [
+          {
+            "fromObjectID": 810928
+          },
+          {
+            "fromObjectID": 810930
+          }
+        ],
+        "difficulty": 3,
+        "missionBriefingID": 115707,
+        "rooms": {
+          "18410": {
+            "messageIcon": "",
+            "roomName": "﻿Forward Point",
+            "objects": {
+              "810928": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -750.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18410,
+                "typeID": 17831,
+                "objectID": 810928,
+                "objectNameID": 153459
+              },
+              "810929": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 750.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18410,
+                "objectID": 810929,
+                "typeID": 10124
+              }
+            },
+            "y": 0,
+            "x": 0,
+            "shortName": "Entrance",
+            "z": 0
+          },
+          "18411": {
+            "messageIcon": "",
+            "roomName": "﻿The Abandoned Stargate",
+            "objects": {
+              "810930": {
+                "typeID": 17831,
+                "objectID": 810930,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 10000.0,
+                  "orbitRange": 5000.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 153460,
+                "entities": {
+                  "103594": {
+                    "npcGroupingID": 28891,
+                    "entityID": 103594,
+                    "triggerSpawn": 0,
+                    "objectID": 810930
+                  },
+                  "103595": {
+                    "npcGroupingID": 27958,
+                    "entityID": 103595,
+                    "triggerSpawn": 0,
+                    "objectID": 810930
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -9067.0,
+                  "x": -8.0,
+                  "n_fields": 3,
+                  "z": -20080.0
+                },
+                "roomID": 18411
+              },
+              "810931": {
+                "typeID": 10124,
+                "objectID": 810931,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 20000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "entities": {
+                  "103596": {
+                    "npcGroupingID": 29531,
+                    "entityID": 103596,
+                    "triggerSpawn": 0,
+                    "objectID": 810931
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 780.0,
+                  "x": -24.0,
+                  "n_fields": 3,
+                  "z": 31776.0
+                },
+                "roomID": 18411
+              },
+              "810932": {
+                "typeID": 16737,
+                "objectID": 810932,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 30000.0,
+                  "orbitRange": 5000.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 153461,
+                "entities": {
+                  "103597": {
+                    "npcGroupingID": 27717,
+                    "entityID": 103597,
+                    "triggerSpawn": 0,
+                    "objectID": 810932
+                  },
+                  "103598": {
+                    "npcGroupingID": 27958,
+                    "entityID": 103598,
+                    "triggerSpawn": 0,
+                    "objectID": 810932
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": -9874.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18411
+              },
+              "810933": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 8641.0,
+                  "x": -16348.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18411,
+                "typeID": 16847,
+                "objectID": 810933,
+                "objectNameID": 153462
+              },
+              "810934": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -11567.0,
+                  "x": -20853.0,
+                  "n_fields": 3,
+                  "z": -11025.0
+                },
+                "roomID": 18411,
+                "typeID": 16738,
+                "objectID": 810934,
+                "objectNameID": 153463
+              },
+              "810935": {
+                "typeID": 3073,
+                "objectID": 810935,
+                "objectNameID": 153464,
+                "radius": 50000.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -9342.0,
+                  "x": -29891.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18411
+              },
+              "810936": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 14863.0,
+                  "x": 19271.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18411,
+                "typeID": 11209,
+                "objectID": 810936,
+                "objectNameID": 153465
+              },
+              "810937": {
+                "typeID": 13835,
+                "objectID": 810937,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 20000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 153466,
+                "entities": {
+                  "103600": {
+                    "npcGroupingID": 27952,
+                    "entityID": 103600,
+                    "triggerSpawn": 0,
+                    "objectID": 810937
+                  },
+                  "103599": {
+                    "npcGroupingID": 27770,
+                    "entityID": 103599,
+                    "triggerSpawn": 0,
+                    "objectID": 810937
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 17535.0,
+                  "x": 14454.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18411
+              },
+              "810938": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": -31123.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 18411,
+                "objectID": 810938,
+                "typeID": 17597
+              },
+              "810939": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 57844.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 18411,
+                "objectID": 810939,
+                "typeID": 17597
+              },
+              "810940": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 49889.0,
+                  "x": 5172.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 18411,
+                "objectID": 810940,
+                "typeID": 17597
+              }
+            },
+            "y": 2,
+            "x": 0,
+            "shortName": "Room1",
+            "z": -1
+          },
+          "18412": {
+            "messageIcon": "",
+            "roomName": "﻿Guristas Storage Facility",
+            "objects": {
+              "810944": {
+                "typeID": 16729,
+                "objectID": 810944,
+                "yaw": 350.0,
+                "pitch": 0.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 31.0,
+                  "x": -230.66015625,
+                  "n_fields": 3,
+                  "z": 820.348876953125
+                },
+                "roomID": 18412,
+                "roll": 0.0
+              },
+              "810945": {
+                "typeID": 16729,
+                "objectID": 810945,
+                "yaw": 350.0,
+                "pitch": 0.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 31.0,
+                  "x": 1769.33984375,
+                  "n_fields": 3,
+                  "z": 820.348876953125
+                },
+                "roomID": 18412,
+                "roll": 0.0
+              },
+              "810946": {
+                "typeID": 16735,
+                "objectID": 810946,
+                "yaw": 350.0,
+                "pitch": 0.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 17.0,
+                  "x": -2399.66015625,
+                  "n_fields": 3,
+                  "z": 1964.348876953125
+                },
+                "roomID": 18412,
+                "roll": 0.0
+              },
+              "810947": {
+                "typeID": 16735,
+                "objectID": 810947,
+                "yaw": 350.0,
+                "pitch": 0.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 17.0,
+                  "x": -399.66015625,
+                  "n_fields": 3,
+                  "z": 1964.348876953125
+                },
+                "roomID": 18412,
+                "roll": 0.0
+              },
+              "810948": {
+                "typeID": 16735,
+                "objectID": 810948,
+                "yaw": 350.0,
+                "pitch": 0.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 17.0,
+                  "x": 1600.33984375,
+                  "n_fields": 3,
+                  "z": 1964.348876953125
+                },
+                "roomID": 18412,
+                "roll": 0.0
+              },
+              "810949": {
+                "typeID": 17787,
+                "objectID": 810949,
+                "yaw": 259.9999694824219,
+                "objectNameID": 153469,
+                "pitch": -4.698506472777808e-09,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -31.0,
+                  "x": -1600.33984375,
+                  "n_fields": 3,
+                  "z": -1964.348876953125
+                },
+                "roomID": 18412,
+                "roll": -0.05595291033387184
+              },
+              "810950": {
+                "typeID": 17787,
+                "objectID": 810950,
+                "yaw": 259.9999694824219,
+                "objectNameID": 153470,
+                "pitch": -4.698506472777808e-09,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -31.0,
+                  "x": -1773.9892578125,
+                  "n_fields": 3,
+                  "z": -979.540283203125
+                },
+                "roomID": 18412,
+                "roll": -0.05595291033387184
+              },
+              "810951": {
+                "typeID": 17787,
+                "objectID": 810951,
+                "yaw": 259.9999694824219,
+                "objectNameID": 153471,
+                "pitch": -4.698506472777808e-09,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -31.0,
+                  "x": 399.66015625,
+                  "n_fields": 3,
+                  "z": -1964.348876953125
+                },
+                "roomID": 18412,
+                "roll": -0.05595291033387184
+              },
+              "810952": {
+                "typeID": 17787,
+                "objectID": 810952,
+                "yaw": 259.9999694824219,
+                "objectNameID": 153472,
+                "pitch": -4.698506472777808e-09,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -31.0,
+                  "x": 2399.66015625,
+                  "n_fields": 3,
+                  "z": -1964.348876953125
+                },
+                "roomID": 18412,
+                "roll": -0.05595291033387184
+              },
+              "810953": {
+                "typeID": 17787,
+                "objectID": 810953,
+                "yaw": 259.9999694824219,
+                "objectNameID": 153473,
+                "pitch": -4.698506472777808e-09,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -31.0,
+                  "x": 226.0107421875,
+                  "n_fields": 3,
+                  "z": -979.540283203125
+                },
+                "roomID": 18412,
+                "roll": -0.05595291033387184
+              },
+              "810954": {
+                "typeID": 17787,
+                "objectID": 810954,
+                "yaw": 259.9999694824219,
+                "objectNameID": 153474,
+                "pitch": -4.698506472777808e-09,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -31.0,
+                  "x": 2226.0107421875,
+                  "n_fields": 3,
+                  "z": -979.540283203125
+                },
+                "roomID": 18412,
+                "roll": -0.05595291033387184
+              },
+              "810955": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": -6766.0,
+                  "n_fields": 3,
+                  "z": 20718.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 200000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 18412,
+                "objectID": 810955,
+                "typeID": 17598
+              },
+              "810956": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": -6766.0,
+                  "n_fields": 3,
+                  "z": -17274.0
+                },
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 200000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roomID": 18412,
+                "objectID": 810956,
+                "typeID": 17598
+              },
+              "810957": {
+                "typeID": 17153,
+                "objectID": 810957,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 153475,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 16861.0,
+                  "x": -31037.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18412
+              },
+              "810958": {
+                "typeID": 17153,
+                "objectID": 810958,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 250000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 153476,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -19048.0,
+                  "x": -31037.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18412
+              },
+              "810959": {
+                "typeID": 10753,
+                "objectID": 810959,
+                "objectNameID": 153477,
+                "radius": 50000.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18412
+              },
+              "810960": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 15972.0,
+                  "x": 287.0,
+                  "n_fields": 3,
+                  "z": -191.0
+                },
+                "roomID": 18412,
+                "typeID": 24245,
+                "objectID": 810960,
+                "objectNameID": 153478
+              },
+              "1022906": {
+                "typeID": 2894,
+                "objectID": 1022906,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 180000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 1
+                },
+                "objectNameID": 219305,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 11452.333984375,
+                  "x": -9919.751953125,
+                  "n_fields": 3,
+                  "z": 53.009124755859375
+                },
+                "roomID": 18412
+              },
+              "810941": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 24.0,
+                  "x": 17179.0,
+                  "n_fields": 3,
+                  "z": -14.0
+                },
+                "roomID": 18412,
+                "typeID": 10124,
+                "objectID": 810941,
+                "objectNameID": 153467
+              },
+              "810942": {
+                "typeID": 22223,
+                "objectID": 810942,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 30000.0,
+                  "orbitRange": 2000.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 153468,
+                "entities": {
+                  "103601": {
+                    "npcGroupingID": 30510,
+                    "entityID": 103601,
+                    "triggerSpawn": 0,
+                    "objectID": 810942
+                  },
+                  "103602": {
+                    "npcGroupingID": 29531,
+                    "entityID": 103602,
+                    "triggerSpawn": 0,
+                    "objectID": 810942
+                  },
+                  "103603": {
+                    "npcGroupingID": 32020,
+                    "entityID": 103603,
+                    "triggerSpawn": 0,
+                    "objectID": 810942
+                  },
+                  "103604": {
+                    "npcGroupingID": 29971,
+                    "entityID": 103604,
+                    "triggerSpawn": 1,
+                    "objectID": 810942
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 11388.0,
+                  "x": -9985.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 18412
+              },
+              "810943": {
+                "typeID": 16729,
+                "objectID": 810943,
+                "yaw": 350.0,
+                "pitch": 0.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 31.0,
+                  "x": -2230.66015625,
+                  "n_fields": 3,
+                  "z": 820.348876953125
+                },
+                "roomID": 18412,
+                "roll": 0.0
+              }
+            },
+            "y": 0,
+            "x": -1,
+            "shortName": "Room2",
+            "z": -1
+          }
+        },
+        "factionID": 500010,
+        "useDefaultSpaceMusic": 0,
+        "dungeonNameID": 114236,
+        "dungeonID": 558
       }
     },
     {
@@ -45467,6 +48404,16 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 54654,
+      "data": {
+        "language": "en-us",
+        "text": "The Spy Stash",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 55103,
       "data": {
         "language": "en-us",
@@ -45740,6 +48687,53 @@
       "data": {
         "language": "en-us",
         "text": "I have taken care of the little pest.  Now hand me my reward.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 128644,
+      "data": {
+        "language": "en-us",
+        "text": "Agents from the Guristas managed to infiltrate one of our stations and gather information about the station's defenses. They've planted the reports out in space near an ancient abandoned stargate in {[location]dungeonLocationID.name} to be picked up. Fortunately, we managed to intercept their transmission and know the location. I want you to travel to {[location]dungeonLocationID.name} and pick up the stolen reports. I'll give you {[numeric]rewardQuantity} ISK as a reward. Be careful, there will definitely be guards at the pickup place which you might have to deal with.",
+        "metadata": null,
+        "tokens": {
+          "{[location]dungeonLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "dungeonLocationID"
+          },
+          "{[numeric]rewardQuantity}": {
+            "conditionalValues": [],
+            "variableType": 9,
+            "propertyName": null,
+            "args": 0,
+            "kwargs": {},
+            "variableName": "rewardQuantity"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 128645,
+      "data": {
+        "language": "en-us",
+        "text": "Great.  Just try to hurry over there, you never know when they might move the reports.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 128646,
+      "data": {
+        "language": "en-us",
+        "text": "I'll have the problem solved in no time.",
         "metadata": null,
         "tokens": null
       }
@@ -46966,6 +49960,16 @@
       }
     },
     {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 153468,
+      "data": {
+        "language": "en-us",
+        "text": "Guristas Officer's Quarters",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
       "dataset": "client/missions",
       "key": 875,
       "data": {
@@ -47091,6 +50095,27 @@
           "objectiveQuantity": 0
         },
         "nameID": 54287
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 1770,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicKillMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.accept.charsays": 128646,
+          "messages.mission.briefing": 128644,
+          "messages.mission.accepted.agentsays": 128645
+        },
+        "fixedLpRewardOmega": 0,
+        "killMission": {
+          "dungeonID": 558,
+          "objectiveTypeID": 22222,
+          "objectiveQuantity": 5
+        },
+        "nameID": 54654
       }
     },
     {
@@ -48232,6 +51257,26 @@
     },
     {
       "dataset": "client/spacecomponentsbytype",
+      "key": 16737,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16738,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
       "key": 16757,
       "data": {
         "entityStandings": {
@@ -48293,6 +51338,16 @@
     {
       "dataset": "client/spacecomponentsbytype",
       "key": 16845,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16847,
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": -11.0,
@@ -48522,6 +51577,16 @@
     },
     {
       "dataset": "client/spacecomponentsbytype",
+      "key": 17000,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
       "key": 17001,
       "data": {
         "entityStandings": {
@@ -48612,6 +51677,16 @@
     },
     {
       "dataset": "client/spacecomponentsbytype",
+      "key": 17153,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
       "key": 17395,
       "data": {
         "entityStandings": {
@@ -48643,6 +51718,26 @@
     {
       "dataset": "client/spacecomponentsbytype",
       "key": 17594,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17597,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17598,
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": 11.0,
@@ -48712,6 +51807,16 @@
     },
     {
       "dataset": "client/spacecomponentsbytype",
+      "key": 17787,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
       "key": 18567,
       "data": {
         "entityStandings": {
@@ -48723,6 +51828,16 @@
     {
       "dataset": "client/spacecomponentsbytype",
       "key": 19557,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 22223,
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": -11.0,
@@ -48773,6 +51888,16 @@
     {
       "dataset": "client/spacecomponentsbytype",
       "key": 23986,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 23987,
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": 11.0,
@@ -49116,6 +52241,16 @@
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": 11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 24245,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
           "friendlyResponseThreshold": 11.0
         }
       }
@@ -49774,6 +52909,124 @@
           {
             "attributeID": 118,
             "value": 0.0
+          },
+          {
+            "attributeID": 137,
+            "value": 510.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3324.0
+          },
+          {
+            "attributeID": 183,
+            "value": 3319.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 278,
+            "value": 1.0
+          },
+          {
+            "attributeID": 281,
+            "value": 6500.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 644,
+            "value": 1.0
+          },
+          {
+            "attributeID": 653,
+            "value": 85.0
+          },
+          {
+            "attributeID": 654,
+            "value": 140.0
+          },
+          {
+            "attributeID": 655,
+            "value": 1500.0
+          },
+          {
+            "attributeID": 1353,
+            "value": 0.682
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 9,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 208,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 120.0
+          },
+          {
+            "attributeID": 37,
+            "value": 4300.0
+          },
+          {
+            "attributeID": 70,
+            "value": 0.00014449800378457667
+          },
+          {
+            "attributeID": 108,
+            "value": 35.0
+          },
+          {
+            "attributeID": 109,
+            "value": 1.0
+          },
+          {
+            "attributeID": 110,
+            "value": 0.8
+          },
+          {
+            "attributeID": 111,
+            "value": 1.0
+          },
+          {
+            "attributeID": 113,
+            "value": 1.0
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 0.0
+          },
+          {
+            "attributeID": 118,
+            "value": 149.0
           },
           {
             "attributeID": 137,
@@ -53259,6 +56512,19 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 11209,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 100000000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 12274,
       "data": {
         "dogmaAttributes": [
@@ -53379,6 +56645,19 @@
           {
             "attributeID": 854,
             "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 13835,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 100000000.0
           }
         ],
         "dogmaEffects": []
@@ -53920,6 +57199,176 @@
           {
             "attributeID": 265,
             "value": 1000.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 5.0
+          },
+          {
+            "attributeID": 457,
+            "value": 10.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16737,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 150000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 5.0
+          },
+          {
+            "attributeID": 251,
+            "value": 10.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 5.0
+          },
+          {
+            "attributeID": 265,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 5.0
+          },
+          {
+            "attributeID": 457,
+            "value": 10.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16738,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 5.0
+          },
+          {
+            "attributeID": 251,
+            "value": 10.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 2500.0
+          },
+          {
+            "attributeID": 265,
+            "value": 2500.0
           },
           {
             "attributeID": 416,
@@ -54527,6 +57976,91 @@
           {
             "attributeID": 457,
             "value": 1.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16847,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 50000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 5.0
+          },
+          {
+            "attributeID": 251,
+            "value": 10.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 2000.0
+          },
+          {
+            "attributeID": 265,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 5.0
+          },
+          {
+            "attributeID": 457,
+            "value": 10.0
           },
           {
             "attributeID": 479,
@@ -62581,6 +66115,408 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 17000,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 20,
+            "value": 0.0
+          },
+          {
+            "attributeID": 37,
+            "value": 360.0
+          },
+          {
+            "attributeID": 55,
+            "value": 1000000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 0.0
+          },
+          {
+            "attributeID": 79,
+            "value": 6000.0
+          },
+          {
+            "attributeID": 103,
+            "value": 0.0
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 0.0
+          },
+          {
+            "attributeID": 118,
+            "value": 0.0
+          },
+          {
+            "attributeID": 192,
+            "value": 3.0
+          },
+          {
+            "attributeID": 193,
+            "value": 1.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 0.0
+          },
+          {
+            "attributeID": 211,
+            "value": 24.0
+          },
+          {
+            "attributeID": 217,
+            "value": 395.0
+          },
+          {
+            "attributeID": 238,
+            "value": 2.0
+          },
+          {
+            "attributeID": 239,
+            "value": 2.0
+          },
+          {
+            "attributeID": 240,
+            "value": 2.0
+          },
+          {
+            "attributeID": 241,
+            "value": 2.0
+          },
+          {
+            "attributeID": 246,
+            "value": 395.0
+          },
+          {
+            "attributeID": 247,
+            "value": 92500.0
+          },
+          {
+            "attributeID": 250,
+            "value": 1.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.05625
+          },
+          {
+            "attributeID": 263,
+            "value": 1300.0
+          },
+          {
+            "attributeID": 265,
+            "value": 950.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.47
+          },
+          {
+            "attributeID": 268,
+            "value": 0.57
+          },
+          {
+            "attributeID": 269,
+            "value": 0.77
+          },
+          {
+            "attributeID": 270,
+            "value": 0.67
+          },
+          {
+            "attributeID": 271,
+            "value": 0.47
+          },
+          {
+            "attributeID": 272,
+            "value": 0.57
+          },
+          {
+            "attributeID": 273,
+            "value": 0.77
+          },
+          {
+            "attributeID": 274,
+            "value": 0.67
+          },
+          {
+            "attributeID": 416,
+            "value": 25000.0
+          },
+          {
+            "attributeID": 456,
+            "value": -4.0
+          },
+          {
+            "attributeID": 457,
+            "value": 3.0
+          },
+          {
+            "attributeID": 466,
+            "value": 0.54
+          },
+          {
+            "attributeID": 475,
+            "value": 5325.0
+          },
+          {
+            "attributeID": 476,
+            "value": 21300.0
+          },
+          {
+            "attributeID": 479,
+            "value": 1000000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 51563.0
+          },
+          {
+            "attributeID": 482,
+            "value": 675.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 497,
+            "value": 0.01
+          },
+          {
+            "attributeID": 504,
+            "value": 0.0
+          },
+          {
+            "attributeID": 506,
+            "value": 5750.0
+          },
+          {
+            "attributeID": 507,
+            "value": 209.0
+          },
+          {
+            "attributeID": 508,
+            "value": 180.0
+          },
+          {
+            "attributeID": 512,
+            "value": 0.0
+          },
+          {
+            "attributeID": 513,
+            "value": 0.0
+          },
+          {
+            "attributeID": 514,
+            "value": 0.0
+          },
+          {
+            "attributeID": 524,
+            "value": 0.75
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 180.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0055
+          },
+          {
+            "attributeID": 563,
+            "value": 5.0
+          },
+          {
+            "attributeID": 564,
+            "value": 220.0
+          },
+          {
+            "attributeID": 580,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 581,
+            "value": 0.1
+          },
+          {
+            "attributeID": 582,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 583,
+            "value": 1.0
+          },
+          {
+            "attributeID": 620,
+            "value": 0.0
+          },
+          {
+            "attributeID": 630,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 631,
+            "value": 0.0
+          },
+          {
+            "attributeID": 636,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 637,
+            "value": 75.0
+          },
+          {
+            "attributeID": 638,
+            "value": 0.43
+          },
+          {
+            "attributeID": 639,
+            "value": 0.43
+          },
+          {
+            "attributeID": 640,
+            "value": 1.0
+          },
+          {
+            "attributeID": 645,
+            "value": 1.594
+          },
+          {
+            "attributeID": 646,
+            "value": 1.594
+          },
+          {
+            "attributeID": 661,
+            "value": 2000.0
+          },
+          {
+            "attributeID": 662,
+            "value": 0.25
+          },
+          {
+            "attributeID": 665,
+            "value": 37500.0
+          },
+          {
+            "attributeID": 798,
+            "value": 1.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          },
+          {
+            "attributeID": 858,
+            "value": 0.8812
+          },
+          {
+            "attributeID": 859,
+            "value": 1.2376
+          },
+          {
+            "attributeID": 928,
+            "value": 0.0
+          },
+          {
+            "attributeID": 929,
+            "value": 20000.0
+          },
+          {
+            "attributeID": 930,
+            "value": 1.0
+          },
+          {
+            "attributeID": 936,
+            "value": 50000.0
+          },
+          {
+            "attributeID": 1007,
+            "value": 0.43
+          },
+          {
+            "attributeID": 1010,
+            "value": 0.43
+          },
+          {
+            "attributeID": 1648,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1650,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1651,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1652,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1656,
+            "value": 0.7
+          },
+          {
+            "attributeID": 1766,
+            "value": 26.0
+          },
+          {
+            "attributeID": 1855,
+            "value": 50.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 1
+          },
+          {
+            "effectID": 569,
+            "isDefault": 0
+          },
+          {
+            "effectID": 2193,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6695,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 17001,
       "data": {
         "dogmaAttributes": [
@@ -65495,6 +69431,224 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 17153,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 6,
+            "value": 0.0
+          },
+          {
+            "attributeID": 9,
+            "value": 1600.0
+          },
+          {
+            "attributeID": 51,
+            "value": 2500.0
+          },
+          {
+            "attributeID": 54,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 55,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 4.0
+          },
+          {
+            "attributeID": 114,
+            "value": 1.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 8.0
+          },
+          {
+            "attributeID": 118,
+            "value": 6.0
+          },
+          {
+            "attributeID": 154,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 158,
+            "value": 50000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.02
+          },
+          {
+            "attributeID": 192,
+            "value": 8.0
+          },
+          {
+            "attributeID": 193,
+            "value": 1.0
+          },
+          {
+            "attributeID": 208,
+            "value": 100.0
+          },
+          {
+            "attributeID": 209,
+            "value": 100.0
+          },
+          {
+            "attributeID": 210,
+            "value": 100.0
+          },
+          {
+            "attributeID": 211,
+            "value": 100.0
+          },
+          {
+            "attributeID": 245,
+            "value": 366.0
+          },
+          {
+            "attributeID": 247,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 500.0
+          },
+          {
+            "attributeID": 265,
+            "value": 1600.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.4
+          },
+          {
+            "attributeID": 268,
+            "value": 0.9
+          },
+          {
+            "attributeID": 269,
+            "value": 0.75
+          },
+          {
+            "attributeID": 270,
+            "value": 0.65
+          },
+          {
+            "attributeID": 272,
+            "value": 0.4
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 479,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 50000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 497,
+            "value": 0.05
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 200.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 620,
+            "value": 100.0
+          },
+          {
+            "attributeID": 645,
+            "value": 1.5
+          },
+          {
+            "attributeID": 646,
+            "value": 1.5
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 798,
+            "value": 1.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1648,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1650,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1651,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1652,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1656,
+            "value": 0.5
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 17395,
       "data": {
         "dogmaAttributes": [
@@ -66214,6 +70368,474 @@
           {
             "attributeID": 507,
             "value": 207.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 150.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 620,
+            "value": 100.0
+          },
+          {
+            "attributeID": 645,
+            "value": 1.5
+          },
+          {
+            "attributeID": 646,
+            "value": 1.5
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 798,
+            "value": 1.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1648,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1650,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1651,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1652,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1656,
+            "value": 0.5
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 569,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 17597,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 6,
+            "value": 0.0
+          },
+          {
+            "attributeID": 9,
+            "value": 800.0
+          },
+          {
+            "attributeID": 20,
+            "value": -75.0
+          },
+          {
+            "attributeID": 51,
+            "value": 20000000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 55,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 3.5
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 0.0
+          },
+          {
+            "attributeID": 118,
+            "value": 0.0
+          },
+          {
+            "attributeID": 154,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 158,
+            "value": 50000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.04
+          },
+          {
+            "attributeID": 192,
+            "value": 8.0
+          },
+          {
+            "attributeID": 193,
+            "value": 3.0
+          },
+          {
+            "attributeID": 208,
+            "value": 100.0
+          },
+          {
+            "attributeID": 209,
+            "value": 100.0
+          },
+          {
+            "attributeID": 210,
+            "value": 100.0
+          },
+          {
+            "attributeID": 211,
+            "value": 100.0
+          },
+          {
+            "attributeID": 212,
+            "value": 3.0
+          },
+          {
+            "attributeID": 245,
+            "value": 372.0
+          },
+          {
+            "attributeID": 247,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 250.0
+          },
+          {
+            "attributeID": 265,
+            "value": 800.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.4
+          },
+          {
+            "attributeID": 268,
+            "value": 0.9
+          },
+          {
+            "attributeID": 269,
+            "value": 0.75
+          },
+          {
+            "attributeID": 270,
+            "value": 0.65
+          },
+          {
+            "attributeID": 272,
+            "value": 0.4
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 479,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 25000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 497,
+            "value": 0.15
+          },
+          {
+            "attributeID": 506,
+            "value": 20000.0
+          },
+          {
+            "attributeID": 507,
+            "value": 210.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 100.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 620,
+            "value": 100.0
+          },
+          {
+            "attributeID": 645,
+            "value": 1.5
+          },
+          {
+            "attributeID": 646,
+            "value": 1.5
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 798,
+            "value": 1.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1648,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1650,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1651,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1652,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1656,
+            "value": 0.5
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 569,
+            "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 17598,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 6,
+            "value": 0.0
+          },
+          {
+            "attributeID": 9,
+            "value": 800.0
+          },
+          {
+            "attributeID": 20,
+            "value": -75.0
+          },
+          {
+            "attributeID": 51,
+            "value": 20000000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 55,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 3.5
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 0.0
+          },
+          {
+            "attributeID": 118,
+            "value": 0.0
+          },
+          {
+            "attributeID": 154,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 158,
+            "value": 50000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.04
+          },
+          {
+            "attributeID": 192,
+            "value": 8.0
+          },
+          {
+            "attributeID": 193,
+            "value": 3.0
+          },
+          {
+            "attributeID": 208,
+            "value": 100.0
+          },
+          {
+            "attributeID": 209,
+            "value": 100.0
+          },
+          {
+            "attributeID": 210,
+            "value": 100.0
+          },
+          {
+            "attributeID": 211,
+            "value": 100.0
+          },
+          {
+            "attributeID": 212,
+            "value": 3.0
+          },
+          {
+            "attributeID": 245,
+            "value": 372.0
+          },
+          {
+            "attributeID": 247,
+            "value": 250000.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 500.0
+          },
+          {
+            "attributeID": 265,
+            "value": 1600.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.4
+          },
+          {
+            "attributeID": 268,
+            "value": 0.9
+          },
+          {
+            "attributeID": 269,
+            "value": 0.75
+          },
+          {
+            "attributeID": 270,
+            "value": 0.65
+          },
+          {
+            "attributeID": 272,
+            "value": 0.4
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 479,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 40000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 497,
+            "value": 0.1
+          },
+          {
+            "attributeID": 506,
+            "value": 24000.0
+          },
+          {
+            "attributeID": 507,
+            "value": 208.0
           },
           {
             "attributeID": 525,
@@ -67263,6 +71885,91 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 17787,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 700.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 5.0
+          },
+          {
+            "attributeID": 251,
+            "value": 10.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 600.0
+          },
+          {
+            "attributeID": 265,
+            "value": 500.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 5.0
+          },
+          {
+            "attributeID": 457,
+            "value": 10.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 17831,
       "data": {
         "dogmaAttributes": [
@@ -67792,6 +72499,75 @@
           {
             "attributeID": 9,
             "value": 100000000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 22223,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 1000000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 1.0
+          },
+          {
+            "attributeID": 457,
+            "value": 3.0
+          },
+          {
+            "attributeID": 470,
+            "value": 84600000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 2700.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 500.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          },
+          {
+            "attributeID": 903,
+            "value": 1.0
           }
         ],
         "dogmaEffects": []
@@ -69327,6 +74103,372 @@
           {
             "attributeID": 859,
             "value": 1.1064
+          },
+          {
+            "attributeID": 1006,
+            "value": 0.25
+          },
+          {
+            "attributeID": 1009,
+            "value": 0.25
+          },
+          {
+            "attributeID": 1648,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1650,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1651,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1652,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1656,
+            "value": 0.7
+          },
+          {
+            "attributeID": 1766,
+            "value": 25.0
+          },
+          {
+            "attributeID": 1855,
+            "value": 50.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 1
+          },
+          {
+            "effectID": 2192,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 23987,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 225.0
+          },
+          {
+            "attributeID": 20,
+            "value": 0.0
+          },
+          {
+            "attributeID": 37,
+            "value": 400.0
+          },
+          {
+            "attributeID": 51,
+            "value": 2750.0
+          },
+          {
+            "attributeID": 54,
+            "value": 15000.0
+          },
+          {
+            "attributeID": 55,
+            "value": 500000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 6.0
+          },
+          {
+            "attributeID": 79,
+            "value": 2000.0
+          },
+          {
+            "attributeID": 103,
+            "value": 0.0
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 6.0
+          },
+          {
+            "attributeID": 118,
+            "value": 5.0
+          },
+          {
+            "attributeID": 158,
+            "value": 6000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.07
+          },
+          {
+            "attributeID": 192,
+            "value": 2.0
+          },
+          {
+            "attributeID": 193,
+            "value": 1.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 0.0
+          },
+          {
+            "attributeID": 211,
+            "value": 15.0
+          },
+          {
+            "attributeID": 217,
+            "value": 395.0
+          },
+          {
+            "attributeID": 245,
+            "value": 565.0
+          },
+          {
+            "attributeID": 246,
+            "value": 395.0
+          },
+          {
+            "attributeID": 247,
+            "value": 41250.0
+          },
+          {
+            "attributeID": 250,
+            "value": 1.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.02125
+          },
+          {
+            "attributeID": 263,
+            "value": 300.0
+          },
+          {
+            "attributeID": 265,
+            "value": 250.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.6
+          },
+          {
+            "attributeID": 268,
+            "value": 0.7
+          },
+          {
+            "attributeID": 269,
+            "value": 0.9
+          },
+          {
+            "attributeID": 270,
+            "value": 0.8
+          },
+          {
+            "attributeID": 271,
+            "value": 0.6
+          },
+          {
+            "attributeID": 272,
+            "value": 0.7
+          },
+          {
+            "attributeID": 273,
+            "value": 0.9
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 416,
+            "value": 16500.0
+          },
+          {
+            "attributeID": 456,
+            "value": -4.0
+          },
+          {
+            "attributeID": 457,
+            "value": 3.0
+          },
+          {
+            "attributeID": 466,
+            "value": 0.39
+          },
+          {
+            "attributeID": 475,
+            "value": 6450.0
+          },
+          {
+            "attributeID": 476,
+            "value": 25800.0
+          },
+          {
+            "attributeID": 479,
+            "value": 2000000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 14625.0
+          },
+          {
+            "attributeID": 482,
+            "value": 210.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 497,
+            "value": 0.0
+          },
+          {
+            "attributeID": 504,
+            "value": 0.0
+          },
+          {
+            "attributeID": 506,
+            "value": 1.0
+          },
+          {
+            "attributeID": 507,
+            "value": 210.0
+          },
+          {
+            "attributeID": 508,
+            "value": 200.0
+          },
+          {
+            "attributeID": 524,
+            "value": 0.75
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 89.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.00325
+          },
+          {
+            "attributeID": 563,
+            "value": 5.0
+          },
+          {
+            "attributeID": 564,
+            "value": 475.0
+          },
+          {
+            "attributeID": 580,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 581,
+            "value": 0.075
+          },
+          {
+            "attributeID": 582,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 583,
+            "value": 1.0
+          },
+          {
+            "attributeID": 620,
+            "value": 40.0
+          },
+          {
+            "attributeID": 630,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 631,
+            "value": 0.0
+          },
+          {
+            "attributeID": 636,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 637,
+            "value": 32.5
+          },
+          {
+            "attributeID": 638,
+            "value": 0.25
+          },
+          {
+            "attributeID": 639,
+            "value": 0.25
+          },
+          {
+            "attributeID": 645,
+            "value": 1.2865
+          },
+          {
+            "attributeID": 646,
+            "value": 1.2865
+          },
+          {
+            "attributeID": 661,
+            "value": 3000.0
+          },
+          {
+            "attributeID": 662,
+            "value": 0.05
+          },
+          {
+            "attributeID": 665,
+            "value": 24750.0
+          },
+          {
+            "attributeID": 798,
+            "value": 1.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          },
+          {
+            "attributeID": 858,
+            "value": 0.9427
+          },
+          {
+            "attributeID": 859,
+            "value": 1.1146
           },
           {
             "attributeID": 1006,
@@ -81639,6 +86781,91 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 24245,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 3.0
+          },
+          {
+            "attributeID": 251,
+            "value": 4.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 265,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 3.0
+          },
+          {
+            "attributeID": 457,
+            "value": 4.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 24685,
       "data": {
         "dogmaAttributes": [
@@ -82984,6 +88211,29 @@
     },
     {
       "dataset": "client/types",
+      "key": 208,
+      "data": {
+        "descriptionID": 79841,
+        "typeID": 208,
+        "graphicID": 20048,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 67739,
+        "volume": 0.03,
+        "iconID": 188,
+        "published": 1,
+        "radius": 300.0,
+        "marketGroupID": 924,
+        "metaGroupID": 1,
+        "mass": 1000.0,
+        "basePrice": 3000.0,
+        "portionSize": 100,
+        "techLevel": 1,
+        "groupID": 385
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 209,
       "data": {
         "descriptionID": 79842,
@@ -83492,6 +88742,40 @@
         "basePrice": 0.0,
         "portionSize": 1,
         "groupID": 226
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 2894,
+      "data": {
+        "typeID": 2894,
+        "graphicID": 10026,
+        "capacity": 0.0,
+        "typeNameID": 76472,
+        "published": 0,
+        "radius": 1.0,
+        "volume": 0.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 227
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 3073,
+      "data": {
+        "typeID": 3073,
+        "graphicID": 1147,
+        "capacity": 0.0,
+        "typeNameID": 68235,
+        "published": 0,
+        "radius": 1.0,
+        "volume": 0.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 227
       }
     },
     {
@@ -84062,6 +89346,23 @@
     },
     {
       "dataset": "client/types",
+      "key": 10753,
+      "data": {
+        "typeID": 10753,
+        "graphicID": 1977,
+        "capacity": 0.0,
+        "typeNameID": 68407,
+        "published": 0,
+        "radius": 1.0,
+        "volume": 0.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 227
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 10754,
       "data": {
         "typeID": 10754,
@@ -84432,6 +89733,23 @@
     },
     {
       "dataset": "client/types",
+      "key": 11209,
+      "data": {
+        "typeID": 11209,
+        "graphicID": 2063,
+        "capacity": 0.0,
+        "typeNameID": 106663,
+        "published": 0,
+        "radius": 2200.0,
+        "volume": 0.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 226
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 12274,
       "data": {
         "descriptionID": 93014,
@@ -84469,6 +89787,24 @@
         "basePrice": 0.0,
         "portionSize": 1,
         "groupID": 306
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 13835,
+      "data": {
+        "descriptionID": 83808,
+        "typeID": 13835,
+        "graphicID": 2367,
+        "capacity": 0.0,
+        "typeNameID": 72866,
+        "published": 0,
+        "radius": 1979.0,
+        "volume": 0.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 226
       }
     },
     {
@@ -84758,6 +90094,44 @@
     },
     {
       "dataset": "client/types",
+      "key": 16737,
+      "data": {
+        "descriptionID": 83829,
+        "typeID": 16737,
+        "graphicID": 2411,
+        "capacity": 10000.0,
+        "typeNameID": 72889,
+        "published": 0,
+        "radius": 5991.0,
+        "volume": 100000000.0,
+        "soundID": 20174,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16738,
+      "data": {
+        "descriptionID": 83639,
+        "typeID": 16738,
+        "graphicID": 2412,
+        "capacity": 10000.0,
+        "typeNameID": 72685,
+        "published": 0,
+        "radius": 4300.0,
+        "volume": 100000000.0,
+        "soundID": 20195,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 16757,
       "data": {
         "descriptionID": 95328,
@@ -84880,6 +90254,25 @@
         "published": 0,
         "radius": 1.0,
         "volume": 100000000.0,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16847,
+      "data": {
+        "descriptionID": 95336,
+        "typeID": 16847,
+        "graphicID": 1999,
+        "capacity": 10000.0,
+        "typeNameID": 106930,
+        "published": 0,
+        "radius": 1400.0,
+        "volume": 100000000.0,
+        "soundID": 20197,
         "mass": 100000.0,
         "basePrice": 0.0,
         "portionSize": 1,
@@ -85347,6 +90740,27 @@
     },
     {
       "dataset": "client/types",
+      "key": 17000,
+      "data": {
+        "descriptionID": 85309,
+        "typeID": 17000,
+        "graphicID": 1824,
+        "capacity": 235.0,
+        "raceID": 1,
+        "typeNameID": 74477,
+        "published": 0,
+        "radius": 150.0,
+        "volume": 101000.0,
+        "soundID": 20904,
+        "wreckTypeID": 26574,
+        "mass": 10100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 613
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 17001,
       "data": {
         "descriptionID": 85310,
@@ -85536,6 +90950,24 @@
     },
     {
       "dataset": "client/types",
+      "key": 17153,
+      "data": {
+        "descriptionID": 80672,
+        "typeID": 17153,
+        "graphicID": 2418,
+        "capacity": 1000.0,
+        "typeNameID": 69140,
+        "published": 0,
+        "radius": 340.0,
+        "volume": 1000.0,
+        "mass": 1000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 383
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 17222,
       "data": {
         "descriptionID": 89028,
@@ -85703,6 +91135,42 @@
     },
     {
       "dataset": "client/types",
+      "key": 17597,
+      "data": {
+        "descriptionID": 80749,
+        "typeID": 17597,
+        "graphicID": 2468,
+        "capacity": 1000.0,
+        "typeNameID": 69225,
+        "published": 0,
+        "radius": 371.0,
+        "volume": 1000.0,
+        "mass": 1000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 383
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17598,
+      "data": {
+        "descriptionID": 80750,
+        "typeID": 17598,
+        "graphicID": 2468,
+        "capacity": 1000.0,
+        "typeNameID": 69226,
+        "published": 0,
+        "radius": 371.0,
+        "volume": 1000.0,
+        "mass": 1000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 383
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 17599,
       "data": {
         "descriptionID": 82902,
@@ -85808,6 +91276,24 @@
         "volume": 100.0,
         "soundID": 20181,
         "mass": 100.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17787,
+      "data": {
+        "descriptionID": 80799,
+        "typeID": 17787,
+        "graphicID": 2301,
+        "capacity": 8850.0,
+        "typeNameID": 69320,
+        "published": 0,
+        "radius": 700.0,
+        "volume": 1150.0,
+        "mass": 1000000.0,
         "basePrice": 0.0,
         "portionSize": 1,
         "groupID": 319
@@ -86004,6 +91490,42 @@
     },
     {
       "dataset": "client/types",
+      "key": 22222,
+      "data": {
+        "descriptionID": 90038,
+        "typeID": 22222,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 99629,
+        "iconID": 1192,
+        "published": 1,
+        "volume": 0.1,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 314
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 22223,
+      "data": {
+        "descriptionID": 83553,
+        "typeID": 22223,
+        "graphicID": 2515,
+        "capacity": 10000.0,
+        "typeNameID": 72599,
+        "published": 0,
+        "radius": 379.0,
+        "volume": 100000000.0,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 306
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 23663,
       "data": {
         "descriptionID": 95339,
@@ -86149,6 +91671,27 @@
         "capacity": 235.0,
         "raceID": 1,
         "typeNameID": 75024,
+        "published": 0,
+        "radius": 50.0,
+        "volume": 16500.0,
+        "soundID": 20904,
+        "wreckTypeID": 26573,
+        "mass": 1650000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 614
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 23987,
+      "data": {
+        "descriptionID": 85857,
+        "typeID": 23987,
+        "graphicID": 24531,
+        "capacity": 235.0,
+        "raceID": 1,
+        "typeNameID": 75025,
         "published": 0,
         "radius": 50.0,
         "volume": 16500.0,
@@ -86874,6 +92417,26 @@
     },
     {
       "dataset": "client/types",
+      "key": 24245,
+      "data": {
+        "descriptionID": 81662,
+        "typeID": 24245,
+        "graphicID": 3465,
+        "capacity": 10000.0,
+        "raceID": 4,
+        "typeNameID": 70423,
+        "published": 0,
+        "radius": 2933.0,
+        "volume": 100000000.0,
+        "soundID": 20180,
+        "mass": 1e+35,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 24685,
       "data": {
         "descriptionID": 81701,
@@ -87526,6 +93089,63 @@
           "ko": "해적 소탕",
           "ru": "Уничтожить досаждающих пиратов (Eliminate a Pirate Nuisance)",
           "zh": "恼人的海盗"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 1770,
+      "data": {
+        "hasStandingRewards": true,
+        "killMission": {
+          "dungeonID": 558,
+          "objectiveQuantity": 5,
+          "objectiveTypeID": 22222
+        },
+        "messages": [
+          {
+            "_key": "messages.mission.accept.charsays",
+            "de": "Ich werde das Problem in null Komma nichts gelöst haben.",
+            "en": "I'll have the problem solved in no time.",
+            "es": "Resolveré el problema en un periquete.",
+            "fr": "Je vais régler ça tout de suite.",
+            "ja": "大丈夫。問題はすぐに解決だ。",
+            "ko": "당장 해결하겠습니다.",
+            "ru": "Я в два счета решу эту проблему.",
+            "zh": "我会立刻解决这个问题。"
+          },
+          {
+            "_key": "messages.mission.accepted.agentsays",
+            "de": "Großartig. Beeilen Sie sich aber, man kann nie wissen, wann die Daten weggeschafft werden könnten.",
+            "en": "Great.  Just try to hurry over there, you never know when they might move the reports.",
+            "es": "Estupendo. Pero date prisa; nunca se sabe cuándo pueden mover los informes.",
+            "fr": "Parfait.  Ne traînez pas pour aller là-bas, on ne sait pas de combien de temps nous disposons avant qu'ils ne récupèrent les rapports.",
+            "ja": "素晴らしい。やつらに先を越されないようにとにかく急いでくれ。",
+            "ko": "좋아요. 어서 서둘러 주세요. 그놈들이 언제 보고서를 옮길지 아무도 모르니까요.",
+            "ru": "Отлично. Только поторопитесь, так как неизвестно, когда они заберут отчёты.",
+            "zh": "很好。赶快去吧，谁知道什么时候那些报告就会被转移。"
+          },
+          {
+            "_key": "messages.mission.briefing",
+            "de": "Agenten der Guristas haben es geschafft, in eine unserer Stationen einzudringen und Daten über die Verteidigungsanlagen der Station zu sammeln. Sie haben die Daten im All versteckt, in der Nähe eines verlassenen, antiken Sprungtores in {[location]dungeonLocationID.name}, um sie später einzusammeln. Zum Glück haben wir deren Funkspruch abfangen können und kennen die genaue Position. Ich möchte, dass Sie nach {[location]dungeonLocationID.name} fliegen und die gestohlenen Berichte einsammeln. Ich werde Ihnen dafür {[numeric]rewardQuantity} ISK als Belohnung zahlen. Seien Sie vorsichtig, am Aufnahmeort sind definitiv Wachen postiert, um die Sie sich wahrscheinlich kümmern werden müssen.",
+            "en": "Agents from the Guristas managed to infiltrate one of our stations and gather information about the station's defenses. They've planted the reports out in space near an ancient abandoned stargate in {[location]dungeonLocationID.name} to be picked up. Fortunately, we managed to intercept their transmission and know the location. I want you to travel to {[location]dungeonLocationID.name} and pick up the stolen reports. I'll give you {[numeric]rewardQuantity} ISK as a reward. Be careful, there will definitely be guards at the pickup place which you might have to deal with.",
+            "es": "Unos agentes de los Guristas han conseguido infiltrarse en una de nuestras estaciones y recopilar información sobre sus defensas. Han dejado los informes cerca de un antiguo portal estelar abandonado, en {[location]dungeonLocationID.name}, para su posterior recogida. Por suerte, hemos interceptado una transmisión y conocemos la ubicación. Quiero que vayas a {[location]dungeonLocationID.name} y te hagas con los informes robados. Recibirás {[numeric]rewardQuantity} ISK como retribución. Ten cuidado: seguro que hay guardias en el lugar que no te dejarán ir por las buenas.",
+            "fr": "Des agents guristas ont réussi à s'infiltrer dans l'une de nos stations et à récupérer des informations sur son système de défense. Ils ont déposé ces informations dans l'espace, près d'un ancien portail stellaire abandonné situé à {[location]dungeonLocationID.name}, en attendant qu'elles soient récupérées. Par chance, nous avons réussi à intercepter leur transmission et nous savons où ces informations se trouvent. Je veux que vous alliez jusqu'à {[location]dungeonLocationID.name} pour récupérer les rapports d'information volés. En récompense, vous recevrez {[numeric]rewardQuantity} ISK. Soyez {[character]player.gender -> \"prudent\", \"prudente\"}, vous devrez probablement éliminer les gardes qui protègent les rapports.",
+            "ja": "ガリスタスのエージェントが我々のステーションの一つに侵入し、ステーションの防衛に関する情報を集めた。やつらはそれを{[location]dungeonLocationID.name}にある古代スターゲート遺跡付近の宇宙空間に残し、仲間が回収に来る手はずになっているらしい。幸い、我々はやつらの通信を傍受して位置を突き止めることができた。{[location]dungeonLocationID.name}へ行って盗まれた情報を回収してきてくれ。報酬として{[numeric]rewardQuantity}ISKを渡そう。気を付けろ、回収地点には敵の見張りがいるはずだ。邪魔するものは始末しろ。",
+            "ko": "구리스타스 에이전트가 정거장에 잠입하여 방어 시스템에 관한 기밀 정보를 빼돌렸습니다. 다행히 놈들의 통신을 가로채 보고서의 대략적인 위치를 알아내는데 성공했습니다. 정보에 따르면 놈들은{[location]dungeonLocationID.name}에 있는 낡은 스타게이트 안쪽에 보고서를 보관하고 있을 겁니다. 그쪽으로 이동하여 도난당한 정보를 회수해주십시오. 이번 임무에 대한 보상은 {[numeric]rewardQuantity} ISK입니다. 조심하세요. 보고서를 지키는 자들이 있을 겁니다.",
+            "ru": "Агенты Gurista смогли проникнуть на одну из наших станций и получить информацию о ее защитных системах. Они поместили отчеты в пространстве рядом с древними заброшенными звездными вратами в {[location]dungeonLocationID.name}, чтобы забрать их позже. К счастью, нам удалось перехватить передачу и узнать их местоположение. Я хочу, чтобы вы отправились в {[location]dungeonLocationID.name} и забрали украденные отчеты. В качестве вознаграждения я дам вам {[numeric]rewardQuantity} ISK. Будьте осторожны, там определенно будет охрана, с которой вам придется разобраться.",
+            "zh": "来自古斯塔斯的间谍潜入我们的一个空间站，并收集了该站的防御信息。他们把这些待取的报告安放在{[location]dungeonLocationID.name}里一个废弃的古老星门附近。值得庆幸的是，我们截获了他们的传送信息，得知了具体地点。我要你前往{[location]dungeonLocationID.name}，取回那些被盗的报告。我会给你{[numeric]rewardQuantity} 星币作为酬劳。不过要小心，你可能得应付取货地点的那些守卫。"
+          }
+        ],
+        "name": {
+          "de": "Das Versteck der Spione",
+          "en": "The Spy Stash",
+          "es": "Alijo de los espías",
+          "fr": "La réserve de l'espion",
+          "ja": "盗まれた情報を回収せよ",
+          "ko": "스파이 은닉품",
+          "ru": "Убежище шпиона (The Spy Stash)",
+          "zh": "间谍的隐藏处"
         }
       }
     },

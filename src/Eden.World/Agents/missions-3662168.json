@@ -873,6 +873,140 @@
       ]
     },
     {
+      "missionId": 1770,
+      "level": 3,
+      "difficulty": 700,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=SpyStash3gu",
+      "sourceRevision": "2017-02-22 13:34 UTC; EVE University oldid=218641 (2024-09-07)",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24016,
+                24017
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                16991,
+                16995
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                24048,
+                24047
+              ],
+              "count": 3,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                23987,
+                23986
+              ],
+              "count": 3,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                17597
+              ],
+              "count": 3,
+              "range": 35000,
+              "required": false
+            }
+          ],
+          "roomId": 18411
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24016
+              ],
+              "count": 2,
+              "range": 40000
+            },
+            {
+              "types": [
+                17000
+              ],
+              "count": 1,
+              "range": 40000
+            },
+            {
+              "types": [
+                23987,
+                23986
+              ],
+              "count": 2,
+              "range": 35000
+            },
+            {
+              "types": [
+                17598
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17153
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            }
+          ],
+          "roomId": 18412
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 18410,
+          "entryObjectId": 810929
+        },
+        {
+          "roomId": 18411,
+          "entryObjectId": 810931
+        },
+        {
+          "roomId": 18412,
+          "entryObjectId": 810941
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 810928,
+          "destinationRoomId": 18411
+        },
+        {
+          "fromObjectId": 810930,
+          "destinationRoomId": 18412
+        }
+      ],
+      "containers": [
+        {
+          "objectId": 810942,
+          "typeId": 22222,
+          "quantity": 5,
+          "requiresClear": true
+        }
+      ]
+    },
+    {
       "missionId": 2912,
       "level": 1,
       "difficulty": 500,

@@ -265,6 +265,12 @@ internal sealed partial class PilotMissionStore
 
     private static void Close(WorldDbContext world, SavedMission mission, MissionState state, long now)
     {
+        long firstContainer = MissionContainerRules.Id(mission.Id, 0);
+        long endContainer = checked(firstContainer + MissionRules.NpcsPerMission);
+        world
+            .Set<Eden.Data.World.Inventory.OwnedItem>()
+            .Where(i => i.LocationId >= firstContainer && i.LocationId < endContainer)
+            .ExecuteDelete();
         mission.State = state;
         mission.ClosedAt = now;
         foreach (
