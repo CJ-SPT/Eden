@@ -14,6 +14,9 @@
 
 ## Development
 
+[Anomaly warp-in collision correction](protocol/combat.md#anomaly-warp-in-collision-correction--november-9-2026) fixes oversized
+ore/scenery collision spheres and non-interactable wreckage in Drone Assembly and Drone Cluster.
+
 [Catalog-wide station production](protocol/industry.md#catalog-wide-station-production-november-9-2026) records broad manufacturing, ancient-relic invention, facility restrictions and preserved material-source gaps. The [production catalog audit](production-catalog.json) records every manufacturing recipe and exclusion.
 
 [Combat-site layout corrections](protocol/combat.md#combat-site-layout-corrections--november-9-2026) cover native spawn anchors,
