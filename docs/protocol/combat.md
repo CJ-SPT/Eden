@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Silent bounty SP rewards, November 9, 2026](#silent-bounty-sp-rewards-november-9-2026)
+
 - [NPC bounty skill point rewards, November 9, 2026](#npc-bounty-skill-point-rewards-november-9-2026)
 
 - [Capsule destruction and home-station respawn, November 7, 2026](#capsule-destruction-and-home-station-respawn-november-7-2026)
@@ -1085,7 +1087,7 @@ kill, with no minimum reward or carried remainder. This is an explicit Eden prog
 including its rounding and pre-tax basis; it is not an extracted EVE bounty mechanic.
 
 `NpcSkillPointRewards` owns the typed calculation. The common NPC damage settlement credits the
-killer's existing `WorldFreeSkillPoints` balance and increments its saved revision in the same
+killer's existing `WorldFreeSkillPoints` balance in the same
 transaction as destruction, bounty/tax, wreck creation and combat history. Turrets, missiles and
 combat drones all use that settlement. Existing bounty role eligibility applies. Nonfatal damage,
 zero/sub-point bounties, non-bounty NPC roles and player kills grant no SP. The existing final-blow
@@ -1094,10 +1096,11 @@ pay the reward again. Invalid/overflowing point state rejects and rolls back the
 The credit changes only the unallocated pool; it does not train a skill or rebuild a training queue
 during combat. Existing skill-point spending rules remain authoritative.
 
-The existing selected-pilot revision monitor observes the committed pool and sends native
-`OnFreeSkillPointsChanged(newBalance)` on its next poll, at most one second later. Balance/queue reads
-can also refresh it. Saved revisions invalidate resident point snapshots and survive checkpoints and
-reopening. There is no new RPC, wire model, schema migration or client modification. The pinned
+The initial implementation incremented the saved notification revision and sent native
+`OnFreeSkillPointsChanged(newBalance)` on the next selected-pilot poll. The
+[silent reward correction](#silent-bounty-sp-rewards-november-9-2026) below supersedes that behavior.
+Committed row changes invalidate resident point snapshots and survive checkpoints and reopening.
+There is no new RPC, wire model, schema migration or client modification. The pinned
 build-3662168 skill notification and queue contract is documented in
 [unallocated skill points](characters.md#persistent-unallocated-skill-points).
 
@@ -1137,3 +1140,40 @@ failure was a missing test import and was corrected before these successful runs
 
 **Optional maintainer checks.** Kill a bounty NPC with the skill window open and confirm the displayed
 unallocated SP increases by the documented amount.
+
+## Silent bounty SP rewards (November 9, 2026)
+
+At the maintainer's request, NPC bounty SP gains are now silent. `CreditSilentFreePoints` updates the
+saved pool inside the kill transaction without advancing the notification revision. The resident
+snapshot still invalidates on committed row changes. Polling silently absorbs the latest balance;
+`GetFreeSkillPoints` and `GetSkillQueueAndFreePoints` return the current total without sending
+`OnFreeSkillPointsChanged` for bounty gains or triggering a skill/brain/queue refresh for those gains.
+Redemption, injectors and spending keep their normal revisions and notifications. A mixed change can
+therefore still report the complete balance when a normal notifying operation occurs. Reward rate,
+rounding, ownership, atomicity and checkpoint persistence remain unchanged. No schema or wire format
+changes were required; references remain those recorded in the preceding bounty milestone.
+
+**Automated validation.** Final affected filter passed **121 cases**, zero failures/skips, in
+**36.89 seconds** including runner startup (reported test duration: 34 seconds), on parent `5fedd18c`:
+
+```text
+FullyQualifiedName~NpcSkillPointRewardTests|FullyQualifiedName~FreeSkillPoint|FullyQualifiedName~SkillPointReward|FullyQualifiedName~SkillInjectorServiceTests|FullyQualifiedName~CompetingLastShotsAwardExactlyOneDurableBounty|FullyQualifiedName~CompetingAdvancersResolveOneKillBountyAndWreckWithoutDuplicatePayment|FullyQualifiedName~DroneFlightAndCombatAdvanceOncePerIntervalAndSettleOneKill
+```
+
+Tool restore, solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog cases in 0.768 seconds; 9 formatting cases in 0.016 seconds), formatting verification
+(1,346 files, maximum 140 characters), documentation links/encoding/whitespace and diff checks passed.
+The ordered validation took **60.45 seconds**. No full .NET suite was requested or run. TRX evidence:
+`artifacts/feature-tests/results/silent-bounty-sp/silent-bounty-sp.trx`.
+
+Initial exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcSkillPointRewardTests.KillAddsToTheSavedPoolWithoutSkillPointNotifications`
+passed both SQL/resident cases (7.09-second build, 6.93-second test invocation). Development integration
+passed 38 cases (3.81-second build, 14.65-second test invocation), covering silent polls and balance/queue
+reads, saved balances/revisions, recipient ownership, reopen/checkpoint behavior, normal reward/spend
+notifications after silent credits, rollback and competing turret/missile/drone settlement.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Kill a bounty NPC and confirm no SP alert appears; refresh the skill
+window to verify the updated unallocated total.

@@ -404,7 +404,7 @@ public sealed class CombatDroneTests
         var points = Assert.Single(world.Set<SavedFreeSkillPoints>());
         Assert.Equal(f.Pilot, points.PilotId);
         Assert.Equal(7, points.Points);
-        Assert.Equal(1, points.Revision);
+        Assert.Equal(0, points.Revision);
         Assert.Single(world.Set<WorldWreck>().Where(w => w.NpcId == f.Npc.Id));
         Assert.NotEqual(start, f.Drones.List(SystemId, f.Now).First().Position);
         Assert.All(f.Drones.List(SystemId, f.Now), d => Assert.Equal(DroneActivity.Idle, d.Activity));

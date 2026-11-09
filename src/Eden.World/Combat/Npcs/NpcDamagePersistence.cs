@@ -111,7 +111,7 @@ internal static class NpcDamagePersistence
                 long skillPoints = NpcSkillPointRewards.FromBounty(cents);
                 if (skillPoints > 0)
                 {
-                    PilotTrainingStore.CreditFreePoints(world, pilot.Id, skillPoints);
+                    PilotTrainingStore.CreditSilentFreePoints(world, pilot.Id, skillPoints);
                 }
                 var wallet = world.Set<PilotWallet>().Find(pilot.Id) ?? world.Set<PilotWallet>().Add(new() { PilotId = pilot.Id }).Entity;
                 wallet.Cents = checked(wallet.Cents + cents);

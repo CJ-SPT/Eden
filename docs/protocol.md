@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Silent bounty SP rewards, November 9, 2026](protocol/combat.md#silent-bounty-sp-rewards-november-9-2026)
+
 - [Skill editor and signed client packages, November 9, 2026](protocol/characters.md#skill-editor-and-signed-client-packages--november-9-2026)
 
 - [NPC bounty skill point rewards, November 9, 2026](protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026)

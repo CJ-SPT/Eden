@@ -5,12 +5,48 @@ using Eden.Protocol.Redemption;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Persistence;
+using Eden.World.Runtime;
+using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class FreeSkillPointServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SilentBountyCreditsPreserveLaterRewardAndSpendNotifications(bool resident)
+    {
+        var clock = CalendarTestData.Clock();
+        using var db = FreePointTestData.Create(clock);
+        using LiveWorld? live = resident ? new(new(db.Path), clock, _ => { }) : null;
+        using CourierServiceTests.Client client = new(db, clock, RedemptionTests.Account);
+        client.Refresh();
+        client.Context.Notifications.Clear();
+        using (WorldDbContext world = new(db.Path))
+        {
+            using var transaction = world.Database.BeginTransaction();
+            PilotTrainingStore.CreditSilentFreePoints(world, FreePointTestData.Pilot, 250);
+            world.SaveChanges();
+            transaction.Commit();
+        }
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        client.Advance();
+        Assert.Empty(client.Context.Notifications.OfType<FreeSkillPointsChanged>());
+        Assert.Empty(client.Context.Notifications.OfType<ServerSkillsChanged>());
+        Assert.Equal(250, FreePointTestData.Points(db).Balance(FreePointTestData.Pilot));
+
+        FreePointTestData.Credit(db);
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+        client.Advance();
+        Assert.Equal(1250, Assert.Single(client.Context.Notifications.OfType<FreeSkillPointsChanged>()).Balance);
+        client.Context.Notifications.Clear();
+        Assert.Equal(1150L, Reply(client.Call("ApplyFreeSkillPoints", [3327L, 100L], "@skills")));
+        Assert.Equal(1150, Assert.Single(client.Context.Notifications.OfType<FreeSkillPointsChanged>()).Balance);
+    }
+
     [Fact]
     public void NativeRedeemedSkillPointsAreVisibleAfterSelectionWithoutAnInventoryDelivery()
     {

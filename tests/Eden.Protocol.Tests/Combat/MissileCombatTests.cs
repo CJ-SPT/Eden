@@ -271,7 +271,7 @@ public sealed class MissileCombatTests
         var points = Assert.Single(world.Set<SavedFreeSkillPoints>());
         Assert.Equal(f.PilotId, points.PilotId);
         Assert.Equal(7, points.Points);
-        Assert.Equal(1, points.Revision);
+        Assert.Equal(0, points.Revision);
         Assert.Equal(100, world.Set<OwnedItem>().Single(i => i.LocationId == wreck.Id).Quantity);
         Assert.Equal(4, world.Set<OwnedItem>().Where(i => i.TypeId == LightMissile && i.OwnerId == f.PilotId).Sum(i => i.Quantity));
     }

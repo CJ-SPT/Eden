@@ -39,17 +39,21 @@ internal sealed partial class PilotTrainingStore
 
     internal static long ReadFreePoints(WorldDbContext world, long pilotId) => ReadPointBalance(world, pilotId).Points;
 
-    internal static void CreditFreePoints(WorldDbContext world, long pilotId, long amount)
+    internal static void CreditSilentFreePoints(WorldDbContext world, long pilotId, long amount)
     {
         long balance = ReadFreePoints(world, pilotId);
-        SavePointBalance(world, pilotId, FreeSkillPointRules.Credit(balance, amount));
+        SavePointBalance(world, pilotId, FreeSkillPointRules.Credit(balance, amount), advanceRevision: false);
     }
 
-    private static void SavePointBalance(WorldDbContext world, long pilotId, long balance)
+    private static void SavePointBalance(WorldDbContext world, long pilotId, long balance, bool advanceRevision = true)
     {
         var state = world.Set<SavedFreeSkillPoints>().Find(pilotId) ?? world.Add(new SavedFreeSkillPoints { PilotId = pilotId }).Entity;
         state.Points = balance;
-        state.Revision = checked(state.Revision + 1);
+        // Pool-only bounty credits stay silent. Revisions request skill/brain/queue notifications.
+        if (advanceRevision)
+        {
+            state.Revision = checked(state.Revision + 1);
+        }
     }
 
     private static FreeSkillPointBalance ReadPointBalance(WorldDbContext world, long pilotId)

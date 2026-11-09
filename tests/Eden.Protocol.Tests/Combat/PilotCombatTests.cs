@@ -410,7 +410,7 @@ public sealed class PilotCombatTests
         var points = Assert.Single(saved.Set<SavedFreeSkillPoints>());
         Assert.Equal(kill.Reward.PilotId, points.PilotId);
         Assert.Equal(7, points.Points);
-        Assert.Equal(1, points.Revision);
+        Assert.Equal(0, points.Revision);
         Assert.Single(saved.Set<ModuleCooldown>());
         Assert.Single(saved.Set<ShipEnergy>());
         Assert.Throws<InvalidDataException>(() => f.Fire());

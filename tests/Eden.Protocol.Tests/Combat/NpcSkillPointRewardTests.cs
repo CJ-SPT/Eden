@@ -6,6 +6,7 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Skills;
+using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.World.Catalog;
@@ -40,7 +41,7 @@ public sealed class NpcSkillPointRewardTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task KillAddsToTheSavedPoolAndNotifiesOnlyTheRecipientOnce(bool resident)
+    public async Task KillAddsToTheSavedPoolWithoutSkillPointNotifications(bool resident)
     {
         using PilotCombatTests.Fixture f = new();
         SetBounty(f, 150000);
@@ -71,17 +72,20 @@ public sealed class NpcSkillPointRewardTests
         Assert.True(shot.Destroyed);
         Assert.Equal(15000000, shot.Reward!.AmountCents);
         Assert.Equal(15000000, shot.Reward.BalanceCents);
-        Assert.Equal(new(498, 5), points.Observe(Pilot));
+        Assert.Equal(new(498, 4), points.Observe(Pilot));
         Assert.Equal(0, points.Balance(90000002));
         handler.Advance(context);
-        var notification = Assert.Single(context.Notifications.OfType<FreeSkillPointsChanged>());
-        Assert.Equal(498, notification.Balance);
-        Assert.Equal(new object?[] { 498L }, BlueMarshal.Decode(BlueMarshal.Encode(notification.Arguments)));
+        Assert.Empty(context.Notifications);
+        var balanceReply = Assert.IsType<PilotCallResult.Success>(handler.Call(context, "@skills", "GetFreeSkillPoints", []));
+        Assert.Equal(498L, BlueMarshal.Decode(BlueMarshal.Encode(balanceReply.Reply)));
+        var queueReply = Assert.IsType<PilotCallResult.Success>(handler.Call(context, "@skills", "GetSkillQueueAndFreePoints", []));
+        Assert.Equal(498, Assert.IsType<SkillQueueReply>(queueReply.Reply).FreePoints);
+        Assert.Empty(context.Notifications);
         f.Clock.Milliseconds += 1000;
         handler.Advance(context);
-        Assert.Single(context.Notifications.OfType<FreeSkillPointsChanged>());
+        Assert.Empty(context.Notifications);
         Assert.Throws<InvalidDataException>(() => f.Fire());
-        Assert.Equal(new(498, 5), points.Observe(Pilot));
+        Assert.Equal(new(498, 4), points.Observe(Pilot));
 
         if (live is not null)
         {
@@ -93,7 +97,7 @@ public sealed class NpcSkillPointRewardTests
         var saved = Assert.Single(reopened.Set<SavedFreeSkillPoints>());
         Assert.Equal(Pilot, saved.PilotId);
         Assert.Equal(498, saved.Points);
-        Assert.Equal(5, saved.Revision);
+        Assert.Equal(4, saved.Revision);
         Assert.Single(reopened.Set<NpcBounty>());
     }
 
@@ -113,8 +117,6 @@ public sealed class NpcSkillPointRewardTests
     [Theory]
     [InlineData(false, long.MaxValue, 0)]
     [InlineData(true, long.MaxValue, 0)]
-    [InlineData(false, 0, long.MaxValue)]
-    [InlineData(true, 0, long.MaxValue)]
     [InlineData(false, -1, 0)]
     [InlineData(true, -1, 0)]
     [InlineData(false, 0, -1)]
@@ -141,14 +143,7 @@ public sealed class NpcSkillPointRewardTests
         {
             Assert.Equal(new(balance, revision), points.Observe(Pilot));
         }
-        if (revision == long.MaxValue)
-        {
-            Assert.Throws<OverflowException>(() => f.Fire());
-        }
-        else
-        {
-            Assert.Throws<InvalidDataException>(() => f.Fire());
-        }
+        Assert.Throws<InvalidDataException>(() => f.Fire());
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Null(saved.Set<WorldNpc>().Find(f.Npc.Id)!.DestroyedAt);
         Assert.Equal(19, saved.Set<WorldNpc>().Find(f.Npc.Id)!.StructureDamage);
