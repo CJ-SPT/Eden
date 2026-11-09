@@ -9,6 +9,7 @@ using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Skills;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
@@ -70,7 +71,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "WorldAccount"
     );
     private readonly ResidentSnapshot<int, IReadOnlyList<StaticSpaceObject>> _asteroids = new("resident.asteroids", "WorldAsteroid");
-    private readonly ResidentSnapshot<(int System, long Catalog), MiningSiteView> _miningSites = new(
+    private readonly ResidentSnapshot<(int System, MiningFamily Family, long Catalog), MiningSiteView> _miningSites = new(
         "resident.miningSites",
         "WorldMiningSite"
     );
@@ -189,8 +190,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     internal IReadOnlyList<StaticSpaceObject> Asteroids(int system, Func<IReadOnlyList<StaticSpaceObject>> load) =>
         Read(_asteroids, system, () => Array.AsReadOnly(load().ToArray()));
 
-    internal MiningSiteView MiningSites(int system, long catalog, long now, Func<MiningSiteView> load) =>
-        Read(_miningSites, (system, catalog), load, now, view => view.Deadline);
+    internal MiningSiteView MiningSites(int system, MiningFamily family, long catalog, long now, Func<MiningSiteView> load) =>
+        Read(_miningSites, (system, family, catalog), load, now, view => view.Deadline);
 
     internal IReadOnlyList<WreckContact> Wrecks(int system, long now, Func<IReadOnlyList<WreckContact>> load) =>
         Read(

@@ -91,6 +91,7 @@ public static class ModuleFittingRules
                     effects.Contains(DogmaEffect.MiningLaser)
                         && (
                             groupId == InventoryDefinitions.ModulatedMinerGroup
+                            || MiningDefinitions.Family(groupId, attributes) == MiningFamily.Ice
                             || (
                                 groupId == InventoryDefinitions.StripMinerGroup
                                     ? MiningDefinitions.IsOrdinaryStripMiner(attributes)

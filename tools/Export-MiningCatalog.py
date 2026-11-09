@@ -1,12 +1,29 @@
 """Export pinned mining equipment, crystals, type lists and skill prerequisites for automated tests."""
 import argparse
 import json
+import math
 from pathlib import Path
 import sqlite3
 
 
 BUILD = 3662168
 GROUPS = {54, 464, 483, 482, 663, 737, 4138}
+
+# Positive high-security locations from the four UniWiki ice-belt pages, November 9, 2026.
+# Pochven entries are deliberately omitted. These are an admitted subset, not a complete retail distribution.
+ICE_SYSTEMS = {
+    5496: '''Actee Deninard Antollare Ardallabier Aydoteaux Carirgnottin Jaschercis Tolle Vaurent
+             Brapelille Chelien Misneden Stegette Niballe'''.split(),
+    5497: '''Uchomida Halaima Kamio Uotila Ahtulaima Gekutami Hentogaira Hurtoken Mitsolen Osmon Outuni
+             Silen Sirseshin Vattuolen Wuos Aakari Elonaya Jotenen Kiskoken Oishami Piekura Yoma'''.split(),
+    5498: '''Abudban Emolgranlan Endrulf Aderkan Asgeir Barkrik Dantbeinn Eygfe Finanar Gedugaud Hodrold
+             Nakugard Nein Oppold Teonusude Varigne'''.split(),
+    5499: '''Avada Gamis Gelhan Ihal Moh Orva Serad Arveyil Dihra Esescama Riavayed Afivad Arera Arshat Azizora
+             Bashakru Clarelam Esteban Fabum Gosalav Isamm Jerma Knophtikoo Luromooh Martha Nalu Pedel Raren Warouh
+             Agal Avyuh Hadji Iderion Manatirid Sigga Ervekam Geztic Gidali Keberz Molea Moniyyuku Moro Saloti Talidal
+             Chanoun Dantan Jakri Kamda Koona Kothe Miah Munory Neburab Rayeret Turba Choga Ordion Anjedin Goram Ivih
+             Jarzalad Kari Moutid Seil Erkinen'''.split(),
+}
 
 # Positive locations from UniWiki Gas_cloud_harvesting, read November 9, 2026.
 # The source explicitly says these lists are incomplete; omitted regions are not a retail exclusion claim.
@@ -48,14 +65,17 @@ def export(catalog_path, output, sites_output):
             raise ValueError('Expected the pinned build-3662168 catalog')
         pending = {type_id for type_id, group in catalog.execute('SELECT Id,GroupId FROM ItemType')
                    if group in GROUPS and record('client/types', type_id).get('published') == 1}
-        pending.update({601, 1230, 1223, 17478, 17480, 17476, 32880, 32918, 3410, 90727, 90728, 25268})
+        pending.update({601, 1230, 1223, 17478, 17480, 17476, 32880, 32918, 3410, 90727, 90728, 25268, 91174, 33697, 28444})
         regions = {name: region_id for region_id, name in catalog.execute('SELECT Id,Name FROM Region')}
+        systems = {name: system_id for system_id, name in catalog.execute('SELECT Id,Name FROM SolarSystem')}
         sites = []
         for key, raw in catalog.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='client/dungeons' ORDER BY CAST(Key AS INTEGER)"):
             dungeon = json.loads(raw)
             name_id = dungeon.get('dungeonNameID', 0)
             name = record('client/localization_fsd_en-us', name_id).get('text', '')
-            if name not in MYKO_REGIONS or dungeon.get('archetypeID') != 30 or len(dungeon.get('rooms', {})) != 1:
+            ice = int(key) in ICE_SYSTEMS
+            if ((not ice and (name not in MYKO_REGIONS or dungeon.get('archetypeID') != 30))
+                    or (ice and dungeon.get('archetypeID') != 28) or len(dungeon.get('rooms', {})) != 1):
                 continue
             objects = list(next(iter(dungeon['rooms'].values())).get('objects', {}).values())
             if any(o.get('entities') for o in objects):
@@ -65,19 +85,25 @@ def export(catalog_path, output, sites_output):
             for obj in sorted(objects, key=lambda o: o['objectID']):
                 type_id = obj.get('typeID', 0)
                 row = catalog.execute('SELECT Name,GroupId,Radius FROM ItemType WHERE Id=?', (type_id,)).fetchone()
-                if not row or row[1] != 711:
+                if not row or row[1] != (465 if ice else 711):
                     continue
-                if 'Mykoserocin' not in row[0] or obj.get('radius', 0) <= 0:
+                if (not ice and 'Mykoserocin' not in row[0]) or obj.get('radius', 0) <= 0:
                     raise ValueError('Unexpected gas resource in ' + name)
                 quantity = int(obj['radius'])
-                if quantity != obj['radius']:
+                if not ice and quantity != obj['radius']:
                     raise ValueError('Nonintegral gas deposit')
-                deposits.append(dict(typeId=type_id, quantity=quantity, radius=row[2] or 0,
+                # Eden projects native dungeon stock to whole blocks and uses its ore geometry rule for ice.
+                radius = math.sqrt(quantity * 1000) if ice else row[2] or 0
+                deposits.append(dict(typeId=type_id, quantity=quantity, radius=radius,
                                      position={axis: obj['position'].get(axis, 0) - entry.get(axis, 0) for axis in 'xyz'}))
                 pending.add(type_id)
-            sites.append(dict(dungeonId=int(key), nameId=name_id, name=name, family=2, difficulty=dungeon.get('difficulty', 1),
-                              regions=[regions[r] for r in MYKO_REGIONS[name]], deposits=deposits))
-        if len(sites) != len(MYKO_REGIONS):
+            site = dict(dungeonId=int(key), nameId=name_id, name=name, family=1 if ice else 2,
+                        difficulty=dungeon.get('difficulty', 1),
+                        regions=[] if ice else [regions[r] for r in MYKO_REGIONS[name]], deposits=deposits)
+            if ice:
+                site['systems'] = [systems[s] for s in ICE_SYSTEMS[int(key)]]
+            sites.append(site)
+        if len(sites) != len(MYKO_REGIONS) + len(ICE_SYSTEMS):
             raise ValueError('Missing or ambiguous Mykoserocin templates')
         types, records, attributes, effects = [], {}, set(), set()
         while pending:

@@ -4,6 +4,94 @@
 
 Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP stores.
 
+## Ice harvesting and public ice fields (November 9, 2026)
+
+All **six static ice tools** in build 3662168 now fit and operate: Ice Harvester I/II/ORE
+(16278, 22229, 28752) and Ice Mining Laser I/II/ORE (37450, 37451, 37452).
+Native ship-group/type restrictions remain enforced, including barge harvesters and the
+Perseverance's explicit laser allowance. Abyssal variants remain unavailable.
+Ice tools accept raw group-465 blocks of 1,000 m³; ordinary ore tools reject ice, and ice tools
+reject ore, gas and compressed ice. Collection chooses the dedicated ice hold, general mining
+hold or cargo, where present. Activation requires space for at least one entire block.
+
+A stopped partial cycle consumes its paid capacitor but extracts no ice, generates no critical
+yield and removes no residue. Stopping at the completed deadline settles one completed cycle.
+The base yield remains 1,000 m³; Mining/Astrogeology do not increase it. Native Ice Harvesting
+skill effects 1190/1191 and applicable hull bonuses reduce duration. The pinned Precision and
+Exploitation effects 12755/12757 explicitly select Ice Harvesting as well as Mining, so their
+critical chance/bonus modifiers apply to completed ice cycles. Native critical output can add
+blocks without removing extra stock, and still requires hold space. This follows the pinned
+catalog where the older wiki's unconditional one-block wording differs.
+
+The first location cohort contains **four high-security field layouts in 117 positively listed
+ice systems**. Native dungeons 5496–5499 supply Blue Ice (21 rocks), White Glaze (19), Glacial
+Mass (20) and Clear Icicle (19). Room-local positions come from the pinned catalog. Eden floors
+the native fractional stock values to whole blocks and projects physical radius using its ore
+geometry convention, square root of stock volume. These are explicit stock/geometry policies,
+not a claim that client dungeon radius is measured retail reserve. Positive system lists come
+from the corresponding UniWiki belt pages; Pochven entries are omitted. This is an admitted
+subset, not complete low/null/wormhole distribution.
+
+Ice fields appear in the onboard scanner and signal tracker as public anomalies with native
+archetype 28. No probes are needed. They use the existing anomaly warp route and local solid,
+lockable asteroid contacts; arriving does not create a combat encounter. The combat Agency
+directory remains combat-only. Ice fields and gas signatures share saved site/deposit identity
+in world version 132, but have separate resident views. Finite stock and depletion survive
+restart/checkpoint. After the last block is collected, the site retires atomically and returns
+**six hours later** with a fresh scanner identity and placement. Eden creates one field per
+admitted system, retains unmined fields across restart without a downtime refill, and does not
+expire them on a wall-clock lifetime. No ice-specific NPC waves, mining drones, compression,
+boosts, low/null-security layouts or shattered-wormhole fields are supplied by this checkpoint.
+
+References: [UniWiki Ice harvesting](https://wiki.eveuniversity.org/Ice_harvesting),
+[Mining yield](https://wiki.eveuniversity.org/Mining_yield),
+[Blue Ice Belt](https://wiki.eveuniversity.org/Blue_Ice_Belt),
+[White Glaze Belt](https://wiki.eveuniversity.org/White_Glaze_Belt),
+[Glacial Mass Belt](https://wiki.eveuniversity.org/Glacial_Mass_Belt), and
+[Clear Icicle Belt](https://wiki.eveuniversity.org/Clear_Icicle_Belt), read November 9, 2026.
+Build-specific tools, attributes and layouts are reproduced by `tools/Export-MiningCatalog.py`;
+the fixture now contains 170 types and the resource file 20 layouts (16 gas, four ice).
+The independently authored implementation reuses Eden's existing Blue/flight adapters;
+[Carbon Blue af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+remains the serialization reference. No evejs source or content pack was imported.
+
+**Automated validation:** Initial exact filter:
+`FullyQualifiedName=Eden.Protocol.Tests.Mining.IceMiningTests.IceNeedsACompleteCycleAndUsesNativeCycleAndCriticalSkillsWithoutOreYieldBonuses`
+passed one case in 6.11 seconds after correcting the expected Retriever role reduction.
+The first field fixtures omitted non-starter geography, then incorrectly asserted gas contacts
+were solid; both fixture assumptions were corrected. The warm-view fixture now warms both
+families after initial site creation, which correctly invalidates the shared table dependency.
+The corrected ice/cohort filter passed 8/8 cases in 10.00 seconds. All six actual tool/hull
+pairs and both native deadline paths subsequently passed 8/8 in 9.14 seconds. Final stable
+milestone checks and affected-test results are recorded below.
+
+Tool and solution restore passed. The final solution build passed with zero warnings/errors in
+0.87 seconds. An earlier overlapping build was blocked by the running test host's file locks;
+it was rerun successfully after those tests completed. The affected filter below passed
+**332/332 cases in 226.69 seconds**. It covers ore/crystals/gas/ice, activation and notifications,
+resource rejection and holds, probe discovery, field identities, persistence/checkpoints,
+small-hull bonuses, fitting/coverage and service registration. After replacing placement
+literals with named constants, the exact four-layout field filter
+`FullyQualifiedName=Eden.Protocol.Tests.Mining.IceMiningTests.PublicIceFieldsPersistFiniteSolidRocksAndRespawnOnlySixHoursAfterDepletion`
+passed **4/4 in 6.88 seconds** on the final build.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningCrystalTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTierTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.GasMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.IceMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.AsteroidFieldTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.NpcMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.ResourceRenewalTests|FullyQualifiedName~Eden.Protocol.Tests.Exploration.ProbeScanningTests|FullyQualifiedName~Eden.Protocol.Tests.Exploration.CombatAnomalyTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.SmallHullBonusTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+Both Python policy suites passed (8 catalog checks in 0.974 seconds; 9 formatting checks in
+0.029 seconds), and formatting/140-column verification passed for 1,458 files. The fixture and
+resource-site export reproduced byte-for-byte; positive ice systems were checked against the
+pinned security status. Coverage was regenerated: all six static tools and the Perseverance's
+ice role are now recognized. Documentation targets/anchors, UTF-8, newlines and diff checks
+passed. The full .NET suite was neither requested nor run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect an ice field in the native onboard scanner; stop a
+partial cycle, then complete one and inspect the mining hold; inspect crystal and gas tool
+presentation if validating all three mining checkpoints. These are optional maintainer actions.
+
 ## Gas harvesting and Mykoserocin nebulae (November 9, 2026)
 
 The five static gas scoops and three barge gas harvesters use their exact build-3662168 ranges,

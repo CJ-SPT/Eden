@@ -55,6 +55,10 @@ public static class MiningRules
         {
             throw new InvalidDataException("Invalid mining yield.");
         }
+        if (laser.Family == MiningFamily.Ice && !collection.Completed)
+        {
+            return new(0, 0, 0, false);
+        }
         int free = (int)Math.Min(int.MaxValue, Math.Floor((availableVolume + InventoryDefinitions.ResourceTolerance) / oreVolume));
         int planned = Math.Min(free, RoundedUnits(laser.Volume * collection.Fraction / oreVolume, collection.Rolls.Yield));
         // Residue is removed from the rock first; critical ore never contributes to it.
@@ -89,17 +93,25 @@ public static class MiningRules
     public static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(MiningModuleInputs inputs)
     {
         var attributes = inputs.Attributes.ToDictionary();
-        if (!InventoryDefinitions.IsOreMiningGroup(inputs.GroupId))
+        if (
+            !InventoryDefinitions.IsOreMiningGroup(inputs.GroupId)
+            || MiningDefinitions.Family(inputs.GroupId, attributes) == MiningFamily.Gas
+        )
         {
             return attributes;
         }
+        var family = MiningDefinitions.Family(inputs.GroupId, attributes);
         foreach (var modifier in MiningDefinitions.SkillModifiers)
         {
+            if (family == MiningFamily.Ice && MiningDefinitions.OwnsYieldSkill((int)modifier.Skill))
+            {
+                continue;
+            }
             attributes[modifier.Attribute] =
                 attributes.GetValueOrDefault(modifier.Attribute)
                 * (1 + modifier.PerLevel * inputs.Levels.GetValueOrDefault(modifier.Skill));
         }
-        if (!inputs.CatalogHullBonuses && inputs.HullTypeId == (int)StarterShipType.Venture)
+        if (family == MiningFamily.Ore && !inputs.CatalogHullBonuses && inputs.HullTypeId == (int)StarterShipType.Venture)
         {
             // Build 3662168 effects 5058/5139 multiply ore yield by hull attribute
             // 207, then apply attribute 1842 percent for each Mining Frigate level.

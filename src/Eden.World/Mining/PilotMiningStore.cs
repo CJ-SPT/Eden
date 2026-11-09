@@ -118,7 +118,13 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
                 ? ore?.CategoryId == MiningDefinitions.GasCloudCategory
                     && ore.GroupId == MiningDefinitions.GasCloudGroup
                     && MiningSiteCatalog.SupportsGas(ore.Id)
-                : ore?.CategoryId == AsteroidDefinitions.Category && Enum.IsDefined((MiningResourceGroup)ore.GroupId);
+                : ore?.CategoryId == AsteroidDefinitions.Category
+                    && (
+                        family == MiningFamily.Ice
+                            ? ore.GroupId == MiningDefinitions.IceGroup
+                                && PilotInventoryStore.Volume(catalog, ore.Id) == MiningDefinitions.IceBlockVolume
+                            : Enum.IsDefined((MiningResourceGroup)ore.GroupId)
+                    );
         if (!compatible)
         {
             throw new InvalidDataException("The mining module does not match this resource.");
@@ -174,6 +180,8 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
     private static InventoryFlag OreHold(CatalogDbContext catalog, int hull, MiningFamily family) =>
         family == MiningFamily.Gas && PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.GasHold) > 0
             ? InventoryFlag.GasHold
+        : family == MiningFamily.Ice && PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.IceHold) > 0
+            ? InventoryFlag.IceHold
         : PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.GeneralMiningHold) > 0 ? InventoryFlag.GeneralMiningHold
         : InventoryFlag.Cargo;
 

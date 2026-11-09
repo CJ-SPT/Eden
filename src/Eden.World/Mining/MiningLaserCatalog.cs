@@ -24,7 +24,11 @@ internal static class MiningLaserCatalog
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
         if (
             !InventoryDefinitions.IsMiningGroup(group)
-            || (group == InventoryDefinitions.StripMinerGroup && !MiningDefinitions.IsOrdinaryStripMiner(attributes))
+            || (
+                group == InventoryDefinitions.StripMinerGroup
+                && !MiningDefinitions.IsOrdinaryStripMiner(attributes)
+                && MiningDefinitions.Family(group, attributes) != MiningFamily.Ice
+            )
             || type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
             || (
@@ -35,6 +39,7 @@ internal static class MiningLaserCatalog
                         or InventoryDefinitions.GasHarvesterGroup
                     )
                 && InventoryDefinitions.RequiresSpecificShip(attributes)
+                && MiningDefinitions.Family(group, attributes) != MiningFamily.Ice
             )
             // Deep-core lasers need Mercoxit cloud hazards before being enabled.
             || attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) != 0

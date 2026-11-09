@@ -61,6 +61,7 @@ public enum MiningSkill
     Exploitation = 90728,
     Frigate = 32918,
     GasHarvesting = 25544,
+    IceHarvesting = 16281,
 }
 
 public enum MiningLaserType
@@ -77,12 +78,17 @@ public static class MiningDefinitions
     public const int DeepCoreMiningSkill = 11395;
     public const int GasCloudGroup = 711;
     public const int GasCloudCategory = 2;
+    public const int IceGroup = 465;
+    public const double IceBlockVolume = 1000;
 
     public static bool IsResource(int category, int group) =>
         category == AsteroidDefinitions.Category || category == GasCloudCategory && group == GasCloudGroup;
 
     public static MiningFamily Family(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
-        group is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup ? MiningFamily.Gas : MiningFamily.Ore;
+        group is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup ? MiningFamily.Gas
+        : InventoryDefinitions.RequiredSkills.Any(p => attributes.GetValueOrDefault(p.Skill) == (int)MiningSkill.IceHarvesting)
+            ? MiningFamily.Ice
+        : MiningFamily.Ore;
 
     public static bool OwnsYieldSkill(int skill) => skill is (int)MiningSkill.Mining or (int)MiningSkill.Astrogeology;
 
@@ -94,7 +100,7 @@ public static class MiningDefinitions
     public const double CriticalChanceBonusPerSkillLevel = 0.10;
     public const double CriticalYieldBonusPerSkillLevel = 0.05;
 
-    // Pinned effects 391/12755/12757 select equipment requiring Mining.
+    // Effect 391 selects Mining; effects 12755/12757 also select Ice Harvesting.
     public static IReadOnlyList<MiningSkillModifier> SkillModifiers { get; } =
     [
         new(MiningSkill.Mining, DogmaAttributeId.MiningAmount, YieldBonusPerSkillLevel),

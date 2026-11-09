@@ -26,7 +26,8 @@ internal static class MiningSiteCatalog
             file.Build != CatalogSources.PinnedBuild
             || file.Sites.Select(s => s.DungeonId).Distinct().Count() != file.Sites.Count
             || file.Sites.Any(s =>
-                s.Family != MiningFamily.Gas
+                s.Family is not (MiningFamily.Gas or MiningFamily.Ice)
+                || (s.Family == MiningFamily.Ice && s.Systems is not { Count: > 0 })
                 || s.Deposits.Count is < 1 or >= MiningSiteRules.DepositsPerSite
                 || s.Deposits.Any(d => d.Quantity <= 0 || !float.IsFinite(d.Radius) || d.Radius < 0)
             )

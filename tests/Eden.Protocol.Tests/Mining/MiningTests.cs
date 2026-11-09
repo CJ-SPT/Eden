@@ -35,6 +35,69 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeIceManualStopProducesNothingAndCompletedCyclePublishesMinedIce(bool manualAtDeadline)
+    {
+        using Fixture f = new();
+        string path = new WorldDatabase(f.Db.Path).CatalogPath;
+        PassiveCatalogFixture.LoadMining(path);
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        using (CatalogDbContext catalog = new(path))
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Ships.Find(pilot.ShipId)!.TypeId = 17478;
+            double rank = catalog.Set<TypeAttribute>().Find(16281, (int)DogmaAttributeId.SkillTimeConstant)!.Value;
+            world
+                .Set<PilotSkill>()
+                .Add(
+                    new()
+                    {
+                        PilotId = pilot.PilotId,
+                        TypeId = 16281,
+                        Points = TrainedSkill.PointsForLevel(rank, 5),
+                    }
+                );
+            world.Set<WorldAsteroid>().Find(Fixture.Asteroid)!.TypeId = 16265;
+            world.SaveChanges();
+        }
+        var (context, _, mining, module) = f.Client(laser: (MiningLaserType)16278);
+        context.Flight.Checkpoint();
+        var position = f.Db.Store.FindPilot(1000001)!.Position!;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var rock = world.Set<WorldAsteroid>().Find(Fixture.Asteroid)!;
+            rock.X = position.X + 100;
+            rock.Y = position.Y;
+            rock.Z = position.Z;
+            world.SaveChanges();
+        }
+        context.Flight.RefreshAsteroids(f.Db.Services.GetRequiredService<IAsteroidField>().List(context.Pilot.SystemId));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        f.Clock.Milliseconds += 100000;
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
+        Assert.False(mining.IsActive(module));
+        Assert.Empty(context.Notifications.OfType<OreMined>());
+        Assert.Equal(10000, f.Remaining());
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 0L]));
+        f.Clock.Milliseconds += 157500;
+        if (manualAtDeadline)
+        {
+            Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
+        }
+        else
+        {
+            mining.Advance(context);
+        }
+        Assert.False(mining.IsActive(module));
+        var notification = Assert.Single(context.Notifications.OfType<OreMined>());
+        Assert.Equal(16265, notification.Yield.TypeId);
+        Assert.Equal(1, notification.Yield.Extracted);
+        Assert.Equal((int)InventoryFlag.GeneralMiningHold, notification.Yield.Cargo!.Item.FlagId);
+        Assert.Equal(9999, f.Remaining());
+    }
+
     [Fact]
     public void NativeGasActivationTargetsNonSolidCloudAndUsesTheCloudBeam()
     {

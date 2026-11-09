@@ -14,6 +14,9 @@
 
 ## Development
 
+[Ice harvesting and public ice fields](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)
+covers native ice tools, complete-cycle collection, public scanner discovery and saved field replacement.
+
 [Gas harvesting and Mykoserocin nebulae](protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026)
 covers gas scoops/harvesters, hull bonuses, finite probe signatures and saved resource-site replacement.
 

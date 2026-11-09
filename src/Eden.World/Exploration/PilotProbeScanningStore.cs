@@ -391,7 +391,13 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                             .Any(s => s.Id == r.Site.Id && s.SystemId == authoritative.SystemId && s.ReplaceAt == null && s.ExpiresAt > now)
                         || world
                             .Set<SavedMiningSite>()
-                            .Any(s => s.Id == r.Site.Id && s.SystemId == authoritative.SystemId && s.ReplaceAt == null && s.ExpiresAt > now)
+                            .Any(s =>
+                                s.Id == r.Site.Id
+                                && s.SystemId == authoritative.SystemId
+                                && s.Family == Eden.Gameplay.Mining.MiningFamily.Gas
+                                && s.ReplaceAt == null
+                                && s.ExpiresAt > now
+                            )
                     )
                     .ToArray();
                 foreach (var result in results.Where(r => r.Certainty >= 1))
@@ -423,7 +429,13 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                     .Any(s => s.Id == siteId && s.SystemId == systemId && s.ReplaceAt == null && s.ExpiresAt > now)
                 || world
                     .Set<SavedMiningSite>()
-                    .Any(s => s.Id == siteId && s.SystemId == systemId && s.ReplaceAt == null && s.ExpiresAt > now)
+                    .Any(s =>
+                        s.Id == siteId
+                        && s.SystemId == systemId
+                        && s.Family == Eden.Gameplay.Mining.MiningFamily.Gas
+                        && s.ReplaceAt == null
+                        && s.ExpiresAt > now
+                    )
             );
     }
 }

@@ -22,6 +22,9 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 ## Current status
 
+[Ice harvesting](docs/protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026) supports six static tools and four public
+ice-field layouts across 117 documented high-security systems, with finite saved stock and six-hour replacement after depletion.
+
 [Gas harvesting](docs/protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026) supports eight static tools and 16
 Mykoserocin nebula templates, with finite saved clouds, probe discovery and gas hull bonuses. Hazardous gas and reactions remain pending.
 

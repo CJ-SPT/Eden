@@ -4,6 +4,19 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningRulesTests
 {
+    [Theory]
+    [InlineData(0)]
+    [InlineData(.5)]
+    [InlineData(.999999999)]
+    [InlineData(1)]
+    public void StoppedIceCyclesNeverProduceExtractionCriticalYieldOrResidue(double fraction)
+    {
+        var ice = Laser with { Volume = 1000, Family = MiningFamily.Ice, CriticalChance = 1, ResidueChance = 1 };
+        Assert.Equal(new MiningRules.Collection(0, 0, 0, false), MiningRules.Collect(100, 10000, 1000, ice, new(fraction, false, Rolls)));
+        Assert.Equal(new MiningRules.Collection(1, 2, 1, false), MiningRules.Collect(100, 10000, 1000, ice, new(1, true, Rolls)));
+        Assert.Equal(new MiningRules.Collection(0, 0, 0, true), MiningRules.Collect(100, 999, 1000, ice, new(1, true, Rolls)));
+    }
+
     [Fact]
     public void GasCannotRollCriticalBonusesEvenWithAnOreCriticalProfile()
     {

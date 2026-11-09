@@ -62,7 +62,7 @@ public sealed class MiningTierTests
     }
 
     [Fact]
-    public void AllTenOrdinaryOreProfilesFitWhileDeepCoreIceAndMutatedProfilesRemainExplicitlyPending()
+    public void OrdinaryOreAndStaticIceProfilesFitWhileDeepCoreAndMutatedProfilesRemainExplicitlyPending()
     {
         using Fixture f = new();
         PassiveCatalogFixture.LoadActiveTiers(f.CatalogPath);
@@ -70,7 +70,7 @@ public sealed class MiningTierTests
         var types = catalog.Set<ItemType>().Where(t => t.GroupId == InventoryDefinitions.MiningLaserGroup).ToArray();
         var supported = types.Where(t => MiningLaserCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
         Assert.Equal(18, types.Length);
-        Assert.Equal(10, supported.Length);
+        Assert.Equal(13, supported.Length);
         Assert.All(
             supported,
             t =>

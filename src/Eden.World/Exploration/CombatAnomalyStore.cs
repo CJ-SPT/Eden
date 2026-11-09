@@ -46,7 +46,35 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
     private long Version(int systemId) =>
         s_versions.GetValueOrDefault((database.Path, 0)) + s_versions.GetValueOrDefault((database.Path, systemId));
 
-    public IReadOnlyList<CombatAnomaly> List(int systemId, long now) => ListCore(systemId, now, false);
+    private readonly Dictionary<
+        int,
+        (IReadOnlyList<CombatAnomaly> Combat, IReadOnlyList<CombatAnomaly> Mining, IReadOnlyList<CombatAnomaly> Combined)
+    > _anomalies = [];
+
+    public IReadOnlyList<CombatAnomaly> List(int systemId, long now)
+    {
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        lock (database.MotionLock)
+        {
+            var combat = ListCore(systemId, now, false);
+            if (mining is null)
+            {
+                return combat;
+            }
+            var resources = mining.Anomalies(systemId, now);
+            if (
+                _anomalies.TryGetValue(systemId, out var view)
+                && ReferenceEquals(view.Combat, combat)
+                && ReferenceEquals(view.Mining, resources)
+            )
+            {
+                return view.Combined;
+            }
+            var combined = combat.Concat(resources).ToArray();
+            _anomalies[systemId] = (combat, resources, combined);
+            return combined;
+        }
+    }
 
     private readonly Dictionary<
         int,
@@ -372,7 +400,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
             {
                 systems = world.Set<WorldCombatAnomaly>().Select(s => s.SystemId).Distinct().ToArray();
             }
-            _directory = systems.Order().Select(id => new AnomalySystemSites(id, List(id, now))).ToArray();
+            _directory = systems.Order().Select(id => new AnomalySystemSites(id, ListCore(id, now, false))).ToArray();
             _directoryDeadline = systems.Select(id => _views[(id, false)].Deadline).DefaultIfEmpty(long.MaxValue).Min();
             _directoryVersion = Version(-1);
             _directoryCatalog = database.Catalog.Identity.Generation;

@@ -237,14 +237,15 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                     {
                         return new PilotCallResult.Failure("The mining effect does not match the active module.");
                     }
-                    // A manual mining stop returns whole units for the elapsed part of
-                    // this cycle. Only completed cycles can roll a critical success.
+                    // Ore/gas can return elapsed yield; ice needs a complete cycle.
+                    // Only completed cycles can roll a critical success.
                     double fraction = Math.Clamp(
                         clock.GetElapsedTime(cycle.Started).TotalMilliseconds / cycle.Laser.DurationMilliseconds,
                         0,
                         1
                     );
-                    _ = Collect(context, cycle, fraction, false);
+                    bool completed = cycle.Laser.Family == MiningFamily.Ice && fraction == 1;
+                    _ = Collect(context, cycle, fraction, completed);
                     Stop(context, cycle);
                 }
                 return PilotCallResult.None;

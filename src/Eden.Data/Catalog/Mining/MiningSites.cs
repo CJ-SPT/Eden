@@ -12,7 +12,8 @@ public sealed record MiningSiteDefinition(
     MiningFamily Family,
     int Difficulty,
     IReadOnlyList<int> Regions,
-    IReadOnlyList<MiningDepositDefinition> Deposits
+    IReadOnlyList<MiningDepositDefinition> Deposits,
+    IReadOnlyList<int>? Systems = null
 );
 
 public sealed record MiningSiteDefinitions(int Build, IReadOnlyList<MiningSiteDefinition> Sites);

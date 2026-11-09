@@ -131,7 +131,12 @@ public sealed class SmallHullBonusTests
         {
             PassiveCatalogFixture.LoadHacking(f.CatalogPath);
         }
-        if (modifiers.Any(m => m.Selector == ModifierSelector.RequiredSkill && m.SelectionId == (int)HullBonusSkill.GasCloudHarvesting))
+        if (
+            modifiers.Any(m =>
+                m.Selector == ModifierSelector.RequiredSkill
+                && m.SelectionId is (int)HullBonusSkill.GasCloudHarvesting or (int)HullBonusSkill.IceHarvesting
+            )
+        )
         {
             PassiveCatalogFixture.LoadMining(f.CatalogPath);
         }
@@ -324,6 +329,7 @@ public sealed class SmallHullBonusTests
                 HullBonusSkill.MissileLauncherOperation => new(499),
                 HullBonusSkill.Mining => new(stripMiner ? 17482 : 482),
                 HullBonusSkill.GasCloudHarvesting => new(stripMiner ? 60313 : 25266),
+                HullBonusSkill.IceHarvesting => new(stripMiner ? 16278 : 37450),
                 HullBonusSkill.Salvaging => new(25861),
                 HullBonusSkill.RepairSystems => new(523),
                 HullBonusSkill.ShieldOperation => new(399),

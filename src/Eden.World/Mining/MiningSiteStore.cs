@@ -16,7 +16,17 @@ internal sealed record MiningSiteView(long Deadline, IReadOnlyList<CombatAnomaly
 [Injectable(InjectionType.Singleton)]
 internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
 {
-    public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now)
+    // Keep resource sites apart from combat placements and vary replacement ice fields.
+    private const int GasPlacement = 25;
+    private const int IcePlacement = 26;
+    private const int IcePlacementSteps = 97;
+    private const double IcePlacementScale = 100;
+
+    public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now) => Get(systemId, now, MiningFamily.Gas);
+
+    public IReadOnlyList<CombatAnomaly> Anomalies(int systemId, long now) => Get(systemId, now, MiningFamily.Ice);
+
+    private IReadOnlyList<CombatAnomaly> Get(int systemId, long now, MiningFamily family)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
@@ -24,13 +34,13 @@ internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
             return (
                 LiveReadModels
                     .Find(database.Path)
-                    ?.MiningSites(systemId, database.Catalog.Identity.Generation, now, () => Read(systemId, now))
-                ?? Read(systemId, now)
+                    ?.MiningSites(systemId, family, database.Catalog.Identity.Generation, now, () => Read(systemId, now, family))
+                ?? Read(systemId, now, family)
             ).Sites;
         }
     }
 
-    private MiningSiteView Read(int systemId, long now)
+    private MiningSiteView Read(int systemId, long now, MiningFamily family)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         var system = catalog.FindSystem(systemId);
@@ -40,9 +50,12 @@ internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
         }
         var eligible = MiningSiteCatalog
             .Sites.Where(s =>
-                s.Family == MiningFamily.Gas
-                && s.Regions.Contains(system.RegionId)
-                && s.Deposits.All(d => catalog.FittingType(d.TypeId)?.GroupId == MiningDefinitions.GasCloudGroup)
+                s.Family == family
+                && (family == MiningFamily.Ice ? s.Systems!.Contains(systemId) : s.Regions.Contains(system.RegionId))
+                && s.Deposits.All(d =>
+                    catalog.FittingType(d.TypeId)?.GroupId
+                    == (family == MiningFamily.Ice ? MiningDefinitions.IceGroup : MiningDefinitions.GasCloudGroup)
+                )
             )
             .ToArray();
         var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).FirstOrDefault();
@@ -54,7 +67,7 @@ internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
         using var transaction = world.Database.BeginTransaction();
         var site = world
             .Set<SavedMiningSite>()
-            .Where(s => s.SystemId == systemId && s.Family == MiningFamily.Gas)
+            .Where(s => s.SystemId == systemId && s.Family == family)
             .OrderByDescending(s => s.Id)
             .FirstOrDefault();
         if (site is not null && site.ExpiresAt <= now && site.ReplaceAt is null)
@@ -65,17 +78,23 @@ internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
         {
             long id = Math.Max(MiningSiteRules.FirstSiteId, (world.Set<SavedMiningSite>().Max(s => (long?)s.Id) ?? 0) + 1);
             var definition = eligible[(int)((id - MiningSiteRules.FirstSiteId + systemId) % eligible.Length)];
-            double offset = CombatAnomalyRules.PlacementOffset * 25;
+            double offset =
+                CombatAnomalyRules.PlacementOffset
+                * (
+                    family == MiningFamily.Gas
+                        ? GasPlacement
+                        : IcePlacement + (id - MiningSiteRules.FirstSiteId) % IcePlacementSteps / IcePlacementScale
+                );
             site = new()
             {
                 Id = id,
                 SystemId = systemId,
-                Family = MiningFamily.Gas,
+                Family = family,
                 DungeonId = definition.DungeonId,
                 X = anchor.X + offset,
                 Y = anchor.Y - offset,
                 Z = anchor.Z + offset,
-                ExpiresAt = checked(now + MiningSiteRules.Lifetime),
+                ExpiresAt = family == MiningFamily.Ice ? long.MaxValue : checked(now + MiningSiteRules.Lifetime),
             };
             world.Add(site);
             CreateDeposits(world, site, definition);
@@ -99,7 +118,7 @@ internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
             true,
             [],
             FactionId: 0,
-            IsSignature: true,
+            IsSignature: family == MiningFamily.Gas,
             Mining: site.Family
         );
         world.SaveChanges();
@@ -156,7 +175,9 @@ internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
 
     private static void Retire(WorldDbContext world, SavedMiningSite site, long now)
     {
-        site.ReplaceAt = checked(now + MiningSiteRules.ReplacementDelay);
+        site.ReplaceAt = checked(
+            now + (site.Family == MiningFamily.Ice ? MiningSiteRules.IceReplacementDelay : MiningSiteRules.ReplacementDelay)
+        );
         var members = world.Set<SavedMiningDeposit>().Where(d => d.SiteId == site.Id).ToArray();
         var ids = members.Select(d => d.Id).ToArray();
         world.RemoveRange(world.Set<WorldAsteroid>().Where(a => ids.Contains(a.Id)).ToArray());

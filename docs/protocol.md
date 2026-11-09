@@ -8,6 +8,9 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Topics
 
+[Ice harvesting and public ice fields, November 9, 2026](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)
+records six static ice tools, 117 admitted high-security systems and persistent public fields.
+
 [Gas harvesting and Mykoserocin nebulae, November 9, 2026](protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026)
 records the first gas-resource cohort, native targeting/mining and persistent signatures.
 

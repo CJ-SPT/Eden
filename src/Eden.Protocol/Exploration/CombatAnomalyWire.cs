@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -17,7 +18,7 @@ internal sealed record AnomalySiteInfo(CombatAnomaly Site) : BlueModel
                 ["targetID"] = Site.TargetId,
                 ["difficulty"] = Site.Difficulty,
                 ["dungeonID"] = Site.DungeonId,
-                ["archetypeID"] = CombatAnomalyRules.CombatSiteArchetypeId,
+                ["archetypeID"] = Site.Mining == MiningFamily.Ice ? MiningSiteRules.IceArchetype : CombatAnomalyRules.CombatSiteArchetypeId,
                 ["dungeonNameID"] = Site.NameId,
                 ["factionID"] = Site.FactionId,
                 ["scanStrengthAttribute"] = null,
