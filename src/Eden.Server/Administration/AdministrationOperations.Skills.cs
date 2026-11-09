@@ -12,12 +12,6 @@ internal sealed record AdminSkillDelete(long Generation);
 
 internal sealed record AdminSkillPublish(long Generation, string ClientRoot);
 
-internal sealed record AdminSkillOptions(
-    IReadOnlyList<SkillEditorOption> Groups,
-    IReadOnlyList<SkillEditorOption> Attributes,
-    IReadOnlyList<SkillEditorOption> Effects
-);
-
 internal sealed partial class AdministrationOperations
 {
     internal async Task<SkillEditorSnapshot> Skills(ClaimsPrincipal user)
@@ -26,10 +20,10 @@ internal sealed partial class AdministrationOperations
         return skillEditor.Read();
     }
 
-    internal async Task<AdminSkillOptions> SkillOptions(ClaimsPrincipal user)
+    internal async Task<SkillEditorChoices> SkillOptions(ClaimsPrincipal user)
     {
         await Authorize(user);
-        return new(skillEditor.Groups(), skillEditor.Attributes(), skillEditor.Effects());
+        return skillEditor.Choices();
     }
 
     internal async Task<SkillEditorEntry> SaveSkill(ClaimsPrincipal user, AdminSkillSave request, bool create = false)

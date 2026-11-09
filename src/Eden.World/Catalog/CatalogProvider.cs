@@ -369,6 +369,41 @@ public sealed partial class CatalogProvider
             )
             .Value;
 
+    internal IReadOnlyDictionary<int, ImmutableDictionary<DogmaAttributeId, double>> AttributeSets(IEnumerable<int> typeIds)
+    {
+        Dictionary<int, ImmutableDictionary<DogmaAttributeId, double>> result = [];
+        List<int> missing = [];
+        foreach (int id in typeIds.Distinct())
+        {
+            if (_attributes.TryRead(id, out var cached))
+            {
+                result.Add(id, cached.Value);
+            }
+            else
+            {
+                missing.Add(id);
+            }
+        }
+        if (missing.Count > 0)
+        {
+            RequireCurrent();
+            using CatalogDbContext catalog = new(Identity.Path);
+            var rows = catalog
+                .Set<TypeAttribute>()
+                .Where(row => EF.Parameter(missing).Contains(row.ItemTypeId))
+                .ToLookup(row => row.ItemTypeId);
+            foreach (int id in missing)
+            {
+                var attributes = rows[id].ToImmutableDictionary(row => (DogmaAttributeId)row.AttributeId, row => row.Value);
+                result.Add(
+                    id,
+                    _attributes.Read(id, () => new(true, attributes, EntryOverhead + attributes.Count * AttributeEstimatedBytes)).Value
+                );
+            }
+        }
+        return result;
+    }
+
     public void PreloadCore()
     {
         _ = Eden.Gameplay.Content.BuildContentPolicy.Current;

@@ -1,0 +1,97 @@
+@typeparam TValue
+@inherits InputBase<TValue>
+@using System.Globalization
+@using System.Diagnostics.CodeAnalysis
+@using Eden.Gameplay.Skills
+<div class="skill-lookup">
+    <label>@Label
+        <select @bind="CurrentValueAsString" @bind:after="Match" class="@CssClass">
+            <option value="">@EmptyLabel</option>
+            @if (Selected is { } selected)
+            {
+                <option value="@selected.Id">@selected.Name@(!selected.Available ? " (retained)" : "")</option>
+            }
+            @foreach (var option in Matches)
+            {
+                <option value="@option.Id">@option.Name</option>
+            }
+        </select>
+    </label>
+    <label class="muted">Find @Label.ToLowerInvariant()
+        <input type="search" value="@Search" @oninput="SearchChanged" placeholder="Search names or descriptions…" />
+    </label>
+    <small class="muted">Showing up to @SkillChoiceSearch.ResultLimit matches. Narrow the search to find more.</small>
+    @if (Matches.Count == 0 && !string.IsNullOrWhiteSpace(Search))
+    {
+        <p class="muted" role="status">No matching choices. Your current selection is kept.</p>
+    }
+    @if (Selected is { Description.Length: > 0 } choice)
+    {
+        <p class="muted">@choice.Description</p>
+    }
+    @if (Selected is { Available: false })
+    {
+        <p class="muted">This existing value is preserved. New bonuses must use supported passive ship or module effects.</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<SkillEditorOption> Options { get; set; } = [];
+    [Parameter, EditorRequired] public string Label { get; set; } = "Choice";
+    [Parameter] public string EmptyLabel { get; set; } = "Choose…";
+    private IReadOnlyList<SkillEditorOption>? PreviousOptions;
+    private IReadOnlyDictionary<int, SkillEditorOption> ById = new Dictionary<int, SkillEditorOption>();
+    private string Search = "";
+    private IReadOnlyList<SkillEditorOption>? MatchedOptions;
+    private string? MatchedSearch;
+    private int? MatchedId;
+    private int? SelectedId => int.TryParse(CurrentValueAsString, CultureInfo.InvariantCulture, out int id)
+        && (id != 0 || typeof(TValue) != typeof(int)) ? id : null;
+    private SkillEditorOption? Selected => SelectedId is int id
+        ? ById.GetValueOrDefault(id) ?? new(id, $"Existing value {id}", "This value is retained until you choose a replacement.", false)
+        : null;
+    private IReadOnlyList<SkillEditorOption> Matches = [];
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(PreviousOptions, Options))
+        {
+            PreviousOptions = Options;
+            ById = SkillChoiceSearch.Index(Options);
+        }
+        Match();
+    }
+
+    private void SearchChanged(ChangeEventArgs args)
+    {
+        Search = args.Value?.ToString() ?? "";
+        Match();
+    }
+
+    private void Match()
+    {
+        if (ReferenceEquals(MatchedOptions, Options) && MatchedSearch == Search && MatchedId == SelectedId)
+        {
+            return;
+        }
+        MatchedOptions = Options;
+        MatchedSearch = Search;
+        MatchedId = SelectedId;
+        Matches = SkillChoiceSearch.Find(Options, Search, SelectedId);
+    }
+
+    protected override string? FormatValueAsString(TValue? value) => typeof(TValue) == typeof(int) && value is 0
+        ? "" : base.FormatValueAsString(value);
+
+    protected override bool TryParseValueFromString(string? value, out TValue result, [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        // A required integer choice uses zero for its empty state; nullable choices retain null.
+        if (BindConverter.TryConvertTo(value is "" && typeof(TValue) == typeof(int) ? "0" : value, CultureInfo.InvariantCulture, out result!))
+        {
+            validationErrorMessage = null;
+            return true;
+        }
+        validationErrorMessage = $"Choose {Label.ToLowerInvariant()} from the list.";
+        return false;
+    }
+}

@@ -1,0 +1,86 @@
+@using System.Globalization
+@using Eden.Gameplay.Skills
+<section class="card skill-browser">
+    <h2>Skills <span class="muted">@Filtered.Count</span></h2>
+    <label>Search by name or ID <input type="search" @bind="Search" @bind:event="oninput" @bind:after="FilterSkills" /></label>
+    <label>Show
+        <select @bind="Filter" @bind:after="FilterSkills">
+            <option value="all">All current skills</option>
+            <option value="original">Original skills</option>
+            <option value="modified">Edited original skills</option>
+            <option value="custom">User-created skills</option>
+            <option value="deleted">Removed user-created skills</option>
+        </select>
+    </label>
+    <div class="toolbar">
+        <button disabled="@Busy" @onclick="OnNew">New skill</button>
+        <button class="secondary" disabled="@Busy" @onclick="OnReload">Reload</button>
+    </div>
+    <div class="skill-list" aria-label="Skill list">
+        @foreach (var entry in Filtered.Skip(Page * PageSize).Take(PageSize))
+        {
+            <button @key="entry.Definition.TypeId" class="@(SelectedId == entry.Definition.TypeId ? "skill-choice selected" : "skill-choice")"
+                    disabled="@Busy" @onclick="() => OnChoose.InvokeAsync(entry)">
+                <strong>@entry.Definition.Name</strong><br />
+                <small>@(entry.Deleted ? "Removed" : entry.UserCreated ? "Custom" : entry.IsModified ? "Edited original" : "Original")</small>
+            </button>
+        }
+        @if (Filtered.Count == 0)
+        {
+            <p class="muted">No matching skills.</p>
+        }
+    </div>
+    <div class="toolbar">
+        <button class="secondary" disabled="@(Page == 0)" @onclick="Previous">Previous</button>
+        <span class="muted">Page @(Page + 1)</span>
+        <button class="secondary" disabled="@((Page + 1) * PageSize >= Filtered.Count)" @onclick="Next">Next</button>
+    </div>
+</section>
+
+@code {
+    private const int PageSize = 30;
+    [Parameter, EditorRequired] public SkillEditorSnapshot Snapshot { get; set; } = null!;
+    [Parameter] public int? SelectedId { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<SkillEditorEntry> OnChoose { get; set; }
+    [Parameter] public EventCallback OnNew { get; set; }
+    [Parameter] public EventCallback OnReload { get; set; }
+    private SkillEditorSnapshot? PreviousSnapshot;
+    private IReadOnlyList<SkillEditorEntry> Ordered = [];
+    private IReadOnlyList<SkillEditorEntry> Filtered = [];
+    private string Search = "";
+    private string Filter = "all";
+    private int Page;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(Snapshot, PreviousSnapshot))
+        {
+            PreviousSnapshot = Snapshot;
+            Ordered = Snapshot.Skills.OrderBy(entry => entry.Definition.Name).ToArray();
+            ApplyFilter();
+        }
+    }
+
+    private void FilterSkills()
+    {
+        Page = 0;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        Filtered = Ordered.Where(entry =>
+            (Filter == "deleted" ? entry.Deleted : !entry.Deleted)
+            && (Filter != "original" || !entry.UserCreated)
+            && (Filter != "custom" || entry.UserCreated)
+            && (Filter != "modified" || entry.IsModified)
+            && (entry.Definition.Name.Contains(Search, StringComparison.OrdinalIgnoreCase)
+                || entry.Definition.TypeId.ToString(CultureInfo.InvariantCulture).Contains(Search, StringComparison.Ordinal))
+        ).ToArray();
+        Page = Math.Min(Page, Math.Max(0, (Filtered.Count - 1) / PageSize));
+    }
+
+    private void Previous() => Page--;
+    private void Next() => Page++;
+}
