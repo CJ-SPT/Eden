@@ -6,6 +6,53 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Hauler return-route stalls, November 9, 2026
+
+A subsequent maintainer capture showed a **5,586.11 ms** traffic maintenance hold and **5,147.53 ms** of world wait on the next tick. The running server already had the per-job lock change described below. That capture did not identify an individual NPC action. Slow owner warnings now include the NPC job, pilot and starting system when a job ran during the hold.
+
+The earlier copied replay omitted the installed traffic snapshot and stopped after 44 wakes. A new frozen checkpoint retained the selected pilot at station 60011866, 1,861 jobs and the matching 27,947 imported traffic profiles. `ReplayReportedSessionWithDueTrafficAndCheckpoint` now copies an optional sibling `traffic.sqlite`. `EDEN_TRAFFIC_REPLAY_SECONDS=180` runs 180 measured one-second steps after four warmups. The configured copies and output are under ignored `artifacts/traffic-holds-latest-source`, `artifacts/traffic-holds-imported-before` and `artifacts/traffic-holds-retained-final`.
+
+The checkpoint contained a 17-jump return journey from station 60000505 to 60009682. Replaying its cold route calculation in isolation took **3,541.17 ms**, with **1,035 catalog commands**. The search read full system-content records, including planetary data, while checking candidate gates. The resident server now prepares reciprocal links and a compact index of system security before accepting clients. Both live for the catalog generation. Homeward searches skip security checks for unrestricted hulls, and restricted hulls apply the same security rule to the source, destination and candidate gates. An explicit test covers a carrier detour, both rejected endpoints and the same warmed reads with a catalog cache too small to hold the graph.
+
+The installed-catalog regression checks every system in the saved return route and requires zero commands, connection opens and fitting calculations for the route after preparation. In an isolated run, cold preparation took **2,731.48 ms** outside world ownership and the route took **0.37 ms**. This establishes a multi-second traffic path. The maintainer's original five-second event remains unattributed.
+
+With the final retained graph, the combined replay measured cold preparation at **3,053.52 ms** and the route at **5.18 ms**, again with zero database or fitting work during routing. On the newer checkpoint, the longest hold in each of 184 concurrent traffic wakes measured **36.43 ms p95 / 265.61 ms maximum**, compared with **44.44 / 340.20 ms** before the route change. Warmed calls measured **31.98 / 81.37 ms** across 540 samples, and ticks measured **20.71 / 63.56 ms** across 180 samples. The slowest remaining traffic warning identified an Arrival for pilot 90001866 in system 30002659. The copied replay did not reproduce a five-second player wait.
+
+The maintainer also reported Guests [4] with blank rows, then saw the list recover. The pinned client populates the count before it primes character names and builds the scroll entries. Both copied-station replays resolved every present character ID to a nonempty name through `station.GetGuests` and `config.GetMultiOwnersEx`, with two guests present after 44 steps. The cause of the temporary blank panel was not established. No guest protocol changes were made.
+
+**Automated validation.** The configured 17-jump route and two 184-wake session replays passed in 66.95 seconds including test startup. The two copied-station roster replays passed in 40.69 seconds. An initial affected run had 397 passes and one failure in a test expecting two independent contexts to retain the same cached route plan. The fixture now retains its catalog generation across both contexts, as the running host does, and still checks that editing the fixture invalidates the plan. That exact regression passed. On base `f2c8ad1a`, the corrected affected filter passed **398 tests** with zero skips in 2 minutes 38 seconds. The filter was the traffic maintenance selection below plus `FullyQualifiedName~CatalogGeographyTests|FullyQualifiedName~CatalogProviderTests|FullyQualifiedName~CatalogAdoptionTests`. Both restores, the solution build, both Python policy suites (8 and 9 cases) and formatting verification (1,384 files) passed. The ordered validation took 3 minutes 12 seconds. Full .NET regression was not requested.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Restart the rebuilt server and capture the full traffic owner warning and nearby tick if another long stall occurs.
+
+## Traffic maintenance lock duration, November 9, 2026
+
+The maintainer's next console capture showed a 967.73 ms traffic hold and a 388.60 ms tick with 379.31 ms spent waiting for world ownership. The resident server now restores saved traffic indexes during startup, before listeners accept players. Maintenance releases the shared owner after each committed NPC action and acquires it separately for presentation. The existing action cap and elapsed-time budget still bound each turn. Every acquisition uses current jobs, locations and observer membership. Scene capture, application and Local publication stay ordered under the shared owner. Performance tracing exposes miner and hauler action costs separately.
+
+The copied-world replay starts the first traffic wake as character selection arrives. It then measures 44 traffic wakes with the same due jobs and checkpoints in the concurrent and isolated cases. The hold measure starts after ownership acquisition and excludes time waiting to enter. Each wake contributes its longest maintenance or presentation hold. Call and tick timings use the final 40 wakes. Baseline production code was `1714af68`. The baseline and final reports are in the ignored `artifacts/traffic-holds-baseline` and `artifacts/traffic-holds-final` directories.
+
+| Concurrent workload | Before | After |
+| --- | ---: | ---: |
+| Character selection world wait | 114.71 ms | 11.18 ms |
+| Longest traffic hold per wake, p95 / maximum | 168.29 / 352.03 ms | 105.47 / 132.60 ms |
+| Full warmed call, p95 / maximum | 75.68 / 352.44 ms | 84.33 / 160.63 ms |
+| Full warmed tick, p95 / maximum | 1.27 / 63.67 ms | 0.51 / 0.75 ms |
+
+A traced hauler entering a system issued 2,347 individual asteroid inserts during one action. Transactional field initialization now writes the generated deposits together per belt. That action fell from 2,487 commands to 141, with three connection opens and zero fitting calculations in both cases. A regression compares all 183 generated rows against the existing standalone save path and rolls back the new deposits with the enclosing transaction. Another regression opens a checkpoint between two due jobs and verifies that only the first job advanced on disk, then both finished once. Existing checkpoints and the save format continue to work. The per-wake measurements come from one local Debug replay per revision. Neither run reproduced the supplied 967.73 ms hold. Full call p95 increased in this sample.
+
+**Automated validation.** The configured exact filter `FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ReplayReportedSessionWithDueTrafficAndCheckpoint` passed both replay cases in 34.73 seconds including test startup. The checkpoint-interleaving and transactional belt regressions were also run individually. The final affected filter passed 382 tests with zero skips in 155 seconds including test startup:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Mining|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~SessionLatencyTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~StationGuestTests
+```
+
+Tool and solution restore, solution build and both Python policy suites passed (8 and 9 cases). The first formatting check identified a missing blank line in the test clock. The correction built with zero warnings and formatting passed. This validation predates the return-route changes above. Full .NET regression was not requested.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** After restarting on this revision, compare the next traffic hold and nearby session world wait under normal play.
+
 ## Session stalls and world ownership, November 9, 2026
 
 Slow calls and ticks now report queue delay, world-lock wait, traffic refresh/reconciliation, pending damage, handler, entry, updates, motion, contacts and output separately. Successful, unsupported and rejected calls record completion of their reply write. Deferred target-lock replies retain their existing delayed delivery. Total processing includes output and notification flushing. Phase times are inclusive and can overlap, so they must not be added. The threshold remains 250 ms, including queue delay. Faster operations remain quiet unless performance tracing is enabled.

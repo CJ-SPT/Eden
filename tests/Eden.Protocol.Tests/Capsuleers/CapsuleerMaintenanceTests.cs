@@ -5,12 +5,89 @@ using Eden.Server.Chat;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Market;
+using Eden.World.Runtime;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed class CapsuleerMaintenanceTests
 {
+    [Fact]
+    public async Task ObserverCanCheckpointBetweenTwoDueJobsInOneMaintenanceTurn()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, 30000141);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        var jobs = scheduler.Jobs().ToArray();
+        Assert.Equal(2, jobs.Length);
+        var ownership = new PauseAfterFirstJob(host.GetRequiredService<IWorldSynchronization>());
+        using CapsuleerMaintenance worker = new(
+            scheduler,
+            host.GetRequiredService<ICapsuleerHandoff>(),
+            host.GetRequiredService<ICapsuleerScene>(),
+            host.GetRequiredService<ChatRuntime>(),
+            f.Clock,
+            ownership,
+            host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
+        );
+        f.Clock.Seconds++;
+        var turn = Task.Run(worker.Tick);
+        try
+        {
+            await ownership.BetweenJobs.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            var committed = scheduler.Jobs().ToDictionary(j => j.PilotId);
+            Assert.Equal(jobs[0].Sequence + 1, committed[jobs[0].PilotId].Sequence);
+            Assert.Equal(jobs[1], committed[jobs[1].PilotId]);
+            await host.GetRequiredService<LiveWorld>().FlushAsync();
+            using var disk = new SqliteConnection(
+                new SqliteConnectionStringBuilder
+                {
+                    DataSource = f.Database.Path,
+                    Mode = SqliteOpenMode.ReadOnly,
+                    Pooling = false,
+                }.ToString()
+            );
+            disk.Open();
+            using var command = disk.CreateCommand();
+            command.CommandText = "SELECT PilotId, Sequence FROM WorldCapsuleerJob ORDER BY PilotId";
+            using var rows = command.ExecuteReader();
+            Assert.True(rows.Read());
+            Assert.Equal(jobs[0].PilotId, rows.GetInt64(0));
+            Assert.Equal(1, rows.GetInt64(1));
+            Assert.True(rows.Read());
+            Assert.Equal(jobs[1].PilotId, rows.GetInt64(0));
+            Assert.Equal(0, rows.GetInt64(1));
+            Assert.False(rows.Read());
+        }
+        finally
+        {
+            ownership.Resume.SetResult();
+            await turn;
+        }
+        Assert.All(scheduler.Jobs(), job => Assert.Equal(1, job.Sequence));
+    }
+
+    private sealed class PauseAfterFirstJob(IWorldSynchronization actual) : IWorldSynchronization
+    {
+        public object Gate => actual.Gate;
+        public TaskCompletionSource BetweenJobs { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _acquisitions;
+
+        public IDisposable Enter(string operation)
+        {
+            if (++_acquisitions == 2)
+            {
+                Assert.False(Monitor.IsEntered(Gate));
+                BetweenJobs.SetResult();
+                Resume.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+            }
+            return actual.Enter(operation);
+        }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -61,7 +138,7 @@ public sealed class CapsuleerMaintenanceTests
         using CapsuleerHaulerTests.Fixture f = new();
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         ManualWakeClock clock = new();
-        BackloggedScheduler scheduler = new();
+        BackloggedScheduler scheduler = new(clock);
         using CapsuleerMaintenance maintenance = new(
             scheduler,
             host.GetRequiredService<ICapsuleerHandoff>(),
@@ -77,19 +154,20 @@ public sealed class CapsuleerMaintenanceTests
         Assert.Equal(3, scheduler.Calls);
     }
 
-    private sealed class BackloggedScheduler : ICapsuleerScheduler
+    private sealed class BackloggedScheduler(ManualWakeClock clock) : ICapsuleerScheduler
     {
         public TaskCompletionSource Current { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int Calls { get; private set; }
 
-        public CapsuleerBatch Run(int destinyStamp)
+        public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
         {
             Calls++;
+            clock.Elapsed += CapsuleerJobQueue.ExecutionBudget;
             if (Calls == 3)
             {
                 Current.SetResult();
             }
-            return new(new(CapsuleerJobQueue.ActionsPerTurn, 200, Calls < 3 ? 1 : null, true), [], []);
+            return new(new(1, 200, Calls < 3 ? 1 : null, true), [], []);
         }
 
         public IReadOnlyList<CapsuleerJob> Jobs() => [];
@@ -153,6 +231,11 @@ public sealed class CapsuleerMaintenanceTests
 
     private sealed class ManualWakeClock : TimeProvider
     {
+        public TimeSpan Elapsed { get; set; }
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp() => Elapsed.Ticks;
+
         private Action? _wake;
 
         public void Wake() => _wake!();

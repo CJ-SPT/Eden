@@ -141,6 +141,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 - [Shared location and directory consumers, November 7, 2026](protocol/catalog.md#shared-location-and-directory-consumers-november-7-2026)
 
+- [Hauler return-route stalls, November 9, 2026](protocol/performance.md#hauler-return-route-stalls-november-9-2026)
+- [Traffic maintenance lock duration, November 9, 2026](protocol/performance.md#traffic-maintenance-lock-duration-november-9-2026)
 - [Session stalls and world ownership, November 9, 2026](protocol/performance.md#session-stalls-and-world-ownership-november-9-2026)
 - [Bound dogma and ship-call latency, November 7, 2026](protocol/performance.md#bound-dogma-and-ship-call-latency-november-7-2026)
 

@@ -6,6 +6,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
@@ -22,6 +23,57 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class AsteroidFieldTests
 {
+    [Fact]
+    public void TransactionalBeltInitializationMatchesSavedDepositsAndRollsBackWithTravel()
+    {
+        using TestWorld db = new();
+        Prepare(db);
+        const int system = 30000144;
+        using (CatalogDbContext setup = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            const string counts = """{"1230":180}""";
+            setup.Database.ExecuteSql(
+                $"UPDATE SourceRecord SET Data={counts} WHERE Dataset='client/asteroidcountbytypeidbeltid' AND Key='40009232'"
+            );
+        }
+        using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath);
+        using WorldDbContext world = new(db.Path);
+        var now = new Clock().Now;
+        var deposits = world
+            .Set<WorldAsteroid>()
+            .AsNoTracking()
+            .OrderBy(a => a.Id)
+            .Select(a => new
+            {
+                a.Id,
+                a.BeltId,
+                a.SystemId,
+                a.TypeId,
+                a.Quantity,
+                a.X,
+                a.Y,
+                a.Z,
+                a.Radius,
+            });
+        using var transaction = world.Database.BeginTransaction();
+        using (var metrics = SessionPerformance.Begin("initialize two belts", _ => { }, force: true)!)
+        {
+            AsteroidFieldStore.Populate(world, catalog, system, now);
+            world.SaveChanges();
+            Assert.InRange(metrics.Commands, 1, 60);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        var batched = deposits.ToArray();
+        Assert.Equal(183, batched.Length);
+        transaction.Rollback();
+        world.ChangeTracker.Clear();
+        Assert.Empty(deposits);
+        AsteroidFieldStore.Populate(world, catalog, system, now);
+        Assert.Empty(deposits);
+        world.SaveChanges();
+        Assert.Equal(batched, deposits.ToArray());
+    }
+
     private static void Prepare(TestWorld db)
     {
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);

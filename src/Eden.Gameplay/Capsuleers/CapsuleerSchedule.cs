@@ -13,7 +13,7 @@ public sealed record CapsuleerBatch(CapsuleerTurn Turn, IReadOnlyList<MinerObser
 
 public interface ICapsuleerScheduler
 {
-    CapsuleerBatch Run(int destinyStamp);
+    CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn);
     IReadOnlyList<CapsuleerJob> Jobs();
     MinerObservation? Miner(long pilotId);
     HaulerObservation? Hauler(long pilotId);

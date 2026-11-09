@@ -1,12 +1,12 @@
 using System.Reflection;
 using Eden.Gameplay.Agents;
-using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Server.Launcher;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Configuration;
@@ -109,7 +109,9 @@ internal static class ServerServices
             // Build the immutable directory before admitting clients, so their first
             // GetAgents/owner lookup never pays the catalog materialization cost.
             _ = provider.GetRequiredService<INpcDirectory>().Agents();
-            _ = provider.GetRequiredService<ICapsuleerPopulation>().Summary();
+            // Restore saved traffic indexes before a maintenance wake can block character selection.
+            using var operation = provider.GetRequiredService<IPilotOperationScope>().Begin();
+            provider.GetRequiredService<CapsuleerScheduler>().Prepare();
         }
         return provider;
     }

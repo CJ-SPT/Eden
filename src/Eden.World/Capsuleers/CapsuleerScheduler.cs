@@ -141,6 +141,14 @@ internal sealed partial class CapsuleerScheduler(
     private LiveWorld? Live => LiveWorld.Find(database.Path);
     private Dictionary<long, CapsuleerJob> Current => Live?.CapsuleerJobs ?? _jobs;
 
+    internal void Prepare()
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        CapsuleerTrafficRoutes.Prepare(catalog);
+        using var owner = synchronization.Enter("traffic startup");
+        Load();
+    }
+
     private void Load(int? preparedSystem = null, long? preparedPilot = null)
     {
         if (preparedSystem is null && preparedPilot is null && _loaded && _populationRevision == (Live?.CapsuleerRevision ?? 0))
@@ -255,9 +263,7 @@ internal sealed partial class CapsuleerScheduler(
         _loaded = true;
     }
 
-    public CapsuleerBatch Run(int destinyStamp) => RunThrough(destinyStamp, null);
-
-    private CapsuleerBatch RunThrough(int destinyStamp, long? horizon, int? systemId = null)
+    public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
     {
         long started = clock.GetTimestamp();
         using var owner = Live?.Enter();
@@ -265,7 +271,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             _destinyStamp = destinyStamp;
             var activity = presence.Read();
-            long throughTicks = Math.Min(activity.ElapsedTicks, horizon ?? activity.ElapsedTicks);
+            long throughTicks = activity.ElapsedTicks;
             var pilots = _turnPilots;
             Dictionary<long, MinerObservation> mining = [];
             Dictionary<long, HaulerObservation> hauling = [];
@@ -284,8 +290,10 @@ internal sealed partial class CapsuleerScheduler(
                             throw new InvalidOperationException("A stale capsuleer job cannot execute.");
                         }
                         CapsuleerJob next;
+                        Live?.ObserveTrafficJob(job, _locations[job.PilotId]);
                         if (_miners.TryGetValue(job.PilotId, out var miner))
                         {
+                            using var phase = SessionPerformance.Phase("traffic.minerAction");
                             bool background = !activity.ActiveSystems.Contains(_locations[job.PilotId]);
                             next = miner.Execute(job, destinyStamp, activity.ElapsedTicks, activity.Resumes, background);
                             Current[job.PilotId] = next;
@@ -300,6 +308,7 @@ internal sealed partial class CapsuleerScheduler(
                         }
                         else if (_haulers.TryGetValue(job.PilotId, out var hauler))
                         {
+                            using var phase = SessionPerformance.Phase("traffic.haulerAction");
                             bool background = !activity.ActiveSystems.Contains(_locations[job.PilotId]);
                             next = hauler.Execute(job, destinyStamp, background);
                             Current[job.PilotId] = next;
@@ -330,20 +339,13 @@ internal sealed partial class CapsuleerScheduler(
                     },
                     clock,
                     pilots,
-                    useCanonicalQueue: true
+                    useCanonicalQueue: true,
+                    maximumActions: maximumActions
                 );
                 Reconcile(activity);
                 if (turn.OldestDueTicks is null)
                 {
-                    if (systemId is { } settledSystem)
-                    {
-                        _systems.Settle(settledSystem, Math.Max(_systems.Get(settledSystem).SettledTicks, throughTicks));
-                    }
-                    else
-                    {
-                        // Local barriers may already have advanced individual systems.
-                        Settle(Math.Max(_settledTicks, throughTicks));
-                    }
+                    Settle(Math.Max(_settledTicks, throughTicks));
                 }
                 return new(turn, mining.Values.ToArray(), hauling.Values.ToArray());
             }

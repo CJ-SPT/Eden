@@ -35,10 +35,10 @@ internal static class TrafficProvisioning
             return null;
         }
         int region = catalog.RequireSystem(system).RegionId;
-        var band = TrafficRules.SecurityBand(catalog.Read(CatalogData.Client.Solarsystemcontent, (long)system)?.Security ?? 0);
+        var security = catalog.Definitions.SystemSecurity;
+        var band = TrafficRules.SecurityBand(security.GetValueOrDefault(system));
         bool visitsHighSecurity = route.Systems.Any(id =>
-            TrafficRules.SecurityBand(catalog.Read(CatalogData.Client.Solarsystemcontent, (long)id)?.Security ?? 0)
-            == TrafficSecurityBand.High
+            TrafficRules.SecurityBand(security.GetValueOrDefault(id)) == TrafficSecurityBand.High
         );
         var reserved = world.Set<SavedTrafficIdentity>().Select(value => value.CharacterId).ToHashSet();
         var names = world.Pilots.Select(value => value.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);

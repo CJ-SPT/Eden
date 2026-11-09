@@ -93,10 +93,13 @@ public sealed class CapsuleerJobQueue
         Func<CapsuleerJob, CapsuleerJob> execute,
         TimeProvider clock,
         IReadOnlySet<long>? pilots = null,
-        bool useCanonicalQueue = false
+        bool useCanonicalQueue = false,
+        int maximumActions = ActionsPerTurn
     )
     {
         ArgumentOutOfRangeException.ThrowIfNegative(throughTicks);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumActions);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(maximumActions, ActionsPerTurn);
         long started = clock.GetTimestamp();
         int completed = 0;
         if (_queue.Min is not { } first || first.DueTicks > throughTicks)
@@ -109,7 +112,7 @@ public sealed class CapsuleerJobQueue
             pilots is null || useCanonicalQueue
                 ? _queue
                 : new SortedSet<CapsuleerJob>(pilots.Where(_jobs.ContainsKey).Select(p => _jobs[p]), _queue.Comparer);
-        while (candidates.Min is { } job && job.DueTicks <= throughTicks && completed < ActionsPerTurn)
+        while (candidates.Min is { } job && job.DueTicks <= throughTicks && completed < maximumActions)
         {
             if (completed > 0 && clock.GetElapsedTime(started) >= ExecutionBudget)
             {

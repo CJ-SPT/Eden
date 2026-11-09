@@ -11,6 +11,7 @@ public sealed partial class CatalogProvider
     private readonly Lazy<FrozenDictionary<int, string>> _regions;
     private readonly Lazy<FrozenDictionary<int, CatalogConstellationDefinition>> _constellations;
     private readonly Lazy<FrozenDictionary<int, CatalogGateDefinition>> _gates;
+    private readonly Lazy<FrozenDictionary<int, double>> _systemSecurity;
     private readonly Lazy<FrozenDictionary<int, string>> _stationNames;
     private readonly Lazy<FrozenDictionary<int, ImmutableArray<CatalogStationDefinition>>> _systemStations;
     private readonly Lazy<FrozenDictionary<int, ImmutableArray<CatalogGateDefinition>>> _systemGates;
@@ -20,6 +21,7 @@ public sealed partial class CatalogProvider
     public IReadOnlyDictionary<int, string> Regions => _regions.Value;
     public IReadOnlyDictionary<int, CatalogConstellationDefinition> Constellations => _constellations.Value;
     public IReadOnlyDictionary<int, CatalogGateDefinition> Gates => _gates.Value;
+    internal IReadOnlyDictionary<int, double> SystemSecurity => _systemSecurity.Value;
     public IReadOnlyDictionary<int, string> StationNames => _stationNames.Value;
 
     public ImmutableArray<CatalogStationDefinition> StationsInSystem(int systemId) => _systemStations.Value.GetValueOrDefault(systemId, []);
@@ -106,6 +108,27 @@ public sealed partial class CatalogProvider
             .Select(gate => new CatalogGateDefinition(gate.Id, gate.SolarSystemId, gate.DestinationId, gate.Destination.SolarSystemId))
             .AsEnumerable()
             .ToFrozenDictionary(value => value.Id);
+        Interlocked.Add(ref _pinnedRecords, rows.Count);
+        return rows;
+    }
+
+    private sealed record SystemSecurityRow(int Id, double Security);
+
+    private FrozenDictionary<int, double> LoadSystemSecurity()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        // Route searches only need security. Leave planet, moon and belt payloads in SQLite.
+        var rows = catalog
+            .Database.SqlQuery<SystemSecurityRow>(
+                $"""
+                SELECT CAST(Key AS INTEGER) AS Id, COALESCE(json_extract(Data, '$.security'), 0) AS Security
+                FROM SourceRecord WHERE Dataset={CatalogData.Client.Solarsystemcontent.Name}
+                """
+            )
+            .AsEnumerable()
+            .ToFrozenDictionary(row => row.Id, row => row.Security);
+        Interlocked.Increment(ref _loads);
         Interlocked.Add(ref _pinnedRecords, rows.Count);
         return rows;
     }

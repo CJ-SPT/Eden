@@ -35,6 +35,7 @@ public sealed partial class CatalogProvider
     private readonly MemoryCache _cache;
     private readonly ConcurrentDictionary<string, ICatalogTable> _tables = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<(string Name, Type Type), ICatalogDefinitionMemo> _definitions = new();
+    private readonly ConcurrentDictionary<object, Lazy<object>> _globalDefinitions = new();
     private readonly CatalogCacheOptions _options;
     private readonly FileStamp _stamp;
     private readonly Lazy<FrozenDictionary<int, CatalogItemDefinition>> _items;
@@ -167,6 +168,7 @@ public sealed partial class CatalogProvider
         _regions = new(LoadRegions);
         _constellations = new(LoadConstellations);
         _gates = new(LoadGates);
+        _systemSecurity = new(LoadSystemSecurity);
         _stationNames = new(LoadStationNames);
         _celestials = new(this, "projection/celestials");
         _systemCelestials = new(this, "projection/system-celestials");
@@ -321,6 +323,22 @@ public sealed partial class CatalogProvider
             (CatalogDefinitionMemo<T>)
                 _definitions.GetOrAdd((definition.Name, typeof(T)), _ => new CatalogDefinitionMemo<T>(this, definition));
         return memo.Read(typeId);
+    }
+
+    // One catalog-wide index per declared definition, retained for this catalog generation.
+    internal T GlobalDefinition<T>(CatalogDefinition<T> definition)
+        where T : class
+    {
+        var index = _globalDefinitions.GetOrAdd(
+            definition,
+            _ => new Lazy<object>(() =>
+            {
+                var value = Definition(definition, 0);
+                Interlocked.Increment(ref _pinnedRecords);
+                return value;
+            })
+        );
+        return (T)index.Value;
     }
 
     public ClientBlueprintsActivitiesManufacturing? ManufacturingRecipe(int blueprintTypeId) =>

@@ -10,7 +10,6 @@ internal sealed record CapsuleerTrafficPlan(int GateCount, int StationCount, Cap
 
 internal static partial class CapsuleerTrafficRoutes
 {
-    private const int GraphKey = 0;
     private const int MaximumRoutes = 8;
     private const int MaximumEndpoints = 16;
     private const int DesiredStationSystems = 4;
@@ -36,6 +35,12 @@ internal static partial class CapsuleerTrafficRoutes
     private sealed record StationPath(int StationId, int[] Systems);
 
     internal static CapsuleerTrafficPlan Read(CatalogDbContext catalog, int systemId) => catalog.Definition(s_plans, systemId);
+
+    internal static void Prepare(CatalogDbContext catalog)
+    {
+        _ = catalog.Definitions.GlobalDefinition(s_graph);
+        _ = catalog.Definitions.SystemSecurity;
+    }
 
     internal static CapsuleerTrafficRoute? Inbound(
         CatalogDbContext catalog,
@@ -77,7 +82,7 @@ internal static partial class CapsuleerTrafficRoutes
         {
             return null;
         }
-        var graph = catalog.Definition(s_graph, GraphKey);
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
         var anchor = FindStationPath(graph, gate.SourceSystemId, gate.ObserverSystemId);
         if (anchor is null || anchor.Systems.Length > TrafficJourneyRules.MaximumJumps)
         {
@@ -181,7 +186,7 @@ internal static partial class CapsuleerTrafficRoutes
 
     private static CapsuleerTrafficPlan LoadPlan(CatalogDbContext catalog, int systemId)
     {
-        var graph = catalog.Definition(s_graph, GraphKey);
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
         Dictionary<int, int> parents = new() { [systemId] = systemId };
         Dictionary<int, int> branches = new() { [systemId] = systemId };
         Queue<int> pending = new();

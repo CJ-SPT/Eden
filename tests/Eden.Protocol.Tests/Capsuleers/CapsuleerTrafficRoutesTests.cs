@@ -121,6 +121,8 @@ public sealed class CapsuleerTrafficRoutesTests
             fixture.AddStation(FirstStation + 100 + offset, FirstSystem + offset);
             fixture.Connect(FirstSystem, FirstSystem + offset);
         }
+        // Match the server's catalog lifetime across the two independent read contexts.
+        using var lifetime = CatalogProvider.Retain(fixture.Path);
         using CatalogDbContext catalog = new(fixture.Path);
         var original = CapsuleerTrafficRoutes.Read(catalog, FirstSystem);
         Assert.Equal(8, original.Routes.Length);
@@ -247,6 +249,37 @@ public sealed class CapsuleerTrafficRoutesTests
         Assert.Contains(TrafficJourneyKind.Regional, roles);
         Assert.Contains(TrafficJourneyKind.LongDistance, roles);
         Assert.Equal(TrafficJourneyKind.Local, TrafficJourneyRules.Kind(0, busy: false));
+    }
+
+    [Fact]
+    public void CapitalReturnsUseTheLowSecurityDetourAndRejectHighSecurityEndpoints()
+    {
+        using Fixture fixture = new();
+        int high = FirstSystem;
+        int source = FirstSystem + 1;
+        int home = FirstSystem + 2;
+        int detour = FirstSystem + 4;
+        fixture.AddStation(FirstStation, source);
+        fixture.AddStation(FirstStation + 1, home);
+        fixture.AddStation(FirstStation + 2, high);
+        fixture.Connect(source, high);
+        fixture.Connect(high, home);
+        fixture.Connect(source, detour);
+        fixture.Connect(detour, home);
+        // Force the graph above the ordinary cache limit. Its prepared generation must stay available.
+        var generation = CatalogProvider.Open(fixture.Path, new CatalogCacheOptions { MaximumEstimatedBytes = 128 });
+        using CatalogDbContext catalog = new(fixture.Path);
+        CapsuleerTrafficRoutes.Prepare(catalog);
+        using var metrics = SessionPerformance.Begin("prepared traffic routes", _ => { }, force: true)!;
+        var ordinary = CapsuleerTrafficRoutes.ToStation(catalog, FirstStation, FirstStation + 1, HullClass.Hauler);
+        var capital = CapsuleerTrafficRoutes.ToStation(catalog, FirstStation, FirstStation + 1, HullClass.Carrier);
+        Assert.Equal([source, high, home], ordinary!.Systems);
+        Assert.Equal([source, detour, home], capital!.Systems);
+        Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation + 2, FirstStation, HullClass.Carrier));
+        Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation, FirstStation + 2, HullClass.Carrier));
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Same(generation, catalog.Definitions);
     }
 
     [Fact]

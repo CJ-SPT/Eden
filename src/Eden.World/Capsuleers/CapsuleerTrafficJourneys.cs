@@ -21,15 +21,16 @@ internal static partial class CapsuleerTrafficRoutes
         HullClass hull
     )
     {
+        if (!TrafficRules.RouteAllows(hull, false))
+        {
+            return null;
+        }
         var routes = catalog.Definition(s_journeys, stationId);
+        var security = catalog.Definitions.SystemSecurity;
+        bool unrestricted = TrafficRules.RouteAllows(hull, true);
         bool Compatible(CapsuleerTrafficRoute route) =>
-            TrafficRules.RouteAllows(
-                hull,
-                route.Systems.Any(system =>
-                    TrafficRules.SecurityBand(catalog.Read(CatalogData.Client.Solarsystemcontent, (long)system)?.Security ?? 0)
-                    == TrafficSecurityBand.High
-                )
-            );
+            unrestricted
+            || !route.Systems.Any(system => TrafficRules.SecurityBand(security.GetValueOrDefault(system)) == TrafficSecurityBand.High);
         var candidates = routes
             .Where(route => route.Systems.Length - 1 <= TrafficJourneyRules.MaximumDistance(kind))
             .Where(Compatible)
@@ -74,9 +75,21 @@ internal static partial class CapsuleerTrafficRoutes
 
     internal static CapsuleerTrafficRoute? ToStation(CatalogDbContext catalog, int sourceStation, int destinationStation, HullClass hull)
     {
-        var graph = catalog.Definition(s_graph, GraphKey);
+        if (!TrafficRules.RouteAllows(hull, false))
+        {
+            return null;
+        }
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
         int source = catalog.RequireStation(sourceStation).SolarSystemId;
         int destination = catalog.RequireStation(destinationStation).SolarSystemId;
+        var security = catalog.Definitions.SystemSecurity;
+        bool unrestricted = TrafficRules.RouteAllows(hull, true);
+        bool Allows(int system) =>
+            unrestricted || TrafficRules.SecurityBand(security.GetValueOrDefault(system)) != TrafficSecurityBand.High;
+        if (!Allows(source) || !Allows(destination))
+        {
+            return null;
+        }
         Queue<int> pending = new();
         Dictionary<int, int> parents = new() { [source] = source };
         Dictionary<int, int> distances = new() { [source] = 0 };
@@ -85,12 +98,7 @@ internal static partial class CapsuleerTrafficRoutes
         {
             if (current == destination)
             {
-                var path = PathTo(current, parents);
-                bool high = path.Any(system =>
-                    TrafficRules.SecurityBand(catalog.Read(CatalogData.Client.Solarsystemcontent, (long)system)?.Security ?? 0)
-                    == TrafficSecurityBand.High
-                );
-                return TrafficRules.RouteAllows(hull, high) ? new(sourceStation, destinationStation, path) : null;
+                return new(sourceStation, destinationStation, PathTo(current, parents));
             }
             if (distances[current] >= TrafficJourneyRules.MaximumJumps)
             {
@@ -98,10 +106,7 @@ internal static partial class CapsuleerTrafficRoutes
             }
             foreach (int next in graph.Links.GetValueOrDefault(current) ?? [])
             {
-                bool high =
-                    TrafficRules.SecurityBand(catalog.Read(CatalogData.Client.Solarsystemcontent, (long)next)?.Security ?? 0)
-                    == TrafficSecurityBand.High;
-                if (!parents.ContainsKey(next) && TrafficRules.RouteAllows(hull, high))
+                if (!parents.ContainsKey(next) && Allows(next))
                 {
                     parents.Add(next, current);
                     distances[next] = distances[current] + 1;
@@ -114,7 +119,7 @@ internal static partial class CapsuleerTrafficRoutes
 
     private static CapsuleerTrafficRoute[] LoadJourneys(CatalogDbContext catalog, int stationId)
     {
-        var graph = catalog.Definition(s_graph, GraphKey);
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
         int source = catalog.RequireStation(stationId).SolarSystemId;
         Queue<int> pending = new();
         Dictionary<int, int> parents = new() { [source] = source };

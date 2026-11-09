@@ -76,6 +76,7 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
 
     internal static void Populate(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
     {
+        long? nextRenewal = null;
         foreach (
             var belt in catalog
                 .CelestialsInSystem(systemId)
@@ -91,7 +92,7 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
                     {
                         BeltId = belt.Id,
                         SystemId = systemId,
-                        NextRenewal = ResourceRenewalRules.Next(now, EconomicStore.Policy(world).RenewalHourUtc),
+                        NextRenewal = nextRenewal ??= ResourceRenewalRules.Next(now, EconomicStore.Policy(world).RenewalHourUtc),
                     }
                 );
             }
@@ -100,7 +101,25 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
             {
                 continue;
             }
-            world.AddRange(Generate(catalog, belt));
+            var rocks = Generate(catalog, belt);
+            if (world.Database.CurrentTransaction is null)
+            {
+                // Standalone callers commit the deposits and renewal rows together in SaveChanges.
+                world.AddRange(rocks);
+                continue;
+            }
+            // A traveling pilot can initialize thousands of deposits in one action.
+            // Insert each generated belt together in the caller's world transaction.
+            string deposits = JsonSerializer.Serialize(rocks);
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldAsteroid(Id,BeltId,SystemId,TypeId,Quantity,X,Y,Z,Radius)
+                SELECT json_extract(value,'$.Id'),json_extract(value,'$.BeltId'),json_extract(value,'$.SystemId'),
+                    json_extract(value,'$.TypeId'),json_extract(value,'$.Quantity'),json_extract(value,'$.X'),
+                    json_extract(value,'$.Y'),json_extract(value,'$.Z'),json_extract(value,'$.Radius')
+                FROM json_each({deposits})
+                """
+            );
         }
     }
 

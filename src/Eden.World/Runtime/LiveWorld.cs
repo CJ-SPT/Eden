@@ -275,6 +275,14 @@ internal sealed class LiveWorld : IDisposable
 
     private const int SlowOwnershipMilliseconds = 250;
     private string? _ownerDescription;
+    private CapsuleerJob? _trafficJob;
+    private int _trafficSystem;
+
+    internal void ObserveTrafficJob(CapsuleerJob job, int system)
+    {
+        _trafficJob = job;
+        _trafficSystem = system;
+    }
 
     private IDisposable Acquire(string operation)
     {
@@ -304,15 +312,21 @@ internal sealed class LiveWorld : IDisposable
             if (Interlocked.Exchange(ref _world, null) is { } held)
             {
                 string? operation = held._ownerDescription;
+                CapsuleerJob? job = null;
+                int system = 0;
                 if (!nested)
                 {
+                    job = held._trafficJob;
+                    system = held._trafficSystem;
+                    held._trafficJob = null;
                     Volatile.Write(ref held._ownerDescription, null);
                 }
                 Monitor.Exit(held._gate);
                 var elapsed = nested ? TimeSpan.Zero : Stopwatch.GetElapsedTime(started);
                 if (!nested && elapsed.TotalMilliseconds >= SlowOwnershipMilliseconds)
                 {
-                    ServerLog.Console.Warning($"Slow world owner {operation}: {elapsed.TotalMilliseconds:F2} ms held.");
+                    string detail = job is null ? "" : $" Included {job.Action} for pilot {job.PilotId} in system {system}.";
+                    ServerLog.Console.Warning($"Slow world owner {operation}: {elapsed.TotalMilliseconds:F2} ms held.{detail}");
                 }
             }
         }
