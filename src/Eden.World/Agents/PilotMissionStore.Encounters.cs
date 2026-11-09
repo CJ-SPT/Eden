@@ -62,7 +62,12 @@ internal sealed partial class PilotMissionStore
                                     int index = Array.FindIndex(room.Objects.ToArray(), o => o.Id == g.ObjectId);
                                     var item = objects[index];
                                     var destination = position + profile.Rooms.Single(r => r.Id == g.DestinationRoomId).Position;
-                                    return new MissionGate(item.Id, item.Position, item.Radius, destination, g.RequiresClear);
+                                    return new MissionGate(item.Id, item.Position, item.Radius, destination, g.RequiresClear)
+                                    {
+                                        Access = g.Access,
+                                        DungeonObjectId = g.ObjectId,
+                                        SourceRoomId = room.Id,
+                                    };
                                 })
                                 .ToArray();
                             bool started =
@@ -75,6 +80,7 @@ internal sealed partial class PilotMissionStore
                                 RoomId = room.Id,
                                 Entrance = position,
                                 Gates = gates,
+                                Deadspace = profile.Definition.Deadspace,
                             };
                         })
                         .ToArray();
@@ -129,7 +135,7 @@ internal sealed partial class PilotMissionStore
         var mission =
             world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId)
             ?? throw new InvalidDataException("Mission NPC has no saved mission.");
-        if (mission.State != MissionState.Accepted || mission.ObjectiveComplete || Expire(world, mission, now))
+        if (mission.State != MissionState.Accepted || Expire(world, mission, now))
         {
             return;
         }
@@ -153,7 +159,39 @@ internal sealed partial class PilotMissionStore
             .Where(n => n.DestroyedAt is null && n.RetiredAt is null)
             .Select(n => n.Id)
             .ToHashSet();
+        alive.UnionWith(
+            world
+                .Set<WorldNpc>()
+                .Local.Where(n =>
+                    n.AnchorKind == NpcAnchorKind.Mission
+                    && n.EncounterId == MissionRules.FirstSiteId + mission.Id
+                    && n.Id != npc.Id
+                    && n.DestroyedAt == null
+                    && n.RetiredAt == null
+                )
+                .Select(n => n.Id)
+        );
         var profile = MissionCatalog.Find(catalog, mission.MissionId);
+        if (
+            member.LootQuantity > 0
+            && world
+                .Set<SavedMissionMember>()
+                .Local.Any(m =>
+                    m.MissionId == mission.Id
+                    && m.Wave == member.Wave
+                    && m.NpcId != npc.Id
+                    && m.LootTypeId == member.LootTypeId
+                    && m.LootQuantity > 0
+                    && alive.Contains(m.NpcId)
+                )
+        )
+        {
+            member.LootQuantity = 0;
+        }
+        if (mission.ObjectiveComplete)
+        {
+            return;
+        }
         int roomId = profile.WaveRoom(member.Wave);
         var progress = world.Set<SavedMissionRoom>().Find(mission.Id, roomId);
         int currentWave = progress?.Wave ?? mission.Wave;
@@ -169,18 +207,6 @@ internal sealed partial class PilotMissionStore
                     ?? (profile.Rooms.Length == 1 ? mission.Wave : -1)
                 ) >= w
             );
-        alive.UnionWith(
-            world
-                .Set<WorldNpc>()
-                .Local.Where(n =>
-                    n.AnchorKind == NpcAnchorKind.Mission
-                    && n.EncounterId == MissionRules.FirstSiteId + mission.Id
-                    && n.Id != npc.Id
-                    && n.DestroyedAt == null
-                    && n.RetiredAt == null
-                )
-                .Select(n => n.Id)
-        );
         var decision = MissionEncounterRules.Killed(
             members.Single(m => m.Id == member.NpcId),
             currentWave,
@@ -216,6 +242,8 @@ internal sealed partial class PilotMissionStore
                 uint seed = NpcSpawnRules.Seed(mission.SystemId, wave, checked((int)mission.Id + slot));
                 int type = group.Types[(int)(seed % group.Types.Length)];
                 var npcProfile = new NpcProfileCatalog().Read(catalog, type);
+                int faction = group.EnemyFaction == 0 ? profile.EnemyFaction : group.EnemyFaction;
+                int corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
                 long id = checked(
                     MissionRules.FirstNpcId + mission.Id * MissionRules.NpcsPerMission + wave * MissionRules.MembersPerWave + slot
                 );
@@ -230,8 +258,8 @@ internal sealed partial class PilotMissionStore
                         Id = id,
                         TypeId = type,
                         SystemId = mission.SystemId,
-                        CorporationId = profile.EnemyCorporation,
-                        FactionId = profile.EnemyFaction,
+                        CorporationId = corporation,
+                        FactionId = faction,
                         AnchorKind = NpcAnchorKind.Mission,
                         Role = NpcRole.Pirate,
                         EncounterId = MissionRules.FirstSiteId + mission.Id,
@@ -257,6 +285,8 @@ internal sealed partial class PilotMissionStore
                         Trigger = group.Trigger,
                         CompletesMission = group.CompletesMission,
                         Required = group.Required,
+                        LootTypeId = group.LootTypeId,
+                        LootQuantity = group.LootQuantity,
                     }
                 );
                 slot++;
@@ -267,5 +297,20 @@ internal sealed partial class PilotMissionStore
             ?? world.Add(new SavedMissionRoom { MissionId = mission.Id, RoomId = roomId }).Entity;
         progress.Wave = wave;
         mission.Wave = Math.Max(mission.Wave, wave);
+    }
+
+    internal static IReadOnlyList<NpcLootDrop> KeyLoot(WorldDbContext world, WorldNpc npc, long now)
+    {
+        if (npc.AnchorKind != NpcAnchorKind.Mission)
+        {
+            return [];
+        }
+        var mission = world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId);
+        if (mission is null || mission.State != MissionState.Accepted || mission.ExpiresAt <= now)
+        {
+            return [];
+        }
+        var member = world.Set<SavedMissionMember>().Find(npc.Id);
+        return member is { LootTypeId: > 0, LootQuantity: > 0 } ? [new(member.LootTypeId, member.LootQuantity)] : [];
     }
 }

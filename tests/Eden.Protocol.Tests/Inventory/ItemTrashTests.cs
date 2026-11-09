@@ -485,7 +485,7 @@ public sealed class ItemTrashTests
     )
     {
         InventoryItem item = new(1, 601, Assets.Pilot, Assets.Station, (int)InventoryFlag.Hangar, 1, 237, 6, 1);
-        ItemTrashTypeList list = new(
+        InventoryTypeList list = new(
             category ? new HashSet<long> { 6 } : [],
             group ? new HashSet<long> { 237 } : [],
             type ? new HashSet<long> { 601 } : [],

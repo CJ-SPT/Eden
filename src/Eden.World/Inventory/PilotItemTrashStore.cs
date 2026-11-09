@@ -150,7 +150,7 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
         || world.Set<SavedContract>().Any(c => c.PackageId == id && c.Status == ContractStatus.InProgress)
         || PilotIndustryStore.IsInstalled(world, id);
 
-    private static ItemTrashTypeList Restrictions(ClientTypelist list) =>
+    private static InventoryTypeList Restrictions(ClientTypelist list) =>
         new(
             list.IncludedCategoryIDs?.ToHashSet() ?? [],
             list.IncludedGroupIDs?.ToHashSet() ?? [],

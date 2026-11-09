@@ -36,6 +36,16 @@ public sealed class SavedMissionMember
     public bool Trigger { get; set; }
     public bool CompletesMission { get; set; }
     public bool Required { get; set; }
+    public int LootTypeId { get; set; }
+    public int LootQuantity { get; set; }
+}
+
+public sealed class SavedMissionGateUnlock
+{
+    public long MissionId { get; set; }
+    public long GateObjectId { get; set; }
+    public long PilotId { get; set; }
+    public long ResetAt { get; set; }
 }
 
 public sealed class SavedMissionRoom

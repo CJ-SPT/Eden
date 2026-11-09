@@ -7,31 +7,6 @@ public interface IPilotItemTrash
 
 public sealed record ItemTrashState(InventoryItem Item, long PilotId, bool ActiveShip, bool Committed, bool Restricted, bool Selected);
 
-public sealed record ItemTrashTypeList(
-    IReadOnlySet<long> IncludedCategories,
-    IReadOnlySet<long> IncludedGroups,
-    IReadOnlySet<long> IncludedTypes,
-    IReadOnlySet<long> ExcludedCategories,
-    IReadOnlySet<long> ExcludedGroups,
-    IReadOnlySet<long> ExcludedTypes
-)
-{
-    // Native GetTypeIDsFromTypeList applies exclusions at each level before
-    // unioning the next, more specific inclusion set.
-    public bool Contains(InventoryItem item) =>
-        !ExcludedTypes.Contains(item.TypeId)
-        && (
-            IncludedTypes.Contains(item.TypeId)
-            || (
-                !ExcludedGroups.Contains(item.GroupId)
-                && (
-                    IncludedGroups.Contains(item.GroupId)
-                    || (IncludedCategories.Contains(item.CategoryId) && !ExcludedCategories.Contains(item.CategoryId))
-                )
-            )
-        );
-}
-
 public static class ItemTrashRules
 {
     public const int MaximumSelection = 1000;

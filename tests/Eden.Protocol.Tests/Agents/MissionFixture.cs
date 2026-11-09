@@ -37,7 +37,12 @@ internal sealed class MissionFixture : IDisposable
     internal IPilotMissions Missions => Services.GetRequiredService<IPilotMissions>();
     internal PilotCallContext Context => _context ??= CreateContext();
 
-    internal MissionFixture(int level = 1, int division = MissionRules.DistributionDivision, bool live = false)
+    internal MissionFixture(
+        int level = 1,
+        int division = MissionRules.DistributionDivision,
+        bool live = false,
+        Action<CatalogDbContext>? configure = null
+    )
     {
         Db = new(clock: Clock);
         string path = new WorldDatabase(Db.Path).CatalogPath;
@@ -53,6 +58,7 @@ internal sealed class MissionFixture : IDisposable
             );
             Agent(catalog, AgentId, AgentType.Basic, level, division);
             Agent(catalog, StorylineId, AgentType.GenericStoryline, 1, MissionRules.DistributionDivision);
+            configure?.Invoke(catalog);
         }
         using (WorldDbContext world = new(Db.Path))
         {
@@ -109,7 +115,7 @@ internal sealed class MissionFixture : IDisposable
 
     internal MissionOffer Accept(MissionOffer offer) => Missions.Act(PilotId, offer.Agent.Id, MissionAction.Accept, offer.Id).Offer!;
 
-    internal void Kill(long npcId)
+    internal void Kill(long npcId, bool commit = true)
     {
         using WorldDbContext world = new(Db.Path);
         using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath);
@@ -129,7 +135,14 @@ internal sealed class MissionFixture : IDisposable
         );
         Assert.True(result.Destroyed);
         world.SaveChanges();
-        transaction.Commit();
+        if (commit)
+        {
+            transaction.Commit();
+        }
+        else
+        {
+            transaction.Rollback();
+        }
     }
 
     private PilotCallContext CreateContext()

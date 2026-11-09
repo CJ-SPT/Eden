@@ -2,6 +2,53 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Keyed acceleration gates and ship restrictions — November 9, 2026
+
+Mission gates now enforce catalog ship lists, race restrictions and prohibited fitted-equipment lists, with authored reusable or consuming cargo keys. Added **Dread Pirate Scarlet**, mission **15237**, dungeon **4227**, as playable reusable-key content. The ordinary pool now contains **ten combat definitions**, four courier definitions and four delivery storylines. This record supersedes the key/ship-list exclusions in the earlier gate milestone while preserving that historical record.
+
+### Gate eligibility and keys
+
+`allowedShipsList` and `disallowedFittedTypesList` resolve through typed `client/typelist` records. Category, group and type inclusions/exclusions use the shared `InventoryTypeList` rule, also used by item trashing: exclusions apply at their own level before the next, more specific inclusion. A specific type inclusion can therefore override a group exclusion; a specific type exclusion still wins. Hull lists and allowed races intersect. Race zero remains admissible under the native client's race check. Explicit hull/race restrictions replace the default blacklist, rather than silently banning explicitly admitted hulls. The default blacklist now also includes build-3662168 **Command Carrier group 5120**. Prohibited equipment checks cover fitted modules, rigs and subsystems, including offline equipment; cargo items do not count as fitted equipment. Rejections produce readable gate errors. This milestone does not add a server-driven native ship-restriction-window notification.
+
+Gate keys are explicit typed bindings in the mission content file because the pinned dungeon connections do not supply a key requirement. The server requires the exact item type and quantity in the activating pilot's active ship Cargo Hold. Other owners, stations, nested containers and specialized holds do not supply keys. Reusable keys remain in cargo and must be present on each activation. Temporary shared gate-open windows for fleet followers are not reconstructed; reusable-key eligibility is per pilot. Consuming keys pay across stable item-ID-ordered stacks in the activation transaction and publish native inventory changes before flight updates.
+
+The [EVE University gate guide](https://wiki.eveuniversity.org/Acceleration_gate) describes key and ship restrictions. Its older canceled-warp key wording is reconciled with [CCP's January 16, 2025 PVE patch](https://www.eveonline.com/news/view/patch-notes-version-22-02): a consumed key unlocks that gate for that character for the site, surviving departure and logout until downtime. Eden saves that unlock by mission instance, catalog gate object and pilot. Repeated activations, canceled alignment and reconnect/restart do not consume a second key before the reset deadline. Eden applies the next **11:00 UTC** boundary from the [daily downtime reference](https://wiki.eveuniversity.org/Server_downtime), without shutting down the local server. A new mission, another gate or another character needs its own unlock. The included Scarlet gate is reusable; consuming-key behavior is validated with real saved-world transactions and checkpoint reopen, rather than claiming additional admitted consuming-key encounters.
+
+The flight owner validates navigation and disruption against a copied course before committing gate access. The world operation rechecks mission membership/expiry, active hull, fit, range and room locks inside the key transaction. Only a successful transaction publishes the prepared movement and inventory changes. Missing keys, rejected ships/equipment, failed transactions and invalid navigation do not charge keys or start warp. The same active gate course acknowledges duplicate requests without paying again. Existing deadspace bypass protections remain in force for deadspace missions.
+
+### Dread Pirate Scarlet content
+
+The [EVE-Survival report](https://eve-survival.org/wikka.php?wakka=DreadPirateScarlet4), edited **October 20, 2020 15:52 UTC**, provides the key and roster evidence. Gate **969329** requires reusable **Gate Key type 2076**; its catalog destination beacon is **969330**. Gates **969331** and **969333** lead to beacons **969332** and **969339** without another key requirement. The ordered rooms are **22286, 22287, 22288, 22289**.
+
+The last initial-pocket battleship drops one key into its own wreck. Earlier battleships do not drop it, including after the final objective is already complete. Key loot, NPC destruction, wreck ownership and ordinary loot commit or roll back together. Existing wreck transfer rules deliver the key to cargo. A brought key can bypass the initial guards. Final-pocket **Anire Scarlet type 2072** completes the objective; remaining escorts are optional and completion cannot pay twice. Mixed-faction groups receive their respective catalog faction corporations, and offer selection checks every authored enemy faction against the issuing agent's faction.
+
+Eden chooses one explicit report alternative per room: Serpentis initial guards, Guristas second-pocket escorts, the report's Serpentis/Guristas third-pocket group and mixed final-pocket defenses. This is a documented reconstruction, not recovered random selection. Earlier Scarlet escape/early-kill/implant scripts, optional station loot, exact group aggro and historical respawn variants are excluded. Only the final Scarlet target is spawned. The report explicitly permits direct fleet warps into these **normal-space** pockets, so this mission does not receive the deadspace redirection used by Guristas Spies and The Assault. Local geometry remains catalog-derived with Eden's existing room placement.
+
+World version **125** adds `WorldMissionGateUnlock` and saved member key-loot fields with zero defaults for existing members. The migration is idempotent and preserves existing NPC deaths, waves and reward quotes. It does not retrofit new loot onto previously saved members or change earlier accepted mission identities.
+
+### Native and reference evidence
+
+Inert disassembly of build-3662168 `code.ccp`, SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**, covered `evedungeons/client/util.pyj` (`GetDungeonShipRestrictions`, nested `IsTypeValid`, `GetDungeonShipRestrictionsTypeListID`), `evedungeons/common/constants.pyj`, the ship restrictions window and the unchanged `movementFunctions.RealActivateAccelerationGate` route. It confirms type-list/race intersection, the race-zero exception, replacement of the default blacklist for explicit restrictions, and one-ID `keeper.ActivateAccelerationGate` calls. No game or client code was executed.
+
+Consulted [Carbon Destiny Ball.cpp at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ball.cpp), alignment/warp-state methods. Key authorization now precedes publishing the existing aligned course; no Blue or Destiny packet layout changed.
+
+### Automated validation
+
+Exact starting filter: `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionGateAccessTests.ScarletDropsOneReusableKeyAndNativeGateRejectsMissingCargoWithoutStartingWarp` passed both file-backed and resident cases in **10.86 seconds**. The initial combined gate/encounter/trash checks passed **86/86**. A later combined run passed 132 cases but exposed a nested transaction in the checkpoint test helper's lazy pilot-context setup; the fixture now resolves its context before opening its write transaction. Both corrected consuming-key cases passed, followed by the exact consuming-key/migration selection passing **3/3 in 7.28 seconds**.
+
+Coverage includes key drop rollback and exactly one final-battleship key, drops after objective completion, missing/foreign-owner/remote/specialized-hold keys, reusable retries, consuming payment across multiple stacks, payment rollback, per-character/per-gate isolation, native inventory changes before flight, checkpoint reopen, exact downtime expiry, old-version migration, type-list inclusion precedence, default Command Carrier rejection, race-zero behavior, and online/offline prohibited fits. Final Scarlet death and exactly-once reward completion have real-world coverage. Consuming payment uses real saved-world transactions; the admitted Scarlet gate exercises reusable activation through native routing and the actual flight owner.
+
+Final tool restore, solution restore and solution build passed with zero warnings/errors; incremental solution build took **0.65 seconds**. The affected filter `FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~Eden.Protocol.Tests.Fleets|FullyQualifiedName~Eden.Protocol.Tests.Bookmarks|FullyQualifiedName~TackleTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~CombatAnomaly|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Inventory.ItemTrashTests|FullyQualifiedName~Eden.Protocol.Tests.Loot.WreckTests` passed **544/544 tests in 171.62 seconds**. Both exporters reproduced the checked-in files apart from platform newlines: **18 mission definitions, 221 types and 891 source records**. The Python catalog and formatting suites passed **8/8** and **9/9** in **0.779 seconds** combined. Formatting verification, the 140-column check and `git diff --check` passed; policy plus formatting checks took **19.20 seconds**. Documentation links, UTF-8/final newlines and preservation of all earlier protocol records were checked. No full .NET suite was requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native presentation, gate input and gameplay feel remain unverified.
+
+### Optional maintainer checks
+
+- Accept Dread Pirate Scarlet, verify the initial gate rejects missing cargo, loot the last battleship's Gate Key, and activate the gate; confirm the key remains in cargo after returning.
+- With a catalog-restricted gate, compare an allowed hull with a prohibited hull and fitted-equipment variant; verify the rejection message and unchanged ship position.
+
 ## Multi-room missions and acceleration gates — November 9, 2026
 
 Added saved, independently advancing mission rooms and native acceleration-gate travel. This supersedes the single-room admission boundary in the original mission record below. The supported pool now contains nine combat definitions, four courier definitions and four delivery storylines. Existing single-room missions retain their saved identities, NPCs, progress and reward quotes.

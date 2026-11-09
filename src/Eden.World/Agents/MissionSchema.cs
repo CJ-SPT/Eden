@@ -24,6 +24,22 @@ internal static class MissionSchema
         model.Entity<SavedMissionRoom>().ToTable("WorldMissionRoom").HasKey(r => new { r.MissionId, r.RoomId });
         model.Entity<SavedMissionRoom>().HasOne<SavedMission>().WithMany().HasForeignKey(r => r.MissionId).OnDelete(DeleteBehavior.Cascade);
         model
+            .Entity<SavedMissionGateUnlock>()
+            .ToTable("WorldMissionGateUnlock")
+            .HasKey(g => new
+            {
+                g.MissionId,
+                g.GateObjectId,
+                g.PilotId,
+            });
+        model
+            .Entity<SavedMissionGateUnlock>()
+            .HasOne<SavedMission>()
+            .WithMany()
+            .HasForeignKey(g => g.MissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+        model.Entity<SavedMissionGateUnlock>().HasOne<Pilot>().WithMany().HasForeignKey(g => g.PilotId).OnDelete(DeleteBehavior.Cascade);
+        model
             .Entity<SavedMissionProgress>()
             .ToTable("WorldMissionProgress")
             .HasKey(m => new
@@ -58,6 +74,10 @@ internal static class MissionSchema
             CREATE TABLE IF NOT EXISTS WorldMissionRoom (
                 MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
                 RoomId INTEGER NOT NULL, Wave INTEGER NOT NULL, PRIMARY KEY(MissionId,RoomId));
+            CREATE TABLE IF NOT EXISTS WorldMissionGateUnlock (
+                MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
+                GateObjectId INTEGER NOT NULL, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                ResetAt INTEGER NOT NULL, PRIMARY KEY(MissionId,GateObjectId,PilotId));
             CREATE TABLE IF NOT EXISTS WorldMissionProgress (
                 PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE, FactionId INTEGER NOT NULL,
                 Level INTEGER NOT NULL, Completed INTEGER NOT NULL, PRIMARY KEY(PilotId,FactionId,Level));
@@ -66,5 +86,14 @@ internal static class MissionSchema
                 LastFreeDeclineAt INTEGER NOT NULL, PRIMARY KEY(PilotId,AgentId));
             """
         );
+        var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldMissionMember')").ToHashSet();
+        if (!columns.Contains("LootTypeId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldMissionMember ADD COLUMN LootTypeId INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!columns.Contains("LootQuantity"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldMissionMember ADD COLUMN LootQuantity INTEGER NOT NULL DEFAULT 0");
+        }
     }
 }

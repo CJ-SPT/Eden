@@ -12,7 +12,7 @@ def export(catalog, output):
     db = sqlite3.connect(catalog.resolve().as_uri() + '?mode=ro', uri=True)
     records = {}
     pending = {i for m in content['missions'] for w in m['waves'] for g in w['groups'] for i in g['types']}
-    pending.update([670, 3355, 3356, 3357, 3359, 3361, 3894, 3895])
+    pending.update([2076, 670, 3355, 3356, 3357, 3359, 3361, 3894, 3895])
     # Existing NPC loss settlement uses the shared Eden ordinary/commander loot policy.
     pending.update([222, 230, 238, 185, 193, 201, 246, 250, 254, 210, 209, 203, 399, 10836, 10838,
                     523, 3528, 3538, 520, 9944, 2363, 12274, 1195, 15331])
@@ -26,6 +26,7 @@ def export(catalog, output):
             records[dataset, int(key)] = value
         return value
 
+    read('client/typelist', 459)  # Native ship-list expansion used by gate restriction tests.
     for definition in content['missions']:
         mission = read('client/missions', definition['missionId'])
         read('sde/missions', definition['missionId'])
@@ -36,6 +37,10 @@ def export(catalog, output):
         if mission.get('killMission'):
             dungeon = read('client/dungeons', mission['killMission']['dungeonID'])
             pending.update(o['typeID'] for r in dungeon['rooms'].values() for o in r['objects'].values())
+            for gate in dungeon.get('connections', []):
+                for field in ['allowedShipsList', 'disallowedFittedTypesList']:
+                    if gate.get(field):
+                        read('client/typelist', gate[field])
     types, attributes = {}, set()
     while pending:
         key = pending.pop()
@@ -59,10 +64,11 @@ def export(catalog, output):
         pending.update(int(v['value']) for v in values if v['id'] == 507 and v['value'])
     for key in attributes:
         read('client/dogmaattributes', key)
-    for faction in [500010, 500011]:
+    for faction in [500010, 500011, 500012, 500020, 500021]:
         data = read('client/factions', faction)
-        read('client/npccorporations', data['corporationID'])
-        read('sde/npcCorporations', data['corporationID'])
+        if data.get('corporationID'):
+            read('client/npccorporations', data['corporationID'])
+            read('sde/npcCorporations', data['corporationID'])
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(dict(build=3662168, types=[types[k] for k in sorted(types)], records=[
         dict(dataset=d, key=k, data=v) for (d, k), v in sorted(records.items())]), indent=2, ensure_ascii=False) + '\n', encoding='utf-8')

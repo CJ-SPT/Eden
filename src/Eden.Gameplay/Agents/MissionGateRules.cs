@@ -20,7 +20,7 @@ public static class MissionGateRules
         {
             throw new InvalidDataException("Approach within 2,500 meters of the acceleration gate.");
         }
-        if (Enum.IsDefined((RestrictedShipGroup)shipGroup))
+        if (gate.Access.AllowedShips is null && gate.Access.AllowedRaces.Count == 0 && DefaultRestricted(shipGroup))
         {
             throw new InvalidDataException("Capsules and capital ships cannot use this mission acceleration gate.");
         }
@@ -30,7 +30,9 @@ public static class MissionGateRules
         }
     }
 
-    // Build 3662168 inventory groups. The admitted gates have no narrower ship list or key requirement.
+    public static bool DefaultRestricted(int shipGroup) => Enum.IsDefined((RestrictedShipGroup)shipGroup);
+
+    // Build 3662168 evedungeons.common.constants.ACCELERATION_GATE_BLACKLISTED_GROUPS.
     private enum RestrictedShipGroup
     {
         Capsule = 29,
@@ -43,5 +45,6 @@ public static class MissionGateRules
         JumpFreighter = 902,
         ForceAuxiliary = 1538,
         LancerDreadnought = 4594,
+        CommandCarrier = 5120,
     }
 }
