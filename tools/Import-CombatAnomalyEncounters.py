@@ -1,5 +1,6 @@
 """Extract numeric encounter facts from saved EVE University revisions and the pinned catalog."""
 import argparse
+import collections
 import json
 import pathlib
 import re
@@ -9,6 +10,22 @@ import sqlite3
 def clean(value):
     value = re.sub(r"\[\[(?:[^]|]*\|)?([^]]+)\]\]", r"\1", value)
     return re.sub(r"\s+", " ", value.replace("’", "'").strip())
+
+
+def sentry_layout_variant(variants, dungeon, type_groups):
+    """Match a report's physical layout only when its battery signature is unique."""
+    batteries = collections.Counter(o['typeID'] for room in dungeon.get('rooms', {}).values()
+                                   for o in room.get('objects', {}).values()
+                                   if type_groups.get(o.get('typeID')) == 383)
+    matches = []
+    for index, variant in enumerate(variants):
+        groups = [g for wave in variant for g in wave['groups'] if g['sentry']]
+        reported_types = {type_id for group in groups for type_id in group['types']}
+        minimum = sum(group['minimum'] for group in groups)
+        maximum = sum(group['maximum'] for group in groups)
+        if set(batteries) == reported_types and minimum <= sum(batteries.values()) <= maximum:
+            matches.append(index)
+    return matches[0] if len(matches) == 1 else None
 
 
 def templates(text):
@@ -277,19 +294,31 @@ def import_encounters(catalog_path, references, output):
     hideaway['layoutSource'] = 'https://eve-survival.org/?wakka=GuristasHideaway (2015-10-06 14:41:54 UTC)'
     bindings = {'Guristas Hideaway': {2134: 0, 2154: 1, 14211: 0, 14212: 1},
                 'Guristas Haven': {2283: 1, 2307: 0}, 'Guristas Sanctum': {2321: 0, 2342: 1}}
+    type_groups = {type_id: t['group'] for type_id, t in types.items()}
     for encounter in encounters:
         ids = []
+        physical_bindings = {}
         for key, raw in db.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='sde/dungeons'"):
             summary = json.loads(raw)
             if summary.get('archetypeID') != 24 or summary.get('name', {}).get('en', '').replace('Blood Raider ', 'Blood ') != encounter['name']:
                 continue
             row = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/dungeons' AND Key=?", (key,)).fetchone()
-            if row and json.loads(row[0]).get('entryTypeID') == 28356:
+            dungeon = json.loads(row[0]) if row else None
+            if dungeon and dungeon.get('entryTypeID') == 28356:
                 ids.append(int(key))
-        # Stable authored bindings remain explicit in the exported facts. They
-        # are not evidence that a report names a particular catalog dungeon ID.
-        encounter['dungeonVariants'] = {key: bindings.get(encounter['name'], {}).get(key, index % len(encounter['variants']))
+                variant = sentry_layout_variant(encounter['variants'], dungeon, type_groups)
+                if variant is not None:
+                    physical_bindings[int(key)] = variant
+        # Reviewed bindings take precedence, then unique native battery signatures.
+        # Ambiguous layouts retain their explicit stable authored assignment.
+        previous = {key: bindings.get(encounter['name'], {}).get(key, index % len(encounter['variants']))
+                    for index, key in enumerate(sorted(ids))}
+        encounter['dungeonVariants'] = {key: bindings.get(encounter['name'], {}).get(
+                                            key, physical_bindings.get(key, index % len(encounter['variants'])))
                                         for index, key in enumerate(sorted(ids))}
+        changed = {key: variant for key, variant in previous.items() if encounter['dungeonVariants'][key] != variant}
+        if changed:
+            encounter['versionOneDungeonVariants'] = changed
     result = dict(build=3662168, encounters=encounters, unresolved=unresolved)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')

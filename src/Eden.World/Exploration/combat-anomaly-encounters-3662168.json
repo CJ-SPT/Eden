@@ -3876,6 +3876,10 @@
         ]
       ],
       "dungeonVariants": {
+        "2146": 1,
+        "2172": 0
+      },
+      "versionOneDungeonVariants": {
         "2146": 0,
         "2172": 1
       }
@@ -4609,6 +4613,10 @@
         ]
       ],
       "dungeonVariants": {
+        "2113": 1,
+        "2159": 0
+      },
+      "versionOneDungeonVariants": {
         "2113": 0,
         "2159": 1
       }
@@ -5268,6 +5276,9 @@
       ],
       "dungeonVariants": {
         "2231": 0,
+        "2280": 0
+      },
+      "versionOneDungeonVariants": {
         "2280": 1
       }
     },
@@ -7651,6 +7662,10 @@
         ]
       ],
       "dungeonVariants": {
+        "2282": 1,
+        "2309": 0
+      },
+      "versionOneDungeonVariants": {
         "2282": 0,
         "2309": 1
       }
@@ -13443,6 +13458,10 @@
         ]
       ],
       "dungeonVariants": {
+        "2201": 1,
+        "2221": 0
+      },
+      "versionOneDungeonVariants": {
         "2201": 0,
         "2221": 1
       }
@@ -13862,6 +13881,9 @@
       ],
       "dungeonVariants": {
         "2355": 0,
+        "2356": 0
+      },
+      "versionOneDungeonVariants": {
         "2356": 1
       }
     },
@@ -18903,6 +18925,10 @@
         ]
       ],
       "dungeonVariants": {
+        "2312": 1,
+        "2322": 0
+      },
+      "versionOneDungeonVariants": {
         "2312": 0,
         "2322": 1
       }
@@ -22705,6 +22731,11 @@
         ]
       ],
       "dungeonVariants": {
+        "2290": 1,
+        "2310": 0,
+        "5639": 1
+      },
+      "versionOneDungeonVariants": {
         "2290": 0,
         "2310": 1,
         "5639": 0
@@ -26407,8 +26438,11 @@
         ]
       ],
       "dungeonVariants": {
-        "2204": 0,
+        "2204": 1,
         "2331": 1
+      },
+      "versionOneDungeonVariants": {
+        "2204": 0
       }
     },
     {
@@ -28798,6 +28832,10 @@
         ]
       ],
       "dungeonVariants": {
+        "2300": 1,
+        "2308": 0
+      },
+      "versionOneDungeonVariants": {
         "2300": 0,
         "2308": 1
       }
@@ -32484,8 +32522,11 @@
         ]
       ],
       "dungeonVariants": {
-        "2276": 0,
+        "2276": 1,
         "2291": 1
+      },
+      "versionOneDungeonVariants": {
+        "2276": 0
       }
     },
     {
