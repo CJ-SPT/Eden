@@ -185,7 +185,7 @@ public sealed class CapsuleCombatTests
     [InlineData(.2, ShipSafetyLevel.Full, false, false)]
     [InlineData(.2, ShipSafetyLevel.Partial, false, false)]
     [InlineData(.2, ShipSafetyLevel.Disabled, false, true)]
-    [InlineData(.8, ShipSafetyLevel.Disabled, false, false)]
+    [InlineData(.8, ShipSafetyLevel.Partial, false, false)]
     [InlineData(.8, ShipSafetyLevel.Full, true, true)]
     public void CapsuleAttacksUseCriminalSafetyAndExistingLegalRights(double security, ShipSafetyLevel safety, bool suspect, bool allowed)
     {

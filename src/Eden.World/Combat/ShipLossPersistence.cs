@@ -130,7 +130,20 @@ internal static class ShipLossPersistence
             }
         }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.ShipLost);
-        var insurance = PilotInsuranceStore.SettleLoss(world, catalog, old, now);
+        bool concordLoss = npcId is not null && world.Set<WorldNpc>().Find(npcId)?.Role == Eden.Gameplay.Combat.NpcRole.Concord;
+        Eden.Gameplay.Insurance.InsurancePayout? insurance = null;
+        if (concordLoss)
+        {
+            PilotInsuranceStore.VoidRemovedHull(world, shipId);
+        }
+        else
+        {
+            insurance = PilotInsuranceStore.SettleLoss(world, catalog, old, now);
+        }
+        if (world.Set<SavedConcordResponse>().Find(shipId) is { CompletedAt: null } response)
+        {
+            ConcordPersistence.Complete(world, response, now);
+        }
         pilot.ActiveShip = capsule;
         pilot.ActiveShipId = capsule.Id;
         if (world.Set<SavedLogoff>().Find(pilotId) is { } logoff)

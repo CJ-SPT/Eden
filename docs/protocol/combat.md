@@ -6,6 +6,42 @@ Targeting, health, weapons, NPC populations and behavior, losses, wrecks and rep
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## CONCORD criminal response — November 9, 2026
+
+High-security criminal aggression now dispatches a saved CONCORD response instead of the earlier blanket rejection. Supported player turret, missile, drone, tackle, electronic-warfare and capacitor-warfare offenses share the existing safety checks and criminal timer. Criminal remote assistance and entering space with an existing criminal timer use the same response owner. Alpha high-security safety remains full; lawful retaliation and low/null-security behavior retain their existing rules. Security-status penalties, sentry guns, faction-police pursuit and additional asset/structure crime categories are separate work.
+
+Each offending ship receives one saved response deadline in `WorldConcordResponse` (world schema 126). Repeat offenses cannot move that deadline. A first-response squad contains two catalog CONCORD Police Captains **3885** and one Police Commander **11125**, owned by CONCORD **1000125**, faction **500006**. The Captain's pinned special effects are `targetDroneBandwidthMultiplier` **3661**, `concordTargetJam` **3710**, `concordWarpScramble` **3713**, `concordModifyTargetSpeed` **3714**, and neutralization **6691**. Existing NPC weapon/EWAR contacts carry the response. Its special jam blocks all targets and reduces drone bandwidth to zero; neutralization, web strength and disruption strength use catalog attributes.
+
+Eden uses the [UniWiki fresh-response estimates](https://wiki.eveuniversity.org/CONCORD#Response_times) as deterministic first-action deadlines, based on displayed security: **19/14/10/7/6 seconds** for **0.5/0.6/0.7/0.8/0.9–1.0**. Those published values already describe the first felt action, so no additional lock delay is added. The Commander imposes terminal ship destruction **15 seconds after response arrival** if the Captains have not already destroyed the ship. These are explicit approximation policies, not recovered live-server scheduling. Existing on-grid/elsewhere squad response times, squad pulling, warp-in animation and session-change invulnerability timing are not modeled. Responders appear at the offender's current position with formation spacing and retire when that ship's loss settles. Enforcement responders cannot be killed or farmed for rewards.
+
+The loss transaction creates the normal wreck, inventory manifest, capsule and combat history, but pays no insurance and voids any paid policy, following [CCP insurance rules](https://support.eveonline.com/hc/en-us/articles/212726885-Insurance). The pending response completes atomically with any earlier ship loss. Capsules are exempt from CONCORD and may warp with a criminal timer; the weapons timer still independently restricts docking, jumping and ship changes. A pending ship response also blocks travel after flag expiry. Reconnects preserve responder ownership; restarts restore Captain aggression without moving either deadline. Offline maintenance settles disconnected offenders, including overdue responses whose original criminal timer has expired. Paid missile impacts do not recheck a later safety setting or criminalize a replacement capsule.
+
+Quiet and pending resident monitoring cache both absent results and exact deadlines against their saved row dependencies. Ordinary position updates do not invalidate this view; docking/system membership, active ship, flags and response changes do. Offline candidate monitoring is likewise cached. Destruction remains an atomic SQL boundary under the existing world owner.
+
+Sources: pinned build **3662168** catalog type/dogma records; inert inspection of `crimewatch/const.pyj` and `eve/client/script/ui/services/crimewatchSvc.pyj` in stock `code.ccp`, SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**; [CCP criminal timer](https://support.eveonline.com/hc/en-us/articles/203268591-Criminal-Timer); [CONCORD gameplay reference](https://wiki.eveuniversity.org/CONCORD). Consulted [Carbon Destiny Thunkers.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp), specifically existing ball insertion, following and entity warp-in entry points. Eden reuses its established NPC scene, damage, EWAR and ship-loss adapters without a new wire format. No client code was executed.
+
+**Automated validation:** The final affected filter passed **766 cases, zero failures, zero skips, in 6 minutes 15 seconds**, including **27 dedicated CONCORD cases**, hosting/dependency checks, safety, turret/missile/drone combat, EWAR, remote support, tackle, insurance and resident monitoring. The exact development filter was `FullyQualifiedName=Eden.Protocol.Tests.Combat.ConcordTests.CriminalAttackSpawnsNativeSquadAndDestroysOnlyTheOffenderOnceWithoutInsurance`; its disk/resident cases passed before widening coverage. Reopen/restart tests cover both pre-arrival and spawned responses after flag expiry; other cases cover offline host maintenance, duplicate/competing callbacks, failed dispatch/loss rollback, exact boundaries, capsule travel, insurance voiding and native damage/capsule notifications. Warm quiet/pending monitoring asserts zero SQL commands, connections and fitting calculations.
+
+Earlier development runs corrected fixture catalog lifetime and responder encounter-slot identity issues. A wider intermediate run was stopped after **459 passes and two failures** (176.65 seconds): ordinary empire guard profiles carrying incomplete CONCORD-named effects, and a resident drone system-transition failure. The special effect handling now belongs specifically to the response Captain. The drone failure independently reproduced on the existing main checkout (five passes, one failure); system-ID writes now invalidate membership and the affected resident ship location, while ordinary coordinate updates remain distinct. Targeted corrections passed before the final 766-case run. Criminal drone repeats also use the transaction that saves their response deadline when earlier legal rights expire. Pinned tool restore and solution restore passed; the final solution build passed in **5.07 seconds**, with zero warnings/errors. Both Python policy suites passed (**8 tests in 1.060 seconds**, **9 in 0.020 seconds**). `tools/Format.ps1 -Check` passed all 1,378 files and the 140-character width check; `git diff --check` passed.
+
+The final affected filter is reproduced below; the full .NET suite was not run.
+
+```powershell
+$affected = @(
+  'Combat.ConcordTests', 'Combat.CrimewatchTests', 'Combat.PilotTurretTests', 'Combat.PilotMissileTests',
+  'Combat.PilotDroneTests', 'Combat.CapsuleCombatTests', 'Combat.NpcCombatTests', 'Combat.PilotCombatTests',
+  'Combat.NpcEwar', 'Combat.NpcGuardTests', 'Combat.RemoteAssistance', 'Combat.RemoteRepair', 'Combat.PlayerEwar',
+  'Combat.CapacitorWarfare', 'Propulsion.TackleTests', 'Persistence.InsuranceTests', 'Persistence.ResidentReadTests',
+  'Combat.ResidentCombatMonitoringTests', 'Combat.ResidentDroneTests', 'Hosting'
+)
+$filter = ($affected | ForEach-Object { 'FullyQualifiedName~Eden.Protocol.Tests.' + $_ }) -join '|'
+dotnet test tests/Eden.Protocol.Tests/Eden.Protocol.Tests.csproj --no-build --artifacts-path artifacts/feature-tests --filter $filter
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native rendering, input and response timing remain unverified.
+
+**Optional maintainer checks:** With an Omega test attacker and disabled safety, check response presentation and timing in high security; confirm the capsule transition and lack of insurance payment.
+
 ## Contents
 
 - [Silent bounty SP rewards, November 9, 2026](#silent-bounty-sp-rewards-november-9-2026)

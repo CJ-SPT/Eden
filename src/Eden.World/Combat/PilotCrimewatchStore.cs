@@ -45,6 +45,34 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
                 }
             );
         }
+        foreach (var response in world.Set<SavedConcordResponse>().Where(r => r.CompletedAt == null).ToArray())
+        {
+            if (response.CommanderId is not null && world.Pilots.Any(p => p.Id == response.PilotId && p.ActiveShipId == response.ShipId))
+            {
+                foreach (long npc in new[] { response.FirstCaptainId!.Value, response.SecondCaptainId!.Value })
+                {
+                    if (world.Set<NpcAggression>().Find(npc) is null)
+                    {
+                        world.Add(NpcAggression.Start(npc, response.ShipId, 0, now));
+                    }
+                }
+            }
+            if (
+                world.Set<SavedLogoff>().Find(response.PilotId) is null
+                && world.Pilots.Any(p => p.Id == response.PilotId && p.ActiveShipId == response.ShipId)
+            )
+            {
+                world.Add(
+                    new SavedLogoff
+                    {
+                        PilotId = response.PilotId,
+                        ShipId = response.ShipId,
+                        SystemId = response.SystemId,
+                        ExpiresAt = Math.Max(response.DestroyAt, now + TimeSpan.TicksPerSecond),
+                    }
+                );
+            }
+        }
         world.SaveChanges();
         transaction.Commit();
     }

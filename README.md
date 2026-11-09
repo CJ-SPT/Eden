@@ -47,6 +47,8 @@ The [ship and module completion program](docs/feature-notes.md#ship-and-module-c
 
 Bounty SP gains are silent; refresh the skill window to read the updated total.
 
+[CONCORD criminal response](docs/protocol/combat.md#concord-criminal-response--november-9-2026) now enforces supported high-security criminal offenses with persistent response deadlines, catalog Captains/Commanders, capsule escape and no insurance payout. Baseline response times approximate a fresh live response; existing-squad timing and pulling remain unsupported.
+
 ## Local game data
 
 Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions and health, item stacks in cargo or station hangars, asteroid fields, wallets, market orders, trade records and manufacturing jobs. Both files are generated locally.

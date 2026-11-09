@@ -197,7 +197,7 @@ public sealed class PilotMissileTests
 
     [Theory]
     [InlineData(.2, ShipSafetyLevel.Full, true)]
-    [InlineData(.8, ShipSafetyLevel.Disabled, true)]
+    [InlineData(.8, ShipSafetyLevel.Partial, true)]
     [InlineData(0, ShipSafetyLevel.Full, false)]
     public void RejectedSafetyAndMissingLocksPreserveAmmoCooldownAndAggression(double security, ShipSafetyLevel safety, bool locked)
     {
@@ -250,8 +250,10 @@ public sealed class PilotMissileTests
         if (automatic)
         {
             using WorldDbContext world = new(f.Db.Path);
+            using CatalogDbContext concordCatalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
             CrimewatchPersistence.Player(
                 world,
+                concordCatalog,
                 Victim,
                 f.PilotId,
                 SystemId,
@@ -372,8 +374,10 @@ public sealed class PilotMissileTests
         {
             var attacker = world.Pilots.Find(Victim)!;
             var victim = world.Pilots.Find(f.PilotId)!;
+            using CatalogDbContext concordCatalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
             CrimewatchPersistence.Player(
                 world,
+                concordCatalog,
                 attacker.Id,
                 victim.Id,
                 SystemId,

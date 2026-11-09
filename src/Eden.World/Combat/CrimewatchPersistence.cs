@@ -55,13 +55,23 @@ internal static class CrimewatchPersistence
         );
     }
 
-    internal static void Player(WorldDbContext world, long source, long victim, int system, AggressionDecision decision, long now, long end)
+    internal static void Player(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long source,
+        long victim,
+        int system,
+        AggressionDecision decision,
+        long now,
+        long end
+    )
     {
         var attacker = State(world, source);
         var target = State(world, victim);
         attacker.SystemId = target.SystemId = system;
         attacker.Apply(CrimewatchRules.Player(attacker.Timers(), end, decision.Flag, true, now));
         target.Apply(CrimewatchRules.Player(target.Timers(), end, CrimewatchFlag.None, false, now));
+        ConcordPersistence.Schedule(world, catalog, world.Pilots.Find(source)!, now);
         long sourceShip = world.Pilots.Find(source)!.ActiveShipId;
         long victimShip = world.Pilots.Find(victim)!.ActiveShipId;
         world.Set<SavedPilotHostility>().Where(h => h.ExpiresAt <= now).ExecuteDelete();
@@ -117,10 +127,14 @@ internal static class CrimewatchPersistence
     )
     {
         var timers = world.Set<SavedCrimewatch>().Find(pilot.Id)?.Timers() ?? CrimewatchTimers.Empty;
-        CrimewatchRules.CheckTravel(timers, action, Security(catalog, System(catalog, pilot.ActiveShip), false), now);
-        if (destination is int system && timers.Criminal.Running(now) && Security(catalog, system, false) >= CrimewatchRules.HighSecurity)
+        double security =
+            catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup
+                ? 0
+                : Security(catalog, System(catalog, pilot.ActiveShip), false);
+        CrimewatchRules.CheckTravel(timers, action, security, now);
+        if (world.Set<SavedConcordResponse>().Any(r => r.ShipId == pilot.ActiveShipId && r.CompletedAt == null))
         {
-            throw new InvalidDataException("Criminal high-security travel requires implemented security enforcement.");
+            throw new InvalidDataException("CONCORD enforcement prevents travel or changing ships.");
         }
     }
 }

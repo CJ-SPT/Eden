@@ -119,8 +119,7 @@ public sealed class CrimewatchTests
     [InlineData(.1, ShipSafetyLevel.Partial, true)]
     [InlineData(.45, ShipSafetyLevel.Full, false)]
     [InlineData(.45, ShipSafetyLevel.Partial, false)]
-    [InlineData(.45, ShipSafetyLevel.Disabled, false)]
-    public void IllegalActionsAreRejectedBeforeUnpolicedHighSecurityAggression(double security, ShipSafetyLevel safety, bool capsule)
+    public void IllegalActionsAreRejectedBySafety(double security, ShipSafetyLevel safety, bool capsule)
     {
         Assert.Throws<InvalidDataException>(() =>
             CrimewatchRules.Decide(new(security, safety, false, capsule, CrimewatchFlag.None, false, false))
@@ -153,7 +152,7 @@ public sealed class CrimewatchTests
 
     [Theory]
     [InlineData(.1, ShipSafetyLevel.Full)]
-    [InlineData(.8, ShipSafetyLevel.Disabled)]
+    [InlineData(.8, ShipSafetyLevel.Partial)]
     public void RejectedPlayerTackleLeavesCapacitorCooldownsEffectsAndTimersUnchanged(double security, ShipSafetyLevel safety)
     {
         using Fixture f = TackleTests.Prepare(526);

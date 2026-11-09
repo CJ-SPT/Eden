@@ -190,7 +190,7 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
             SaveEnergy(targetId, applied.Target);
             if (!transfer)
             {
-                CrimewatchPersistence.Player(world, source.Id, recipient.Id, system, decision!, now, end);
+                CrimewatchPersistence.Player(world, catalog, source.Id, recipient.Id, system, decision!, now, end);
             }
         }
         else

@@ -171,7 +171,7 @@ internal sealed class PilotTackleStore(WorldDatabase database, TimeProvider cloc
         long expires = checked(now + (long)Math.Ceiling(module.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
         if (aggression is not null)
         {
-            CrimewatchPersistence.Player(world, pilotId, victimId, system, aggression, now, expires);
+            CrimewatchPersistence.Player(world, catalog, pilotId, victimId, system, aggression, now, expires);
         }
         else if (npc is not null)
         {

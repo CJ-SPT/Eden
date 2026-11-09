@@ -117,6 +117,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldRemoteAssistance>().HasIndex(r => r.TargetId);
         EconomicSchema.Configure(model);
         CrimewatchSchema.Configure(model);
+        ConcordSchema.Configure(model);
         DroneSchema.Configure(model);
         HistorySchema.Configure(model);
         ConfigureInteractionHistory(model);

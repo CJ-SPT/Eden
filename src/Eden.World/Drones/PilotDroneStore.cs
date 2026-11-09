@@ -308,7 +308,7 @@ internal sealed partial class PilotDroneStore(
                 {
                     throw new InvalidDataException("The target ship is destroyed.");
                 }
-                CrimewatchPersistence.Player(world, pilotId, victim.Id, systemId, decision, now, now);
+                CrimewatchPersistence.Player(world, catalog, pilotId, victim.Id, systemId, decision, now, now);
             }
             else if (
                 !locks.Contains(npc.Id)
@@ -320,6 +320,10 @@ internal sealed partial class PilotDroneStore(
             )
             {
                 throw new InvalidDataException("Order drones to attack a locked NPC within drone control range.");
+            }
+            else if (npc.Role == NpcRole.Concord)
+            {
+                ConcordPersistence.Attack(world, catalog, npc, pilot.ActiveShipId, now);
             }
         }
         if (order == DroneOrder.Reconnect)
@@ -718,7 +722,7 @@ internal sealed partial class PilotDroneStore(
             DroneHit hit;
             if (npc is null)
             {
-                CrimewatchPersistence.Player(world, pilot.Id, victim!.Id, systemId, decision!, now, drone.ReadyAt);
+                CrimewatchPersistence.Player(world, catalog, pilot.Id, victim!.Id, systemId, decision!, now, drone.ReadyAt);
                 var impact = ApplyPilotDamage(world, catalog, pilot, victim, drone, profile, attributes, damage, now);
                 pilotHits.Add(impact);
                 hit = impact.Hit;

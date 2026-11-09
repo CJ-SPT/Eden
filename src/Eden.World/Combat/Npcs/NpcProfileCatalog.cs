@@ -39,7 +39,8 @@ public sealed class NpcProfileCatalog(bool cache = true)
                 .Profile(
                     FittingCatalog.Effects(catalog, typeId),
                     attributes,
-                    type.GroupId is NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup
+                    type.GroupId is NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup,
+                    concord: typeId == ConcordRules.CaptainType
                 )
                 .ToImmutableArray()
         )

@@ -22,7 +22,8 @@ internal sealed class NpcCombatHandler(
     SharedSpace space,
     INpcMissiles? missiles = null,
     CharacterInteractionHistoryHandler? history = null,
-    NpcEwarHandler? ewar = null
+    NpcEwarHandler? ewar = null,
+    IConcord? concord = null
 ) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
@@ -71,6 +72,16 @@ internal sealed class NpcCombatHandler(
             Clear();
             _shipId = context.Pilot.ShipId;
             _disengaged = false;
+        }
+        if (context.Pilot.Position is not null && context.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup && concord is not null)
+        {
+            var enforcement = concord.Advance(context.Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            context.Flight.RefreshNpcs();
+            if (enforcement is not null)
+            {
+                Notify(context, enforcement);
+                return;
+            }
         }
         if (!context.Flight.CanTarget || context.Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {

@@ -102,12 +102,6 @@ public static class CrimewatchRules
         {
             throw new InvalidDataException("Your ship safety setting prevents this hostile action.");
         }
-        // High-sec criminal aggression needs CONCORD enforcement, which belongs
-        // to the next combat milestone. Do not silently permit an unpoliced attack.
-        if (input.Security >= HighSecurity)
-        {
-            throw new InvalidDataException("Criminal high-security aggression is not supported until security enforcement is available.");
-        }
         return new(flag, false);
     }
 

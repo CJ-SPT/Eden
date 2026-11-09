@@ -65,6 +65,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             || systemId is int destinationSystem
                 && saved is not null
                 && (saved.SystemId ?? catalog.RequireStation(world.Ships.Find(shipId)!.StationId).SolarSystemId) != destinationSystem;
+        bool entered = position is not null && (saved is null || transfer);
         if (transfer)
         {
             ShipHeatPersistence.CancelForTravel(world, shipId);
@@ -107,6 +108,11 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             (saved.X, saved.Y, saved.Z) = (position.X, position.Y, position.Z);
         }
         world.SaveChanges();
+        if (entered && pilot is not null)
+        {
+            ConcordPersistence.Schedule(world, catalog, pilot, now);
+            world.SaveChanges();
+        }
         return transfer;
     }
 

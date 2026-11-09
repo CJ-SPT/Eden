@@ -79,7 +79,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             return null;
         }
         // Mining alerts and cargo/operation state share the paid shot's SQL transaction.
-        if (NpcPopulationRules.IsMining(target.Role))
+        if (NpcPopulationRules.IsMining(target.Role) || target.Role == NpcRole.Concord)
         {
             return null;
         }
@@ -502,6 +502,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             ClearDrones();
         }
+        bool membershipChanged = changes.Any(c => c.Table == "WorldPositionMembership");
         foreach (var change in changes)
         {
             switch (change.Table)
@@ -526,6 +527,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     _acquisitions.Clear();
                     break;
                 case "WorldPosition":
+                    if (membershipChanged && _shipPilots.TryGetValue(change.Id, out long movedPilot))
+                    {
+                        _staleShips.Add(movedPilot);
+                    }
                     _positions.Remove(change.Id);
                     _savedPositions.Remove(change.Id);
                     _acquisitionShips.Clear();

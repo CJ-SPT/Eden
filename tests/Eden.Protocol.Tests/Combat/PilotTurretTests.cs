@@ -103,7 +103,7 @@ public sealed class PilotTurretTests
     [Theory]
     [InlineData(.2, ShipSafetyLevel.Full)]
     [InlineData(.8, ShipSafetyLevel.Full)]
-    [InlineData(.8, ShipSafetyLevel.Disabled)]
+    [InlineData(.8, ShipSafetyLevel.Partial)]
     public void RejectedAggressionLeavesHealthCapacitorCooldownAndTimersUnchanged(double security, ShipSafetyLevel safety)
     {
         using var f = Prepare(security);

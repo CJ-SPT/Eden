@@ -266,7 +266,7 @@ internal sealed class PilotCombatStore(
         Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, targetId, victim is not null, now);
         if (victim is not null)
         {
-            CrimewatchPersistence.Player(world, pilotId, victim.Id, target.SystemId, aggression!, now, cycleEnd);
+            CrimewatchPersistence.Player(world, catalog, pilotId, victim.Id, target.SystemId, aggression!, now, cycleEnd);
         }
         else
         {

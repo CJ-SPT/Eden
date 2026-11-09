@@ -170,7 +170,10 @@ internal static class WorldConnections
                                 if (
                                     action == SQLitePCL.raw.SQLITE_UPDATE
                                     && string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
-                                    && string.Equals(column, "ShipId", StringComparison.OrdinalIgnoreCase)
+                                    && (
+                                        string.Equals(column, "ShipId", StringComparison.OrdinalIgnoreCase)
+                                        || string.Equals(column, "SystemId", StringComparison.OrdinalIgnoreCase)
+                                    )
                                 )
                                 {
                                     _positionMembershipWrite = true;

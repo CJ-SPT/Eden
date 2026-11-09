@@ -165,7 +165,7 @@ internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls
         );
         if (victim.Pilot is { } player)
         {
-            CrimewatchPersistence.Player(world, pilotId, player.Id, system, decision!, now, expires);
+            CrimewatchPersistence.Player(world, catalog, pilotId, player.Id, system, decision!, now, expires);
         }
         if (victim.Npc is { } npc)
         {

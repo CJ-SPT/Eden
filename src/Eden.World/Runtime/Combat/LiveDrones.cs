@@ -235,7 +235,7 @@ internal sealed partial class LiveCombatRuntime
                 npc = null;
             }
             // Mining alerts and inventory return retain the existing transaction boundary.
-            if (npc is not null && NpcPopulationRules.IsMining(npc.Role))
+            if (npc is not null && (NpcPopulationRules.IsMining(npc.Role) || npc.Role == NpcRole.Concord))
             {
                 return Settle();
             }
@@ -245,6 +245,12 @@ internal sealed partial class LiveCombatRuntime
             var playerContact = player is null ? null : DronePresence(player, presence, ship.SystemId, now);
             var decision =
                 source is null || player is null || player.PilotId == pilotId ? null : DroneLegality(source, player, ship.SystemId, now);
+            if (decision?.Flag == CrimewatchFlag.Criminal)
+            {
+                // The paid criminal shot and its CONCORD deadline share one SQL
+                // transaction, including when earlier legal rights have expired.
+                return Settle();
+            }
             var playerShip =
                 playerContact is null || decision is null
                     ? null

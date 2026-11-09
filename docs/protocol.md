@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [CONCORD criminal response, November 9, 2026](protocol/combat.md#concord-criminal-response--november-9-2026)
+
 - [Offline startup belt renewal, November 9, 2026](protocol/performance.md#offline-startup-belt-renewal-november-9-2026)
 
 - [Character portraits across the client, November 9, 2026](protocol/characters.md#character-portraits-across-the-client--november-9-2026)

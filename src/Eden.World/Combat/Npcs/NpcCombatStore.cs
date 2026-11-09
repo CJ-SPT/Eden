@@ -170,7 +170,14 @@ internal sealed class NpcCombatStore(
 
     internal static void Disengage(WorldDbContext world, long shipId, long? npcId = null)
     {
-        var aggression = world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId && (npcId == null || a.NpcId == npcId)).ToArray();
+        var aggression = world
+            .Set<NpcAggression>()
+            .Where(a =>
+                a.TargetShipId == shipId
+                && (npcId == null || a.NpcId == npcId)
+                && !world.Set<WorldNpc>().Any(n => n.Id == a.NpcId && n.Role == NpcRole.Concord)
+            )
+            .ToArray();
         var ids = aggression.Select(a => a.NpcId).ToArray();
         foreach (var npc in world.Set<WorldNpc>().Where(n => ids.Contains(n.Id) && n.DestroyedAt == null && n.RetiredAt == null))
         {

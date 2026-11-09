@@ -12,6 +12,8 @@
 
 ## Development
 
+[CONCORD criminal response](protocol/combat.md#concord-criminal-response--november-9-2026) records persistent high-security enforcement, response timing approximations, capsule immunity and insurance exclusion.
+
 [Character portraits](protocol/characters.md#character-portraits-across-the-client--november-9-2026) covers native local rendering, public appearance reads and defaults for pilots without creator data.
 
 [Skill editing and client packages](world-configuration.md#skill-editor) covers original restoration, custom skills, protected removal, staged activation and automatic launcher installation.

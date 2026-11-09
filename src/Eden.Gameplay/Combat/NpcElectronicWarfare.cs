@@ -86,7 +86,8 @@ public static class NpcEwarRules
     public static IReadOnlyList<NpcEwarAbility> Profile(
         IReadOnlySet<DogmaEffect> effects,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
-        bool sentry = false
+        bool sentry = false,
+        bool concord = false
     )
     {
         double Value(DogmaAttributeId id, double fallback = 0) => attributes.GetValueOrDefault(id, fallback);
@@ -138,6 +139,34 @@ public static class NpcEwarRules
             }
             Validate(power);
             abilities.Add(ability);
+        }
+        if (concord)
+        {
+            Add(
+                DogmaEffect.ConcordTargetJam,
+                NpcEwarKind.Jamming,
+                DogmaAttributeId.EntityEcmDuration,
+                DogmaAttributeId.EntityEcmRange,
+                null,
+                new(Jamming: new(0, 0, 0, 0))
+            );
+            Add(
+                DogmaEffect.ConcordWeb,
+                NpcEwarKind.Webifying,
+                DogmaAttributeId.EntityWebDuration,
+                DogmaAttributeId.EntityWebRange,
+                null,
+                new(WebPercent: Value(DogmaAttributeId.SpeedFactor))
+            );
+            Add(
+                DogmaEffect.ConcordWarpScramble,
+                NpcEwarKind.WarpDisruption,
+                DogmaAttributeId.EntityWarpScrambleDuration,
+                DogmaAttributeId.WarpScrambleRange,
+                null,
+                new(WarpStrength: Value(DogmaAttributeId.WarpScrambleStrength)),
+                defaultDuration: 5000
+            );
         }
         Add(
             DogmaEffect.NpcEcm,
@@ -365,7 +394,7 @@ public static class NpcEwarRules
         }
         double range = distance <= NpcEncounterDefinitions.VisibilityRange ? RangeFactor(ability, distance) : 0;
         double chance = ability.Chance;
-        if (ability.Kind == NpcEwarKind.Jamming && ability.Power.Jamming is { } jam)
+        if (ability.Kind == NpcEwarKind.Jamming && ability.Effect != DogmaEffect.ConcordTargetJam && ability.Power.Jamming is { } jam)
         {
             double Ratio(DogmaAttributeId sensor, double strength) =>
                 target.GetValueOrDefault(sensor) is > 0 and var defense ? strength / defense : 0;
@@ -399,8 +428,11 @@ public static class NpcEwarRules
     }
 
     public static bool CanTarget(IReadOnlyList<NpcEwarContact> incoming, long target) =>
-        !incoming.Any(e => e.Ability.Kind == NpcEwarKind.Jamming)
-        || incoming.Any(e => e.Ability.Kind == NpcEwarKind.Jamming && e.SourceId == target);
+        !incoming.Any(e => e.Ability.Effect == DogmaEffect.ConcordTargetJam)
+        && (
+            !incoming.Any(e => e.Ability.Kind == NpcEwarKind.Jamming)
+            || incoming.Any(e => e.Ability.Kind == NpcEwarKind.Jamming && e.SourceId == target)
+        );
 
     public static IEnumerable<DogmaModifier> Modifiers(
         long ship,
@@ -431,6 +463,11 @@ public static class NpcEwarRules
             );
         foreach (var effect in incoming)
         {
+            if (effect.Ability.Effect == DogmaEffect.ConcordTargetJam)
+            {
+                // The Captain also carries targetDroneBandwidthMultiplier (3661).
+                yield return new(ship, DogmaAttributeId.DroneBandwidth, DogmaOperation.PostMultiply, new DogmaValue.Constant(0));
+            }
             var power = effect.Applied;
             switch (effect.Ability.Kind)
             {

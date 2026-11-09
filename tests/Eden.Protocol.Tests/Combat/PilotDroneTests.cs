@@ -171,7 +171,7 @@ public sealed class PilotDroneTests
     [Theory]
     [InlineData(0, ShipSafetyLevel.Full, "lock")]
     [InlineData(.2, ShipSafetyLevel.Full, "safety")]
-    [InlineData(.8, ShipSafetyLevel.Disabled, "safety")]
+    [InlineData(.8, ShipSafetyLevel.Partial, "safety")]
     [InlineData(0, ShipSafetyLevel.Full, "range")]
     [InlineData(.2, ShipSafetyLevel.Partial, "capsule")]
     [InlineData(0, ShipSafetyLevel.Full, "dock")]
@@ -400,6 +400,42 @@ public sealed class PilotDroneTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NewlyCriminalRepeatsCannotBypassTheTransactionalConcordDispatch(bool resident)
+    {
+        using var f = Prepare(.8);
+        using LiveWorld? live = resident ? new(new(f.Base.Db.Path), f.Base.Clock, _ => { }) : null;
+        var ids = f.Launch();
+        Space(f);
+        using (WorldDbContext world = new(f.Base.Db.Path))
+        {
+            world.Set<Account>().Find(1000001L)!.CloneGrade = AccountCloneGrade.Omega;
+            world.Pilots.Find(f.Pilot)!.SafetyLevel = ShipSafetyLevel.Disabled;
+            world.Add(new SavedCrimewatch { PilotId = Victim, SuspectUntil = f.Now + TimeSpan.TicksPerMinute });
+            world.SaveChanges();
+        }
+        Engage(f, ids);
+        CrimewatchTimers timers;
+        using (WorldDbContext world = new(f.Base.Db.Path))
+        {
+            timers = world.Set<SavedCrimewatch>().Find(f.Pilot)!.Timers();
+            world.Set<SavedCrimewatch>().Find(Victim)!.SuspectUntil = f.Now;
+            world.Set<SavedEngagement>().ExecuteDelete();
+            world.SaveChanges();
+        }
+        var before = f.Base.Db.Services.GetRequiredService<IPilotHealth>().Read(Victim, f.Now);
+        // This fixture deliberately lacks the response hulls. Losing legal rights
+        // must reject atomically rather than pay an unpoliced resident shot.
+        Assert.Throws<InvalidDataException>(() => f.Tick());
+        using WorldDbContext saved = new(f.Base.Db.Path);
+        Assert.Equal(timers, saved.Set<SavedCrimewatch>().Find(f.Pilot)!.Timers());
+        Assert.Equal(before.Remaining.Armor, f.Base.Db.Services.GetRequiredService<IPilotHealth>().Read(Victim, f.Now).Remaining.Armor);
+        Assert.Empty(saved.Set<SavedConcordResponse>());
+        Assert.Empty(saved.Set<SavedCombatDamage>());
+    }
+
+    [Theory]
     [InlineData(false, "recent", true)]
     [InlineData(true, "recent", true)]
     [InlineData(true, "passive", false)]
@@ -417,7 +453,17 @@ public sealed class PilotDroneTests
         using (WorldDbContext world = new(f.Base.Db.Path))
         {
             long attackAt = condition == "old" ? f.Now - TimeSpan.TicksPerSecond * 2 : f.Now;
-            CrimewatchPersistence.Player(world, Victim, f.Pilot, SystemId, new(CrimewatchFlag.None, false), attackAt, attackAt);
+            using CatalogDbContext concordCatalog = new(new WorldDatabase(f.Base.Db.Path).CatalogPath);
+            CrimewatchPersistence.Player(
+                world,
+                concordCatalog,
+                Victim,
+                f.Pilot,
+                SystemId,
+                new(CrimewatchFlag.None, false),
+                attackAt,
+                attackAt
+            );
             if (condition == "expired")
             {
                 world.Set<SavedPilotHostility>().Local.Single().ExpiresAt = f.Now;

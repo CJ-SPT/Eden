@@ -35,14 +35,20 @@ internal static class NpcDamagePersistence
         DamageVector damage,
         long now,
         int? weaponType = null,
-        int? sourceType = null
+        int? sourceType = null,
+        bool paidProjectile = false
     )
     {
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
         {
             throw new InvalidDataException("The NPC is no longer available.");
         }
-        NpcHostility.Record(world, catalog, npc, attackingShip, now);
+        // A paid missile already checked safety and recorded CONCORD hostility
+        // at launch. Its impact cannot recheck a later safety setting or hull.
+        if (!paidProjectile || npc.Role != NpcRole.Concord)
+        {
+            NpcHostility.Record(world, catalog, npc, attackingShip, now);
+        }
         CrimewatchPersistence.Npc(world, pilot.Id, npc.SystemId, now);
         var defense = ShipHealth.DefenseFrom(attributes);
         NpcRepairPersistence.Advance(npc, attributes, now);
@@ -56,6 +62,10 @@ internal static class NpcDamagePersistence
             Math.Max(0, defense.Armor - npc.ArmorDamage),
             Math.Max(0, defense.Structure - npc.StructureDamage)
         );
+        if (npc.Role == NpcRole.Concord)
+        {
+            return new(new(npc.Id, defense, health), 0, false, null);
+        }
         var result = CombatDamage.Apply(health, defense, damage);
         var attacker = PilotInteractionHistoryStore.Player(world, pilot, attackingShip, weaponType, result.Remaining.Destroyed);
         if (sourceType is > 0)

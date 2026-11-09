@@ -114,6 +114,12 @@ public enum DogmaEffect
     GuidanceDisruptor = 6423,
     TargetPainter = 6425,
     NpcEcm = 6695,
+
+    // Build-3662168 CONCORD Captain dogma effects.
+    ConcordDroneBandwidth = 3661,
+    ConcordTargetJam = 3710,
+    ConcordWarpScramble = 3713,
+    ConcordWeb = 3714,
     NpcSensorDampening = 1878,
     NpcTrackingDisruption = 6846,
     NpcTargetPainting = 1879,

@@ -30,6 +30,7 @@ internal static class AssistancePersistence
         var state = CrimewatchPersistence.State(world, source.Id);
         state.SystemId = system;
         state.Apply(AssistanceRules.Apply(state.Timers(), timers, flag, now, end));
+        ConcordPersistence.Schedule(world, catalog, source, now);
         if (world.Set<SavedLogoff>().Find(source.Id) is { } logoff)
         {
             logoff.ExpiresAt = Math.Max(logoff.ExpiresAt, Math.Max(state.PvpUntil, state.NpcUntil));

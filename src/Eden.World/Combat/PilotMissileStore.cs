@@ -306,7 +306,7 @@ internal sealed partial class PilotMissileStore(
         Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, targetId!.Value, victim is not null, now);
         if (victim is not null)
         {
-            CrimewatchPersistence.Player(world, pilotId, victim.Id, systemId, aggression!, now, cooldown.ReadyAt);
+            CrimewatchPersistence.Player(world, catalog, pilotId, victim.Id, systemId, aggression!, now, cooldown.ReadyAt);
         }
         else
         {
@@ -459,7 +459,8 @@ internal sealed partial class PilotMissileStore(
                         damage,
                         time,
                         row.LauncherTypeId,
-                        row.SourceTypeId
+                        row.SourceTypeId,
+                        paidProjectile: true
                     );
                     destroyed |= result.Destroyed;
                     world.SaveChanges();

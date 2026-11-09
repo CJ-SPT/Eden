@@ -43,10 +43,6 @@ public static class AssistanceRules
         {
             throw new InvalidDataException("Your ship safety setting prevents this remote assistance.");
         }
-        if (flag == CrimewatchFlag.Criminal && input.Security >= CrimewatchRules.HighSecurity)
-        {
-            throw new InvalidDataException("Criminal high-security assistance requires security enforcement.");
-        }
         return new(flag, input.TargetEngaged || input.TargetOutlaw && input.TargetInCombat);
     }
 
