@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Mission-tracker refresh compatibility, November 9, 2026](protocol/agents.md#mission-tracker-refresh-compatibility--november-9-2026)
+
 - [LP-wallet nearest-station lookup, November 9, 2026](protocol/industry.md#lp-wallet-nearest-station-lookup-november-9-2026)
 
 - [Blank combat conversation correction, November 9, 2026](protocol/agents.md#blank-combat-conversation-correction--november-9-2026)

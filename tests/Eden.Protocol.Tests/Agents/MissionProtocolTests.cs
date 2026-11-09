@@ -12,6 +12,63 @@ namespace Eden.Protocol.Tests.Agents;
 public sealed class MissionProtocolTests
 {
     [Theory]
+    [InlineData(MissionRules.SecurityDivision)]
+    [InlineData(MissionRules.DistributionDivision)]
+    public void LegacyTrackerRefreshAndReadsUseNativeShapesWithoutChangingMissionState(int division)
+    {
+        using MissionFixture f = new(division: division);
+        List<object?> agents = [MissionFixture.AgentId, MissionFixture.StorylineId];
+        Assert.Null(MissionFixture.Reply(f.Call("missionTrackerMgr", "UpdateAllMissions", [agents], new())));
+        Assert.Empty(f.Missions.Journal(MissionFixture.PilotId));
+        var accepted = f.Accept(f.Request());
+        for (int cycle = 0; cycle < 2; cycle++)
+        {
+            Assert.Null(MissionFixture.Reply(f.Call("missionTrackerMgr", "UpdateAllMissions", [agents])));
+            Assert.Null(MissionFixture.Reply(f.Call("missionTrackerMgr", "UpdateAllMissions", [new List<object?>()])));
+            Assert.Null(MissionFixture.Reply(f.Call("missionTrackerMgr", "GetMissionInfoItems", [MissionFixture.AgentId])));
+            Assert.Empty(
+                Assert.IsType<List<object?>>(
+                    MissionFixture.Reply(f.Call("missionTrackerMgr", "GetAllMissionObjectives", [MissionFixture.AgentId]))
+                )
+            );
+            Assert.False(
+                Assert.IsType<bool>(MissionFixture.Reply(f.Call("missionTrackerMgr", "IsInActiveDungeonID", [MissionFixture.AgentId])))
+            );
+        }
+        foreach (string method in new[] { "GetMissionInfoItems", "GetAllMissionObjectives", "IsInActiveDungeonID" })
+        {
+            foreach (object?[] args in new object?[][] { [], [null], [MissionFixture.PilotId], ["3012018"], [MissionFixture.AgentId, 1L] })
+            {
+                Assert.IsType<PilotCallResult.Failure>(f.Call("missionTrackerMgr", method, args));
+            }
+            Assert.IsType<PilotCallResult.Failure>(
+                f.Call("missionTrackerMgr", method, [MissionFixture.AgentId], new() { ["pilotID"] = MissionFixture.PilotId })
+            );
+        }
+        foreach (
+            object?[] args in new object?[][]
+            {
+                [],
+                [MissionFixture.AgentId],
+                [new object?[] { MissionFixture.AgentId }],
+                [new List<object?> { MissionFixture.AgentId, MissionFixture.PilotId }],
+                [new List<object?> { MissionFixture.AgentId, null }],
+            }
+        )
+        {
+            Assert.IsType<PilotCallResult.Failure>(f.Call("missionTrackerMgr", "UpdateAllMissions", args));
+        }
+        Assert.IsType<PilotCallResult.Failure>(
+            f.Call("missionTrackerMgr", "UpdateAllMissions", [agents], new() { ["pilotID"] = MissionFixture.PilotId })
+        );
+        Assert.Same(PilotCallResult.Unsupported, f.Call("missionTrackerMgr", "UnknownTrackerMethod", []));
+        Assert.Equal(accepted, f.Missions.Current(MissionFixture.PilotId, MissionFixture.AgentId));
+        Assert.Empty(f.Context.Notifications);
+        var objectives = BlueRead.Fields(MissionFixture.Reply(f.Call($"@agent:{MissionFixture.AgentId}", "GetMissionObjectiveInfo", [])));
+        Assert.Equal((long)accepted.MissionId, objectives["contentID"]);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void CombatObjectiveOmitsUnavailableNativeOptionalFieldsAndOnlyReportsSettledCompletion(bool completed)

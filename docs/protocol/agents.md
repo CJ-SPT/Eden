@@ -2,6 +2,28 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Mission-tracker refresh compatibility — November 9, 2026
+
+The maintainer supplied an accepted-mission conversation screenshot showing **"Invalid mission tracker request."** The earlier handler recognized only `GetMissionInfoItems(agentID)` while claiming the entire `missionTrackerMgr` service. Inert inspection of the pinned build-3662168 archive (SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**) established four native calls in `missions/client/missionObjectivesTracker.pyj`: `UpdateAllMissions(agentList)` takes one Python list, while `GetMissionInfoItems`, `GetAllMissionObjectives` and `IsInActiveDungeonID` each take one agent ID. The info-panel consumer enumerates all-objective replies, so None is not valid for that collection read.
+
+A dedicated selected-pilot handler now owns those four calls. Valid batch refreshes return None; current legacy info returns None; all legacy objectives return an empty native list; active legacy dungeon membership returns native False. Every supplied ID must identify a catalog agent, and malformed argument shapes, unknown agents and unexpected keywords reject. Empty batch lists and empty keyword maps are accepted. Unknown methods remain unsupported. These calls do not create offers, mutate objectives, issue rewards or emit notifications.
+
+Eden's ordinary mission sites do not register the legacy tracker's event-driven objective sequence or dungeon membership. This correction removes the missing-call errors and supplies the correct empty shapes; it does **not** implement that legacy progression language. Actual mission state, objective progress and combat bookmarks continue through the existing journal, `GetMissionObjectiveInfo` and native mission notifications. The [EVE University mission guide](https://wiki.eveuniversity.org/Missions) distinguishes the tracked completion indicator from the mission details. Consulted [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) for tuple/list/None/boolean preservation; no codec changed.
+
+### Automated validation
+
+Exact development filter: `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionProtocolTests.LegacyTrackerRefreshAndReadsUseNativeShapesWithoutChangingMissionState`. Both combat and courier cases first failed against the previous handler on the native batch refresh. After correction, both passed in **8.29 seconds**. Coverage exercises refresh before an offer, repeated refresh/read cycles after acceptance, the empty batch, special-agent IDs without offers, None/list/boolean response types, malformed tuples/lists/agent IDs, unexpected keywords, unknown methods and unchanged saved mission state/notifications. Actual native objective replies remain available after tracker calls.
+
+Final tool restore, solution restore and solution build passed with zero warnings/errors. The affected filter `FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~AgentDirectory|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **114/114 tests in 15.41 seconds**. Both Python policy suites passed (**8/8** catalog and **9/9** formatting cases in **1.15 seconds** combined). Formatting verification, the 140-column check and `git diff --check` passed; policy plus formatting verification took **25.87 seconds**. No full .NET suite was requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The screenshot records the original tracker dialog, not acceptance of this correction.
+
+### Optional maintainer checks
+
+Restart the server with the updated build, reopen the accepted mission and toggle tracking; verify the tracker-request dialog no longer appears and mission details remain usable. Legacy tracked objective progression remains outside this compatibility correction.
+
 ## Blank combat conversation correction — November 9, 2026
 
 The maintainer's follow-up screenshot shows an empty Ogyura Unao conversation with an offer already recorded. The earlier header correction removed a missing remote call but did not establish that the objective HTML could be built. Static inspection of the same pinned build-3662168 archive and an isolated automated invocation of `agentDialogueUtil.GetMissionObjectiveHTML` reproduced **`TypeError: list indices must be integers, not NoneType`** with Eden's combat reply. `_ProcessDungeonData` tests whether `shipRestrictions` is present, then uses its value as an integer list index. A present None is invalid.

@@ -34,7 +34,7 @@ internal sealed class MissionHandler(
     )
     {
         bool bound = service.StartsWith("@agent:", StringComparison.Ordinal);
-        if (!bound && service != "agentMgr" && service != "missionTrackerMgr")
+        if (!bound && service != "agentMgr")
         {
             return PilotCallResult.Unsupported;
         }
@@ -53,14 +53,6 @@ internal sealed class MissionHandler(
                 throw new InvalidDataException("Unexpected mission keyword arguments.");
             }
             long pilotId = context.Pilot.PilotId;
-            if (service == "missionTrackerMgr")
-            {
-                // The legacy tracker has its own server event language. Ordinary native
-                // objective cards use GetMissionObjectiveInfo instead of invented tracker tokens.
-                return method == "GetMissionInfoItems" && args is [long id] && directory.Agent(id) is not null
-                    ? PilotCallResult.None
-                    : new PilotCallResult.Failure("Invalid mission tracker request.");
-            }
             if (!bound)
             {
                 return method switch
