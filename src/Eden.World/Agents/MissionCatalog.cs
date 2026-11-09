@@ -28,6 +28,13 @@ internal sealed record MissionProfile(
 
     internal MissionKind Kind => DungeonId.HasValue ? MissionKind.Combat : MissionKind.Courier;
 
+    internal int SupplierFaction { get; init; }
+    internal int SupplierCorporation { get; init; }
+
+    internal bool AvailableTo(CatalogAgent agent) =>
+        (SupplierFaction == 0 || SupplierFaction == agent.FactionId)
+        && (SupplierCorporation == 0 || SupplierCorporation == agent.CorporationId);
+
     internal bool AttacksFaction(int? faction) =>
         faction.HasValue
         && Definition.Waves.SelectMany(w => w.Groups).Any(g => (g.EnemyFaction == 0 ? EnemyFaction : g.EnemyFaction) == faction);
@@ -113,6 +120,10 @@ internal static class MissionCatalog
             }
             profiles.Add(
                 new(definition, name, nameId, briefingId, briefing, dungeonId, faction, corporation, cargoType, quantity, volume, rooms)
+                {
+                    SupplierFaction = checked((int)(mission.FactionID ?? 0)),
+                    SupplierCorporation = checked((int)(mission.CorporationID ?? 0)),
+                }
             );
         }
         return profiles.ToImmutableArray();
