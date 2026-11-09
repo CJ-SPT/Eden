@@ -118,7 +118,7 @@ public sealed partial class InformationTests
     }
 
     [Fact]
-    public void DirectionalDockedRequestsFailWithoutCreatingACooldown()
+    public void DirectionalUndockRestorationReturnsEmptyUntilBallparkAndDoesNotConsumeCooldown()
     {
         using Fixture f = Prepare();
         var pilot = f.Db.Store.FindPilot(1000001)!;
@@ -133,8 +133,41 @@ public sealed partial class InformationTests
         source.Select(pilot);
         using var scope = f.Db.Services.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<DirectionalScanHandler>();
-        Assert.IsType<PilotCallResult.Failure>(handler.Call(source, "@systemScan", "ConeScan", Cone()));
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        IReadOnlyList<DirectionalScanContact> Scan()
+        {
+            var result = Assert.IsType<PilotCallResult.Success>(
+                router.Call(source, "@systemScan", "ConeScan", BlueMarshal.Decode(BlueMarshal.Encode(Cone())), _ => { })
+            );
+            var reply = Assert.IsType<DirectionalScanReply>(result.Reply);
+            Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(reply)));
+            return reply.Contacts;
+        }
+        Assert.Empty(Scan());
+        Assert.Empty(Scan());
         Assert.Throws<InvalidDataException>(() => Store(f).Directional(f.PilotId, Math.Tau, 1000, new(1, 0, 0), f.Clock.Now));
+        for (int cycle = 0; cycle < 2; cycle++)
+        {
+            Assert.Same(PilotCallResult.None, source.Flight.Execute(new FlightCommand.Undock(pilot.ShipId)));
+            Assert.NotNull(source.Pilot.Position);
+            Assert.False(source.Flight.InBallpark);
+            f.Db.Store.SetPosition(Target(f), source.Pilot.Position + new SpacePosition(1000, 0, 0));
+            Assert.Empty(Scan());
+            source.Flight.Snapshot();
+            Assert.True(source.Flight.InBallpark);
+            Assert.Contains(Scan(), contact => contact.Id == Target(f));
+            Assert.IsType<PilotCallResult.Failure>(handler.Call(source, "@systemScan", "ConeScan", Cone()));
+            // Dock before cooldown expiry to exercise restoration ordering and
+            // discard the previous scan's disclosed names.
+            Assert.Same(PilotCallResult.None, source.Flight.Execute(new FlightCommand.Dock(pilot.StationId, pilot.ShipId)));
+            Assert.Null(source.Pilot.Position);
+            Assert.Null(f.Db.Store.FindPilot(1000001)!.Position);
+            Assert.Empty(Scan());
+            Assert.Empty(handler.Names(source, new HashSet<long> { Target(f) }));
+            f.Clock.Milliseconds += (long)InformationRules.DirectionalScanCooldown.TotalMilliseconds;
+        }
+        Assert.Empty(source.Notifications);
+        Assert.Empty(source.NotificationsBeforeFlight);
     }
 
     [Theory]

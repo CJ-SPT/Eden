@@ -46,16 +46,21 @@ internal sealed class DirectionalScanHandler(IPilotInformation information, Time
         try
         {
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            context.Flight.Checkpoint();
+            // Build 3662168 restores the scanner palette with scanOnOpen before
+            // ballpark initialization and scans again on OnBallparkSetState.
+            // Reply with an empty list during docking/session transitions, without
+            // disclosing contacts or consuming the next in-space scan's cooldown.
+            if (!context.Flight.CanUseSelfModules)
+            {
+                _names = [];
+                return new DirectionalScanReply([]);
+            }
             if (now < _readyAt)
             {
                 return new PilotCallResult.Failure("The directional scanner is still resetting.");
             }
-            context.Flight.Checkpoint();
             // Directional scanning is available during warp; targeting is not.
-            if (!context.Flight.CanUseSelfModules)
-            {
-                return new PilotCallResult.Failure("Use the directional scanner while in space.");
-            }
             var contacts = information.Directional(
                 context.Pilot.PilotId,
                 Convert.ToDouble(args[0]),

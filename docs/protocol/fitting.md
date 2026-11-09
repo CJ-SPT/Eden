@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Multifit item-creation capability, November 9, 2026](#multifit-item-creation-capability-november-9-2026)
+
 - [CPU and power-grid skill budgets, November 9, 2026](#cpu-and-power-grid-skill-budgets-november-9-2026)
 
 - [Paid nanite repair runtime, November 7, 2026](#paid-nanite-repair-runtime-november-7-2026)
@@ -296,6 +298,20 @@ dotnet test --no-build --artifacts-path artifacts/feature-tests --filter $rigFil
 **Live acceptance:** Not performed; agent client testing is disabled. Native rendering, confirmation input and fitting-panel presentation remain unverified.
 
 **Optional maintainer checks:** fit one matching-size T1/T2 pair and inspect calibration/bonuses; remove a rig through its confirmation and verify it disappears; reconnect with a fitted rig and inspect its retained effects.
+
+## Multifit item-creation capability, November 9, 2026
+
+The maintainer reported **Invalid Packet Destination: Unsupported local call publicQaToolsServer.CanGiveItemForMultifit**. Build **3662168** `PublicQaToolsClient.CanGiveItemForMultifit` forwards a zero-argument call and returns its Boolean reply directly. `MultiFitWnd.AddButtons` and `SetInventoryStatus` use that capability only to construct and update the public-QA **Create Missing** button. Its `GiveAllPlayer` callback builds `/giveitem` commands through `publicQaToolsServer.SlashCmd`. Ordinary fitting controls do not depend on a positive capability reply.
+
+Eden now owns this exact service/method in a selected-pilot handler and returns native Python **False**. The public-QA item-spawning path is unavailable for ordinary and developer accounts alike. Additional positional or keyword arguments fail explicitly; unrelated QA methods remain unsupported. The query changes no inventory, wallet or saved fitting and emits no notifications. This fixes capability discovery; it does not add batch fitting or public-QA commands.
+
+Gameplay reference: [EVE University fitting management](https://wiki.eveuniversity.org/NeoCom#Fitting_Management), which describes multifit as fitting multiple ships. Protocol evidence comes from inert inspection of the hash-verified original script archive, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Both relevant modules match the currently staged skill-overlay client byte-for-byte. Consulted [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), specifically native Boolean read/write forms. The existing Blue codec is unchanged.
+
+**Automated validation.** Tool/solution restore and the solution build passed with zero warnings/errors. The combined filter `FullyQualifiedName~Eden.Protocol.Tests.Fittings|FullyQualifiedName~Eden.Protocol.Tests.Information|FullyQualifiedName~Eden.Protocol.Tests.Exploration.CombatAnomalyTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.StationUndockTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **234 cases**, zero failed/skipped, in **69 seconds** (**72.85 seconds** test-command wall time). Both Python policy suites passed (**8 catalog + 9 formatting cases**), as did formatting verification (**1394 files**), line-width checks and `git diff --check`. The required sequence took **101.77 seconds**. Edited-document encoding/whitespace and **502 local documentation links/anchors** passed; unrelated linked pages were read tolerantly for pre-existing non-UTF-8 punctuation when resolving their headings. No full .NET suite or client acceptance was requested or run. The exact development filter `FullyQualifiedName=Eden.Protocol.Tests.Fittings.MultifitCapabilityTests.NativeCapabilityCheckReturnsFalseWithoutChangingAssetsOrNotifying` passed four cases, covering docked/in-space players and developers, selection gating, repeated queries, Blue Boolean round trips, malformed arguments, unsupported neighboring methods, unchanged funded assets and empty notification queues.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The screenshot records the original failure, not acceptance of the correction.
+
+**Optional maintainer checks.** After updating/restarting the server, reopen Multifit and confirm it opens without the unsupported-call dialog and without a Create Missing button.
 
 ## Personal saved fitting plans (November 6, 2026)
 
