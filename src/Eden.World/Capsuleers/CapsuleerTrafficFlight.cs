@@ -42,6 +42,7 @@ internal static class CapsuleerTrafficFlight
         {
             return work;
         }
+        var leg = HaulingRouteRules.Crossing(route.Systems, gate.SourceSystemId, gate.ObserverSystemId);
         var departure = SystemObjects.Geometry(catalog, gate.SourceSystemId).Single(o => o.Id == gate.DepartureGateId);
         var position = departure.Position + new SpacePosition(departure.Radius + pilot.Flight.ShipRadius + ApproachRange, 0, 0);
         SqliteWorld.SetPosition(world, catalog, pilot.ShipId, position, gate.SourceSystemId, now);
@@ -50,7 +51,14 @@ internal static class CapsuleerTrafficFlight
             catalog.Definitions.StationsInSystem(gate.ObserverSystemId).Length,
             pilot.PilotId
         );
-        return work with { TargetId = gate.DepartureGateId, DueStamp = dwell, DueTicks = elapsed + TimeSpan.FromSeconds(dwell).Ticks };
+        return work with
+        {
+            RouteIndex = leg.Index,
+            RouteDirection = leg.Direction,
+            TargetId = gate.DepartureGateId,
+            DueStamp = dwell,
+            DueTicks = elapsed + TimeSpan.FromSeconds(dwell).Ticks,
+        };
     }
 
     internal static CapsuleerTrafficRoute Route(SavedCapsuleerHauler saved, CatalogDbContext catalog)

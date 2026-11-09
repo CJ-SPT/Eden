@@ -609,17 +609,14 @@ internal sealed partial class CapsuleerHauler(
 
     private void BeginTravel()
     {
-        if (!SelectLaneTarget())
+        var leg = CapsuleerTrafficFlight.Leg(_route, Work, Pilot.SystemId);
+        _work = Work with
         {
-            var leg = CapsuleerTrafficFlight.Leg(_route, Work, Pilot.SystemId);
-            _work = Work with
-            {
-                RouteIndex = leg.Index,
-                RouteDirection = leg.Direction,
-                DestinationStationId = leg.Direction < 0 ? Founder.SourceStationId : Founder.DestinationStationId,
-            };
-            _target = CapsuleerTrafficFlight.Target(_route, Work, Pilot.SystemId, _objects);
-        }
+            RouteIndex = leg.Index,
+            RouteDirection = leg.Direction,
+            DestinationStationId = leg.Direction < 0 ? Founder.SourceStationId : Founder.DestinationStationId,
+        };
+        _target = CapsuleerTrafficFlight.Target(_route, Work, Pilot.SystemId, _objects);
         var saved = _operation.World.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == Pilot.PilotId);
         Eden.World.Combat.CrimewatchPersistence.CheckTravel(_operation.World, _operation.Catalog, saved, CrimewatchTravel.Warp, Now);
         if (_warpBlocked)

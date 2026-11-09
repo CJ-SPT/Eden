@@ -205,3 +205,17 @@ With the [gate controller correction](navigation.md#observed-stargate-activation
 **Live acceptance.** Not performed; agent client testing is disabled. The maintainer's report of missing flashes predates the gate controller correction.
 
 **Optional maintainer check.** Run the updated server and watch the Uoyonen gate from Vattuolen. Confirm the gate animates on incoming and outgoing crossings.
+
+### Traffic improvement stage 1 — stationless lane routes
+
+Gate encounters now use the saved route cursor and ordinary route targets after their inbound crossing. Previously the lane-specific target override always selected the watched gate when there was no local station, trapping a hauler between two stationless endpoints even when its saved home station was reachable farther along the route. Initial placement, arming and hidden transfer resolve the exact directed edge in the saved route. Subsequent flight follows the ordinary station/turnaround rules and retains the same owned hull.
+
+References remain the [EVE University stargate reference](https://wiki.eveuniversity.org/Stargates), the pinned catalog and [Carbon Destiny Ball.cpp at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp); movement and wire formats are unchanged.
+
+**Automated validation.** The exact `CapsuleerInboundRuntimeTests.StationlessLaneContinuesToItsSavedRemoteStationAndPersistsCursor` method passed both gate orientations (6.56 seconds including runner startup). The focused filter `FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerInboundProvisioningTests|FullyQualifiedName~CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerHaulerTests` passed 48 cases in 13.47 seconds including runner startup. Coverage includes the real remote-station dock, saved route cursor, shared gate observations, rejection, rollback and lost ships. The copied-save gate case remains opt-in and was not exercised. No full .NET regression was run.
+
+Tool/solution restore, solution build (zero warnings/errors), both Python policy suites (eight catalog and nine formatting cases), formatting verification and diff checks also passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for this route correction beyond the historical presentation check above.

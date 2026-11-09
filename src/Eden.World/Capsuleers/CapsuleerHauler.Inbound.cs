@@ -11,7 +11,6 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
-    private const int StationCategory = 3;
     private readonly Dictionary<int, int> _inboundDwells = [];
 
     internal bool IsInbound => _loaded && Work.Activity == HaulerActivity.Inbound;
@@ -57,6 +56,7 @@ internal sealed partial class CapsuleerHauler
             return job;
         }
         long delay = Math.Max(0, elapsed - Work.ActiveTicks);
+        var leg = HaulingRouteRules.Crossing(_route.Systems, gate.SourceSystemId, gate.ObserverSystemId);
         int dwell = _inboundDwells[gate.ObserverSystemId];
         long due = Work.Activity == HaulerActivity.Inbound ? Work.DueTicks + delay : elapsed + TimeSpan.FromSeconds(dwell).Ticks;
         NavigationState navigation = new();
@@ -68,6 +68,8 @@ internal sealed partial class CapsuleerHauler
             DueTicks = due,
             DueStamp = Work.Activity == HaulerActivity.Inbound ? Work.DueStamp : Work.Stamp + dwell,
             TargetId = gate.DepartureGateId,
+            RouteIndex = leg.Index,
+            RouteDirection = leg.Direction,
             Navigation = navigation.Capture(),
             TrafficLane = new(gate.ObserverSystemId, gate.SourceSystemId, gate.ArrivalGateId, gate.DepartureGateId),
             LaneDeparting = true,
@@ -132,22 +134,6 @@ internal sealed partial class CapsuleerHauler
         return next;
     }
 
-    private bool SelectLaneTarget()
-    {
-        if (Work.TrafficLane is not { } lane || Pilot.SystemId != lane.ObserverSystemId && Pilot.SystemId != lane.SourceSystemId)
-        {
-            return false;
-        }
-        long gate = Pilot.SystemId == lane.ObserverSystemId ? lane.ArrivalGateId : lane.DepartureGateId;
-        var station = Work.LaneDeparting ? null : _objects.Where(o => o.CategoryId == StationCategory).OrderBy(o => o.Id).FirstOrDefault();
-        _target = station ?? _objects.Single(o => o.Id == gate);
-        if (station is not null)
-        {
-            _work = Work with { DestinationStationId = checked((int)station.Id) };
-        }
-        return true;
-    }
-
     private void CompleteInbound()
     {
         if (Work.InboundPaused || Work.TrafficLane is not { } lane || Pilot.SystemId != lane.SourceSystemId)
@@ -176,7 +162,8 @@ internal sealed partial class CapsuleerHauler
             departure.Position + new SpacePosition(departure.Radius + Pilot.Flight.ShipRadius + CapsuleerTrafficFlight.ApproachRange, 0, 0);
         SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, position, Pilot.SystemId, Now);
         _target = departure;
-        _work = Work with { TargetId = departure.Id, InboundPaused = false };
+        var leg = HaulingRouteRules.Crossing(_route.Systems, Pilot.SystemId, lane.ObserverSystemId);
+        _work = Work with { TargetId = departure.Id, RouteIndex = leg.Index, RouteDirection = leg.Direction, InboundPaused = false };
         CompleteJump();
     }
 }

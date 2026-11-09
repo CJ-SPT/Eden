@@ -13,6 +13,7 @@ using Eden.World.Combat;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,58 @@ public sealed class CapsuleerInboundRuntimeTests
     private const int Observer = 30000141;
     private const int Source = 30000142;
     private static readonly WatchedTrafficGate s_gate = new(Observer, Source, 50009991, 50009992);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task StationlessLaneContinuesToItsSavedRemoteStationAndPersistsCursor(bool reverseGate)
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        const int remote = 30000144;
+        const long remoteGate = 50001249;
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("UPDATE Station SET SolarSystemId=30000144");
+        }
+        var gate = reverseGate ? new(Source, Observer, s_gate.DepartureGateId, s_gate.ArrivalGateId) : s_gate;
+        long pilot = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(gate)!.Value;
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilot);
+        var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilot);
+        long ship = hauler.Read()!.Pilot.ShipId;
+        job = hauler.ArmInbound(job, 0, gate);
+        job = hauler.Execute(job, 0, background: true);
+        List<int> visited = [hauler.SystemId];
+        for (int seconds = 1; seconds < 2000 && hauler.Read()!.Pilot.Position is not null; seconds++)
+        {
+            var observation = hauler.Read()!;
+            if (observation.Pilot.SystemId == Source)
+            {
+                Assert.Equal(remoteGate, observation.Work.TargetId);
+                Assert.Equal(1, observation.Work.RouteIndex);
+                Assert.Equal(-1, observation.Work.RouteDirection);
+            }
+            f.Clock.Seconds++;
+            job = hauler.Execute(job, seconds);
+            Assert.Null(hauler.Read()!.Work.WaitingReason);
+            Assert.Equal(ship, hauler.Read()!.Pilot.ShipId);
+            if (hauler.SystemId != visited[^1])
+            {
+                visited.Add(hauler.SystemId);
+            }
+        }
+        Assert.Equal<int>(reverseGate ? [Source, remote] : [Observer, Source, remote], visited);
+        Assert.Null(hauler.Read()!.Pilot.Position);
+        Assert.Equal(HaulerActivity.Docked, hauler.Read()!.Work.Activity);
+        await host.GetRequiredService<LiveWorld>().FlushAsync();
+        using WorldDbContext reopened = new(f.Database.Path);
+        var saved = reopened.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == pilot);
+        var progress = HaulerCheckpoint.Read(saved.Progress)!;
+        Assert.Equal(0, progress.RouteIndex);
+        Assert.Equal(-1, progress.RouteDirection);
+        Assert.Equal(ship, progress.ShipId);
+        Assert.Equal(saved.SourceStationId, hauler.Read()!.Pilot.StationId);
+    }
 
     [Theory]
     [InlineData("arm")]

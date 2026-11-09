@@ -22,6 +22,8 @@ Busy routes can first appear with a hauler inbound at a gate, another closing on
 
 A pilot within 250 km of a reciprocal gate can also encounter a passing hauler from the other side. The two ends share one saved pilot with its own ship and cargo. Watching the same gate with a friend shares the crossing. A docked pilot or an empty grid cannot keep incoming traffic running. Both endpoints contribute to eligibility, so a quiet neighbor can still exchange traffic with a busy system. The home-roster counts above exclude these gate pilots.
 
+Gate pilots follow their saved station route after crossing. When both gate endpoints are stationless, a returning hauler continues through the corridor to its real home station instead of shuttling indefinitely between the two gates.
+
 World schema 120 retains prior pilots in their original roster slots. Generated names get natural replacements and custom pilot or ship names are preserved. Missing roster members are granted on visits. A gate or station count determines traffic independently of mining eligibility, local ore availability and regional market activity.
 
 See [implementation and validation](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic).

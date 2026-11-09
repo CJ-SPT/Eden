@@ -49,6 +49,22 @@ public sealed record HaulerRouteLeg(int Index, int Direction, int? NextSystemId)
 
 public static class HaulingRouteRules
 {
+    public static HaulerRouteLeg Crossing(IReadOnlyList<int> systems, int systemId, int nextSystemId)
+    {
+        for (int index = 0; index + 1 < systems.Count; index++)
+        {
+            if (systems[index] == systemId && systems[index + 1] == nextSystemId)
+            {
+                return new(index, 1, nextSystemId);
+            }
+            if (systems[index + 1] == systemId && systems[index] == nextSystemId)
+            {
+                return new(index + 1, -1, nextSystemId);
+            }
+        }
+        throw new InvalidDataException("The gate crossing is outside the saved hauling route.");
+    }
+
     public static HaulerRouteLeg Leg(IReadOnlyList<int> systems, int systemId, int index, int direction, bool roundTrip)
     {
         if (systems.Count == 0)
