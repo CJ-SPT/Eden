@@ -63,6 +63,7 @@ internal sealed class SupportModuleWire(
             DogmaEffect.ShipScan => "effects.ShipScan",
             DogmaEffect.TractorBeam => "effects.TractorBeam",
             DogmaEffect.Salvaging => "effects.Salvaging",
+            DogmaEffect.Hacking => "effects.TargetScan",
             DogmaEffect.PassiveTargeting or DogmaEffect.AutomaticTargeting => null,
             // Pinned effect 6557 declares no world graphic; the HUD cycle still uses ShipEffectChanged.
             DogmaEffect.OmnidirectionalTrackingLink => null,

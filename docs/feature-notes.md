@@ -6,6 +6,8 @@ Detailed implementation summaries formerly collected in the root README, grouped
 
 Counts, schema versions, example pilots, fixture populations and native observations describe the recorded implementation. Read the linked follow-ups before treating an older example as current behavior. Automated support and historical client observations are distinct; native presentation remains unverified where stated.
 
+The [hacking and archaeology milestone](protocol/information.md#hacking-and-archaeology-november-9-2026) adds native analyzer minigames and persistent pirate data/relic exploration with earned loot. Earlier probe and equipment limitations below are historical where superseded.
+
 ## Contents
 
 - [Accounts, profiles and skills](#accounts-profiles-and-skills)

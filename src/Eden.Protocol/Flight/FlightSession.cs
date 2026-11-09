@@ -101,6 +101,7 @@ internal sealed class FlightSession(
         InBallpark && !_destroying && Pilot.Position is not null && _travel.Gate is null && !Translocating && _navigation.Warp is null;
 
     public bool InWarp => _navigation.Warp is not null;
+    internal bool PreparingWarp => _navigation.WarpDestination is not null;
     public bool MicrowarpdriveBlocked => ModuleEffects.MwdBlocked;
 
     // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and

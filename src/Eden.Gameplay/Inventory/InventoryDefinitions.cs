@@ -93,6 +93,7 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    Hacking = 1738,
     ShipScan = 46,
     CargoScan = 47,
     PassiveTargeting = 54,

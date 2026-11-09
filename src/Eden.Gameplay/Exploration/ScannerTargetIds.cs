@@ -7,6 +7,22 @@ public static class ScannerTargetIds
     private const int AlphabetSize = 26;
     private const int Prefixes = AlphabetSize * AlphabetSize * AlphabetSize;
     private const int Suffixes = 1000;
+    public const long ExplorationSequenceOffset = 8_000_000;
+
+    public static string FromCombatSequence(long sequence)
+    {
+        if (sequence >= ExplorationSequenceOffset)
+        {
+            throw new InvalidDataException("The combat scanner identifier range is exhausted.");
+        }
+        return FromSequence(sequence);
+    }
+
+    public static string FromExplorationSequence(long sequence)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(sequence);
+        return FromSequence(checked(ExplorationSequenceOffset + sequence));
+    }
 
     // Native scan rows have a narrow ID column. Vary the letters first so
     // adjacent sites remain distinguishable even when its last digit is clipped.

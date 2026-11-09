@@ -82,10 +82,24 @@ internal static class ProbeScanningWire
                 ["scanGroupID"] = ProbeScanRules.SignatureScanGroup,
                 ["groupID"] = ProbeScanRules.SignatureGroup,
                 ["typeID"] = name ? ProbeScanRules.SignatureType : null,
-                ["strengthAttributeID"] = group ? CombatStrengthAttribute : null,
+                ["strengthAttributeID"] = group
+                    ? result.Site.Exploration switch
+                    {
+                        ExplorationKind.Data => HackingRules.DataStrengthAttribute,
+                        ExplorationKind.Relic => HackingRules.RelicStrengthAttribute,
+                        _ => CombatStrengthAttribute,
+                    }
+                    : null,
                 ["dungeonID"] = name ? result.Site.DungeonId : null,
                 ["dungeonNameID"] = name ? result.Site.NameId : null,
-                ["archetypeID"] = group ? CombatAnomalyRules.CombatSiteArchetypeId : null,
+                ["archetypeID"] = group
+                    ? result.Site.Exploration switch
+                    {
+                        ExplorationKind.Data => HackingRules.DataArchetype,
+                        ExplorationKind.Relic => HackingRules.RelicArchetype,
+                        _ => CombatAnomalyRules.CombatSiteArchetypeId,
+                    }
+                    : null,
                 ["factionID"] = name ? result.Site.FactionId : null,
                 ["certainty"] = result.Certainty,
                 ["pos"] = Position(result.Position),

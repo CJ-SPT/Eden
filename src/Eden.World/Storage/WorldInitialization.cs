@@ -122,6 +122,7 @@ public static class WorldInitialization
         // capacitor/cooldowns but never leaves an orphaned active bonus.
         world.Set<ActiveFittedModule>().ExecuteDelete();
         world.Set<WorldTackle>().ExecuteDelete();
+        Eden.World.Exploration.HackingSchema.Reconcile(world);
         world.Set<WorldPlayerEwar>().ExecuteDelete();
         world.Set<WorldRemoteRepair>().ExecuteDelete();
         world.Set<WorldRemoteAssistance>().ExecuteDelete();

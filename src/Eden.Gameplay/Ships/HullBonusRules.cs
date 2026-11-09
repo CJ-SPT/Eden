@@ -350,5 +350,6 @@ public static class HullBonusRules
                     or HullCapability.RemoteElectronicAssistance
                     or HullCapability.TractorBeams
                     or HullCapability.Salvaging
-                    or HullCapability.Probes;
+                    or HullCapability.Probes
+                    or HullCapability.Hacking;
 }

@@ -52,7 +52,8 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            groupId == ProbeScanRules.LauncherGroup && effects.Contains(DogmaEffect.UseMissiles)
+            groupId == HackingRules.AnalyzerGroup && effects.Contains(DogmaEffect.Hacking)
+            || groupId == ProbeScanRules.LauncherGroup && effects.Contains(DogmaEffect.UseMissiles)
             || Enum.IsDefined((InformationGroup)groupId)
                 && (InformationRules.Effect(groupId) is { } information ? effects.Contains(information) : true)
             || groupId == AssaultDamageControlRules.Group && effects.Contains(DogmaEffect.AssaultDamageControl)

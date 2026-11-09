@@ -99,8 +99,13 @@ internal sealed class FlightScene(
         {
             return new(id, wreck.TypeId, wreck.Position, wreck.Radius);
         }
-        return VisibleObjects(context).FirstOrDefault(o => o.Id == id && o.CategoryId == AsteroidDefinitions.Category) is { } asteroid
-            ? new(id, asteroid.TypeId, asteroid.Position, asteroid.Radius)
+        return
+            VisibleObjects(context)
+                .FirstOrDefault(o =>
+                    o.Id == id && (o.CategoryId == AsteroidDefinitions.Category || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id))
+                )
+                is { } targetObject
+            ? new(id, targetObject.TypeId, targetObject.Position, targetObject.Radius)
             : null;
     }
 

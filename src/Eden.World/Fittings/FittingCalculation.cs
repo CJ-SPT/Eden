@@ -421,6 +421,7 @@ internal sealed record FittingCalculation(
         var relevantSkills = PassiveModules
             .Skills.Concat(MissileDefinitions.Skills)
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
+            .Concat([Eden.Gameplay.Exploration.HackingRules.HackingSkill, Eden.Gameplay.Exploration.HackingRules.ArchaeologySkill])
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
             .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))

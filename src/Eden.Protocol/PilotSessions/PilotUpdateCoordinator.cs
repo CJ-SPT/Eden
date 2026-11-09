@@ -76,12 +76,14 @@ internal sealed class PilotUpdateCoordinator(
     NaniteRepairHandler naniteRepairs,
     ModuleBurnoutMonitor burnout,
     OverloadHandler overload,
-    InformationHandler information
+    InformationHandler information,
+    Eden.Protocol.Exploration.HackingHandler? hacking = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
     public bool IsMonitoring =>
-        overload.IsMonitoring
+        hacking?.IsMonitoring == true
+        || overload.IsMonitoring
         || corporations.IsMonitoring
         || fleets.IsMonitoring
         || industry.IsMonitoring
@@ -177,6 +179,7 @@ internal sealed class PilotUpdateCoordinator(
         capacitorWarfare.Cancel(context);
         remoteAssistance.Cancel(context);
         information.Cancel(context);
+        hacking?.Cancel(context);
         hardeners.Cancel(context);
         signatureSuppression.Cancel(context);
         assaultDamageControl.Cancel(context);
@@ -212,6 +215,7 @@ internal sealed class PilotUpdateCoordinator(
         capacitorWarfare.Advance(context);
         remoteAssistance.Advance(context);
         information.Advance(context);
+        hacking?.Advance(context);
         capacitorBoosters.Advance(context);
         drones.Advance(context);
         hardeners.Advance(context);

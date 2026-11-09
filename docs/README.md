@@ -19,6 +19,7 @@ restored scenery, room-local coordinate transforms and saved-position compatibil
 
 [Anomaly warp-in collision correction](protocol/combat.md#anomaly-warp-in-collision-correction--november-9-2026) fixes oversized
 ore/scenery collision spheres and non-interactable wreckage in Drone Assembly and Drone Cluster.
+[Hacking and archaeology](protocol/information.md#hacking-and-archaeology-november-9-2026) covers native analyzer minigames, persistent pirate exploration containers, earned industrial inputs and the pinned-build content export.
 
 [Catalog-wide station production](protocol/industry.md#catalog-wide-station-production-november-9-2026) records broad manufacturing, ancient-relic invention, facility restrictions and preserved material-source gaps. The [production catalog audit](production-catalog.json) records every manufacturing recipe and exclusion.
 

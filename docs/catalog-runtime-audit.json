@@ -2,9 +2,9 @@
   "build": 3662168,
   "purpose": "Completed adoption inventory; native identifiers and mechanics are intentional, classified below.",
   "counts": {
-    "catalog-read": 210,
-    "catalog-context": 677,
-    "content-identifier": 186,
+    "catalog-read": 223,
+    "catalog-context": 733,
+    "content-identifier": 204,
     "type-selection": 9
   },
   "coverage": {
@@ -60,6 +60,30 @@
       "line": 11,
       "kind": "content-identifier",
       "text": "public const int AccelerationGateGroup = 366;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Agents/MissionStructures.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "public const int LargeCollidableStructureGroup = 319;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Agents/MissionStructures.cs",
+      "line": 8,
+      "kind": "content-identifier",
+      "text": "public const int RecoveryContainerType = 23;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Agents/MissionStructures.cs",
+      "line": 9,
+      "kind": "content-identifier",
+      "text": "public const int RecoveryContainerGroup = 12;",
       "disposition": "native-identifier-or-rule",
       "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
     },
@@ -177,7 +201,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Capsuleers/Hauling.cs",
-      "line": 103,
+      "line": 104,
       "kind": "content-identifier",
       "text": "public const int BadgerType = 648;",
       "disposition": "native-identifier-or-rule",
@@ -292,6 +316,22 @@
       "line": 72,
       "kind": "content-identifier",
       "text": "public const int ProjectileWeaponGroup = 55;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/Concord.cs",
+      "line": 13,
+      "kind": "content-identifier",
+      "text": "public const int CaptainType = 3885;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/Concord.cs",
+      "line": 14,
+      "kind": "content-identifier",
+      "text": "public const int CommanderType = 11125;",
       "disposition": "native-identifier-or-rule",
       "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
     },
@@ -569,7 +609,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Exploration/CombatAnomalies.cs",
-      "line": 37,
+      "line": 40,
       "kind": "content-identifier",
       "text": "public const int AnomalyTypeId = 28356;",
       "disposition": "native-identifier-or-rule",
@@ -577,7 +617,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Exploration/CombatAnomalies.cs",
-      "line": 38,
+      "line": 41,
       "kind": "content-identifier",
       "text": "public const int TelescopeTypeId = 70824;",
       "disposition": "native-identifier-or-rule",
@@ -585,17 +625,105 @@
     },
     {
       "path": "src/Eden.Gameplay/Exploration/CombatAnomalyEncounters.cs",
-      "line": 26,
+      "line": 28,
       "kind": "content-identifier",
       "text": "public const int SentryGroup = NpcEncounterDefinitions.SentryGroup;",
       "disposition": "native-identifier-or-rule",
       "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
     },
     {
+      "path": "src/Eden.Gameplay/Exploration/Hacking.cs",
+      "line": 133,
+      "kind": "content-identifier",
+      "text": "public const int AnalyzerGroup = 538;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/Hacking.cs",
+      "line": 134,
+      "kind": "content-identifier",
+      "text": "public const int ContainerGroup = 1207;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 58,
+      "kind": "content-identifier",
+      "text": "public const int LauncherGroup = 481;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 59,
+      "kind": "content-identifier",
+      "text": "public const int ProbeGroup = 479;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 74,
+      "kind": "content-identifier",
+      "text": "public const int SignatureGroup = 502;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 75,
+      "kind": "content-identifier",
+      "text": "public const int SignatureType = 19728;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 76,
+      "kind": "content-identifier",
+      "text": "public const int SignatureScanGroup = 3;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Flight/DungeonObjectGeometry.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "private const int CloudGroup = 227;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Flight/DungeonObjectGeometry.cs",
+      "line": 8,
+      "kind": "content-identifier",
+      "text": "private const int MassiveEnvironmentGroup = 1882;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Flight/DungeonObjectGeometry.cs",
+      "line": 9,
+      "kind": "content-identifier",
+      "text": "private const int NonInteractableObjectGroup = 1975;",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
       "path": "src/Eden.Gameplay/Industry/PilotIndustry.cs",
-      "line": 21,
+      "line": 25,
       "kind": "content-identifier",
       "text": "public enum IndustrySkill",
+      "disposition": "native-identifier-or-rule",
+      "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
+    },
+    {
+      "path": "src/Eden.Gameplay/Industry/PilotIndustry.cs",
+      "line": 137,
+      "kind": "content-identifier",
+      "text": "public const int GenericDecryptorGroup = 1304;",
       "disposition": "native-identifier-or-rule",
       "reason": "Named native operation/item/skill identifiers and mathematical rules remain in the owning Gameplay feature."
     },
@@ -617,7 +745,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
-      "line": 85,
+      "line": 86,
       "kind": "content-identifier",
       "text": "public enum FittingSkill",
       "disposition": "native-identifier-or-rule",
@@ -625,7 +753,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
-      "line": 228,
+      "line": 236,
       "kind": "content-identifier",
       "text": "public const int MiningLaserGroup = 54;",
       "disposition": "native-identifier-or-rule",
@@ -633,7 +761,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
-      "line": 229,
+      "line": 237,
       "kind": "content-identifier",
       "text": "public const int StripMinerGroup = 464;",
       "disposition": "native-identifier-or-rule",
@@ -641,7 +769,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
-      "line": 233,
+      "line": 241,
       "kind": "content-identifier",
       "text": "public const int CivilianMinerType = 3651;",
       "disposition": "native-identifier-or-rule",
@@ -649,7 +777,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Inventory/PassiveModules.cs",
-      "line": 84,
+      "line": 86,
       "kind": "content-identifier",
       "text": "public enum PassiveModuleSkill",
       "disposition": "native-identifier-or-rule",
@@ -761,7 +889,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Market/PilotMarket.cs",
-      "line": 150,
+      "line": 154,
       "kind": "content-identifier",
       "text": "public const int PlexTypeId = 44992;",
       "disposition": "native-identifier-or-rule",
@@ -1169,7 +1297,7 @@
     },
     {
       "path": "src/Eden.Protocol/Agents/MissionWire.cs",
-      "line": 119,
+      "line": 120,
       "kind": "content-identifier",
       "text": "internal const int SolarSystemType = 5; // Build 3662168 appConst.typeSolarSystem.",
       "disposition": "protocol-identifier",
@@ -1177,7 +1305,7 @@
     },
     {
       "path": "src/Eden.Protocol/Agents/MissionWire.cs",
-      "line": 152,
+      "line": 153,
       "kind": "content-identifier",
       "text": "private const int CreditsType = 29; // Build 3662168 appConst.typeCredits.",
       "disposition": "protocol-identifier",
@@ -1249,25 +1377,9 @@
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 46,
+      "line": 58,
       "kind": "content-identifier",
       "text": "private const int InvisibleBeaconGroup = 4055;",
-      "disposition": "mechanic-binding",
-      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
-    },
-    {
-      "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 47,
-      "kind": "content-identifier",
-      "text": "private const int CloudGroup = 227;",
-      "disposition": "mechanic-binding",
-      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
-    },
-    {
-      "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 48,
-      "kind": "content-identifier",
-      "text": "private const int EnvironmentGroup = 1882;",
       "disposition": "mechanic-binding",
       "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
     },
@@ -1377,7 +1489,7 @@
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 514,
+      "line": 518,
       "kind": "type-selection",
       "text": "|| !DroneRules.SupportsHull(ship.TypeId)",
       "disposition": "build-content-policy",
@@ -1385,25 +1497,57 @@
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 31,
+      "line": 37,
       "kind": "content-identifier",
       "text": "private const int InvisibleBeaconGroup = 4055;",
       "disposition": "mechanic-binding",
       "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
     },
     {
-      "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 32,
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 15,
       "kind": "content-identifier",
-      "text": "private const int CloudGroup = 227;",
+      "text": "private const int AbyssalMetaGroup = 15;",
       "disposition": "mechanic-binding",
       "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
     },
     {
-      "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 33,
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 16,
       "kind": "content-identifier",
-      "text": "private const int EnvironmentGroup = 1882;",
+      "text": "internal const int DatacoreGroup = 333;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 17,
+      "kind": "content-identifier",
+      "text": "internal const int DecryptorGroup = 1304;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 18,
+      "kind": "content-identifier",
+      "text": "internal const int SalvageGroup = 754;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Exploration/PilotProbeScanningStore.cs",
+      "line": 31,
+      "kind": "content-identifier",
+      "text": "private const int CapsuleGroup = 29;",
+      "disposition": "mechanic-binding",
+      "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
+    },
+    {
+      "path": "src/Eden.World/Exploration/ProbeCatalog.cs",
+      "line": 11,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;",
       "disposition": "mechanic-binding",
       "reason": "Named native group/effect identifiers bind typed source inputs to implemented feature rules."
     },
@@ -1622,6 +1766,24 @@
       "text": "public const int AccelerationGateGroup = 366;"
     },
     {
+      "path": "src/Eden.Gameplay/Agents/MissionStructures.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "public const int LargeCollidableStructureGroup = 319;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Agents/MissionStructures.cs",
+      "line": 8,
+      "kind": "content-identifier",
+      "text": "public const int RecoveryContainerType = 23;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Agents/MissionStructures.cs",
+      "line": 9,
+      "kind": "content-identifier",
+      "text": "public const int RecoveryContainerGroup = 12;"
+    },
+    {
       "path": "src/Eden.Gameplay/Agents/PilotMissions.cs",
       "line": 51,
       "kind": "content-identifier",
@@ -1707,7 +1869,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Capsuleers/Hauling.cs",
-      "line": 103,
+      "line": 104,
       "kind": "content-identifier",
       "text": "public const int BadgerType = 648;"
     },
@@ -1794,6 +1956,18 @@
       "line": 72,
       "kind": "content-identifier",
       "text": "public const int ProjectileWeaponGroup = 55;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/Concord.cs",
+      "line": 13,
+      "kind": "content-identifier",
+      "text": "public const int CaptainType = 3885;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Combat/Concord.cs",
+      "line": 14,
+      "kind": "content-identifier",
+      "text": "public const int CommanderType = 11125;"
     },
     {
       "path": "src/Eden.Gameplay/Combat/MissileDefinitions.cs",
@@ -2001,27 +2175,93 @@
     },
     {
       "path": "src/Eden.Gameplay/Exploration/CombatAnomalies.cs",
-      "line": 37,
+      "line": 40,
       "kind": "content-identifier",
       "text": "public const int AnomalyTypeId = 28356;"
     },
     {
       "path": "src/Eden.Gameplay/Exploration/CombatAnomalies.cs",
-      "line": 38,
+      "line": 41,
       "kind": "content-identifier",
       "text": "public const int TelescopeTypeId = 70824;"
     },
     {
       "path": "src/Eden.Gameplay/Exploration/CombatAnomalyEncounters.cs",
-      "line": 26,
+      "line": 28,
       "kind": "content-identifier",
       "text": "public const int SentryGroup = NpcEncounterDefinitions.SentryGroup;"
     },
     {
+      "path": "src/Eden.Gameplay/Exploration/Hacking.cs",
+      "line": 133,
+      "kind": "content-identifier",
+      "text": "public const int AnalyzerGroup = 538;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/Hacking.cs",
+      "line": 134,
+      "kind": "content-identifier",
+      "text": "public const int ContainerGroup = 1207;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 58,
+      "kind": "content-identifier",
+      "text": "public const int LauncherGroup = 481;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 59,
+      "kind": "content-identifier",
+      "text": "public const int ProbeGroup = 479;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 74,
+      "kind": "content-identifier",
+      "text": "public const int SignatureGroup = 502;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 75,
+      "kind": "content-identifier",
+      "text": "public const int SignatureType = 19728;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Exploration/ProbeScanning.cs",
+      "line": 76,
+      "kind": "content-identifier",
+      "text": "public const int SignatureScanGroup = 3;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Flight/DungeonObjectGeometry.cs",
+      "line": 7,
+      "kind": "content-identifier",
+      "text": "private const int CloudGroup = 227;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Flight/DungeonObjectGeometry.cs",
+      "line": 8,
+      "kind": "content-identifier",
+      "text": "private const int MassiveEnvironmentGroup = 1882;"
+    },
+    {
+      "path": "src/Eden.Gameplay/Flight/DungeonObjectGeometry.cs",
+      "line": 9,
+      "kind": "content-identifier",
+      "text": "private const int NonInteractableObjectGroup = 1975;"
+    },
+    {
       "path": "src/Eden.Gameplay/Industry/PilotIndustry.cs",
-      "line": 21,
+      "line": 25,
       "kind": "content-identifier",
       "text": "public enum IndustrySkill"
+    },
+    {
+      "path": "src/Eden.Gameplay/Industry/PilotIndustry.cs",
+      "line": 137,
+      "kind": "content-identifier",
+      "text": "public const int GenericDecryptorGroup = 1304;"
     },
     {
       "path": "src/Eden.Gameplay/Information/InformationRules.cs",
@@ -2037,31 +2277,31 @@
     },
     {
       "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
-      "line": 85,
+      "line": 86,
       "kind": "content-identifier",
       "text": "public enum FittingSkill"
     },
     {
       "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
-      "line": 228,
+      "line": 236,
       "kind": "content-identifier",
       "text": "public const int MiningLaserGroup = 54;"
     },
     {
       "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
-      "line": 229,
+      "line": 237,
       "kind": "content-identifier",
       "text": "public const int StripMinerGroup = 464;"
     },
     {
       "path": "src/Eden.Gameplay/Inventory/InventoryDefinitions.cs",
-      "line": 233,
+      "line": 241,
       "kind": "content-identifier",
       "text": "public const int CivilianMinerType = 3651;"
     },
     {
       "path": "src/Eden.Gameplay/Inventory/PassiveModules.cs",
-      "line": 84,
+      "line": 86,
       "kind": "content-identifier",
       "text": "public enum PassiveModuleSkill"
     },
@@ -2145,7 +2385,7 @@
     },
     {
       "path": "src/Eden.Gameplay/Market/PilotMarket.cs",
-      "line": 150,
+      "line": 154,
       "kind": "content-identifier",
       "text": "public const int PlexTypeId = 44992;"
     },
@@ -2451,13 +2691,13 @@
     },
     {
       "path": "src/Eden.Protocol/Agents/MissionWire.cs",
-      "line": 119,
+      "line": 120,
       "kind": "content-identifier",
       "text": "internal const int SolarSystemType = 5; // Build 3662168 appConst.typeSolarSystem."
     },
     {
       "path": "src/Eden.Protocol/Agents/MissionWire.cs",
-      "line": 152,
+      "line": 153,
       "kind": "content-identifier",
       "text": "private const int CreditsType = 29; // Build 3662168 appConst.typeCredits."
     },
@@ -2529,49 +2769,43 @@
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 46,
+      "line": 58,
       "kind": "content-identifier",
       "text": "private const int InvisibleBeaconGroup = 4055;"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 47,
-      "kind": "content-identifier",
-      "text": "private const int CloudGroup = 227;"
-    },
-    {
-      "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 48,
-      "kind": "content-identifier",
-      "text": "private const int EnvironmentGroup = 1882;"
-    },
-    {
-      "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 67,
+      "line": 77,
       "kind": "catalog-context",
       "text": "internal static ImmutableArray<MissionProfile> Read(CatalogDbContext catalog) => catalog.Definition(s_profiles, 0);"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 69,
+      "line": 79,
       "kind": "catalog-context",
       "text": "internal static MissionProfile Find(CatalogDbContext catalog, int missionId) =>"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 73,
+      "line": 83,
       "kind": "catalog-context",
       "text": "private static ImmutableArray<MissionProfile> Load(CatalogDbContext catalog, int unused)"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 117,
+      "line": 135,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 159,
+      "line": 177,
+      "kind": "catalog-read",
+      "text": ".Select(o => (Source: o, Type: catalog.FittingType(o.TypeID!.Value)))"
+    },
+    {
+      "path": "src/Eden.World/Agents/MissionCatalog.cs",
+      "line": 194,
       "kind": "catalog-read",
       "text": "var type = catalog.FittingType(item.TypeID!.Value);"
     },
@@ -2580,6 +2814,30 @@
       "line": 16,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Agents/PilotMissionStore.Containers.cs",
+      "line": 29,
+      "kind": "catalog-context",
+      "text": "private static void SeedContainers(WorldDbContext world, CatalogDbContext catalog, SavedMission mission, MissionProfile profile)"
+    },
+    {
+      "path": "src/Eden.World/Agents/PilotMissionStore.Containers.cs",
+      "line": 48,
+      "kind": "catalog-context",
+      "text": "private ContainerAccess AccessContainer(WorldDbContext world, CatalogDbContext catalog, long pilotId, long containerId)"
+    },
+    {
+      "path": "src/Eden.World/Agents/PilotMissionStore.Containers.cs",
+      "line": 109,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Agents/PilotMissionStore.Containers.cs",
+      "line": 137,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.cs",
@@ -2619,43 +2877,43 @@
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.cs",
-      "line": 282,
+      "line": 292,
       "kind": "catalog-context",
       "text": "private static void RequireAgentAccess(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent)"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.cs",
-      "line": 299,
+      "line": 309,
       "kind": "catalog-context",
       "text": "private MissionOffer Snapshot(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, SavedMission row)"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.cs",
-      "line": 360,
+      "line": 382,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Encounters.cs",
-      "line": 32,
+      "line": 35,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Encounters.cs",
-      "line": 109,
+      "line": 127,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Encounters.cs",
-      "line": 129,
+      "line": 147,
       "kind": "catalog-context",
       "text": "internal static void Killed(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, long now)"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Encounters.cs",
-      "line": 228,
+      "line": 252,
       "kind": "catalog-context",
       "text": "private static void Spawn(WorldDbContext world, CatalogDbContext catalog, SavedMission mission, int wave, long now)"
     },
@@ -2685,15 +2943,33 @@
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Rewards.cs",
-      "line": 184,
+      "line": 186,
       "kind": "catalog-context",
       "text": "private void Progress(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent, int level, long now)"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Rewards.cs",
-      "line": 238,
+      "line": 240,
       "kind": "catalog-context",
       "text": "private static Dictionary<int, int> Distances(CatalogDbContext catalog, int system)"
+    },
+    {
+      "path": "src/Eden.World/Agents/PilotMissionStore.Structures.cs",
+      "line": 21,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Agents/PilotMissionStore.Structures.cs",
+      "line": 115,
+      "kind": "catalog-context",
+      "text": "private static void StructureKilled(WorldDbContext world, CatalogDbContext catalog, SavedMission mission, WorldNpc npc, long now)"
+    },
+    {
+      "path": "src/Eden.World/Agents/PilotMissionStore.Structures.cs",
+      "line": 151,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Ammunition/AmmunitionCatalog.cs",
@@ -2703,55 +2979,55 @@
     },
     {
       "path": "src/Eden.World/Ammunition/AmmunitionCatalog.cs",
-      "line": 18,
+      "line": 19,
       "kind": "catalog-read",
       "text": "&& catalog.FittingAttributes(typeId).GetValueOrDefault(DogmaAttributeId.CapacitorBonus) > 0;"
     },
     {
       "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
-      "line": 73,
+      "line": 75,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
-      "line": 103,
+      "line": 105,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
-    },
-    {
-      "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
-      "line": 188,
-      "kind": "catalog-context",
-      "text": "private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>"
-    },
-    {
-      "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
-      "line": 189,
-      "kind": "catalog-read",
-      "text": "catalog.FittingAttributes(typeId);"
     },
     {
       "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
       "line": 191,
       "kind": "catalog-context",
+      "text": "private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>"
+    },
+    {
+      "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
+      "line": 192,
+      "kind": "catalog-read",
+      "text": "catalog.FittingAttributes(typeId);"
+    },
+    {
+      "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
+      "line": 194,
+      "kind": "catalog-context",
       "text": "private static void CheckCargo(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)"
     },
     {
       "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
-      "line": 212,
+      "line": 215,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
-      "line": 220,
+      "line": 223,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Ammunition/PilotAmmunitionStore.cs",
-      "line": 432,
+      "line": 436,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -2835,7 +3111,7 @@
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerHauler.cs",
-      "line": 460,
+      "line": 475,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -2883,7 +3159,7 @@
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerProvisioner.Inbound.cs",
-      "line": 17,
+      "line": 19,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -2967,7 +3243,13 @@
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerScheduler.cs",
-      "line": 181,
+      "line": 146,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Capsuleers/CapsuleerScheduler.cs",
+      "line": 192,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -2985,43 +3267,67 @@
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerTrafficFlight.cs",
-      "line": 18,
+      "line": 19,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerTrafficFlight.cs",
-      "line": 65,
+      "line": 86,
       "kind": "catalog-context",
       "text": "internal static CapsuleerTrafficRoute Route(SavedCapsuleerHauler saved, CatalogDbContext catalog)"
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerTrafficFlight.cs",
-      "line": 105,
+      "line": 130,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
+      "path": "src/Eden.World/Capsuleers/CapsuleerTrafficJourneys.cs",
+      "line": 16,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Capsuleers/CapsuleerTrafficJourneys.cs",
+      "line": 76,
+      "kind": "catalog-context",
+      "text": "internal static CapsuleerTrafficRoute? ToStation(CatalogDbContext catalog, int sourceStation, int destinationStation, HullClass hull)"
+    },
+    {
+      "path": "src/Eden.World/Capsuleers/CapsuleerTrafficJourneys.cs",
+      "line": 120,
+      "kind": "catalog-context",
+      "text": "private static CapsuleerTrafficRoute[] LoadJourneys(CatalogDbContext catalog, int stationId)"
+    },
+    {
       "path": "src/Eden.World/Capsuleers/CapsuleerTrafficRoutes.cs",
-      "line": 38,
+      "line": 37,
       "kind": "catalog-context",
       "text": "internal static CapsuleerTrafficPlan Read(CatalogDbContext catalog, int systemId) => catalog.Definition(s_plans, systemId);"
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerTrafficRoutes.cs",
-      "line": 40,
+      "line": 39,
       "kind": "catalog-context",
-      "text": "internal static CapsuleerTrafficRoute? Inbound(CatalogDbContext catalog, WatchedTrafficGate gate, bool sourceObserved = false)"
+      "text": "internal static void Prepare(CatalogDbContext catalog)"
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerTrafficRoutes.cs",
-      "line": 120,
+      "line": 46,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Capsuleers/CapsuleerTrafficRoutes.cs",
+      "line": 152,
       "kind": "catalog-context",
       "text": "private static TrafficGraph LoadGraph(CatalogDbContext catalog, int unused)"
     },
     {
       "path": "src/Eden.World/Capsuleers/CapsuleerTrafficRoutes.cs",
-      "line": 155,
+      "line": 187,
       "kind": "catalog-context",
       "text": "private static CapsuleerTrafficPlan LoadPlan(CatalogDbContext catalog, int systemId)"
     },
@@ -3141,157 +3447,169 @@
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 142,
+      "line": 143,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 146,
+      "line": 147,
       "kind": "catalog-read",
       "text": "foreach (var dataset in catalog.Set<SourceDataset>().OrderBy(dataset => dataset.Name))"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 362,
+      "line": 380,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 431,
+      "line": 408,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 456,
+      "line": 484,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 458,
+      "line": 509,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.cs",
+      "line": 511,
       "kind": "catalog-read",
       "text": "var corporations = catalog.Set<NpcCorporation>().ToFrozenDictionary(corporation => corporation.Id, corporation => corporation.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 482,
+      "line": 535,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 496,
+      "line": 549,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 542,
+      "line": 595,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 631,
+      "line": 684,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 633,
+      "line": 686,
       "kind": "catalog-read",
       "text": "var record = catalog.Set<SourceRecord>().Find(_source.Name, encoded);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 672,
+      "line": 725,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 700,
+      "line": 753,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 701,
+      "line": 754,
       "kind": "catalog-read",
       "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 730,
+      "line": 783,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 731,
+      "line": 784,
       "kind": "catalog-read",
       "text": "var query = catalog.Set<SourceRecord>().Where(record => record.Dataset == _source.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.cs",
-      "line": 772,
+      "line": 825,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_owner.Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 36,
+      "line": 38,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 37,
+      "line": 39,
       "kind": "catalog-read",
       "text": "var value = CelestialRows(catalog.Set<Celestial>().Where(body => body.Id == id)).SingleOrDefault();"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 50,
+      "line": 52,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 52,
+      "line": 54,
       "kind": "catalog-read",
       "text": "catalog.Set<Celestial>().Where(body => body.SolarSystemId == systemId).OrderBy(body => body.Id)"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 78,
+      "line": 80,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 80,
+      "line": 82,
       "kind": "catalog-read",
       "text": "var rows = catalog.Set<Region>().ToFrozenDictionary(region => region.Id, region => region.Name);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 88,
+      "line": 90,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 102,
+      "line": 104,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
     {
       "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
-      "line": 116,
+      "line": 120,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(Identity.Path);"
+    },
+    {
+      "path": "src/Eden.World/Catalog/CatalogProvider.Geography.cs",
+      "line": 139,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(Identity.Path);"
     },
@@ -3770,6 +4088,36 @@
       "text": "private Target ReadTarget(WorldDbContext world, CatalogDbContext catalog, long id, int system, long now)"
     },
     {
+      "path": "src/Eden.World/Combat/ConcordPersistence.cs",
+      "line": 16,
+      "kind": "catalog-context",
+      "text": "internal static SavedConcordResponse? Schedule(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long now)"
+    },
+    {
+      "path": "src/Eden.World/Combat/ConcordPersistence.cs",
+      "line": 58,
+      "kind": "catalog-context",
+      "text": "internal static void Attack(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, long shipId, long now)"
+    },
+    {
+      "path": "src/Eden.World/Combat/ConcordStore.cs",
+      "line": 35,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Combat/ConcordStore.cs",
+      "line": 119,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Combat/ConcordStore.cs",
+      "line": 158,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
       "path": "src/Eden.World/Combat/CrimewatchPersistence.cs",
       "line": 21,
       "kind": "catalog-context",
@@ -3789,7 +4137,13 @@
     },
     {
       "path": "src/Eden.World/Combat/CrimewatchPersistence.cs",
-      "line": 112,
+      "line": 60,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Combat/CrimewatchPersistence.cs",
+      "line": 122,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
@@ -3813,7 +4167,7 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcCombatStore.cs",
-      "line": 209,
+      "line": 216,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -3975,31 +4329,31 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
-      "line": 63,
+      "line": 64,
       "kind": "catalog-read",
       "text": "var source = catalog.FittingType(npc.TypeId)!;"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
-      "line": 64,
+      "line": 65,
       "kind": "catalog-read",
       "text": "var hull = catalog.FittingType(pilot.ActiveShip.TypeId)!;"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
-      "line": 90,
+      "line": 91,
       "kind": "catalog-read",
       "text": "GroupId = catalog.FittingType(chargeId)!.GroupId,"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
-      "line": 119,
+      "line": 120,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcMissileStore.cs",
-      "line": 148,
+      "line": 149,
       "kind": "catalog-read",
       "text": "|| catalog.FittingType(pilot.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup"
     },
@@ -4035,9 +4389,9 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcProfileCatalog.cs",
-      "line": 51,
+      "line": 52,
       "kind": "catalog-context",
-      "text": "private static NpcStandingThresholds? ReadStandingThresholds(CatalogDbContext catalog, int typeId)"
+      "text": "internal static NpcStandingThresholds? ReadStandingThresholds(CatalogDbContext catalog, int typeId)"
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcSpawnCatalog.cs",
@@ -4089,19 +4443,19 @@
     },
     {
       "path": "src/Eden.World/Combat/PilotCrimewatchStore.cs",
-      "line": 102,
+      "line": 130,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Combat/PilotCrimewatchStore.cs",
-      "line": 117,
+      "line": 145,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Combat/PilotCrimewatchStore.cs",
-      "line": 132,
+      "line": 160,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -4533,7 +4887,7 @@
     },
     {
       "path": "src/Eden.World/Contracts/PilotContractStore.cs",
-      "line": 396,
+      "line": 399,
       "kind": "catalog-context",
       "text": "private static InventoryItem Transfer(WorldDbContext world, CatalogDbContext catalog, long itemId, long previousOwner, long owner)"
     },
@@ -4881,25 +5235,25 @@
     },
     {
       "path": "src/Eden.World/Docking/SqliteWorld.cs",
-      "line": 127,
+      "line": 133,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Docking/SqliteWorld.cs",
-      "line": 134,
+      "line": 140,
       "kind": "catalog-context",
       "text": "internal DockedPilot Dock(WorldDbContext world, CatalogDbContext catalog, long pilotId, long shipId, int stationId)"
     },
     {
       "path": "src/Eden.World/Docking/SqliteWorld.cs",
-      "line": 216,
+      "line": 222,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(_database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Docking/SqliteWorld.cs",
-      "line": 222,
+      "line": 228,
       "kind": "catalog-read",
       "text": "int turretSlots = checked((int)catalog.FittingAttributes(type.Id).GetValueOrDefault(DogmaAttributeId.TurretSlotsLeft));"
     },
@@ -5079,49 +5433,49 @@
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 373,
+      "line": 377,
       "kind": "catalog-context",
       "text": "internal static DroneContact Contact(WorldDbContext world, CatalogDbContext catalog, WorldDrone drone)"
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 436,
+      "line": 440,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 451,
+      "line": 455,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 468,
+      "line": 472,
       "kind": "catalog-read",
       "text": "var defense = ShipHealth.DefenseFrom(catalog.FittingAttributes(i.TypeId));"
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 484,
+      "line": 488,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 514,
+      "line": 518,
       "kind": "type-selection",
       "text": "|| !DroneRules.SupportsHull(ship.TypeId)"
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 632,
+      "line": 636,
       "kind": "catalog-read",
       "text": "catalog.FittingType(npc?.TypeId ?? (victimContact is null ? ship.TypeId : victim!.ActiveShip.TypeId))?.Radius ?? 0"
     },
     {
       "path": "src/Eden.World/Drones/PilotDroneStore.cs",
-      "line": 707,
+      "line": 711,
       "kind": "catalog-read",
       "text": ": PlayerEwarStore.NpcAttributes(world, npc.Id, catalog.FittingAttributes(npc.TypeId));"
     },
@@ -5145,93 +5499,315 @@
     },
     {
       "path": "src/Eden.World/Economy/EconomicStore.cs",
-      "line": 27,
+      "line": 29,
       "kind": "catalog-context",
       "text": "internal static void CheckCatalog(CatalogDbContext catalog, EconomicConfiguration settings)"
     },
     {
       "path": "src/Eden.World/Economy/EconomicStore.cs",
-      "line": 61,
+      "line": 63,
       "kind": "catalog-context",
       "text": "internal static void Initialize(WorldDbContext world, CatalogDbContext catalog, bool newEconomy, EconomicConfiguration? configuration)"
     },
     {
       "path": "src/Eden.World/Economy/EconomicStore.cs",
-      "line": 103,
+      "line": 105,
       "kind": "catalog-context",
       "text": "internal static void SeedPrices(WorldDbContext world, CatalogDbContext catalog, EconomicConfiguration settings)"
     },
     {
+      "path": "src/Eden.World/Economy/EconomicStore.cs",
+      "line": 127,
+      "kind": "catalog-context",
+      "text": "private static Dictionary<int, decimal> IndustryReferencePrices(CatalogDbContext catalog)"
+    },
+    {
+      "path": "src/Eden.World/Economy/EconomicStore.cs",
+      "line": 149,
+      "kind": "catalog-context",
+      "text": "internal static void ReconcileIndustryPrices(WorldDbContext world, CatalogDbContext catalog)"
+    },
+    {
       "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 31,
+      "line": 37,
       "kind": "content-identifier",
       "text": "private const int InvisibleBeaconGroup = 4055;"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 32,
-      "kind": "content-identifier",
-      "text": "private const int CloudGroup = 227;"
-    },
-    {
-      "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 33,
-      "kind": "content-identifier",
-      "text": "private const int EnvironmentGroup = 1882;"
-    },
-    {
-      "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 44,
+      "line": 48,
       "kind": "catalog-context",
       "text": "internal static ImmutableArray<CombatAnomalyDefinition> Read(CatalogDbContext catalog) => catalog.Definition(s_definitions, 0);"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 46,
+      "line": 50,
       "kind": "catalog-context",
       "text": "internal static CombatAnomalyDefinition? Find(CatalogDbContext catalog, int dungeonId) =>"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 60,
+      "line": 64,
       "kind": "catalog-context",
       "text": "private static ImmutableArray<CombatAnomalyDefinition> Load(CatalogDbContext catalog, int unused)"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
-      "line": 100,
+      "line": 94,
+      "kind": "catalog-read",
+      "text": ".Select(o => (Source: o, Type: catalog.FittingType(o.TypeID!.Value)))"
+    },
+    {
+      "path": "src/Eden.World/Exploration/CombatAnomalyCatalog.cs",
+      "line": 125,
       "kind": "catalog-read",
       "text": ".Select(o => (Source: o, Type: catalog.FittingType(o.TypeID!.Value)))"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyStore.cs",
-      "line": 69,
+      "line": 102,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyStore.cs",
-      "line": 226,
+      "line": 269,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyStore.cs",
-      "line": 242,
+      "line": 285,
       "kind": "catalog-context",
       "text": "internal static void Killed(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, long now)"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyStore.cs",
-      "line": 335,
+      "line": 378,
       "kind": "catalog-context",
       "text": "private static void NextWave(WorldDbContext world, CatalogDbContext catalog, WorldCombatAnomaly site, long now)"
     },
     {
       "path": "src/Eden.World/Exploration/CombatAnomalyStore.cs",
-      "line": 378,
+      "line": 428,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 15,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 16,
+      "kind": "content-identifier",
+      "text": "internal const int DatacoreGroup = 333;"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 17,
+      "kind": "content-identifier",
+      "text": "internal const int DecryptorGroup = 1304;"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 18,
+      "kind": "content-identifier",
+      "text": "internal const int SalvageGroup = 754;"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 22,
+      "kind": "catalog-context",
+      "text": "internal static ImmutableArray<int> Loot(CatalogDbContext catalog, int group) => catalog.Definition(s_loot, group);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 24,
+      "kind": "catalog-context",
+      "text": "private static ImmutableArray<int> LoadLoot(CatalogDbContext catalog, int group) =>"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 48,
+      "kind": "catalog-context",
+      "text": "internal static bool Supported(CatalogDbContext catalog, int type, int group) => s_support.Supports(catalog, type, group);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 50,
+      "kind": "catalog-context",
+      "text": "private static bool Validate(CatalogDbContext catalog, int typeId, int group)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/HackingCatalog.cs",
+      "line": 57,
+      "kind": "catalog-read",
+      "text": "var a = catalog.FittingAttributes(typeId);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PilotProbeScanningStore.cs",
+      "line": 31,
+      "kind": "content-identifier",
+      "text": "private const int CapsuleGroup = 29;"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PilotProbeScanningStore.cs",
+      "line": 34,
+      "kind": "catalog-context",
+      "text": "private T Write<T>(Func<WorldDbContext, CatalogDbContext, T> action)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PilotProbeScanningStore.cs",
+      "line": 40,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PilotProbeScanningStore.cs",
+      "line": 49,
+      "kind": "catalog-context",
+      "text": "private static Pilot Pilot(WorldDbContext world, CatalogDbContext catalog, long pilotId, long now)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PilotProbeScanningStore.cs",
+      "line": 82,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PilotProbeScanningStore.cs",
+      "line": 88,
+      "kind": "catalog-read",
+      "text": "return type is int id && catalog.FittingType(id)?.GroupId == ProbeScanRules.LauncherGroup;"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PilotProbeScanningStore.cs",
+      "line": 130,
+      "kind": "catalog-read",
+      "text": "|| !ProbeCatalog.Compatible(catalog.FittingAttributes(module.TypeId), catalog.FittingAttributes(charge.TypeId))"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.cs",
+      "line": 36,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.cs",
+      "line": 71,
+      "kind": "catalog-read",
+      "text": "&& s.Containers.All(c => catalog.FittingType(c.TypeId)?.GroupId == HackingRules.ContainerGroup)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.cs",
+      "line": 161,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.cs",
+      "line": 169,
+      "kind": "catalog-read",
+      "text": "catalog.FittingType(definition.TypeId) ?? throw new InvalidDataException(\"The exploration container type is unavailable.\");"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.cs",
+      "line": 216,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.cs",
+      "line": 235,
+      "kind": "catalog-read",
+      "text": "catalog.FittingType(stack.TypeId) is not { } type"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.Hacking.cs",
+      "line": 43,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.Hacking.cs",
+      "line": 67,
+      "kind": "catalog-read",
+      "text": "- (catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.Hacking.cs",
+      "line": 84,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.Hacking.cs",
+      "line": 92,
+      "kind": "catalog-read",
+      "text": "|| !HackingCatalog.Supported(catalog, item.TypeId, catalog.FittingType(item.TypeId)?.GroupId ?? 0)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.Hacking.cs",
+      "line": 123,
+      "kind": "catalog-read",
+      "text": "if (!InventoryDefinitions.RequiredSkills.Any(p => catalog.FittingAttributes(item.TypeId).GetValueOrDefault(p.Skill) == skill))"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.Hacking.cs",
+      "line": 190,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.Hacking.cs",
+      "line": 266,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/PirateExplorationStore.Hacking.cs",
+      "line": 298,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/ProbeCatalog.cs",
+      "line": 11,
+      "kind": "content-identifier",
+      "text": "private const int AbyssalMetaGroup = 15;"
+    },
+    {
+      "path": "src/Eden.World/Exploration/ProbeCatalog.cs",
+      "line": 14,
+      "kind": "catalog-context",
+      "text": "internal static bool Launcher(CatalogDbContext catalog, int typeId, int group)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/ProbeCatalog.cs",
+      "line": 35,
+      "kind": "catalog-context",
+      "text": "internal static bool Probe(CatalogDbContext catalog, int typeId, int group)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/ProbeCatalog.cs",
+      "line": 45,
+      "kind": "catalog-read",
+      "text": "var a = catalog.FittingAttributes(typeId);"
+    },
+    {
+      "path": "src/Eden.World/Exploration/ProbeCatalog.cs",
+      "line": 58,
+      "kind": "catalog-context",
+      "text": "internal static ProbeProfile FittedProfile(CatalogDbContext catalog, FittingCalculation fitting, long target, int typeId, int hullType)"
+    },
+    {
+      "path": "src/Eden.World/Exploration/ProbeCatalog.cs",
+      "line": 60,
+      "kind": "catalog-read",
+      "text": "var attributes = catalog.FittingAttributes(typeId);"
     },
     {
       "path": "src/Eden.World/Fittings/FittingCalculation.cs",
@@ -5289,37 +5865,37 @@
     },
     {
       "path": "src/Eden.World/Fittings/FittingCatalog.cs",
-      "line": 56,
+      "line": 70,
       "kind": "catalog-read",
       "text": "var rigAttributes = catalog.FittingAttributes(typeId);"
     },
     {
       "path": "src/Eden.World/Fittings/FittingCatalog.cs",
-      "line": 155,
+      "line": 169,
       "kind": "catalog-read",
       "text": "var attributes = catalog.FittingAttributes(typeId);"
     },
     {
       "path": "src/Eden.World/Fittings/FittingCatalog.cs",
-      "line": 165,
+      "line": 179,
       "kind": "catalog-context",
       "text": "internal static ImmutableHashSet<DogmaEffect> Effects(CatalogDbContext catalog, int typeId) => catalog.Definition(s_effects, typeId);"
     },
     {
       "path": "src/Eden.World/Fittings/FittingCatalog.cs",
-      "line": 167,
+      "line": 181,
       "kind": "catalog-context",
       "text": "private static ImmutableHashSet<DogmaEffect> LoadEffects(CatalogDbContext catalog, int typeId) =>"
     },
     {
       "path": "src/Eden.World/Fittings/FittingCatalog.cs",
-      "line": 174,
+      "line": 188,
       "kind": "catalog-context",
       "text": "internal static DogmaEffect? DefaultEffect(CatalogDbContext catalog, int typeId) => catalog.Definition(s_defaultEffect, typeId);"
     },
     {
       "path": "src/Eden.World/Fittings/FittingCatalog.cs",
-      "line": 176,
+      "line": 190,
       "kind": "catalog-context",
       "text": "private static DogmaEffect? LoadDefaultEffect(CatalogDbContext catalog, int typeId)"
     },
@@ -5745,19 +6321,19 @@
     },
     {
       "path": "src/Eden.World/Fittings/ShipContentAudit.cs",
-      "line": 458,
+      "line": 465,
       "kind": "catalog-context",
       "text": "private static bool Charge(CatalogDbContext catalog, ItemType type, ShipContentMilestone milestone, List<ContentCapabilityCheck> checks)"
     },
     {
       "path": "src/Eden.World/Fittings/ShipContentAudit.cs",
-      "line": 479,
+      "line": 486,
       "kind": "catalog-context",
       "text": "private static bool Drone(CatalogDbContext catalog, ItemType type, ShipContentMilestone milestone, List<ContentCapabilityCheck> checks)"
     },
     {
       "path": "src/Eden.World/Fittings/ShipContentAudit.cs",
-      "line": 510,
+      "line": 517,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(catalogPath);"
     },
@@ -5798,142 +6374,214 @@
       "text": "private TranslocationTarget ResolveRuntime(CatalogDbContext catalog, long targetId)"
     },
     {
+      "path": "src/Eden.World/Industry/ManufacturingCatalog.cs",
+      "line": 28,
+      "kind": "catalog-context",
+      "text": "internal static IReadOnlyDictionary<int, ManufacturingRecipeDefinition> Recipes(CatalogDbContext catalog) =>"
+    },
+    {
+      "path": "src/Eden.World/Industry/ManufacturingCatalog.cs",
+      "line": 31,
+      "kind": "catalog-context",
+      "text": "internal static double Security(CatalogDbContext catalog, int systemId) =>"
+    },
+    {
+      "path": "src/Eden.World/Industry/ManufacturingCatalog.cs",
+      "line": 36,
+      "kind": "catalog-context",
+      "text": "internal static bool Allowed(CatalogDbContext catalog, int productId, double security)"
+    },
+    {
+      "path": "src/Eden.World/Industry/ManufacturingCatalog.cs",
+      "line": 42,
+      "kind": "catalog-context",
+      "text": "private static FrozenDictionary<int, ManufacturingRecipeDefinition> Load(CatalogDbContext catalog, int unused)"
+    },
+    {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 58,
+      "line": 34,
+      "kind": "catalog-context",
+      "text": "private static IndustryFacility ReadFacility(CatalogDbContext catalog, CatalogStationDefinition station) =>"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
+      "line": 44,
+      "kind": "catalog-context",
+      "text": "private IndustryFacility PricedFacility(CatalogDbContext catalog, CatalogStationDefinition station)"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
+      "line": 61,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 64,
+      "line": 67,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 86,
+      "line": 89,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 103,
+      "line": 106,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 110,
+      "line": 113,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 121,
+      "line": 124,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 128,
+      "line": 131,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
-    },
-    {
-      "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 141,
-      "kind": "catalog-context",
-      "text": "private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
       "line": 144,
       "kind": "catalog-context",
-      "text": "private static bool SupportedProduct(CatalogDbContext catalog, CatalogItemDefinition type)"
+      "text": "private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 182,
+      "line": 149,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 186,
+      "line": 155,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
+      "line": 169,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<int> ProductTypes(CatalogDbContext catalog) =>"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 208,
+      "line": 177,
       "kind": "catalog-context",
       "text": "private static OwnedBlueprint ReadBlueprint(WorldDbContext world, CatalogDbContext catalog, OwnedItem item)"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 233,
+      "line": 204,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 257,
+      "line": 228,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 267,
+      "line": 238,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 277,
+      "line": 248,
       "kind": "catalog-context",
       "text": "private static int Level(WorldDbContext world, CatalogDbContext catalog, long pilotId, int typeId) =>"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 280,
+      "line": 251,
       "kind": "catalog-context",
       "text": "private static IndustryCharacterBonus[] Bonuses(WorldDbContext world, CatalogDbContext catalog, long pilotId)"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 320,
+      "line": 325,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 324,
+      "line": 329,
       "kind": "catalog-context",
-      "text": "private ManufacturingJob ReadJob(CatalogDbContext catalog, IndustryJob job) =>"
+      "text": "private IndustryJobDetails ReadJob(CatalogDbContext catalog, IndustryJob job) =>"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 345,
+      "line": 356,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 359,
+      "line": 370,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 371,
+      "line": 390,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Industry/PilotIndustryStore.cs",
-      "line": 539,
+      "line": 500,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.Science.cs",
+      "line": 24,
+      "kind": "catalog-context",
+      "text": "private static ClientBlueprints BlueprintDefinition(CatalogDbContext catalog, int typeId) =>"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.Science.cs",
+      "line": 33,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.Science.cs",
+      "line": 217,
+      "kind": "catalog-context",
+      "text": "private static double BlueprintValue(CatalogDbContext catalog, IReadOnlyDictionary<int, decimal> prices, int typeId)"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.Science.cs",
+      "line": 240,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.Science.cs",
+      "line": 284,
+      "kind": "catalog-context",
+      "text": "private static OwnedItem ReserveBlueprint(WorldDbContext world, CatalogDbContext catalog, OwnedItem item, List<InventoryChange> changes)"
+    },
+    {
+      "path": "src/Eden.World/Industry/PilotIndustryStore.Science.cs",
+      "line": 311,
+      "kind": "catalog-context",
+      "text": "private static void DeliverScience(WorldDbContext world, CatalogDbContext catalog, IndustryJob job, List<InventoryChange> changes)"
     },
     {
       "path": "src/Eden.World/Information/DirectionalScanning.cs",
@@ -6249,31 +6897,31 @@
     },
     {
       "path": "src/Eden.World/Inventory/PilotInventoryStore.cs",
-      "line": 323,
+      "line": 326,
       "kind": "catalog-context",
       "text": "internal static double HoldCapacity(WorldDbContext world, CatalogDbContext catalog, long pilotId, long shipId, int flagId)"
     },
     {
       "path": "src/Eden.World/Inventory/PilotInventoryStore.cs",
-      "line": 330,
+      "line": 333,
       "kind": "catalog-context",
       "text": "internal static double HoldCapacity(CatalogDbContext catalog, int typeId, int flagId)"
     },
     {
       "path": "src/Eden.World/Inventory/PilotInventoryStore.cs",
-      "line": 333,
+      "line": 336,
       "kind": "catalog-read",
       "text": "attributes[DogmaAttributeId.CargoCapacity] = catalog.FittingType(typeId)?.Capacity ?? 0;"
     },
     {
       "path": "src/Eden.World/Inventory/PilotInventoryStore.cs",
-      "line": 337,
+      "line": 340,
       "kind": "catalog-context",
       "text": "internal static double Volume(CatalogDbContext catalog, int typeId, bool singleton = false, CatalogItemDefinition? type = null)"
     },
     {
       "path": "src/Eden.World/Inventory/PilotInventoryStore.cs",
-      "line": 350,
+      "line": 353,
       "kind": "catalog-read",
       "text": "type ??= catalog.FittingType(typeId) ?? throw new InvalidDataException(\"Unknown inventory type.\");"
     },
@@ -6326,6 +6974,12 @@
       "text": "catalog.FittingType(item.TypeId) ?? throw new InvalidDataException(\"Unknown ship type.\"),"
     },
     {
+      "path": "src/Eden.World/Loot/SpaceLootTransfer.cs",
+      "line": 15,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
+    },
+    {
       "path": "src/Eden.World/Loot/WreckStore.cs",
       "line": 36,
       "kind": "catalog-context",
@@ -6333,49 +6987,49 @@
     },
     {
       "path": "src/Eden.World/Loot/WreckStore.cs",
-      "line": 40,
+      "line": 44,
       "kind": "catalog-read",
       "text": "? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)"
     },
     {
       "path": "src/Eden.World/Loot/WreckStore.cs",
-      "line": 96,
+      "line": 100,
       "kind": "catalog-context",
       "text": "private static IReadOnlyList<NpcLootDrop> Drops(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc)"
     },
     {
       "path": "src/Eden.World/Loot/WreckStore.cs",
-      "line": 150,
+      "line": 154,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Loot/WreckStore.cs",
-      "line": 161,
+      "line": 165,
       "kind": "catalog-read",
       "text": "? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)"
     },
     {
       "path": "src/Eden.World/Loot/WreckStore.cs",
-      "line": 222,
+      "line": 226,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Loot/WreckStore.cs",
-      "line": 273,
+      "line": 277,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Loot/WreckStore.cs",
-      "line": 308,
+      "line": 312,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Loot/WreckStore.cs",
-      "line": 339,
+      "line": 343,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -6615,31 +7269,43 @@
     },
     {
       "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
-      "line": 33,
+      "line": 34,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
-      "line": 45,
+      "line": 46,
       "kind": "catalog-context",
       "text": "internal static IReadOnlyList<StaticSpaceObject> List(WorldDbContext world, CatalogDbContext catalog, int systemId)"
     },
     {
       "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
-      "line": 68,
+      "line": 69,
       "kind": "catalog-context",
       "text": "private void Initialize(WorldDbContext world, CatalogDbContext catalog, int systemId)"
     },
     {
       "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
-      "line": 76,
+      "line": 77,
       "kind": "catalog-context",
-      "text": "internal static void Populate(WorldDbContext world, CatalogDbContext catalog, int systemId, long now, int? renewBelt = null)"
+      "text": "internal static void Populate(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)"
     },
     {
       "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
-      "line": 121,
+      "line": 126,
+      "kind": "catalog-context",
+      "text": "internal static void Renew(WorldDbContext world, CatalogDbContext catalog, IReadOnlyList<SavedBeltRenewal> belts)"
+    },
+    {
+      "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
+      "line": 162,
+      "kind": "catalog-context",
+      "text": "private static IEnumerable<WorldAsteroid> Generate(CatalogDbContext catalog, CatalogCelestialDefinition belt)"
+    },
+    {
+      "path": "src/Eden.World/Mining/AsteroidFieldStore.cs",
+      "line": 183,
       "kind": "catalog-read",
       "text": "if (catalog.FittingType(type)?.CategoryId != AsteroidDefinitions.Category)"
     },
@@ -6825,7 +7491,7 @@
     },
     {
       "path": "src/Eden.World/Mining/ResourceRenewalStore.cs",
-      "line": 34,
+      "line": 36,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -7587,25 +8253,25 @@
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveDrones.cs",
-      "line": 487,
+      "line": 493,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveDrones.cs",
-      "line": 488,
+      "line": 494,
       "kind": "catalog-read",
       "text": "return catalog.FittingAttributes(type).GetValueOrDefault(DogmaAttributeId.SignatureRadius);"
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveSimulation.cs",
-      "line": 197,
+      "line": 206,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Runtime/Combat/LiveSimulation.cs",
-      "line": 456,
+      "line": 465,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
@@ -7851,13 +8517,13 @@
     },
     {
       "path": "src/Eden.World/Storage/WorldInitialization.cs",
-      "line": 52,
+      "line": 53,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Storage/WorldMigration.cs",
-      "line": 22,
+      "line": 23,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },

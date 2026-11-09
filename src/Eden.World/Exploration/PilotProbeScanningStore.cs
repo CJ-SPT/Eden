@@ -375,6 +375,9 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                         world
                             .Set<WorldCombatAnomaly>()
                             .Any(s => s.Id == r.Site.Id && s.CompletedAt == null && s.IsSignature && s.SystemId == authoritative.SystemId)
+                        || world
+                            .Set<SavedExplorationSite>()
+                            .Any(s => s.Id == r.Site.Id && s.SystemId == authoritative.SystemId && s.ReplaceAt == null && s.ExpiresAt > now)
                     )
                     .ToArray();
                 foreach (var result in results.Where(r => r.Certainty >= 1))
@@ -399,6 +402,11 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     {
         using WorldDbContext world = new(database.Path);
         return world.Set<SavedResolvedSignature>().Any(r => r.PilotId == pilotId && r.SiteId == siteId && r.SystemId == systemId)
-            && world.Set<WorldCombatAnomaly>().Any(s => s.Id == siteId && s.SystemId == systemId && s.IsSignature && s.CompletedAt == null);
+            && (
+                world.Set<WorldCombatAnomaly>().Any(s => s.Id == siteId && s.SystemId == systemId && s.IsSignature && s.CompletedAt == null)
+                || world
+                    .Set<SavedExplorationSite>()
+                    .Any(s => s.Id == siteId && s.SystemId == systemId && s.ReplaceAt == null && s.ExpiresAt > now)
+            );
     }
 }

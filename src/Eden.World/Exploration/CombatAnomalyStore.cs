@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Exploration;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomalies
+internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExploration? exploration = null) : ICombatAnomalies
 {
     private sealed record View(
         long Version,
@@ -46,7 +46,35 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
 
     public IReadOnlyList<CombatAnomaly> List(int systemId, long now) => ListCore(systemId, now, false);
 
-    public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now) => ListCore(systemId, now, true);
+    private readonly Dictionary<
+        int,
+        (IReadOnlyList<CombatAnomaly> Combat, IReadOnlyList<CombatAnomaly> Exploration, IReadOnlyList<CombatAnomaly> Combined)
+    > _signatures = [];
+
+    public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now)
+    {
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        lock (database.MotionLock)
+        {
+            var combat = ListCore(systemId, now, true);
+            if (exploration is null)
+            {
+                return combat;
+            }
+            var other = exploration.Signatures(systemId, now);
+            if (
+                _signatures.TryGetValue(systemId, out var view)
+                && ReferenceEquals(view.Combat, combat)
+                && ReferenceEquals(view.Exploration, other)
+            )
+            {
+                return view.Combined;
+            }
+            var combined = combat.Concat(other).ToArray();
+            _signatures[systemId] = (combat, other, combined);
+            return combined;
+        }
+    }
 
     private IReadOnlyList<CombatAnomaly> ListCore(int systemId, long now, bool signature)
     {
@@ -209,7 +237,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database) : ICombatAnomal
             .ToArray();
         return new(
             site.Id,
-            ScannerTargetIds.FromSequence(site.Id - CombatAnomalyRules.FirstSiteId),
+            ScannerTargetIds.FromCombatSequence(site.Id - CombatAnomalyRules.FirstSiteId),
             site.SystemId,
             site.DungeonId,
             definition.NameId,

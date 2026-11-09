@@ -36,6 +36,7 @@ Historical native observations apply only to the recorded revision and actions. 
 - [Mission layout corrections, November 9, 2026](protocol/agents.md#mission-layout-corrections--november-9-2026)
 
 - [Anomaly warp-in collision correction, November 9, 2026](protocol/combat.md#anomaly-warp-in-collision-correction--november-9-2026)
+- [Hacking and archaeology, November 9, 2026](protocol/information.md#hacking-and-archaeology-november-9-2026)
 
 - [Catalog-wide station production, November 9, 2026](protocol/industry.md#catalog-wide-station-production-november-9-2026)
 

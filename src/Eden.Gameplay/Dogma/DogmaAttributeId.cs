@@ -3,6 +3,9 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    VirusCoherence = 1909,
+    VirusStrength = 1910,
+    VirusSlots = 1911,
     ProbeBaseRange = 1370,
     ProbeStrength = 1371,
     ProbeDeviation = 1372,

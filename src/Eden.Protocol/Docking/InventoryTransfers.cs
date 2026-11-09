@@ -21,7 +21,8 @@ internal sealed class InventoryTransfers(
     MagazineWire magazinesWire,
     FittingOperations fittingOperations,
     DeferredRefitPrimes refits,
-    ICorporationStorage corporationStorage
+    ICorporationStorage corporationStorage,
+    Eden.Gameplay.Exploration.IPilotHacking? hacking = null
 )
 {
     internal PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
@@ -44,7 +45,11 @@ internal sealed class InventoryTransfers(
                 context.Pilot.Position is not null
                 && destination == context.Pilot.ShipId
                 && ShipHoldRules.IsHold(flag)
-                && (context.Flight.VisibleWrecks.Any(w => w.Id == source) || MissionContainerRules.IsContainer(source));
+                && (
+                    context.Flight.VisibleWrecks.Any(w => w.Id == source)
+                    || MissionContainerRules.IsContainer(source)
+                    || Eden.Gameplay.Exploration.HackingRules.IsContainer(source)
+                );
             if (looting && !context.Flight.CanTarget)
             {
                 return new PilotCallResult.Failure("Container contents cannot be transferred during warp or a system transition.");
@@ -146,6 +151,11 @@ internal sealed class InventoryTransfers(
     {
         if (looting)
         {
+            if (Eden.Gameplay.Exploration.HackingRules.IsContainer(request.SourceId))
+            {
+                return hacking?.Take(context.Pilot.PilotId, context.Pilot.ShipId, request, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                    ?? throw new InvalidDataException("Exploration transfers are unavailable.");
+            }
             return MissionContainerRules.IsContainer(request.SourceId)
                 ? missionContainers.Take(context.Pilot.PilotId, context.Pilot.ShipId, request)
                 : LootWreck(context, request);

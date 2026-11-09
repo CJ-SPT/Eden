@@ -16,6 +16,7 @@ public sealed record StaticSpaceObject(
     int? DestinationSystemId = null
 )
 {
+    public int? HackingState { get; init; }
     public bool Solid { get; init; } = true;
     public bool IsGlobal { get; init; } = true;
     public string? Name { get; init; }

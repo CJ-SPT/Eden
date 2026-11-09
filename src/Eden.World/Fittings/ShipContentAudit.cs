@@ -387,14 +387,18 @@ internal static class ShipContentAudit
             bool probes = effects
                 .SelectMany(e => e.ModifierInfo ?? [])
                 .Any(m => m.ModifiedAttributeID is (int)DogmaAttributeId.ProbeStrength or (int)DogmaAttributeId.ProbeDeviation);
+            bool hacking = effects
+                .SelectMany(e => e.ModifierInfo ?? [])
+                .Any(m => m.ModifiedAttributeID is (int)DogmaAttributeId.VirusCoherence or (int)DogmaAttributeId.VirusStrength);
             checks.Add(
                 new(
                     ContentOperation.ConsumerCoverage,
-                    salvage || probes,
+                    salvage || probes || hacking,
                     milestone == ShipContentMilestone.InformationAndSalvage && !salvage ? ShipContentMilestone.Mining : milestone,
                     salvage ? "Salvage Tackle feeds the paid salvager's additive access chance."
                         : probes ? "Scanning rig modifiers feed authoritative probe strength and deviation."
-                        : "Rig fitting/modifiers work; the owning mining or hacking consumer remains unfinished."
+                        : hacking ? "Analyzer rigs feed the authoritative hacking virus profile."
+                        : "Rig fitting/modifiers work; the owning mining consumer remains unfinished."
                 )
             );
         }

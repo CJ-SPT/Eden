@@ -13,7 +13,8 @@ public sealed record CombatAnomaly(
     bool Started,
     IReadOnlyList<StaticSpaceObject> Objects,
     int FactionId = 500010,
-    bool IsSignature = false
+    bool IsSignature = false,
+    ExplorationKind? Exploration = null
 );
 
 public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomaly> Sites);

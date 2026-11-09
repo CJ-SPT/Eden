@@ -36,7 +36,8 @@ internal sealed class ModuleActivationHandler(
     AssaultDamageControlHandler? assaultDamageControl = null,
     InformationHandler? information = null,
     SharedTargetLocks? targetLocks = null,
-    Eden.Protocol.Exploration.ProbeScanningHandler? probes = null
+    Eden.Protocol.Exploration.ProbeScanningHandler? probes = null,
+    Eden.Protocol.Exploration.HackingHandler? hacking = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -58,6 +59,8 @@ internal sealed class ModuleActivationHandler(
         }
         var result = effectName switch
         {
+            Eden.Protocol.Exploration.HackingHandler.EffectName => hacking?.CallModule(context, method, args)
+                ?? PilotCallResult.Unsupported,
             var name when InformationWire.Effect(name) is not null => information?.CallModule(context, method, args)
                 ?? PilotCallResult.Unsupported,
             AssaultDamageControlHandler.EffectName => assaultDamageControl?.Call(context, service, method, args)

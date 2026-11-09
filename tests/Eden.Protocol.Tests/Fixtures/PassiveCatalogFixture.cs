@@ -65,6 +65,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadRemoteAssistance(string path) => Load(path, "RemoteAssistanceCatalog.json", null);
 
+    internal static void LoadHacking(string path) => Load(path, "HackingCatalog.json", null);
+
     internal static void LoadProbes(string path) => Load(path, "ProbeCatalog.json", null);
 
     internal static void LoadInformation(string path) => Load(path, "InformationCatalog.json", null);
