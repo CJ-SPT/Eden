@@ -2,6 +2,28 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Agent conversation header correction — November 9, 2026
+
+The maintainer supplied an **Ogyura Unao Level 1** conversation screenshot showing "Invalid or unsupported agent mission request." Static inspection of the pinned build-3662168 archive (SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**) confirmed that ordinary agents use `AgentDialogueWindow`; its `GetBriefingHTML` calls `GetAgentHeader`, which calls the bound agent's previously missing zero-argument `GetAgentLocationWrap`. This call occurs before the window renders its briefing. `agentDialogueUtil.LocationWrapper` consumes a dictionary containing `typeID`, `locationID` and `solarsystemID` for a station location. Eden now returns those fields from the existing catalog station directory, independently of any mission offer. Extra arguments and agents without a supported station location reject.
+
+The same window's `GetObjectiveHTML` directly indexes `missionCompleted`, `missionDeclined`, `missionQuit` and `missionCantReplay`. Conversation replies now include all four false defaults and set the applicable terminal event flag. This preserves the objective visibility contract after the header read succeeds. The new regression follows the native embedded binding, greeting, automatic request, location, and objective reads; verifies catalog station identity and no offer created by the header read; and rejects extraneous location arguments. Direct wire cases cover greeting, offer, acceptance, completion, decline and quit flags.
+
+References: [EVE University missions](https://wiki.eveuniversity.org/Missions), reconciled with the pinned client's legacy conversation route; [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp), consulted for native dictionary/value preservation. No codec or gameplay selection rules changed.
+
+### Automated validation
+
+The exact regression filter is `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionProtocolTests.OrdinaryAgentConversationProvidesNativeLocationHeaderAndEveryObjectiveStatusFlag`. It first reproduced the missing handler failure. A subsequent run exposed an incorrect expected station type in the test; the expectation was corrected to fixture catalog type **52678**.
+
+Final tool restore, solution restore and solution build passed with zero warnings/errors. The corrected exact regression passed in **14.49 seconds**; the combined filter `FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~AgentDirectory|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **110/110 tests in 14.56 seconds**. Both Python policy suites passed (**8/8** catalog and **9/9** formatting cases in **1.16 seconds** combined). Formatting verification, the 140-column check and `git diff --check` passed; policy plus formatting verification took **22.19 seconds**. No full .NET suite was requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The supplied screenshot establishes the original failure, not acceptance of the correction.
+
+### Optional maintainer checks
+
+Restart the server with the updated build and reopen Ogyura Unao's conversation; verify the station header, briefing and objectives render.
+
 ## Ordinary agent missions — November 9, 2026
 
 Implemented a first playable ordinary-agent cohort: saved offers, acceptance, objectives, completion, expiry, decline/defer/quit, ISK and LP payments, agent/corporation standings, and delivery storylines. This record supersedes the earlier empty mission-journal boundary; the historical [agent-directory record](characters.md#catalog-agent-directory-and-saved-agents) remains evidence for that earlier revision.

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
@@ -18,6 +19,7 @@ namespace Eden.Protocol.Agents;
 internal sealed class MissionHandler(
     IPilotMissions missions,
     INpcDirectory directory,
+    IStationDirectory stations,
     IPilotInteractionHistory history,
     LoyaltyWalletHandler loyalty,
     CooperativeFleetHandler fleets
@@ -80,6 +82,15 @@ internal sealed class MissionHandler(
             if (method == "GetMyJournalDetails" && args.Length == 0)
             {
                 return new MissionJournal(missions.Journal(pilotId, agentId));
+            }
+            if (method == "GetAgentLocationWrap" && args.Length == 0)
+            {
+                // Build 3662168 AgentDialogueWindow.GetAgentHeader reads this before
+                // rendering the briefing, independently of whether an offer exists.
+                var station = stations.Read().Stations.FirstOrDefault(s => s.Id == agent.StationId);
+                return station is null
+                    ? new PilotCallResult.Failure("This agent has no supported station location.")
+                    : new AgentLocation(station);
             }
             if (method == "GetReplayTimestamp")
             {

@@ -61,3 +61,5 @@ Agents perform **automated testing only**. Do not launch the game, use Computer 
 ## Milestones
 
 Automated validation and remote verification establish milestone completion under this policy; unperformed live acceptance does not block it. After verifying a milestone, commit its code, tests, and documentation together and push the commit to GitHub. Confirm the commit is on the remote branch before reporting the milestone complete or starting the next one.
+
+After merging a task branch, always remove its worktree once the merge is verified on the remote target branch. Preserve unrelated work and remove only the completed task's worktree; do not force removal of a worktree containing uncommitted changes.

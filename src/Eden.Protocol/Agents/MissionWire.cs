@@ -1,4 +1,5 @@
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -8,6 +9,17 @@ namespace Eden.Protocol.Agents;
 internal sealed record AgentMissionChanged(string Action, long AgentId) : PilotNotification("OnAgentMissionChange")
 {
     public override object?[] Arguments => [Action, AgentId];
+}
+
+internal sealed record AgentLocation(StationDirectoryEntry Station) : BlueModel
+{
+    public override object ToBlue() =>
+        new Dictionary<string, object?>
+        {
+            ["typeID"] = Station.TypeId,
+            ["locationID"] = Station.Id,
+            ["solarsystemID"] = Station.SystemId,
+        };
 }
 
 internal sealed record MissionConversation(MissionOffer? Offer, string Event, string Greeting) : BlueModel
@@ -34,7 +46,14 @@ internal sealed record MissionConversation(MissionOffer? Offer, string Event, st
         {
             actions.Add(new object?[] { (int)MissionAction.Request, (int)MissionAction.Request });
         }
-        var last = new Dictionary<string, object?>();
+        // The legacy dialogue indexes these four keys directly when rendering objectives.
+        var last = new Dictionary<string, object?>
+        {
+            ["missionCompleted"] = false,
+            ["missionDeclined"] = false,
+            ["missionQuit"] = false,
+            ["missionCantReplay"] = false,
+        };
         if (Event.Length != 0)
         {
             string? key = Event switch

@@ -12,6 +12,59 @@ namespace Eden.Protocol.Tests.Agents;
 public sealed class MissionProtocolTests
 {
     [Fact]
+    public void OrdinaryAgentConversationProvidesNativeLocationHeaderAndEveryObjectiveStatusFlag()
+    {
+        using MissionFixture f = new(division: MissionRules.SecurityDivision);
+        var binding = Assert.IsType<BoundPilotReply>(
+            Assert
+                .IsType<PilotCallResult.Success>(
+                    f.Call("agentMgr", "MachoBindObject", [MissionFixture.AgentId, new object?[] { "DoAction", new object?[] { null } }])
+                )
+                .Reply
+        );
+        string service = f.Context.ResolveReference(binding.Reference.Id)!;
+        var initialLocation = BlueRead.Fields(MissionFixture.Reply(f.Call(service, "GetAgentLocationWrap", [])));
+        Assert.Equal((long)MissionFixture.StationId, initialLocation["locationID"]);
+        Assert.Empty(f.Missions.Journal(MissionFixture.PilotId));
+        var greeting = Conversation(new PilotCallResult.Success(binding.Reply));
+        var request = Assert.IsType<object?[]>(Assert.Single(greeting.Actions));
+        var offered = Conversation(f.Call(service, "DoAction", [request[0]]));
+        var location = BlueRead.Fields(MissionFixture.Reply(f.Call(service, "GetAgentLocationWrap", [])));
+        Assert.Equal(52678L, location["typeID"]);
+        Assert.Equal((long)MissionFixture.StationId, location["locationID"]);
+        Assert.Equal(30000142L, location["solarsystemID"]);
+        Assert.DoesNotContain("coords", location.Keys);
+        foreach (string flag in new[] { "missionCompleted", "missionDeclined", "missionQuit", "missionCantReplay" })
+        {
+            Assert.Equal(false, offered.Last[flag]);
+        }
+        Assert.NotEmpty(BlueRead.Fields(MissionFixture.Reply(f.Call(service, "GetMissionObjectiveInfo", []))));
+        Assert.IsType<PilotCallResult.Failure>(f.Call(service, "GetAgentLocationWrap", [MissionFixture.PilotId]));
+        Assert.Single(f.Missions.Journal(MissionFixture.PilotId));
+        Assert.Equal(MissionState.Offered, f.Missions.Current(MissionFixture.PilotId, MissionFixture.AgentId)!.State);
+    }
+
+    [Theory]
+    [InlineData("", null)]
+    [InlineData("offered", "missionOffered")]
+    [InlineData("accepted", "missionAccepted")]
+    [InlineData("completed", "missionCompleted")]
+    [InlineData("offer_declined", "missionDeclined")]
+    [InlineData("quit", "missionQuit")]
+    public void ConversationStatusFlagsPreserveTheNativeObjectiveVisibilityContract(string action, string? activeFlag)
+    {
+        var conversation = Conversation(new MissionConversation(null, action, "Greeting"));
+        foreach (string flag in new[] { "missionCompleted", "missionDeclined", "missionQuit", "missionCantReplay" })
+        {
+            Assert.Equal(flag == activeFlag, conversation.Last[flag]);
+        }
+        if (activeFlag is not null)
+        {
+            Assert.Equal(true, conversation.Last[activeFlag]);
+        }
+    }
+
+    [Fact]
     public void StationAgentPanelCanBindAndReadReplayTimersBeforeAnyMissionOfferExists()
     {
         using MissionFixture f = new();
