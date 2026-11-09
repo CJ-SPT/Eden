@@ -102,7 +102,9 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                 observation.Work.Stamp,
                 observation.Health,
                 DepartureGate: observation.Work.Activity == HaulerActivity.Jumping ? observation.Work.TargetId : null,
-                Arriving: observation.Work.Stamp < observation.Work.ArrivalUntil
+                Arriving: observation.Work.Stamp < observation.Work.ArrivalUntil,
+                GateArrival: observation.Work is { ArrivalGateId: long gate, ArrivalAt: long arrived } ? new(gate, arrived) : null,
+                DepartureAt: observation.Work.DepartureAt
             )
         );
 
@@ -131,7 +133,9 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
         int DueStamp = 0,
         int CycleSeconds = 0,
         long? DepartureGate = null,
-        bool Arriving = false
+        bool Arriving = false,
+        GateArrivalContact? GateArrival = null,
+        long? DepartureAt = null
     );
 
     private sealed class PilotScene(SharedSpace space, TimeProvider clock)
@@ -224,7 +228,9 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                     Mining: _mining is null ? [] : [_mining],
                     Health: observation.Health,
                     FollowMode: nav.FollowMode,
-                    Stamp: stamp
+                    Stamp: stamp,
+                    GateArrival: observation.GateArrival,
+                    DepartureAt: observation.DepartureAt
                 );
                 long id = pilot.ShipId;
                 if (contact.AlignTo is { } end && _previous?.AlignTo != end)

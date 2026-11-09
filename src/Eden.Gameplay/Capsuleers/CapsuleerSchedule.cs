@@ -44,11 +44,16 @@ public static class CapsuleerScheduleRules
         var action = work.Activity switch
         {
             HaulerActivity.Docked => CapsuleerAction.Trade,
-            HaulerActivity.Jumping => CapsuleerAction.GateTransfer,
+            HaulerActivity.Jumping or HaulerActivity.Inbound => CapsuleerAction.GateTransfer,
             HaulerActivity.Waiting => CapsuleerAction.Retry,
             _ => CapsuleerAction.Arrival,
         };
-        return Next(work.ActiveTicks, work.DueTicks, action, !inSpace && work.Activity == HaulerActivity.Waiting);
+        return Next(
+            work.ActiveTicks,
+            work.DueTicks,
+            action,
+            work.Activity == HaulerActivity.Inbound || !inSpace && work.Activity is HaulerActivity.Waiting or HaulerActivity.Docked
+        );
     }
 
     public static long? WarpDeadline(NavigationFrame navigation, FlightProperties flight, long offsetTicks, long activeTicks)

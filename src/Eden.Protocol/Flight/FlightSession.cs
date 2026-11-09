@@ -403,7 +403,9 @@ internal sealed class FlightSession(
             RemoteRepairs: ModuleEffects.RemoteRepairs,
             CapacitorEffects: ModuleEffects.CapacitorEffects,
             SignatureSuppressions: ModuleEffects.SignatureSuppressions,
-            AssaultDamageControls: ModuleEffects.AssaultDamageControls
+            AssaultDamageControls: ModuleEffects.AssaultDamageControls,
+            GateArrival: _travel.Arrival,
+            DepartureAt: _travel.DepartureAt
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -781,6 +783,10 @@ internal sealed class FlightSession(
             }
             else
             {
+                if (_travel.Arrival is { } arrival)
+                {
+                    Effects.GateActivity(arrival.GateId, arriving: true);
+                }
                 ArrivalEffect(Pilot.ShipId);
             }
         }
@@ -819,7 +825,7 @@ internal sealed class FlightSession(
             return departure.Result;
         }
         // Keep the source scene alive for the camera handoff before transferring the pilot.
-        _travel.BeginGate(transit, Stamp);
+        _travel.BeginGate(transit, Stamp, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
@@ -849,7 +855,7 @@ internal sealed class FlightSession(
         LeaveSpace();
         Scene.ReplaceObjects(jump.Objects);
         Pilot = Pilot with { Position = position, CurrentSystem = jump.System };
-        _travel.CompleteGate();
+        _travel.CompleteGate(jump.Exit.Id, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         return true;
     }
 

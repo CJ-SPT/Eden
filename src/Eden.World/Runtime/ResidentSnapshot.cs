@@ -42,5 +42,7 @@ internal sealed class ResidentSnapshot<TKey, TValue>(string name, params string[
         }
     }
 
+    internal void Remove(TKey key) => _entries.Remove(key);
+
     internal void Clear() => _entries.Clear();
 }

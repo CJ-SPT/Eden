@@ -11,17 +11,18 @@ namespace Eden.World.Capsuleers;
 
 internal sealed record CapsuleerOrigin(int RaceId, int BloodlineId, int SchoolId, int CorporationId);
 
-internal sealed record CapsuleerSite(
-    int SystemId,
-    CapsuleerEligibility Eligibility,
-    int? HomeStationId,
-    int? DestinationStationId,
-    bool SupportsMining = true
-);
+internal sealed record CapsuleerSite(int SystemId, CapsuleerEligibility Eligibility, int? HomeStationId, int? DestinationStationId);
 
 internal static class CapsuleerProvisioningCatalog
 {
-    internal static CapsuleerOrigin[] Origins(CatalogDbContext catalog)
+    private static readonly CatalogDefinition<CapsuleerOrigin[]> s_origins = new("capsuleer-origins", (catalog, _) => LoadOrigins(catalog));
+    private static readonly CatalogDefinition<CapsuleerSite> s_miningSites = new("capsuleer-mining-site", MiningSite);
+
+    internal static CapsuleerOrigin[] Origins(CatalogDbContext catalog) => catalog.Definition(s_origins, 0);
+
+    internal static CapsuleerSite Mining(CatalogDbContext catalog, int systemId) => catalog.Definition(s_miningSites, systemId);
+
+    private static CapsuleerOrigin[] LoadOrigins(CatalogDbContext catalog)
     {
         var bloodlines = catalog.Records(CatalogData.Client.Bloodlines).ToArray();
         return catalog
@@ -48,70 +49,40 @@ internal static class CapsuleerProvisioningCatalog
             .ToArray();
     }
 
-    internal static CapsuleerSite[] Plan(
-        CatalogDbContext catalog,
-        bool enabled,
-        IReadOnlyDictionary<int, int> establishedHomes,
-        bool origins,
-        IReadOnlySet<int>? selectedSystems = null
-    )
+    private static CapsuleerSite MiningSite(CatalogDbContext catalog, int system)
     {
+        var security = catalog.Read(CatalogData.Client.Solarsystemcontent, (long)system)?.Security;
+        var station = catalog
+            .Definitions.StationsInSystem(system)
+            .Where(s => StationCapabilities.Has(catalog, s.OperationId, StationService.Market))
+            .OrderBy(s => s.Id)
+            .FirstOrDefault();
+        var belts =
+            security >= CapsuleerProvisioningRules.MinimumSecurity && station is not null
+                ? catalog.CelestialsInSystem(system).Where(b => b.GroupId == AsteroidDefinitions.BeltGroup).ToArray()
+                : [];
+        bool ore = belts.Length > 0 && belts.All(b => ValidCounts(catalog, b.Id)) && belts.Any(b => UsableOre(catalog, b.Id));
         bool equipment =
             catalog.FittingType(CapsuleerCommunityStore.VentureType) is not null
-            && catalog.FittingType(HaulingRules.BadgerType) is not null
             && catalog.FittingType((int)MiningLaserType.MinerI) is not null;
-        var selected = selectedSystems ?? catalog.Definitions.Systems.Keys.ToHashSet();
-        var routeSystems = selected
-            .SelectMany(system => catalog.Definitions.GatesInSystem(system).Select(g => g.DestinationSystemId))
-            .Union(selected)
-            .ToHashSet();
-        var content = catalog.ReadMany(CatalogData.Client.Solarsystemcontent, routeSystems.Select(id => (long)id));
-        var security = routeSystems.ToDictionary(id => id, id => content.GetValueOrDefault(id)?.Security);
-        var markets = catalog
-            .Stations()
-            .Where(s => routeSystems.Contains(s.SolarSystemId))
-            .Where(s => StationCapabilities.Has(catalog, s.OperationId, StationService.Market))
-            .GroupBy(s => s.SolarSystemId)
-            .ToDictionary(g => g.Key, g => g.OrderBy(s => s.Id).ToArray());
-        List<CapsuleerSite> sites = [];
-        foreach (int system in selected.Order())
-        {
-            var stations = markets.GetValueOrDefault(system) ?? [];
-            int? home = establishedHomes.TryGetValue(system, out int saved) ? saved : stations.FirstOrDefault()?.Id;
-            bool market = home is not null && stations.Any(s => s.Id == home);
-            bool belt = false;
-            bool ore = false;
-            int? destination = null;
-            if (enabled && security[system] >= CapsuleerProvisioningRules.MinimumSecurity && market)
-            {
-                var belts = catalog.CelestialsInSystem(system).Where(b => b.GroupId == AsteroidDefinitions.BeltGroup).ToArray();
-                belt = belts.Length != 0;
-                ore = belts.All(b => ValidCounts(catalog, b.Id)) && belts.Any(b => UsableOre(catalog, b.Id));
-                destination = catalog
-                    .Definitions.GatesInSystem(system)
-                    .Where(g => g.DestinationSystemId != system)
-                    .OrderBy(g => g.DestinationSystemId)
-                    .ThenBy(g => g.Id)
-                    .Where(g => security.GetValueOrDefault(g.DestinationSystemId) >= CapsuleerProvisioningRules.MinimumSecurity)
-                    .Where(g =>
-                        catalog
-                            .Definitions.GatesInSystem(g.DestinationSystemId)
-                            .Any(exit => exit.Id == g.DestinationId && exit.DestinationId == g.Id && exit.DestinationSystemId == system)
-                    )
-                    .SelectMany(g => markets.GetValueOrDefault(g.DestinationSystemId) ?? [])
-                    .Select(s => (int?)s.Id)
-                    .FirstOrDefault();
-            }
-            var eligibility = CapsuleerProvisioningRules.Eligibility(
-                new(enabled, security[system], market, belt, ore, destination is not null, origins, equipment)
-            );
-            if (eligibility == CapsuleerEligibility.NoBelt && destination is not null && origins && equipment)
-            {
-                eligibility = CapsuleerEligibility.Eligible;
-            }
-            sites.Add(new(system, eligibility, home, destination, belt));
-        }
-        return sites.ToArray();
+        bool exportRoute =
+            ore
+            && catalog
+                .Definitions.GatesInSystem(system)
+                .Any(g =>
+                    g.DestinationSystemId != system
+                    && catalog.Definitions.Gates.TryGetValue(g.DestinationId, out var back)
+                    && back.DestinationId == g.Id
+                    && catalog.Read(CatalogData.Client.Solarsystemcontent, (long)g.DestinationSystemId)?.Security
+                        >= CapsuleerProvisioningRules.MinimumSecurity
+                    && catalog
+                        .Definitions.StationsInSystem(g.DestinationSystemId)
+                        .Any(s => StationCapabilities.Has(catalog, s.OperationId, StationService.Market))
+                );
+        var eligibility = CapsuleerProvisioningRules.Eligibility(
+            new(true, security, station is not null, belts.Length > 0, ore, exportRoute, true, equipment)
+        );
+        return new(system, eligibility, station?.Id, null);
     }
 
     internal static bool UsableOre(CatalogDbContext catalog, int belt)
@@ -142,6 +113,18 @@ internal static class CapsuleerProvisioningCatalog
                 )
             );
     }
+
+    private static readonly CatalogDefinition<int> s_freight = new(
+        "capsuleer-freight-ore",
+        (catalog, _) =>
+            catalog
+                .Definitions.Items.Values.Where(i => i.CategoryId == AsteroidDefinitions.Category)
+                .Select(i => i.Id)
+                .Order()
+                .FirstOrDefault(id => SupportedOre(catalog, id))
+    );
+
+    internal static int FreightOre(CatalogDbContext catalog) => catalog.Definition(s_freight, 0);
 
     internal static bool SupportedOre(CatalogDbContext catalog, int id) =>
         catalog.FittingType(id) is { CategoryId: AsteroidDefinitions.Category } type

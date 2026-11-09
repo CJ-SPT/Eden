@@ -34,18 +34,17 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     public void SeededOpeningAndTrafficProfilesRetainTheSameChoices(long seed, MinerEncounterOpening expected)
     {
         Assert.Equal(expected, CapsuleerEncounterRules.Opening(seed, Source));
-        Assert.Equal<CapsuleerCareer>([CapsuleerCareer.Mining], CapsuleerEncounterRules.Careers(2, Source, 1, true));
-        Assert.Equal<CapsuleerCareer>(
-            [CapsuleerCareer.Mining, CapsuleerCareer.Hauling],
-            CapsuleerEncounterRules.Careers(2, Source, CapsuleerEncounterRules.CorridorGateCount, true)
-        );
-        Assert.Empty(CapsuleerEncounterRules.Careers(2, Source, 1, false));
+        Assert.Equal(0, CapsuleerEncounterRules.Haulers(2, Source, 1, 1));
+        Assert.Equal(1, CapsuleerEncounterRules.Haulers(1, Source, 1, 1));
+        Assert.InRange(CapsuleerEncounterRules.Haulers(seed, Source, 3, 1), 2, 3);
+        Assert.InRange(CapsuleerEncounterRules.Haulers(seed, Source, 4, 1), 3, 4);
+        Assert.InRange(CapsuleerEncounterRules.Haulers(seed, Source, 7, 18), 5, 6);
     }
 
     [Fact]
     public void EmptyTrafficProfileStillPublishesItsPreparedEligibility()
     {
-        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var population = host.GetRequiredService<ICapsuleerPopulation>();
         Assert.Equal(0, population.Summary().RegisteredSystems);
@@ -130,7 +129,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     [Fact]
     public async Task SmallWorldRunsTheSameDockedFrameWorkload()
     {
-        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var live = host.GetRequiredService<LiveWorld>();
         live.MeasureCheckpoints = true;
@@ -190,7 +189,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     [Fact]
     public async Task EntryCreatesSharedMiningAndTrafficWithoutBackgroundCatchup()
     {
-        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
@@ -232,7 +231,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     [Fact]
     public void RememberedHaulerCanReappearAlongItsRouteWithTheSameShipAndCargo()
     {
-        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
@@ -260,7 +259,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     [Fact]
     public void LateUnobservedGateTransferFinishesOnceAndLeavesTheRemainingCareerDormant()
     {
-        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         using var human = presence.Select(Human, Source);
@@ -293,7 +292,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     [Fact]
     public async Task WitnessedHaulerCrossesTwoGatesWithOneIdentityAndUnchangedCargoAcrossRestart()
     {
-        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         long pilot;
         long ship;
         using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
@@ -340,7 +339,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     [Fact]
     public void EmptySystemsHaveNoCareerWorkSqlFittingOrNativeScenes()
     {
-        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         using (var human = presence.Select(Human, Source))

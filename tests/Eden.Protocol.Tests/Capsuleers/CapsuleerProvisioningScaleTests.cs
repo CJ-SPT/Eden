@@ -24,7 +24,7 @@ public sealed class CapsuleerProvisioningScaleTests
         var provisioner = new CapsuleerProvisioner(f.Database, f.Clock);
         Assert.Equal(0, provisioner.Reconcile().CreatedCommunities);
         Assert.Equal(1, provisioner.EnsureSystem(30000141).CreatedCommunities);
-        Assert.Equal(2, world.Set<SavedCapsuleerAgent>().Count());
+        Assert.InRange(world.Set<SavedCapsuleerAgent>().Count(), 6, 7);
         Assert.Single(world.Set<SavedCapsuleerSystem>());
     }
 }

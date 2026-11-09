@@ -4,6 +4,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +12,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Capsuleers;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CapsuleerScheduler(
+internal sealed partial class CapsuleerScheduler(
     WorldDatabase database,
     CapsuleerActivitySource presence,
     ICapsuleerPopulation population,
     IWorldSynchronization synchronization,
     TimeProvider clock,
     CapsuleerMinerFactory miners,
-    CapsuleerHaulerFactory haulers
+    CapsuleerHaulerFactory haulers,
+    ICapsuleerGateWatch gateWatch,
+    MarketChangeSignal marketSignal
 ) : ICapsuleerScheduler, ICapsuleerSimulation, ICapsuleerHauling, ICapsuleerHandoff, ICapsuleerDiagnostics
 {
     private readonly SystemSimulationRegistry _systems = new();
@@ -97,15 +100,12 @@ internal sealed class CapsuleerScheduler(
     private readonly Dictionary<long, long> _ships = [];
     private readonly Dictionary<long, long> _pilotShips = [];
     private readonly Dictionary<long, int> _locations = [];
-    private readonly Dictionary<long, (int Source, int Destination)> _routes = [];
+    private readonly Dictionary<long, HashSet<int>> _routes = [];
     private readonly Dictionary<int, HashSet<long>> _systemAgents = [];
 
     private void IndexLocation(long pilot, int system)
     {
-        if (
-            _locations.TryGetValue(pilot, out int previous)
-            && (!_routes.TryGetValue(pilot, out var route) || previous != route.Source && previous != route.Destination)
-        )
+        if (_locations.TryGetValue(pilot, out int previous) && (!_routes.TryGetValue(pilot, out var route) || !route.Contains(previous)))
         {
             _systemAgents.GetValueOrDefault(previous)?.Remove(pilot);
         }
@@ -125,21 +125,38 @@ internal sealed class CapsuleerScheduler(
     private LiveWorld? Live => LiveWorld.Find(database.Path);
     private Dictionary<long, CapsuleerJob> Current => Live?.CapsuleerJobs ?? _jobs;
 
-    private void Load()
+    private void Load(int? preparedSystem = null, long? preparedPilot = null)
     {
-        if (_loaded && _populationRevision == (Live?.CapsuleerRevision ?? 0))
+        if (preparedSystem is null && preparedPilot is null && _loaded && _populationRevision == (Live?.CapsuleerRevision ?? 0))
         {
             return;
         }
         using WorldDbContext world = new(database.Path);
-        var agents = world.Set<SavedCapsuleerAgent>().AsNoTracking().OrderBy(a => a.PilotId).ToArray();
-        var jobs = CapsuleerPopulationStore.Jobs(world);
-        foreach (int system in world.Set<SavedCapsuleerSystem>().Select(s => s.SystemId))
+        bool incremental = _loaded && (preparedSystem is not null || preparedPilot is not null);
+        var agentQuery = world.Set<SavedCapsuleerAgent>().AsNoTracking();
+        if (incremental)
+        {
+            agentQuery = preparedPilot is { } pilotId
+                ? agentQuery.Where(a => a.PilotId == pilotId)
+                : agentQuery.Where(a => a.CommunitySystemId == preparedSystem);
+        }
+        var agents = agentQuery.OrderBy(a => a.PilotId).ToArray();
+        var pilotIds = agents.Select(a => a.PilotId).ToArray();
+        var jobs = incremental
+            ? world
+                .Set<SavedCapsuleerJob>()
+                .Where(j => pilotIds.Contains(j.PilotId))
+                .Select(j => new CapsuleerJob(j.PilotId, j.Revision, j.Sequence, j.DueTicks, j.Action))
+                .ToArray()
+            : CapsuleerPopulationStore.Jobs(world);
+        foreach (
+            int system in world.Set<SavedCapsuleerSystem>().Where(s => !incremental || s.SystemId == preparedSystem).Select(s => s.SystemId)
+        )
         {
             _systems.Register(system);
         }
         var locations = (
-            from agent in world.Set<SavedCapsuleerAgent>()
+            from agent in agentQuery
             join pilot in world.Pilots on agent.PilotId equals pilot.Id
             select new SavedLocation(
                 agent.PilotId,
@@ -150,22 +167,55 @@ internal sealed class CapsuleerScheduler(
         var stations = locations.Where(l => l.SystemId is null).Select(l => l.StationId).Distinct().ToArray();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var systems = stations.ToDictionary(id => id, id => catalog.RequireStation(id).SolarSystemId);
-        foreach (var route in world.Set<SavedCapsuleerHauler>().AsNoTracking())
+        var laneAgents = agents
+            .Where(a => a.Career == CapsuleerCareer.Hauling && catalog.Definitions.Gates.ContainsKey(a.Slot))
+            .Select(a => a.PilotId)
+            .ToHashSet();
+        Dictionary<long, HaulerProgress> restoredInbound = [];
+        foreach (var route in world.Set<SavedCapsuleerHauler>().AsNoTracking().Where(r => !incremental || pilotIds.Contains(r.PilotId)))
         {
-            int source = catalog.RequireStation(route.SourceStationId).SolarSystemId;
-            int destination = catalog.RequireStation(route.DestinationStationId).SolarSystemId;
-            _routes[route.PilotId] = (source, destination);
-            IndexLocation(route.PilotId, source);
-            IndexLocation(route.PilotId, destination);
+            if (laneAgents.Contains(route.PilotId))
+            {
+                _lanePilots.Add(route.PilotId);
+                if (
+                    !_loaded
+                    && (Live?.HaulerCheckpoints.GetValueOrDefault(route.PilotId)?.Work ?? HaulerCheckpoint.Read(route.Progress))
+                        is { Activity: HaulerActivity.Inbound, InboundPaused: false } progress
+                )
+                {
+                    restoredInbound[route.PilotId] = progress;
+                }
+            }
+            var systemsOnRoute = CapsuleerTrafficFlight.Route(route, catalog).Systems.ToHashSet();
+            _routes[route.PilotId] = systemsOnRoute;
+            foreach (int system in systemsOnRoute)
+            {
+                if (!_systemAgents.TryGetValue(system, out var members))
+                {
+                    members = [];
+                    _systemAgents.Add(system, members);
+                }
+                members.Add(route.PilotId);
+            }
         }
         foreach (var location in locations)
         {
-            IndexLocation(location.PilotId, location.SystemId ?? systems[location.StationId]);
+            int system = location.SystemId ?? systems[location.StationId];
+            IndexLocation(location.PilotId, system);
+            _systems.Register(system);
         }
         foreach (var job in jobs)
         {
             Current.TryAdd(job.PilotId, job);
             Live?.ProjectedCapsuleerJobs.TryAdd(job.PilotId, job);
+        }
+        if (restoredInbound.Count > 0)
+        {
+            long elapsed = world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
+            foreach (var pair in restoredInbound)
+            {
+                Current[pair.Key] = RestoreInbound(Current[pair.Key], pair.Value, elapsed);
+            }
         }
         foreach (var agent in agents)
         {
@@ -295,8 +345,13 @@ internal sealed class CapsuleerScheduler(
                 _visited.Add(system);
                 if (prepared.CreatedCommunities > 0)
                 {
-                    _loaded = false;
-                    Load();
+                    Load(system);
+                }
+                else
+                {
+                    _systems.Register(system);
+                    _populationRevision = Live?.CapsuleerRevision ?? 0;
+                    _population = population.Summary();
                 }
             }
         }
@@ -319,14 +374,15 @@ internal sealed class CapsuleerScheduler(
             {
                 if (
                     _running.Contains(pilot)
+                    || _lanePilots.Contains(pilot)
                     || !_haulers.TryGetValue(pilot, out var hauler)
                     || activity.ActiveSystems.Contains(_locations[pilot])
                 )
                 {
                     continue;
                 }
-                // Familiar route traffic can reappear at its other endpoint after
-                // an absence long enough to have completed that journey.
+                // Only an adjacent saved route leg can be accounted for while
+                // unobserved; the hauler validates its hull and travel restrictions.
                 const int reappearanceMinutes = 15;
                 var job = Current[pilot];
                 if (
@@ -337,15 +393,21 @@ internal sealed class CapsuleerScheduler(
                     continue;
                 }
                 Current[pilot] = hauler.Reappear(job, activity.ElapsedTicks, system);
-                IndexLocation(pilot, system);
+                IndexLocation(pilot, hauler.SystemId);
             }
         }
+        var inbound = ReconcileInbound(activity);
         var running = activity
             .ActiveSystems.SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? [])
             .Where(pilot => activity.ActiveSystems.Contains(_locations[pilot]))
             .ToHashSet();
+        running.UnionWith(inbound);
         foreach (long pilot in running.Except(_running))
         {
+            if (inbound.Contains(pilot))
+            {
+                continue;
+            }
             var job = Current[pilot];
             Current[pilot] = _miners.TryGetValue(pilot, out var miner)
                 ? miner.Resume(job, activity.ElapsedTicks)
@@ -353,7 +415,7 @@ internal sealed class CapsuleerScheduler(
         }
         // A witnessed gate departure is one durable transfer, even if its source
         // loses its last observer before the destination becomes visible.
-        running.UnionWith(_running.Where(pilot => Current[pilot].Action == CapsuleerAction.GateTransfer));
+        running.UnionWith(_running.Where(pilot => Current[pilot].Action == CapsuleerAction.GateTransfer && !_haulers[pilot].IsInbound));
         foreach (long pilot in _running.Except(running))
         {
             // Release navigation, contacts and fitting references. The immutable

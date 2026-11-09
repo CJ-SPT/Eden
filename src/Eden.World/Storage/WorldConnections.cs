@@ -89,6 +89,10 @@ internal static class WorldConnections
             {
                 foreach (var change in runtime.Synchronize(context, _changes))
                 {
+                    if (change.Table == "WorldPosition")
+                    {
+                        world.Reads?.GateWatcherPositionChanged(change.Id);
+                    }
                     _changes.Remove(change);
                 }
             }

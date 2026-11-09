@@ -15,6 +15,7 @@ public sealed class SavedCapsuleerAgent
     public long PilotId { get; set; }
     public int CommunitySystemId { get; set; }
     public CapsuleerCareer Career { get; set; }
+    public int Slot { get; set; }
     public long FounderShipId { get; set; }
     public long FounderModuleId { get; set; }
     public long StartingCents { get; set; }

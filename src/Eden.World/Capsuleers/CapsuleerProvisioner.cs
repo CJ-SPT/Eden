@@ -24,7 +24,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Capsuleers;
 
 [Injectable]
-internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider clock) : ICapsuleerProvisioning
+internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeProvider clock) : ICapsuleerProvisioning
 {
     public CapsuleerProvisioningTurn Reconcile(int maximumCommunities = int.MaxValue, CancellationToken cancellationToken = default)
     {
@@ -38,203 +38,162 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
     {
         lock (database.MotionLock)
         {
-            return Provision(1, CancellationToken.None, systemId);
+            return Provision(systemId);
         }
     }
 
-    private CapsuleerProvisioningTurn Provision(int limit, CancellationToken cancellationToken, int systemId)
+    private CapsuleerProvisioningTurn Provision(int systemId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        // Local catalog edits can preserve the imported source fingerprint.
-        FileInfo catalogFile = new(database.CatalogPath);
-        string fingerprint = $"{catalog.Definitions.Identity.SourceFingerprint}|{catalogFile.Length}|{catalogFile.LastWriteTimeUtc.Ticks}";
-        long seed;
-        Dictionary<int, int> homes;
-        using (WorldDbContext world = new(database.Path))
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
+        if (state is null)
         {
-            using var transaction = world.Database.BeginTransaction();
-            var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
-            if (state is null)
-            {
-                state = new() { Id = 1, WorldSeed = BitConverter.ToInt64(RandomNumberGenerator.GetBytes(sizeof(long))) & long.MaxValue };
-                world.Add(state);
-                world.SaveChanges();
-            }
-            seed = state.WorldSeed;
-            homes = world
-                .Set<SavedCapsuleerPopulation>()
-                .Where(c => c.SystemId == systemId)
-                .ToDictionary(c => c.SystemId, c => c.HomeStationId);
-            transaction.Commit();
+            state = new() { Id = 1, WorldSeed = BitConverter.ToInt64(RandomNumberGenerator.GetBytes(sizeof(long))) & long.MaxValue };
+            world.Add(state);
         }
-        SavedCapsuleerSystem[] saved;
-        using (WorldDbContext world = new(database.Path))
+        long seed = state.WorldSeed;
+        var summary = world.Set<SavedCapsuleerSystem>().Find(systemId);
+        FileInfo file = new(database.CatalogPath);
+        string fingerprint = $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}";
+        if (summary?.PolicyVersion == CapsuleerProvisioningRules.Version && summary.CatalogFingerprint == fingerprint)
         {
-            saved = world.Set<SavedCapsuleerSystem>().AsNoTracking().Where(s => s.SystemId == systemId).ToArray();
+            return new(1, 0, 0);
         }
-        bool enabled = true;
-        bool reusable =
-            saved.Length == 1
-            && saved.All(s =>
-                catalog.Definitions.Systems.ContainsKey(s.SystemId)
-                && s.CatalogFingerprint == fingerprint
-                && s.PolicyVersion == CapsuleerProvisioningRules.Version
-                && (s.Eligibility == CapsuleerEligibility.Disabled) == !enabled
-            );
-        var origins = reusable ? [] : CapsuleerProvisioningCatalog.Origins(catalog);
-        var sites = reusable
-            ? saved
-                .Select(s => new CapsuleerSite(
-                    s.SystemId,
-                    s.Eligibility,
-                    s.HomeStationId,
-                    s.DestinationStationId,
-                    catalog.CelestialsInSystem(s.SystemId).Any(c => c.GroupId == AsteroidDefinitions.BeltGroup)
-                ))
-                .ToArray()
-            : CapsuleerProvisioningCatalog.Plan(catalog, enabled, homes, origins.Length != 0, new HashSet<int> { systemId });
-        if (!reusable)
+        var mining = CapsuleerProvisioningCatalog.Mining(catalog, systemId);
+        var traffic = CapsuleerTrafficRoutes.Read(catalog, systemId);
+        var origins = CapsuleerProvisioningCatalog.Origins(catalog);
+        bool hasRoute = traffic.Routes.Length > 0;
+        bool canHaul =
+            hasRoute && catalog.FittingType(HaulingRules.BadgerType) is not null && CapsuleerProvisioningCatalog.FreightOre(catalog) != 0;
+        int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic.GateCount, traffic.StationCount) : 0;
+        var agents = world
+            .Set<SavedCapsuleerAgent>()
+            .Where(a => a.CommunitySystemId == systemId)
+            .Select(a => new { a.Career, a.Slot })
+            .ToArray();
+        bool addMiner =
+            origins.Length > 0
+            && mining.Eligibility == CapsuleerEligibility.Eligible
+            && !agents.Any(a => a.Career == CapsuleerCareer.Mining);
+        bool awaitingOre = false;
+        if (addMiner)
         {
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
-            var records = world.Set<SavedCapsuleerSystem>().ToDictionary(s => s.SystemId);
-            foreach (var site in sites)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (!records.TryGetValue(site.SystemId, out var record))
-                {
-                    record = new() { SystemId = site.SystemId };
-                    world.Add(record);
-                }
-                record.Eligibility = site.Eligibility;
-                record.HomeStationId = site.HomeStationId;
-                record.DestinationStationId = site.DestinationStationId;
-                record.CatalogFingerprint = fingerprint;
-                record.PolicyVersion = CapsuleerProvisioningRules.Version;
-            }
+            AsteroidFieldStore.Populate(world, catalog, systemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             world.SaveChanges();
-            transaction.Commit();
-        }
-        HashSet<int> complete;
-        using (WorldDbContext world = new(database.Path))
-        {
-            complete = world
-                .Set<SavedCapsuleerAgent>()
-                .Where(a => a.CommunitySystemId == systemId)
-                .GroupBy(a => a.CommunitySystemId)
-                .Where(g => g.Count() == CapsuleerProvisioningRules.FoundersPerCommunity)
-                .Select(g => g.Key)
-                .ToHashSet();
-        }
-        int created = 0;
-        int pending = 0;
-        if (reusable && enabled)
-        {
-            // Depleted saved fields may have renewed since the previous attempt.
-            var deferred = saved
-                .Where(s => s.Eligibility == CapsuleerEligibility.NoUsableOre && !complete.Contains(s.SystemId))
-                .Select(s => s.SystemId)
-                .ToArray();
-            using WorldDbContext world = new(database.Path);
-            var replenished = world
+            addMiner = world
                 .Set<WorldAsteroid>()
-                .Where(a => deferred.Contains(a.SystemId) && a.Quantity > 0)
-                .Select(a => new { a.SystemId, a.TypeId })
-                .Distinct()
-                .AsEnumerable()
-                .Where(a => CapsuleerProvisioningCatalog.SupportedOre(catalog, a.TypeId))
-                .Select(a => a.SystemId)
-                .ToHashSet();
-            if (replenished.Count > 0)
-            {
-                origins = CapsuleerProvisioningCatalog.Origins(catalog);
-                var reconsidered = CapsuleerProvisioningCatalog
-                    .Plan(catalog, enabled, homes, origins.Length != 0, replenished)
-                    .ToDictionary(s => s.SystemId);
-                sites = sites.Select(s => reconsidered.GetValueOrDefault(s.SystemId) ?? s).ToArray();
-            }
-        }
-        foreach (var site in sites.Where(s => s.Eligibility == CapsuleerEligibility.Eligible))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (complete.Contains(site.SystemId))
-            {
-                continue;
-            }
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
-            var agents = world.Set<SavedCapsuleerAgent>().Where(a => a.CommunitySystemId == site.SystemId).ToArray();
-            var careers = CapsuleerEncounterRules.Careers(
-                seed,
-                site.SystemId,
-                catalog.Definitions.GatesInSystem(site.SystemId).Length,
-                site.SupportsMining
-            );
-            if (careers.All(c => agents.Any(a => a.Career == c)))
-            {
-                continue;
-            }
-            if (created == limit)
-            {
-                pending++;
-                continue;
-            }
-            // Materialize and validate the real deposits before granting this pair.
-            // Existing saved fields are read as-is; Populate never replenishes them.
-            if (site.SupportsMining)
-            {
-                AsteroidFieldStore.Populate(world, catalog, site.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-            }
-            world.SaveChanges();
-            var available = world
-                .Set<WorldAsteroid>()
-                .Where(a => a.SystemId == site.SystemId && a.Quantity > 0)
+                .Where(a => a.SystemId == systemId && a.Quantity > 0)
                 .Select(a => a.TypeId)
                 .Distinct()
-                .ToArray();
-            if (site.SupportsMining && !available.Any(type => CapsuleerProvisioningCatalog.SupportedOre(catalog, type)))
+                .AsEnumerable()
+                .Any(id => CapsuleerProvisioningCatalog.SupportedOre(catalog, id));
+            if (!addMiner)
             {
-                world.Set<SavedCapsuleerSystem>().Single(s => s.SystemId == site.SystemId).Eligibility = CapsuleerEligibility.NoUsableOre;
-                world.SaveChanges();
-                transaction.Commit();
-                continue;
+                awaitingOre = true;
+                mining = mining with { Eligibility = CapsuleerEligibility.NoUsableOre };
             }
-            if (origins.Length == 0)
-            {
-                origins = CapsuleerProvisioningCatalog.Origins(catalog);
-            }
-            world.Set<SavedCapsuleerSystem>().Single(s => s.SystemId == site.SystemId).Eligibility = CapsuleerEligibility.Eligible;
-            EnsureAccount(world);
-            var population = world.Set<SavedCapsuleerPopulation>().Find(site.SystemId);
-            if (population is null)
-            {
-                world.Add(
-                    new SavedCapsuleerPopulation
-                    {
-                        SystemId = site.SystemId,
-                        HomeStationId = site.HomeStationId!.Value,
-                        Seed = unchecked(
-                            (long)(CapsuleerProvisioningRules.Seed(seed, site.SystemId, CapsuleerCareer.Mining) & long.MaxValue)
-                        ),
-                        Version = CapsuleerPopulationStore.PopulationVersion,
-                    }
-                );
-                world.SaveChanges();
-            }
-            foreach (var career in careers)
-            {
-                if (agents.Any(a => a.Career == career))
-                {
-                    continue;
-                }
-                ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, site.SystemId, career);
-                var origin = origins[(int)(roleSeed % (ulong)origins.Length)];
-                CreateFounder(world, catalog, site, origin, career, seed);
-            }
-            transaction.Commit();
-            created++;
         }
-        return new(sites.Length, created, pending);
+
+        if (summary is null)
+        {
+            summary = new() { SystemId = systemId };
+            world.Add(summary);
+        }
+        var first = traffic.Routes.FirstOrDefault();
+        summary.Eligibility =
+            origins.Length == 0 ? CapsuleerEligibility.MissingOrigin
+            : canHaul || mining.Eligibility == CapsuleerEligibility.Eligible ? CapsuleerEligibility.Eligible
+            : hasRoute ? CapsuleerEligibility.MissingEquipment
+            : CapsuleerEligibility.NoReciprocalRoute;
+        summary.HomeStationId = mining.HomeStationId ?? first?.SourceStationId;
+        summary.DestinationStationId = first?.DestinationStationId;
+        // A depleted saved field must retry after renewal even with an unchanged catalog.
+        summary.CatalogFingerprint = awaitingOre ? "" : fingerprint;
+        summary.PolicyVersion = CapsuleerProvisioningRules.Version;
+        var newSlots = Enumerable
+            .Range(0, count)
+            .Where(slot => !agents.Any(a => a.Career == CapsuleerCareer.Hauling && a.Slot == slot))
+            .ToArray();
+        if (origins.Length == 0 || !addMiner && newSlots.Length == 0)
+        {
+            world.SaveChanges();
+            transaction.Commit();
+            return new(1, 0, 0);
+        }
+        var population = world.Set<SavedCapsuleerPopulation>().Find(systemId);
+        if (population is null)
+        {
+            world.Add(
+                new SavedCapsuleerPopulation
+                {
+                    SystemId = systemId,
+                    HomeStationId = summary.HomeStationId!.Value,
+                    Seed = (long)(CapsuleerProvisioningRules.Seed(seed, systemId, CapsuleerCareer.Mining) & long.MaxValue),
+                    Version = CapsuleerPopulationStore.PopulationVersion,
+                }
+            );
+        }
+        EnsureAccount(world);
+        world.SaveChanges();
+        if (addMiner)
+        {
+            CreateFounder(world, catalog, mining, origins, CapsuleerCareer.Mining, seed, 0, null, HaulerEncounterOpening.Docked);
+        }
+        int offset = (int)(
+            CapsuleerProvisioningRules.Seed(seed, systemId, CapsuleerCareer.Hauling) % (ulong)Math.Max(1, traffic.Routes.Length)
+        );
+        foreach (int slot in newSlots)
+        {
+            var opening = CapsuleerEncounterRules.TrafficOpening(seed, systemId, slot, count);
+            var route = SelectRoute(catalog, traffic, systemId, slot, opening, offset);
+            var site = mining with { HomeStationId = route.SourceStationId, DestinationStationId = route.DestinationStationId };
+            CreateFounder(world, catalog, site, origins, CapsuleerCareer.Hauling, seed, slot, route, opening);
+        }
+        transaction.Commit();
+        return new(1, 1, 0);
+    }
+
+    private static CapsuleerTrafficRoute SelectRoute(
+        CatalogDbContext catalog,
+        CapsuleerTrafficPlan traffic,
+        int systemId,
+        int slot,
+        HaulerEncounterOpening opening,
+        int offset
+    )
+    {
+        var routes = opening switch
+        {
+            HaulerEncounterOpening.ApproachingStation => traffic
+                .Routes.Where(r =>
+                    catalog.RequireStation(r.SourceStationId).SolarSystemId == systemId
+                    || catalog.RequireStation(r.DestinationStationId).SolarSystemId == systemId
+                )
+                .ToArray(),
+            HaulerEncounterOpening.Docked => traffic
+                .Routes.Where(r => catalog.RequireStation(r.SourceStationId).SolarSystemId == systemId)
+                .ToArray(),
+            _ => traffic.Routes.Where(r => r.Systems.Length > 1).ToArray(),
+        };
+        if (routes.Length == 0)
+        {
+            routes = traffic.Routes;
+        }
+        if (slot == 1 && opening == HaulerEncounterOpening.ApproachingStation)
+        {
+            // Anchor the first station arrival at the familiar trading undock when one exists.
+            foreach (var route in routes)
+            {
+                int station = route.Systems[0] == systemId ? route.SourceStationId : route.DestinationStationId;
+                if (CapsuleerEncounterRules.IsTradeHubStation(station) && catalog.RequireStation(station).SolarSystemId == systemId)
+                {
+                    return route;
+                }
+            }
+        }
+        return routes[(offset + slot) % routes.Length];
     }
 
     private void EnsureAccount(WorldDbContext world)
@@ -255,13 +214,18 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         world.SaveChanges();
     }
 
-    private void CreateFounder(
+    private long CreateFounder(
         WorldDbContext world,
         CatalogDbContext catalog,
         CapsuleerSite site,
-        CapsuleerOrigin origin,
+        CapsuleerOrigin[] origins,
         CapsuleerCareer career,
-        long seed
+        long seed,
+        int slot,
+        CapsuleerTrafficRoute? route,
+        HaulerEncounterOpening opening,
+        WatchedTrafficGate? watchedGate = null,
+        bool sourceObserved = false
     )
     {
         long pilot = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
@@ -269,14 +233,15 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         int hull = career == CapsuleerCareer.Mining ? CapsuleerCommunityStore.VentureType : HaulingRules.BadgerType;
         int station = site.HomeStationId!.Value;
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        string originalName = CapsuleerProvisioningRules.Name(seed, site.SystemId, career);
-        string name = originalName;
-        int suffix = 1;
-        while (world.Pilots.Any(p => EF.Functions.Collate(p.Name, "NOCASE") == name))
+        ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, site.SystemId, career, slot);
+        var origin = origins[(int)(roleSeed % (ulong)origins.Length)];
+        int attempt = 0;
+        string name;
+        do
         {
-            name = originalName + "-" + suffix++;
-        }
-        int gender = (int)(CapsuleerProvisioningRules.Seed(seed, site.SystemId, career) % 2);
+            name = CapsuleerProvisioningRules.Name(seed, site.SystemId, career, slot, attempt++);
+        } while (world.Pilots.Any(p => EF.Functions.Collate(p.Name, "NOCASE") == name));
+        int gender = (int)(roleSeed % 2);
         CharacterRules.ValidateOrigin(
             new(name, origin.RaceId, origin.BloodlineId, gender, CharacterRules.UnspecifiedAncestry, [], [], origin.SchoolId),
             new(origin.RaceId, origin.RaceId, hull, origin.CorporationId, [station], null)
@@ -332,7 +297,8 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
             world.Add(
                 new SavedCapsuleerHauler
                 {
-                    Id = site.SystemId,
+                    Id = slot == 0 ? site.SystemId : Math.Min(0, world.Set<SavedCapsuleerHauler>().Min(h => (int?)h.Id) ?? 0) - 1,
+                    RouteSystems = route!.Systems,
                     PilotId = pilot,
                     SourceStationId = station,
                     DestinationStationId = site.DestinationStationId!.Value,
@@ -344,20 +310,7 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         if (career == CapsuleerCareer.Hauling)
         {
             const int starterOreUnits = 100;
-            int ore = world
-                .Set<WorldAsteroid>()
-                .Where(a => a.SystemId == site.SystemId && a.Quantity > 0)
-                .OrderBy(a => a.Id)
-                .Select(a => a.TypeId)
-                .FirstOrDefault();
-            if (ore == 0)
-            {
-                ore = catalog
-                    .Definitions.Items.Values.Where(i => CapsuleerProvisioningCatalog.SupportedOre(catalog, i.Id))
-                    .OrderBy(i => i.Id)
-                    .Select(i => i.Id)
-                    .First();
-            }
+            int ore = CapsuleerProvisioningCatalog.FreightOre(catalog);
             world.Add(
                 new OwnedItem
                 {
@@ -378,9 +331,11 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
             PilotFittingStore.Fit(world, catalog, pilot, [module], station, (int)InventoryFlag.AutoFit, now);
             PilotFittingStore.SetOnline(world, catalog, pilot, ship, module, true, now);
         }
-        CapsuleerPopulationStore.AddAgent(world, new(pilot, site.SystemId, career, ship, module, cents));
-        long elapsed = world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
-        var navigation = new NavigationState().Capture();
+        CapsuleerPopulationStore.AddAgent(world, new(pilot, site.SystemId, career, ship, module, cents, slot));
+        long elapsed =
+            LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ElapsedTicks ?? world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
+        var action = CapsuleerAction.Prepare;
+        long? inboundDue = null;
         if (career == CapsuleerCareer.Mining)
         {
             var work = new MinerProgress(
@@ -391,7 +346,7 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 0,
                 module,
                 0,
-                navigation,
+                new NavigationState().Capture(),
                 ship,
                 ActiveTicks: elapsed,
                 ClockOffsetTicks: elapsed
@@ -435,20 +390,24 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         }
         else
         {
-            new HaulerCheckpoint(
-                pilot,
-                new(
-                    HaulerActivity.Docked,
-                    0,
-                    0,
-                    ship,
-                    site.DestinationStationId!.Value,
-                    0,
-                    navigation,
-                    ActiveTicks: elapsed,
-                    ClockOffsetTicks: elapsed
-                )
-            ).Apply(world);
+            var docked = new SqliteWorld(database, clock).FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilot)!;
+            var work = watchedGate is null
+                ? CapsuleerTrafficFlight.Opening(world, catalog, docked, route!, site.SystemId, opening, elapsed, now)
+                : CapsuleerTrafficFlight.OpeningInbound(world, catalog, docked, route!, watchedGate, elapsed, now, sourceObserved);
+            action = work.Activity == HaulerActivity.Docked ? CapsuleerAction.Trade : CapsuleerAction.Arrival;
+            if (watchedGate is not null)
+            {
+                if (work.Activity == HaulerActivity.Inbound)
+                {
+                    action = CapsuleerAction.GateTransfer;
+                    inboundDue = work.DueTicks;
+                }
+                else if (work.Activity == HaulerActivity.Docked)
+                {
+                    inboundDue = CapsuleerProvisioningRules.FirstDueTicks(elapsed, seed, site.SystemId, career);
+                }
+            }
+            new HaulerCheckpoint(pilot, work).Apply(world);
         }
         CapsuleerJobCheckpoint.Apply(
             world,
@@ -456,9 +415,15 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 pilot,
                 0,
                 0,
-                CapsuleerProvisioningRules.FirstDueTicks(elapsed, seed, site.SystemId, career),
-                career == CapsuleerCareer.Mining ? CapsuleerAction.Prepare : CapsuleerAction.Trade
+                inboundDue
+                    ?? (
+                        action == CapsuleerAction.Arrival
+                            ? elapsed + TimeSpan.TicksPerSecond
+                            : CapsuleerProvisioningRules.FirstDueTicks(elapsed, seed, site.SystemId, career, slot)
+                    ),
+                action
             )
         );
+        return pilot;
     }
 }

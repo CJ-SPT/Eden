@@ -48,6 +48,11 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
         try
         {
             CreateWorld(database, clock);
+            const int emptySystem = 31000001;
+            using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+            {
+                catalog.Database.ExecuteSql($"INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES ({emptySystem},20000020,'Isolated')");
+            }
             long actor;
             long deposit;
             long before;
@@ -98,7 +103,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 }
                 Assert.Null(worker.Tick());
                 UpdateSelection(host, First, null);
-                UpdateSelection(host, Second, new(b.PilotId, b.Name, b.CorpId, 30000142, 0));
+                UpdateSelection(host, Second, new(b.PilotId, b.Name, b.CorpId, emptySystem, 0));
                 clock.Seconds++;
                 using (var metrics = SessionPerformance.Begin("paid miner waiting", output.WriteLine, force: true)!)
                 {

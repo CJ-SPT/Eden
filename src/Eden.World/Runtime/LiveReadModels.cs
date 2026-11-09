@@ -202,6 +202,17 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     internal void Observe(IReadOnlyCollection<CombatRowChange> changes)
     {
         _information.Observe(changes);
+        foreach (var change in changes)
+        {
+            if (change.Table == "WorldPilot")
+            {
+                _gateWatcherShips.Remove(change.Id);
+            }
+            if (change.Table is "WorldPosition" or "WorldShip")
+            {
+                _gateWatcherPositions.Remove(change.Id);
+            }
+        }
         _directionalObservers.Observe(changes);
         _directionalContacts.Observe(changes);
         if (changes.Any(c => c.Table == "schema"))
@@ -235,6 +246,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     internal void Clear()
     {
         _information.Clear();
+        _gateWatcherShips.Clear();
+        _gateWatcherPositions.Clear();
         _directionalObservers.Clear();
         _directionalContacts.Clear();
         _moduleConditions.Clear();

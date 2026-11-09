@@ -431,8 +431,13 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         emit(new DestinyCommand.SpecialEffect(id, null, null, null, null, "effects.Warping", false, start, true));
     }
 
-    internal void DepartureEffect(long shipId, long gateId, int systemId, int durationMilliseconds) =>
+    internal void DepartureEffect(long shipId, long gateId, int systemId, int durationMilliseconds)
+    {
+        GateActivity(gateId, arriving: false);
         emit(new DestinyCommand.JumpOut(shipId, gateId, systemId, durationMilliseconds));
+    }
+
+    internal void GateActivity(long gateId, bool arriving) => emit(new DestinyCommand.GateActivity(gateId, arriving));
 
     internal void ArrivalEffect(long shipId) =>
         emit(new DestinyCommand.SpecialEffect(shipId, null, null, null, null, "effects.JumpIn", false, true, false));

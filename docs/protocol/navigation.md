@@ -323,6 +323,12 @@ After ten simulation ticks Eden saves the destination system and coordinates tog
 
 **Automated checks on the committed revision.** Restore and build succeeded with zero warnings and errors. All 56 tests and formatting verification passed. The gate test covers a round trip, rejected requests, the destination in the departure effect, arrival after the new snapshot, approach to the return gate, and reopening the save. A migration test restores a version 6 flight in its original system.
 
+### Observed stargate activation in build 3662168
+
+The ship jump and gate model have separate client effects. On a witnessed departure the observer receives the departing gate controller's `Departure` event and the ship's `effects.JumpOut`. On a witnessed arrival the receiving gate controller gets `Arrival` and the arriving ship gets `effects.JumpIn`. Both gate directions use `DoDestinyUpdate` with `OnClientControllerEvent(gateID, None, eventName, 1.0, None)`. The fifth argument is the optional delay. The model controls animation timing.
+
+In the pinned `code.ccp`, Michelle's `Park` registers `OnClientControllerEvent` among its non-Destiny-critical functions and forwards the call to `SpaceMgr.OnClientControllerEvent`. The space object sends the event to the model via `HandleControllerEvent`. The published gate debugger uses the case-sensitive names `Arrival` and `Departure`. The staged Caldari stargate effect model contains both event handlers and their arriving/departing counters. An automated replay of the pinned park and space-manager callbacks delivered both serialized controller events to a substitute gate model. Native rendering remains a maintainer check. See the [Vattuolen observer checks](capsuleers.md#galaxy-wide-station-and-gate-traffic).
+
 ## Native player Orbit and moving navigation targets
 
 Build **3662168**'s `menuSvcExtras/movementFunctions._Ship_Orbit` calls **beyonce.CmdOrbit(targetID, followRange)**, with ordinary ranges encoded as integers and fractional ranges below ten metres encoded as floats. The client sets its indication to **DSTBALL_ORBIT** and uses that mode to distinguish an already active orbit from Keep at Range. The packaged script hash remains the build-pinned value above.

@@ -1,6 +1,30 @@
 # Capsuleer encounters
 
-[Documentation index](README.md) / [Implementation evidence](protocol/capsuleers.md#shared-miner-and-hauler-jobs--november-8-2026)
+[Documentation index](README.md) / [Implementation evidence](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic)
+
+## Galaxy-wide station and gate traffic
+
+On the first human visit, Eden looks for real stations and usable reciprocal gates in the build-3662168 catalog. Routes can connect stations in one system, pass through stationless systems, or turn back to a station through a dead end. All security bands use the same traffic policy. Isolated systems need at least two usable stations for local traffic. Gate-free systems with no station pair stay quiet.
+
+The following table gives the number of **home haulers** a system can acquire when a route exists. The first matching row applies. The saved seed chooses within each range. Miners and visiting haulers can increase the number of pilots seen in Local.
+
+| System geography | Home haulers |
+| --- | ---: |
+| At least 6 gate connections or 8 stations | 5–6 |
+| At least 4 gate connections or 4 stations | 3–4 |
+| At least 3 gate connections or 3 stations | 2–3 |
+| Two gate connections, or a gate-free system with a station pair | 1–2 |
+| Other supported branches | 0–1 |
+
+The first station approach in Jita, Amarr, Rens, Dodixie and Hek favors the established trade-hub undock when the catalog offers that route. [EVE University trade hubs](https://wiki.eveuniversity.org/Trade_Hubs)
+
+Busy routes can first appear with a hauler inbound at a gate, another closing on a station, and others docked. Established pilots resume their saved trip. Pilots use normal ship movement and gate transfers while observed, with a short individual layover after docking. Two observers share the same ships. The last witness leaving pauses career work, apart from completing an already witnessed gate departure. A saved loss continues to apply on later visits.
+
+A pilot within 250 km of a reciprocal gate can also encounter a passing hauler from the other side. The two ends share one saved pilot with its own ship and cargo. Watching the same gate with a friend shares the crossing. A docked pilot or an empty grid cannot keep incoming traffic running. Both endpoints contribute to eligibility, so a quiet neighbor can still exchange traffic with a busy system. The home-roster counts above exclude these gate pilots.
+
+World schema 120 retains prior pilots in their original roster slots. Generated names get natural replacements and custom pilot or ship names are preserved. Missing roster members are granted on visits. A gate or station count determines traffic independently of mining eligibility, local ore availability and regional market activity.
+
+See [implementation and validation](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic).
 
 ## Observed encounters — November 8, 2026
 
@@ -10,7 +34,7 @@ Unobserved pilots retain compact progress and owned assets. Their jobs remain do
 
 Startup no longer provisions every eligible catalog system or a first-human founder. Eligibility and new actors are prepared on visits. Existing founder identities, personal orders, assets and paid progress become remembered encounters. Native scenes and loaded role navigation are released when their system becomes unobserved. All saves adopt this lifecycle. The old global-provisioning switch no longer grants a global population.
 
-Initial encounters reuse the supported high-security Venture/Badger cohort and reciprocal station routes. Systems with three or more gate connections receive a hauler. Half of quieter systems receive a hauler, determined by the saved seed. A connected market system without belts can receive hauling independently of mining. Other systems can remain empty. Regional progressive markets now develop independently. Encounter mining and hauling never create or fill market orders.
+The initial November 8 profile, superseded by the galaxy-wide traffic rules above, used the supported high-security Venture/Badger cohort and reciprocal station routes. Systems with three or more gate connections receive a hauler. Half of quieter systems receive a hauler, determined by the saved seed. A connected market system without belts can receive hauling independently of mining. Other systems can remain empty. Regional progressive markets now develop independently. Encounter mining and hauling never create or fill market orders.
 
 See the [implementation and validation record](protocol/capsuleers.md#observed-capsuleer-encounters--november-8-2026).
 

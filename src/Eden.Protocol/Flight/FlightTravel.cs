@@ -41,6 +41,8 @@ internal sealed class FlightTravel
     internal TranslocationTransit? Translocation { get; private set; }
     internal bool Translocating => Translocation is not null;
     internal bool TranslocationArrival { get; private set; }
+    internal GateArrivalContact? Arrival { get; private set; }
+    internal long? DepartureAt { get; private set; }
     private bool _awaitingArrival;
     private int? _arrivalStamp;
 
@@ -51,6 +53,8 @@ internal sealed class FlightTravel
         Gate = null;
         Translocation = null;
         TranslocationArrival = false;
+        Arrival = null;
+        DepartureAt = null;
         _awaitingArrival = false;
         _arrivalStamp = null;
     }
@@ -61,9 +65,11 @@ internal sealed class FlightTravel
 
     internal void ExpectArrival() => _awaitingArrival = true;
 
-    internal void BeginGate(GateDestination destination, int stamp)
+    internal void BeginGate(GateDestination destination, int stamp, long departedAt)
     {
         _arrivalStamp = null;
+        Arrival = null;
+        DepartureAt = departedAt;
         Gate = new(destination, stamp + JumpDurationTicks);
     }
 
@@ -105,9 +111,11 @@ internal sealed class FlightTravel
             : new(PilotCallResult.None, new(source.Id, exit, systems.GetSystem(systemId), destination));
     }
 
-    internal void CompleteGate()
+    internal void CompleteGate(long arrivalGate, long arrivedAt)
     {
         Gate = null;
+        DepartureAt = null;
+        Arrival = new(arrivalGate, arrivedAt);
         _awaitingArrival = true;
     }
 
@@ -120,6 +128,7 @@ internal sealed class FlightTravel
     {
         Gate = null;
         _arrivalStamp = null;
+        Arrival = null;
         _awaitingArrival = false;
         Translocation = new(travel, target, objects, stamp + TranslocationDurationTicks);
     }

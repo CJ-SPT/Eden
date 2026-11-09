@@ -9,4 +9,5 @@ public sealed class SavedCapsuleerHauler
     public long FounderShipId { get; set; }
     public long StartingCents { get; set; }
     public string? Progress { get; set; }
+    public int[]? RouteSystems { get; set; }
 }

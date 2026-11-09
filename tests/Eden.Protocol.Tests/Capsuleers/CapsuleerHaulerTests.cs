@@ -208,7 +208,7 @@ public sealed class CapsuleerHaulerTests
         internal WorldDatabase Database { get; }
         internal TestClock Clock { get; } = new();
 
-        internal Fixture(bool legacyFounders = true)
+        internal Fixture(bool legacyFounders = true, bool isolateRoute = false)
         {
             Database = new(Path.Combine(_directory.FullName, "world.sqlite"));
             CapsuleerMinerTests.CreateWorld(Database, Clock, legacyFounders);
@@ -227,6 +227,12 @@ public sealed class CapsuleerHaulerTests
             }
             using (CatalogDbContext catalog = new(Database.CatalogPath, writable: true))
             {
+                if (isolateRoute)
+                {
+                    // The stock fixture also connects Jita to stationless Perimeter.
+                    // Single-route scenarios exercise just the Kisogo/Jita pair.
+                    catalog.Database.ExecuteSqlRaw("DELETE FROM Stargate WHERE SolarSystemId=30000144 OR Id=50001249");
+                }
                 catalog.Database.ExecuteSqlRaw(
                     """
                     UPDATE Station SET OperationId=14 WHERE Id IN (60015157,60003760);

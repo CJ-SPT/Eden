@@ -14,6 +14,14 @@ public sealed partial class CatalogDbContext
             ? Stations().Where(station => station.SolarSystemId == id).OrderBy(station => station.Id)
             : Definitions.StationsInSystem(id);
 
+    internal IReadOnlyDictionary<int, int> StaticGateSystems() =>
+        (
+            from gate in Set<Stargate>()
+            join body in Set<Celestial>() on gate.Id equals body.Id
+            join item in Set<ItemType>() on body.TypeId equals item.Id
+            select new { body.Id, body.SolarSystemId }
+        ).ToDictionary(body => body.Id, body => body.SolarSystemId);
+
     internal IEnumerable<CatalogGateDefinition> GatesInSystem(int id) =>
         writable
             ? Set<Stargate>()

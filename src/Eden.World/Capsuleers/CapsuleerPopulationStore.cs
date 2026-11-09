@@ -26,7 +26,14 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
         agents.ToTable("WorldCapsuleerAgent").HasKey(a => a.PilotId);
         agents.HasOne<Pilot>().WithMany().HasForeignKey(a => a.PilotId);
         agents.HasOne<SavedCapsuleerPopulation>().WithMany().HasForeignKey(a => a.CommunitySystemId);
-        agents.HasIndex(a => new { a.CommunitySystemId, a.Career }).IsUnique();
+        agents
+            .HasIndex(a => new
+            {
+                a.CommunitySystemId,
+                a.Career,
+                a.Slot,
+            })
+            .IsUnique();
         var jobs = model.Entity<SavedCapsuleerJob>();
         jobs.ToTable("WorldCapsuleerJob").HasKey(j => j.PilotId);
         jobs.HasOne<SavedCapsuleerAgent>().WithMany().HasForeignKey(j => j.PilotId);
@@ -50,9 +57,8 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                 PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id),
                 CommunitySystemId INTEGER NOT NULL REFERENCES WorldCapsuleerPopulation(SystemId),
                 Career INTEGER NOT NULL CHECK(Career IN (1,2)), FounderShipId INTEGER NOT NULL,
-                FounderModuleId INTEGER NOT NULL, StartingCents INTEGER NOT NULL CHECK(StartingCents>=0));
-            CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldCapsuleerAgent_CommunitySystemId_Career
-                ON WorldCapsuleerAgent(CommunitySystemId,Career);
+                FounderModuleId INTEGER NOT NULL, StartingCents INTEGER NOT NULL CHECK(StartingCents>=0),
+                Slot INTEGER NOT NULL DEFAULT 0 CHECK(Slot>=0));
             CREATE TABLE IF NOT EXISTS WorldCapsuleerJob(
                 PilotId INTEGER PRIMARY KEY REFERENCES WorldCapsuleerAgent(PilotId),
                 Revision INTEGER NOT NULL CHECK(Revision>=0), Sequence INTEGER NOT NULL CHECK(Sequence>=0),
@@ -62,6 +68,17 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             CREATE TABLE IF NOT EXISTS WorldCapsuleerClock(
                 Id INTEGER PRIMARY KEY CHECK(Id=1), ElapsedTicks INTEGER NOT NULL CHECK(ElapsedTicks>=0));
             INSERT OR IGNORE INTO WorldCapsuleerClock(Id,ElapsedTicks) VALUES (1,0);
+            """
+        );
+        if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCapsuleerAgent')").Contains("Slot"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCapsuleerAgent ADD COLUMN Slot INTEGER NOT NULL DEFAULT 0 CHECK(Slot>=0)");
+        }
+        world.Database.ExecuteSqlRaw(
+            """
+            DROP INDEX IF EXISTS IX_WorldCapsuleerAgent_CommunitySystemId_Career;
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldCapsuleerAgent_CommunitySystemId_Career_Slot
+                ON WorldCapsuleerAgent(CommunitySystemId,Career,Slot);
             """
         );
     }
@@ -92,9 +109,9 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
     internal static void AddAgent(WorldDbContext world, CapsuleerAgent agent) =>
         world.Database.ExecuteSql(
             $"""
-            INSERT INTO WorldCapsuleerAgent(PilotId,CommunitySystemId,Career,FounderShipId,FounderModuleId,StartingCents)
+            INSERT INTO WorldCapsuleerAgent(PilotId,CommunitySystemId,Career,FounderShipId,FounderModuleId,StartingCents,Slot)
             VALUES ({agent.PilotId},{agent.CommunitySystemId},{agent.Career},{agent.FounderShipId},
-                {agent.FounderModuleId},{agent.StartingCents}) ON CONFLICT(PilotId) DO NOTHING
+                {agent.FounderModuleId},{agent.StartingCents},{agent.Slot}) ON CONFLICT(PilotId) DO NOTHING
             """
         );
 
@@ -164,7 +181,15 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             .Set<SavedCapsuleerAgent>()
             .Where(a => a.CommunitySystemId == communitySystemId)
             .OrderBy(a => a.PilotId)
-            .Select(a => new CapsuleerAgent(a.PilotId, a.CommunitySystemId, a.Career, a.FounderShipId, a.FounderModuleId, a.StartingCents))
+            .Select(a => new CapsuleerAgent(
+                a.PilotId,
+                a.CommunitySystemId,
+                a.Career,
+                a.FounderShipId,
+                a.FounderModuleId,
+                a.StartingCents,
+                a.Slot
+            ))
             .ToArray();
     }
 

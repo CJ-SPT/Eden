@@ -36,7 +36,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
     [Fact]
     public async Task UnrelatedSystemEntryLeavesSavedBacklogUntouched()
     {
-        using CapsuleerHaulerTests.Fixture f = new();
+        using CapsuleerHaulerTests.Fixture f = new(isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         using var first = presence.Select(Human, Remote);
@@ -153,7 +153,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
     [Fact]
     public async Task RestartRetainsPaidWorkAndJobsButRebuildsObserverModesFromSelections()
     {
-        using CapsuleerHaulerTests.Fixture f = new();
+        using CapsuleerHaulerTests.Fixture f = new(isolateRoute: true);
         MinerObservation paid;
         CapsuleerJob[] jobs;
         using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
@@ -188,7 +188,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
     [InlineData(MinerActivity.Returning)]
     public void RepeatedHandoffsRetainNavigationTargetsAndPaidProgress(MinerActivity phase)
     {
-        using CapsuleerHaulerTests.Fixture f = new();
+        using CapsuleerHaulerTests.Fixture f = new(isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         using var human = host.GetRequiredService<IHumanPresence>().Select(Human, Source);
         var before = UntilMiner(host, f.Clock, m => m.Work.Activity == phase);
@@ -306,7 +306,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
     [Fact]
     public void EnteringAnUnrelatedSystemDoesNotHydrateBackgroundFitsOrNavigation()
     {
-        using CapsuleerHaulerTests.Fixture f = new();
+        using CapsuleerHaulerTests.Fixture f = new(isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         _ = host.GetRequiredService<ICapsuleerScheduler>().Jobs();

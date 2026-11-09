@@ -12,6 +12,7 @@ internal static class CapsuleerProvisioningSchema
         model.Entity<SavedCapsuleerSystem>().ToTable("WorldCapsuleerSystem").HasKey(s => s.SystemId);
         model.Entity<SavedCapsuleerCommunity>().HasIndex(c => c.PilotId).IsUnique();
         model.Entity<SavedCapsuleerHauler>().HasIndex(h => h.PilotId).IsUnique();
+        model.Entity<SavedCapsuleerHauler>().PrimitiveCollection(h => h.RouteSystems);
     }
 
     internal static void Upgrade(WorldDbContext world)
@@ -63,5 +64,13 @@ internal static class CapsuleerProvisioningSchema
                 PolicyVersion INTEGER NOT NULL CHECK(PolicyVersion>0));
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCapsuleerHauler')")
+                .Contains("RouteSystems")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCapsuleerHauler ADD COLUMN RouteSystems TEXT");
+        }
     }
 }

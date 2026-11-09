@@ -88,6 +88,8 @@ internal sealed record PilotContact(
         );
 }
 
+internal sealed record GateArrivalContact(long GateId, long OccurredAt);
+
 internal sealed record ShipContact(
     PilotContact Pilot,
     SpacePosition Velocity,
@@ -119,7 +121,9 @@ internal sealed record ShipContact(
     RemoteRepairCycle[]? RemoteRepairs = null,
     CapacitorCycle[]? CapacitorEffects = null,
     SignatureSuppressionContact[]? SignatureSuppressions = null,
-    AssaultDamageControlContact[]? AssaultDamageControls = null
+    AssaultDamageControlContact[]? AssaultDamageControls = null,
+    GateArrivalContact? GateArrival = null,
+    long? DepartureAt = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);

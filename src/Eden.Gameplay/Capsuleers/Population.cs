@@ -8,7 +8,8 @@ public sealed record CapsuleerAgent(
     CapsuleerCareer Career,
     long FounderShipId,
     long FounderModuleId,
-    long StartingCents
+    long StartingCents,
+    int Slot = 0
 );
 
 public interface ICapsuleerPopulation
@@ -19,8 +20,18 @@ public interface ICapsuleerPopulation
     CapsuleerPopulationSummary Summary();
 }
 
+public sealed record SelectedHumanPilot(long PilotId, int SystemId);
+
+public sealed record WatchedTrafficGate(int ObserverSystemId, int SourceSystemId, long ArrivalGateId, long DepartureGateId);
+
+public interface ICapsuleerGateWatch
+{
+    IReadOnlyList<WatchedTrafficGate> Read(HumanActivitySnapshot activity);
+}
+
 public sealed record HumanActivitySnapshot(long ElapsedTicks, int SelectedSessions, IReadOnlyList<int> ActiveSystems, long Resumes = 0)
 {
+    public IReadOnlyList<SelectedHumanPilot> Pilots { get; init; } = [];
     public bool Active => SelectedSessions > 0;
 }
 

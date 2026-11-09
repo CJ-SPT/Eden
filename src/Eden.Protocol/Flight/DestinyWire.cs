@@ -161,6 +161,13 @@ internal abstract record DestinyCommand(string Name) : BlueModel
             [Id, null, null, GateId, null, "effects.JumpOut", false, true, false, Duration, 0, null, 0, new object?[] { SystemId }];
     }
 
+    internal sealed record GateActivity(long GateId, bool Arriving) : DestinyCommand("OnClientControllerEvent")
+    {
+        // Build 3662168 Park.OnClientControllerEvent forwards these five fields
+        // to SpaceMgr, then the gate model's named controller event handler.
+        protected override object?[] Arguments => [GateId, null, Arriving ? "Arrival" : "Departure", 1d, null];
+    }
+
     internal sealed record TranslocationOut(long Id, int SystemId, int Duration) : DestinyCommand("OnSpecialFX")
     {
         // JumpDriveOut accepts a None gate and preloads the destination from graphicInfo[0].

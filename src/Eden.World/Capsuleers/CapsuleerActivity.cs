@@ -33,7 +33,8 @@ internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clo
         }
     }
 
-    internal void Update(Guid session, int? system) => Activity.Update(session, system, clock.GetTimestamp(), clock.TimestampFrequency);
+    internal void Update(Guid session, int? system, long pilotId) =>
+        Activity.Update(session, system, clock.GetTimestamp(), clock.TimestampFrequency, pilotId);
 
     internal HumanActivitySnapshot Read() => Activity.Read(clock.GetTimestamp(), clock.TimestampFrequency);
 
@@ -56,14 +57,14 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
         }
     }
 
-    public void Update(Guid session, int? systemId)
+    public void Update(Guid session, int? systemId, long pilotId = 0)
     {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
         lock (synchronization.Gate)
         {
             var activity = live?.CapsuleerActivity ?? _standalone;
-            activity.Update(session, systemId);
+            activity.Update(session, systemId, pilotId);
             if (live is not null)
             {
                 live.ObjectsChanged();
@@ -88,15 +89,22 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(pilotId);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(systemId);
         Guid session = Guid.NewGuid();
-        Update(session, systemId);
-        return new Lease(this, session, systemId);
+        Change(session, systemId, () => true, pilotId: pilotId);
+        return new Lease(this, session, systemId, pilotId);
     }
 
     public HumanActivitySnapshot Read() => activity.Read();
 
     public void Update(Guid session, int? systemId) => Change(session, systemId, () => true);
 
-    private void Change(Guid session, int? systemId, Func<bool> validate, Action? committed = null, int? previousSystem = null)
+    private void Change(
+        Guid session,
+        int? systemId,
+        Func<bool> validate,
+        Action? committed = null,
+        int? previousSystem = null,
+        long pilotId = 0
+    )
     {
         int target;
         int? original;
@@ -109,7 +117,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         {
             if (validate())
             {
-                activity.Update(session, systemId);
+                activity.Update(session, systemId, pilotId);
                 if (systemId is { } selected)
                 {
                     _sessions[session] = selected;
@@ -138,7 +146,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
             {
                 lock (synchronization.Gate)
                 {
-                    activity.Update(session, original);
+                    activity.Update(session, original, pilotId);
                     if (original is { } previous)
                     {
                         _sessions[session] = previous;
@@ -163,7 +171,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         }
     }
 
-    private sealed class Lease(HumanPresence presence, Guid session, int initialSystem) : IHumanPresenceLease
+    private sealed class Lease(HumanPresence presence, Guid session, int initialSystem, long pilotId) : IHumanPresenceLease
     {
         private bool _disposed;
         private int _system = initialSystem;
@@ -178,7 +186,8 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
                 {
                     ObjectDisposedException.ThrowIf(_disposed, this);
                     return true;
-                }
+                },
+                pilotId: pilotId
             );
             _system = systemId;
         }
@@ -187,7 +196,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         {
             try
             {
-                presence.Change(session, null, () => !_disposed, () => _disposed = true, _system);
+                presence.Change(session, null, () => !_disposed, () => _disposed = true, _system, pilotId);
             }
             catch
             {

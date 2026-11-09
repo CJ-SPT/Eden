@@ -4,13 +4,15 @@ namespace Eden.Gameplay.Capsuleers;
 // never wall time, and is counted once regardless of the number of selected pilots.
 public sealed class HumanActivity
 {
-    private readonly Dictionary<Guid, int> _sessions = [];
+    private readonly Dictionary<Guid, SelectedHumanPilot> _sessions = [];
     private long _observedAt;
     private long _elapsedTicks;
     private long _frequency;
     private Int128 _remainder;
     private long _resumes;
     private IReadOnlyList<int> _activeSystems = [];
+
+    private IReadOnlyList<SelectedHumanPilot> _pilots = [];
 
     public HumanActivity(long elapsedTicks, long timestamp)
     {
@@ -19,7 +21,7 @@ public sealed class HumanActivity
         _observedAt = timestamp;
     }
 
-    public void Update(Guid session, int? systemId, long timestamp, long frequency)
+    public void Update(Guid session, int? systemId, long timestamp, long frequency, long pilotId = 0)
     {
         if (systemId is <= 0)
         {
@@ -28,7 +30,8 @@ public sealed class HumanActivity
         Advance(timestamp, frequency);
         if (systemId is int system)
         {
-            if (_sessions.GetValueOrDefault(session) == system)
+            var selected = new SelectedHumanPilot(pilotId, system);
+            if (_sessions.GetValueOrDefault(session) == selected)
             {
                 return;
             }
@@ -36,19 +39,20 @@ public sealed class HumanActivity
             {
                 _resumes = checked(_resumes + 1);
             }
-            _sessions[session] = system;
+            _sessions[session] = selected;
         }
         else if (!_sessions.Remove(session))
         {
             return;
         }
-        _activeSystems = Array.AsReadOnly(_sessions.Values.Distinct().Order().ToArray());
+        _pilots = Array.AsReadOnly(_sessions.Values.Where(p => p.PilotId > 0).Distinct().OrderBy(p => p.PilotId).ToArray());
+        _activeSystems = Array.AsReadOnly(_sessions.Values.Select(p => p.SystemId).Distinct().Order().ToArray());
     }
 
     public HumanActivitySnapshot Read(long timestamp, long frequency)
     {
         Advance(timestamp, frequency);
-        return new(_elapsedTicks, _sessions.Count, _activeSystems, _resumes);
+        return new(_elapsedTicks, _sessions.Count, _activeSystems, _resumes) { Pilots = _pilots };
     }
 
     private void Advance(long timestamp, long frequency)
