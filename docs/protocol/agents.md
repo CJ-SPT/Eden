@@ -2,6 +2,28 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Blank combat conversation correction — November 9, 2026
+
+The maintainer's follow-up screenshot shows an empty Ogyura Unao conversation with an offer already recorded. The earlier header correction removed a missing remote call but did not establish that the objective HTML could be built. Static inspection of the same pinned build-3662168 archive and an isolated automated invocation of `agentDialogueUtil.GetMissionObjectiveHTML` reproduced **`TypeError: list indices must be integers, not NoneType`** with Eden's combat reply. `_ProcessDungeonData` tests whether `shipRestrictions` is present, then uses its value as an integer list index. A present None is invalid.
+
+Combat dungeon replies now omit unavailable optional `shipRestrictions`, `briefingMessage` and `ownerID` fields. Omitting the briefing override retains the native default objective text. They also omit dungeon `completionStatus` until completion: the native renderer interprets a present zero as a failed site and strikes out its text, whereas an unfinished site requires the field to be absent. The required `objectiveCompleted` remains None while unfinished and becomes one at completion; the top-level mission completion status is unchanged. No mission selection, rewards or persistence rules changed.
+
+References remain the [EVE University mission guide](https://wiki.eveuniversity.org/Missions), the pinned archive SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**, and [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp). This correction changes the wire adapter, not the Blue codec.
+
+### Automated validation
+
+Exact regression filter: `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionProtocolTests.CombatObjectiveOmitsUnavailableNativeOptionalFieldsAndOnlyReportsSettledCompletion`. Both incomplete and complete cases failed against the previous reply because `shipRestrictions` was present; both pass after the correction. An isolated renderer probe evaluated actual round-tripped Eden objective replies for levels one through four, combat and courier, unfinished and finished: **16/16 produced HTML**, and unfinished views contained no failed/struck-out site marker. This used extracted renderer functions with stand-in catalog/localization/service lookups; no client module initialization, game startup, UI or interactive acceptance occurred. An initial diagnostic export lacked the standing needed for higher-level offers; adding fixture standing resolved that setup failure. Initial probe failures from incomplete stand-ins and an over-specific text assertion were corrected before the final result.
+
+Final tool restore, solution restore and solution build passed with zero warnings/errors. The combined filter `FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~AgentDirectory|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting` passed **112/112 tests in 16.68 seconds**. The Python catalog and formatting policy suites passed **8/8** and **9/9** cases in **0.96 seconds** combined. Formatting verification, the 140-column check and `git diff --check` passed; policy plus formatting verification took **26.38 seconds**. No full .NET suite was requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The screenshot establishes the remaining failure after the header correction; native rendering remains unverified in a running client.
+
+### Optional maintainer checks
+
+Restart the server with the updated build and reopen Ogyura Unao's offered mission. Verify the briefing, objective and action buttons appear, with the unfinished combat site shown without failed/struck-out text.
+
 ## Agent conversation header correction — November 9, 2026
 
 The maintainer supplied an **Ogyura Unao Level 1** conversation screenshot showing "Invalid or unsupported agent mission request." Static inspection of the pinned build-3662168 archive (SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**) confirmed that ordinary agents use `AgentDialogueWindow`; its `GetBriefingHTML` calls `GetAgentHeader`, which calls the bound agent's previously missing zero-argument `GetAgentLocationWrap`. This call occurs before the window renders its briefing. `agentDialogueUtil.LocationWrapper` consumes a dictionary containing `typeID`, `locationID` and `solarsystemID` for a station location. Eden now returns those fields from the existing catalog station directory, independently of any mission offer. Extra arguments and agents without a supported station location reject.

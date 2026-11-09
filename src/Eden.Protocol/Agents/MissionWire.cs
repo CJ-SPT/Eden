@@ -180,19 +180,21 @@ internal sealed record MissionObjectives(MissionOffer Offer) : BlueModel
         }
         else
         {
-            dungeons.Add(
-                new Dictionary<string, object?>
-                {
-                    ["dungeonID"] = Offer.DungeonId,
-                    ["location"] = new MissionLocation(Offer),
-                    ["objectiveCompleted"] = Offer.ObjectiveComplete ? 1 : null,
-                    ["completionStatus"] = Offer.ObjectiveComplete ? 1 : 0,
-                    ["shipRestrictions"] = null,
-                    ["optional"] = false,
-                    ["briefingMessage"] = null,
-                    ["ownerID"] = null,
-                }
-            );
+            var dungeon = new Dictionary<string, object?>
+            {
+                ["dungeonID"] = Offer.DungeonId,
+                ["location"] = new MissionLocation(Offer),
+                ["objectiveCompleted"] = Offer.ObjectiveComplete ? 1 : null,
+                ["optional"] = false,
+            };
+            // Pinned agentDialogueUtil._ProcessDungeonData branches on key presence:
+            // shipRestrictions must be an integer index, and completionStatus=0
+            // marks a failed, struck-out site. Omit unavailable optional values.
+            if (Offer.ObjectiveComplete)
+            {
+                dungeon["completionStatus"] = 1;
+            }
+            dungeons.Add(dungeon);
         }
         return new Dictionary<string, object?>
         {

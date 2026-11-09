@@ -11,6 +11,32 @@ namespace Eden.Protocol.Tests.Agents;
 
 public sealed class MissionProtocolTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CombatObjectiveOmitsUnavailableNativeOptionalFieldsAndOnlyReportsSettledCompletion(bool completed)
+    {
+        using MissionFixture f = new(division: MissionRules.SecurityDivision);
+        var offer = f.Request() with { ObjectiveComplete = completed };
+        var objectives = BlueRead.Fields(MissionFixture.Reply(new MissionObjectives(offer)));
+        var dungeon = BlueRead.Fields(Assert.Single(Assert.IsType<List<object?>>(objectives["dungeons"])));
+        // The native renderer branches on key presence, then uses restrictions as
+        // a list index and treats completionStatus=0 as a failed, struck-out site.
+        Assert.DoesNotContain("shipRestrictions", dungeon.Keys);
+        Assert.DoesNotContain("briefingMessage", dungeon.Keys);
+        Assert.DoesNotContain("ownerID", dungeon.Keys);
+        if (completed)
+        {
+            Assert.Equal(1L, dungeon["completionStatus"]);
+            Assert.Equal(1L, dungeon["objectiveCompleted"]);
+        }
+        else
+        {
+            Assert.DoesNotContain("completionStatus", dungeon.Keys);
+            Assert.Null(dungeon["objectiveCompleted"]);
+        }
+    }
+
     [Fact]
     public void OrdinaryAgentConversationProvidesNativeLocationHeaderAndEveryObjectiveStatusFlag()
     {

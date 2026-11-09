@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Blank combat conversation correction, November 9, 2026](protocol/agents.md#blank-combat-conversation-correction--november-9-2026)
+
 - [Agent conversation header correction, November 9, 2026](protocol/agents.md#agent-conversation-header-correction--november-9-2026)
 
 - [Targeted stack merging, November 9, 2026](protocol/inventory.md#targeted-stack-merging-november-9-2026)
