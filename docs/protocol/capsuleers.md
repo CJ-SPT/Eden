@@ -293,7 +293,7 @@ Two preliminary twelve-worker validation runs each finished 340/341: one login f
 
 **Optional maintainer checks.** Restart the server to adopt the snapshot, then observe mixed ships at a station and gate and inspect a traveler's fitting.
 
-## Destination journeys � November 9, 2026
+## Destination journeys — November 9, 2026
 
 Gate encounters now prepare a bounded group of four station travelers with staggered departures. One initial visitor can finish a moving gate approach on the unobserved source side. Remaining visitors wait docked at real source stations and fly to the gate when due, removing the previous far-side parking queue. Reciprocal watchers share the group. Observation preserves direction and due time. Each journey saves its kind, home, source, destination, ordered system path and sequence in the existing hauler progress payload. Subsequent station departures choose a compatible destination from the actual docking location. Local return trips retain their home. Visitors avoid their previous origin when another eligible destination exists.
 
@@ -329,7 +329,7 @@ An eight-jump fixture covers ordinary flight, background deadlines, a player wai
 
 The final copied installed save retained 1,861 roster identities, 1,871 ships, 2,141 item stacks and 1,868 wallets across initialization and reopening. Initialization took 831 ms. Before warming another system, the reported Dodixie case reserved two local pilots and observed its first local in space after one simulated second. Jita preparation then took 972 ms. Its one-hour sweep saw six distinct gate pilots and six distinct station pilots. The two-observer path saw four distinct pilots. These are copied-world automated observations.
 
-Warmed complete maintenance measured 11.27�37.33 ms across 200 unchanged wakes, including one or two observers and original/imported traffic. Each case asserted zero SQL commands, connections and fitting calculations. Checkpoint capture, projection and write measured 0.61�1.45 ms, 1.46�7.58 ms and 10.72�21.69 ms respectively. These are automated fixture measurements.
+Warmed complete maintenance measured 11.27–37.33 ms across 200 unchanged wakes, including one or two observers and original/imported traffic. Each case asserted zero SQL commands, connections and fitting calculations. Checkpoint capture, projection and write measured 0.61–1.45 ms, 1.46–7.58 ms and 10.72–21.69 ms respectively. These are automated fixture measurements.
 
 **Automated validation.** The affected validation filter includes Capsuleers, Flight, WorldMigrationTests, LiveWorldTests, DetachedCheckpointTests, PilotLoginTests, StationGuestTests, ChatWorldTests and Hosting. The final selection passed 494 cases in 135 seconds with four workers. The separate login-preparation process check passed in isolation in three seconds. A preliminary parallel run timed out that check while a copied-world run was competing for resources, so the final selection excluded that method and exercised it separately with its unchanged ten-second timeout. After moving the background timing calculation into Gameplay, the 14 scheduling, eight-jump, gate-boundary and station-wait cases passed in seven seconds. Both Python policy suites passed, with eight catalog and nine formatting cases, and formatting verification passed. The final opt-in copied-save and installed-route checks passed two cases in 85 seconds. Full .NET regression was not requested.
 
@@ -342,3 +342,170 @@ The affected filter was the following expression. The isolated method filter was
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** After restarting with the new build, watch a connected gate for varied arrivals and follow one traveler across successive systems. Existing short trips can finish before adopting their next destination.
+
+## Persistent traveler routines — November 9, 2026
+
+Travelers now retain a deterministic pace, station affinities and three recent stops in their existing hauler progress payload.
+Geographic destination weights combine with stable personal affinities and a separate per-trip mixer. Recent stops receive a
+quarter of their ordinary weight. Existing journeys finish before routine assignment at a dock. New station dwell times use
+half/normal/double pace with 20% variation, retaining population counts and journey distance bands. Security status is not a
+travel preference; real hull restrictions remain enforced. All stations are considered before retaining bounded candidates.
+Capital destination searches now apply hull restrictions during traversal, preserving detours hidden by a shorter highsec path.
+
+Attack memory retains four systems for thirty human-active minutes. A retreat shelters at the next dock for five to fifteen
+human-active minutes. Alternate paths and destinations avoid remembered systems while available, including postponing a
+preferred homeward leg. Otherwise ordinary compatible routes remain available. Memory and shelter share the saved progress
+and checkpoint generation. Rejected navigation retains the threat instead of silently consuming the attack notification.
+Legacy saves retain their assets, identities, current navigation, deadlines and nullable progress compatibility.
+
+References: [EVE University hauling](https://wiki.eveuniversity.org/Hauling), with Eden's explicit security-neutral routing policy;
+unchanged navigation uses [Carbon Ball.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp).
+No client observations were collected.
+
+**Automated validation.** Tool/solution restore and build passed with zero warnings/errors (final build 3.89 seconds).
+Final affected filter `FullyQualifiedName~TravelerRoutineTests|FullyQualifiedName~CapsuleerTrafficRoutesTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerTrafficObservationTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~LiveSimulationTests`
+passed **84 tests** in **20.57 seconds** (feature build 1.48 seconds). Catalog setup (**8**) and formatting policy (**9**)
+Python tests passed. Formatting and diff verification passed. Tests cover station affinity and recent-stop weighting,
+pace variation, compatible capital detours, threat avoidance/expiry/fallback, all station endpoints, retreat/shelter and
+checkpoint persistence. Warmed complete traffic wakes retain zero SQL commands, connections and fitting calculations for
+empty and occupied systems with multiple observers; capture/projection/write are measured separately.
+Two hundred warmed complete wakes took **9.58–24.45 ms** across those cases. Checkpoint capture was **0.44–2.85 ms**,
+projection **1.87–6.36 ms**, and writing **11.41–18.50 ms** on this run; these measurements are workload evidence, not latency guarantees.
+Development first used exact filter `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.TravelerRoutineTests.HabitsThreatsAndShelterSurviveCheckpointWithoutChangingLegacyDeadlines`.
+The first fixture serialization omitted the production read-only-property setting and was corrected. The expanded retreat
+regression exposed stale outbound alignment and dirty-position eviction on docking; both were corrected before final validation.
+The dirty-position correction is exercised by a real resident checkpoint after retreat. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe recurring travelers and the sheltered return after an attack to assess visual pacing.
+
+## Simulated-pilot retaliation — November 9, 2026
+
+Travelers and miners now share a defense controller independently of their career routines. Typed Gameplay rules select
+threats, activation thresholds, capacitor reserve and retreat. World executes normal authoritative operations; Protocol
+publishes the existing targeting and module contacts. The committed hostility ledger and incoming combat triggers replace
+the victim-only damage callback. Paid misses, launches, tackle and electronic warfare can provoke defense; target locks alone
+cannot. Defense selects an active tackler, then the most recent attacker, then stable ship identity. It stays on the current
+grid and forgets ships that depart or are lost, without following gates or selecting replacement capsules.
+
+Actual hull cohorts, online usable equipment and remaining damage sources distinguish combat ships from escape-first
+miners and transports. Locks retain normal scan delay, range and jamming restrictions and share the human target-lock
+registry. Each offensive action reuses normal legality, payment, cooldown, damage and loss operations. Automated module
+coverage includes turrets, launchers, drones, tackle/core stabilizers, ECM, dampeners, turret/guidance disruption, painters,
+neutralizers/nosferatu, propulsion, local/ancillary shield and armor repairs, hull repair, hardeners, capacitor boosters,
+assault damage controls, signature suppression and targeting/tracking/guidance/drone support.
+
+Local repairs start below 80% of their layer, boosters below 30% capacitor, and emergency defenses below 40% of the fitted
+tank layer. Defensive modules precede optional offensive support with a capacitor reserve. Ordinary navigation maintains
+weapon range and advances at most once per movement stamp despite subsecond module deadlines. Combat ships retreat below
+35% effective health, below 75% structure, or when usable damage sources run out. Retreat cancels offensive repeats and
+recalls drones, allowing at most ten seconds before available escape takes priority. Normal weapons timers still apply.
+An emergency core's strength ends at its paid duration while retaining its longer reactivation deadline; successful core
+activation immediately updates the career's warp restriction.
+
+One durable `WorldCapsuleerSupplies` marker per pilot shares the owning grant/departure transaction. New ships, and surviving
+original ships at their next dock, receive at most five magazines of loaded consumable combat charges, bounded by free cargo.
+Scripts and nonconsumable crystals are excluded. A legal homogeneous flight of supported T1 mobile combat drones prefers the
+largest class permitting a full flight, with stable type ordering. Bay, bandwidth and control limits apply; existing cargo,
+equipment and drone stacks are preserved. Required drone skills use the existing simulated-pilot grant mechanism. Consumption,
+abandonment and loss remain finite. There is no hunting, fleet assistance, automatic overheating, market restocking or
+replacement-ship grant. The schema reconciliation creates the marker table idempotently on existing version-131 saves.
+
+Nullable defense progress preserves legacy payloads. Locks, cycle deadlines, recall and movement stamps checkpoint with
+career progress. Standard local repair cycles and sustained-module renewal keep paid capacitor and cooldowns resident.
+Renewed repair deadlines replace older projected completions, and checkpoint/restart tests complete the last paid repair once.
+Existing initialization clears sustained bonuses; defense preserves paid deadlines without advertising a removed bonus or
+paying again before another cycle is due. Ordinary turret combat against pilots now uses the existing resident combat math;
+criminal/fatal actions retain transactional settlement. Failed and duplicate callbacks do not repeat payments or losses.
+
+Performance keeps unchanged and absent reads cached, shares observer contacts, indexes pending hostility by victim and caches
+defense fitting profiles by the actual pilot revision. Peaceful updates, movement, nonfatal turret/drone combat, standard
+local repairs and sustained local renewals use resident state. Initial activation, charge loading, missile and remote-module
+operations retain their established SQL boundaries. Their cost remains relevant when scaling mixed-module fights; the fixture
+measurements below are not a large heterogeneous-fleet capacity claim. Checkpoint capture, projection and file writing are
+measured separately from complete maintenance and two-observer session frames, including packet encoding.
+
+Gameplay references: [EVE University timers](https://wiki.eveuniversity.org/Timers),
+[turrets](https://wiki.eveuniversity.org/Turret_mechanics), [drones](https://wiki.eveuniversity.org/Drones), and
+[tackling](https://wiki.eveuniversity.org/Tackling). Movement retains the established
+[Carbon Ball.cpp revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp).
+Catalog variants use committed build-3662168 extracts. No new live-client observations were collected.
+
+**Automated validation.** Development began with exact method filters through `tools/Test-Feature.ps1`, including
+`PilotTurretTests.WarmPilotVolleysKeepPaymentsAndHostilityResidentWithoutSql`,
+`CapsuleerDefenseTests.CombatPilotLocksAndRetaliatesAgainstAMissingShotWithNormalCostsAndLegality`,
+`CapsuleerDefenseModuleTests.DefenseUsesTheRealSupportedModuleAndCannotReplayItsPaidCycle`,
+`CapsuleerDefenseLifecycleTests.EmptyMagazineReloadsOwnedCargoThenRetreatsWithoutCreatingCharges`,
+`CapsuleerDefenseLifecycleTests.DroneRecallReturnsIndividualsOrYieldsToEscapeAfterTenSeconds`,
+`CapsuleerDefenseLifecycleTests.LockingAloneDoesNotProvokeButTackleMakesAMiningFitFightWhileTrapped`,
+`CapsuleerDefenseTests.ACommittedJamPreventsLocksOnOtherAttackersUntilItEnds`,
+`CapsuleerDefensePerformanceTests.WarmLocalRepairCyclesUseNoSqlAndCheckpointOnePaidCompletionAcrossRestart`,
+`CapsuleerDefenseFrameTests.WarmCompleteMaintenanceAndTwoObserverFramesKeepCombatResident`, and the three
+`CapsuleerSupplyTests` methods. An intermediate affected selection passed 146 cases in 55.43 seconds including runner startup
+(feature build 6.41 seconds). The wider affected selection checked 1,112 cases in 318.46 seconds: 1,111 passed and one old
+snapshot assertion expected only a fitted gun at the ship location, excluding the newly required reserve cargo. The assertion
+now checks the fitted slot, unchanged loaded ammunition, reserve stack and durable marker separately. Its exact method and the
+updated capacitor-reserve rule passed two cases in 6.09 seconds (feature build 4.25 seconds). A subsequent exact NPC-miss filter
+passed both turret and failed-electronic-warfare cases in 6.36 seconds (build 5.69 seconds).
+
+The final affected follow-up passed **319 cases in 93.38 seconds**, with four workers, on the corrected code. Its filter was
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerDefense|FullyQualifiedName~CapsuleerSupplyTests|FullyQualifiedName~TrafficSnapshotTests|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~CapsuleerHaulerTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~PilotTurretTests|FullyQualifiedName~PilotDroneTests|FullyQualifiedName~NpcEwar|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcMissile|FullyQualifiedName~DroneCombatTrigger|FullyQualifiedName~LiveSimulationTests`.
+The wider filter additionally selected Capsuleers, Propulsion, Repair and Defenses namespaces and MissileTests, PlayerEwar,
+CapacitorWarfare, SupportModule, DetachedCheckpointTests, WorldMigrationTests and TargetingTests. Those unaffected checks were
+not blindly repeated after the focused correction. No full .NET regression suite was requested or run.
+
+Tool/solution restore and the final solution build passed with zero warnings/errors (4.31 seconds). Both Python policy suites
+passed: eight catalog cases in 0.837 seconds and nine formatting cases in 0.026 seconds. Formatting verification checked 1,467
+files and passed the 140-character policy; diff verification passed. Coverage includes human/NPC attackers, all security bands,
+misses and failed electronic warfare, lock-only inactivity, tackle-only aggression, jamming, attacker selection, retreat,
+finite ammunition/reloading, individual drone recovery and timeout, supported module families, duplicate paid cycles,
+rollback, unchanged-state rejection, exactly-once losses, absent NPC rewards for capsuleer kills, two-observer effects,
+bounded grants and restart continuity. Early focused failures corrected fixture setup and exposed paid-cycle retention,
+renewed repair projection and emergency-core expiry issues before final validation.
+
+The final deterministic workload uses 12 warmed, time-advancing complete maintenance/session frames and two observers,
+with packet encoding. A quiet population fixture avoids unrelated unsupported NPC spawn retries while retaining ordinary
+career jobs, commands, damage and session updates. Counts include periodic transaction work, rather than reporting only
+the controller's inner loop. Timings are fixture evidence under a four-worker test run, not server-capacity guarantees.
+
+| Complete frame or checkpoint | Peaceful | Retaliating |
+| --- | ---: | ---: |
+| Median frame | 0.53 ms | 0.76 ms |
+| 95th-percentile frame | 1.03 ms | 3.14 ms |
+| SQL commands per frame | 0–2 | 0–8 |
+| Connections per frame | 0–2 | 0–8 |
+| Fitting calculations per frame | 0 | 0 |
+| Checkpoint capture | 0.50 ms | 0.74 ms |
+| Detached projection | 1.69 ms | 9.86 ms |
+| Checkpoint file writing | 23.45 ms | 20.01 ms |
+
+Ten warmed paid local repair cycles took 0.88 ms and allocated 25,816 bytes, with zero SQL commands, connections or fitting
+calculations. Their checkpoint capture/projection/write measured 0.52/5.29/11.02 ms. Separate warmed peaceful-controller,
+pilot-volley, drone-combat and traffic-presentation checks retain zero SQL/connection/fitting budgets where no transaction
+boundary is due. Captured locks/cycle deadlines, damage, charge consumption and the final paid repair are checked across
+projection/restart; same-time callbacks cannot replay them.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a retaliation encounter and a retreat to assess native effects and gameplay feel.
+
+### Main integration — November 9, 2026
+
+Integrated both pilot milestones with main revision `39fb0fc2`, retaining its gas/ice mining, map and mod-package changes.
+The only conflict was the protocol index; both modding and simulated-pilot links are retained. Shared resident read-model
+changes preserve the mining-site cache alongside defense-profile invalidation. Uncommitted work in the main checkout
+was excluded from this merge and preserved.
+
+**Automated validation.** Tool/solution restore and the merged solution build passed with zero warnings/errors
+(6.04 seconds). Exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerDefenseFrameTests.WarmCompleteMaintenanceAndTwoObserverFramesKeepCombatResident`
+passed both peaceful/combat observer cases in 8.14 seconds (feature build 1.39 seconds). The affected filter
+`FullyQualifiedName~CapsuleerDefense|FullyQualifiedName~CapsuleerSupplyTests|FullyQualifiedName~TravelerRoutineTests|FullyQualifiedName~CapsuleerTrafficRoutesTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~GasMiningTests|FullyQualifiedName~IceMiningTests`
+passed **151 tests in 49.24 seconds** (feature build 1.47 seconds). Both Python policy suites passed: eight catalog cases
+in 0.854 seconds and nine formatting cases in 0.023 seconds. Formatting checked 1,491 files; line-width and diff checks passed.
+No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** The retaliation/retreat observations above remain optional.

@@ -179,3 +179,6 @@ The server runs an authoritative world in memory and checkpoints committed state
 ## License
 
 Eden's original source and documentation are available under the [MIT License](LICENSE). Supply the EVE client and its resource cache separately. See the [Carbon licensing notes](docs/carbon-license.md) for reference-source attribution.
+
+[Persistent traveler routines](docs/protocol/capsuleers.md#persistent-traveler-routines--november-9-2026) give simulated pilots saved travel habits, shelter and temporary attack memory.
+[Simulated-pilot retaliation](docs/protocol/capsuleers.md#simulated-pilot-retaliation--november-9-2026) adds actual fitted defenses, shared locks, retreat and finite starter supplies.

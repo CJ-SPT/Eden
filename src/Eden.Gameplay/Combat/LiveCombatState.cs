@@ -30,7 +30,7 @@ public sealed record LiveHealth(
         };
 }
 
-public sealed record LiveRepair(long ModuleId, long CompletesAt, double Amount, RepairLayer Layer);
+public sealed record LiveRepair(long ModuleId, long CompletesAt, double Amount, RepairLayer Layer, long StartedAt = 0);
 
 public sealed record LiveTurretDefinition(
     CombatWeapon Weapon,
@@ -67,6 +67,8 @@ public sealed record LiveCombatShip(
     CombatTimer? NpcAggression = null
 )
 {
+    public IReadOnlyDictionary<long, long> LocalCooldowns { get; init; } = new Dictionary<long, long>();
+
     public LiveCombatShip SettleRepairs(long now)
     {
         var due = Repairs.Where(r => r.CompletesAt <= now).ToArray();

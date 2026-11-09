@@ -32,11 +32,12 @@ internal sealed class CapsuleerHaulerFactory(
     INpcElectronicWarfare warfare,
     IPilotHealth health,
     TimeProvider clock,
-    MarketChangeSignal marketSignal
+    MarketChangeSignal marketSignal,
+    CapsuleerDefense defense
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
-        new(pilotId, database, ships, systems, tackle, combat, encounters, missiles, warfare, health, clock, marketSignal);
+        new(pilotId, database, ships, systems, tackle, combat, encounters, missiles, warfare, health, clock, marketSignal, defense);
 }
 
 internal sealed partial class CapsuleerHauler(
@@ -51,7 +52,8 @@ internal sealed partial class CapsuleerHauler(
     INpcElectronicWarfare warfare,
     IPilotHealth health,
     TimeProvider clock,
-    MarketChangeSignal marketSignal
+    MarketChangeSignal marketSignal,
+    CapsuleerDefense defense
 )
 {
     private SavedCapsuleerHauler? _founder;
@@ -284,13 +286,54 @@ internal sealed partial class CapsuleerHauler(
             }
         }
         _background = background;
-        if (!background && Work.Activity != HaulerActivity.Inbound)
+        if ((!background || Work.Defense is not null) && Work.Activity != HaulerActivity.Inbound)
         {
             ObserveDanger(destinyStamp);
         }
         if (Pilot.Position is not null)
         {
             RefreshTackle();
+        }
+        var previousDefense = Work.Defense;
+        var defended = defense.Advance(
+            Pilot,
+            _navigation,
+            previousDefense,
+            Now,
+            destinyStamp,
+            _obstacles,
+            Work.Retreating,
+            Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil
+        );
+        _pilot = defended.Pilot;
+        _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
+        _work = Work with { Defense = defended.State, LastMotionStamp = defended.HoldsNavigation ? destinyStamp : Work.LastMotionStamp };
+        if (defended.NewThreat)
+        {
+            _work = Work with
+            {
+                Routine = TravelerRoutineRules.Threatened(
+                    Work.Routine ?? TravelerRoutineRules.Create(pilotId),
+                    Pilot.SystemId,
+                    job.DueTicks
+                ),
+            };
+        }
+        if (defended.Escape && !Work.Retreating)
+        {
+            ObserveAggression(Pilot.ShipId);
+        }
+        bool resumeCourse = defended.ResumeNavigation;
+        if (Pilot.Position is not null && Volatile.Read(ref _threatenedShip) == Pilot.ShipId)
+        {
+            _work = Work with
+            {
+                Routine = TravelerRoutineRules.Threatened(
+                    Work.Routine ?? TravelerRoutineRules.Create(pilotId),
+                    Pilot.SystemId,
+                    job.DueTicks
+                ),
+            };
         }
         var beforePilot = Pilot;
         var before = Work;
@@ -307,7 +350,7 @@ internal sealed partial class CapsuleerHauler(
                 throw new InvalidDataException("Warp disruption interrupts the hauler's alignment.");
             }
             if (
-                Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
+                Volatile.Read(ref _threatenedShip) == Pilot.ShipId
                 && Pilot.Position is not null
                 && Work.Activity != HaulerActivity.Jumping
                 && !Work.Retreating
@@ -328,7 +371,14 @@ internal sealed partial class CapsuleerHauler(
                 };
                 BeginTravel();
             }
-            Step();
+            if (!defended.HoldsNavigation)
+            {
+                if (resumeCourse && Pilot.Position is not null)
+                {
+                    BeginTravel();
+                }
+                Step();
+            }
             return Commit(job);
         }
         catch (Exception error) when (error is InvalidDataException or CargoCapacityException)
@@ -404,12 +454,13 @@ internal sealed partial class CapsuleerHauler(
         var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
         if (
             _background
+            && Work.Defense is null
             && CapsuleerScheduleRules.WarpDeadline(Work.Navigation, Pilot.Flight, Work.ClockOffsetTicks, Work.ActiveTicks) is { } exit
         )
         {
             schedule = schedule with { DueTicks = exit };
         }
-        else if (_background && Work.Activity == HaulerActivity.Flying && !_warpBlocked)
+        else if (_background && Work.Defense is null && Work.Activity == HaulerActivity.Flying && !_warpBlocked)
         {
             schedule = schedule with
             {
@@ -422,12 +473,14 @@ internal sealed partial class CapsuleerHauler(
                 ),
             };
         }
-        else if (_background && Work.Activity == HaulerActivity.Jumping && Work.DueTicks > Work.ActiveTicks)
+        else if (_background && Work.Defense is null && Work.Activity == HaulerActivity.Jumping && Work.DueTicks > Work.ActiveTicks)
         {
             schedule = schedule with { DueTicks = Work.DueTicks };
         }
+        schedule = schedule with { DueTicks = CapsuleerDefenseRules.NextDeadline(Work.Defense, Now, Work.ActiveTicks, schedule.DueTicks) };
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
+        Interlocked.CompareExchange(ref _threatenedShip, 0, Pilot.ShipId);
         return next;
     }
 
@@ -494,7 +547,11 @@ internal sealed partial class CapsuleerHauler(
                 RouteDirection: Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup ? -1 : 1,
                 TrafficLane: previous?.TrafficLane,
                 DwellSequence: previous?.DwellSequence ?? 0
-            );
+            )
+            {
+                Routine = previous?.Routine,
+                Defense = previous?.Defense,
+            };
         }
         if (previous is null || previous.ShipId != Pilot.ShipId)
         {
@@ -606,7 +663,8 @@ internal sealed partial class CapsuleerHauler(
             }
             _trafficRefreshChecked = true;
         }
-        if (Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
+        CapsuleerSupplyStore.Ensure(_operation.World, _operation.Catalog, pilotId, Founder.FounderShipId);
+        if (Work.Retreating || Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
         {
             AssignJourney();
         }
@@ -662,6 +720,9 @@ internal sealed partial class CapsuleerHauler(
         }
         var target = _target ?? throw new InvalidDataException("The hauling route has no travel target.");
         _work = Work with { Activity = HaulerActivity.Flying, TargetId = target.Id };
+        // A nearby refuge needs subwarp movement. Do not retain an old outbound alignment
+        // when StartWarp rejects the new destination as too close.
+        _navigation.CancelAlignment();
         if (!_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, target, 0, Work.Stamp))
         {
             Follow();
@@ -682,6 +743,11 @@ internal sealed partial class CapsuleerHauler(
 
     private void Fly()
     {
+        if (Work.LastMotionStamp == Work.Stamp)
+        {
+            return;
+        }
+        _work = Work with { LastMotionStamp = Work.Stamp };
         bool wasWarping = _navigation.Warp is not null;
         var tick = _navigation.Advance(
             Pilot.ShipId,
@@ -745,9 +811,15 @@ internal sealed partial class CapsuleerHauler(
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
             _navigation.Dock();
             _operation.TravelChanged = true;
+            var routine = TravelerRoutineRules.Arrive(Work.Routine ?? TravelerRoutineRules.Create(pilotId), Pilot.StationId);
             int dwell = Work.Journey is { } journey
-                ? TrafficJourneyRules.LayoverSeconds(journey.Kind, pilotId, Work.DwellSequence)
+                ? TravelerRoutineRules.LayoverSeconds(routine, journey.Kind, pilotId, Work.DwellSequence)
                 : HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
+            if (routine.ShelterPending)
+            {
+                dwell = Math.Max(dwell, TravelerRoutineRules.ShelterSeconds(routine, Work.DwellSequence));
+                routine = routine with { ShelterPending = false };
+            }
             _work = Work with
             {
                 Activity = HaulerActivity.Docked,
@@ -755,6 +827,7 @@ internal sealed partial class CapsuleerHauler(
                 DueStamp = Work.Stamp + dwell,
                 DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(dwell).Ticks,
                 DwellSequence = checked(Work.DwellSequence + 1),
+                Routine = routine,
             };
         }
         else
@@ -836,10 +909,6 @@ internal sealed partial class CapsuleerHauler(
                 Load();
                 return;
             }
-        }
-        if (attackers.Length > 0 && Work.Activity != HaulerActivity.Jumping)
-        {
-            ObserveAggression(Pilot.ShipId);
         }
     }
 }

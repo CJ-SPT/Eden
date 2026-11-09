@@ -45,7 +45,9 @@ internal sealed partial class LiveReadModels
     );
     private readonly ResidentSnapshot<int, IReadOnlyList<TackleEffect>> _tackle = new("resident.tackle", "WorldTackle");
 
-    private sealed record NpcEwarWork(long TargetShipId, NpcEwarContact? Contact);
+    internal sealed record NpcHostileAttempt(long SourceId, long StartedAt);
+
+    private sealed record NpcEwarWork(long TargetShipId, NpcEwarContact? Contact, NpcHostileAttempt Attempt);
 
     private readonly ResidentSnapshot<int, IReadOnlyList<NpcEwarWork>> _npcEwar = new("resident.npcEwar", "WorldNpcEwar");
 
@@ -60,12 +62,15 @@ internal sealed partial class LiveReadModels
                     .Set<WorldNpcEwar>()
                     .AsNoTracking()
                     .AsEnumerable()
-                    .Select(e => new NpcEwarWork(e.TargetShipId, e.Contact()))
+                    .Select(e => new NpcEwarWork(e.TargetShipId, e.Contact(), new(e.NpcId, e.StartedAt)))
                     .ToArray();
             }
         );
 
     internal bool HasNpcEwar(long ship) => NpcEwar().Any(e => e.TargetShipId == ship);
+
+    internal IReadOnlyList<NpcHostileAttempt> NpcEwarAttempts(long ship) =>
+        NpcEwar().Where(e => e.TargetShipId == ship && e.Attempt.StartedAt > 0).Select(e => e.Attempt).ToArray();
 
     internal IReadOnlyList<NpcEwarContact> NpcEwarIncoming(long ship) =>
         NpcEwar().Where(e => e.TargetShipId == ship).Select(e => e.Contact).OfType<NpcEwarContact>().ToArray();

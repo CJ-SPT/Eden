@@ -151,25 +151,65 @@ public sealed class CapsuleerTrafficNavigationTests
     }
 
     [Fact]
-    public void RepeatedAggressionKeepsEndpointRefugeInsteadOfReversingAgain()
+    public async Task RepeatedAggressionKeepsEndpointRefugeInsteadOfReversingAgain()
     {
-        using CapsuleerHaulerTests.Fixture f = new();
+        CapsuleerHaulerTests.Fixture f = new();
         var founder = f.Founder();
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
-        var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
-        var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
-        job = hauler.Execute(job, 1);
-        hauler.ObserveAggression(founder.FounderShipId);
-        job = hauler.Execute(job, 2);
-        var refuge = hauler.Read()!.Work;
-        Assert.Equal(SourceStation, refuge.TargetId);
-        Assert.Equal(-1, refuge.RouteDirection);
-        Assert.True(refuge.Retreating);
-        hauler.ObserveAggression(founder.FounderShipId);
-        hauler.Execute(job, 3);
-        Assert.Equal(SourceStation, hauler.Read()!.Work.TargetId);
-        Assert.Equal(-1, hauler.Read()!.Work.RouteDirection);
-        Assert.True(hauler.Read()!.Work.Retreating);
+        var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        try
+        {
+            var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
+            var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
+            job = hauler.Execute(job, 1);
+            hauler.ObserveAggression(founder.FounderShipId);
+            job = hauler.Execute(job, 2);
+            var refuge = hauler.Read()!.Work;
+            Assert.Equal(SourceStation, refuge.DestinationStationId);
+            Assert.Equal(-1, refuge.RouteDirection);
+            Assert.True(refuge.Retreating);
+            if (hauler.Read()!.Pilot.Position is not null)
+            {
+                hauler.ObserveAggression(founder.FounderShipId);
+                job = hauler.Execute(job, 3);
+            }
+            Assert.Equal(SourceStation, hauler.Read()!.Work.DestinationStationId);
+            Assert.Equal(-1, hauler.Read()!.Work.RouteDirection);
+            Assert.True(hauler.Read()!.Work.Retreating);
+            var threat = Assert.Single(hauler.Read()!.Work.Routine!.Threats);
+            Assert.Equal(Source, threat.SystemId);
+            // The slow unfitted Badger can need several thousand one-second samples to close on the station.
+            for (int turn = 4; turn < 12000 && hauler.Read()!.Pilot.Position is not null; turn++)
+            {
+                f.Clock.Seconds++;
+                job = hauler.Execute(job, turn);
+            }
+            var docked = hauler.Read()!;
+            Assert.True(
+                docked.Pilot.Position is null,
+                $"Activity={docked.Work.Activity}, target={docked.Work.TargetId}, reason={docked.Work.WaitingReason}, "
+                    + $"position={docked.Pilot.Position?.X}/{docked.Pilot.Position?.Y}/{docked.Pilot.Position?.Z}"
+            );
+            Assert.InRange((docked.Work.DueTicks - docked.Work.ActiveTicks) / TimeSpan.TicksPerSecond, 300, 900);
+            Assert.False(docked.Work.Routine!.ShelterPending);
+            await host.GetRequiredService<LiveWorld>().FlushAsync();
+            using WorldDbContext reopened = new(f.Database.Path);
+            var saved = HaulerCheckpoint.Read(reopened.Set<SavedCapsuleerHauler>().Single().Progress)!;
+            Assert.Equal(docked.Work.DueTicks, saved.DueTicks);
+            Assert.Equal(docked.Work.Routine.Threats, saved.Routine!.Threats);
+        }
+        finally
+        {
+            try
+            {
+                host.Dispose();
+                f.Dispose();
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine(error);
+                throw;
+            }
+        }
     }
 
     [Theory]

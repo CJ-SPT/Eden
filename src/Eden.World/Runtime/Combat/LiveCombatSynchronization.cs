@@ -67,6 +67,7 @@ internal sealed partial class LiveCombatRuntime
                 _savedShips[pilot] = next;
                 _positions.Remove(row.ShipId);
                 _savedPositions.Remove(row.ShipId);
+                _dirtyPositions.Remove(row.ShipId);
                 _acquisitionShips.Clear();
                 _acquisitions.Clear();
                 consumed.Add(key);

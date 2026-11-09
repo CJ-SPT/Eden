@@ -100,6 +100,24 @@ public sealed class PilotTurretTests
         Assert.Equal(shot.Health.Remaining.Shield, f.Health.Read(Victim, f.Clock.Now).Remaining.Shield, 8);
     }
 
+    [Fact]
+    public void WarmPilotVolleysKeepPaymentsAndHostilityResidentWithoutSql()
+    {
+        using var f = Prepare(live: true);
+        Fire(f, .999);
+        using var metrics = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin("warm pilot volleys", _ => { }, force: true)!;
+        for (int shot = 0; shot < 4; shot++)
+        {
+            f.Clock.Seconds += 10;
+            var result = Fire(f, .999);
+            Assert.Null(result.Reward);
+            Assert.False(result.Destroyed);
+        }
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
     [Theory]
     [InlineData(.2, ShipSafetyLevel.Full)]
     [InlineData(.8, ShipSafetyLevel.Full)]

@@ -133,11 +133,18 @@ public sealed class TrafficSnapshotTests
         using WorldDbContext world = new(fixture.Database.Path);
         var identity = Assert.Single(world.Set<SavedTrafficIdentity>());
         long ship = world.Pilots.Single(value => value.Id == identity.PilotId).ActiveShipId;
-        var module = Assert.Single(world.Set<OwnedItem>().Where(value => value.LocationId == ship));
+        var module = Assert.Single(
+            world.Set<OwnedItem>().Where(value => value.LocationId == ship && value.FlagId == (int)InventoryFlag.HighSlot0)
+        );
         var charge = Assert.Single(world.Set<OwnedItem>().Where(value => value.LocationId == module.Id));
         Assert.Equal(215, charge.TypeId);
         Assert.Equal(50, charge.Quantity);
         Assert.Equal(identity.PilotId, charge.OwnerId);
+        Assert.Contains(
+            world.Set<OwnedItem>(),
+            value => value.LocationId == ship && value.TypeId == 215 && value.FlagId == (int)InventoryFlag.Cargo && value.Quantity > 0
+        );
+        Assert.Contains(world.Set<SavedCapsuleerSupplies>(), value => value.PilotId == identity.PilotId && value.ShipId == ship);
     }
 
     [Fact]

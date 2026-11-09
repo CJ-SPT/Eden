@@ -38,7 +38,12 @@ public sealed record HaulerProgress(
     long? DepartureAt = null,
     long DwellSequence = 0,
     TrafficJourney? Journey = null
-);
+)
+{
+    public TravelerRoutine? Routine { get; init; }
+    public CapsuleerDefenseState? Defense { get; init; }
+    public int LastMotionStamp { get; init; } = int.MinValue;
+}
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth Health);
 

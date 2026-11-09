@@ -275,6 +275,8 @@ public sealed class CapsuleerTrafficRoutesTests
         var capital = CapsuleerTrafficRoutes.ToStation(catalog, FirstStation, FirstStation + 1, HullClass.Carrier);
         Assert.Equal([source, high, home], ordinary!.Systems);
         Assert.Equal([source, detour, home], capital!.Systems);
+        var journey = CapsuleerTrafficRoutes.Journey(catalog, FirstStation, TrafficJourneyKind.Regional, 1, 0, HullClass.Carrier);
+        Assert.Equal([source, detour, home], journey!.Systems);
         Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation + 2, FirstStation, HullClass.Carrier));
         Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation, FirstStation + 2, HullClass.Carrier));
         Assert.Equal(0, metrics.Commands);
@@ -297,6 +299,59 @@ public sealed class CapsuleerTrafficRoutesTests
         Assert.Equal([FirstSystem + 1, FirstSystem], homeward.Systems);
         Assert.Equal(FirstStation, homeward.DestinationStationId);
         Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation + 2, FirstStation, HullClass.Titan));
+    }
+
+    [Fact]
+    public void ThreatMemoryUsesADetourExpiresAndFallsBackWhenThereIsNoAlternative()
+    {
+        using Fixture fixture = new();
+        fixture.AddStation(FirstStation, FirstSystem);
+        fixture.AddStation(FirstStation + 1, FirstSystem + 3);
+        fixture.Connect(FirstSystem, FirstSystem + 1);
+        fixture.Connect(FirstSystem + 1, FirstSystem + 3);
+        fixture.Connect(FirstSystem, FirstSystem + 2);
+        fixture.Connect(FirstSystem + 2, FirstSystem + 3);
+        using CatalogDbContext catalog = new(fixture.Path);
+        var routine = TravelerRoutineRules.Threatened(TravelerRoutineRules.Create(42), FirstSystem + 1, 0);
+        var safe = CapsuleerTrafficRoutes.Journey(catalog, FirstStation, TrafficJourneyKind.Local, 1, 0, HullClass.Hauler, routine)!;
+        Assert.Equal([FirstSystem, FirstSystem + 2, FirstSystem + 3], safe.Systems);
+        var expired = CapsuleerTrafficRoutes.Journey(
+            catalog,
+            FirstStation,
+            TrafficJourneyKind.Local,
+            1,
+            0,
+            HullClass.Hauler,
+            routine,
+            TravelerRoutineRules.ThreatMemory.Ticks
+        )!;
+        Assert.Equal([FirstSystem, FirstSystem + 1, FirstSystem + 3], expired.Systems);
+        routine = TravelerRoutineRules.Threatened(routine, FirstSystem + 2, 0);
+        Assert.NotNull(CapsuleerTrafficRoutes.Journey(catalog, FirstStation, TrafficJourneyKind.Local, 1, 0, HullClass.Hauler, routine));
+    }
+
+    [Fact]
+    public void LaterStationEndpointsIncludeTheHubAndPilotDrawsVaryDestinations()
+    {
+        using Fixture fixture = new();
+        for (int index = 0; index < 7; index++)
+        {
+            fixture.AddStation(FirstStation + index, FirstSystem);
+        }
+        const int jitaHub = 60003760;
+        fixture.AddStation(jitaHub, FirstSystem);
+        using CatalogDbContext catalog = new(fixture.Path);
+        var routine = TravelerRoutineRules.Create(42);
+        var destinations = Enumerable
+            .Range(0, 128)
+            .Select(sequence =>
+                CapsuleerTrafficRoutes
+                    .Journey(catalog, FirstStation, TrafficJourneyKind.Local, sequence, 0, HullClass.Hauler, routine)!
+                    .DestinationStationId
+            )
+            .ToHashSet();
+        Assert.Contains(jitaHub, destinations);
+        Assert.True(destinations.Count >= 5);
     }
 
     private static void AssertPathsAreReal(CatalogDbContext catalog, CapsuleerTrafficPlan plan, int systemId)
