@@ -38,8 +38,3 @@ internal sealed record FighterState() : BlueModel
 {
     public override object ToBlue() => new object?[] { new List<object?>(), new List<object?>(), new Dictionary<string, object?>() };
 }
-
-internal sealed record AgentJournalState() : BlueModel
-{
-    public override object ToBlue() => new object?[] { new List<object?>(), new List<object?>() };
-}

@@ -36,6 +36,9 @@ public sealed record ShipCombatReport(
 
 public enum StandingEvent
 {
+    // Build 3662168 appLogConst.eventStandingAgentMissionCompleted.
+    AgentMissionCompleted = 73,
+
     // Build 3662168 appLogConst.eventStandingCombatShipKill.
     CombatShipKill = 77,
 }

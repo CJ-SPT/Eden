@@ -20,6 +20,7 @@ public enum NpcAnchorKind
     Gate,
     Station,
     Anomaly,
+    Mission,
 }
 
 public static class NpcPopulationRules

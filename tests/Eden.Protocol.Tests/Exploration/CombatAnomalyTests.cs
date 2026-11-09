@@ -185,7 +185,7 @@ public sealed class CombatAnomalyTests
             SignedSettings.Empty
         );
         context.Select(f.Pilot);
-        CombatAnomalyHandler handler = new(sites, f.Clock);
+        CombatAnomalyHandler handler = new(sites, f.Db.Services.GetRequiredService<Eden.Gameplay.Agents.IPilotMissions>(), f.Clock);
         Assert.IsType<PilotCallResult.Success>(handler.Call(context, "scanMgr", "SignalTrackerRegister", []));
         var notification = Assert.IsType<SignalTrackerFullState>(Assert.Single(context.Notifications));
         Assert.Equal(3, notification.Arguments.Length);
@@ -370,7 +370,7 @@ public sealed class CombatAnomalyTests
             );
             context.Select(pilot);
             context.Flight.Snapshot();
-            CombatAnomalyHandler handler = new(sites, f.Clock);
+            CombatAnomalyHandler handler = new(sites, f.Db.Services.GetRequiredService<Eden.Gameplay.Agents.IPilotMissions>(), f.Clock);
             handler.Call(context, "scanMgr", "SignalTrackerRegister", []);
             var fullState = Assert.IsType<SignalTrackerFullState>(Assert.Single(context.Notifications));
             Assert.Equal(site.Id, Assert.Single(fullState.Sites).Id);

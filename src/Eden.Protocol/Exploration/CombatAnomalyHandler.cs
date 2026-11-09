@@ -5,7 +5,8 @@ using Eden.Protocol.PilotSessions;
 namespace Eden.Protocol.Exploration;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, TimeProvider clock) : ISelectedPilotCallHandler
+internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, Eden.Gameplay.Agents.IPilotMissions missions, TimeProvider clock)
+    : ISelectedPilotCallHandler
 {
     private int? _system;
     private IReadOnlyList<CombatAnomaly> _known = [];
@@ -59,12 +60,14 @@ internal sealed class CombatAnomalyHandler(ICombatAnomalies sites, TimeProvider 
         if (context.Flight.CanTarget && context.Pilot.Position is { } arrival)
         {
             sites.Arrive(system, arrival, Now);
+            missions.Arrive(system, arrival);
         }
         var current = sites.List(system, Now);
         var position = context.Pilot.Position;
         context.Flight.RefreshAnomalies(
             current
                 .SelectMany(s => s.Objects)
+                .Concat(missions.Sites(system).SelectMany(s => s.Objects))
                 .Where(o =>
                     position is not null && position.DistanceTo(o.Position) <= Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
                 )

@@ -146,7 +146,7 @@ public sealed class TypedCallResultTests
             (new JumpTimerState(), new object?[] { null, null, null }),
             (new FighterState(), new object?[] { new List<object?>(), new List<object?>(), new Dictionary<string, object?>() }),
             (new BountiesAndKillRightsState(), new object?[] { new List<object?>(), new List<object?>() }),
-            (new AgentJournalState(), new object?[] { new List<object?>(), new List<object?>() }),
+            (new Eden.Protocol.Agents.MissionJournal([]), new object?[] { new List<object?>(), new List<object?>() }),
             (
                 new TaskProgressReply(new([], [], false)),
                 new Dictionary<string, object?>

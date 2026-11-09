@@ -35,7 +35,13 @@ public sealed class NpcProfileCatalog(bool cache = true)
             type,
             attributes,
             ShipHealth.DefenseFrom(attributes),
-            NpcEwarRules.Profile(FittingCatalog.Effects(catalog, typeId), attributes).ToImmutableArray()
+            NpcEwarRules
+                .Profile(
+                    FittingCatalog.Effects(catalog, typeId),
+                    attributes,
+                    type.GroupId is NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup
+                )
+                .ToImmutableArray()
         )
         {
             StandingThresholds = ReadStandingThresholds(catalog, typeId),

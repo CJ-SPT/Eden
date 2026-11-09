@@ -85,7 +85,8 @@ public static class NpcEwarRules
 
     public static IReadOnlyList<NpcEwarAbility> Profile(
         IReadOnlySet<DogmaEffect> effects,
-        IReadOnlyDictionary<DogmaAttributeId, double> attributes
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes,
+        bool sentry = false
     )
     {
         double Value(DogmaAttributeId id, double fallback = 0) => attributes.GetValueOrDefault(id, fallback);
@@ -106,13 +107,20 @@ public static class NpcEwarRules
             {
                 return;
             }
+            double probability = chance is { } chanceAttribute ? Value(chanceAttribute) : 1;
+            // Pinned destructible/overseer sentries use 50/100 for legacy web
+            // chances. Ship profiles retain their ordinary 0..1 representation.
+            if (sentry && chance == DogmaAttributeId.EntityWebChance && probability is > 1 and <= Percent)
+            {
+                probability /= Percent;
+            }
             NpcEwarAbility ability = new(
                 kind,
                 effect,
                 Value(duration, defaultDuration),
                 Value(range, defaultRange),
                 falloff is { } id ? Value(id) : 0,
-                chance is { } chanceAttribute ? Value(chanceAttribute) : 1,
+                probability,
                 power
             );
             if (

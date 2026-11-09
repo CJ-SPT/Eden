@@ -179,7 +179,7 @@ public sealed class IdleAnomalyFrameTests(ITestOutputHelper output)
                 services.GetRequiredService<SkillHandler>(),
                 services.GetRequiredService<IAsteroidField>(),
                 services.GetRequiredService<IPilotOperationScope>(),
-                anomalies: new(sites, fixture.Clock)
+                anomalies: new(sites, services.GetRequiredService<Eden.Gameplay.Agents.IPilotMissions>(), fixture.Clock)
             );
             _transport = new(
                 Context,

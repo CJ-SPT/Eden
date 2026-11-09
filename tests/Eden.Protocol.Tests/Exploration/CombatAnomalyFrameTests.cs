@@ -152,7 +152,7 @@ public sealed class CombatAnomalyFrameTests(ITestOutputHelper output)
         var router = services.GetRequiredService<PilotCallRouter>();
         Assert.IsType<PilotCallResult.Success>(router.Call(context, "onlineStatus", "GetInitialState", Array.Empty<object?>(), _ => { }));
         Assert.IsType<PilotCallResult.Success>(router.Call(context, "userSvc", "GetRedeemTokens", Array.Empty<object?>(), _ => { }));
-        CombatAnomalyHandler anomalies = new(sites, fixture.Clock);
+        CombatAnomalyHandler anomalies = new(sites, services.GetRequiredService<Eden.Gameplay.Agents.IPilotMissions>(), fixture.Clock);
         PilotSessionTick tick = new(
             fixture.Clock,
             services.GetRequiredService<PilotUpdateCoordinator>(),

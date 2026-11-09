@@ -12,6 +12,7 @@
     <EmbeddedResource Include="Market/starter-market.json" LogicalName="Eden.Server.Persistence.starter-market.json" />
     <EmbeddedResource Include="Market/loyalty-offers.json" LogicalName="Eden.World.LoyaltyOffers.json" />
     <EmbeddedResource Include="Market/market-prices.json" LogicalName="Eden.World.MarketSnapshot.json" />
+    <EmbeddedResource Include="Agents/missions-3662168.json" LogicalName="Eden.World.Missions.json" />
     <EmbeddedResource Include="Fittings/ship-content-roadmap-3662168.json" LogicalName="Eden.World.ShipContentRoadmap.json" />
   </ItemGroup>
 </Project>

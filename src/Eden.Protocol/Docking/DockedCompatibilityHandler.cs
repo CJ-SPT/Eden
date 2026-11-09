@@ -107,7 +107,6 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, DirectionalS
             ("map", "GetTriglavianMinorVictorySystems" or "GetEdencomFortressSystems" or "GetEdencomMinorVictorySystems") => BlueEmpty.List,
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
-            ("agentMgr", "GetMyJournalDetails") => new AgentJournalState(),
             ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new LocalSystemState(pilot.SystemId),
 
 

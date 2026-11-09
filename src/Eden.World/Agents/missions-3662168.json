@@ -1,0 +1,369 @@
+{
+  "build": 3662168,
+  "missions": [
+    {
+      "missionId": 896,
+      "level": 1,
+      "difficulty": 700,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=AngelCartelSpies1",
+      "sourceRevision": "2017-11-17 14:30 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 9,
+              "range": 25000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 897,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=AngelCartelSpies2",
+      "sourceRevision": "2012-07-14 05:27 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16879,
+                16886,
+                16877,
+                16885,
+                16878
+              ],
+              "count": 8,
+              "range": 48000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 890,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=AngelCartelSpies3",
+      "sourceRevision": "2013-04-14 02:15 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23974,
+                23969
+              ],
+              "count": 3,
+              "range": 30000
+            },
+            {
+              "types": [
+                16881,
+                16880
+              ],
+              "count": 4,
+              "range": 35000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 892,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=AngelCartelSpies4",
+      "sourceRevision": "2017-04-12 02:00 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17605
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17574
+              ],
+              "count": 2,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                24006,
+                24007
+              ],
+              "count": 4,
+              "range": 50000
+            },
+            {
+              "types": [
+                16899,
+                24125,
+                24126
+              ],
+              "count": 3,
+              "range": 50000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 916,
+      "level": 1,
+      "difficulty": 0,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=EliminateaPirateNuisance1an",
+      "sourceRevision": "2012-07-14 06:24 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16882,
+                16877
+              ],
+              "count": 2,
+              "range": 20000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 920,
+      "level": 1,
+      "difficulty": 0,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=EliminateaPirateNuisance1gu",
+      "sourceRevision": "2017-11-17 13:40 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16981
+              ],
+              "count": 1,
+              "range": 45000
+            },
+            {
+              "types": [
+                16994
+              ],
+              "count": 1,
+              "range": 45000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2924,
+      "level": 1,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=Blockade1gu",
+      "sourceRevision": "2017-10-16 08:49 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17606
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": false
+            },
+            {
+              "types": [
+                16981
+              ],
+              "count": 4,
+              "range": 25000
+            },
+            {
+              "types": [
+                17001,
+                17006
+              ],
+              "count": 1,
+              "range": 25000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16981,
+                16994
+              ],
+              "count": 6,
+              "range": 120000
+            },
+            {
+              "types": [
+                16996
+              ],
+              "count": 1,
+              "range": 120000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16981
+              ],
+              "count": 6,
+              "range": 115000
+            },
+            {
+              "types": [
+                16987,
+                17002
+              ],
+              "count": 1,
+              "range": 115000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                16994,
+                16981
+              ],
+              "count": 8,
+              "range": 100000
+            },
+            {
+              "types": [
+                17002,
+                16987
+              ],
+              "count": 1,
+              "range": 100000,
+              "trigger": true
+            }
+          ]
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17002,
+                16987
+              ],
+              "count": 4,
+              "range": 100000
+            },
+            {
+              "types": [
+                17001
+              ],
+              "count": 1,
+              "range": 100000,
+              "completesMission": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2912,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "build-3662168 client/missions; Eden courier offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2913,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "build-3662168 client/missions; Eden courier offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2914,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "build-3662168 client/missions; Eden courier offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2915,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "build-3662168 client/missions; Eden courier offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2919,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "source": "build-3662168 client/missions; Eden storyline offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2920,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "source": "build-3662168 client/missions; Eden storyline offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2921,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "source": "build-3662168 client/missions; Eden storyline offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2922,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "source": "build-3662168 client/missions; Eden storyline offer policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    }
+  ]
+}

@@ -187,8 +187,22 @@ internal sealed class PilotCallRouter(
                 or "reprocessingSvc"
                 or "repairSvc"
                 or "charMgr"
+                or "agentMgr"
         )
         {
+            if (
+                service == "agentMgr"
+                && method is "MachoResolveObject" or "MachoBindObject"
+                && (
+                    keywords is { Count: > 0 }
+                    || args.Length != (method == "MachoResolveObject" ? 1 : 2)
+                    || args[0] is not long agentId
+                    || !Eden.Gameplay.Agents.NpcCharacterIds.Contains(agentId)
+                )
+            )
+            {
+                return new PilotCallResult.Failure("Bind a known NPC agent by its character ID.");
+            }
             if (
                 service == "charMgr"
                 && method is "MachoResolveObject" or "MachoBindObject"
@@ -286,7 +300,10 @@ internal sealed class PilotCallRouter(
                     return PilotCallResult.Unsupported;
                 }
                 PilotCallResult result = PilotCallResult.None;
-                string boundService = service == "charMgr" ? GlobalInventoryHandler.BoundService : service;
+                string boundService =
+                    service == "charMgr" ? GlobalInventoryHandler.BoundService
+                    : service == "agentMgr" ? $"@agent:{args[0]}"
+                    : service;
                 if (args[1] is object?[] { Length: >= 2 } first && first[1] is object?[] innerArgs)
                 {
                     string innerMethod = BlueMarshal.Text(first[0]);
@@ -311,7 +328,7 @@ internal sealed class PilotCallRouter(
                         new BoundPilotReply(
                             context.Reference(
                                 boundService,
-                                service == "charMgr" ? PilotBindingLifetime.Pilot : PilotBindingLifetime.Location
+                                service is "charMgr" or "agentMgr" ? PilotBindingLifetime.Pilot : PilotBindingLifetime.Location
                             ),
                             success.Reply
                         )
