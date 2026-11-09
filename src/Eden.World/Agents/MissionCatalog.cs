@@ -3,6 +3,7 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.Catalog.Agents;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
@@ -45,15 +46,16 @@ internal sealed record MissionRoomProfile(
     SpacePosition Position,
     ImmutableArray<StaticSpaceObject> Objects,
     ImmutableArray<MissionRoomGate> Gates
-);
+)
+{
+    internal ImmutableArray<MissionSpawnAnchor> SpawnAnchors { get; init; } = [];
+}
 
 internal sealed record MissionRoomGate(long ObjectId, int DestinationRoomId, bool RequiresClear, MissionGateAccess Access);
 
 internal static class MissionCatalog
 {
     private const int InvisibleBeaconGroup = 4055;
-    private const int CloudGroup = 227;
-    private const int EnvironmentGroup = 1882;
     private static readonly Lazy<MissionContent> s_content = new(() =>
     {
         using var stream = typeof(MissionCatalog).Assembly.GetManifestResourceStream("Eden.World.Missions.json")!;
@@ -169,6 +171,23 @@ internal static class MissionCatalog
             var entry = room.Objects!.Values.Single(o => o.ObjectID == binding.EntryObjectId);
             var origin = Position(entry.Position!);
             var offset = new SpacePosition(index * MissionGateRules.RoomSpacing, 0, 0);
+            var anchors = room
+                .Objects.Values.Where(o => o.TypeID.HasValue && o.Position is not null)
+                .OrderBy(o => o.ObjectID)
+                .Select(o => (Source: o, Type: catalog.FittingType(o.TypeID!.Value)))
+                .Where(o => o.Source.Entities is { Count: > 0 } || o.Type?.GroupId == NpcEncounterDefinitions.SentryGroup)
+                .Select(o => new MissionSpawnAnchor(
+                    o.Source.ObjectID!.Value,
+                    Position(o.Source.Position!) - origin,
+                    o.Source.GuardCommand?.AggressionRange is > 0
+                        ? o.Source.GuardCommand.AggressionRange.Value
+                        : NpcEncounterDefinitions.VisibilityRange,
+                    o.Source.GuardCommand?.ObjectTriggerSpawn != 1
+                        && (o.Source.Entities is not { Count: > 0 } || o.Source.Entities.Values.Any(e => e.TriggerSpawn != 1)),
+                    o.Source.GuardCommand?.ObjectTriggerSpawn == 1 || o.Source.Entities?.Values.Any(e => e.TriggerSpawn == 1) == true,
+                    o.Type?.GroupId == NpcEncounterDefinitions.SentryGroup ? o.Type.Id : null
+                ))
+                .ToImmutableArray();
             List<StaticSpaceObject> objects = [];
             foreach (var item in room.Objects.Values.Where(o => o.TypeID.HasValue && o.Position is not null))
             {
@@ -181,7 +200,6 @@ internal static class MissionCatalog
                     || !container && !structure && type.CategoryId is not (2 or 25)
                     || type.GroupId == InvisibleBeaconGroup
                     || item.ObjectID == binding.EntryObjectId
-                    || !gate && !container && !structure && item.Entities is { Count: > 0 }
                 )
                 {
                     continue;
@@ -198,11 +216,16 @@ internal static class MissionCatalog
                         type.CategoryId,
                         corporation,
                         offset + Position(item.Position!) - origin,
-                        (float)(item.Radius ?? type.Radius ?? 0)
+                        DungeonObjectGeometry.Radius(
+                            type.CategoryId,
+                            type.Radius,
+                            item.Radius,
+                            catalog.Read(CatalogData.Client.Types, (long)type.Id)?.Volume ?? 0
+                        )
                     )
                     {
                         IsGlobal = false,
-                        Solid = !gate && type.GroupId is not (CloudGroup or EnvironmentGroup),
+                        Solid = !gate && DungeonObjectGeometry.IsSolid(type.GroupId),
                         Name =
                             (container || structure) && item.ObjectNameID is long name
                                 ? catalog.Read(CatalogData.Client.LocalizationFsdEnUs, name)?.Text
@@ -243,7 +266,7 @@ internal static class MissionCatalog
                     $"Mission {definition.MissionId}, room {binding.RoomId}: invalid gate source or destination."
                 );
             }
-            rooms.Add(new(binding.RoomId, offset, objects.ToImmutableArray(), gates));
+            rooms.Add(new(binding.RoomId, offset, objects.ToImmutableArray(), gates) { SpawnAnchors = anchors });
         }
         if (definition.Waves.Any(w => w.RoomId != 0 && !bindings.Any(r => r.RoomId == w.RoomId)))
         {

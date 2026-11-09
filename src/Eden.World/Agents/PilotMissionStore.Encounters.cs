@@ -1,3 +1,4 @@
+using Eden.Data.Catalog.Agents;
 using Eden.Data.World.Agents;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Agents;
@@ -13,6 +14,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Agents;
 
 internal sealed record MissionSitesView(IReadOnlyList<MissionSite> Sites, long ExpiresAt);
+
+internal sealed record MissionPreparedSpawn(MissionSpawnGroup Group, MissionSpawnMember Member, NpcHullProfile Profile);
 
 internal sealed partial class PilotMissionStore
 {
@@ -251,11 +254,14 @@ internal sealed partial class PilotMissionStore
         var profile = MissionCatalog.Find(catalog, mission.MissionId);
         int roomId = profile.WaveRoom(wave);
         var room = profile.Rooms.Single(r => r.Id == roomId);
-        int slot = 0;
-        foreach (var group in profile.Definition.Waves[wave].Groups)
+        var groups = profile.Definition.Waves[wave].Groups;
+        List<MissionPreparedSpawn> spawns = [];
+        for (int groupIndex = 0; groupIndex < groups.Length; groupIndex++)
         {
+            var group = groups[groupIndex];
             for (int i = 0; i < group.Count; i++)
             {
+                int slot = spawns.Count;
                 if (slot >= MissionRules.MembersPerWave)
                 {
                     throw new InvalidDataException("Mission wave exceeds its reserved NPC identity range.");
@@ -263,55 +269,66 @@ internal sealed partial class PilotMissionStore
                 uint seed = NpcSpawnRules.Seed(mission.SystemId, wave, checked((int)mission.Id + slot));
                 int type = group.Types[(int)(seed % group.Types.Length)];
                 var npcProfile = new NpcProfileCatalog().Read(catalog, type);
-                int faction = group.EnemyFaction == 0 ? profile.EnemyFaction : group.EnemyFaction;
-                int corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
-                long id = checked(
-                    MissionRules.FirstNpcId + mission.Id * MissionRules.NpcsPerMission + wave * MissionRules.MembersPerWave + slot
+                spawns.Add(
+                    new(
+                        group,
+                        new(type, groupIndex, group.Range, npcProfile.Type.GroupId == NpcEncounterDefinitions.SentryGroup),
+                        npcProfile
+                    )
                 );
-                var p = new SpacePosition(
-                    mission.X + room.Position.X + group.Range,
-                    mission.Y + room.Position.Y + slot * NpcSpawnRules.MemberSpacing,
-                    mission.Z + room.Position.Z
-                );
-                world.Add(
-                    new WorldNpc
-                    {
-                        Id = id,
-                        TypeId = type,
-                        SystemId = mission.SystemId,
-                        CorporationId = corporation,
-                        FactionId = faction,
-                        AnchorKind = NpcAnchorKind.Mission,
-                        Role = NpcRole.Pirate,
-                        EncounterId = MissionRules.FirstSiteId + mission.Id,
-                        SpawnSlot = slot,
-                        HomeX = p.X,
-                        HomeY = p.Y,
-                        HomeZ = p.Z,
-                        X = p.X,
-                        Y = p.Y,
-                        Z = p.Z,
-                        ShieldCharge = npcProfile.Attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity),
-                        UpdatedAt = now,
-                        MotionAt = now,
-                        AcquisitionRange = NpcEncounterDefinitions.VisibilityRange,
-                    }
-                );
-                world.Add(
-                    new SavedMissionMember
-                    {
-                        NpcId = id,
-                        MissionId = mission.Id,
-                        Wave = wave,
-                        Trigger = group.Trigger,
-                        CompletesMission = group.CompletesMission,
-                        Required = group.Required,
-                        LootTypeId = group.LootTypeId,
-                        LootQuantity = group.LootQuantity,
-                    }
-                );
-                slot++;
             }
+        }
+        bool initial = !Enumerable.Range(0, wave).Any(w => profile.WaveRoom(w) == roomId);
+        var placements = MissionSpawnRules.Place(initial, spawns.Select(s => s.Member).ToArray(), room.SpawnAnchors);
+        for (int slot = 0; slot < spawns.Count; slot++)
+        {
+            var spawn = spawns[slot];
+            var group = spawn.Group;
+            var npcProfile = spawn.Profile;
+            int type = spawn.Member.TypeId;
+            int faction = group.EnemyFaction == 0 ? profile.EnemyFaction : group.EnemyFaction;
+            int corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
+            long id = checked(
+                MissionRules.FirstNpcId + mission.Id * MissionRules.NpcsPerMission + wave * MissionRules.MembersPerWave + slot
+            );
+            var p = new SpacePosition(mission.X, mission.Y, mission.Z) + (room.Position + placements[slot].Position);
+            world.Add(
+                new WorldNpc
+                {
+                    Id = id,
+                    TypeId = type,
+                    SystemId = mission.SystemId,
+                    CorporationId = corporation,
+                    FactionId = faction,
+                    AnchorKind = NpcAnchorKind.Mission,
+                    Role = NpcRole.Pirate,
+                    EncounterId = MissionRules.FirstSiteId + mission.Id,
+                    SpawnSlot = slot,
+                    HomeX = p.X,
+                    HomeY = p.Y,
+                    HomeZ = p.Z,
+                    X = p.X,
+                    Y = p.Y,
+                    Z = p.Z,
+                    ShieldCharge = npcProfile.Attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity),
+                    UpdatedAt = now,
+                    MotionAt = now,
+                    AcquisitionRange = placements[slot].AcquisitionRange,
+                }
+            );
+            world.Add(
+                new SavedMissionMember
+                {
+                    NpcId = id,
+                    MissionId = mission.Id,
+                    Wave = wave,
+                    Trigger = group.Trigger,
+                    CompletesMission = group.CompletesMission,
+                    Required = group.Required,
+                    LootTypeId = group.LootTypeId,
+                    LootQuantity = group.LootQuantity,
+                }
+            );
         }
         var progress =
             world.Set<SavedMissionRoom>().Find(mission.Id, roomId)

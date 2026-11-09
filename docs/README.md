@@ -14,6 +14,9 @@
 
 ## Development
 
+[Mission layout corrections](protocol/agents.md#mission-layout-corrections--november-9-2026) cover native NPC anchors, fixed batteries,
+restored scenery, room-local coordinate transforms and saved-position compatibility across the 50 existing combat definitions.
+
 [Anomaly warp-in collision correction](protocol/combat.md#anomaly-warp-in-collision-correction--november-9-2026) fixes oversized
 ore/scenery collision spheres and non-interactable wreckage in Drone Assembly and Drone Cluster.
 
