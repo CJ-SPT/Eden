@@ -4,6 +4,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Server;
@@ -39,14 +40,16 @@ public sealed class CapsuleerInboundRuntimeTests
         const long remoteGate = 50001249;
         using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
         {
-            catalog.Database.ExecuteSqlRaw("UPDATE Station SET SolarSystemId=30000144");
+            catalog.Database.ExecuteSqlRaw(
+                "UPDATE Station SET SolarSystemId=30000144; UPDATE Station SET SolarSystemId=30000141 WHERE Id=60015157"
+            );
         }
         if (imported)
         {
             TrafficSnapshotTests.Install(f.Database, TrafficSnapshotTests.Profile());
         }
         var gate = reverseGate ? new(Source, Observer, s_gate.DepartureGateId, s_gate.ArrivalGateId) : s_gate;
-        long pilot = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(gate)!.Value;
+        long pilot = CreateLegacyInbound(f, gate);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilot);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilot);
@@ -59,9 +62,9 @@ public sealed class CapsuleerInboundRuntimeTests
             var observation = hauler.Read()!;
             if (observation.Pilot.SystemId == Source)
             {
-                Assert.Equal(remoteGate, observation.Work.TargetId);
+                Assert.Equal(reverseGate ? remoteGate : s_gate.DepartureGateId, observation.Work.TargetId);
                 Assert.Equal(1, observation.Work.RouteIndex);
-                Assert.Equal(-1, observation.Work.RouteDirection);
+                Assert.Equal(1, observation.Work.RouteDirection);
             }
             f.Clock.Seconds++;
             job = hauler.Execute(job, seconds);
@@ -72,17 +75,17 @@ public sealed class CapsuleerInboundRuntimeTests
                 visited.Add(hauler.SystemId);
             }
         }
-        Assert.Equal<int>(reverseGate ? [Source, remote] : [Observer, Source, remote], visited);
+        Assert.Equal<int>(reverseGate ? [Source, remote] : [Observer], visited);
         Assert.Null(hauler.Read()!.Pilot.Position);
         Assert.Equal(HaulerActivity.Docked, hauler.Read()!.Work.Activity);
         await host.GetRequiredService<LiveWorld>().FlushAsync();
         using WorldDbContext reopened = new(f.Database.Path);
         var saved = reopened.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == pilot);
         var progress = HaulerCheckpoint.Read(saved.Progress)!;
-        Assert.Equal(0, progress.RouteIndex);
-        Assert.Equal(-1, progress.RouteDirection);
+        Assert.Equal(2, progress.RouteIndex);
+        Assert.Equal(1, progress.RouteDirection);
         Assert.Equal(ship, progress.ShipId);
-        Assert.Equal(saved.SourceStationId, hauler.Read()!.Pilot.StationId);
+        Assert.Equal(saved.DestinationStationId, hauler.Read()!.Pilot.StationId);
     }
 
     [Theory]
@@ -92,7 +95,7 @@ public sealed class CapsuleerInboundRuntimeTests
     public void FailedInboundTransitionPreservesResidentAndSavedProgress(string transition)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
-        long pilot = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(s_gate)!.Value;
+        long pilot = CreateLegacyInbound(f, s_gate);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: false);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilot);
         CapsuleerJob job;
@@ -143,7 +146,7 @@ public sealed class CapsuleerInboundRuntimeTests
     public void PausedInboundRetainsRemainingObservedDelayAndOneDurableTransfer()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
-        long pilot = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(s_gate)!.Value;
+        long pilot = CreateLegacyInbound(f, s_gate);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: false);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilot);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
@@ -198,16 +201,29 @@ public sealed class CapsuleerInboundRuntimeTests
         Assert.True(stationDelays.Distinct().Count() > 1);
         Assert.Throws<ArgumentOutOfRangeException>(() => HaulingRules.StationDwellSeconds(pilot, -1));
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
-        long actor = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(s_gate)!.Value;
+        long actor = CreateLegacyInbound(f, s_gate);
         using WorldDbContext world = new(f.Database.Path);
         var saved = world.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == actor);
         var work = HaulerCheckpoint.Read(saved.Progress)!;
         Assert.Equal(1, work.DwellSequence);
-        var later = work with { DwellSequence = 17 };
+        var later = work with
+        {
+            DwellSequence = 17,
+            Journey = new(
+                TrafficJourneyKind.Regional,
+                saved.SourceStationId,
+                saved.SourceStationId,
+                saved.DestinationStationId,
+                saved.RouteSystems!,
+                1
+            ),
+        };
         new HaulerCheckpoint(actor, later).Apply(world);
         using WorldDbContext reopened = new(f.Database.Path);
         var restored = HaulerCheckpoint.Read(reopened.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == actor).Progress)!;
-        Assert.Equal(later, restored);
+        Assert.Equal(later with { Journey = null }, restored with { Journey = null });
+        Assert.Equal(later.Journey!.Systems, restored.Journey!.Systems);
+        Assert.Equal(later.Journey, restored.Journey with { Systems = later.Journey.Systems });
         Assert.Equal(
             HaulingRules.InboundDwellSeconds(4, 0, actor, later.DwellSequence),
             HaulingRules.InboundDwellSeconds(4, 0, actor, restored.DwellSequence)
@@ -221,7 +237,7 @@ public sealed class CapsuleerInboundRuntimeTests
     public void WarpDisruptionBlocksHiddenInboundTransferUntilItClears()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
-        long pilot = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(s_gate)!.Value;
+        long pilot = CreateLegacyInbound(f, s_gate);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: false);
         BlockingTackle tackle = new(host.GetRequiredService<IPilotTackle>());
         CapsuleerHauler hauler = new(
@@ -264,7 +280,7 @@ public sealed class CapsuleerInboundRuntimeTests
         {
             TrafficSnapshotTests.Install(f.Database, TrafficSnapshotTests.Profile());
         }
-        long pilotId = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(s_gate)!.Value;
+        long pilotId = CreateLegacyInbound(f, s_gate);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilotId);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilotId);
@@ -310,6 +326,83 @@ public sealed class CapsuleerInboundRuntimeTests
         Assert.False(hauler.IsInbound);
         using WorldDbContext reopened = new(f.Database.Path);
         Assert.DoesNotContain(reopened.Ships, ship => ship.OwnerId == pilotId && ship.TypeId == HaulingRules.BadgerType);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void LegacyPausedArrivalUpgradePreservesRemainingDelayAndShip(bool liveWorld)
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        long pilot = CreateLegacyInbound(f, s_gate);
+        long ship;
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            var row = world.Set<SavedCapsuleerHauler>().Single();
+            ship = row.FounderShipId;
+            var work = HaulerCheckpoint.Read(row.Progress)!;
+            new HaulerCheckpoint(
+                pilot,
+                work with
+                {
+                    ActiveTicks = TimeSpan.FromSeconds(10).Ticks,
+                    DueTicks = TimeSpan.FromSeconds(90).Ticks,
+                    InboundPaused = true,
+                    Journey = null,
+                }
+            ).Apply(world);
+            world.Set<SavedCapsuleerClock>().Single().ElapsedTicks = TimeSpan.FromSeconds(600).Ticks;
+            world.Set<SavedCapsuleerJob>().Single().DueTicks = TimeSpan.FromSeconds(90).Ticks;
+            world.SaveChanges();
+        }
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: liveWorld);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        var job = scheduler.Jobs().Single();
+        Assert.Equal(TimeSpan.FromSeconds(680).Ticks, job.DueTicks);
+        var restored = scheduler.Hauler(pilot)!;
+        Assert.False(restored.Work.InboundPaused);
+        Assert.Equal(TimeSpan.FromSeconds(600).Ticks, restored.Work.ActiveTicks);
+        Assert.Equal(ship, restored.Pilot.ShipId);
+        Assert.Equal(job, scheduler.Jobs().Single());
+    }
+
+    private static long CreateLegacyInbound(CapsuleerHaulerTests.Fixture fixture, WatchedTrafficGate gate)
+    {
+        long pilot = new CapsuleerProvisioner(fixture.Database, fixture.Clock).EnsureInbound(gate)!.Value;
+        using WorldDbContext world = new(fixture.Database.Path);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        var row = world.Set<SavedCapsuleerHauler>().Single(value => value.PilotId == pilot);
+        var route = CapsuleerTrafficFlight.Route(row, catalog);
+        var leg = HaulingRouteRules.Crossing(route.Systems, gate.SourceSystemId, gate.ObserverSystemId);
+        var work = HaulerCheckpoint.Read(row.Progress)!;
+        var departure = SystemObjects.Geometry(catalog, gate.SourceSystemId).Single(body => body.Id == gate.DepartureGateId);
+        var ship = world.Ships.Single(value => value.Id == row.FounderShipId);
+        double radius = catalog.RequireItem(ship.TypeId).Radius ?? 0;
+        var position = departure.Position + new SpacePosition(departure.Radius + radius + CapsuleerTrafficFlight.ApproachRange, 0, 0);
+        SqliteWorld.SetPosition(world, catalog, ship.Id, position, gate.SourceSystemId, fixture.Clock.Now);
+        int dwell = HaulingRules.InboundDwellSeconds(
+            catalog.Definitions.GatesInSystem(gate.ObserverSystemId).Length,
+            catalog.Definitions.StationsInSystem(gate.ObserverSystemId).Length,
+            pilot
+        );
+        // Exercise compatibility with the previously saved gate-side waiting state.
+        work = work with
+        {
+            Activity = HaulerActivity.Inbound,
+            DueStamp = dwell,
+            DueTicks = TimeSpan.FromSeconds(dwell).Ticks,
+            TargetId = gate.DepartureGateId,
+            RouteIndex = leg.Index,
+            RouteDirection = leg.Direction,
+            DwellSequence = 1,
+            Journey = null,
+        };
+        new HaulerCheckpoint(pilot, work).Apply(world);
+        var job = world.Set<SavedCapsuleerJob>().Single(value => value.PilotId == pilot);
+        job.Action = CapsuleerAction.GateTransfer;
+        job.DueTicks = work.DueTicks;
+        world.SaveChanges();
+        return pilot;
     }
 
     private sealed class BlockingTackle(IPilotTackle actual) : IPilotTackle

@@ -31,6 +31,7 @@ internal sealed partial class CapsuleerScheduler(
     private HashSet<long> _nextRunning = [];
     private readonly HashSet<long> _turnPilots = [];
     private readonly HashSet<int> _visited = [];
+    private readonly HashSet<long> _legacyTravelers = [];
     private long _presentationRevision;
     private long _settledTicks;
     private int _destinyStamp;
@@ -184,32 +185,42 @@ internal sealed partial class CapsuleerScheduler(
             .Where(a => a.Career == CapsuleerCareer.Hauling && catalog.Definitions.Gates.ContainsKey(a.Slot))
             .Select(a => a.PilotId)
             .ToHashSet();
-        Dictionary<long, HaulerProgress> restoredInbound = [];
-        foreach (var route in world.Set<SavedCapsuleerHauler>().AsNoTracking().Where(r => !incremental || pilotIds.Contains(r.PilotId)))
+        foreach (
+            var route in world.Set<SavedCapsuleerHauler>().AsNoTracking().Where(r => !incremental || pilotIds.Contains(r.PilotId)).ToArray()
+        )
         {
-            if (laneAgents.Contains(route.PilotId))
+            var progress = Live?.HaulerCheckpoints.GetValueOrDefault(route.PilotId)?.Work ?? HaulerCheckpoint.Read(route.Progress);
+            if (laneAgents.Contains(route.PilotId) || progress?.TrafficLane is not null)
             {
-                _lanePilots.Add(route.PilotId);
-                if (
-                    !_loaded
-                    && (Live?.HaulerCheckpoints.GetValueOrDefault(route.PilotId)?.Work ?? HaulerCheckpoint.Read(route.Progress))
-                        is { Activity: HaulerActivity.Inbound, InboundPaused: false } progress
-                )
-                {
-                    restoredInbound[route.PilotId] = progress;
-                }
+                _travelers.Add(route.PilotId);
             }
-            var systemsOnRoute = CapsuleerTrafficFlight.Route(route, catalog).Systems.ToHashSet();
-            _routes[route.PilotId] = systemsOnRoute;
-            foreach (int system in systemsOnRoute)
+            if (progress is { Activity: HaulerActivity.Inbound, InboundPaused: true })
             {
-                if (!_systemAgents.TryGetValue(system, out var members))
+                var job = Current.GetValueOrDefault(route.PilotId) ?? jobs.Single(value => value.PilotId == route.PilotId);
+                long elapsed = world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
+                long delay = Math.Max(0, elapsed - progress.ActiveTicks);
+                var resumed = progress with
                 {
-                    members = [];
-                    _systemAgents.Add(system, members);
-                }
-                members.Add(route.PilotId);
+                    InboundPaused = false,
+                    ActiveTicks = progress.ActiveTicks + delay,
+                    ClockOffsetTicks = progress.ClockOffsetTicks + delay,
+                    DueTicks = progress.DueTicks + delay,
+                };
+                using CapsuleerOperation operation = new(database, job, marketSignal);
+                var next = job.Next(resumed.DueTicks, job.Action);
+                operation.Commit(next, null, new HaulerCheckpoint(route.PilotId, resumed));
+                Current[route.PilotId] = next;
             }
+            if (progress?.Journey is null)
+            {
+                _legacyTravelers.Add(route.PilotId);
+            }
+            if (progress?.Journey is not null)
+            {
+                _travelers.Add(route.PilotId);
+            }
+            var systemsOnRoute = progress?.Journey?.Systems ?? CapsuleerTrafficFlight.Route(route, catalog).Systems;
+            IndexRoute(route.PilotId, systemsOnRoute);
         }
         foreach (var location in locations)
         {
@@ -221,14 +232,6 @@ internal sealed partial class CapsuleerScheduler(
         {
             Current.TryAdd(job.PilotId, job);
             Live?.ProjectedCapsuleerJobs.TryAdd(job.PilotId, job);
-        }
-        if (restoredInbound.Count > 0)
-        {
-            long elapsed = world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
-            foreach (var pair in restoredInbound)
-            {
-                Current[pair.Key] = RestoreInbound(Current[pair.Key], pair.Value, elapsed);
-            }
         }
         foreach (var agent in agents)
         {
@@ -299,6 +302,7 @@ internal sealed partial class CapsuleerScheduler(
                             next = hauler.Execute(job, destinyStamp, background);
                             Current[job.PilotId] = next;
                             _completed++;
+                            IndexJourney(job.PilotId, hauler);
                             IndexLocation(job.PilotId, hauler.SystemId);
                             _systems.Register(hauler.SystemId);
                             var observation = hauler.Read()!;
@@ -312,7 +316,11 @@ internal sealed partial class CapsuleerScheduler(
                             throw new InvalidDataException("The capsuleer job has no supported role.");
                         }
                         Current[job.PilotId] = next;
-                        if (!activity.ActiveSystems.Contains(_locations[job.PilotId]) && next.Action != CapsuleerAction.GateTransfer)
+                        if (
+                            !_travelers.Contains(job.PilotId)
+                            && !activity.ActiveSystems.Contains(_locations[job.PilotId])
+                            && next.Action != CapsuleerAction.GateTransfer
+                        )
                         {
                             pilots.Remove(job.PilotId);
                         }
@@ -389,9 +397,18 @@ internal sealed partial class CapsuleerScheduler(
         {
             foreach (long pilot in _systemAgents.GetValueOrDefault(system) ?? [])
             {
+                if (_legacyTravelers.Contains(pilot) && _haulers.TryGetValue(pilot, out var legacy))
+                {
+                    if (!_running.Contains(pilot) && legacy.Read()!.Work.Activity != HaulerActivity.Jumping)
+                    {
+                        Current[pilot] = legacy.Resume(Current[pilot], activity.ElapsedTicks);
+                    }
+                    _travelers.Add(pilot);
+                    _legacyTravelers.Remove(pilot);
+                }
                 if (
                     _running.Contains(pilot)
-                    || _lanePilots.Contains(pilot)
+                    || _travelers.Contains(pilot)
                     || !_haulers.TryGetValue(pilot, out var hauler)
                     || activity.ActiveSystems.Contains(_locations[pilot])
                 )
@@ -429,7 +446,7 @@ internal sealed partial class CapsuleerScheduler(
         running.UnionWith(inbound);
         foreach (long pilot in running.Except(_running))
         {
-            if (inbound.Contains(pilot))
+            if (_travelers.Contains(pilot))
             {
                 continue;
             }

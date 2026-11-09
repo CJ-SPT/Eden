@@ -124,7 +124,15 @@ public sealed class CapsuleerTrafficAcceptanceTests(ITestOutputHelper output)
             );
             using (var host = ServerServices.Build(copy, clock, liveWorld: true))
             {
-                await MeasureBusySystem(host, copy, clock, JitaSystem, $"installed copy, prior local roster {busyBefore}");
+                MeasureDodixieLocalRecovery(host, copy, clock);
+                await MeasureBusySystem(
+                    host,
+                    copy,
+                    clock,
+                    JitaSystem,
+                    $"installed copy, prior local roster {busyBefore}",
+                    observationSeconds: 3600
+                );
             }
             var after = Identities(copy);
             WorldInitialization.Initialize(copy, clock);
@@ -207,7 +215,14 @@ public sealed class CapsuleerTrafficAcceptanceTests(ITestOutputHelper output)
         }
     }
 
-    private async Task MeasureBusySystem(ServiceProvider host, WorldDatabase database, TestClock clock, int system, string label)
+    private async Task MeasureBusySystem(
+        ServiceProvider host,
+        WorldDatabase database,
+        TestClock clock,
+        int system,
+        string label,
+        int observationSeconds = ObservationSeconds
+    )
     {
         var presence = host.GetRequiredService<IHumanPresence>();
         var worker = host.GetRequiredService<CapsuleerMaintenance>();
@@ -244,11 +259,10 @@ public sealed class CapsuleerTrafficAcceptanceTests(ITestOutputHelper output)
         int? firstRouteGate = null;
         var flightSystem = objects.GetSystem(system);
         start = Stopwatch.GetTimestamp();
-        for (int secondIndex = 0; secondIndex <= ObservationSeconds; secondIndex++)
+        for (int secondIndex = 0; secondIndex <= observationSeconds; secondIndex++)
         {
-            // The fixed observer path samples one station for 60 seconds, then
-            // one gate for 60 seconds. Keep this distinct from the grid sweep.
-            var routeAnchor = secondIndex < ObservationSeconds / 2 ? stationAnchor : gateAnchor;
+            // Sample a station and a gate for equal halves of the observation window.
+            var routeAnchor = secondIndex < observationSeconds / 2 ? stationAnchor : gateAnchor;
             var routeViewer = human with { CurrentSystem = flightSystem, Position = routeAnchor.Position };
             var routeContacts = space
                 .Peers(routeViewer)
@@ -295,7 +309,7 @@ public sealed class CapsuleerTrafficAcceptanceTests(ITestOutputHelper output)
                     gatePilots.UnionWith(contacts);
                 }
             }
-            if (secondIndex < ObservationSeconds)
+            if (secondIndex < observationSeconds)
             {
                 clock.Seconds++;
                 worker.Tick();
@@ -307,11 +321,12 @@ public sealed class CapsuleerTrafficAcceptanceTests(ITestOutputHelper output)
                 + $"entry {entryMilliseconds:F2} ms; all-grid sweep first gate {firstGate?.ToString() ?? "none"} simulated s, "
                 + $"first station {firstStation?.ToString() ?? "none"} simulated s; "
                 + $"{gatePilots.Count} distinct gate pilots, {stationPilots.Count} distinct station pilots "
-                + $"in {ObservationSeconds} simulated s; "
+                + $"in {observationSeconds} simulated s; "
                 + $"observation execution {observationMilliseconds:F2} ms."
         );
         output.WriteLine(
-            $"Fixed two-observer path: station {stationAnchor.Id} at 0-59 simulated s, gate {gateAnchor.Id} at 60-120 simulated s; "
+            $"Fixed two-observer path: station {stationAnchor.Id} for {observationSeconds / 2} s, "
+                + $"then gate {gateAnchor.Id} for {observationSeconds / 2} s; "
                 + $"first station contact {firstRouteStation?.ToString() ?? "none"} s, "
                 + $"first gate contact {firstRouteGate?.ToString() ?? "none"} s; {observerRoutePilots.Count} distinct pilots."
         );
@@ -321,6 +336,58 @@ public sealed class CapsuleerTrafficAcceptanceTests(ITestOutputHelper output)
         Assert.NotEmpty(observerRoutePilots);
         Assert.Equal(identities, population.Agents(system).OrderBy(a => a.PilotId));
         await host.GetRequiredService<LiveWorld>().FlushAsync();
+    }
+
+    private void MeasureDodixieLocalRecovery(ServiceProvider host, WorldDatabase database, TestClock clock)
+    {
+        const int dodixie = 30002659;
+        var objects = host.GetRequiredService<ISystemObjects>();
+        try
+        {
+            _ = objects.GetSystem(dodixie);
+        }
+        catch (InvalidDataException)
+        {
+            return;
+        }
+        var human = Human(host, database);
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(human.PilotId, dodixie);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        var worker = host.GetRequiredService<CapsuleerMaintenance>();
+        worker.Refresh();
+        var locals = host.GetRequiredService<ICapsuleerPopulation>()
+            .Agents(dodixie)
+            .Where(agent => agent.Career == CapsuleerCareer.Hauling && agent.Slot < TrafficJourneyRules.HomeRosterSlots)
+            .Where(agent => TrafficJourneyRules.Kind(agent.Slot, busy: true) == TrafficJourneyKind.Local)
+            .Select(agent => agent.PilotId)
+            .ToArray();
+        Assert.NotEmpty(locals);
+        int? firstLocal = null;
+        for (int second = 0; second <= 900; second++)
+        {
+            foreach (long pilot in locals)
+            {
+                var observation = scheduler.Hauler(pilot)!;
+                if (
+                    observation.Pilot.SystemId == dodixie
+                    && observation.Pilot.Position is not null
+                    && observation.Work.Journey?.Kind == TrafficJourneyKind.Local
+                )
+                {
+                    firstLocal ??= second;
+                }
+            }
+            if (firstLocal is not null)
+            {
+                break;
+            }
+            clock.Seconds++;
+            worker.Tick();
+        }
+        output.WriteLine(
+            $"Dodixie recovery: {locals.Length} reserved local pilots, first returning local at {firstLocal?.ToString() ?? "none"} s."
+        );
+        Assert.NotNull(firstLocal);
     }
 
     private static Identity[] Identities(WorldDatabase database)

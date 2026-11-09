@@ -225,7 +225,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         CapsuleerTrafficRoute? route,
         HaulerEncounterOpening opening,
         WatchedTrafficGate? watchedGate = null,
-        bool sourceObserved = false
+        bool sourceObserved = false,
+        int visitor = 0
     )
     {
         long pilot = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
@@ -414,10 +415,11 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             var docked = new SqliteWorld(database, clock).FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilot)!;
             var work = watchedGate is null
                 ? CapsuleerTrafficFlight.Opening(world, catalog, docked, route!, site.SystemId, opening, elapsed, now)
-                : CapsuleerTrafficFlight.OpeningInbound(world, catalog, docked, route!, watchedGate, elapsed, now, sourceObserved);
+                : CapsuleerTrafficFlight.OpeningInbound(world, catalog, docked, route!, watchedGate, elapsed, now, sourceObserved, visitor);
             action = work.Activity == HaulerActivity.Docked ? CapsuleerAction.Trade : CapsuleerAction.Arrival;
             if (watchedGate is not null)
             {
+                inboundDue = work.DueTicks;
                 if (work.Activity == HaulerActivity.Inbound)
                 {
                     action = CapsuleerAction.GateTransfer;
@@ -425,7 +427,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 }
                 else if (work.Activity == HaulerActivity.Docked)
                 {
-                    inboundDue = CapsuleerProvisioningRules.FirstDueTicks(elapsed, seed, site.SystemId, career);
+                    inboundDue = work.DueTicks;
                 }
             }
             new HaulerCheckpoint(pilot, work).Apply(world);

@@ -26,8 +26,8 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
     private const long FreshReceivingGate = 50009991;
     private const int Vattuolen = 30000173;
     private const long UoyonenGateInVattuolen = 50005333;
-    private const int FirstArrivalSeconds = 180;
-    private const int RepeatObservationSeconds = 900;
+    private const int FirstArrivalSeconds = 300;
+    private const int RepeatObservationSeconds = 3600;
     private const double ObserverClearance = 10_000;
 
     private sealed record Arrival(long PilotId, long ShipId, int Seconds, bool PresentAtLogin);
@@ -144,6 +144,8 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         int? departure = null;
         int gateActivations = 0;
         int departureAnimations = 0;
+        Dictionary<long, bool> dockedSinceArrival = [];
+        int undockedReversals = 0;
         start = Stopwatch.GetTimestamp();
         for (int seconds = 0; seconds <= RepeatObservationSeconds; seconds++)
         {
@@ -209,6 +211,20 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
             {
                 var observation = scheduler.Hauler(id)!;
                 var pilot = observation.Pilot;
+                if (pilot.Position is null)
+                {
+                    dockedSinceArrival[id] = true;
+                }
+                if (
+                    previous.TryGetValue(id, out var prior)
+                    && prior.SystemId == receivingSystem
+                    && pilot.SystemId == sourceSystem
+                    && dockedSinceArrival.TryGetValue(id, out bool docked)
+                    && !docked
+                )
+                {
+                    undockedReversals++;
+                }
                 if (pilot.SystemId == sourceSystem && pilot.Position is not null)
                 {
                     seenInSource.Add((id, pilot.ShipId));
@@ -249,18 +265,11 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
                     Assert.Contains(chat.Members(secondChat.Id, room), p => p.Id == id);
                     Assert.Contains(id, firstLocalArrivals);
                     Assert.Contains(id, secondLocalArrivals);
+                    dockedSinceArrival[id] = false;
                     arrivals.Add(new(id, pilot.ShipId, seconds, loginShips.Contains(pilot.ShipId)));
                     output.WriteLine($"Actual inbound crossing at {seconds} simulated s: pilot {id}, same ship {pilot.ShipId}.");
                 }
                 previous[id] = (pilot.ShipId, pilot.SystemId);
-            }
-            if (departure is { } left && arrivals.Any(a => a.Seconds > left))
-            {
-                break;
-            }
-            if (seconds == FirstArrivalSeconds && arrivals.Count == 0)
-            {
-                break;
             }
             clock.Seconds++;
             worker.Tick();
@@ -275,10 +284,19 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
                 + $"gate activations per observer {gateActivations}, departure animations {departureAnimations}; "
                 + $"observation execution {observationMilliseconds:F2} ms."
         );
+        output.WriteLine(
+            $"One-hour traffic: arrivals={arrivals.Count}, distinct={arrivals.Select(a => a.PilotId).Distinct().Count()}, "
+                + $"repeat arrivals={arrivals.Count - arrivals.Select(a => a.PilotId).Distinct().Count()}, "
+                + $"undocked reversals={undockedReversals}."
+        );
         Assert.NotEmpty(arrivals);
-        Assert.InRange(arrivals[0].Seconds, 1, FirstArrivalSeconds);
+        // A restarted opening may already have delivered the first visitor onto the login grid.
+        // Its next new arrival includes a station departure and the following staggered slot.
+        int arrivalBudget = loginShips.Count > 1 ? FirstArrivalSeconds * 2 : FirstArrivalSeconds;
+        Assert.InRange(arrivals[0].Seconds, 1, arrivalBudget);
         Assert.NotNull(departure);
-        Assert.Contains(arrivals, a => a.Seconds > departure);
+        Assert.True(arrivals.Select(arrival => arrival.PilotId).Distinct().Count() >= 2);
+        Assert.Equal(0, undockedReversals);
         Assert.True(departureAnimations > 0);
         Assert.Equal(0, host.GetRequiredService<ICapsuleerDiagnostics>().Read().Failures);
         var existingJobs = scheduler.Jobs().ToArray();
@@ -346,12 +364,12 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
             clock.Seconds += 10;
             host.GetRequiredService<CapsuleerMaintenance>().Tick();
             using WorldDbContext world = new(database.Path);
-            long slot = Math.Min(gate.Id, gate.DestinationGateId!.Value);
+            long slot = Math.Min(gate.Id, gate.DestinationGateId!.Value) + TrafficJourneyRules.VisitorSlotStride;
             var actor = world.Set<SavedCapsuleerAgent>().Single(a => a.Career == CapsuleerCareer.Hauling && a.Slot == slot);
             pilot = actor.PilotId;
             ship = actor.FounderShipId;
             var observation = host.GetRequiredService<ICapsuleerScheduler>().Hauler(pilot)!;
-            Assert.Equal(HaulerActivity.Inbound, observation.Work.Activity);
+            Assert.Equal(HaulerActivity.Docked, observation.Work.Activity);
             Assert.Equal(gate.DestinationSystemId, observation.Pilot.SystemId);
             Assert.Equal(ship, observation.Pilot.ShipId);
             await host.GetRequiredService<LiveWorld>().FlushAsync();

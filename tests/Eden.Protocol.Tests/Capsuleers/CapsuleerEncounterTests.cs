@@ -187,7 +187,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public async Task EntryCreatesSharedMiningAndTrafficWithoutBackgroundCatchup()
+    public async Task EntrySharesMiningAndTrafficWhileOnlyTravelAdvancesOffscreen()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
@@ -217,19 +217,20 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
             f.Clock.Seconds++;
             worker.Tick();
         }
-        Assert.Equal(before, scheduler.Jobs());
+        Assert.Equal(before.Single(job => job.PilotId == miner), scheduler.Jobs().Single(job => job.PilotId == miner));
+        Assert.True(scheduler.Jobs().Single(job => job.PilotId != miner).Revision > before.Single(job => job.PilotId != miner).Revision);
         int calls = 0;
         await host.GetRequiredService<ICapsuleerHandoff>().SynchronizeAsync(Source, () => calls++);
         Assert.Equal(1, calls);
         using var returning = presence.Select(Human + 1, Source);
-        Assert.Equal(before.Select(j => j.PilotId), scheduler.Jobs().Select(j => j.PilotId));
+        Assert.Equal(before.Select(j => j.PilotId).Order(), scheduler.Jobs().Select(j => j.PilotId).Order());
         Assert.All(scheduler.Jobs(), j => Assert.True(j.DueTicks > presence.Read().ElapsedTicks));
         Assert.Equal(MinerActivity.Mining, scheduler.Miner(miner)!.Work.Activity);
         await host.GetRequiredService<LiveWorld>().FlushAsync();
     }
 
     [Fact]
-    public void RememberedHaulerCanReappearAlongItsRouteWithTheSameShipAndCargo()
+    public void ScheduledHaulerCanBeMetOnItsRealRouteWithTheSameShipAndCargo()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
@@ -244,7 +245,12 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
             ship = scheduler.Hauler(pilot)!.Pilot.ShipId;
         }
         using var elsewhere = presence.Select(Human, Remote);
-        f.Clock.Seconds += 1200;
+        var worker = host.GetRequiredService<CapsuleerMaintenance>();
+        for (int second = 0; second < 1200 && scheduler.Hauler(pilot)!.Pilot.SystemId != 30000142; second++)
+        {
+            f.Clock.Seconds++;
+            worker.Tick();
+        }
         elsewhere.Transfer(30000142);
         var encountered = scheduler.Hauler(pilot)!;
         Assert.Equal(ship, encountered.Pilot.ShipId);
@@ -257,7 +263,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void LateUnobservedGateTransferFinishesOnceAndLeavesTheRemainingCareerDormant()
+    public void LateUnobservedGateTransferContinuesItsJourneyAndEmptyWorldPausesClock()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
@@ -278,15 +284,15 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         human.Transfer(Remote);
         f.Clock.Seconds += 3600;
         var transfer = scheduler.Run(host.GetRequiredService<ICapsuleerScene>().Stamp);
-        Assert.InRange(transfer.Turn.Completed, 1, 2);
-        Assert.Equal(30000142, scheduler.Hauler(pilot)!.Pilot.SystemId);
-        var jobs = scheduler.Jobs().ToArray();
-        for (int i = 0; i < 10; i++)
-        {
-            f.Clock.Seconds++;
-            Assert.Equal(0, scheduler.Run(host.GetRequiredService<ICapsuleerScene>().Stamp).Turn.Completed);
-        }
-        Assert.Equal(jobs, scheduler.Jobs());
+        Assert.True(transfer.Turn.Completed > 0);
+        Assert.NotNull(scheduler.Hauler(pilot)!.Work.Journey);
+        human.Dispose();
+        var elapsed = presence.Read().ElapsedTicks;
+        f.Clock.Seconds += 3600;
+        Assert.Equal(elapsed, presence.Read().ElapsedTicks);
+        var ship = scheduler.Hauler(pilot)!.Pilot.ShipId;
+        scheduler.Run(host.GetRequiredService<ICapsuleerScene>().Stamp);
+        Assert.Equal(ship, scheduler.Hauler(pilot)!.Pilot.ShipId);
     }
 
     [Fact]
@@ -337,7 +343,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void EmptySystemsHaveNoCareerWorkSqlFittingOrNativeScenes()
+    public void UnchangedEmptySystemFramesHaveNoSqlFittingOrNativeScenesWhileTravelContinues()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
@@ -351,10 +357,18 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         worker.Tick();
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var before = scheduler.Jobs().ToArray();
+        f.Clock.Seconds += 20;
+        worker.Tick();
+        long miner = host.GetRequiredService<ICapsuleerPopulation>()
+            .Agents(Source)
+            .Single(agent => agent.Career == CapsuleerCareer.Mining)
+            .PilotId;
+        Assert.Equal(before.Single(job => job.PilotId == miner), scheduler.Jobs().Single(job => job.PilotId == miner));
+        Assert.True(scheduler.Jobs().Single(job => job.PilotId != miner).Revision > before.Single(job => job.PilotId != miner).Revision);
+        before = scheduler.Jobs().ToArray();
         using var metrics = SessionPerformance.Begin("unobserved encounters", output.WriteLine, force: true)!;
         for (int i = 0; i < 20; i++)
         {
-            f.Clock.Seconds++;
             worker.Tick();
         }
         Assert.Equal(before, scheduler.Jobs());

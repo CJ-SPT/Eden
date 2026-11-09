@@ -8,7 +8,7 @@ internal sealed record CapsuleerTrafficRoute(int SourceStationId, int Destinatio
 
 internal sealed record CapsuleerTrafficPlan(int GateCount, int StationCount, CapsuleerTrafficRoute[] Routes);
 
-internal static class CapsuleerTrafficRoutes
+internal static partial class CapsuleerTrafficRoutes
 {
     private const int GraphKey = 0;
     private const int MaximumRoutes = 8;
@@ -37,7 +37,12 @@ internal static class CapsuleerTrafficRoutes
 
     internal static CapsuleerTrafficPlan Read(CatalogDbContext catalog, int systemId) => catalog.Definition(s_plans, systemId);
 
-    internal static CapsuleerTrafficRoute? Inbound(CatalogDbContext catalog, WatchedTrafficGate gate, bool sourceObserved = false)
+    internal static CapsuleerTrafficRoute? Inbound(
+        CatalogDbContext catalog,
+        WatchedTrafficGate gate,
+        bool sourceObserved = false,
+        int visitor = 0
+    )
     {
         if (
             gate.ArrivalGateId is <= 0 or > int.MaxValue
@@ -73,22 +78,44 @@ internal static class CapsuleerTrafficRoutes
             return null;
         }
         var graph = catalog.Definition(s_graph, GraphKey);
-        int first = sourceObserved ? gate.SourceSystemId : gate.ObserverSystemId;
-        int second = sourceObserved ? gate.ObserverSystemId : gate.SourceSystemId;
-        if (sourceObserved && !graph.Stations.ContainsKey(first) && graph.Stations.ContainsKey(second))
-        {
-            (first, second) = (second, first);
-        }
-        var anchor = FindStationPath(graph, first, second);
-        bool firstSide = anchor is not null;
-        anchor ??= FindStationPath(graph, second, first);
-        if (anchor is null)
+        var anchor = FindStationPath(graph, gate.SourceSystemId, gate.ObserverSystemId);
+        if (anchor is null || anchor.Systems.Length > TrafficJourneyRules.MaximumJumps)
         {
             return null;
         }
-        int turnaround = firstSide ? second : first;
-        int[] path = [.. anchor.Systems.Reverse(), turnaround];
-        return new(anchor.StationId, anchor.StationId, path);
+        var blocked = anchor.Systems.ToHashSet();
+        Queue<int> pending = new();
+        Dictionary<int, int> parents = new() { [gate.ObserverSystemId] = gate.ObserverSystemId };
+        pending.Enqueue(gate.ObserverSystemId);
+        List<StationPath> destinations = [];
+        while (pending.TryDequeue(out int current))
+        {
+            var path = PathTo(current, parents);
+            foreach (int station in (graph.Stations.GetValueOrDefault(current) ?? []).Take(2))
+            {
+                destinations.Add(new(station, path));
+            }
+            if (path.Length + anchor.Systems.Length >= TrafficJourneyRules.MaximumJumps + 1)
+            {
+                continue;
+            }
+            foreach (int next in graph.Links.GetValueOrDefault(current) ?? [])
+            {
+                if (!blocked.Contains(next) && parents.TryAdd(next, current))
+                {
+                    pending.Enqueue(next);
+                }
+            }
+        }
+        if (destinations.Count == 0)
+        {
+            return null;
+        }
+        int minimum = visitor % 2 == 0 ? TrafficJourneyRules.RegionalMinimumJumps : TrafficJourneyRules.LongDistanceMinimumJumps;
+        var preferred = destinations.Where(path => path.Systems.Length + anchor.Systems.Length - 1 >= minimum).ToArray();
+        var choices = preferred.Length > 0 ? preferred : destinations.ToArray();
+        var destination = choices[visitor % choices.Length];
+        return new(anchor.StationId, destination.StationId, [.. anchor.Systems.Reverse(), .. destination.Systems]);
     }
 
     private static StationPath? FindStationPath(TrafficGraph graph, int root, int blockedNeighbor)
@@ -104,7 +131,7 @@ internal static class CapsuleerTrafficRoutes
             }
             foreach (int next in graph.Links.GetValueOrDefault(current) ?? [])
             {
-                if ((current == root && next == blockedNeighbor) || (current == blockedNeighbor && next == root))
+                if (next == blockedNeighbor)
                 {
                     continue;
                 }
@@ -190,22 +217,7 @@ internal static class CapsuleerTrafficRoutes
             }
         }
         List<CapsuleerTrafficRoute> routes = [];
-        if (stations.Count == 1)
-        {
-            var source = stations[0];
-            if (source.SystemId != systemId)
-            {
-                routes.Add(new(source.StationId, source.StationId, PathTo(source.SystemId, parents).Reverse().ToArray()));
-            }
-            else
-            {
-                foreach (int turnaround in parents.Keys.Where(id => id != systemId).Take(MaximumRoutes))
-                {
-                    routes.Add(new(source.StationId, source.StationId, PathTo(turnaround, parents)));
-                }
-            }
-        }
-        else if (stations.Count > 1)
+        if (stations.Count > 1)
         {
             // Round-robin branch selection gives sparse corridors endpoint
             // variety even when the nearest station system has many stations.
@@ -235,7 +247,13 @@ internal static class CapsuleerTrafficRoutes
         return new(
             graph.Links.GetValueOrDefault(systemId)?.Length ?? 0,
             graph.Stations.GetValueOrDefault(systemId)?.Length ?? 0,
-            routes.ToArray()
+            routes
+                .Where(route =>
+                    route.SourceStationId != route.DestinationStationId
+                    && route.Systems.Length <= TrafficJourneyRules.MaximumJumps + 1
+                    && route.Systems.Distinct().Count() == route.Systems.Length
+                )
+                .ToArray()
         );
     }
 

@@ -1,0 +1,60 @@
+using Eden.Data.World.Capsuleers;
+using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Ships;
+
+namespace Eden.World.Capsuleers;
+
+internal sealed partial class CapsuleerHauler
+{
+    private void AssignJourney()
+    {
+        var previous = Work.Journey;
+        var agent = _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!;
+        bool homeRoster = agent.Slot < TrafficJourneyRules.HomeRosterSlots;
+        int home = homeRoster
+            ? _operation
+                .Catalog.Definitions.StationsInSystem(agent.CommunitySystemId)
+                .OrderByDescending(station => CapsuleerEncounterRules.IsTradeHubStation(station.Id))
+                .Select(station => station.Id)
+                .FirstOrDefault(previous?.HomeStationId ?? Pilot.StationId)
+            : previous?.HomeStationId ?? Pilot.StationId;
+        var plan = CapsuleerTrafficRoutes.Read(_operation.Catalog, homeRoster ? agent.CommunitySystemId : Pilot.SystemId);
+        bool busy = plan.GateCount >= 4 || plan.StationCount >= 4;
+        var kind = homeRoster ? TrafficJourneyRules.Kind(agent.Slot, busy) : previous?.Kind ?? TrafficJourneyKind.Regional;
+        if (kind == TrafficJourneyKind.Local && plan.StationCount == 0)
+        {
+            kind = TrafficJourneyKind.Regional;
+        }
+        long sequence = checked((previous?.Sequence ?? 0) + 1);
+        int avoided = previous?.SourceStationId ?? _route.SourceStationId;
+        var route = CapsuleerTrafficRoutes.Journey(
+            _operation.Catalog,
+            Pilot.StationId,
+            kind,
+            pilotId + sequence,
+            avoided,
+            (HullClass)Pilot.ShipGroupId
+        );
+        if (kind == TrafficJourneyKind.Local && Pilot.StationId != home)
+        {
+            route =
+                previous is not null && previous.Kind == TrafficJourneyKind.Local && previous.SourceStationId == home
+                    ? new(Pilot.StationId, home, previous.Systems.Reverse().ToArray())
+                    : CapsuleerTrafficRoutes.ToStation(_operation.Catalog, Pilot.StationId, home, (HullClass)Pilot.ShipGroupId);
+        }
+        if (kind != TrafficJourneyKind.Local && previous is not null && previous.SourceStationId != home && Pilot.StationId != home)
+        {
+            route = CapsuleerTrafficRoutes.ToStation(_operation.Catalog, Pilot.StationId, home, (HullClass)Pilot.ShipGroupId) ?? route;
+        }
+        if (route is null)
+        {
+            throw new InvalidDataException("No compatible station destination is available.");
+        }
+        _route = route;
+        _work = Work with
+        {
+            Journey = new(kind, home, route.SourceStationId, route.DestinationStationId, route.Systems, sequence),
+            TrafficLane = null,
+        };
+    }
+}

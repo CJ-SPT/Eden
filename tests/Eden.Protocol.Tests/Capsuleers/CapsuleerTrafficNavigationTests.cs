@@ -218,12 +218,12 @@ public sealed class CapsuleerTrafficNavigationTests
             }
         }
         Assert.Equal<int>([Source, Corridor, Remote, Corridor, Source], visited);
-        Assert.Equal(!sameStation, dockedAtRemote);
+        Assert.True(dockedAtRemote);
         await host.GetRequiredService<LiveWorld>().FlushAsync();
         using WorldDbContext reopened = new(f.Database.Path);
         var progress = HaulerCheckpoint.Read(reopened.Set<SavedCapsuleerHauler>().Single().Progress)!;
-        Assert.Equal(0, progress.RouteIndex);
-        Assert.Equal(-1, progress.RouteDirection);
+        Assert.Equal(2, progress.RouteIndex);
+        Assert.Equal(1, progress.RouteDirection);
         Assert.Equal(founder.FounderShipId, progress.ShipId);
     }
 
@@ -273,6 +273,165 @@ public sealed class CapsuleerTrafficNavigationTests
         Assert.Null(appearance.Work.ArrivalGateId);
         Assert.Null(appearance.Work.ArrivalAt);
         Assert.Null(appearance.Work.DepartureAt);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task EightJumpJourneyRetainsShipDestinationAndCursorAcrossRestart(bool background, bool scheduled)
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        var founder = f.Founder();
+        const int firstSystem = 30001001;
+        const int jumps = 8;
+        int[] route = [Source, .. Enumerable.Range(firstSystem, jumps)];
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("DELETE FROM Stargate");
+            for (int index = 1; index < route.Length; index++)
+            {
+                int system = route[index];
+                int previous = route[index - 1];
+                int departure = 50010000 + index * 2;
+                int arrival = departure + 1;
+                catalog.Database.ExecuteSql($"INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES ({system},20000020,'Journey')");
+                catalog.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
+                        ({departure},{previous},16,10,3532,900000000000,0,0),
+                        ({arrival},{system},16,10,3532,-900000000000,0,0);
+                    INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
+                        ({departure},{previous},{arrival}),({arrival},{system},{departure});
+                    """
+                );
+            }
+            catalog.Database.ExecuteSql($"UPDATE Station SET SolarSystemId={route[^1]} WHERE Id={DestinationStation}");
+        }
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            var saved = world.Set<SavedCapsuleerHauler>().Single();
+            saved.RouteSystems = route;
+            var work = new HaulerProgress(
+                HaulerActivity.Docked,
+                0,
+                0,
+                founder.FounderShipId,
+                DestinationStation,
+                0,
+                new NavigationState().Capture(),
+                Journey: new(TrafficJourneyKind.LongDistance, SourceStation, SourceStation, DestinationStation, route, 0)
+            );
+            world.SaveChanges();
+            new HaulerCheckpoint(founder.PilotId, work).Apply(world);
+        }
+        var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        IHumanPresenceLease? human = null;
+        try
+        {
+            var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
+            var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+            if (scheduled)
+            {
+                human = host.GetRequiredService<IHumanPresence>().Select(90000001, route[^1]);
+            }
+            var job = scheduler.Jobs().Single(j => j.PilotId == founder.PilotId);
+            HaulerObservation Current() => scheduled ? scheduler.Hauler(founder.PilotId)! : hauler.Read()!;
+            List<int> visited = [Source];
+            bool restarted = false;
+            for (int turn = 0; turn < 12000 && Current().Pilot.StationId != DestinationStation; turn++)
+            {
+                f.Clock.Seconds++;
+                if (scheduled)
+                {
+                    scheduler.Run(turn);
+                }
+                else
+                {
+                    job = hauler.Execute(job, turn, background);
+                }
+                var observation = Current();
+                Assert.Null(observation.Work.WaitingReason);
+                Assert.Equal(founder.FounderShipId, observation.Pilot.ShipId);
+                if (observation.Pilot.SystemId != visited[^1])
+                {
+                    visited.Add(observation.Pilot.SystemId);
+                }
+                if (!restarted && visited.Count == 5)
+                {
+                    await host.GetRequiredService<LiveWorld>().FlushAsync();
+                    human?.Dispose();
+                    host.Dispose();
+                    host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+                    hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
+                    scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+                    if (scheduled)
+                    {
+                        human = host.GetRequiredService<IHumanPresence>().Select(90000001, route[^1]);
+                    }
+                    job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
+                    restarted = true;
+                }
+            }
+            Assert.True(restarted);
+            Assert.Equal(route, visited);
+            Assert.Equal(DestinationStation, Current().Pilot.StationId);
+            Assert.Null(Current().Pilot.Position);
+            Assert.Equal(jumps, Current().Work.RouteIndex);
+        }
+        finally
+        {
+            human?.Dispose();
+            host.Dispose();
+        }
+    }
+
+    [Fact]
+    public void VisitorVisitsAnotherStationBeforeReturningToItsOrigin()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        const int thirdStation = 60009999;
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z)
+                VALUES ({thirdStation},52678,1000035,{Corridor},14,40009087,900000000000,0,0)
+                """
+            );
+        }
+        long pilot = new CapsuleerProvisioner(f.Database, f.Clock)
+            .EnsureInbound(new(Source, Corridor, 50009991, 50009992), sourceObserved: true)!
+            .Value;
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilot);
+        var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(row => row.PilotId == pilot);
+        var original = hauler.Read()!;
+        int home = original.Work.Journey!.HomeStationId;
+        bool visitedThirdStation = false;
+        for (int turn = 0; turn < 4000; turn++)
+        {
+            f.Clock.Seconds = checked((int)(job.DueTicks / TimeSpan.TicksPerSecond));
+            job = hauler.Execute(job, turn);
+            var observation = hauler.Read()!;
+            Assert.Null(observation.Work.WaitingReason);
+            Assert.Equal(original.Pilot.ShipId, observation.Pilot.ShipId);
+            if (observation.Work.Journey!.Sequence == 1)
+            {
+                Assert.Equal(thirdStation, observation.Work.Journey.DestinationStationId);
+            }
+            if (observation.Pilot.Position is null && observation.Pilot.StationId == thirdStation)
+            {
+                visitedThirdStation = true;
+            }
+            if (observation.Work.Journey.Sequence == 2)
+            {
+                Assert.True(visitedThirdStation);
+                Assert.Equal(home, observation.Work.Journey.DestinationStationId);
+                return;
+            }
+        }
+        Assert.Fail("The visitor did not complete its onward stop and homeward departure.");
     }
 
     private static void MoveDestinationToRemote(CapsuleerHaulerTests.Fixture fixture)

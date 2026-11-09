@@ -84,24 +84,22 @@ internal sealed partial class CapsuleerHauler(
         }
     }
 
+    internal IReadOnlyList<int> RouteSystems => _route.Systems;
+
+    internal bool HasJourney => _loaded && Work.Journey is not null;
+
     internal int SystemId
     {
         get
         {
-            if (!_loaded)
-            {
-                Load();
-            }
+            EnsureCurrentHull();
             return _pilot?.SystemId ?? throw new InvalidDataException("The scheduled capsuleer is missing.");
         }
     }
 
     internal HaulerObservation? Read()
     {
-        if (!_loaded)
-        {
-            Load();
-        }
+        EnsureCurrentHull();
         return _pilot is null ? null : Observation();
     }
 
@@ -148,8 +146,8 @@ internal sealed partial class CapsuleerHauler(
         var intent = Pilot.Position is null
             ? Work with
             {
-                RouteIndex = Pilot.StationId == Founder.SourceStationId ? 0 : _route.Systems.Length - 1,
-                RouteDirection = Pilot.StationId == Founder.SourceStationId ? 1 : -1,
+                RouteIndex = Pilot.StationId == _route.SourceStationId ? 0 : _route.Systems.Length - 1,
+                RouteDirection = Pilot.StationId == _route.SourceStationId ? 1 : -1,
             }
             : Work;
         var leg = CapsuleerTrafficFlight.Leg(_route, intent, Pilot.SystemId);
@@ -198,7 +196,7 @@ internal sealed partial class CapsuleerHauler(
             Eden.World.Combat.CrimewatchPersistence.CheckTravel(operation.World, operation.Catalog, saved, CrimewatchTravel.Warp, Now);
             if (completeEndpointVisit)
             {
-                int station = leg.Direction > 0 ? Founder.SourceStationId : Founder.DestinationStationId;
+                int station = leg.Direction > 0 ? _route.SourceStationId : _route.DestinationStationId;
                 var endpoint = _objects.Single(o => o.Id == station);
                 var approach =
                     endpoint.Position
@@ -286,7 +284,7 @@ internal sealed partial class CapsuleerHauler(
             }
         }
         _background = background;
-        if (Work.Activity != HaulerActivity.Inbound)
+        if (!background && Work.Activity != HaulerActivity.Inbound)
         {
             ObserveDanger(destinyStamp);
         }
@@ -296,6 +294,7 @@ internal sealed partial class CapsuleerHauler(
         }
         var beforePilot = Pilot;
         var before = Work;
+        var beforeRoute = _route;
         var beforeTarget = _target;
         var beforeObjects = _objects;
         var beforeObstacles = _obstacles;
@@ -316,14 +315,14 @@ internal sealed partial class CapsuleerHauler(
             {
                 var leg = CapsuleerTrafficFlight.Leg(_route, Work, Pilot.SystemId);
                 int direction =
-                    Founder.SourceStationId == Founder.DestinationStationId || leg.Index == 0 ? -1
+                    _route.SourceStationId == _route.DestinationStationId || leg.Index == 0 ? -1
                     : leg.Index == _route.Systems.Length - 1 ? 1
                     : -leg.Direction;
                 _work = Work with
                 {
                     RouteIndex = leg.Index,
                     RouteDirection = direction,
-                    DestinationStationId = direction < 0 ? Founder.SourceStationId : Founder.DestinationStationId,
+                    DestinationStationId = direction < 0 ? _route.SourceStationId : _route.DestinationStationId,
                     Retreating = true,
                     LaneDeparting = false,
                 };
@@ -338,6 +337,7 @@ internal sealed partial class CapsuleerHauler(
             _operation.Dispose();
             _pilot = beforePilot;
             _work = before;
+            _route = beforeRoute;
             _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
             _target = beforeTarget;
             _objects = beforeObjects;
@@ -362,6 +362,7 @@ internal sealed partial class CapsuleerHauler(
             {
                 _pilot = beforePilot;
                 _work = before;
+                _route = beforeRoute;
                 _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
                 _target = beforeTarget;
                 _objects = beforeObjects;
@@ -375,6 +376,7 @@ internal sealed partial class CapsuleerHauler(
             _pilot = beforePilot;
             _trafficRefreshChecked = false;
             _work = before;
+            _route = beforeRoute;
             _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
             _target = beforeTarget;
             _objects = beforeObjects;
@@ -406,6 +408,19 @@ internal sealed partial class CapsuleerHauler(
         )
         {
             schedule = schedule with { DueTicks = exit };
+        }
+        else if (_background && Work.Activity == HaulerActivity.Flying && !_warpBlocked)
+        {
+            schedule = schedule with
+            {
+                DueTicks = CapsuleerScheduleRules.BackgroundFlightDeadline(
+                    Work,
+                    Pilot.Flight,
+                    Pilot.Position!,
+                    _target!,
+                    CapsuleerTrafficFlight.ApproachRange
+                ),
+            };
         }
         else if (_background && Work.Activity == HaulerActivity.Jumping && Work.DueTicks > Work.ActiveTicks)
         {
@@ -473,7 +488,7 @@ internal sealed partial class CapsuleerHauler(
                 0,
                 0,
                 Pilot.ShipId,
-                Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup ? Founder.SourceStationId : Founder.DestinationStationId,
+                Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup ? _route.SourceStationId : _route.DestinationStationId,
                 0,
                 _navigation.Capture(),
                 RouteDirection: Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup ? -1 : 1,
@@ -490,12 +505,16 @@ internal sealed partial class CapsuleerHauler(
                 Stamp = previous?.Stamp ?? 0,
             };
         }
-        if (Founder.RouteSystems is null)
+        if (Work.Journey is { } journey)
+        {
+            _route = new(journey.SourceStationId, journey.DestinationStationId, journey.Systems);
+        }
+        if (Founder.RouteSystems is null && Work.Journey is null)
         {
             // Older direct routes had only their destination station as a cursor.
             _work = Work with
             {
-                RouteDirection = Work.DestinationStationId == Founder.SourceStationId ? -1 : 1,
+                RouteDirection = Work.DestinationStationId == _route.SourceStationId ? -1 : 1,
             };
         }
         _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
@@ -587,13 +606,17 @@ internal sealed partial class CapsuleerHauler(
             }
             _trafficRefreshChecked = true;
         }
+        if (Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
+        {
+            AssignJourney();
+        }
         // The cargo belongs to this encounter. A dock changes its route, never
         // purchases or lists goods on behalf of the independent regional economy.
         _work = Work with
         {
-            DestinationStationId = Pilot.StationId == Founder.DestinationStationId ? Founder.SourceStationId : Founder.DestinationStationId,
-            RouteIndex = Pilot.StationId == Founder.SourceStationId ? 0 : _route.Systems.Length - 1,
-            RouteDirection = Pilot.StationId == Founder.SourceStationId ? 1 : -1,
+            DestinationStationId = Pilot.StationId == _route.DestinationStationId ? _route.SourceStationId : _route.DestinationStationId,
+            RouteIndex = Pilot.StationId == _route.SourceStationId ? 0 : _route.Systems.Length - 1,
+            RouteDirection = Pilot.StationId == _route.SourceStationId ? 1 : -1,
             Retreating = false,
             DueTicks = 0,
             DueStamp = 0,
@@ -628,7 +651,7 @@ internal sealed partial class CapsuleerHauler(
         {
             RouteIndex = leg.Index,
             RouteDirection = leg.Direction,
-            DestinationStationId = leg.Direction < 0 ? Founder.SourceStationId : Founder.DestinationStationId,
+            DestinationStationId = leg.Direction < 0 ? _route.SourceStationId : _route.DestinationStationId,
         };
         _target = CapsuleerTrafficFlight.Target(_route, Work, Pilot.SystemId, _objects);
         var saved = _operation.World.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == Pilot.PilotId);
@@ -722,7 +745,9 @@ internal sealed partial class CapsuleerHauler(
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
             _navigation.Dock();
             _operation.TravelChanged = true;
-            int dwell = HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
+            int dwell = Work.Journey is { } journey
+                ? TrafficJourneyRules.LayoverSeconds(journey.Kind, pilotId, Work.DwellSequence)
+                : HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
             _work = Work with
             {
                 Activity = HaulerActivity.Docked,
@@ -753,6 +778,7 @@ internal sealed partial class CapsuleerHauler(
         );
         _pilot = ships.FindPilot(_operation.World, account, Pilot.PilotId)!;
         _operation.TravelChanged = true;
+        _background = _background && Live?.CapsuleerActivity.Read().ActiveSystems.Contains(_pilot.SystemId) != true;
         _navigation.AdoptHull();
         _work = Work with
         {

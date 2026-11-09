@@ -292,3 +292,53 @@ Two preliminary twelve-worker validation runs each finished 340/341: one login f
 **Live acceptance.** Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified.
 
 **Optional maintainer checks.** Restart the server to adopt the snapshot, then observe mixed ships at a station and gate and inspect a traveler's fitting.
+
+## Destination journeys — November 9, 2026
+
+Gate encounters now prepare a bounded group of four station travelers with staggered departures. One initial visitor can finish a moving gate approach on the unobserved source side. Remaining visitors wait docked at real source stations and fly to the gate when due, removing the previous far-side parking queue. Reciprocal watchers share the group. Observation preserves direction and due time. Each journey saves its kind, home, source, destination, ordered system path and sequence in the existing hauler progress payload. Subsequent station departures choose a compatible destination from the actual docking location. Local return trips retain their home. Visitors avoid their previous origin when another eligible destination exists.
+
+Local journeys cover zero to two jumps, regional journeys prefer three to seven, and long-distance journeys prefer eight to twenty. Unsupported distance bands fall back to shorter real paths. New routes have distinct station endpoints and unique systems. Stationless dead ends receive no new shuttle routes. Hull admission checks every system on the path. Destination candidates are memoized and bounded per distance, with additional selection weight for hubs and station clusters.
+
+The scheduler retains a system-to-route membership index as destinations change. Established travelers continue through empty systems on shared playtime, using alignment, analytic warp, approach and transfer deadlines. Selected-player time pauses in empty worlds. Existing movement, gate effects, transaction/version checks and detached checkpoints provide the travel boundaries. Existing pilots and assets persist, with a new journey chosen at a safe dock. Migration of a paused inbound wait retains its remaining delay. Loading materializes saved rows before committing those transitions so a streaming SQLite reader cannot lock the writer.
+
+Gameplay reference was checked against [EVE University route planning](https://wiki.eveuniversity.org/Star_Map). Movement retains the existing implementation checked against [Carbon Destiny Ball.cpp revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp). Routing uses the installed build-3662168 catalog. No new live-client observations were collected.
+
+### Local roster correction
+
+A reported empty Dodixie Local exposed a role-allocation error. Its five home pilots had global IDs that selected regional/long-distance work, while its nearby legacy traveler remained paused. Roles now derive from stable community roster slots. A busy five-pilot roster reserves two locals, two regional travelers and one long-distance traveler. Locals use their community's station as home and prefer same-system station trips. A previously misassigned local returns over real gates after reaching a safe dock. Activation enrolls paused legacy routes into continuous travel without replaying elapsed absence.
+
+Visitors choose an onward destination before routing back to their actual home station. The three-station circuit regression verifies the onward stop and subsequent homeward leg using one persistent ship.
+
+### Automated comparison
+
+The same seeded receiving-gate fixture was observed for 3,600 simulated seconds on baseline revision a7078e8d and the destination-journey implementation. The fresh opening produced the following results. The pending-wait restart retained an already delivered visitor and observed twelve subsequent arrivals from five pilots.
+
+| Receiving-gate measurement | Baseline | Destination journeys |
+| --- | ---: | ---: |
+| Total inbound crossings | 15 | 13 |
+| Distinct arriving pilots | 1 | 5 |
+| Repeat arrivals | 14 | 8 |
+| Reverse crossings without an intervening dock | 0 | 0 |
+| First arrival, fresh fixture | 109 seconds | 4 seconds |
+
+This fixture has station endpoints on both sides, so its baseline reversals include a dock. Separate stationless-corridor tests establish onward travel and quiet dead ends. The baseline comparison intentionally fails the new distinct-pilot requirement.
+
+The same one-hour residential and quiet fixtures were also compared. The residential baseline had one pilot, one home visit and one crossing before becoming dormant. The destination implementation has five home visits and nine crossings by that same pilot. The quiet fixture stays empty in both versions.
+
+An eight-jump fixture covers ordinary flight, background deadlines, a player waiting downstream, and reopening a checkpoint halfway through the trip. Route-generation cases exercise all distance bands and real reciprocal gates. Existing rejection, rollback, tackle, loss, shared observer, native notification and warmed observer tests remain in the affected validation set. An installed-catalog check verifies the Vattuolen/Uoyonen crossing has an onward station destination.
+
+The final copied installed save retained 1,861 roster identities, 1,871 ships, 2,141 item stacks and 1,868 wallets across initialization and reopening. Initialization took 831 ms. Before warming another system, the reported Dodixie case reserved two local pilots and observed its first local in space after one simulated second. Jita preparation then took 972 ms. Its one-hour sweep saw six distinct gate pilots and six distinct station pilots. The two-observer path saw four distinct pilots. These are copied-world automated observations.
+
+Warmed complete maintenance measured 11.27–37.33 ms across 200 unchanged wakes, including one or two observers and original/imported traffic. Each case asserted zero SQL commands, connections and fitting calculations. Checkpoint capture, projection and write measured 0.61–1.45 ms, 1.46–7.58 ms and 10.72–21.69 ms respectively. These are automated fixture measurements.
+
+**Automated validation.** The affected validation filter includes Capsuleers, Flight, WorldMigrationTests, LiveWorldTests, DetachedCheckpointTests, PilotLoginTests, StationGuestTests, ChatWorldTests and Hosting. The final selection passed 494 cases in 135 seconds with four workers. The separate login-preparation process check passed in isolation in three seconds. A preliminary parallel run timed out that check while a copied-world run was competing for resources, so the final selection excluded that method and exercised it separately with its unchanged ten-second timeout. After moving the background timing calculation into Gameplay, the 14 scheduling, eight-jump, gate-boundary and station-wait cases passed in seven seconds. Both Python policy suites passed, with eight catalog and nine formatting cases, and formatting verification passed. The final opt-in copied-save and installed-route checks passed two cases in 85 seconds. Full .NET regression was not requested.
+
+The affected filter was the following expression. The isolated method filter was FullyQualifiedName=Eden.Protocol.Tests.Persistence.LiveWorldTests.DevelopmentTicketPreparationDoesNotAcquireTheRunningWorld.
+
+~~~text
+(FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~ChatWorldTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting)&FullyQualifiedName!~DevelopmentTicketPreparationDoesNotAcquireTheRunningWorld
+~~~
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After restarting with the new build, watch a connected gate for varied arrivals and follow one traveler across successive systems. Existing short trips can finish before adopting their next destination.

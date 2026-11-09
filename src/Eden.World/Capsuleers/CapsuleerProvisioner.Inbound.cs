@@ -10,23 +10,26 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerProvisioner
 {
-    internal long? EnsureInbound(WatchedTrafficGate gate, bool sourceObserved = false)
+    internal long? EnsureInbound(WatchedTrafficGate gate, bool sourceObserved = false, int visitor = 0)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(visitor);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(visitor, TrafficJourneyRules.GateVisitorCount);
         lock (database.MotionLock)
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
             sourceObserved =
                 sourceObserved
                 || LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ActiveSystems.Contains(gate.SourceSystemId) == true;
-            var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, sourceObserved);
+            var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, sourceObserved, visitor);
             if (route is null)
             {
                 return null;
             }
             // Reciprocal observers share one durable lane identity. High gate
             // IDs occupy slots disjoint from the small ordinary home roster.
-            int slot = checked((int)Math.Min(gate.ArrivalGateId, gate.DepartureGateId));
-            int community = gate.ArrivalGateId == slot ? gate.ObserverSystemId : gate.SourceSystemId;
+            int gateSlot = checked((int)Math.Min(gate.ArrivalGateId, gate.DepartureGateId));
+            int slot = visitor == 0 ? gateSlot : checked(gateSlot + visitor * TrafficJourneyRules.VisitorSlotStride);
+            int community = gate.ArrivalGateId == gateSlot ? gate.ObserverSystemId : gate.SourceSystemId;
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();
             long? existing = world
@@ -37,12 +40,6 @@ internal sealed partial class CapsuleerProvisioner
             if (existing is not null)
             {
                 return existing;
-            }
-            if (sourceObserved && route.Systems[0] != gate.ObserverSystemId && route.Systems[0] != gate.SourceSystemId)
-            {
-                // Both sides are occupied and neither has a station to undock from.
-                // Retry when the far side empties so no new ship appears on a witnessed grid.
-                return null;
             }
             var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
             if (state is null)
@@ -96,7 +93,8 @@ internal sealed partial class CapsuleerProvisioner
                 route,
                 HaulerEncounterOpening.Inbound,
                 gate,
-                sourceObserved
+                sourceObserved,
+                visitor
             );
             world.SaveChanges();
             transaction.Commit();

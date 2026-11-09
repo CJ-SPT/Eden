@@ -38,16 +38,17 @@ public sealed class CapsuleerInboundProvisioningTests
             ship = saved.FounderShipId;
             progress = saved.Progress!;
             var work = HaulerCheckpoint.Read(progress)!;
-            Assert.Equal(HaulerActivity.Inbound, work.Activity);
+            Assert.Equal(HaulerActivity.Flying, work.Activity);
             Assert.Equal(DepartureGate, work.TargetId);
             Assert.Equal(s_gate.ArrivalGateId, work.TrafficLane!.ArrivalGateId);
             Assert.Equal(Source, world.Positions.Single(position => position.ShipId == ship).SystemId);
+            Assert.Equal(Source, catalog.RequireStation(world.Ships.Single(value => value.Id == ship).StationId).SolarSystemId);
             var route = CapsuleerTrafficFlight.Route(saved, catalog);
             Assert.Equal(Observer, CapsuleerTrafficFlight.Leg(route, work, Source).NextSystemId);
-            Assert.Equal(saved.SourceStationId, saved.DestinationStationId);
+            Assert.NotEqual(saved.SourceStationId, saved.DestinationStationId);
             var job = Assert.Single(world.Set<SavedCapsuleerJob>());
             due = job.DueTicks;
-            Assert.Equal(CapsuleerAction.GateTransfer, job.Action);
+            Assert.Equal(CapsuleerAction.Arrival, job.Action);
             Assert.Equal(work.DueTicks, due);
             Assert.InRange(due, TimeSpan.FromSeconds(1).Ticks, TimeSpan.FromMinutes(3).Ticks);
             Assert.Equal(HaulingRules.StartingCents, world.Set<PilotWallet>().Single(wallet => wallet.PilotId == pilot).Cents);
@@ -84,43 +85,52 @@ public sealed class CapsuleerInboundProvisioningTests
         Assert.Equal(ArrivalGate, work.TrafficLane!.ArrivalGateId);
         var job = Assert.Single(world.Set<SavedCapsuleerJob>());
         Assert.Equal(CapsuleerAction.Trade, job.Action);
-        Assert.InRange(job.DueTicks, 1, TimeSpan.FromSeconds(31).Ticks);
+        Assert.InRange(job.DueTicks, 1, TimeSpan.FromSeconds(45).Ticks);
     }
 
     [Fact]
-    public void StationlessObserverUsesItsRealGateAsTurnaround()
+    public void StationlessDeadEndCannotCreateAGateShuttle()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false);
         WatchedTrafficGate gate = new(30000144, Source, 50002185, 50001249);
-        long pilot = new CapsuleerProvisioner(fixture.Database, fixture.Clock).EnsureInbound(gate)!.Value;
+        Assert.Null(new CapsuleerProvisioner(fixture.Database, fixture.Clock).EnsureInbound(gate));
         using WorldDbContext world = new(fixture.Database.Path);
-        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
-        var saved = world.Set<SavedCapsuleerHauler>().Single(hauler => hauler.PilotId == pilot);
-        Assert.Equal([Source, 30000144], saved.RouteSystems!);
-        Assert.Equal(saved.SourceStationId, saved.DestinationStationId);
-        var work = HaulerCheckpoint.Read(saved.Progress)!;
-        Assert.Equal(gate.DepartureGateId, work.TargetId);
-        var leg = CapsuleerTrafficFlight.Leg(CapsuleerTrafficFlight.Route(saved, catalog), work, Source);
-        Assert.Equal(gate.ObserverSystemId, leg.NextSystemId);
+        Assert.Empty(world.Set<SavedCapsuleerAgent>());
     }
 
     [Fact]
-    public void TwoWatchedStationlessSystemsDeferTheirFirstArrivalUntilTheFarSideEmpties()
+    public void StationlessBranchWithNoDestinationStaysQuietEvenWhenUnobserved()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false);
         using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
         {
-            // Perimeter remains connected to Jita and supplies the only station for this lane.
             catalog.Database.ExecuteSqlRaw("UPDATE Station SET SolarSystemId=30000144");
         }
         var provisioner = new CapsuleerProvisioner(fixture.Database, fixture.Clock);
         Assert.Null(provisioner.EnsureInbound(s_gate, sourceObserved: true));
+        Assert.Null(provisioner.EnsureInbound(s_gate));
         using WorldDbContext saved = new(fixture.Database.Path);
         Assert.Empty(saved.Set<SavedCapsuleerAgent>());
-        long pilot = provisioner.EnsureInbound(s_gate)!.Value;
-        var ship = saved.Pilots.Single(p => p.Id == pilot).ActiveShipId;
-        Assert.Equal(Source, saved.Positions.Single(p => p.ShipId == ship).SystemId);
-        Assert.Equal(pilot, provisioner.EnsureInbound(s_gate, sourceObserved: true));
+    }
+
+    [Fact]
+    public void ObservedStationlessCorridorStartsVisitorsDockedAtItsRemoteSource()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false);
+        const int remote = 30000144;
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql($"UPDATE Station SET SolarSystemId={remote} WHERE Id=60003760");
+        }
+        long pilot = new CapsuleerProvisioner(fixture.Database, fixture.Clock).EnsureInbound(s_gate, sourceObserved: true)!.Value;
+        using WorldDbContext world = new(fixture.Database.Path);
+        using CatalogDbContext source = new(fixture.Database.CatalogPath);
+        var saved = world.Set<SavedCapsuleerHauler>().Single(row => row.PilotId == pilot);
+        var ship = world.Ships.Single(row => row.Id == saved.FounderShipId);
+        Assert.Equal(remote, source.RequireStation(ship.StationId).SolarSystemId);
+        Assert.DoesNotContain(world.Positions, position => position.ShipId == ship.Id);
+        Assert.Equal([remote, Source, Observer], saved.RouteSystems!);
+        Assert.Equal(HaulerActivity.Docked, HaulerCheckpoint.Read(saved.Progress)!.Activity);
     }
 
     [Fact]
@@ -141,6 +151,43 @@ public sealed class CapsuleerInboundProvisioningTests
         Assert.All(originalShips, id => Assert.Contains(saved.Ships, ship => ship.Id == id));
         Assert.Equal(originalShips.Length + 1, saved.Ships.Count());
         Assert.Single(saved.Set<SavedCapsuleerAgent>(), agent => agent.Slot == ArrivalGate);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NewGateVisitorsWaitAtStationsWithStaggeredDeparturesInsteadOfParkingOnTheGate(bool sourceObserved)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        var provisioner = new CapsuleerProvisioner(fixture.Database, fixture.Clock);
+        long[] pilots = Enumerable
+            .Range(0, TrafficJourneyRules.GateVisitorCount)
+            .Select(visitor => provisioner.EnsureInbound(s_gate, sourceObserved, visitor)!.Value)
+            .ToArray();
+        using WorldDbContext world = new(fixture.Database.Path);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        long previousDue = 0;
+        foreach (long pilot in pilots)
+        {
+            var saved = world.Set<SavedCapsuleerHauler>().Single(row => row.PilotId == pilot);
+            var work = HaulerCheckpoint.Read(saved.Progress)!;
+            bool approaching = !sourceObserved && pilot == pilots[0];
+            Assert.Equal(approaching ? HaulerActivity.Flying : HaulerActivity.Docked, work.Activity);
+            Assert.True(work.DueTicks > previousDue);
+            if (approaching)
+            {
+                Assert.Contains(world.Positions, position => position.ShipId == saved.FounderShipId);
+                Assert.True(work.Navigation.Velocity.Length > 0);
+            }
+            else
+            {
+                Assert.DoesNotContain(world.Positions, position => position.ShipId == saved.FounderShipId);
+            }
+            var ship = world.Ships.Single(row => row.Id == saved.FounderShipId);
+            Assert.Equal(Source, catalog.RequireStation(ship.StationId).SolarSystemId);
+            previousDue = work.DueTicks;
+        }
+        Assert.Equal(pilots.Length, pilots.Distinct().Count());
     }
 
     [Fact]

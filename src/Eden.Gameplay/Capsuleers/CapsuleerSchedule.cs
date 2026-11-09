@@ -56,6 +56,26 @@ public static class CapsuleerScheduleRules
         );
     }
 
+    public static long BackgroundFlightDeadline(
+        HaulerProgress work,
+        FlightProperties flight,
+        SpacePosition position,
+        StaticSpaceObject target,
+        double approachRange
+    )
+    {
+        double seconds = work.Navigation.WarpDestination is not null
+            ? Math.Max(1, Math.Ceiling(flight.InertiaTime * Math.Log(4)))
+            : Math.Max(
+                1,
+                Math.Ceiling(
+                    (position.DistanceTo(target.Position) - target.Radius - flight.ShipRadius - approachRange)
+                        / Math.Max(1, flight.MaxSpeed)
+                )
+            );
+        return checked(work.ActiveTicks + TimeSpan.FromSeconds(seconds).Ticks);
+    }
+
     public static long? WarpDeadline(NavigationFrame navigation, FlightProperties flight, long offsetTicks, long activeTicks)
     {
         if (navigation.Warp is not { } frame)

@@ -1,3 +1,5 @@
+using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
@@ -40,15 +42,8 @@ public sealed class CapsuleerTrafficRoutesTests
         fixture.Connect(FirstSystem + 1, FirstSystem + 2);
         using CatalogDbContext catalog = new(fixture.Path);
         var transit = CapsuleerTrafficRoutes.Read(catalog, FirstSystem + 2);
-        var turnaround = Assert.Single(transit.Routes);
-        Assert.Equal(FirstStation, turnaround.SourceStationId);
-        Assert.Equal(FirstStation, turnaround.DestinationStationId);
-        Assert.Equal(Enumerable.Range(FirstSystem, 3), turnaround.Systems);
-        AssertPathsAreReal(catalog, transit, FirstSystem + 2);
-        var home = CapsuleerTrafficRoutes.Read(catalog, FirstSystem);
-        Assert.Equal(2, home.Routes.Length);
-        Assert.All(home.Routes, route => Assert.True(route.Systems.Length > 1));
-        AssertPathsAreReal(catalog, home, FirstSystem);
+        Assert.Empty(transit.Routes);
+        Assert.Empty(CapsuleerTrafficRoutes.Read(catalog, FirstSystem).Routes);
     }
 
     [Fact]
@@ -113,9 +108,7 @@ public sealed class CapsuleerTrafficRoutesTests
         fixture.Connect(FirstSystem + 1, FirstSystem + 2);
         using CatalogDbContext catalog = new(fixture.Path);
         var plan = CapsuleerTrafficRoutes.Read(catalog, FirstSystem + 2);
-        Assert.Equal(2, plan.Routes.Length);
-        Assert.Equal([FirstSystem, FirstSystem + 1, FirstSystem + 2, FirstSystem + 1, FirstSystem], plan.Routes[0].Systems);
-        AssertPathsAreReal(catalog, plan, FirstSystem + 2);
+        Assert.Empty(plan.Routes);
     }
 
     [Fact]
@@ -167,6 +160,110 @@ public sealed class CapsuleerTrafficRoutesTests
         Assert.Equal(2, plan.Routes.Count(route => route.Systems.Length == 1));
         Assert.Contains(plan.Routes, route => route.Systems.Length > 1);
         AssertPathsAreReal(catalog, plan, FirstSystem);
+    }
+
+    [Theory]
+    [InlineData(TrafficJourneyKind.Local, 0, 2)]
+    [InlineData(TrafficJourneyKind.Regional, 3, 7)]
+    [InlineData(TrafficJourneyKind.LongDistance, 8, 10)]
+    public void DestinationJourneysHaveRealEndpointsDistanceBandsAndNoRepeatedSystems(TrafficJourneyKind kind, int minimum, int maximum)
+    {
+        using Fixture fixture = new();
+        for (int offset = 0; offset <= 10; offset++)
+        {
+            fixture.AddStation(FirstStation + offset, FirstSystem + offset);
+            if (offset > 0)
+            {
+                fixture.Connect(FirstSystem + offset - 1, FirstSystem + offset);
+            }
+        }
+        using CatalogDbContext catalog = new(fixture.Path);
+        var route = CapsuleerTrafficRoutes.Journey(catalog, FirstStation, kind, 0, 0, HullClass.Hauler)!;
+        Assert.NotNull(route);
+        Assert.InRange(route.Systems.Length - 1, minimum, maximum);
+        Assert.Equal(route.Systems.Length, route.Systems.Distinct().Count());
+        AssertPathsAreReal(catalog, new(1, 1, [route]), FirstSystem);
+        using var metrics = SessionPerformance.Begin("warm journey destinations", _ => { }, force: true)!;
+        Assert.Equal(route, CapsuleerTrafficRoutes.Journey(catalog, FirstStation, kind, 0, 0, HullClass.Hauler));
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Theory]
+    [InlineData(0, 3)]
+    [InlineData(1, 10)]
+    [InlineData(2, 3)]
+    [InlineData(3, 10)]
+    public void GateVisitorsContinuePastAStationlessCorridorToDifferentStations(int visitor, int jumps)
+    {
+        using Fixture fixture = new();
+        fixture.AddStation(FirstStation, FirstSystem);
+        fixture.AddStation(FirstStation + 1, FirstSystem + 10);
+        fixture.AddStation(FirstStation + 2, FirstSystem + 3);
+        for (int offset = 0; offset < 10; offset++)
+        {
+            fixture.Connect(FirstSystem + offset, FirstSystem + offset + 1);
+        }
+        using CatalogDbContext catalog = new(fixture.Path);
+        var gate = catalog.Definitions.GatesInSystem(FirstSystem + 1).Single(g => g.DestinationSystemId == FirstSystem + 2);
+        var route = CapsuleerTrafficRoutes.Inbound(
+            catalog,
+            new(FirstSystem + 2, FirstSystem + 1, gate.DestinationId, gate.Id),
+            visitor: visitor
+        )!;
+        Assert.NotNull(route);
+        Assert.NotEqual(route.SourceStationId, route.DestinationStationId);
+        Assert.Equal(Enumerable.Range(FirstSystem, jumps + 1), route.Systems);
+        AssertPathsAreReal(catalog, new(2, 0, [route]), FirstSystem + 2);
+    }
+
+    [Fact]
+    public void InstalledVattuolenGateHasAnOnwardStationDestination()
+    {
+        string? path = Environment.GetEnvironmentVariable("EDEN_ENCOUNTER_CATALOG");
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+        using CatalogDbContext catalog = new(path);
+        const int vattuolen = 30000173;
+        const long gateId = 50005333;
+        var gate = catalog.Definitions.Gates[(int)gateId];
+        var route = CapsuleerTrafficRoutes.Inbound(catalog, new(gate.DestinationSystemId, vattuolen, gate.DestinationId, gateId))!;
+        Assert.NotNull(route);
+        Assert.NotEqual(route.SourceStationId, route.DestinationStationId);
+        int crossing = Array.IndexOf(route.Systems, gate.DestinationSystemId);
+        Assert.True(crossing > 0 && crossing < route.Systems.Length - 1);
+        Assert.NotEqual(vattuolen, route.Systems[crossing + 1]);
+        AssertPathsAreReal(catalog, new(2, 1, [route]), vattuolen);
+    }
+
+    [Fact]
+    public void BusyHomeRostersAlwaysIncludeLocalsRegionalAndLongDistanceTravelers()
+    {
+        var roles = Enumerable.Range(0, 5).Select(slot => TrafficJourneyRules.Kind(slot, busy: true)).ToArray();
+        Assert.Equal(2, roles.Count(kind => kind == TrafficJourneyKind.Local));
+        Assert.Contains(TrafficJourneyKind.Regional, roles);
+        Assert.Contains(TrafficJourneyKind.LongDistance, roles);
+        Assert.Equal(TrafficJourneyKind.Local, TrafficJourneyRules.Kind(0, busy: false));
+    }
+
+    [Fact]
+    public void LocalTripsPreferHomeSystemStationsAndHomewardRoutesUseRealGates()
+    {
+        using Fixture fixture = new();
+        fixture.AddStation(FirstStation, FirstSystem);
+        fixture.AddStation(FirstStation + 1, FirstSystem);
+        fixture.AddStation(FirstStation + 2, FirstSystem + 1);
+        fixture.Connect(FirstSystem, FirstSystem + 1);
+        using CatalogDbContext catalog = new(fixture.Path);
+        var local = CapsuleerTrafficRoutes.Journey(catalog, FirstStation, TrafficJourneyKind.Local, 1234, 0, HullClass.Hauler)!;
+        Assert.Equal([FirstSystem], local.Systems);
+        var homeward = CapsuleerTrafficRoutes.ToStation(catalog, FirstStation + 2, FirstStation, HullClass.Hauler)!;
+        Assert.Equal([FirstSystem + 1, FirstSystem], homeward.Systems);
+        Assert.Equal(FirstStation, homeward.DestinationStationId);
+        Assert.Null(CapsuleerTrafficRoutes.ToStation(catalog, FirstStation + 2, FirstStation, HullClass.Titan));
     }
 
     private static void AssertPathsAreReal(CatalogDbContext catalog, CapsuleerTrafficPlan plan, int systemId)

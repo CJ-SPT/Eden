@@ -36,7 +36,8 @@ public sealed record HaulerProgress(
     long? ArrivalGateId = null,
     long? ArrivalAt = null,
     long? DepartureAt = null,
-    long DwellSequence = 0
+    long DwellSequence = 0,
+    TrafficJourney? Journey = null
 );
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth Health);

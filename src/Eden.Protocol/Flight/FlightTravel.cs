@@ -31,7 +31,8 @@ internal sealed class FlightTravel
 {
     internal const int ArrivalDurationTicks = GateTravelRules.ArrivalTicks;
 
-    // Build 3662168 client/effects defines effects.JumpOut with duration 10,000 ms.
+    // The pinned effect defaults to 10,000 ms. The departure packet overrides its duration
+    // with Eden's shorter authoritative gate transition.
     internal const int JumpDurationTicks = GateTravelRules.DurationTicks;
 
     // Allow the pinned cyno camera's look phase and source-scene handoff to begin.

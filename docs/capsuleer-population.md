@@ -28,7 +28,7 @@ See the [implementation and automated evidence](protocol/capsuleers.md#zkill-bac
 
 ## Galaxy-wide station and gate traffic
 
-On the first human visit, Eden looks for real stations and usable reciprocal gates in the build-3662168 catalog. Routes can connect stations in one system, pass through stationless systems, or turn back to a station through a dead end. All security bands use the same traffic policy. Isolated systems need at least two usable stations for local traffic. Gate-free systems with no station pair stay quiet.
+On the first human visit, Eden looks for real stations and usable reciprocal gates in the build-3662168 catalog. Routes connect real stations in one system or across reciprocal gates. Stationless transit systems can carry through-travelers. Stationless dead ends stay quiet. All security bands use the same traffic policy. Isolated systems need at least two usable stations for local traffic. Gate-free systems with no station pair stay quiet.
 
 The following table gives the number of **home haulers** a system can acquire when a route exists. The first matching row applies. The saved seed chooses within each range. Miners and visiting haulers can increase the number of pilots seen in Local.
 
@@ -42,19 +42,27 @@ The following table gives the number of **home haulers** a system can acquire wh
 
 The first station approach in Jita, Amarr, Rens, Dodixie and Hek favors the established trade-hub undock when the catalog offers that route. [EVE University trade hubs](https://wiki.eveuniversity.org/Trade_Hubs)
 
-Busy routes can first appear with a hauler inbound at a gate, another closing on a station, and others docked. Established pilots resume their saved trip. Pilots use normal ship movement and gate transfers while observed, with a short individual layover after docking. Two observers share the same ships. The last witness leaving pauses career work, apart from completing an already witnessed gate departure. A saved loss continues to apply on later visits.
+Busy routes can first appear with a traveler inbound at a gate, another closing on a station, and others docked. Two observers share the same ships and Local membership.
 
-A pilot within 250 km of a reciprocal gate can also encounter a passing hauler from the other side. The two ends share one saved pilot with its own ship and cargo. Watching the same gate with a friend shares the crossing. A docked pilot or an empty grid cannot keep incoming traffic running. Both endpoints contribute to eligibility, so a quiet neighbor can still exchange traffic with a busy system. The home-roster counts above exclude these gate pilots.
+### Destination journeys
 
-Gate pilots follow their saved station route after crossing. When both gate endpoints are stationless, a returning hauler continues through the corridor to its real home station instead of shuttling indefinitely between the two gates.
+Locals travel zero to two jumps from their saved home station and can return after docking. Regional visitors favor three to seven jumps. Long-distance visitors favor eight to twenty. A topology that cannot support the preferred distance uses a shorter compatible station route. Each new route has distinct station endpoints and visits each system once.
 
-New inbound waits vary within the existing busy/quiet ranges, and station layovers vary from 15 to 45 seconds between visits. Each pilot saves a wait sequence and the chosen deadline. Pausing, reconnecting and restarting retain the remaining wait; they do not choose another delay. Existing saved waits keep their deadlines.
+Home roster slots reserve recurring locals alongside regional and long-distance travelers. Busy station systems use a local/regional/long-distance cycle across their slots. Ordinary station systems reserve two local slots per three. Locals prefer trips between stations in their home system when available. Destination selection weights trade hubs and station clusters. The entire path must admit the selected hull, including restrictions on capitals entering high security.
+
+A watched reciprocal gate pair introduces at most four durable visitors with staggered departures and distinct owned ships. The first visitor can already be finishing a moving approach on the unobserved source side. Remaining visitors wait docked at their real source stations and fly the full departure route. Gate arrivals use a stable spread around the arrival shell. Both ends share those identities. Watching the opposite side preserves each traveler's direction and deadline. Subsequent trips begin at the pilot's actual docked station and favor a destination other than the previous origin when alternatives exist. Visitors make an onward stop before routing home, keeping a continuing circuit. Homeward legs follow real compatible paths.
+
+Established travelers continue on the shared human play clock through unobserved systems. Background alignment, analytic warp, approach, docking and gate-transfer deadlines retain the same navigation and ownership checks. Observed systems use ordinary flight samples. Empty worlds pause the shared clock. A witnessed departure completes once. Tackle, retreat, loss, cargo and equipment retain their normal effects.
+
+Locals wait 135–165 seconds at stations. Visitors wait 615–645 seconds. First departures use the busy/quiet gate cadence to stagger the four visitors across successive intervals. The first arrival includes the actual station-to-gate flight. Waiting and navigation progress survive restarts.
+
+Journey metadata lives in the existing version-125 hauler checkpoint payload. Existing pilots finish their current route to a safe dock before selecting a new destination. A roster's paused legacy travelers resume on system activation. Previously misassigned locals return to their community before beginning local trips. Legacy paused arrivals preserve their remaining delay when enrolled into continuous travel. Provisioning policy version 4 refreshes visited-system eligibility while retaining roster slots and assets.
 
 The administration performance page reports the last complete traffic update, simulation/preparation and scene/Local publication separately. The complete update includes gate watching and presentation capture. Checkpoint capture, projection and writing remain separate measurements.
 
 World schema 120 retains prior pilots in their original roster slots. Generated names get natural replacements and custom pilot or ship names are preserved. Missing roster members are granted on visits. A gate or station count determines traffic independently of mining eligibility, local ore availability and regional market activity.
 
-See [implementation and validation](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic).
+See [destination-journey validation](protocol/capsuleers.md#destination-journeys--november-9-2026) and [historical traffic evidence](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic).
 
 ## Observed encounters â€” November 8, 2026
 

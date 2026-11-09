@@ -462,7 +462,7 @@ public sealed class FlightSessionTests
                 false,
                 true,
                 false,
-                10000,
+                3000,
                 0,
                 null,
                 0,
@@ -473,7 +473,9 @@ public sealed class FlightSessionTests
         Assert.Same(PilotCallResult.Unsupported, session.StartJump(args, systems));
         Assert.False(session.CompleteJump());
         Assert.Equal(0, TaskTrackingTestData.Count(db, TaskEvents.Jumped));
-        clock.Seconds += 10;
+        clock.Seconds += 2;
+        Assert.False(session.CompleteJump());
+        clock.Seconds++;
         Assert.True(session.CompleteJump());
         Assert.False(session.InBallpark);
         Assert.Equal(gate.DestinationSystemId, session.Pilot.SystemId);
