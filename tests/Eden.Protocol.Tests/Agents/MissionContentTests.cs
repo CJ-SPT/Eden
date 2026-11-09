@@ -32,10 +32,12 @@ public sealed partial class MissionContentTests
 
     public static TheoryData<int, int> DeliveryMissions => Cases(combat: false);
 
-    private static TheoryData<int, int> Cases(bool combat)
+    public static TheoryData<int, int> CombatExpansionMissions => Cases(combat: true, offerOrder: 2);
+
+    private static TheoryData<int, int> Cases(bool combat, int offerOrder = 1)
     {
         TheoryData<int, int> cases = new();
-        foreach (var mission in Content().Missions.Where(m => combat ? m.OfferOrder > 0 && !m.Waves.IsEmpty : m.Waves.IsEmpty))
+        foreach (var mission in Content().Missions.Where(m => combat ? m.OfferOrder == offerOrder && !m.Waves.IsEmpty : m.Waves.IsEmpty))
         {
             cases.Add(mission.MissionId, mission.Level);
         }
@@ -49,7 +51,7 @@ public sealed partial class MissionContentTests
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
         var profiles = MissionCatalog.Read(catalog);
         Assert.Equal(Content().Missions.Length, profiles.Length);
-        Assert.Equal(50, profiles.Count(p => p.Kind == MissionKind.Combat));
+        Assert.Equal(70, profiles.Count(p => p.Kind == MissionKind.Combat));
         Assert.Equal(261, profiles.Count(p => p.Kind == MissionKind.Courier));
         foreach (var profile in profiles)
         {
@@ -68,7 +70,13 @@ public sealed partial class MissionContentTests
 
     [Theory]
     [MemberData(nameof(NewCombatMissions))]
-    public void EveryNewCombatVariantHasWorkingObjectivesCargoAndExactlyOnceTurnIn(int id, int level)
+    public void EveryNewCombatVariantHasWorkingObjectivesCargoAndExactlyOnceTurnIn(int id, int level) => VerifyCombat(id, level);
+
+    [Theory]
+    [MemberData(nameof(CombatExpansionMissions))]
+    public void EveryExpandedCombatVariantPersistsItsObjectiveAndSettlesExactlyOnce(int id, int level) => VerifyCombat(id, level);
+
+    private static void VerifyCombat(int id, int level)
     {
         using var f = Create(id, level, MissionRules.SecurityDivision);
         var offer = f.Accept(f.Request());
@@ -92,58 +100,26 @@ public sealed partial class MissionContentTests
         {
             using (WorldDbContext world = new(f.Db.Path))
             {
-                last = world.Set<WorldNpc>().Single(n => n.Role == NpcRole.MissionStructure && n.TypeId == 17787).Id;
+                long objective = profile.Definition.Structures.Single(s => s.CompletesMission).ObjectId;
+                last = world.Set<SavedMissionStructure>().Single(s => s.ObjectId == objective).NpcId;
             }
             f.Kill(last);
-            Assert.True(Current(f).CombatComplete);
-            Assert.False(Current(f).ObjectiveComplete);
-            long recovery = MissionContainerRules.Id(offer.Id, 0);
-            var obj = f.Missions.Sites(offer.SystemId).SelectMany(s => s.Objects).Single(o => o.Id == recovery);
-            Move(f, offer.SystemId, obj.Position);
-            var containers = f.Services.GetRequiredService<IPilotMissionContainers>();
-            var cargo = Assert.Single(containers.Read(MissionFixture.PilotId, recovery).Items);
-            Assert.Equal(profile.CargoQuantity, cargo.Quantity);
-            containers.Take(MissionFixture.PilotId, f.Context.Pilot.ShipId, new([cargo.Id], recovery, (int)InventoryFlag.Cargo, null));
-            Assert.Empty(containers.Read(MissionFixture.PilotId, recovery).Items);
-        }
-        else
-        {
-            long[] required;
-            using (WorldDbContext world = new(f.Db.Path))
-            {
-                required = world
-                    .Set<SavedMissionMember>()
-                    .Where(m => m.Required || m.CompletesMission)
-                    .OrderBy(m => m.NpcId)
-                    .Select(m => m.NpcId)
-                    .ToArray();
-            }
-            Assert.NotEmpty(required);
-            foreach (long target in required)
-            {
-                last = target;
-                f.Kill(target);
-                if (target != required[^1])
-                {
-                    Assert.False(Current(f).CombatComplete);
-                    using WorldDbContext world = new(f.Db.Path);
-                    Assert.Empty(world.Set<OwnedItem>().Where(i => i.TypeId == profile.CargoType));
-                }
-            }
             Assert.True(Current(f).CombatComplete);
             if (profile.CargoType != 0)
             {
                 Assert.False(Current(f).ObjectiveComplete);
-                var wrecks = f.Services.GetRequiredService<IWrecks>();
-                var wreck = wrecks.List(offer.SystemId, f.Clock.Now).Single(w => w.SourceId == last);
-                Move(f, offer.SystemId, wreck.Position);
-                var cargo = Assert.Single(
-                    wrecks.Read(MissionFixture.PilotId, wreck.Id, f.Clock.Now).Items,
-                    i => i.TypeId == profile.CargoType
-                );
-                Assert.Equal(profile.CargoQuantity, cargo.Quantity);
-                wrecks.Take(MissionFixture.PilotId, f.Context.Pilot.ShipId, wreck.Id, [cargo.Id], null, f.Clock.Now);
+                RecoverStructureCargo(f, offer, profile);
             }
+            else
+            {
+                using WorldDbContext world = new(f.Db.Path);
+                Assert.True(world.Set<WorldNpc>().Any(n => n.Role != NpcRole.MissionStructure && n.DestroyedAt == null));
+                Assert.Empty(world.Set<OwnedItem>().Where(i => i.TypeId == MissionStructureRules.RecoveryContainerType));
+            }
+        }
+        else
+        {
+            CompleteCombatGroups(f, offer, profile);
         }
         Assert.True(Current(f).ObjectiveComplete);
         f.Dock(MissionFixture.StationId);
@@ -160,6 +136,56 @@ public sealed partial class MissionContentTests
         using WorldDbContext check = new(f.Db.Path);
         Assert.Empty(check.Set<OwnedItem>().Where(i => i.TypeId == profile.CargoType));
         Assert.Empty(missions.Sites(offer.SystemId));
+    }
+
+    private static void RecoverStructureCargo(MissionFixture f, MissionOffer offer, MissionProfile profile)
+    {
+        long recovery = MissionContainerRules.Id(offer.Id, 0);
+        var obj = f.Missions.Sites(offer.SystemId).SelectMany(s => s.Objects).Single(o => o.Id == recovery);
+        Move(f, offer.SystemId, obj.Position);
+        var containers = f.Services.GetRequiredService<IPilotMissionContainers>();
+        var cargo = Assert.Single(containers.Read(MissionFixture.PilotId, recovery).Items);
+        Assert.Equal(profile.CargoQuantity, cargo.Quantity);
+        containers.Take(MissionFixture.PilotId, f.Context.Pilot.ShipId, new([cargo.Id], recovery, (int)InventoryFlag.Cargo, null));
+        Assert.Empty(containers.Read(MissionFixture.PilotId, recovery).Items);
+    }
+
+    private static void CompleteCombatGroups(MissionFixture f, MissionOffer offer, MissionProfile profile)
+    {
+        long last = 0;
+        long[] required;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            required = world
+                .Set<SavedMissionMember>()
+                .Where(m => m.Required || m.CompletesMission)
+                .OrderBy(m => m.NpcId)
+                .Select(m => m.NpcId)
+                .ToArray();
+        }
+        Assert.NotEmpty(required);
+        foreach (long target in required)
+        {
+            last = target;
+            f.Kill(target);
+            if (target != required[^1])
+            {
+                Assert.False(Current(f).CombatComplete);
+                using WorldDbContext world = new(f.Db.Path);
+                Assert.Empty(world.Set<OwnedItem>().Where(i => i.TypeId == profile.CargoType));
+            }
+        }
+        Assert.True(Current(f).CombatComplete);
+        if (profile.CargoType != 0)
+        {
+            Assert.False(Current(f).ObjectiveComplete);
+            var wrecks = f.Services.GetRequiredService<IWrecks>();
+            var wreck = wrecks.List(offer.SystemId, f.Clock.Now).Single(w => w.SourceId == last);
+            Move(f, offer.SystemId, wreck.Position);
+            var cargo = Assert.Single(wrecks.Read(MissionFixture.PilotId, wreck.Id, f.Clock.Now).Items, i => i.TypeId == profile.CargoType);
+            Assert.Equal(profile.CargoQuantity, cargo.Quantity);
+            wrecks.Take(MissionFixture.PilotId, f.Context.Pilot.ShipId, wreck.Id, [cargo.Id], null, f.Clock.Now);
+        }
     }
 
     private static MissionFixture Create(int id, int level, int division)

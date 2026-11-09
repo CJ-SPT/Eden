@@ -1,15 +1,15 @@
 missionId,name,template,status,reason
 875,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-888,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+888,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 890,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-891,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+891,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 892,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-893,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+893,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 894,The Serpentis Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 895,The Serpentis Spies,BasicKillMission,blocked,Requires timed reinforcements
 896,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 897,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-898,The Serpentis Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+898,The Serpentis Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 899,The Serpentis Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 900,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 901,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -49,7 +49,7 @@ missionId,name,template,status,reason
 1062,The Blood Raider Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1063,The Blood Raider Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1064,The Blood Raider Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1065,The Blood Raider Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1065,The Blood Raider Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1081,Silence The Informant,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1083,Silence The Informant,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1084,Attack the Angel Hideout,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -81,11 +81,11 @@ missionId,name,template,status,reason
 1173,Ammatar Scouts Spotted,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1175,Gallente Scouts Spotted,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1176,CONCORD Scout Spotted,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1177,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1177,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1178,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1179,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1180,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1181,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1179,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1180,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1181,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1182,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1183,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1184,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -101,7 +101,7 @@ missionId,name,template,status,reason
 1196,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1197,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1198,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1199,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1199,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1200,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1201,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1207,Vengeance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -903,10 +903,10 @@ missionId,name,template,status,reason
 2232,Threat From Afar,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2233,Threat From Afar,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2234,Threat From Afar,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2235,Pirate Aggression,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2236,Pirate Aggression,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2237,Pirate Aggression,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2238,Pirate Aggression,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2235,Pirate Aggression,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2236,Pirate Aggression,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2237,Pirate Aggression,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2238,Pirate Aggression,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2239,Murderer Brought To Justice,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2240,Murderer Brought To Justice,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2241,Ambush the Convoy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1027,7 +1027,7 @@ missionId,name,template,status,reason
 2388,Police Invasion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2389,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2390,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2391,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2391,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2392,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2393,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2394,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1042,18 +1042,18 @@ missionId,name,template,status,reason
 2403,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2404,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2405,Unauthorized Military Presence,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2407,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2407,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2408,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2409,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2416,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2449,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2416,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+2449,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2453,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2459,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2469,Intercept The Saboteurs,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2470,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2470,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2471,Intercept The Saboteurs,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2472,Intercept The Saboteurs,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2473,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+2473,The Score,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 2474,Intercept The Saboteurs,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2475,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2476,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

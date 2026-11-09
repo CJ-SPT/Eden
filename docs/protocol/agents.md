@@ -474,3 +474,88 @@ No full .NET suite was requested or run. Final TRX:
 
 **Optional maintainer checks.** Inspect Guristas Spies and a Duo of Death destination pocket for
 separated groups, native battery positions, scenery and stable arrival.
+
+
+## Further combat mission expansion — November 9, 2026
+
+Eden now admits **70 combat encounters**, up from 50, for **331 total definitions** including the
+unchanged 261 deliveries/storylines. The exhaustive [catalog audit](../data/mission-support-3662168.csv)
+retains all 2,892 records; 2,561 remain blocked. See the [content inventory](../missions.md).
+
+Research used the local evejs release 261108.1 (AGPL-3.0-only, no Git metadata) and its four
+level-one through level-four security-mission packs as a discovery index. Pack fingerprints are
+recorded in the preceding mission layout evidence. Their provisional rosters, wave scripts,
+rewards, prose and runtime code were not imported. Original EVE University report revisions were
+retrieved directly, then numeric facts were independently bound to Eden's read-only build-3662168
+catalog. No reference checkout or network is required for export or gameplay.
+
+| Additional family | Mission IDs | Report revisions |
+| --- | --- | --- |
+| Guristas Spies, levels 2/3/4 | 888, 893, 891 | 192010, 192011, 196566 |
+| Serpentis Spies, level 3 | 898 | 223606 |
+| Blood Raider Spies, level 4 | 1065 | 208031 |
+| Pirate Aggression, Sansha | 2235, 2237 | 209078 |
+| Pirate Aggression, Angel | 2236, 2238 | 230763 |
+| The Score, Guristas/Angel level 1 | 2391, 2407 | 192048, 209646 |
+| The Score, Blood/Serpentis level 2 | 2416, 2449 | 192046, 192055 |
+| The Score, Guristas/Angel level 3 | 2470, 2473 | 223423, 223035 |
+| Avenge a Fallen Comrade, Angel level 1 | 1180, 1181 | 209636 |
+| Avenge a Fallen Comrade, Guristas level 2 | 1177 | 203235 |
+| Avenge a Fallen Comrade, Serpentis level 2 | 1179, 1199 | 193385 |
+
+Each definition records its original report URL and revision in the embedded manifest. For example,
+[The Score (Guristas, level 3)](https://wiki.eveuniversity.org/The_Score_%28Guristas_Pirates%29_%28Level_3%29)
+defines two combat pockets and the final required group;
+[Avenge (Angel, level 1)](https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_%28Angel_Cartel%29_%28Level_1%29)
+identifies Habitat destruction as the objective. Empty native entrance rooms are explicitly bound.
+The Score's second gates require first-room clearance under Eden's authored policy (the Guristas
+report explicitly requires clearing the first room; the Angel report does not publish a gate-lock
+condition). Pirate Aggression remains normal space.
+
+The compiler fails on changed lifecycle, faction, cargo or gate topology. Existing full-payload
+alias admission adds 1199 from 1179 and preserves its cohort order. Both Angel Avenge layouts have
+separate authored bindings. All 311 previous definitions are unchanged as parsed JSON; none are rerolled or reordered. New offers use order two after existing offers. Supplier
+restrictions, eligibility, rewards, standing and settlement retain existing Eden policy. No schema
+migration, save reset, wire change or new movement behavior is required.
+
+The only runtime capability change admits explicitly authored, positive-health **Deadspace Overseer
+Structures (group 494)** alongside Large Collidable Structures (319). This enables catalog Habitat
+19715 through the existing immobile, targetable mission-structure lifecycle. No arbitrary scenery
+becomes attackable. Destroying the Habitat completes Avenge with optional guards alive and creates
+no objective cargo. Warehouse retrieval remains unchanged. Existing Carbon Destiny behavior and
+source revision documented above remain unchanged.
+
+The new compiler excludes unnamed alternatives and invalid report names. Named Guristas spies use
+Pithatis Executor (the hull identified in the level-three report, retained for level four); Blood
+level-four spies use Corpatis Exorcist. This is explicit Eden reconstruction where the native
+NPC-group roster and name override are unpublished. Missing ranges use stated hints; placement
+uses native room anchors. The Angel Score's nonexistent Prime alternative is omitted in favor of
+catalog Tribuni. Delayed Pirate Invasion, timed and damage-triggered Avenge variants, unresolved
+Blood spy hulls and the mixed level-four Serpentis roster remain blocked in this batch.
+
+The offline fixture adds 67 types and 319 records, totaling **620 types and 3,791 records**. Every
+previous fixture type and record remains semantically unchanged. Both exporters are reproducible.
+
+**Automated validation.** Development: all 20 new variants passed objective, persistence and
+exactly-once settlement checks (30.89-second invocation after a 10.51-second build). Gate, habitat
+rollback/restart and all-mission layout coverage passed 17 cases (19.26-second invocation after a
+5.09-second build). Destructible-group and hull-health rejection cases also passed.
+
+Final root validation passed **227 affected .NET cases** (148-second test duration, 151.16-second
+invocation) with filter
+`FullyQualifiedName~Eden.Protocol.Tests.Agents&FullyQualifiedName!~EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce`.
+This includes every old and new combat expansion case, mission protocols, gates, structures,
+containers, persistence, eligibility and layouts. The unchanged 261-case delivery matrix and the
+full .NET suite were not run. Tool restore, solution restore, solution build (zero warnings/errors),
+catalog policy (8 cases, 0.783 seconds), formatting policy (9 cases, 0.019 seconds), mission content
+(7 cases, 0.117 seconds), formatting verification (1,430 files; maximum 140 characters), exact
+export reproduction, previous-definition/order preservation, fixture equivalence, documentation
+links/encoding and diff checks passed. Ordered final validation took **190.86 seconds**. TRX:
+`artifacts/feature-tests/results/combat-expansion-final/missions.trx`. The mission compiler's tests
+reproduce the new definitions from the offline fixture and reject changed scripts, cargo, factions
+and gate topology without the reference checkout or network.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect a level-three Score gate transition and an Avenge Habitat
+blitz in the native client for presentation, targetability and gameplay feel.

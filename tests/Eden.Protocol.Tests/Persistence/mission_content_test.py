@@ -9,6 +9,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools'))
 from mission_content import delivery_rejection
+from mission_combat_expansion import expand
 
 
 class MissionAdmissionTests(unittest.TestCase):
@@ -60,6 +61,54 @@ class MissionAdmissionTests(unittest.TestCase):
         admitted = {int(row['missionId']) for row in audit if row['status'] == 'admitted'}
         self.assertEqual({m['missionId'] for m in manifest['missions']}, admitted)
         self.assertTrue(all(row['reason'] for row in audit))
+
+
+class CombatExpansionTests(unittest.TestCase):
+    def setUp(self):
+        fixture = json.loads((ROOT / 'tests/Eden.Protocol.Tests/Fixtures/MissionCatalog.json').read_text(encoding='utf-8'))
+        self.records = {(r['dataset'], str(r['key'])): r['data'] for r in fixture['records']}
+        self.types = {t['name']: t['id'] for t in fixture['types']}
+
+    def compile(self):
+        missions = []
+
+        def source(db, dataset, key):
+            return self.records[dataset, str(key)]
+
+        def group(names, count, distance, **flags):
+            return dict(types=[self.types[name] for name in names.split('/')], count=count, range=distance, **flags)
+
+        expand(source, None, missions, group)
+        return missions
+
+    def test_reviewed_encounters_reproduce_manifest_without_the_reference_repository_or_network(self):
+        manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
+        expected = [m for m in manifest['missions'] if m.get('offerOrder') == 2 and m['missionId'] != 1199]
+        self.assertEqual(19, len(expected))
+        self.assertEqual(expected, self.compile())
+        alias = next(m for m in manifest['missions'] if m['missionId'] == 1199)
+        original = copy.deepcopy(next(m for m in expected if m['missionId'] == 1179))
+        original['missionId'] = 1199
+        self.assertEqual(original, alias)
+        self.assertEqual(self.records['client/missions', '1179']['killMission'],
+                         self.records['client/missions', '1199']['killMission'])
+
+    def test_changed_lifecycles_cargo_factions_and_room_topology_fail_closed(self):
+        changes = [('client/missions', '888', 'nodeGraphID', 1),
+                   ('client/missions', '2470', 'initialAgentGiftTypeID', 23),
+                   ('client/dungeons', '214', 'factionID', 500011),
+                   ('client/dungeons', '214', 'connections', []),
+                   ('client/dungeons', '927', 'connections', [])]
+        for dataset, key, field, value in changes:
+            with self.subTest(dataset=dataset, key=key, field=field):
+                original = self.records[dataset, key]
+                self.records[dataset, key] = dict(original, **{field: value})
+                with self.assertRaises(ValueError):
+                    self.compile()
+                self.records[dataset, key] = original
+        self.records['client/missions', '888']['killMission']['objectiveQuantity'] = 1
+        with self.assertRaises(ValueError):
+            self.compile()
 
 
 if __name__ == '__main__':

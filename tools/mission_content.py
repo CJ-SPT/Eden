@@ -8,6 +8,7 @@ import copy
 import json
 import re
 from collections import Counter
+from mission_combat_expansion import expand
 
 KNOWN_BLOCKERS = {
     895: 'Requires timed reinforcements',
@@ -176,6 +177,7 @@ def extend(db, missions, group):
         encounter(mid, faction, f'Seek_and_Destroy_({variant})_(Level_{level})', revision,
                   [group(names, count, distance, required=required) for names, count, distance, required in roster], entry)
 
+    expand(source, db, missions, group)
     admitted = {m['missionId'] for m in missions}
     encounters = {tuple(sorted(source(db, 'client/missions', m['missionId'])['killMission'].items())): m
                   for m in missions if m['waves']}
@@ -207,7 +209,7 @@ def extend(db, missions, group):
             chain = re.search(r'\b\d+\s+of\s+\d+\b', name, re.IGNORECASE) or any('nextmission' in k for k in data.get('messages', {}))
             if equivalent and not special and not chain:
                 definition = copy.deepcopy(equivalent)
-                definition.update(missionId=mid, offerOrder=1)
+                definition.update(missionId=mid, offerOrder=max(1, equivalent.get('offerOrder', 0)))
                 missions.append(definition)
                 reason = None
             else:

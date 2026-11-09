@@ -5,6 +5,7 @@ public sealed record MissionStructureProgress(long Id, bool Required, bool Compl
 public static class MissionStructureRules
 {
     public const int LargeCollidableStructureGroup = 319;
+    public const int DeadspaceOverseerStructureGroup = 494;
     public const int RecoveryContainerType = 23;
     public const int RecoveryContainerGroup = 12;
 

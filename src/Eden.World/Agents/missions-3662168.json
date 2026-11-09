@@ -3028,6 +3028,1403 @@
       ]
     },
     {
+      "missionId": 888,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Guristas_Spies_(Level_2)",
+      "sourceRevision": "oldid=192010",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16987
+              ],
+              "count": 5,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                23986
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16986,
+                16989
+              ],
+              "count": 2,
+              "range": 57000
+            },
+            {
+              "types": [
+                23985,
+                23984
+              ],
+              "count": 2,
+              "range": 57000
+            }
+          ],
+          "roomId": 2712
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2713,
+          "entryObjectId": 53026
+        },
+        {
+          "roomId": 2712,
+          "entryObjectId": 53018
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53025,
+          "destinationRoomId": 2712
+        }
+      ]
+    },
+    {
+      "missionId": 893,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Guristas_Spies_(Level_3)",
+      "sourceRevision": "oldid=192011",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24001
+              ],
+              "count": 3,
+              "range": 30000
+            },
+            {
+              "types": [
+                23984
+              ],
+              "count": 3,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                24015,
+                24014
+              ],
+              "count": 1,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 2714
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2715,
+          "entryObjectId": 53040
+        },
+        {
+          "roomId": 2714,
+          "entryObjectId": 53027
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53039,
+          "destinationRoomId": 2714
+        }
+      ]
+    },
+    {
+      "missionId": 891,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Guristas_Spies_(Level_4)",
+      "sourceRevision": "oldid=196566",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23988,
+                23987
+              ],
+              "count": 1,
+              "range": 27000,
+              "required": false
+            },
+            {
+              "types": [
+                17005,
+                24147
+              ],
+              "count": 3,
+              "range": 27000,
+              "required": false
+            },
+            {
+              "types": [
+                24015,
+                24014
+              ],
+              "count": 3,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16992,
+                16988
+              ],
+              "count": 4,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                23987
+              ],
+              "count": 2,
+              "range": 68000
+            },
+            {
+              "types": [
+                24001
+              ],
+              "count": 3,
+              "range": 68000
+            },
+            {
+              "types": [
+                24149,
+                24148
+              ],
+              "count": 1,
+              "range": 68000
+            }
+          ],
+          "roomId": 14089
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14090,
+          "entryObjectId": 592848
+        },
+        {
+          "roomId": 14089,
+          "entryObjectId": 592833
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 592847,
+          "destinationRoomId": 14089
+        }
+      ]
+    },
+    {
+      "missionId": 898,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Serpentis_Spies_(Level_3)",
+      "sourceRevision": "oldid=223606",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23995,
+                23994
+              ],
+              "count": 3,
+              "range": 28000,
+              "required": false
+            },
+            {
+              "types": [
+                24063,
+                24064
+              ],
+              "count": 1,
+              "range": 28000,
+              "required": false
+            },
+            {
+              "types": [
+                17159
+              ],
+              "count": 2,
+              "range": 52000,
+              "required": false
+            },
+            {
+              "types": [
+                17118,
+                17279
+              ],
+              "count": 5,
+              "range": 70000
+            },
+            {
+              "types": [
+                2379
+              ],
+              "count": 3,
+              "range": 70000
+            }
+          ],
+          "roomId": 2746
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2747,
+          "entryObjectId": 53202
+        },
+        {
+          "roomId": 2746,
+          "entryObjectId": 53182
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53201,
+          "destinationRoomId": 2746
+        }
+      ]
+    },
+    {
+      "missionId": 1065,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Blood_Raider_Spies_(Level_4)",
+      "sourceRevision": "oldid=208031",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24000,
+                24009
+              ],
+              "count": 3,
+              "range": 5000,
+              "required": false
+            },
+            {
+              "types": [
+                24136,
+                16938
+              ],
+              "count": 1,
+              "range": 5000,
+              "required": false
+            },
+            {
+              "types": [
+                23970,
+                23979
+              ],
+              "count": 3,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                24099,
+                24100
+              ],
+              "count": 3,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                16952,
+                16934
+              ],
+              "count": 3,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                23983,
+                23982
+              ],
+              "count": 3,
+              "range": 55000
+            },
+            {
+              "types": [
+                24013
+              ],
+              "count": 3,
+              "range": 55000
+            }
+          ],
+          "roomId": 3535
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3536,
+          "entryObjectId": 70449
+        },
+        {
+          "roomId": 3535,
+          "entryObjectId": 70433
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 70448,
+          "destinationRoomId": 3535
+        }
+      ]
+    },
+    {
+      "missionId": 2235,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Pirate_Aggression_(Sansha's_Nation)",
+      "sourceRevision": "oldid=209078",
+      "offerOrder": 2,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17074,
+                17077
+              ],
+              "count": 3,
+              "range": 10000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2237,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Pirate_Aggression_(Sansha's_Nation)",
+      "sourceRevision": "oldid=209078",
+      "offerOrder": 2,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17074,
+                17077
+              ],
+              "count": 3,
+              "range": 10000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2236,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Pirate_Aggression_(Angel_Cartel)",
+      "sourceRevision": "oldid=230763",
+      "offerOrder": 2,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 6,
+              "range": 7000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2238,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Pirate_Aggression_(Angel_Cartel)",
+      "sourceRevision": "oldid=230763",
+      "offerOrder": 2,
+      "deadspace": false,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 6,
+              "range": 7000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2391,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Guristas_Pirates)_(Level_1)",
+      "sourceRevision": "oldid=192048",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17002,
+                16987
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17002,
+                16987,
+                17006
+              ],
+              "count": 3,
+              "range": 50000
+            },
+            {
+              "types": [
+                23985,
+                23984
+              ],
+              "count": 1,
+              "range": 50000
+            },
+            {
+              "types": [
+                17001,
+                17006,
+                16989
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            }
+          ],
+          "roomId": 15026
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15027,
+          "entryObjectId": 653575
+        },
+        {
+          "roomId": 15026,
+          "entryObjectId": 653574
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 653576,
+          "destinationRoomId": 15026
+        }
+      ]
+    },
+    {
+      "missionId": 2407,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Angel_Cartel)_(Level_1)",
+      "sourceRevision": "oldid=209646",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16885,
+                16878
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16882,
+                16874
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16882,
+                16874
+              ],
+              "count": 1,
+              "range": 45000
+            },
+            {
+              "types": [
+                16878,
+                16885
+              ],
+              "count": 1,
+              "range": 45000
+            },
+            {
+              "types": [
+                16887
+              ],
+              "count": 1,
+              "range": 45000
+            },
+            {
+              "types": [
+                23974,
+                23975
+              ],
+              "count": 1,
+              "range": 45000
+            },
+            {
+              "types": [
+                16882,
+                16874
+              ],
+              "count": 3,
+              "range": 45000,
+              "required": false
+            }
+          ],
+          "roomId": 15022
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15023,
+          "entryObjectId": 653507
+        },
+        {
+          "roomId": 15022,
+          "entryObjectId": 653506
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 653508,
+          "destinationRoomId": 15022
+        }
+      ]
+    },
+    {
+      "missionId": 2416,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Blood_Raiders)",
+      "sourceRevision": "oldid=192046",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16935,
+                16947
+              ],
+              "count": 2,
+              "range": 38000,
+              "required": false
+            },
+            {
+              "types": [
+                23979
+              ],
+              "count": 1,
+              "range": 38000,
+              "required": false
+            },
+            {
+              "types": [
+                16936,
+                16947
+              ],
+              "count": 5,
+              "range": 43000,
+              "required": false
+            },
+            {
+              "types": [
+                16946,
+                16933
+              ],
+              "count": 3,
+              "range": 60000
+            },
+            {
+              "types": [
+                23980
+              ],
+              "count": 1,
+              "range": 60000
+            },
+            {
+              "types": [
+                16929
+              ],
+              "count": 1,
+              "range": 60000
+            }
+          ],
+          "roomId": 15001
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15000,
+          "entryObjectId": 652798
+        },
+        {
+          "roomId": 15001,
+          "entryObjectId": 652800
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 652799,
+          "destinationRoomId": 15001
+        }
+      ]
+    },
+    {
+      "missionId": 2449,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Serpentis)_(level_2)",
+      "sourceRevision": "oldid=192055",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17121,
+                17117,
+                17116,
+                17120
+              ],
+              "count": 5,
+              "range": 38000,
+              "required": false
+            },
+            {
+              "types": [
+                17121,
+                17117
+              ],
+              "count": 4,
+              "range": 43000,
+              "required": false
+            },
+            {
+              "types": [
+                23994,
+                23995
+              ],
+              "count": 1,
+              "range": 43000,
+              "required": false
+            },
+            {
+              "types": [
+                17279,
+                17118
+              ],
+              "count": 3,
+              "range": 48000
+            },
+            {
+              "types": [
+                23973
+              ],
+              "count": 2,
+              "range": 48000
+            },
+            {
+              "types": [
+                17114
+              ],
+              "count": 1,
+              "range": 48000
+            }
+          ],
+          "roomId": 15003
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 15002,
+          "entryObjectId": 652822
+        },
+        {
+          "roomId": 15003,
+          "entryObjectId": 652824
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 652823,
+          "destinationRoomId": 15003
+        }
+      ]
+    },
+    {
+      "missionId": 1180,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Angel_Cartel)_(Level_1)",
+      "sourceRevision": "oldid=209636",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 2,
+              "range": 2000,
+              "required": false
+            },
+            {
+              "types": [
+                16877,
+                16886
+              ],
+              "count": 3,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16885,
+                16874
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                16877
+              ],
+              "count": 8,
+              "range": 55000,
+              "required": false
+            }
+          ],
+          "roomId": 2928
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2927,
+          "entryObjectId": 55660
+        },
+        {
+          "roomId": 2928,
+          "entryObjectId": 55664
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 55659,
+          "destinationRoomId": 2928
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 55669,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1181,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Angel_Cartel)_(Level_1)",
+      "sourceRevision": "oldid=209636",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 2,
+              "range": 2000,
+              "required": false
+            },
+            {
+              "types": [
+                16877,
+                16886
+              ],
+              "count": 3,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16885,
+                16874
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                16877
+              ],
+              "count": 8,
+              "range": 55000,
+              "required": false
+            }
+          ],
+          "roomId": 2930
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2929,
+          "entryObjectId": 55684
+        },
+        {
+          "roomId": 2930,
+          "entryObjectId": 55688
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 55683,
+          "destinationRoomId": 2930
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 55693,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1177,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Guristas_Pirates)_(Level_2)",
+      "sourceRevision": "oldid=203235",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16981,
+                16994
+              ],
+              "count": 4,
+              "range": 10000,
+              "required": false
+            },
+            {
+              "types": [
+                16996,
+                16997
+              ],
+              "count": 5,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23971
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16996,
+                16997
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17004
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16987,
+                17002
+              ],
+              "count": 5,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 14165
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14164,
+          "entryObjectId": 595376
+        },
+        {
+          "roomId": 14165,
+          "entryObjectId": 595380
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 595375,
+          "destinationRoomId": 14165
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 595398,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1179,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Serpentis)_(Level_2)",
+      "sourceRevision": "oldid=193385",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17113
+              ],
+              "count": 2,
+              "range": 2000,
+              "required": false
+            },
+            {
+              "types": [
+                17121
+              ],
+              "count": 4,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23994
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17118,
+                17279
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17111
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17116,
+                17120
+              ],
+              "count": 7,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 2924
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2923,
+          "entryObjectId": 55612
+        },
+        {
+          "roomId": 2924,
+          "entryObjectId": 55616
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 55611,
+          "destinationRoomId": 2924
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 55621,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 2470,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 2,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Guristas_Pirates)_(Level_3)",
+      "sourceRevision": "oldid=223423",
+      "rooms": [
+        {
+          "roomId": 14776,
+          "entryObjectId": 642754
+        },
+        {
+          "roomId": 14777,
+          "entryObjectId": 642757
+        },
+        {
+          "roomId": 14778,
+          "entryObjectId": 642866
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 642755,
+          "destinationRoomId": 14777
+        },
+        {
+          "fromObjectId": 642756,
+          "destinationRoomId": 14778,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 14777,
+          "groups": [
+            {
+              "types": [
+                16989
+              ],
+              "count": 1,
+              "range": 48000
+            },
+            {
+              "types": [
+                16995,
+                16991
+              ],
+              "count": 2,
+              "range": 48000
+            },
+            {
+              "types": [
+                16989
+              ],
+              "count": 1,
+              "range": 48000
+            },
+            {
+              "types": [
+                16995,
+                16991
+              ],
+              "count": 2,
+              "range": 48000
+            },
+            {
+              "types": [
+                16986
+              ],
+              "count": 1,
+              "range": 60000
+            },
+            {
+              "types": [
+                23987
+              ],
+              "count": 1,
+              "range": 60000
+            }
+          ]
+        },
+        {
+          "roomId": 14778,
+          "groups": [
+            {
+              "types": [
+                17001
+              ],
+              "count": 1,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                16991
+              ],
+              "count": 2,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                16989,
+                16986
+              ],
+              "count": 2,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                24087
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                16989,
+                16986
+              ],
+              "count": 2,
+              "range": 63000
+            },
+            {
+              "types": [
+                16995
+              ],
+              "count": 1,
+              "range": 63000
+            },
+            {
+              "types": [
+                24014,
+                24015
+              ],
+              "count": 1,
+              "range": 63000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "missionId": 2473,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 2,
+      "source": "https://wiki.eveuniversity.org/The_Score_(Angel_Cartel)_(Level_3)",
+      "sourceRevision": "oldid=223035",
+      "rooms": [
+        {
+          "roomId": 14945,
+          "entryObjectId": 650165
+        },
+        {
+          "roomId": 14946,
+          "entryObjectId": 650168
+        },
+        {
+          "roomId": 14947,
+          "entryObjectId": 650206
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 650166,
+          "destinationRoomId": 14946
+        },
+        {
+          "fromObjectId": 650167,
+          "destinationRoomId": 14947,
+          "requiresClear": true
+        }
+      ],
+      "waves": [
+        {
+          "roomId": 14946,
+          "groups": [
+            {
+              "types": [
+                16874,
+                16882,
+                16885,
+                16887
+              ],
+              "count": 7,
+              "range": 30000
+            },
+            {
+              "types": [
+                23974,
+                23975
+              ],
+              "count": 2,
+              "range": 30000
+            },
+            {
+              "types": [
+                16880,
+                16898,
+                16875,
+                16881
+              ],
+              "count": 8,
+              "range": 30000
+            }
+          ]
+        },
+        {
+          "roomId": 14947,
+          "groups": [
+            {
+              "types": [
+                16874,
+                16885,
+                16888
+              ],
+              "count": 6,
+              "range": 65000
+            },
+            {
+              "types": [
+                24112,
+                16896,
+                16891,
+                24111
+              ],
+              "count": 4,
+              "range": 65000
+            },
+            {
+              "types": [
+                24005
+              ],
+              "count": 1,
+              "range": 65000
+            },
+            {
+              "types": [
+                16874,
+                16883,
+                16885,
+                16888
+              ],
+              "count": 2,
+              "range": 63000,
+              "required": false
+            },
+            {
+              "types": [
+                24112,
+                16896,
+                16891,
+                24111
+              ],
+              "count": 2,
+              "range": 63000,
+              "required": false
+            }
+          ]
+        }
+      ]
+    },
+    {
       "missionId": 937,
       "level": 1,
       "difficulty": 500,
@@ -3133,6 +4530,96 @@
         {
           "fromObjectId": 758958,
           "destinationRoomId": 17131
+        }
+      ]
+    },
+    {
+      "missionId": 1199,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Serpentis)_(Level_2)",
+      "sourceRevision": "oldid=193385",
+      "offerOrder": 2,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17113
+              ],
+              "count": 2,
+              "range": 2000,
+              "required": false
+            },
+            {
+              "types": [
+                17121
+              ],
+              "count": 4,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23994
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17118,
+                17279
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17111
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17116,
+                17120
+              ],
+              "count": 7,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 2924
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2923,
+          "entryObjectId": 55612
+        },
+        {
+          "roomId": 2924,
+          "entryObjectId": 55616
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 55611,
+          "destinationRoomId": 2924
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 55621,
+          "required": true,
+          "completesMission": true
         }
       ]
     },

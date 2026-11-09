@@ -2,15 +2,19 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 pool contains **311 definitions: 50 combat encounters, 177 ordinary deliveries and 84 delivery storylines**. These are reconstructed Eden offers, using the existing mission systems. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,581** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability; the audit does not claim that every excluded combat mission needs new mechanics.
+The build-3662168 pool contains **331 definitions: 70 combat encounters, 177 ordinary deliveries and 84 delivery storylines**. These are reconstructed Eden offers, using the existing mission systems. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,561** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability; the audit does not claim that every excluded combat mission needs new mechanics.
 
 ## Combat content
 
 | Family | Admitted variants | Definitions |
 | --- | --- | --- |
 | Angel Cartel Spies | Levels 1–4 | 4 |
-| Guristas Spies | Level 1 | 1 |
-| Serpentis Spies | Level 2 | 1 |
+| Guristas Spies | Levels 1–4 | 4 |
+| Serpentis Spies | Levels 2–3 | 2 |
+| Blood Raider Spies | Level 4 | 1 |
+| Pirate Aggression | Angel and Sansha, two templates each; level 1 | 4 |
+| The Score | Angel and Guristas levels 1 and 3; Blood and Serpentis level 2 | 6 |
+| Avenge a Fallen Comrade | Angel level 1 (two layouts); Guristas level 2; Serpentis level 2 (two templates) | 5 |
 | Eliminate a Pirate Nuisance | Angel, Blood, Guristas, Sansha, Serpentis; level 1 | 5 |
 | The Blockade | Guristas, level 1 | 1 |
 | The Assault | Guristas, level 4 | 1 |
@@ -22,6 +26,22 @@ The build-3662168 pool contains **311 definitions: 50 combat encounters, 177 ord
 | Seek and Destroy | Angel, Guristas and Sansha levels 1–2; Blood level 1; Serpentis level 2; two Thukker-supplier templates using the same Sansha dungeons | 10 |
 
 The numeric definitions and report revisions are in [the embedded manifest](../src/Eden.World/Agents/missions-3662168.json). The [exporter](../tools/Export-MissionCatalog.py) and [additional content compiler](../tools/mission_content.py) bind report names to exact pinned catalog types, factions, geometry, objective types and quantities. Unknown or ambiguous names fail export. Mixed rogue-drone groups use their own faction. The Pirate Nuisance Angel/Guristas definitions now match the catalog's actual faction assignments: **920 Angel, 916 Guristas**.
+
+The [combat expansion compiler](../tools/mission_combat_expansion.py) adds 20 definitions discovered through
+evejs's security-mission report index and independently authored from the original University reports.
+Spies and Score distinguish the reported objective groups from optional guards.
+The level-three Score variants retain an empty entrance, two combat rooms and a gate requiring the
+first combat room to be cleared. The Guristas report specifies this clearance; the Angel gate lock
+is an explicit Eden reconstruction policy. Avenge requires the exact catalog Habitat (type 19715), with guards
+optional and no invented objective cargo. Pirate Aggression uses normal space. New offers follow
+the existing pool in a second stable cohort; existing definitions and saved offers are unchanged.
+
+Named Guristas spies use the report-identified Pithatis Executor hull for levels three and four;
+Blood level-four spies use Corpatis Exorcist. NPC display-name aliases are not reconstructed.
+Unidentified alternatives and invalid report spellings are excluded: `Corelior Infantry` resolves
+the reported Serpentis spelling, and the Angel level-three Score uses the catalog's `Gistatis Tribuni`.
+Missing ranges remain Eden hints. Timed/damage-triggered Avenge variants, unresolved Blood spy hulls,
+level-four Serpentis Spies and delayed Pirate Invasion spawns remain outside this batch.
 
 The Hidden Stash permits the warehouse blitz: guards remain optional, the warehouse releases **15 Small Sealed Cargo Containers**, and turn-in consumes the recovered **150 m³** objective. Optional scenery loot remains excluded. The Sansha level-two report lists duplicated structures; the pinned dungeon has one objective warehouse, and that catalog geometry takes precedence.
 
@@ -58,4 +78,4 @@ python tools/Export-MissionFixture.py --catalog "$env:LOCALAPPDATA/Eden/catalog.
 python tests/Eden.Protocol.Tests/Persistence/mission_content_test.py
 ```
 
-The first command emits the runtime manifest and exhaustive CSV audit. The second captures **553 types and 3,472 source records** for offline tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved.
+The first command emits the runtime manifest and exhaustive CSV audit. The second captures **620 types and 3,791 source records** for offline tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved.
