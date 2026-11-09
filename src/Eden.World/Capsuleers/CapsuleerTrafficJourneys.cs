@@ -12,29 +12,42 @@ internal static partial class CapsuleerTrafficRoutes
         Estimate: routes => EntryEstimatedBytes + routes.Sum(r => EntryEstimatedBytes + r.Systems.Length * sizeof(int))
     );
 
+    private static readonly CatalogDefinition<CapsuleerTrafficRoute[]> s_capitalJourneys = new(
+        "capsuleer-capital-destination-journeys",
+        (catalog, station) => LoadJourneys(catalog, station, false),
+        Estimate: routes => EntryEstimatedBytes + routes.Sum(r => EntryEstimatedBytes + r.Systems.Length * sizeof(int))
+    );
+
     internal static CapsuleerTrafficRoute? Journey(
         CatalogDbContext catalog,
         int stationId,
         TrafficJourneyKind kind,
         long sequence,
         int previousStationId,
-        HullClass hull
+        HullClass hull,
+        TravelerRoutine? routine = null,
+        long elapsed = 0
     )
     {
         if (!TrafficRules.RouteAllows(hull, false))
         {
             return null;
         }
-        var routes = catalog.Definition(s_journeys, stationId);
-        var security = catalog.Definitions.SystemSecurity;
         bool unrestricted = TrafficRules.RouteAllows(hull, true);
-        bool Compatible(CapsuleerTrafficRoute route) =>
-            unrestricted
-            || !route.Systems.Any(system => TrafficRules.SecurityBand(security.GetValueOrDefault(system)) == TrafficSecurityBand.High);
-        var candidates = routes
-            .Where(route => route.Systems.Length - 1 <= TrafficJourneyRules.MaximumDistance(kind))
-            .Where(Compatible)
-            .ToArray();
+        var routes = catalog.Definition(unrestricted ? s_journeys : s_capitalJourneys, stationId);
+        var avoided = routine?.Threats.Where(threat => threat.ExpiresAt > elapsed).Select(threat => threat.SystemId).ToHashSet();
+        int maximum = TrafficJourneyRules.MaximumDistance(kind);
+        var candidates = routes.Where(route => route.Systems.Length - 1 <= maximum).ToArray();
+        if (avoided is { Count: > 0 })
+        {
+            var alternatives = LoadJourneys(catalog, stationId, unrestricted, avoided)
+                .Where(route => route.Systems.Length - 1 <= maximum && !avoided.Contains(route.Systems[^1]))
+                .ToArray();
+            if (alternatives.Length > 0)
+            {
+                candidates = alternatives;
+            }
+        }
         if (candidates.Length == 0)
         {
             return null;
@@ -57,11 +70,16 @@ internal static partial class CapsuleerTrafficRoutes
         {
             candidates = onward;
         }
-        int Weight(CapsuleerTrafficRoute route) =>
-            CapsuleerEncounterRules.IsTradeHubStation(route.DestinationStationId) ? 4
-            : catalog.Definitions.StationsInSystem(route.Systems[^1]).Length >= 4 ? 2
-            : 1;
-        int selection = (int)((ulong)sequence % (ulong)candidates.Sum(Weight));
+        int Weight(CapsuleerTrafficRoute route)
+        {
+            int geographic =
+                CapsuleerEncounterRules.IsTradeHubStation(route.DestinationStationId) ? 4
+                : catalog.Definitions.StationsInSystem(route.Systems[^1]).Length >= 4 ? 2
+                : 1;
+            return routine is null ? geographic : TravelerRoutineRules.DestinationWeight(routine, route.DestinationStationId, geographic);
+        }
+        ulong draw = routine is null ? TravelerRoutineRules.Mix(unchecked((ulong)sequence)) : TravelerRoutineRules.Draw(routine, sequence);
+        int selection = (int)(draw % (ulong)candidates.Sum(Weight));
         foreach (var candidate in candidates)
         {
             selection -= Weight(candidate);
@@ -73,7 +91,13 @@ internal static partial class CapsuleerTrafficRoutes
         throw new InvalidOperationException("The destination weighting has no selected route.");
     }
 
-    internal static CapsuleerTrafficRoute? ToStation(CatalogDbContext catalog, int sourceStation, int destinationStation, HullClass hull)
+    internal static CapsuleerTrafficRoute? ToStation(
+        CatalogDbContext catalog,
+        int sourceStation,
+        int destinationStation,
+        HullClass hull,
+        IReadOnlySet<int>? avoided = null
+    )
     {
         if (!TrafficRules.RouteAllows(hull, false))
         {
@@ -86,7 +110,7 @@ internal static partial class CapsuleerTrafficRoutes
         bool unrestricted = TrafficRules.RouteAllows(hull, true);
         bool Allows(int system) =>
             unrestricted || TrafficRules.SecurityBand(security.GetValueOrDefault(system)) != TrafficSecurityBand.High;
-        if (!Allows(source) || !Allows(destination))
+        if (!Allows(source) || !Allows(destination) || avoided?.Contains(destination) == true)
         {
             return null;
         }
@@ -106,7 +130,7 @@ internal static partial class CapsuleerTrafficRoutes
             }
             foreach (int next in graph.Links.GetValueOrDefault(current) ?? [])
             {
-                if (!parents.ContainsKey(next) && Allows(next))
+                if (!parents.ContainsKey(next) && Allows(next) && avoided?.Contains(next) != true)
                 {
                     parents.Add(next, current);
                     distances[next] = distances[current] + 1;
@@ -117,10 +141,24 @@ internal static partial class CapsuleerTrafficRoutes
         return null;
     }
 
-    private static CapsuleerTrafficRoute[] LoadJourneys(CatalogDbContext catalog, int stationId)
+    private static CapsuleerTrafficRoute[] LoadJourneys(CatalogDbContext catalog, int stationId) => LoadJourneys(catalog, stationId, true);
+
+    private static CapsuleerTrafficRoute[] LoadJourneys(
+        CatalogDbContext catalog,
+        int stationId,
+        bool unrestricted,
+        IReadOnlySet<int>? avoided = null
+    )
     {
         var graph = catalog.Definitions.GlobalDefinition(s_graph);
         int source = catalog.RequireStation(stationId).SolarSystemId;
+        var security = catalog.Definitions.SystemSecurity;
+        bool Allows(int system) =>
+            unrestricted || TrafficRules.SecurityBand(security.GetValueOrDefault(system)) != TrafficSecurityBand.High;
+        if (!Allows(source))
+        {
+            return [];
+        }
         Queue<int> pending = new();
         Dictionary<int, int> parents = new() { [source] = source };
         Dictionary<int, int> distances = new() { [source] = 0 };
@@ -128,7 +166,7 @@ internal static partial class CapsuleerTrafficRoutes
         pending.Enqueue(source);
         while (pending.TryDequeue(out int current))
         {
-            foreach (int destination in (graph.Stations.GetValueOrDefault(current) ?? []).Take(2))
+            foreach (int destination in graph.Stations.GetValueOrDefault(current) ?? [])
             {
                 if (destination != stationId)
                 {
@@ -141,7 +179,7 @@ internal static partial class CapsuleerTrafficRoutes
             }
             foreach (int next in graph.Links.GetValueOrDefault(current) ?? [])
             {
-                if (parents.TryAdd(next, current))
+                if (Allows(next) && avoided?.Contains(next) != true && parents.TryAdd(next, current))
                 {
                     distances[next] = distances[current] + 1;
                     pending.Enqueue(next);

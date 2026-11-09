@@ -292,6 +292,17 @@ internal sealed partial class CapsuleerHauler(
         {
             RefreshTackle();
         }
+        if (Pilot.Position is not null && Volatile.Read(ref _threatenedShip) == Pilot.ShipId)
+        {
+            _work = Work with
+            {
+                Routine = TravelerRoutineRules.Threatened(
+                    Work.Routine ?? TravelerRoutineRules.Create(pilotId),
+                    Pilot.SystemId,
+                    job.DueTicks
+                ),
+            };
+        }
         var beforePilot = Pilot;
         var before = Work;
         var beforeRoute = _route;
@@ -307,7 +318,7 @@ internal sealed partial class CapsuleerHauler(
                 throw new InvalidDataException("Warp disruption interrupts the hauler's alignment.");
             }
             if (
-                Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
+                Volatile.Read(ref _threatenedShip) == Pilot.ShipId
                 && Pilot.Position is not null
                 && Work.Activity != HaulerActivity.Jumping
                 && !Work.Retreating
@@ -428,6 +439,7 @@ internal sealed partial class CapsuleerHauler(
         }
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
+        Interlocked.CompareExchange(ref _threatenedShip, 0, Pilot.ShipId);
         return next;
     }
 
@@ -494,7 +506,10 @@ internal sealed partial class CapsuleerHauler(
                 RouteDirection: Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup ? -1 : 1,
                 TrafficLane: previous?.TrafficLane,
                 DwellSequence: previous?.DwellSequence ?? 0
-            );
+            )
+            {
+                Routine = previous?.Routine,
+            };
         }
         if (previous is null || previous.ShipId != Pilot.ShipId)
         {
@@ -606,7 +621,7 @@ internal sealed partial class CapsuleerHauler(
             }
             _trafficRefreshChecked = true;
         }
-        if (Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
+        if (Work.Retreating || Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
         {
             AssignJourney();
         }
@@ -662,6 +677,9 @@ internal sealed partial class CapsuleerHauler(
         }
         var target = _target ?? throw new InvalidDataException("The hauling route has no travel target.");
         _work = Work with { Activity = HaulerActivity.Flying, TargetId = target.Id };
+        // A nearby refuge needs subwarp movement. Do not retain an old outbound alignment
+        // when StartWarp rejects the new destination as too close.
+        _navigation.CancelAlignment();
         if (!_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, target, 0, Work.Stamp))
         {
             Follow();
@@ -745,9 +763,15 @@ internal sealed partial class CapsuleerHauler(
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
             _navigation.Dock();
             _operation.TravelChanged = true;
+            var routine = TravelerRoutineRules.Arrive(Work.Routine ?? TravelerRoutineRules.Create(pilotId), Pilot.StationId);
             int dwell = Work.Journey is { } journey
-                ? TrafficJourneyRules.LayoverSeconds(journey.Kind, pilotId, Work.DwellSequence)
+                ? TravelerRoutineRules.LayoverSeconds(routine, journey.Kind, pilotId, Work.DwellSequence)
                 : HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
+            if (routine.ShelterPending)
+            {
+                dwell = Math.Max(dwell, TravelerRoutineRules.ShelterSeconds(routine, Work.DwellSequence));
+                routine = routine with { ShelterPending = false };
+            }
             _work = Work with
             {
                 Activity = HaulerActivity.Docked,
@@ -755,6 +779,7 @@ internal sealed partial class CapsuleerHauler(
                 DueStamp = Work.Stamp + dwell,
                 DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(dwell).Ticks,
                 DwellSequence = checked(Work.DwellSequence + 1),
+                Routine = routine,
             };
         }
         else

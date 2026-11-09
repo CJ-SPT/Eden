@@ -38,7 +38,10 @@ public sealed record HaulerProgress(
     long? DepartureAt = null,
     long DwellSequence = 0,
     TrafficJourney? Journey = null
-);
+)
+{
+    public TravelerRoutine? Routine { get; init; }
+}
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth Health);
 

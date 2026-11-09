@@ -44,6 +44,18 @@ The first station approach in Jita, Amarr, Rens, Dodixie and Hek favors the esta
 
 Busy routes can first appear with a traveler inbound at a gate, another closing on a station, and others docked. Two observers share the same ships and Local membership.
 
+### Persistent traveler routines
+
+Travelers acquire a saved pace and station affinities at their next dock. Trip selection uses an independent deterministic draw,
+reduces the weight of the last three stations, and retains the local/regional/long-distance and home roster policies.
+Brisk, regular and leisurely pilots use half, normal and double layovers with 20% per-visit variation. Station endpoints are
+considered before candidate limits; hull-restricted searches retain compatible detours. Security status adds no travel preference.
+
+An attacked traveler remembers up to four systems for thirty human-active minutes. After retreat, its next dock shelters it
+for five to fifteen human-active minutes. Compatible alternatives avoid remembered systems; topology without an alternative
+retains ordinary travel. Shelter, affinities and threats survive checkpoints without changing existing in-flight deadlines.
+See [the validation record](protocol/capsuleers.md#persistent-traveler-routines--november-9-2026).
+
 ### Destination journeys
 
 Locals travel zero to two jumps from their saved home station and can return after docking. Regional visitors favor three to seven jumps. Long-distance visitors favor eight to twenty. A topology that cannot support the preferred distance uses a shorter compatible station route. Each new route has distinct station endpoints and visits each system once.

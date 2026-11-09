@@ -342,3 +342,40 @@ The affected filter was the following expression. The isolated method filter was
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** After restarting with the new build, watch a connected gate for varied arrivals and follow one traveler across successive systems. Existing short trips can finish before adopting their next destination.
+
+## Persistent traveler routines — November 9, 2026
+
+Travelers now retain a deterministic pace, station affinities and three recent stops in their existing hauler progress payload.
+Geographic destination weights combine with stable personal affinities and a separate per-trip mixer. Recent stops receive a
+quarter of their ordinary weight. Existing journeys finish before routine assignment at a dock. New station dwell times use
+half/normal/double pace with 20% variation, retaining population counts and journey distance bands. Security status is not a
+travel preference; real hull restrictions remain enforced. All stations are considered before retaining bounded candidates.
+Capital destination searches now apply hull restrictions during traversal, preserving detours hidden by a shorter highsec path.
+
+Attack memory retains four systems for thirty human-active minutes. A retreat shelters at the next dock for five to fifteen
+human-active minutes. Alternate paths and destinations avoid remembered systems while available, including postponing a
+preferred homeward leg. Otherwise ordinary compatible routes remain available. Memory and shelter share the saved progress
+and checkpoint generation. Rejected navigation retains the threat instead of silently consuming the attack notification.
+Legacy saves retain their assets, identities, current navigation, deadlines and nullable progress compatibility.
+
+References: [EVE University hauling](https://wiki.eveuniversity.org/Hauling), with Eden's explicit security-neutral routing policy;
+unchanged navigation uses [Carbon Ball.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp).
+No client observations were collected.
+
+**Automated validation.** Tool/solution restore and build passed with zero warnings/errors (final build 3.89 seconds).
+Final affected filter `FullyQualifiedName~TravelerRoutineTests|FullyQualifiedName~CapsuleerTrafficRoutesTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerTrafficObservationTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~LiveSimulationTests`
+passed **84 tests** in **20.57 seconds** (feature build 1.48 seconds). Catalog setup (**8**) and formatting policy (**9**)
+Python tests passed. Formatting and diff verification passed. Tests cover station affinity and recent-stop weighting,
+pace variation, compatible capital detours, threat avoidance/expiry/fallback, all station endpoints, retreat/shelter and
+checkpoint persistence. Warmed complete traffic wakes retain zero SQL commands, connections and fitting calculations for
+empty and occupied systems with multiple observers; capture/projection/write are measured separately.
+Two hundred warmed complete wakes took **9.58–24.45 ms** across those cases. Checkpoint capture was **0.44–2.85 ms**,
+projection **1.87–6.36 ms**, and writing **11.41–18.50 ms** on this run; these measurements are workload evidence, not latency guarantees.
+Development first used exact filter `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.TravelerRoutineTests.HabitsThreatsAndShelterSurviveCheckpointWithoutChangingLegacyDeadlines`.
+The first fixture serialization omitted the production read-only-property setting and was corrected. The expanded retreat
+regression exposed stale outbound alignment and dirty-position eviction on docking; both were corrected before final validation.
+The dirty-position correction is exercised by a real resident checkpoint after retreat. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe recurring travelers and the sheltered return after an attack to assess visual pacing.

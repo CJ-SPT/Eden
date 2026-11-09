@@ -533,6 +533,9 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                     }
                     _positions.Remove(change.Id);
                     _savedPositions.Remove(change.Id);
+                    // Docking/transfer committed the authoritative membership transition.
+                    // Its evicted position must not remain in the next checkpoint's dirty set.
+                    _dirtyPositions.Remove(change.Id);
                     _acquisitionShips.Clear();
                     _acquisitions.Clear();
                     break;

@@ -9,6 +9,11 @@ internal sealed partial class CapsuleerHauler
     private void AssignJourney()
     {
         var previous = Work.Journey;
+        var routine = Work.Routine ?? TravelerRoutineRules.Create(pilotId);
+        var avoidedSystems = routine
+            .Threats.Where(threat => threat.ExpiresAt > Work.ActiveTicks)
+            .Select(threat => threat.SystemId)
+            .ToHashSet();
         var agent = _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!;
         bool homeRoster = agent.Slot < TrafficJourneyRules.HomeRosterSlots;
         int home = homeRoster
@@ -31,11 +36,13 @@ internal sealed partial class CapsuleerHauler
             _operation.Catalog,
             Pilot.StationId,
             kind,
-            pilotId + sequence,
+            sequence,
             avoided,
-            (HullClass)Pilot.ShipGroupId
+            (HullClass)Pilot.ShipGroupId,
+            routine,
+            Work.ActiveTicks
         );
-        if (kind == TrafficJourneyKind.Local && Pilot.StationId != home)
+        if (kind == TrafficJourneyKind.Local && Pilot.StationId != home && avoidedSystems.Count == 0)
         {
             route =
                 previous is not null && previous.Kind == TrafficJourneyKind.Local && previous.SourceStationId == home
@@ -44,7 +51,9 @@ internal sealed partial class CapsuleerHauler
         }
         if (kind != TrafficJourneyKind.Local && previous is not null && previous.SourceStationId != home && Pilot.StationId != home)
         {
-            route = CapsuleerTrafficRoutes.ToStation(_operation.Catalog, Pilot.StationId, home, (HullClass)Pilot.ShipGroupId) ?? route;
+            route =
+                CapsuleerTrafficRoutes.ToStation(_operation.Catalog, Pilot.StationId, home, (HullClass)Pilot.ShipGroupId, avoidedSystems)
+                ?? route;
         }
         if (route is null)
         {
@@ -55,6 +64,7 @@ internal sealed partial class CapsuleerHauler
         {
             Journey = new(kind, home, route.SourceStationId, route.DestinationStationId, route.Systems, sequence),
             TrafficLane = null,
+            Routine = routine,
         };
     }
 }
