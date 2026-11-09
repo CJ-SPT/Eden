@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Probe launcher undocking crash correction, November 9, 2026](protocol/information.md#probe-launcher-undocking-crash-correction-november-9-2026)
+
 - [Mission layout corrections, November 9, 2026](protocol/agents.md#mission-layout-corrections--november-9-2026)
 
 - [Anomaly warp-in collision correction, November 9, 2026](protocol/combat.md#anomaly-warp-in-collision-correction--november-9-2026)

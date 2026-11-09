@@ -64,6 +64,13 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     private static ScanProbe Read(SavedScanProbe p) =>
         new(p.Id, p.TypeId, p.SystemId, new(p.X, p.Y, p.Z), p.ExpiresAt, JsonSerializer.Deserialize<ProbeProfile>(p.ProfileJson)!);
 
+    private static int SystemId(Pilot pilot, CatalogDbContext catalog)
+    {
+        var position = pilot.ActiveShip.Position ?? throw new InvalidDataException("Operate probes from a ship in space.");
+        // Ordinary undocking leaves the system implicit until the ship travels to another system.
+        return position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
+    }
+
     public IReadOnlyList<ScanProbe> List(long pilotId, int systemId, long now)
     {
         using WorldDbContext world = new(database.Path);
@@ -103,6 +110,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                     throw new InvalidDataException("Launch between one and eight probes.");
                 }
                 var pilot = Pilot(world, catalog, pilotId, now);
+                int system = SystemId(pilot, catalog);
                 var module = world.Set<OwnedItem>().Find(moduleId);
                 if (
                     module is not { Online: true, Singleton: true }
@@ -134,9 +142,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                 }
                 PilotSkillReader.CheckRequirements(world, catalog, pilotId, charge.TypeId);
                 world.RemoveRange(world.Set<SavedScanProbe>().Where(p => p.PilotId == pilotId && p.ExpiresAt <= now));
-                int deployed = world
-                    .Set<SavedScanProbe>()
-                    .Count(p => p.PilotId == pilotId && p.SystemId == pilot.ActiveShip.Position!.SystemId && p.ExpiresAt > now);
+                int deployed = world.Set<SavedScanProbe>().Count(p => p.PilotId == pilotId && p.SystemId == system && p.ExpiresAt > now);
                 int quantity = Math.Min(count, Math.Min(charge.Quantity, ProbeScanRules.MaximumProbes - deployed));
                 if (quantity <= 0)
                 {
@@ -166,7 +172,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                             {
                                 Id = next++,
                                 PilotId = pilotId,
-                                SystemId = position.SystemId!.Value,
+                                SystemId = system,
                                 TypeId = charge.TypeId,
                                 X = position.X,
                                 Y = position.Y,
@@ -225,7 +231,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
             {
                 var pilot = Pilot(world, catalog, pilotId, now);
                 Idle(world, pilotId, now);
-                var probes = Owned(world, pilotId, pilot.ActiveShip.Position!.SystemId!.Value, ids, now);
+                var probes = Owned(world, pilotId, SystemId(pilot, catalog), ids, now);
                 double required = probes.Sum(p => PilotInventoryStore.Volume(catalog, p.TypeId));
                 double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
                 double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
@@ -258,7 +264,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
             {
                 var pilot = Pilot(world, catalog, pilotId, now);
                 Idle(world, pilotId, now);
-                world.RemoveRange(Owned(world, pilotId, pilot.ActiveShip.Position!.SystemId!.Value, [id], now));
+                world.RemoveRange(Owned(world, pilotId, SystemId(pilot, catalog), [id], now));
                 return true;
             }
         );
@@ -272,9 +278,9 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
             int system;
             using (WorldDbContext world = new(database.Path))
             {
-                system =
-                    world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShip.Position!.SystemId).Single()
-                    ?? throw new InvalidDataException("Scan while in space.");
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+                system = SystemId(pilot, catalog);
             }
             var signatures = sites.Signatures(system, now);
             return Write(
@@ -361,7 +367,11 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                 var authoritative = JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson)!;
                 world.Remove(saved);
                 var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-                if (pilot.ActiveShipId != authoritative.ShipId || pilot.ActiveShip.Position?.SystemId != authoritative.SystemId)
+                if (
+                    pilot.ActiveShipId != authoritative.ShipId
+                    || pilot.ActiveShip.Position is null
+                    || SystemId(pilot, catalog) != authoritative.SystemId
+                )
                 {
                     return Array.Empty<ProbeScanResult>();
                 }

@@ -2,6 +2,24 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Probe launcher undocking crash correction, November 9, 2026
+
+The maintainer reported `Nullable object must have a value` at `PilotProbeScanningStore.Launch` when activating a probe launcher. Ordinary undocking saves a flight position without an explicit system ID; navigation resolves that position through the ship's last station. Probe launch instead dereferenced the nullable ID, aborting the connection before its transaction committed. Existing tests always supplied an explicit system and missed this state.
+
+Probe launch, deployed-probe limits, recovery, destruction, scan startup and scan completion now resolve the same effective system: the explicit flight system takes precedence, otherwise the last station's catalog system applies. A missing flight position still means docked. No saved-world migration, protocol shape, probe profile or scan rule changes are required.
+
+Automated coverage exercises native module activation, notifications, perfect scan resolution and warp authorization with both explicit and station-inferred systems. Additional cases cover split launches and unchanged inventory at the eight-probe limit, recovery/destruction, pending-scan restart, and docked rejection without inventory/probe changes or result disclosure. The initial native regression reproduced the reported exception exactly. An initial docked test compared positions from before scanning; its assertion now captures the deployed state after scan placement.
+
+Gameplay reference: [EVE University probe scanning](https://wiki.eveuniversity.org/Probe_scanning). Rechecked Carbon [Destiny Ballpark.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp) for existing movement ownership. This correction is confined to Eden's saved-position interpretation; Blue and Destiny behavior are unchanged. Pinned build-3662168 module activation and probe reply/notification adapters are reused.
+
+Automated validation: the final ordered tool restore, solution restore/build, focused .NET tests, both Python policy suites and formatting verification passed in **160.66 seconds**. The solution built with zero warnings/errors; **169 .NET cases passed with zero failures/skips** (75.97 seconds including runner startup), along with **8 catalog + 9 formatting policy cases** (3.227 + 0.056 seconds). Formatting verified **1,441 files**. The new documentation anchor, UTF-8, final newline, trailing whitespace and `git diff --check` checks passed. No full .NET regression run was requested.
+
+Final affected filter: `FullyQualifiedName~ProbeScanningTests|FullyQualifiedName~ProbeScanningRuleTests|FullyQualifiedName~HackingWorldTests|FullyQualifiedName~AmmunitionTests|FullyQualifiedName~StationUndockTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~WorldInitializationTests`. Development started with exact method filter `FullyQualifiedName=Eden.Protocol.Tests.Exploration.ProbeScanningTests.NativeLaunchScanNotificationsAndWarpRequireAPerPilotPerfectResult`; it initially passed the explicit-system case and failed the station-inferred case at the reported launch line. After correction, both native cases and the restart lifecycle passed; the docked assertion correction passed its exact method filter before final validation.
+
+Live acceptance: **Not performed; agent client testing is disabled.** The reported failure is historical evidence, not acceptance of this fix.
+
+Optional maintainer checks: after restarting the updated server, undock normally, launch probes from the fitted launcher, scan, and recover them.
+
 ## Hacking and archaeology, November 9, 2026
 
 Native data and relic analyzers now open the client's hacking minigame against ordinary pirate exploration containers. The supported cohort contains all **ten published static analyzer profiles** in build 3662168, including integrated analyzers and their actual virus coherence, strength, utility slots, range, CPU/power, skill and hull restrictions. Hacking and Archaeology skills, operational hull bonuses and supported analyzer rigs feed the existing fitting graph. Integrated analyzers retain both required-skill contributions. Purloined Sansha equipment retains its Echelon restriction; this milestone does not admit unrelated hull capabilities.

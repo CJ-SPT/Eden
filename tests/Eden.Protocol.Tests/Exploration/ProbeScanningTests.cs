@@ -49,14 +49,14 @@ public sealed class ProbeScanningTests
         return (new(db, sites), sites);
     }
 
-    private static long Load(Fixture f, int launcher = 17938, int probe = 30013, int quantity = 8)
+    private static long Load(Fixture f, int launcher = 17938, int probe = 30013, int quantity = 8, bool explicitSystem = true)
     {
         long module = f.Fit(launcher);
         long stack = f.Grant(probe, quantity);
         f.Db.Services.GetRequiredService<IPilotAmmunition>().Load(f.PilotId, f.ShipId, [module], [stack], f.StationId, f.Clock.Now);
         f.Clock.Milliseconds += 10000;
         var pilot = f.Db.Store.FindPilot(1000001)!;
-        f.Db.Store.SetPosition(f.ShipId, new(pilot.X + 1_000_000, pilot.Y, pilot.Z), CombatAnomalyRules.SystemId);
+        f.Db.Store.SetPosition(f.ShipId, new(pilot.X + 1_000_000, pilot.Y, pilot.Z), explicitSystem ? CombatAnomalyRules.SystemId : null);
         return module;
     }
 
@@ -147,6 +147,77 @@ public sealed class ProbeScanningTests
     }
 
     [Fact]
+    public void StationInferredSystemPreservesProbeLimitsRecoveryDestructionAndPendingScansAfterRestart()
+    {
+        using var f = Prepare();
+        long module = Load(f, explicitSystem: false);
+        var (scanning, sites) = Stores(f);
+        int system = f.Db.Store.FindPilot(1000001)!.SystemId;
+        var first = scanning.Launch(f.PilotId, module, 4, f.Clock.Now);
+        f.Clock.Milliseconds += 2000;
+        var second = scanning.Launch(f.PilotId, module, 8, f.Clock.Now);
+        Assert.Equal(4, second.Probes.Count);
+        var probes = first.Probes.Concat(second.Probes).ToArray();
+        Assert.All(probes, p => Assert.Equal(system, p.SystemId));
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Null(world.Positions.Find(f.ShipId)!.SystemId);
+        }
+        long spare = f.Grant(30013, 8, cargo: true);
+        f.Clock.Milliseconds += 2000;
+        f.Db.Services.GetRequiredService<IPilotAmmunition>().Load(f.PilotId, f.ShipId, [module], [spare], f.ShipId, f.Clock.Now);
+        f.Clock.Milliseconds += 10000;
+        Assert.Throws<InvalidDataException>(() => scanning.Launch(f.PilotId, module, 1, f.Clock.Now));
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Equal(8, world.Set<OwnedItem>().Single(i => i.LocationId == module).Quantity);
+            Assert.Equal(8, world.Set<SavedScanProbe>().Count());
+        }
+        var site = Assert.Single(sites.Signatures(system, f.Clock.Now));
+        var scan = scanning.Begin(f.PilotId, Formation(probes, site.Position), f.Clock.Now);
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        scanning = Stores(f).Scanning;
+        Assert.Equal(scan.ReadyAt, scanning.Pending(f.PilotId)!.ReadyAt);
+        f.Clock.Milliseconds += (scan.ReadyAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond;
+        Assert.Equal(1, Assert.Single(scanning.Complete(f.PilotId, scan, f.Clock.Now)).Certainty);
+        Assert.True(scanning.Resolved(f.PilotId, site.Id, system, f.Clock.Now));
+        var recovered = scanning.Recover(f.PilotId, first.Probes.Select(p => p.Id).ToArray(), f.Clock.Now);
+        Assert.Equal(4, Assert.Single(recovered.Items).Item.Quantity);
+        foreach (var probe in second.Probes)
+        {
+            scanning.Destroy(f.PilotId, probe.Id, f.Clock.Now);
+        }
+        Assert.Empty(scanning.List(f.PilotId, system, f.Clock.Now));
+        Assert.Throws<InvalidDataException>(() => scanning.Destroy(f.PilotId, second.Probes[0].Id, f.Clock.Now));
+    }
+
+    [Fact]
+    public void DockingRejectsProbeCommandsAndDiscardsPendingResultsWithoutChangingInventoryOrProbes()
+    {
+        using var f = Prepare();
+        long module = Load(f, explicitSystem: false);
+        var (scanning, sites) = Stores(f);
+        int system = f.Db.Store.FindPilot(1000001)!.SystemId;
+        var probes = scanning.Launch(f.PilotId, module, 8, f.Clock.Now).Probes;
+        var site = Assert.Single(sites.Signatures(system, f.Clock.Now));
+        var placements = Formation(probes, site.Position);
+        var scan = scanning.Begin(f.PilotId, placements, f.Clock.Now);
+        var deployed = scanning.List(f.PilotId, system, f.Clock.Now);
+        f.Db.Store.SetPosition(f.ShipId, null);
+        f.Clock.Milliseconds += (scan.ReadyAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond;
+        Assert.Throws<InvalidDataException>(() => scanning.Launch(f.PilotId, module, 1, f.Clock.Now));
+        Assert.Throws<InvalidDataException>(() => scanning.Recover(f.PilotId, probes.Select(p => p.Id).ToArray(), f.Clock.Now));
+        Assert.Throws<InvalidDataException>(() => scanning.Destroy(f.PilotId, probes[0].Id, f.Clock.Now));
+        Assert.Throws<InvalidDataException>(() => scanning.Begin(f.PilotId, placements, f.Clock.Now));
+        Assert.Empty(scanning.Complete(f.PilotId, scan, f.Clock.Now));
+        Assert.False(scanning.Resolved(f.PilotId, site.Id, system, f.Clock.Now));
+        Assert.Equal(deployed, scanning.List(f.PilotId, system, f.Clock.Now));
+        using WorldDbContext world = new(f.Db.Path);
+        Assert.Empty(world.Set<OwnedItem>().Where(i => i.TypeId == 30013));
+        Assert.Empty(world.Set<SavedProbeScan>());
+    }
+
+    [Fact]
     public void PublishedLaunchersAndProbesHaveFittingAndChargeAdmission()
     {
         using var f = Prepare();
@@ -215,11 +286,13 @@ public sealed class ProbeScanningTests
         Assert.False(scanning.Resolved(f.PilotId, site.Id, site.SystemId, f.Clock.Now));
     }
 
-    [Fact]
-    public void NativeLaunchScanNotificationsAndWarpRequireAPerPilotPerfectResult()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void NativeLaunchScanNotificationsAndWarpRequireAPerPilotPerfectResult(bool explicitSystem)
     {
         using var f = Prepare();
-        long module = Load(f);
+        long module = Load(f, explicitSystem: explicitSystem);
         var (scanning, sites) = Stores(f);
         var pilot = f.Db.Store.FindPilot(1000001)!;
         using PilotCallContext context = new(
