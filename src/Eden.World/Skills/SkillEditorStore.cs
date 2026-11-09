@@ -8,14 +8,13 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
-using Eden.World.Fittings;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Skills;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class SkillEditorStore(WorldDatabase database, TimeProvider clock) : ISkillEditor
+public sealed partial class SkillEditorStore(WorldDatabase database, TimeProvider clock) : ISkillEditor
 {
     private const int SkillCategory = 16;
     private const int SkillLevelEffect = 132;
@@ -27,7 +26,17 @@ public sealed class SkillEditorStore(WorldDatabase database, TimeProvider clock)
     private readonly Lazy<ImmutableDictionary<int, SkillDefinition>> _original = new(() => LoadOriginal(database));
     private readonly object _initialize = new();
     private bool _initialized;
-    private CatalogProvider Catalog => CatalogProvider.Open(database.OriginalCatalogPath);
+    private CatalogProvider? _catalog;
+    private CatalogProvider Catalog
+    {
+        get
+        {
+            // Retain the base generation even when the running world uses a published package.
+            _catalog = CatalogProvider.Open(database.OriginalCatalogPath);
+            return _catalog;
+        }
+    }
+    private readonly Lazy<SkillEditorChoices> _choices = new(() => LoadChoices(database));
 
     private SkillEditorDbContext Open()
     {
@@ -101,35 +110,13 @@ public sealed class SkillEditorStore(WorldDatabase database, TimeProvider clock)
             edit?.Revision ?? 0
         );
 
-    public IReadOnlyList<SkillEditorOption> Groups() =>
-        _original
-            .Value.Values.Select(skill => skill.GroupId)
-            .Distinct()
-            .Order()
-            .Select(id => new SkillEditorOption(id, GroupName(id)))
-            .ToArray();
+    public IReadOnlyList<SkillEditorOption> Groups() => Choices().Groups;
 
-    private string GroupName(int id)
-    {
-        var group = Catalog.Find(CatalogData.Client.Groups, (long)id);
-        return group?.GroupNameID is long name ? Text(name) : $"Skill group {id}";
-    }
+    public IReadOnlyList<SkillEditorOption> Attributes() => Choices().Attributes;
 
-    private string Text(long? id) => id is long key ? Catalog.Find(CatalogData.Client.LocalizationFsdEnUs, key)?.Text ?? "" : "";
+    public IReadOnlyList<SkillEditorOption> Effects() => Choices().Effects;
 
-    public IReadOnlyList<SkillEditorOption> Attributes() =>
-        Catalog
-            .Pin(CatalogData.Client.Dogmaattributes)
-            .Select(pair => new SkillEditorOption(checked((int)pair.Key), pair.Value.Name ?? $"Attribute {pair.Key}"))
-            .OrderBy(option => option.Name)
-            .ToArray();
-
-    public IReadOnlyList<SkillEditorOption> Effects() =>
-        Catalog
-            .Pin(CatalogData.Client.Dogmaeffects)
-            .Select(pair => new SkillEditorOption(checked((int)pair.Key), pair.Value.EffectName ?? $"Effect {pair.Key}"))
-            .OrderBy(option => option.Name)
-            .ToArray();
+    public SkillEditorChoices Choices() => _choices.Value;
 
     public SkillEditorEntry Save(long generation, SkillDefinition definition, string author)
     {
@@ -303,7 +290,7 @@ public sealed class SkillEditorStore(WorldDatabase database, TimeProvider clock)
             || skill.MarketGroupId is int market && Catalog.Find(CatalogData.Client.Marketgroups, (long)market) is null
         )
         {
-            throw new InvalidDataException("Choose existing icon and market group IDs, or leave them empty.");
+            throw new InvalidDataException("Choose an existing icon and market group, or leave them empty.");
         }
         if (
             skill.Prerequisites.Length > 6
@@ -361,14 +348,7 @@ public sealed class SkillEditorStore(WorldDatabase database, TimeProvider clock)
             foreach (var reference in skill.Effects.Where(effect => effect.EffectId != SkillLevelEffect))
             {
                 var effect = Catalog.Get(CatalogData.Client.Dogmaeffects, (long)reference.EffectId);
-                if (
-                    effect.EffectCategory is not ((int)PassiveEffectPhase.Fitted) and not ((int)PassiveEffectPhase.Online)
-                    || effect.ModifierInfo is not { Length: > 0 } modifiers
-                    || modifiers.Any(value =>
-                        PassiveCatalog.Parse(value, effect.EffectCategory.Value)
-                            is not { Domain: ModifierDomain.Ship or ModifierDomain.Item }
-                    )
-                )
+                if (!SupportedEffect(reference.EffectId, effect))
                 {
                     throw new InvalidDataException(
                         $"Effect {reference.EffectId} is not a supported passive ship or module bonus. Choose a supported catalog effect."
@@ -436,55 +416,62 @@ public sealed class SkillEditorStore(WorldDatabase database, TimeProvider clock)
 
     private static ImmutableDictionary<int, SkillDefinition> LoadOriginal(WorldDatabase database)
     {
+        using var scope = new CatalogConnectionScope().Begin();
         var catalog = CatalogProvider.Open(database.OriginalCatalogPath);
+        var items = catalog.Items.Values.Where(item => item.CategoryId == SkillCategory).ToArray();
+        var ids = items.Select(item => (long)item.Id).ToArray();
+        var types = catalog.FindMany(CatalogData.Client.Types, ids);
+        var dogmas = catalog.FindMany(CatalogData.Client.Typedogma, ids);
+        _ = catalog.FindMany(CatalogData.Client.Requiredskillsfortypes, ids);
+        var attributeSets = catalog.AttributeSets(items.Select(item => item.Id));
+        var descriptions = catalog.FindMany(
+            CatalogData.Client.LocalizationFsdEnUs,
+            types.Values.Where(type => type.DescriptionID.HasValue).Select(type => type.DescriptionID!.Value)
+        );
         var alpha = Races.ToDictionary(
             race => race,
             race => catalog.Find(CatalogData.Client.Clonegrades, race.ToString(CultureInfo.InvariantCulture))?.Skills ?? []
         );
-        return catalog
-            .Items.Values.Where(item => item.CategoryId == SkillCategory)
-            .ToImmutableDictionary(
-                item => item.Id,
-                item =>
+        return items.ToImmutableDictionary(
+            item => item.Id,
+            item =>
+            {
+                var type = types.GetValueOrDefault(item.Id);
+                var attributes = attributeSets[item.Id];
+                var dogma = dogmas.GetValueOrDefault(item.Id);
+                string description = type?.DescriptionID is long id ? descriptions.GetValueOrDefault(id)?.Text ?? "" : "";
+                return new SkillDefinition
                 {
-                    var type = catalog.Find(CatalogData.Client.Types, (long)item.Id);
-                    var attributes = catalog.Attributes(item.Id);
-                    var dogma = catalog.Find(CatalogData.Client.Typedogma, (long)item.Id);
-                    string description = type?.DescriptionID is long id
-                        ? catalog.Find(CatalogData.Client.LocalizationFsdEnUs, id)?.Text ?? ""
-                        : "";
-                    return new SkillDefinition
-                    {
-                        TypeId = item.Id,
-                        Name = item.Name,
-                        Description = description,
-                        GroupId = item.GroupId,
-                        IconId = type?.IconID is long icon ? checked((int)icon) : null,
-                        MarketGroupId = type?.MarketGroupID is long market ? checked((int)market) : null,
-                        Published = type?.Published == 1,
-                        BasePrice = type?.BasePrice ?? 0,
-                        Rank = attributes.GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1),
-                        PrimaryAttribute = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.PrimaryAttribute, 165)),
-                        SecondaryAttribute = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.SecondaryAttribute, 166)),
-                        Prerequisites = catalog
-                            .RequiredSkills(item.Id)
-                            .Select(pair => new SkillPrerequisite(pair.Key, pair.Value))
-                            .ToImmutableArray(),
-                        AlphaLimits = Races
-                            .Select(race => new SkillAlphaLimit(
-                                race,
-                                checked((int)(alpha[race].FirstOrDefault(value => value.TypeID == item.Id)?.Level ?? 0))
-                            ))
-                            .ToImmutableArray(),
-                        Attributes = attributes
-                            .Where(pair => !ManagedAttribute((int)pair.Key))
-                            .Select(pair => new SkillAttributeValue((int)pair.Key, pair.Value))
-                            .ToImmutableArray(),
-                        Effects = (dogma?.DogmaEffects ?? [])
-                            .Select(effect => new SkillEffectReference(checked((int)effect.EffectID!.Value), effect.IsDefault == 1))
-                            .ToImmutableArray(),
-                    };
-                }
-            );
+                    TypeId = item.Id,
+                    Name = item.Name,
+                    Description = description,
+                    GroupId = item.GroupId,
+                    IconId = type?.IconID is long icon ? checked((int)icon) : null,
+                    MarketGroupId = type?.MarketGroupID is long market ? checked((int)market) : null,
+                    Published = type?.Published == 1,
+                    BasePrice = type?.BasePrice ?? 0,
+                    Rank = attributes.GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1),
+                    PrimaryAttribute = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.PrimaryAttribute, 165)),
+                    SecondaryAttribute = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.SecondaryAttribute, 166)),
+                    Prerequisites = catalog
+                        .RequiredSkills(item.Id)
+                        .Select(pair => new SkillPrerequisite(pair.Key, pair.Value))
+                        .ToImmutableArray(),
+                    AlphaLimits = Races
+                        .Select(race => new SkillAlphaLimit(
+                            race,
+                            checked((int)(alpha[race].FirstOrDefault(value => value.TypeID == item.Id)?.Level ?? 0))
+                        ))
+                        .ToImmutableArray(),
+                    Attributes = attributes
+                        .Where(pair => !ManagedAttribute((int)pair.Key))
+                        .Select(pair => new SkillAttributeValue((int)pair.Key, pair.Value))
+                        .ToImmutableArray(),
+                    Effects = (dogma?.DogmaEffects ?? [])
+                        .Select(effect => new SkillEffectReference(checked((int)effect.EffectID!.Value), effect.IsDefault == 1))
+                        .ToImmutableArray(),
+                };
+            }
+        );
     }
 }

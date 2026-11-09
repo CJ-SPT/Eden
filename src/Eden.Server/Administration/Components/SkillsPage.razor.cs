@@ -7,7 +7,6 @@ namespace Eden.Server.Administration.Components;
 
 public partial class SkillsPage
 {
-    private const int PageSize = 30;
     private static readonly SkillEditorOption[] TrainingAttributes =
     [
         new(164, "Charisma"),
@@ -17,40 +16,24 @@ public partial class SkillsPage
         new(168, "Willpower"),
     ];
     private SkillEditorSnapshot? Snapshot;
-    private AdminSkillOptions? Options;
+    private SkillEditorChoices? Options;
     private SkillPublicationStatus? Publication;
     private SkillEditorEntry? Selected;
     private SkillForm? Form;
     private EditContext? Context;
     private IReadOnlyList<SkillEditorRevision> History = [];
-    private string Search = "";
-    private string Filter = "all";
     private string ClientRoot = "";
     private string? Error;
     private string? Message;
-    private int Page;
     private bool Busy;
     private bool ExtraDirty;
     private bool Deleting;
     private Func<Task>? DiscardAction;
     private bool Dirty => ExtraDirty || Context?.IsModified() == true;
-    private IReadOnlyList<SkillEditorEntry> Filtered =>
-        Snapshot
-            ?.Skills.Where(entry =>
-                (Filter == "deleted" ? entry.Deleted : !entry.Deleted)
-                && (Filter != "original" || !entry.UserCreated)
-                && (Filter != "custom" || entry.UserCreated)
-                && (Filter != "modified" || entry.IsModified)
-                && (
-                    entry.Definition.Name.Contains(Search, StringComparison.OrdinalIgnoreCase)
-                    || entry
-                        .Definition.TypeId.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                        .Contains(Search, StringComparison.Ordinal)
-                )
-            )
-            .OrderBy(entry => entry.Definition.Name)
-            .ToArray()
-        ?? [];
+    private bool ShowAdvanced;
+    private IReadOnlyList<SkillEditorOption> PrerequisiteOptions = [];
+
+    private void ToggleAdvanced() => ShowAdvanced = !ShowAdvanced;
 
     private async Task<ClaimsPrincipal> User() => (await Authentication.GetAuthenticationStateAsync()).User;
 
@@ -69,7 +52,6 @@ public partial class SkillsPage
                 ClientRoot = Publication.ClientRoot ?? "";
             }
             Error = null;
-            Page = 0;
         }
         catch (Exception error) when (Expected(error))
         {
@@ -127,12 +109,6 @@ public partial class SkillsPage
 
     private void KeepDraft() => DiscardAction = null;
 
-    private void ResetPage() => Page = 0;
-
-    private void Previous() => Page--;
-
-    private void Next() => Page++;
-
     private static string RaceName(int id) =>
         id switch
         {
@@ -158,6 +134,12 @@ public partial class SkillsPage
         Context = new(Form);
         ExtraDirty = false;
         Deleting = false;
+        ShowAdvanced = false;
+        PrerequisiteOptions = Snapshot!
+            .Skills.Where(entry => !entry.Deleted && entry.Definition.TypeId != skill.TypeId)
+            .Select(entry => new SkillEditorOption(entry.Definition.TypeId, entry.Definition.Name))
+            .OrderBy(option => option.Name)
+            .ToArray();
     }
 
     private Task New() =>

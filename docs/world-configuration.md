@@ -55,13 +55,29 @@ The editor uses a dark theme throughout settings, catalog browsing, revision his
 
 Open **Skills** in local administration. Search the original and custom skill lists by name or ID. The form edits names, descriptions, existing skill groups, skillbook base prices, publication, icons, market groups, training multipliers, primary/secondary attributes, up to six prerequisites and each race's Alpha limit. Zero Alpha levels require Omega; the normal five-level progression remains unchanged. New skills receive server-assigned IDs from a reserved range, checked against installed types and retained custom identities.
 
+Skill groups, prerequisites, bonus attributes, effects, icons and market groups have searchable named choices. Search names or descriptions, then choose a result; each field shows at most 30 matches and keeps its current selection visible. Market groups show their parent path, icons used by skills show those skill names, and bonus attributes include catalog descriptions and stored units. Effect details name their input and affected attributes. Only effects accepted by the server's existing passive ship/module validation are offered for new bonuses; existing unsupported effects remain visible and are preserved. Training and prerequisite attributes are edited in their own fields rather than added as duplicate bonuses.
+
+Open **Edit appearance and bonuses** for those fields. Closing it retains draft values. These controls are mounted only while open, and searching/paging the skill list updates the browser separately from the draft form. Catalog definitions and lookup labels are loaded in batches and shared across editor visits; searching does not read the catalog. Saving and reloading preserve the list's search and page (clamped if its results shrink). The editor still rechecks saved generations and administrator access for each operation.
+
 **New skill** creates a definition; **Create a copy** starts from the selected skill. **Save skill** durably saves that draft without changing the running game. Resetting a draft discards unsaved edits. **Restore original values** saves a fresh revision containing the original catalog definition. Revision history can restore earlier saved versions, including removed custom skills. Restored originals leave the edited-only list. Stale saves are rejected while retaining the draft.
 
 Only user-created skills have a removal button. The same restriction is enforced by the server and immutable stored provenance. A skill required by another current definition cannot be removed until that prerequisite is changed. Removal retains its ID, history, existing skill points and personal assets; the published retired definition becomes unpublished, loses its passive effects and is no longer supplied by NPCs or injectable. Existing character records can therefore still display a retired skill. IDs are never reused.
 
 Custom skills can reuse existing fitted/online passive effects that the server's ship/module modifier graph supports, with additional catalog attributes. Catalog-driven original passive skills also support bonus editing. Original skills with dedicated gameplay calculations retain their existing bonus attributes and effects; those controls are read-only, and a forged write is rejected. New effect implementations, new skill groups, new icons and arbitrary gameplay scripting are outside this editor.
 
-### Publishing and launcher installation
+#**Automated performance check (2026-11-09):** A fresh-process comparison against the installed 589-skill catalog loaded the same normalized definitions (matching SHA-256) in 8.877 seconds with the previous per-skill loader versus 2.033 seconds with batched loading. Catalog commands fell from 2,947 to 14 and connections from 2,944 to two. Constructing the richer lookup labels took a further 0.535 seconds; three repeated reads plus lookups took 0.053 seconds with no catalog commands or connections. These are one local data-loading comparison, not browser timings or a general latency guarantee. A deterministic 200-added-skill regression bounds cold query/connection counts, and warm reads, history and choices assert zero catalog work. Component checks cover bounded lookup markup, retained unsupported values, escaped text, nullable clearing and draft change tracking. The affected administration/catalog tests and required build/policy/format checks are used; the full .NET suite is not requested.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Open Skills after restarting the server, search and switch several skills, then try named bonus choices and save/discard a draft. Check that opening and closing appearance/bonuses keeps your values and that searching the list retains your draft.
+
+**Stable milestone validation:** Tool restore, solution restore and build passed with zero warnings/errors. The focused filter below passed 39 tests; one optional pinned-client packaging test was skipped because `EDEN_TEST_CLIENT_ROOT` was not supplied for this UI change. Both Python policy suites passed (8 catalog tests and 9 formatting tests), and `tools/Format.ps1 -Check` passed. The final sequence took 39.20 seconds: build 6.57 seconds, focused tests 7.93 seconds, policies 0.93 seconds and formatting 22.91 seconds, plus restore time. No full .NET suite or interactive acceptance was performed.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Administration|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CatalogFittingReadTests
+```
+
+## Publishing and launcher installation
 
 1. Save the skill definitions you want to use. Unsaved form changes block publication.
 2. Enter a build-3662168 client folder on the **server computer**, then choose **Build and stage package**. The server requires 64-bit Python 3.11 or newer; `EDEN_PYTHON` can select its executable. `EDEN_CLIENT_ROOT` can supply the initial source folder, and the last successfully used folder is remembered. A prepared source copy with the launcher's verified original-archive backup is also supported.

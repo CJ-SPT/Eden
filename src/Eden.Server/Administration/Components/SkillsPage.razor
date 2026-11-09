@@ -42,42 +42,8 @@ else
         <button disabled="@(Busy || Dirty || string.IsNullOrWhiteSpace(ClientRoot))" @onclick="Publish">@(Busy ? "Working…" : "Build and stage package")</button>
     </section>
     <div class="skill-workspace">
-        <section class="card skill-browser">
-            <h2>Skills <span class="muted">@Filtered.Count</span></h2>
-            <label>Search by name or ID <input @bind="Search" @bind:event="oninput" @bind:after="ResetPage" /></label>
-            <label>Show
-                <select @bind="Filter" @bind:after="ResetPage">
-                    <option value="all">All current skills</option>
-                    <option value="original">Original skills</option>
-                    <option value="modified">Edited original skills</option>
-                    <option value="custom">User-created skills</option>
-                    <option value="deleted">Removed user-created skills</option>
-                </select>
-            </label>
-            <div class="toolbar">
-                <button disabled="@Busy" @onclick="New">New skill</button>
-                <button class="secondary" disabled="@Busy" @onclick="Reload">Reload</button>
-            </div>
-            <div class="skill-list" aria-label="Skill list">
-                @foreach (var entry in Filtered.Skip(Page * PageSize).Take(PageSize))
-                {
-                    <button @key="entry.Definition.TypeId" class="@(Selected?.Definition.TypeId == entry.Definition.TypeId ? "skill-choice selected" : "skill-choice")"
-                            disabled="@Busy" @onclick="() => Choose(entry)">
-                        <strong>@entry.Definition.Name</strong><br />
-                        <small>@entry.Definition.TypeId · @(entry.Deleted ? "Removed" : entry.UserCreated ? "Custom" : entry.IsModified ? "Edited original" : "Original")</small>
-                    </button>
-                }
-                @if (Filtered.Count == 0)
-                {
-                    <p class="muted">No matching skills.</p>
-                }
-            </div>
-            <div class="toolbar">
-                <button class="secondary" disabled="@(Page == 0)" @onclick="Previous">Previous</button>
-                <span class="muted">Page @(Page + 1)</span>
-                <button class="secondary" disabled="@((Page + 1) * PageSize >= Filtered.Count)" @onclick="Next">Next</button>
-            </div>
-        </section>
+        <SkillBrowser Snapshot="Snapshot" SelectedId="Selected?.Definition.TypeId" Busy="Busy"
+                      OnChoose="Choose" OnNew="New" OnReload="Reload" />
         <section class="card">
             @if (Form is null || Context is null)
             {
@@ -96,11 +62,7 @@ else
                         <label>Name <InputText @bind-Value="Form.Name" /></label>
                         <label>Description <InputTextArea rows="5" @bind-Value="Form.Description" /></label>
                         <div class="grid">
-                            <label>Skill group
-                                <InputSelect @bind-Value="Form.GroupId">
-                                    @foreach (var group in Options.Groups) { <option value="@group.Id">@group.Name</option> }
-                                </InputSelect>
-                            </label>
+                            <SkillChoice TValue="int" Label="Skill group" Options="Options.Groups" @bind-Value="Form.GroupId" />
                             <label>Skillbook base price (ISK) <InputNumber @bind-Value="Form.BasePrice" min="0" step="any" /></label>
                             <label>Training multiplier <InputNumber @bind-Value="Form.Rank" min="0.01" max="1000" step="any" /></label>
                             <label>Primary attribute
@@ -119,13 +81,7 @@ else
                         @foreach (var required in Form.Prerequisites)
                         {
                             <div class="skill-input-row" @key="required">
-                                <label>Required skill
-                                    <InputSelect @bind-Value="required.TypeId">
-                                        <option value="0">Choose a skill</option>
-                                        @foreach (var skill in Snapshot.Skills.Where(skill => !skill.Deleted && skill.Definition.TypeId != Form.TypeId).OrderBy(skill => skill.Definition.Name))
-                                        { <option value="@skill.Definition.TypeId">@skill.Definition.Name</option> }
-                                    </InputSelect>
-                                </label>
+                                <SkillChoice TValue="int" Label="Required skill" Options="PrerequisiteOptions" @bind-Value="required.TypeId" />
                                 <label>Level <InputNumber @bind-Value="required.Level" min="1" max="5" /></label>
                                 <button type="button" class="secondary" @onclick="() => RemovePrerequisite(required)">Remove prerequisite</button>
                             </div>
@@ -139,46 +95,45 @@ else
                                 <label>@RaceName(limit.RaceId) <InputNumber @bind-Value="limit.Level" min="0" max="5" /></label>
                             }
                         </div>
-                        <details>
-                            <summary>Icon, market group, attributes and effects</summary>
+                        <h3>Appearance and bonuses</h3>
+                        <button type="button" class="secondary" aria-expanded="@ShowAdvanced" @onclick="ToggleAdvanced">
+                            @(ShowAdvanced ? "Hide appearance and bonuses" : "Edit appearance and bonuses")
+                        </button>
+                        @if (ShowAdvanced)
+                        {
                             <div class="grid">
-                                <label>Existing icon ID <InputNumber @bind-Value="Form.IconId" /></label>
-                                <label>Existing market group ID <InputNumber @bind-Value="Form.MarketGroupId" /></label>
+                                <SkillChoice TValue="int?" Label="Icon" EmptyLabel="No icon" Options="Options.Icons" @bind-Value="Form.IconId" />
+                                <SkillChoice TValue="int?" Label="Market group" EmptyLabel="No market group" Options="Options.MarketGroups" @bind-Value="Form.MarketGroupId" />
                             </div>
-                            <p class="muted">Custom skills can reuse supported passive ship and module effects.</p>
+                            <p class="muted">Search by name or description. Effect details show the attributes used by a bonus. Values use the catalog's stored units.</p>
                             @if (Selected is { CanEditBonuses: false })
                             {
                                 <p class="muted">This original skill's bonuses have a dedicated gameplay calculation and are retained.</p>
                             }
                             <fieldset disabled="@(Selected is { CanEditBonuses: false })">
-                            <datalist id="skill-attribute-options">
-                                @foreach (var option in Options.Attributes) { <option value="@option.Id">@option.Name</option> }
-                            </datalist>
-                            <datalist id="skill-effect-options">
-                                @foreach (var option in Options.Effects) { <option value="@option.Id">@option.Name</option> }
-                            </datalist>
-                            <h3>Additional attributes</h3>
-                            @foreach (var attribute in Form.Attributes)
-                            {
-                                <div class="skill-input-row" @key="attribute">
-                                    <label>Attribute ID <InputNumber @bind-Value="attribute.AttributeId" list="skill-attribute-options" /></label>
-                                    <label>Value <InputNumber @bind-Value="attribute.Value" step="any" /></label>
-                                    <button type="button" class="secondary" @onclick="() => RemoveAttribute(attribute)">Remove attribute</button>
-                                </div>
-                            }
-                            <button type="button" class="secondary" @onclick="AddAttribute">Add attribute</button>
-                            <h3>Effects</h3>
-                            @foreach (var effect in Form.Effects)
-                            {
-                                <div class="skill-input-row" @key="effect">
-                                    <label>Effect ID <InputNumber @bind-Value="effect.EffectId" list="skill-effect-options" /></label>
-                                    <label><InputCheckbox @bind-Value="effect.IsDefault" /> Default effect</label>
-                                    <button type="button" class="secondary" @onclick="() => RemoveEffect(effect)">Remove effect</button>
-                                </div>
-                            }
-                            <button type="button" class="secondary" @onclick="AddEffect">Add effect</button>
+                                <h3>Additional attributes</h3>
+                                @foreach (var attribute in Form.Attributes)
+                                {
+                                    <div class="skill-input-row" @key="attribute">
+                                        <SkillChoice TValue="int" Label="Bonus attribute" Options="Options.Attributes" @bind-Value="attribute.AttributeId" />
+                                        <label>Value <InputNumber @bind-Value="attribute.Value" step="any" /></label>
+                                        <button type="button" class="secondary" @onclick="() => RemoveAttribute(attribute)">Remove attribute</button>
+                                    </div>
+                                }
+                                <button type="button" class="secondary" @onclick="AddAttribute">Add attribute</button>
+                                <h3>Effects</h3>
+                                <p class="muted">Only passive ship and module effects supported by Eden can be added. Existing effects remain visible.</p>
+                                @foreach (var effect in Form.Effects)
+                                {
+                                    <div class="skill-input-row" @key="effect">
+                                        <SkillChoice TValue="int" Label="Bonus effect" Options="Options.Effects" @bind-Value="effect.EffectId" />
+                                        <label><InputCheckbox @bind-Value="effect.IsDefault" /> Default effect</label>
+                                        <button type="button" class="secondary" @onclick="() => RemoveEffect(effect)">Remove effect</button>
+                                    </div>
+                                }
+                                <button type="button" class="secondary" @onclick="AddEffect">Add effect</button>
                             </fieldset>
-                        </details>
+                        }
                         <div class="toolbar">
                             <button type="submit">@(Form.TypeId == 0 ? "Create skill" : "Save skill")</button>
                             <button type="button" class="secondary" @onclick="ResetDraft">Discard draft</button>

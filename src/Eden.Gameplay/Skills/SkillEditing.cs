@@ -60,7 +60,15 @@ public static class SkillEditingRules
         && left.Effects.OrderBy(value => value.EffectId).SequenceEqual(right.Effects.OrderBy(value => value.EffectId));
 }
 
-public sealed record SkillEditorOption(int Id, string Name);
+public sealed record SkillEditorOption(int Id, string Name, string Description = "", bool Available = true, string SearchTerms = "");
+
+public sealed record SkillEditorChoices(
+    IReadOnlyList<SkillEditorOption> Groups,
+    IReadOnlyList<SkillEditorOption> Attributes,
+    IReadOnlyList<SkillEditorOption> Effects,
+    IReadOnlyList<SkillEditorOption> Icons,
+    IReadOnlyList<SkillEditorOption> MarketGroups
+);
 
 public sealed record SkillEditorSnapshot(long Generation, string CatalogFingerprint, ImmutableArray<SkillEditorEntry> Skills);
 
@@ -81,6 +89,7 @@ public interface ISkillEditor
     IReadOnlyList<SkillEditorOption> Groups();
     IReadOnlyList<SkillEditorOption> Attributes();
     IReadOnlyList<SkillEditorOption> Effects();
+    SkillEditorChoices Choices();
     SkillEditorEntry Save(long generation, SkillDefinition definition, string author);
     SkillEditorEntry Create(long generation, SkillDefinition definition, string author);
     SkillEditorEntry Restore(long generation, int typeId, long? revision, string author);

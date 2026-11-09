@@ -1,5 +1,6 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Dogma;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.World.Catalog;
@@ -13,6 +14,46 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class CatalogFittingReadTests
 {
+    [Fact]
+    public void BatchedAttributesShareCachedValuesAndRememberAbsentTypes()
+    {
+        using TestWorld db = new();
+        string path = new WorldDatabase(db.Path).CatalogPath;
+        using (CatalogDbContext fixture = new(path, writable: true))
+        {
+            fixture.Add(
+                new TypeAttribute
+                {
+                    ItemTypeId = 3651,
+                    AttributeId = (int)DogmaAttributeId.MaxVelocity,
+                    Value = 42,
+                }
+            );
+            fixture.SaveChanges();
+        }
+        var catalog = CatalogProvider.Open(path);
+        var cached = catalog.Attributes(601);
+        using (var cold = SessionPerformance.Begin("batch-attributes", _ => { }, force: true)!)
+        {
+            var batch = catalog.AttributeSets([601, 3651, int.MaxValue, 3651]);
+            Assert.Equal(3, batch.Count);
+            Assert.Same(cached, batch[601]);
+            Assert.Equal(42, batch[3651][DogmaAttributeId.MaxVelocity]);
+            Assert.Empty(batch[int.MaxValue]);
+            Assert.Equal(1, cold.Commands);
+            Assert.Equal(1, cold.Connections);
+            Assert.Equal(0, cold.FittingCalculations);
+        }
+        using var warm = SessionPerformance.Begin("warm-batch-attributes", _ => { }, force: true)!;
+        var repeated = catalog.AttributeSets([601, 3651, int.MaxValue]);
+        Assert.Same(cached, repeated[601]);
+        Assert.Same(repeated[3651], catalog.Attributes(3651));
+        Assert.Same(repeated[int.MaxValue], catalog.Attributes(int.MaxValue));
+        Assert.Equal(0, warm.Commands);
+        Assert.Equal(0, warm.Connections);
+        Assert.Equal(0, warm.FittingCalculations);
+    }
+
     [Fact]
     public void SharedEffectsPreserveSourceOrderAndRemoveRepeatedIds()
     {
