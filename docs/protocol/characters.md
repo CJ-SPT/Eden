@@ -530,3 +530,5 @@ The Eden filter was `FullyQualifiedName~Eden.Protocol.Tests.Administration|Fully
 **Live acceptance:** Not performed; agent client testing is disabled. Native archive import, rendering and interactive gameplay remain unverified.
 
 **Optional maintainer checks:** Edit and restore an original skill in the web page; publish/restart and buy, inject and queue a custom skill through the updated launcher; remove/restore that custom skill and check its retained history.
+
+**Main integration validation:** After incorporating the newer mission/gate and NPC skill-point work from main, the affected filter additionally selected `Eden.Protocol.Tests.Persistence.FreeSkillPointTests` and `Eden.Protocol.Tests.Hosting.ServerServicesTests`. **117 cases passed with no skips**. Restore/build, both Python policy suites, the 11 headless native assertions, formatting and diff checks passed in **51.19 seconds**. This validates the combined source rather than only the earlier feature base. Live acceptance remains unperformed.

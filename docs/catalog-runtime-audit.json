@@ -2,8 +2,8 @@
   "build": 3662168,
   "purpose": "Completed adoption inventory; native identifiers and mechanics are intentional, classified below.",
   "counts": {
-    "catalog-read": 211,
-    "catalog-context": 673,
+    "catalog-read": 210,
+    "catalog-context": 677,
     "content-identifier": 186,
     "type-selection": 9
   },
@@ -1249,7 +1249,7 @@
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 42,
+      "line": 46,
       "kind": "content-identifier",
       "text": "private const int InvisibleBeaconGroup = 4055;",
       "disposition": "mechanic-binding",
@@ -1257,7 +1257,7 @@
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 43,
+      "line": 47,
       "kind": "content-identifier",
       "text": "private const int CloudGroup = 227;",
       "disposition": "mechanic-binding",
@@ -1265,7 +1265,7 @@
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 44,
+      "line": 48,
       "kind": "content-identifier",
       "text": "private const int EnvironmentGroup = 1882;",
       "disposition": "mechanic-binding",
@@ -2529,51 +2529,57 @@
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 42,
+      "line": 46,
       "kind": "content-identifier",
       "text": "private const int InvisibleBeaconGroup = 4055;"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 43,
+      "line": 47,
       "kind": "content-identifier",
       "text": "private const int CloudGroup = 227;"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 44,
+      "line": 48,
       "kind": "content-identifier",
       "text": "private const int EnvironmentGroup = 1882;"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 63,
+      "line": 67,
       "kind": "catalog-context",
       "text": "internal static ImmutableArray<MissionProfile> Read(CatalogDbContext catalog) => catalog.Definition(s_profiles, 0);"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 65,
+      "line": 69,
       "kind": "catalog-context",
       "text": "internal static MissionProfile Find(CatalogDbContext catalog, int missionId) =>"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 69,
+      "line": 73,
       "kind": "catalog-context",
       "text": "private static ImmutableArray<MissionProfile> Load(CatalogDbContext catalog, int unused)"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 113,
+      "line": 117,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Agents/MissionCatalog.cs",
-      "line": 163,
+      "line": 159,
       "kind": "catalog-read",
       "text": "var type = catalog.FittingType(item.TypeID!.Value);"
+    },
+    {
+      "path": "src/Eden.World/Agents/MissionGatePayment.cs",
+      "line": 16,
+      "kind": "catalog-context",
+      "text": "CatalogDbContext catalog,"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.cs",
@@ -2637,33 +2643,39 @@
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Encounters.cs",
-      "line": 103,
+      "line": 109,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Encounters.cs",
-      "line": 123,
+      "line": 129,
       "kind": "catalog-context",
       "text": "internal static void Killed(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, long now)"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Encounters.cs",
-      "line": 202,
+      "line": 228,
       "kind": "catalog-context",
       "text": "private static void Spawn(WorldDbContext world, CatalogDbContext catalog, SavedMission mission, int wave, long now)"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Gates.cs",
-      "line": 21,
+      "line": 27,
       "kind": "catalog-context",
       "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Gates.cs",
-      "line": 30,
-      "kind": "catalog-read",
-      "text": "catalog.FittingType(pilot.ActiveShip.TypeId)"
+      "line": 48,
+      "kind": "catalog-context",
+      "text": "using CatalogDbContext catalog = new(database.CatalogPath);"
+    },
+    {
+      "path": "src/Eden.World/Agents/PilotMissionStore.Gates.cs",
+      "line": 65,
+      "kind": "catalog-context",
+      "text": "private void ValidateGate(WorldDbContext world, CatalogDbContext catalog, Eden.Data.World.Characters.Pilot pilot, MissionGate gate)"
     },
     {
       "path": "src/Eden.World/Agents/PilotMissionStore.Rewards.cs",
@@ -3326,6 +3338,12 @@
       "text": "using CatalogDbContext db = new(path);"
     },
     {
+      "path": "src/Eden.World/Catalog/CatalogTypeLists.cs",
+      "line": 9,
+      "kind": "catalog-context",
+      "text": "internal static InventoryTypeList Read(CatalogDbContext catalog, long id)"
+    },
+    {
       "path": "src/Eden.World/Catalog/CatalogTypeRule.cs",
       "line": 5,
       "kind": "catalog-context",
@@ -3843,7 +3861,7 @@
     },
     {
       "path": "src/Eden.World/Combat/Npcs/NpcDamagePersistence.cs",
-      "line": 29,
+      "line": 30,
       "kind": "catalog-context",
       "text": "CatalogDbContext catalog,"
     },
