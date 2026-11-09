@@ -472,6 +472,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             return;
         }
+        if (changes.Any(change => change.Table == "WorldAsteroid"))
+        {
+            ObserveAsteroidPopulation(changes);
+        }
         if (
             changes.Any(c =>
                 c.Table
@@ -560,9 +564,6 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 case "WorldNpcEncounter":
                 case "WorldNpcMiningOperation":
                     ObserveEncounterPopulation(change.Id);
-                    break;
-                case "WorldAsteroid":
-                    ObserveAsteroidPopulation(change.Id);
                     break;
                 case "WorldNpcStanding":
                     _populationDue.Clear();

@@ -1,5 +1,6 @@
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Mining;
 using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
@@ -18,6 +19,64 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class LiveSimulationTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void BulkAsteroidChangesInvalidatePopulationWithOneLookup(bool delete)
+    {
+        using TestWorld db = new(liveWorld: true);
+        const int system = 30000144;
+        const int remote = 30000142;
+        const int count = 128;
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.AddRange(
+                Enumerable
+                    .Range(1, count)
+                    .Select(index => new WorldAsteroid
+                    {
+                        Id = index,
+                        BeltId = 40009232,
+                        SystemId = system,
+                        TypeId = 1230,
+                        Quantity = 1,
+                    })
+            );
+            world.SaveChanges();
+        }
+        var runtime = LiveWorld.Find(db.Path)!.Combat!;
+        long now = new TestClock().Now;
+        int localRefreshes = 0;
+        int remoteRefreshes = 0;
+        void ReadLocal() => runtime.Simulate(system, now, () => localRefreshes++, () => now + TimeSpan.TicksPerDay);
+        void ReadRemote() => runtime.Simulate(remote, now, () => remoteRefreshes++, () => now + TimeSpan.TicksPerDay);
+        ReadLocal();
+        ReadRemote();
+        Assert.Equal(1, localRefreshes);
+        Assert.Equal(1, remoteRefreshes);
+        using (var measured = SessionPerformance.Begin("bulk asteroid invalidation", _ => { }, force: true)!)
+        {
+            using (WorldDbContext world = new(db.Path))
+            {
+                if (delete)
+                {
+                    world.Set<WorldAsteroid>().ExecuteDelete();
+                }
+                else
+                {
+                    world.Set<WorldAsteroid>().ExecuteUpdate(setters => setters.SetProperty(rock => rock.Quantity, 2));
+                }
+            }
+            Assert.Equal(2, measured.Commands);
+            Assert.Equal(2, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+        }
+        ReadLocal();
+        ReadRemote();
+        Assert.Equal(2, localRefreshes);
+        Assert.Equal(delete ? 2 : 1, remoteRefreshes);
+    }
+
     [Fact]
     public void ChangingNpcPopulationKeepsOtherSystemsWarm()
     {

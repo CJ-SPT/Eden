@@ -6,6 +6,41 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Offline startup belt renewal, November 9, 2026
+
+A reported slow restart after roughly six hours offline led to the startup reconciliation path. The saved development world contained **9,096 initialized belts and 964,647 asteroids**. A restart crossing the saved daily renewal boundary previously loaded each asteroid separately, tracked every generated deposit and saved renewed deadlines individually before admitting connections. Unmodified belts still paid the lookup cost. Capsuleer elapsed time resumes from its saved clock, so ordinary capsuleer work does not replay the wall-clock shutdown interval.
+
+Renewal now generates the same deterministic catalog-backed deposits and applies one parameterized SQLite upsert per existing bounded batch of at most 32 belts. A second bulk statement advances their saved deadlines in the same transaction. Existing coordinates, identities, types and radius remain intact; quantity only increases to the generated baseline, higher saved quantities survive, and missing rocks are restored. Cold catalog belt-count reads are batched, and already-full rocks are filtered before decoding their full insert projection. Unchanged rocks cause no write. Multiple missed days replenish once and advance directly to the next future boundary. Personal-order escrow expiration and the requirement to finish reconciliation before accepting clients remain in place.
+
+Resident asteroid changes now invalidate population schedules with at most one location lookup per transaction, instead of opening a connection for every rock. Unrelated system deadlines stay warm; deleted identities retain conservative invalidation, and an empty schedule cache needs no lookup. Rollback coverage verifies that both renewed quantities and deadlines remain unchanged after a failed deadline update and that the resident view refreshes after a successful retry.
+
+Reference: [EVE University mining](https://wiki.eveuniversity.org/Mining) describes finite belt deposits and renewal at downtime. The exact ore amounts, stable random placement and configurable UTC renewal boundary remain Eden policy for pinned build 3662168. Consulted [Carbon Destiny `Ballpark.cpp`, revision `27ee40b38a563d29054b32f64c3ebc87fabaec1f`](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp); this change owns persistence/reconciliation and does not alter Destiny movement or client wire replies.
+
+The matched warmed fixture has 16 belts and 2,048 rocks, with depleted rows, one missing row and one above-baseline deposit. Measurements below are single Debug samples on this desktop, excluding fixture setup, checkpoint file writing and complete session frames. Baseline is `e9fcd36c`; the final implementation additionally batches resident schedule invalidation. These are workload observations, not startup latency guarantees.
+
+| Renewal workload | Baseline ms | Optimized ms | SQL commands before / after | Connections before / after |
+| --- | ---: | ---: | ---: | ---: |
+| File-backed startup store | 324.67 | 53.73 | 4,113 / 4 | 1 / 1 |
+| Resident world | 1,198.31 | 39.00 | 6,160 / 4 | 2,048 / 1 |
+
+The baseline intentionally failed the new bounded-command regression. An intermediate batch implementation exposed the remaining resident invalidation lookups; those were then batched as well. The eight persistent renewal cases and two warmed population-invalidation cases subsequently passed, including six-hour and thirty-day gaps, just-before/at deadline boundaries, batching, geometry and quantity preservation, failed transactions, checkpoint/reopen and immediate observer visibility.
+
+`StartupPerformanceReplayTests.ReconcileSavedWorldAfterOfflineRenewal` is an opt-in automated replay. Set `EDEN_PERFORMANCE_SOURCE` to a directory containing `world.sqlite` and its catalog. The test opens the source save read-only, copies it using SQLite backup, copies the active catalog into a private test directory, moves its test clock six hours past the earliest saved renewal boundary and initializes twice. It reports `startup.schema`, `startup.beltRenewal`, `startup.marketExpiry` and total overdue/current reconciliation separately. It does not launch listeners or the client; traffic imports, launcher initialization and host catalog preloading are outside this replay. Temporary data is removed afterward.
+
+The final isolated replay of the installed save renewed all 9,096 belts / 964,647 rocks in **14.15 seconds**, with **17.65 seconds** for complete overdue world reconciliation and **0.34 seconds** for the immediately repeated current reconciliation. These single Debug timings exclude the private catalog/save copy, traffic data, service construction, listeners and native login; there is no matched original-revision full-save startup measurement. Earlier intermediate batch implementations took 34.45–36.60 seconds and then 25.56 seconds before cold count batching and filtering already-full rows were both present. The existing save and its owner were never opened for writing by the replay.
+
+Automated validation: tool/solution restore passed; the final root solution build passed with zero warnings/errors in 1.39 seconds. Both Python policy suites passed (8 catalog cases in 1.24 seconds; 9 formatting cases in 0.04 seconds), and formatting verification passed across 1,362 C# files. The final affected .NET selection passed 228 cases in 1 minute 32 seconds; its opt-in source was unset, with the full installed-save replay exercised separately as described above. The installed-save replay passed one case in 38 seconds including private data copying and assertions. The full .NET suite was not run.
+
+Two earlier affected selections were interrupted after stale fixture assumptions: an asteroid restart test initialized an actively owned world instead of reopening its checkpoint, and the three-cycle economy test listed personal ammunition above the newly unlocked NPC competition. The former now checks a flushed checkpoint; the latter prices its personal offer below the catalog snapshot ask and preserves its wallet-conservation assertion. Their exact regressions passed after correction. An overlapping build was canceled when its output was locked by a test host; the subsequent clean root build above passed. The combined affected filter is:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Mining.|FullyQualifiedName~Eden.Protocol.Tests.Economy.EconomicLifecycleTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveSimulationTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcPopulationTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerProvisioningTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerMinerTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldConfigurationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests|FullyQualifiedName~Eden.Protocol.Tests.Market.PersonalMarketTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerServicesTests
+```
+
+Live acceptance: Not performed; agent client testing is disabled.
+
+Optional maintainer check: restart the rebuilt server after a renewal boundary and compare the console's world-reconciliation timing. The real save and running server were not modified by the automated replays.
+
 ## Bound dogma and ship-call latency, November 7, 2026
 
 The reported console capture showed repeated `dogmaIM.MachoBindObject` dispatches taking 0.77–1.62 seconds, a 421 ms ship binding and a 334 ms activation. The binding name concealed its embedded service method. Warnings and performance traces now include that method, such as `dogmaIM.MachoBindObject (GetAllInfo)`, and initial update-coordinator entry has its own `enter` phase.

@@ -361,6 +361,8 @@ public sealed class EconomicLifecycleTests
         long blueprint = f.BuyInput((int)IndustryBlueprintType.IronChargeSmall);
         long initialMoney = f.Market.Balance(Pilot) + f.Market.Balance(StarterProductionTests.Consumer);
         var reprocessing = f.Db.Services.GetRequiredService<IPilotReprocessing>();
+        // Claimed production unlocks NPC competition; keep this personal trade cheaper.
+        long salePrice = Math.Min(1000, MarketSnapshotCatalog.Quotes[215].SellCents!.Value - 1);
         for (int cycle = 0; cycle < 3; cycle++)
         {
             using (WorldDbContext world = new(f.Db.Path))
@@ -392,8 +394,8 @@ public sealed class EconomicLifecycleTests
             f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(240));
             f.Industry.Deliver(Pilot, job.Job.Id, System);
             Assert.Empty(f.Industry.Deliver(Pilot, job.Job.Id, System).Changes);
-            f.Personal.PlaceSell(Pilot, [new(f.Stack(Pilot, 215).Id, Station, 215, 1000, 100)], 1);
-            f.Market.Buy(StarterProductionTests.Consumer, Station, [new(215, 1000, 100)]);
+            f.Personal.PlaceSell(Pilot, [new(f.Stack(Pilot, 215).Id, Station, 215, salePrice, 100)], 1);
+            f.Market.Buy(StarterProductionTests.Consumer, Station, [new(215, salePrice, 100)]);
             WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
             Assert.Equal((cycle + 1) * 100, f.Quantity(StarterProductionTests.Consumer, 215));
         }

@@ -5,6 +5,7 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
@@ -54,7 +55,10 @@ public static class WorldInitialization
         {
             EconomicStore.CheckCatalog(catalog, economics);
         }
-        WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics);
+        using (SessionPerformance.Phase("startup.schema"))
+        {
+            WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics);
+        }
         if (skillsChanged)
         {
             world.Set<Eden.Data.World.Market.MarketStation>().ExecuteUpdate(setters => setters.SetProperty(row => row.SeedVersion, 0));
@@ -76,14 +80,20 @@ public static class WorldInitialization
             EconomicStore.ReconcileBelts(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
             reconciliation.Commit();
         }
-        while (new ResourceRenewalStore(database, clock ?? TimeProvider.System).Renew() > 0)
+        using (SessionPerformance.Phase("startup.beltRenewal"))
         {
-            // Reconcile overdue catalog belts before admitting connections.
+            while (new ResourceRenewalStore(database, clock ?? TimeProvider.System).Renew() > 0)
+            {
+                // Reconcile overdue catalog belts before admitting connections.
+            }
         }
         var market = new PilotMarketStore(database, clock ?? TimeProvider.System, new MarketChangeSignal());
-        while (market.Expire() > 0)
+        using (SessionPerformance.Phase("startup.marketExpiry"))
         {
-            // Reconcile all overdue escrow once before admitting connections.
+            while (market.Expire() > 0)
+            {
+                // Reconcile all overdue escrow once before admitting connections.
+            }
         }
         // Drones remain where they were left; downtime releases control and never replays damage.
         world.Set<WorldDroneCombatTriggers>().ExecuteDelete();

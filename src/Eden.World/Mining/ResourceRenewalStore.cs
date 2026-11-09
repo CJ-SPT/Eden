@@ -4,6 +4,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Economy;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mining;
 
@@ -26,19 +27,24 @@ internal sealed class ResourceRenewalStore(WorldDatabase database, TimeProvider 
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var due = world
             .Set<SavedBeltRenewal>()
+            .AsNoTracking()
             .Where(b => b.NextRenewal <= now)
             .OrderBy(b => b.NextRenewal)
             .ThenBy(b => b.BeltId)
             .Take(limit)
             .ToArray();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        foreach (var belt in due)
+        AsteroidFieldStore.Renew(world, catalog, due);
+        if (due.Length > 0)
         {
-            AsteroidFieldStore.Populate(world, catalog, belt.SystemId, now, belt.BeltId);
-            // Catch up once to the next future boundary, without accumulating ore.
-            belt.NextRenewal = ResourceRenewalRules.Next(now, policy.RenewalHourUtc);
+            int[] belts = due.Select(belt => belt.BeltId).ToArray();
+            // Multiple missed renewals replenish once, then retain the next future boundary.
+            long next = ResourceRenewalRules.Next(now, policy.RenewalHourUtc);
+            world
+                .Set<SavedBeltRenewal>()
+                .Where(belt => belts.Contains(belt.BeltId))
+                .ExecuteUpdate(setters => setters.SetProperty(belt => belt.NextRenewal, next));
         }
-        world.SaveChanges();
         transaction.Commit();
         return due.Length;
     }

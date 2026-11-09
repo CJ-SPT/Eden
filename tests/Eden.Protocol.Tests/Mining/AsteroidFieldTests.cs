@@ -12,6 +12,7 @@ using Eden.Protocol.Transport;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Mining;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -74,8 +75,11 @@ public sealed class AsteroidFieldTests
                 AsteroidDefinitions.OuterFieldRadius + AsteroidDefinitions.FieldThickness
             );
         }
-        _ = WorldInitialization.Open(db.Path);
-        Assert.Equal(loads[0], new AsteroidFieldStore(new(db.Path)).List(30000144));
+        await LiveWorld.Find(db.Path)!.FlushAsync();
+        string checkpoint = Path.Combine(Path.GetDirectoryName(db.Path)!, "asteroid-restart.sqlite");
+        File.Copy(db.Path, checkpoint);
+        _ = WorldInitialization.Open(checkpoint);
+        Assert.Equal(loads[0], new AsteroidFieldStore(new(checkpoint)).List(30000144));
     }
 
     [Fact]

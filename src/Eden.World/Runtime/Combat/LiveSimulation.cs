@@ -23,25 +23,34 @@ internal sealed partial class LiveCombatRuntime
     private readonly Dictionary<int, long> _populationDue = [];
     private int? _populationRefreshSystem;
 
-    private void ObserveAsteroidPopulation(long id)
+    private void ObserveAsteroidPopulation(IReadOnlyCollection<CombatRowChange> changes)
     {
+        if (_populationDue.Count == 0)
+        {
+            return;
+        }
         if (_populationRefreshSystem is { } scoped)
         {
             _populationDue.Remove(scoped);
             return;
         }
-        int? system = Loading(() =>
+        var ids = changes.Where(change => change.Table == "WorldAsteroid").Select(change => change.Id).ToArray();
+        var systems = Loading(() =>
         {
             using WorldDbContext world = new(database.Path);
-            return world.Set<WorldAsteroid>().Where(a => a.Id == id).Select(a => (int?)a.SystemId).SingleOrDefault();
+            return world.Set<WorldAsteroid>().Where(a => EF.Parameter(ids).Contains(a.Id)).Select(a => a.SystemId).ToArray();
         });
-        if (system is { } current)
+        if (systems.Length != ids.Length)
         {
-            _populationDue.Remove(current);
+            // Deleted identities have no remaining location; retain conservative invalidation.
+            _populationDue.Clear();
         }
         else
         {
-            _populationDue.Clear();
+            foreach (int system in systems.Distinct())
+            {
+                _populationDue.Remove(system);
+            }
         }
     }
 
