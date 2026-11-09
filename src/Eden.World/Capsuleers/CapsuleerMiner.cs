@@ -37,8 +37,7 @@ internal sealed class CapsuleerMinerFactory(
     INpcElectronicWarfare warfare,
     IPilotTackle tackle,
     IPilotHealth health,
-    MarketChangeSignal marketSignal,
-    PilotMarketStore marketStore
+    MarketChangeSignal marketSignal
 )
 {
     internal CapsuleerMiner Create(long pilotId) =>
@@ -57,8 +56,7 @@ internal sealed class CapsuleerMinerFactory(
             warfare,
             tackle,
             health,
-            marketSignal,
-            marketStore
+            marketSignal
         );
 }
 
@@ -77,8 +75,7 @@ internal sealed class CapsuleerMiner(
     INpcElectronicWarfare warfare,
     IPilotTackle tackle,
     IPilotHealth health,
-    MarketChangeSignal marketSignal,
-    PilotMarketStore marketStore
+    MarketChangeSignal marketSignal
 )
 {
     private const int RetrySeconds = 60;
@@ -132,6 +129,36 @@ internal sealed class CapsuleerMiner(
             Load();
         }
         return _pilot is null ? null : Observation(includeHealth);
+    }
+
+    internal CapsuleerJob Resume(CapsuleerJob job, long elapsed)
+    {
+        if (!_loaded)
+        {
+            Load();
+        }
+        if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
+        {
+            _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
+            Load();
+        }
+        _resumeCount = -1;
+        long delay = Math.Max(0, elapsed - Work.ActiveTicks);
+        if (delay == 0)
+        {
+            return job;
+        }
+        var resumed = Work with
+        {
+            ActiveTicks = Work.ActiveTicks + delay,
+            ClockOffsetTicks = Work.ClockOffsetTicks + delay,
+            DueTicks = Work.DueTicks == 0 ? 0 : Work.DueTicks + delay,
+        };
+        var next = job.Next(Math.Max(elapsed + TimeSpan.TicksPerSecond, job.DueTicks + delay), job.Action);
+        using CapsuleerOperation operation = new(database, job, marketSignal);
+        operation.Commit(next, new MinerCheckpoint(pilotId, resumed), null);
+        _work = resumed;
+        return next;
     }
 
     internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes, bool background = false)
@@ -490,16 +517,6 @@ internal sealed class CapsuleerMiner(
                 Pilot.StationId,
                 new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null),
                 Now
-            );
-        }
-        if (_operation.World.Set<SavedCapsuleerHauler>().Any(h => h.SourceStationId == Pilot.StationId))
-        {
-            _operation.MarketChanged |= CapsuleerTrade.ListStock(
-                _operation.World,
-                _operation.Catalog,
-                marketStore,
-                Pilot.PilotId,
-                Pilot.StationId
             );
         }
         _laser = aboard.FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI && InventoryDefinitions.IsHighSlot(i.FlagId));

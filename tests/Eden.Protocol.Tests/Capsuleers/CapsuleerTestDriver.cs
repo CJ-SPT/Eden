@@ -10,6 +10,7 @@ internal sealed class CapsuleerTestDriver
 {
     private static readonly ConditionalWeakTable<ServiceProvider, CapsuleerTestDriver> Drivers = new();
     private readonly ServiceProvider _host;
+    private readonly Guid _observer = Guid.NewGuid();
     private readonly TestClock _clock;
     private readonly ICapsuleerScheduler _scheduler;
     private readonly IHumanPresence _presence;
@@ -37,6 +38,11 @@ internal sealed class CapsuleerTestDriver
     private long Advance(CapsuleerCareer career)
     {
         long pilot = _pilots.Single(p => p.Career == career).PilotId;
+        int system = career == CapsuleerCareer.Mining ? _scheduler.Miner(pilot)!.Pilot.SystemId : _scheduler.Hauler(pilot)!.Pilot.SystemId;
+        if (!_presence.Read().ActiveSystems.Contains(system))
+        {
+            _presence.Update(_observer, system);
+        }
         var job = _scheduler.Jobs().Single(j => j.PilotId == pilot);
         long elapsed = _presence.Read().ElapsedTicks;
         if (elapsed < job.DueTicks)

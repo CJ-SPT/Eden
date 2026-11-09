@@ -25,6 +25,8 @@ internal sealed class CapsuleerScheduler(
     private readonly Dictionary<long, MinerObservation> _pendingMiners = [];
     private readonly Dictionary<long, HaulerObservation> _pendingHaulers = [];
     private readonly HashSet<int> _activated = [];
+    private HashSet<long> _running = [];
+    private readonly HashSet<int> _visited = [];
     private long _presentationRevision;
     private long _settledTicks;
     private int _destinyStamp;
@@ -176,7 +178,7 @@ internal sealed class CapsuleerScheduler(
                 _haulers.Add(agent.PilotId, haulers.Create(agent.PilotId));
             }
         }
-        _queue.Restore(Current.Values);
+        _queue.Restore(_running.Select(pilot => Current[pilot]));
         _populationRevision = Live?.CapsuleerRevision ?? 0;
         _population = population.Summary();
         _loaded = true;
@@ -192,9 +194,9 @@ internal sealed class CapsuleerScheduler(
             _destinyStamp = destinyStamp;
             var activity = presence.Read();
             long throughTicks = Math.Min(activity.ElapsedTicks, horizon ?? activity.ElapsedTicks);
-            Reconcile(activity);
             Load();
-            HashSet<long>? pilots = systemId is { } target ? _systemAgents.GetValueOrDefault(target) ?? [] : null;
+            Reconcile(activity);
+            HashSet<long> pilots = _running;
             Dictionary<long, MinerObservation> mining = [];
             Dictionary<long, HaulerObservation> hauling = [];
             CapsuleerTurn turn;
@@ -255,7 +257,7 @@ internal sealed class CapsuleerScheduler(
                 _lastFailure = error.Message;
                 // A committed action can precede a failed observation or another role.
                 // Rebuild from canonical revisions so retry cannot replay that action.
-                _queue.Restore(Current.Values);
+                _queue.Restore(_running.Select(pilot => Current[pilot]));
                 throw;
             }
             finally
@@ -280,6 +282,16 @@ internal sealed class CapsuleerScheduler(
 
     private void Reconcile(HumanActivitySnapshot activity)
     {
+        foreach (int system in activity.ActiveSystems)
+        {
+            if (!_visited.Contains(system))
+            {
+                new CapsuleerProvisioner(database, clock).EnsureSystem(system);
+                _visited.Add(system);
+                _loaded = false;
+                Load();
+            }
+        }
         foreach (var state in _systems.Begin(activity.ActiveSystems))
         {
             if (state.Mode == SystemSimulationMode.Deactivating)
@@ -292,6 +304,62 @@ internal sealed class CapsuleerScheduler(
                 _activated.Add(state.SystemId);
             }
         }
+        foreach (int system in _activated)
+        {
+            foreach (long pilot in _systemAgents.GetValueOrDefault(system) ?? [])
+            {
+                if (
+                    _running.Contains(pilot)
+                    || !_haulers.TryGetValue(pilot, out var hauler)
+                    || activity.ActiveSystems.Contains(_locations[pilot])
+                )
+                {
+                    continue;
+                }
+                // Familiar route traffic can reappear at its other endpoint after
+                // an absence long enough to have completed that journey.
+                const int reappearanceMinutes = 15;
+                var job = Current[pilot];
+                if (
+                    activity.ElapsedTicks - job.DueTicks < TimeSpan.FromMinutes(reappearanceMinutes).Ticks
+                    || (pilot + activity.ElapsedTicks / TimeSpan.FromHours(1).Ticks) % 2 != 0
+                )
+                {
+                    continue;
+                }
+                Current[pilot] = hauler.Reappear(job, activity.ElapsedTicks, system);
+                IndexLocation(pilot, system);
+            }
+        }
+        var running = activity
+            .ActiveSystems.SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? [])
+            .Where(pilot => activity.ActiveSystems.Contains(_locations[pilot]))
+            .ToHashSet();
+        foreach (long pilot in running.Except(_running))
+        {
+            var job = Current[pilot];
+            Current[pilot] = _miners.TryGetValue(pilot, out var miner)
+                ? miner.Resume(job, activity.ElapsedTicks)
+                : _haulers[pilot].Resume(job, activity.ElapsedTicks);
+        }
+        // A witnessed gate departure is one durable transfer, even if its source
+        // loses its last observer before the destination becomes visible.
+        running.UnionWith(_running.Where(pilot => Current[pilot].Action == CapsuleerAction.GateTransfer));
+        foreach (long pilot in _running.Except(running))
+        {
+            // Release navigation, contacts and fitting references. The immutable
+            // checkpoint retains the encounter and its paid work for re-entry.
+            if (_miners.ContainsKey(pilot))
+            {
+                _miners[pilot] = miners.Create(pilot);
+            }
+            else
+            {
+                _haulers[pilot] = haulers.Create(pilot);
+            }
+        }
+        _running = running;
+        _queue.Restore(_running.Select(pilot => Current[pilot]));
     }
 
     private void Settle(long throughTicks)
@@ -309,87 +377,55 @@ internal sealed class CapsuleerScheduler(
         }
     }
 
-    // Release ownership between bounded turns. The action and the final due check
-    // share ownership; no timer can insert an older action between them.
-    // Freeze the entry horizon: an overloaded world must not extend a login's
-    // catch-up target every time another bounded turn advances real time.
-    public void Synchronize(Action action) => SynchronizeCore(action, null);
+    public void Synchronize(Action action) => SynchronizeCore(action);
 
-    public void Synchronize(int systemId, Action action) => SynchronizeCore(action, systemId);
+    public void Synchronize(int systemId, Action action) => SynchronizeCore(action);
 
-    private void SynchronizeCore(Action action, int? systemId)
+    private void SynchronizeCore(Action action)
     {
-        long horizon = presence.Read().ElapsedTicks;
-        while (!TrySynchronize(action, horizon, systemId))
-        {
-            Thread.Yield();
-        }
-    }
-
-    public ValueTask SynchronizeAsync(Action action, CancellationToken cancellationToken = default) =>
-        SynchronizeCoreAsync(action, null, cancellationToken);
-
-    public ValueTask SynchronizeAsync(int systemId, Action action, CancellationToken cancellationToken = default) =>
-        SynchronizeCoreAsync(action, systemId, cancellationToken);
-
-    private async ValueTask SynchronizeCoreAsync(Action action, int? systemId, CancellationToken cancellationToken)
-    {
-        long horizon = presence.Read().ElapsedTicks;
-        while (true)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TrySynchronize(action, horizon, systemId))
-            {
-                return;
-            }
-            await Task.Yield();
-        }
-    }
-
-    private bool TrySynchronize(Action action, long horizon, int? systemId)
-    {
+        using var owner = Live?.Enter();
         lock (synchronization.Gate)
         {
-            var turn = RunThrough(_destinyStamp, horizon, systemId).Turn;
-            if (turn.OldestDueTicks is not null)
-            {
-                return false;
-            }
             action();
-            Reconcile(presence.Read());
-            if (systemId is { } selected)
-            {
-                _systems.Settle(selected, _systems.Get(selected).SettledTicks);
-            }
-            else
-            {
-                Settle(_settledTicks);
-            }
-            return true;
+            Load();
+            var activity = presence.Read();
+            Reconcile(activity);
+            Settle(activity.ElapsedTicks);
         }
     }
+
+    public ValueTask SynchronizeAsync(Action action, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        SynchronizeCore(action);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask SynchronizeAsync(int systemId, Action action, CancellationToken cancellationToken = default) =>
+        SynchronizeAsync(action, cancellationToken);
 
     public CapsuleerBatch Capture()
     {
         lock (synchronization.Gate)
         {
-            Reconcile(presence.Read());
             Load();
+            Reconcile(presence.Read());
+            Settle(presence.Read().ElapsedTicks);
             var active = _systems.Observed().Where(s => s.Mode == SystemSimulationMode.Active).Select(s => s.SystemId).ToHashSet();
-            foreach (var location in _locations.Where(p => active.Contains(p.Value)))
+            foreach (
+                var location in active
+                    .SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? [])
+                    .Distinct()
+                    .Where(pilot => active.Contains(_locations[pilot]))
+                    .Select(pilot => new KeyValuePair<long, int>(pilot, _locations[pilot]))
+            )
             {
-                if (
-                    _miners.TryGetValue(location.Key, out var miner)
-                    && (miner.Sample(_systems.Get(location.Value).SettledTicks) || _activated.Contains(location.Value))
-                )
+                if (_miners.TryGetValue(location.Key, out var miner))
                 {
                     var observation = miner.Read()!;
                     _pendingMiners[observation.Pilot.PilotId] = observation;
                 }
-                if (
-                    _haulers.TryGetValue(location.Key, out var hauler)
-                    && (hauler.Sample(_systems.Get(location.Value).SettledTicks) || _activated.Contains(location.Value))
-                )
+                if (_haulers.TryGetValue(location.Key, out var hauler))
                 {
                     var observation = hauler.Read()!;
                     _pendingHaulers[observation.Pilot.PilotId] = observation;

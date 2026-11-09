@@ -1,8 +1,7 @@
 # Eden
 
-A persistent [local capsuleer miner](docs/protocol/capsuleers.md) now works near the first human pilot’s home by default, with real ore, owned equipment and saved progress. A Badger hauler buys mined ore, flies a saved local gate route and lists delivered stock at a neighboring market.
+[Capsuleer encounters](docs/capsuleer-population.md) are created when humans visit supported high-security mining systems. Persistent miners can already be working and haulers carry owned cargo along real gate routes. Observers share the same ships, movement, damage and saved consequences. Empty systems do not execute career jobs or delay entry with catch-up work. Ambient pilots do not trade on the market.
 
-The miner and hauler now run through a [shared saved job scheduler](docs/capsuleer-population.md), with atomic economic actions, restart-safe deadlines and a human-active clock independent of chat. Active/background handoffs now settle due work before commands and system entry, preserve canonical work and release unobserved native scenes. Background warps and gate delays use saved event boundaries; subwarp navigation and danger retain conservative one-second samples. Schema 118 now provisions one miner/hauler pair per eligible system, preserves established grants and exposes coverage and backlog in local administration. The installed catalog yields 902 communities and 1,804 pilots; initial preparation runs before the host listens.
 
 Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It supports persistent local worlds and multiple pilots using separate Windows clients. Supply the matching EVE installation and resource cache separately.
 

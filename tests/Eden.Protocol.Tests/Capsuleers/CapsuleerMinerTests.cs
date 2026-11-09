@@ -102,12 +102,11 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 clock.Seconds++;
                 using (var metrics = SessionPerformance.Begin("paid miner waiting", output.WriteLine, force: true)!)
                 {
-                    Assert.NotNull(worker.Tick());
+                    Assert.Null(worker.Tick());
                     Assert.Equal(0, metrics.Commands);
                     Assert.Equal(0, metrics.Connections);
                     Assert.Equal(0, metrics.FittingCalculations);
                 }
-                stamp++;
                 UpdateSelection(host, Second, null);
                 clock.Seconds += 3600;
                 using (var empty = SessionPerformance.Begin("empty server miner", output.WriteLine, force: true)!)
@@ -472,7 +471,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
         );
     }
 
-    internal static void CreateWorld(WorldDatabase database, TestClock clock)
+    internal static void CreateWorld(WorldDatabase database, TestClock clock, bool legacyFounders = true)
     {
         TestCatalog.Create(database.CatalogPath);
         TestCatalog.AddSchool(database.CatalogPath, 17, 1, 1, Kisogo, SchoolStation, 601);
@@ -501,5 +500,15 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             world.Database.ExecuteSqlRaw("UPDATE WorldShip SET StationId=60015157");
         }
         WorldInitialization.Initialize(database, clock);
+        if (legacyFounders)
+        {
+            using WorldDbContext founders = new(database.Path);
+            using CatalogDbContext source = new(database.CatalogPath);
+            using var transaction = founders.Database.BeginTransaction();
+            CapsuleerCommunityStore.Provision(founders, source, clock);
+            CapsuleerPopulationStore.Reconcile(founders, source);
+            CapsuleerPopulationStore.ScheduleFounders(founders);
+            transaction.Commit();
+        }
     }
 }

@@ -32,12 +32,11 @@ internal sealed class CapsuleerHaulerFactory(
     INpcElectronicWarfare warfare,
     IPilotHealth health,
     TimeProvider clock,
-    MarketChangeSignal marketSignal,
-    PilotMarketStore marketStore
+    MarketChangeSignal marketSignal
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
-        new(pilotId, database, ships, systems, tackle, combat, encounters, missiles, warfare, health, clock, marketSignal, marketStore);
+        new(pilotId, database, ships, systems, tackle, combat, encounters, missiles, warfare, health, clock, marketSignal);
 }
 
 internal sealed class CapsuleerHauler(
@@ -52,8 +51,7 @@ internal sealed class CapsuleerHauler(
     INpcElectronicWarfare warfare,
     IPilotHealth health,
     TimeProvider clock,
-    MarketChangeSignal marketSignal,
-    PilotMarketStore marketStore
+    MarketChangeSignal marketSignal
 )
 {
     private const double ApproachRange = 500;
@@ -106,6 +104,75 @@ internal sealed class CapsuleerHauler(
             Load();
         }
         return _pilot is null ? null : Observation();
+    }
+
+    internal CapsuleerJob Resume(CapsuleerJob job, long elapsed)
+    {
+        if (!_loaded)
+        {
+            Load();
+        }
+        if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
+        {
+            _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
+            Load();
+        }
+        long delay = Math.Max(0, elapsed - Work.ActiveTicks);
+        if (delay == 0)
+        {
+            return job;
+        }
+        var resumed = Work with
+        {
+            ActiveTicks = Work.ActiveTicks + delay,
+            ClockOffsetTicks = Work.ClockOffsetTicks + delay,
+            DueTicks = Work.DueTicks == 0 ? 0 : Work.DueTicks + delay,
+        };
+        var next = job.Next(Math.Max(elapsed + TimeSpan.TicksPerSecond, job.DueTicks + delay), job.Action);
+        using CapsuleerOperation operation = new(database, job, marketSignal);
+        operation.Commit(next, null, new HaulerCheckpoint(pilotId, resumed));
+        _work = resumed;
+        return next;
+    }
+
+    internal CapsuleerJob Reappear(CapsuleerJob job, long elapsed, int systemId)
+    {
+        var resumed = Resume(job, elapsed);
+        if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup || Pilot.SystemId == systemId)
+        {
+            return resumed;
+        }
+        using CapsuleerOperation operation = new(database, resumed, marketSignal);
+        try
+        {
+            var arrival = systems.Load(systemId).First(o => o.DestinationSystemId == Pilot.SystemId);
+            SqliteWorld.SetPosition(operation.World, operation.Catalog, Pilot.ShipId, arrival.Position, systemId, Now);
+            long account = operation.World.Pilots.Where(p => p.Id == pilotId).Select(p => p.AccountId).Single();
+            _pilot = ships.FindPilot(operation.World, account, pilotId)!;
+            _navigation.AdoptHull();
+            _objects = systems.Load(systemId);
+            _obstacles = _objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup).ToArray();
+            int station = systemId == _sourceSystem ? Founder.SourceStationId : Founder.DestinationStationId;
+            _target = _objects.Single(o => o.Id == station);
+            _work = Work with
+            {
+                Activity = HaulerActivity.Flying,
+                DestinationStationId = station,
+                TargetId = station,
+                Navigation = _navigation.Capture(),
+                ArrivalUntil = Work.Stamp + GateTravelRules.ArrivalTicks,
+            };
+            var next = resumed.Next(resumed.DueTicks, CapsuleerAction.Arrival);
+            operation.TravelChanged = true;
+            operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
+            return next;
+        }
+        catch
+        {
+            operation.Dispose();
+            Load();
+            throw;
+        }
     }
 
     internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, bool background = false)
@@ -395,104 +462,12 @@ internal sealed class CapsuleerHauler(
         {
             throw new InvalidDataException("Waiting for a replacement hauling ship.");
         }
-        _operation.MarketChanged |= marketStore.Expire(_operation.World, _operation.Catalog) > 0;
-        var cargo = Ore(Pilot.ShipId);
-        if (Pilot.StationId == Founder.DestinationStationId)
+        // The cargo belongs to this encounter. A dock changes its route, never
+        // purchases or lists goods on behalf of the independent regional economy.
+        _work = Work with
         {
-            if (cargo.Length > 0)
-            {
-                PilotInventoryStore.Move(
-                    _operation.World,
-                    _operation.Catalog,
-                    Pilot.PilotId,
-                    Pilot.StationId,
-                    new(cargo.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null),
-                    Now
-                );
-            }
-            _operation.MarketChanged |= CapsuleerTrade.ListStock(
-                _operation.World,
-                _operation.Catalog,
-                marketStore,
-                Pilot.PilotId,
-                Pilot.StationId,
-                HaulingRules.DestinationMultiplier
-            );
-            // Reserved market stock stays at this station until a buyer fills the ordinary order.
-            _work = Work with
-            {
-                DestinationStationId = Founder.SourceStationId,
-            };
-        }
-        else
-        {
-            if (cargo.Length == 0)
-            {
-                var stock = Ore(Pilot.StationId);
-                if (stock.Length == 0)
-                {
-                    var offer = _operation
-                        .World.Set<Eden.Data.World.Market.SavedPersonalOrder>()
-                        .Where(o => o.PilotId == _miner && o.Status == Eden.Gameplay.Market.PersonalOrderStatus.Open)
-                        .AsEnumerable()
-                        .Select(o => o.Snapshot())
-                        .Where(o => !o.Bid && o.StationId == Founder.SourceStationId)
-                        .OrderBy(o => o.PriceCents)
-                        .ThenBy(o => o.Id)
-                        .FirstOrDefault();
-                    if (offer is null)
-                    {
-                        Wait("Waiting for mined ore on the home-station market.");
-                        return;
-                    }
-                    var catalog = _operation.Catalog;
-                    double volume = PilotInventoryStore.Volume(catalog, offer.TypeId);
-                    int quantity = HaulingRules.PurchaseQuantity(
-                        offer.Remaining,
-                        offer.PriceCents,
-                        (_operation.World.Set<Eden.Data.World.Market.PilotWallet>().Find(Pilot.PilotId)?.Cents ?? 0),
-                        Pilot.CargoCapacity,
-                        volume
-                    );
-                    if (quantity == 0)
-                    {
-                        Wait("Waiting for affordable ore and destination listing funds.");
-                        return;
-                    }
-                    marketStore.Expire(_operation.World, _operation.Catalog);
-                    marketStore.ExecuteBuy(
-                        _operation.World,
-                        _operation.Catalog,
-                        Pilot.PilotId,
-                        Founder.SourceStationId,
-                        [new(offer.TypeId, offer.PriceCents, quantity)],
-                        0
-                    );
-                    _operation.MarketChanged = true;
-                    stock = Ore(Pilot.StationId);
-                }
-                var load = stock.FirstOrDefault();
-                if (load is null)
-                {
-                    Wait("The quoted ore was purchased by another pilot.");
-                    return;
-                }
-                int units = (int)Math.Min(load.Quantity, Math.Floor(Pilot.CargoCapacity / load.Volume));
-                if (units <= 0)
-                {
-                    throw new InvalidDataException("The ore does not fit in the hauling ship.");
-                }
-                PilotInventoryStore.Move(
-                    _operation.World,
-                    _operation.Catalog,
-                    Pilot.PilotId,
-                    Pilot.ShipId,
-                    new([load.Id], Pilot.StationId, (int)InventoryFlag.Cargo, units),
-                    Now
-                );
-            }
-            _work = Work with { DestinationStationId = Founder.DestinationStationId };
-        }
+            DestinationStationId = Pilot.StationId == Founder.DestinationStationId ? Founder.SourceStationId : Founder.DestinationStationId,
+        };
         var launch = StationUndocking.Launch(Pilot.ShipId, Pilot.Home, Pilot.Flight);
         SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, launch.Position, Pilot.SystemId, Now);
         _operation.TravelChanged = true;

@@ -470,3 +470,5 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="console-logging-cleanup-november-5-2026"></a>[Console logging cleanup (November 5, 2026)](protocol/compatibility.md#console-logging-cleanup-november-5-2026)
 - <a id="placeholder-route-implementation-november-4-2026"></a>[Placeholder route implementation (November 4, 2026)](protocol/compatibility.md#placeholder-route-implementation-november-4-2026)
 - <a id="gameplay-rejection-dialogs-november-2-2026"></a>[Gameplay rejection dialogs, November 2, 2026](protocol/compatibility.md#gameplay-rejection-dialogs-november-2-2026)
+
+Current encounter lifecycle and automated evidence are recorded under [observed capsuleer encounters](protocol/capsuleers.md#observed-capsuleer-encounters--november-8-2026).

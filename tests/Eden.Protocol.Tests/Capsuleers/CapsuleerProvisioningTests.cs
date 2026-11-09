@@ -35,9 +35,9 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         var provisioner = new CapsuleerProvisioner(f.Database, f.Clock);
-        var first = provisioner.Reconcile();
+        var first = provisioner.EnsureSystem(Source);
         using var metrics = SessionPerformance.Begin("unchanged eligibility", output.WriteLine, force: true)!;
-        var second = provisioner.Reconcile();
+        var second = provisioner.EnsureSystem(Source);
         Assert.Equal(first.RegisteredSystems, second.RegisteredSystems);
         Assert.Equal(0, second.CreatedCommunities);
         Assert.InRange(metrics.Commands, 1, 12);
@@ -57,13 +57,13 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             world.Set<WorldAsteroid>().Where(a => a.SystemId == Destination).ExecuteUpdate(s => s.SetProperty(a => a.Quantity, 0));
         }
         var provisioner = new CapsuleerProvisioner(f.Database, f.Clock);
-        Assert.Equal(0, provisioner.Reconcile().CreatedCommunities);
+        Assert.Equal(0, provisioner.EnsureSystem(Destination).CreatedCommunities);
         using (WorldDbContext world = new(f.Database.Path))
         {
             world.Set<WorldAsteroid>().Where(a => a.SystemId == Destination).ExecuteUpdate(s => s.SetProperty(a => a.Quantity, 100));
         }
-        Assert.Equal(1, provisioner.Reconcile().CreatedCommunities);
-        Assert.Equal(0, provisioner.Reconcile().CreatedCommunities);
+        Assert.Equal(1, provisioner.EnsureSystem(Destination).CreatedCommunities);
+        Assert.Equal(0, provisioner.EnsureSystem(Destination).CreatedCommunities);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             cents = world.Set<PilotWallet>().Sum(w => w.Cents);
         }
         AddDestinationOre(f.Database);
-        var turn = new CapsuleerProvisioner(f.Database, f.Clock).Reconcile();
+        var turn = new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination);
         output.WriteLine($"Registered {turn.RegisteredSystems} systems; created {turn.CreatedCommunities} community.");
         Assert.Equal(1, turn.CreatedCommunities);
         Assert.Equal(0, turn.PendingCommunities);
@@ -115,8 +115,8 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
         }
         Assert.Equal(2, saved.Set<SavedCapsuleerCommunity>().Count());
         Assert.Equal(2, saved.Set<SavedCapsuleerHauler>().Count());
-        Assert.Equal(Source, new CapsuleerPopulationStore(f.Database).Systems().Single(s => s.SystemId == Source).SystemId);
-        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).Reconcile().CreatedCommunities);
+        Assert.Equal(Destination, new CapsuleerPopulationStore(f.Database).Systems().Single(s => s.SystemId == Destination).SystemId);
+        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination).CreatedCommunities);
         WorldInitialization.Initialize(f.Database, f.Clock);
         using WorldDbContext reopened = new(f.Database.Path);
         Assert.Equal(4, reopened.Set<SavedCapsuleerAgent>().Count());
@@ -143,7 +143,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             }
             world.SaveChanges();
         }
-        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).Reconcile().CreatedCommunities);
+        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination).CreatedCommunities);
         Assert.Equal(
             CapsuleerEligibility.NoUsableOre,
             new CapsuleerPopulationStore(f.Database).Systems().Single(s => s.SystemId == Destination).Eligibility
@@ -174,7 +174,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             );
         }
         Assert.IsType<SqliteException>(
-            Assert.Throws<DbUpdateException>(() => new CapsuleerProvisioner(f.Database, f.Clock).Reconcile()).InnerException
+            Assert.Throws<DbUpdateException>(() => new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination)).InnerException
         );
         using (WorldDbContext world = new(f.Database.Path))
         {
@@ -186,8 +186,8 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             Assert.DoesNotContain(world.Set<SavedCapsuleerCommunity>(), c => c.Id == Destination);
             world.Database.ExecuteSqlRaw("DROP TRIGGER reject_global_hauler");
         }
-        Assert.Equal(1, new CapsuleerProvisioner(f.Database, f.Clock).Reconcile().CreatedCommunities);
-        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).Reconcile().CreatedCommunities);
+        Assert.Equal(1, new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination).CreatedCommunities);
+        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination).CreatedCommunities);
     }
 
     [Fact]
@@ -196,9 +196,9 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
         using CapsuleerHaulerTests.Fixture f = new();
         AddDestinationOre(f.Database);
         AddSystem(f.Database, Third);
-        var first = new CapsuleerProvisioner(f.Database, f.Clock).Reconcile(1);
+        var first = new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination);
         Assert.Equal(1, first.CreatedCommunities);
-        Assert.Equal(1, first.PendingCommunities);
+        Assert.Equal(0, first.PendingCommunities);
         string[] names;
         long seed;
         using (WorldDbContext world = new(f.Database.Path))
@@ -206,14 +206,14 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             names = world.Pilots.Where(p => p.AccountId < 0).OrderBy(p => p.Id).Select(p => p.Name).ToArray();
             seed = world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed;
         }
-        var resumed = new CapsuleerProvisioner(f.Database, f.Clock).Reconcile(1);
+        var resumed = new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Third);
         Assert.Equal(1, resumed.CreatedCommunities);
         Assert.Equal(0, resumed.PendingCommunities);
         using WorldDbContext reopened = new(f.Database.Path);
         Assert.Equal(6, reopened.Set<SavedCapsuleerAgent>().Count());
         Assert.Equal(names, reopened.Pilots.Where(p => p.AccountId < 0).OrderBy(p => p.Id).Take(names.Length).Select(p => p.Name));
         Assert.Equal(seed, reopened.Set<SavedCapsuleerProvisioning>().Single().WorldSeed);
-        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).Reconcile().CreatedCommunities);
+        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination).CreatedCommunities);
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
         WorldInitialization.Initialize(f.Database, f.Clock);
         var population = new CapsuleerPopulationStore(f.Database);
         Assert.Equal(2, population.Summary().Agents);
-        Assert.All(population.Systems(), s => Assert.Equal(CapsuleerEligibility.Disabled, s.Eligibility));
+        Assert.Empty(population.Systems());
         state = configuration.Read();
         configuration.Save(
             state.Generation,
@@ -245,6 +245,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             "test"
         );
         WorldInitialization.Initialize(f.Database, f.Clock);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination);
         Assert.Equal(4, population.Summary().Agents);
     }
 
@@ -253,7 +254,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         AddDestinationOre(f.Database);
-        new CapsuleerProvisioner(f.Database, f.Clock).Reconcile();
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var presence = host.GetRequiredService<IHumanPresence>();
@@ -265,7 +266,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             f.Clock.Seconds++;
             host.GetRequiredService<CapsuleerMaintenance>().Tick();
         }
-        Assert.All(scheduler.Jobs(), j => Assert.True(j.Sequence > 0));
+        Assert.All(scheduler.Jobs(), j => Assert.Equal(0, j.Sequence));
         Assert.Equal(0, host.GetRequiredService<CapsuleerScene>().MaterializedPilots);
         foreach (var source in new[] { Source, Destination })
         {
@@ -273,7 +274,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             long miner = agents.Single(a => a.Career == CapsuleerCareer.Mining).PilotId;
             Assert.Equal(source, scheduler.Miner(miner)!.Pilot.SystemId);
         }
-        Assert.Throws<InvalidOperationException>(() => host.GetRequiredService<ICapsuleerProvisioning>().Reconcile());
+        Assert.Equal(0, host.GetRequiredService<ICapsuleerProvisioning>().Reconcile().CreatedCommunities);
     }
 
     [Theory]
@@ -299,7 +300,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
                     : "UPDATE Stargate SET DestinationId=50009992 WHERE Id=50009992"
             );
         }
-        new CapsuleerProvisioner(f.Database, f.Clock).Reconcile();
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination);
         var registry = new CapsuleerPopulationStore(f.Database).Systems();
         Assert.Equal(
             missingOre ? CapsuleerEligibility.NoUsableOre : CapsuleerEligibility.NoReciprocalRoute,
@@ -308,7 +309,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
         using WorldDbContext world = new(f.Database.Path);
         Assert.Equal(2, world.Set<SavedCapsuleerAgent>().Count());
         using CatalogDbContext source = new(f.Database.CatalogPath);
-        Assert.Equal(source.Definitions.Systems.Count, registry.Count);
+        Assert.Single(registry);
     }
 
     internal static void AddDestinationOre(WorldDatabase database)

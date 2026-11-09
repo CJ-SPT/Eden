@@ -12,6 +12,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Mining;
@@ -29,17 +30,19 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
     {
         ArgumentOutOfRangeException.ThrowIfNegative(maximumCommunities);
         cancellationToken.ThrowIfCancellationRequested();
-        if (LiveWorld.Find(database.Path) is not null)
-        {
-            throw new InvalidOperationException("Population provisioning requires a stopped world.");
-        }
+        // Encounter populations are created only when a human visits a system.
+        return new(0, 0, 0);
+    }
+
+    internal CapsuleerProvisioningTurn EnsureSystem(int systemId)
+    {
         lock (database.MotionLock)
         {
-            return Provision(maximumCommunities, cancellationToken);
+            return Provision(1, CancellationToken.None, systemId);
         }
     }
 
-    private CapsuleerProvisioningTurn Provision(int limit, CancellationToken cancellationToken)
+    private CapsuleerProvisioningTurn Provision(int limit, CancellationToken cancellationToken, int systemId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         // Local catalog edits can preserve the imported source fingerprint.
@@ -64,11 +67,11 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         SavedCapsuleerSystem[] saved;
         using (WorldDbContext world = new(database.Path))
         {
-            saved = world.Set<SavedCapsuleerSystem>().AsNoTracking().ToArray();
+            saved = world.Set<SavedCapsuleerSystem>().AsNoTracking().Where(s => s.SystemId == systemId).ToArray();
         }
-        bool enabled = database.Settings.Capsuleers.GlobalProvisioning;
+        bool enabled = true;
         bool reusable =
-            saved.Length == catalog.Definitions.Systems.Count
+            saved.Length == 1
             && saved.All(s =>
                 catalog.Definitions.Systems.ContainsKey(s.SystemId)
                 && s.CatalogFingerprint == fingerprint
@@ -78,7 +81,7 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         var origins = reusable ? [] : CapsuleerProvisioningCatalog.Origins(catalog);
         var sites = reusable
             ? saved.Select(s => new CapsuleerSite(s.SystemId, s.Eligibility, s.HomeStationId, s.DestinationStationId)).ToArray()
-            : CapsuleerProvisioningCatalog.Plan(catalog, enabled, homes, origins.Length != 0);
+            : CapsuleerProvisioningCatalog.Plan(catalog, enabled, homes, origins.Length != 0, new HashSet<int> { systemId });
         if (!reusable)
         {
             using WorldDbContext world = new(database.Path);
@@ -317,6 +320,27 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 }
             );
         }
+        if (career == CapsuleerCareer.Hauling)
+        {
+            const int starterOreUnits = 100;
+            int ore = world
+                .Set<WorldAsteroid>()
+                .Where(a => a.SystemId == site.SystemId && a.Quantity > 0)
+                .OrderBy(a => a.Id)
+                .Select(a => a.TypeId)
+                .First();
+            world.Add(
+                new OwnedItem
+                {
+                    Id = ship + 1,
+                    OwnerId = pilot,
+                    TypeId = ore,
+                    LocationId = ship,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    Quantity = starterOreUnits,
+                }
+            );
+        }
         world.Add(new SavedHomeStation { PilotId = pilot, StationId = station });
         world.Add(new PilotWallet { PilotId = pilot, Cents = cents });
         world.SaveChanges();
@@ -330,10 +354,47 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         var navigation = new NavigationState().Capture();
         if (career == CapsuleerCareer.Mining)
         {
-            new MinerCheckpoint(
-                pilot,
-                new(MinerActivity.Docked, 0, 0, 0, 0, module, 0, navigation, ship, ActiveTicks: elapsed, ClockOffsetTicks: elapsed)
-            ).Apply(world);
+            var work = new MinerProgress(
+                MinerActivity.Docked,
+                0,
+                0,
+                0,
+                0,
+                module,
+                0,
+                navigation,
+                ship,
+                ActiveTicks: elapsed,
+                ClockOffsetTicks: elapsed
+            );
+            // New encounters can begin midway through their first shift. This is
+            // paid once, in the same transaction that creates their owned ship.
+            var rocks = world.Set<WorldAsteroid>().Where(a => a.SystemId == site.SystemId && a.Quantity > 0).OrderBy(a => a.Id).ToArray();
+            if (rocks.Length > 0)
+            {
+                var rock = rocks[(int)(CapsuleerProvisioningRules.Seed(seed, site.SystemId, career) % (ulong)rocks.Length)];
+                const double miningClearance = 750;
+                SqliteWorld.SetPosition(
+                    world,
+                    catalog,
+                    ship,
+                    new(rock.X + rock.Radius + miningClearance, rock.Y, rock.Z),
+                    site.SystemId,
+                    now
+                );
+                var cycle = PilotMiningStore.Begin(world, catalog, pilot, module, rock.Id, now);
+                int seconds = checked((int)Math.Ceiling(cycle.Laser.DurationMilliseconds / 1000));
+                work = work with
+                {
+                    Activity = MinerActivity.Mining,
+                    TargetId = rock.Id,
+                    CycleSeconds = seconds,
+                    DueStamp = seconds,
+                    DueTicks = elapsed + TimeSpan.FromSeconds(seconds).Ticks,
+                    PaidUntil = now + TimeSpan.FromSeconds(seconds).Ticks,
+                };
+            }
+            new MinerCheckpoint(pilot, work).Apply(world);
         }
         else
         {

@@ -91,57 +91,6 @@ public sealed class CapsuleerRuntimeTests
     }
 
     [Fact]
-    public async Task FailedPurchaseJobLeavesMoneyOrderAndCargoUnchangedAndRetrySettlesOnce()
-    {
-        using CapsuleerHaulerTests.Fixture f = new();
-        long hauler = f.Founder().PilotId;
-        long ship = f.Founder().FounderShipId;
-        long balance;
-        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
-        {
-            long miner = host.GetRequiredService<ICapsuleerCommunity>().Pilots().Single(p => p.Career == CapsuleerCareer.Mining).PilotId;
-            f.AddStock(miner, 1000);
-            host.GetRequiredService<CapsuleerTrade>().ListStock(miner, SourceStation);
-            var offer = Assert.Single(host.GetRequiredService<IPersonalMarket>().PersonalOrders(miner));
-            var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
-            var expected = scheduler.Jobs().Single(j => j.PilotId == hauler);
-            balance = host.GetRequiredService<IPilotMarket>().Balance(hauler);
-            using (WorldDbContext world = new(f.Database.Path))
-            {
-                RejectJob(world, hauler);
-            }
-            using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
-            f.Clock.Seconds++;
-            Assert.Throws<SqliteException>(() =>
-            {
-                for (int batch = 0; batch < 3; batch++)
-                {
-                    scheduler.Run(1);
-                }
-            });
-            Assert.Equal(expected, scheduler.Jobs().Single(j => j.PilotId == hauler));
-            Assert.Equal(balance, host.GetRequiredService<IPilotMarket>().Balance(hauler));
-            Assert.Empty(host.GetRequiredService<IPilotMarket>().Transactions(hauler));
-            Assert.Equal(offer, Assert.Single(host.GetRequiredService<IPersonalMarket>().PersonalOrders(miner)));
-            Assert.Empty(host.GetRequiredService<IPilotInventory>().List(hauler, ship));
-            using (WorldDbContext world = new(f.Database.Path))
-            {
-                world.Database.ExecuteSqlRaw("DROP TRIGGER reject_job");
-            }
-            scheduler.Run(1);
-            Assert.Equal(1L, scheduler.Jobs().Single(j => j.PilotId == hauler).Sequence);
-            Assert.Equal(0, scheduler.Run(1).Turn.Completed);
-            Assert.Equal(balance - offer.PriceCents * offer.Remaining, host.GetRequiredService<IPilotMarket>().Balance(hauler));
-            Assert.Single(host.GetRequiredService<IPilotMarket>().Transactions(hauler));
-            await host.GetRequiredService<LiveWorld>().FlushAsync();
-        }
-        WorldInitialization.Initialize(f.Database, f.Clock);
-        using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
-        Assert.Single(reopened.GetRequiredService<IPilotMarket>().Transactions(hauler));
-        Assert.Equal(1000, reopened.GetRequiredService<IPilotInventory>().List(hauler, ship).Single(i => i.TypeId == OreType).Quantity);
-    }
-
-    [Fact]
     public void Schema116PaidCycleMigrationRetainsRemainingDeadlineAndResumeRebasesItsNativeCooldown()
     {
         using CapsuleerHaulerTests.Fixture f = new();

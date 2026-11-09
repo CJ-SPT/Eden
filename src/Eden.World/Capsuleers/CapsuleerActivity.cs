@@ -99,8 +99,10 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
     private void Change(Guid session, int? systemId, Func<bool> validate, Action? committed = null, int? previousSystem = null)
     {
         int target;
+        int? original;
         lock (synchronization.Gate)
         {
+            original = _sessions.TryGetValue(session, out int saved) ? saved : null;
             target = systemId ?? previousSystem ?? _sessions.GetValueOrDefault(session);
         }
         void Apply()
@@ -128,7 +130,26 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         }
         else
         {
-            handoff.Synchronize(target, Apply);
+            try
+            {
+                handoff.Synchronize(target, Apply);
+            }
+            catch
+            {
+                lock (synchronization.Gate)
+                {
+                    activity.Update(session, original);
+                    if (original is { } previous)
+                    {
+                        _sessions[session] = previous;
+                    }
+                    else
+                    {
+                        _sessions.Remove(session);
+                    }
+                }
+                throw;
+            }
         }
     }
 
@@ -157,9 +178,9 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
                 {
                     ObjectDisposedException.ThrowIf(_disposed, this);
                     return true;
-                },
-                () => _system = systemId
+                }
             );
+            _system = systemId;
         }
 
         public void Dispose()

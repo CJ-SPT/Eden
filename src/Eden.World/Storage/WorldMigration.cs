@@ -100,7 +100,7 @@ internal static class WorldMigration
         ShipHeatPersistence.ValidateSaved(world);
         Eden.World.Capsuleers.CapsuleerCommunityStore.Initialize(world);
         Eden.World.Capsuleers.CapsuleerProvisioningSchema.Upgrade(world);
-        Eden.World.Capsuleers.CapsuleerCommunityStore.Provision(world, catalog, clock);
+
         Eden.World.Capsuleers.CapsuleerPopulationStore.Initialize(world);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);
         Eden.World.Capsuleers.CapsuleerPopulationStore.ScheduleFounders(world);

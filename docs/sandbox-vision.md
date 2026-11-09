@@ -2,6 +2,8 @@
 
 [Documentation index](README.md)
 
+**Revised direction, November 8, 2026.** The [observed encounter design](capsuleer-population.md#observed-encounters--november-8-2026) supersedes the autonomous capsuleer economy below. Visible activities retain continuity and ordinary player interaction. Regional markets develop independently using shared human-active time and direct player trades. Historical stages below describe the prior design.
+
 **Status: Local miner and ore-hauler milestones implemented. Autonomous pirate hunting and additional careers remain planned.**
 
 The [default local miner](protocol/capsuleers.md) is the first implementation slice. The miner begins with an equipped Venture and lists mined ore while human pilots are online. The [hauler](protocol/capsuleers.md#local-ore-hauling--november-8-2026) buys and carries ore to a neighboring market. Its permanent home follows the first human pilot’s home area. The historical stages below describe the broader economy and future careers.
