@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Trashing personal items and ships (November 8, 2026)](#trashing-personal-items-and-ships-november-8-2026)
 - [Personal Assets window (November 8, 2026)](#personal-assets-window-november-8-2026)
 - [Capsule retirement on boarding (November 6, 2026)](#capsule-retirement-on-boarding-november-6-2026)
 - [Personal ship insurance](#personal-ship-insurance)
@@ -18,6 +19,30 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Trashing personal items and ships (November 8, 2026)
+
+Implemented selected-pilot `invbroker.TrashItems([itemID, ...], stationID)` through the native inventory-manager binding. It returns Python `None` on success and a native RPC failure for invalid requests. The list must contain one to 1,000 distinct positive IDs, without extra arguments or keywords. A batch must share an immediate location and flag. Trashing permanently removes complete stacks, packaged ships, inactive assembled ships and station containers. Personal assets at remote NPC stations are supported, including while the caller is elsewhere; loose cargo inside docked ships and containers resolves through its authoritative parent chain to the supplied station.
+
+The operation discovers and validates the entire contents graph before deletion, including fittings, rigs, loaded ammunition and ships stored in bays. It checks all owners and active-ship references, rejects ships in space, direct fitted-item selections, installed industry blueprints, contract escrow, in-progress courier packages and the pinned catalog's non-trashable types. Hidden escrow or foreign descendants reject the entire batch instead of becoming orphaned inventory. A malformed, duplicate, missing, mixed-location or protected selection leaves the full batch unchanged. Corporation trashing and trashing space inventory are unsupported.
+
+All removals and insurance invalidations commit in one existing world transaction. Trashing a hull voids its insurance without refund, payout or combat-loss report. Existing foreign-key cascades remove module condition, health and other dependent runtime rows, while inventory descendants are explicitly removed. The normal world transaction bridge and checkpoint machinery remain authoritative. Only committed results generate named `OnItemChange` notifications; removal rows use the existing graveyard-location adapter and preserve the former stack quantity. Blueprint removal also invalidates the native blueprint cache with `OnBlueprintsUpdated`.
+
+**Pinned-client evidence.** Inert inspection of build **3662168** `code.ccp` (SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**) confirms `invItemFunctions.TrashInvItems` owns the confirmation prompt, calls `CheckItemsInSamePlace`, supplies a Python list of item IDs and the containing station ID to `GetInventoryMgr().TrashItems`, and treats a falsy response as success before invalidating its local location cache. `inventoryrestrictions.common.checks.is_trashable` references `evetypes.const.TYPE_LIST_NON_TRASHABLE_ITEMS` **298**. `evetypes.GetTypeIDsFromTypeList` subtracts excluded categories, then unions included groups and subtracts excluded groups, then unions included types and subtracts excluded types. Eden preserves that precedence in typed Gameplay rules. The installed catalog's record 298 includes types **60033** and **73484**; implementation reads the catalog rather than hardcoding those IDs.
+
+**References.** [EVE University: Managing Your Assets](https://wiki.eveuniversity.org/Managing_Your_Assets) describes station inventory, personal assets and remote location caching; it is a gameplay reference, not evidence for this RPC or exact deletion rules. [Carbon Blue Marshal.cpp, revision af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) was consulted for the existing list/tuple and None boundary. No codec changes or live-client observations were introduced.
+
+**Automated validation.** Tool restore, solution restore and build passed with zero warnings and errors; **236 affected .NET cases passed**, including **41 trashing cases**. Both Python policy suites passed (**8** catalog setup and **9** formatting-policy cases), and `tools/Format.ps1 -Check` passed. The complete stable validation sequence took **118.76 seconds**, with the .NET run reporting **1 minute 28 seconds**. The full .NET suite was not run. Validation uses temporary worlds only, covering local and remote stacks, remote trashing from space, assembled and stored hulls, fittings and loaded charges, container/blueprint notifications, ownership and commitment rejections, database rollback, foreign-key integrity, and stopped-world reopen after resident shutdown/checkpoint persistence.
+
+The initial exact filter was `FullyQualifiedName=Eden.Protocol.Tests.Inventory.ItemTrashTests.TrashRemovesCompleteStacksAndPackagedShipsAtLocalAndRemoteStationsAcrossReopen` (two cases passed at that revision). Development fixture-only ownership-key, catalog-tracking and live-world shutdown failures were corrected before the final passing run. The final combined filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Inventory|FullyQualifiedName~Eden.Protocol.Tests.Docking.TypedInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.Inventory|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipStorageTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PersonalAssetServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ContractAssetTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ContractTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CourierContractTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InsuranceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.InsuranceServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ProductionInventoryTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled. Native menus, confirmation presentation, cache repaint and input remain unverified.
+
+**Optional maintainer checks.** Trash a disposable local stack and inactive fitted hull through the native menu; trash a remote personal asset and refresh its station listing; inspect removal of a container containing a blueprint.
 
 ## Capsule retirement on boarding (November 6, 2026)
 

@@ -57,6 +57,8 @@ All 442 catalog datasets have generated typed keys and payloads in `Eden.Data`; 
 
 The native Insider [Type Browser](docs/development-client.md#developer-type-browser) can create persistent items, original blueprints and packaged ships in a developer pilot's station hangar or load cargo within its capacity. Existing assembly/fitting support remains authoritative.
 
+The native [Trash Item action](docs/protocol/inventory.md#trashing-personal-items-and-ships-november-8-2026) permanently removes personal station items, containers and inactive ships with their contents, including remote personal assets. Active ships, space inventory and assets committed to contracts or industry are protected.
+
 ## Build and run
 
 Use the SDK pinned in [global.json](global.json), 64-bit Python 3.11 or later, and PowerShell 7 on Windows. Run from the repository root. After a code milestone is stable, validate in this order; select a .NET filter for the affected behavior and immediate dependencies, and stop to investigate a failed step.
