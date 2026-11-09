@@ -330,6 +330,7 @@ public sealed class PilotCombatTests
         Assert.Equal(129, world.Set<ShipEnergy>().Single().Charge);
         Assert.Equal(14.06, world.Set<WorldNpc>().Find(f.Npc.Id)!.ShieldCharge, 8);
         Assert.Empty(world.Set<NpcBounty>());
+        Assert.Empty(world.Set<SavedFreeSkillPoints>());
         Assert.Equal(f.Clock.Now + 1960 * TimeSpan.TicksPerMillisecond, world.Set<ModuleCooldown>().Single().ReadyAt);
         f.Clock.Milliseconds += 1960;
         Assert.True(f.Fire().Applied > 0);
@@ -370,6 +371,7 @@ public sealed class PilotCombatTests
         Assert.Empty(saved.Set<WorldWreck>());
         Assert.DoesNotContain(saved.Set<OwnedItem>(), i => i.TypeId == WreckDefinitions.StarterLootType);
         Assert.Equal(long.MaxValue, saved.Set<PilotWallet>().Single().Cents);
+        Assert.Empty(saved.Set<SavedFreeSkillPoints>());
     }
 
     [Fact]
@@ -405,6 +407,10 @@ public sealed class PilotCombatTests
         Assert.Equal(kill.Reward.PilotId, wreck.OwnerId);
         Assert.Equal(100, Assert.Single(saved.Set<OwnedItem>().Where(i => i.LocationId == wreck.Id)).Quantity);
         Assert.Equal(300000, saved.Set<PilotWallet>().Sum(w => w.Cents));
+        var points = Assert.Single(saved.Set<SavedFreeSkillPoints>());
+        Assert.Equal(kill.Reward.PilotId, points.PilotId);
+        Assert.Equal(7, points.Points);
+        Assert.Equal(1, points.Revision);
         Assert.Single(saved.Set<ModuleCooldown>());
         Assert.Single(saved.Set<ShipEnergy>());
         Assert.Throws<InvalidDataException>(() => f.Fire());

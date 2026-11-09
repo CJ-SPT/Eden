@@ -1,6 +1,7 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.World.Catalog;
@@ -169,6 +170,7 @@ public sealed class NpcPopulationTests
             Assert.Equal(OtherCorporation, pending.CorporationId);
         }
         Assert.Equal(rewarded ? 1 : 0, world.Set<NpcBounty>().Count());
+        Assert.Equal(rewarded ? 7 : 0, world.Set<SavedFreeSkillPoints>().Sum(p => p.Points));
     }
 
     [Fact]

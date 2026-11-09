@@ -15,7 +15,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 124;
+    internal const int CurrentVersion = 125;
 
     public static void Open(
         WorldDbContext world,
@@ -115,7 +115,7 @@ internal static class WorldMigration
             Eden.World.Market.MarketProgressionStore.Upgrade(world, catalog);
         }
         Eden.World.Agents.MissionSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=124");
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=125");
         history.Commit();
     }
 }

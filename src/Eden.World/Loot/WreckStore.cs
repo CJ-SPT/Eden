@@ -74,7 +74,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
             )
             .Entity;
         Eden.World.Information.SalvagePersistence.Seed(catalog, wreck);
-        foreach (var drop in Drops(world, catalog, npc))
+        foreach (var drop in Drops(world, catalog, npc).Concat(Eden.World.Agents.PilotMissionStore.KeyLoot(world, npc, now)))
         {
             _ = catalog.RequireItem(drop.TypeId);
             world

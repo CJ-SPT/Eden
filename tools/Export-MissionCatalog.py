@@ -94,6 +94,43 @@ def export(catalog, output):
     for index, wave in enumerate(missions[-1]['waves']):
         wave['roomId'] = 17284 if index < 2 else 17285
 
+    # One explicit report variant per room; early Scarlet escape/implant scripts remain excluded.
+    gate_key = db.execute("SELECT Id FROM ItemType WHERE Name='Gate Key'").fetchone()[0]
+    serpentis, guristas, blood, angels, scarlet_faction = 500020, 500010, 500012, 500011, 500021
+    combat(15237, 4, 1000, 'DreadPirateScarlet4', '2020-10-20 15:52 UTC', [
+        [group('Corelatis Squad Leader', 3, 55000, required=False, enemyFaction=serpentis),
+         group('Corelum Chief Safeguard', 2, 55000, required=False, enemyFaction=serpentis),
+         group('Core Admiral/Core High Admiral', 4, 55000, required=False, enemyFaction=serpentis,
+               lootTypeId=gate_key, lootQuantity=1)],
+        [group('Pithatis Enforcer/Pithatis Death Dealer/Pithatis Revolter/Pithatis Assassin/Pithatis Executor/Pithatis Assaulter',
+               5, 60000, required=False, enemyFaction=guristas),
+         group('Pith Exterminator/Pith Eliminator', 4, 60000, required=False, enemyFaction=guristas)],
+        [group('Corelior Artillery/Corelior Cannoneer', 3, 33000, required=False, trigger=True, enemyFaction=serpentis),
+         group('Pith Conquistador/Pith Massacrer', 4, 33000, required=False, trigger=True, enemyFaction=guristas)],
+        [group('Pith Eliminator/Pith Extinguisher', 4, 35000, required=False, enemyFaction=guristas)],
+        [group('Anire Scarlet', 1, 84000, completesMission=True, enemyFaction=scarlet_faction),
+         group('Angel Heavy Missile Battery', 1, 84000, required=False, enemyFaction=angels),
+         group('Blood Heavy Missile Battery', 1, 84000, required=False, enemyFaction=blood),
+         group('Guristas Cruise Missile Battery', 1, 84000, required=False, enemyFaction=guristas),
+         group('Serpentis Cruise Missile Battery', 1, 84000, required=False, enemyFaction=serpentis),
+         group('Dire Pithi Imputor', 2, 62000, required=False, enemyFaction=guristas),
+         group('Dire Pithum Abolisher/Dire Pithum Annihilator', 3, 62000, required=False, enemyFaction=guristas),
+         group('Pithatis Enforcer/Pithatis Executor', 4, 62000, required=False, enemyFaction=guristas),
+         group('Corelatis Squad Leader/Corelatis Wing Leader', 4, 112000, required=False, enemyFaction=serpentis),
+         group('Core Baron/Core Commodore', 4, 112000, required=False, trigger=True, enemyFaction=serpentis)],
+        [group('Core Port Admiral/Core Rear Admiral', 4, 105000, required=False, trigger=True, enemyFaction=serpentis)],
+        [group('Core Grand Admiral/Core High Admiral', 5, 106000, required=False, enemyFaction=serpentis)]])
+    scarlet = missions[-1]
+    scarlet['deadspace'] = False  # Report explicitly allows direct fleet warps into its normal-space pockets.
+    scarlet['rooms'] = [dict(roomId=22286, entryObjectId=969328), dict(roomId=22287, entryObjectId=969330),
+                         dict(roomId=22288, entryObjectId=969332), dict(roomId=22289, entryObjectId=969339)]
+    scarlet['gates'] = [dict(fromObjectId=969329, destinationRoomId=22287,
+                             key=dict(typeId=gate_key, quantity=1, consume=False)),
+                         dict(fromObjectId=969331, destinationRoomId=22288),
+                         dict(fromObjectId=969333, destinationRoomId=22289)]
+    for wave, room in zip(scarlet['waves'], [22286, 22287, 22288, 22288, 22289, 22289, 22289]):
+        wave['roomId'] = room
+
     for level, mid in enumerate([2912, 2913, 2914, 2915], 1):
         missions.append(dict(missionId=mid, level=level, difficulty=500, storyline=False,
                              source='build-3662168 client/missions; Eden courier offer policy', sourceRevision='3662168', waves=[]))

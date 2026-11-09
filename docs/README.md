@@ -14,7 +14,7 @@
 
 [Skill editing and client packages](world-configuration.md#skill-editor) covers original restoration, custom skills, protected removal, staged activation and automatic launcher installation.
 
-[Ordinary agent missions](protocol/agents.md) records supported combat/courier content, multi-room encounters and acceleration gates, standing-based access, agreed rewards, delivery storylines and native protocol evidence.
+[Ordinary agent missions](protocol/agents.md) records supported combat/courier content, multi-room encounters, keyed acceleration gates and ship restrictions, standing-based access, agreed rewards, delivery storylines and native protocol evidence.
 
 [Production-driven market progression](protocol/industry.md#production-driven-market-progression--november-8-2026) records claimed-production unlocks, high-security regional hubs, dated price snapshots and migration behavior.
 

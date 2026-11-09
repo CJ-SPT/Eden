@@ -26,6 +26,10 @@ internal sealed record MissionProfile(
     internal int WaveRoom(int wave) => Definition.Waves[wave].RoomId == 0 ? Rooms[0].Id : Definition.Waves[wave].RoomId;
 
     internal MissionKind Kind => DungeonId.HasValue ? MissionKind.Combat : MissionKind.Courier;
+
+    internal bool AttacksFaction(int? faction) =>
+        faction.HasValue
+        && Definition.Waves.SelectMany(w => w.Groups).Any(g => (g.EnemyFaction == 0 ? EnemyFaction : g.EnemyFaction) == faction);
 }
 
 internal sealed record MissionRoomProfile(
@@ -35,7 +39,7 @@ internal sealed record MissionRoomProfile(
     ImmutableArray<MissionRoomGate> Gates
 );
 
-internal sealed record MissionRoomGate(long ObjectId, int DestinationRoomId, bool RequiresClear);
+internal sealed record MissionRoomGate(long ObjectId, int DestinationRoomId, bool RequiresClear, MissionGateAccess Access);
 
 internal static class MissionCatalog
 {
@@ -137,14 +141,6 @@ internal static class MissionCatalog
             throw new InvalidDataException("Mission room bindings or NPC identity budget are invalid.");
         }
         var catalogGates = dungeon.Connections?.Select(g => g.FromObjectID).ToHashSet() ?? [];
-        if (
-            dungeon.Connections?.Any(g =>
-                g.AllowedShipsList.HasValue || g.DisallowedFittedTypesList.HasValue || g.AllowedShipRaces is { Length: > 0 }
-            ) == true
-        )
-        {
-            throw new InvalidDataException("This mission needs unsupported catalog gate restrictions.");
-        }
         if (!catalogGates.SetEquals(definition.Gates.Select(g => (long?)g.FromObjectId)))
         {
             throw new InvalidDataException("Every catalog gate needs an explicit destination binding.");
@@ -194,7 +190,24 @@ internal static class MissionCatalog
             }
             var gates = definition
                 .Gates.Where(g => room.Objects.Values.Any(o => o.ObjectID == g.FromObjectId))
-                .Select(g => new MissionRoomGate(g.FromObjectId, g.DestinationRoomId, g.RequiresClear))
+                .Select(g =>
+                {
+                    var connection = dungeon.Connections!.Value.Single(c => c.FromObjectID == g.FromObjectId);
+                    if (g.Key is { } key)
+                    {
+                        _ = MissionGateAccessRules.RequiresKey(key, false);
+                        _ = catalog.RequireItem(key.TypeId);
+                    }
+                    var access = new MissionGateAccess(
+                        connection.AllowedShipsList is > 0 ? CatalogTypeLists.Read(catalog, connection.AllowedShipsList.Value) : null,
+                        (connection.AllowedShipRaces ?? []).ToHashSet(),
+                        connection.DisallowedFittedTypesList is > 0
+                            ? CatalogTypeLists.Read(catalog, connection.DisallowedFittedTypesList.Value)
+                            : null,
+                        g.Key
+                    );
+                    return new MissionRoomGate(g.FromObjectId, g.DestinationRoomId, g.RequiresClear, access);
+                })
                 .ToImmutableArray();
             if (
                 gates.Any(g =>
@@ -216,6 +229,17 @@ internal static class MissionCatalog
         if (rooms.Sum(r => r.Objects.Length) > MissionRules.NpcsPerMission)
         {
             throw new InvalidDataException("Mission objects exceed their reserved identity range.");
+        }
+        foreach (var group in definition.Waves.SelectMany(w => w.Groups))
+        {
+            if (group.LootTypeId != 0 || group.LootQuantity != 0)
+            {
+                if (group.LootTypeId <= 0 || group.LootQuantity <= 0)
+                {
+                    throw new InvalidDataException("Invalid mission key loot definition.");
+                }
+                _ = catalog.RequireItem(group.LootTypeId);
+            }
         }
         return rooms.ToImmutableArray();
     }

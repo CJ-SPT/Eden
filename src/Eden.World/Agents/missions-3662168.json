@@ -588,6 +588,291 @@
       ]
     },
     {
+      "missionId": 15237,
+      "level": 4,
+      "difficulty": 1000,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=DreadPirateScarlet4",
+      "sourceRevision": "2020-10-20 15:52 UTC",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                24024
+              ],
+              "count": 3,
+              "range": 55000,
+              "required": false,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                17042
+              ],
+              "count": 2,
+              "range": 55000,
+              "required": false,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                24167,
+                24168
+              ],
+              "count": 4,
+              "range": 55000,
+              "required": false,
+              "enemyFaction": 500020,
+              "lootTypeId": 2076,
+              "lootQuantity": 1
+            }
+          ],
+          "roomId": 22286
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24014,
+                24017,
+                24018,
+                24016,
+                24001,
+                24015
+              ],
+              "count": 5,
+              "range": 60000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                24146,
+                24145
+              ],
+              "count": 4,
+              "range": 60000,
+              "required": false,
+              "enemyFaction": 500010
+            }
+          ],
+          "roomId": 22287
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                23998,
+                23997
+              ],
+              "count": 3,
+              "range": 33000,
+              "required": false,
+              "trigger": true,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                24148,
+                24149
+              ],
+              "count": 4,
+              "range": 33000,
+              "required": false,
+              "trigger": true,
+              "enemyFaction": 500010
+            }
+          ],
+          "roomId": 22288
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24145,
+                17005
+              ],
+              "count": 4,
+              "range": 35000,
+              "required": false,
+              "enemyFaction": 500010
+            }
+          ],
+          "roomId": 22288
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                2072
+              ],
+              "count": 1,
+              "range": 84000,
+              "completesMission": true,
+              "enemyFaction": 500021
+            },
+            {
+              "types": [
+                17574
+              ],
+              "count": 1,
+              "range": 84000,
+              "required": false,
+              "enemyFaction": 500011
+            },
+            {
+              "types": [
+                17594
+              ],
+              "count": 1,
+              "range": 84000,
+              "required": false,
+              "enemyFaction": 500012
+            },
+            {
+              "types": [
+                27638
+              ],
+              "count": 1,
+              "range": 84000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                17571
+              ],
+              "count": 1,
+              "range": 84000,
+              "required": false,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                16990
+              ],
+              "count": 2,
+              "range": 62000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                24098,
+                24093
+              ],
+              "count": 3,
+              "range": 62000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                24014,
+                24001
+              ],
+              "count": 4,
+              "range": 62000,
+              "required": false,
+              "enemyFaction": 500010
+            },
+            {
+              "types": [
+                24024,
+                24003
+              ],
+              "count": 4,
+              "range": 112000,
+              "required": false,
+              "enemyFaction": 500020
+            },
+            {
+              "types": [
+                17038,
+                17037
+              ],
+              "count": 4,
+              "range": 112000,
+              "required": false,
+              "trigger": true,
+              "enemyFaction": 500020
+            }
+          ],
+          "roomId": 22289
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                17036,
+                17034
+              ],
+              "count": 4,
+              "range": 105000,
+              "required": false,
+              "trigger": true,
+              "enemyFaction": 500020
+            }
+          ],
+          "roomId": 22289
+        },
+        {
+          "groups": [
+            {
+              "types": [
+                24169,
+                24168
+              ],
+              "count": 5,
+              "range": 106000,
+              "required": false,
+              "enemyFaction": 500020
+            }
+          ],
+          "roomId": 22289
+        }
+      ],
+      "deadspace": false,
+      "rooms": [
+        {
+          "roomId": 22286,
+          "entryObjectId": 969328
+        },
+        {
+          "roomId": 22287,
+          "entryObjectId": 969330
+        },
+        {
+          "roomId": 22288,
+          "entryObjectId": 969332
+        },
+        {
+          "roomId": 22289,
+          "entryObjectId": 969339
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 969329,
+          "destinationRoomId": 22287,
+          "key": {
+            "typeId": 2076,
+            "quantity": 1,
+            "consume": false
+          }
+        },
+        {
+          "fromObjectId": 969331,
+          "destinationRoomId": 22288
+        },
+        {
+          "fromObjectId": 969333,
+          "destinationRoomId": 22289
+        }
+      ]
+    },
+    {
       "missionId": 2912,
       "level": 1,
       "difficulty": 500,

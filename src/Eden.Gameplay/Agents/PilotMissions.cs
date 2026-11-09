@@ -131,9 +131,15 @@ public sealed record MissionSite(
     public int RoomId { get; init; }
     public SpacePosition Entrance { get; init; } = Position;
     public IReadOnlyList<MissionGate> Gates { get; init; } = [];
+    public bool Deadspace { get; init; } = true;
 }
 
-public sealed record MissionGate(long Id, SpacePosition Position, float Radius, SpacePosition Destination, bool RequiresClear);
+public sealed record MissionGate(long Id, SpacePosition Position, float Radius, SpacePosition Destination, bool RequiresClear)
+{
+    public MissionGateAccess Access { get; init; } = MissionGateAccess.Default;
+    public long DungeonObjectId { get; init; }
+    public int SourceRoomId { get; init; }
+}
 
 public interface IPilotMissions
 {
@@ -144,6 +150,7 @@ public interface IPilotMissions
     IReadOnlyList<MissionSite> Sites(int systemId);
     void Arrive(int systemId, SpacePosition position);
     MissionGate Gate(long pilotId, long gateId);
+    MissionGateActivation ActivateGate(long pilotId, long gateId, SpacePosition destination);
     SpacePosition WarpDestination(int systemId, SpacePosition origin, SpacePosition destination);
 }
 

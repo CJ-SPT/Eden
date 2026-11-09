@@ -16,6 +16,7 @@ using Eden.World.Corporations;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Market;
+using Eden.World.Skills;
 using Eden.World.Storage;
 
 namespace Eden.World.Combat.Npcs;
@@ -107,6 +108,11 @@ internal static class NpcDamagePersistence
             long cents = checked((long)Math.Round(bounty * MarketDefinitions.CentsPerIsk, MidpointRounding.ToEven));
             if (cents > 0)
             {
+                long skillPoints = NpcSkillPointRewards.FromBounty(cents);
+                if (skillPoints > 0)
+                {
+                    PilotTrainingStore.CreditFreePoints(world, pilot.Id, skillPoints);
+                }
                 var wallet = world.Set<PilotWallet>().Find(pilot.Id) ?? world.Set<PilotWallet>().Add(new() { PilotId = pilot.Id }).Entity;
                 wallet.Cents = checked(wallet.Cents + cents);
                 long tax = CorporationWalletStore.TaxBounty(world, pilot, cents, now);

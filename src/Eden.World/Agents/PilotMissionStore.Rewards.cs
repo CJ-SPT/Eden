@@ -38,7 +38,7 @@ internal sealed partial class PilotMissionStore
                 p.Definition.Level == level
                 && p.Definition.Storyline == storyline
                 && (storyline || p.Kind == kind)
-                && (p.EnemyFaction == 0 || p.EnemyFaction != agent.FactionId)
+                && !p.AttacksFaction(agent.FactionId)
             )
             .OrderBy(p => p.Definition.Gates.IsEmpty ? 0 : 1)
             .ThenBy(p => p.Definition.MissionId)

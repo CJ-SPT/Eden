@@ -58,6 +58,15 @@ internal sealed class FlightSession(
     private bool _disconnecting;
     private bool _destroying;
     private bool _accelerationGateWarp;
+    private readonly List<InventoryChange> _gateInventoryChanges = [];
+
+    internal IReadOnlyList<InventoryChange> TakeGateInventoryChanges()
+    {
+        var items = _gateInventoryChanges.ToArray();
+        _gateInventoryChanges.Clear();
+        return items;
+    }
+
     private int _simulatedStamp = space.Stamp(clock);
     private readonly FlightTravel _travel = new();
 
@@ -917,17 +926,24 @@ internal sealed class FlightSession(
                 return new PilotCallResult.Failure(error.Message);
             }
         }
+        var navigation = _navigation.Copy();
         if (
             !InBallpark
             || !(
                 coordinates is { } point
-                    ? _navigation.StartWarpPoint(Pilot.ShipId, Pilot.Flight, Pilot.Position!, point, target, range, _simulatedStamp)
-                    : _navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, body!, range, _simulatedStamp)
+                    ? navigation.StartWarpPoint(Pilot.ShipId, Pilot.Flight, Pilot.Position!, point, target, range, _simulatedStamp)
+                    : navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, body!, range, _simulatedStamp)
             )
         )
         {
             return PilotCallResult.Unsupported;
         }
+        if (accelerationGate)
+        {
+            var activation = missions!.ActivateGate(Pilot.PilotId, target, coordinates!);
+            _gateInventoryChanges.AddRange(activation.Items);
+        }
+        _navigation = navigation;
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         var contact = CreateContact();

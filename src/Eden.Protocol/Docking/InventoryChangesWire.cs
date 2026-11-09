@@ -5,7 +5,7 @@ namespace Eden.Protocol.Docking;
 
 internal static class InventoryChangesWire
 {
-    internal static void NotifyItemChange(PilotCallContext context, InventoryChange change)
+    internal static void NotifyItemChange(PilotCallContext context, InventoryChange change, bool beforeFlight = false)
     {
         // OnItemChange keys index the inventory DBRow; values describe the old row.
         // Build 3662168 removes exhausted stacks through a junk-location change.
@@ -61,7 +61,15 @@ internal static class InventoryChangesWire
                 old[InventoryColumn.StackSize] = previous.Quantity;
             }
         }
-        context.Notifications.Add(new ItemChanged(InventoryRow.From(item), old));
+        var notification = new ItemChanged(InventoryRow.From(item), old);
+        if (beforeFlight)
+        {
+            context.NotificationsBeforeFlight.Add(notification);
+        }
+        else
+        {
+            context.Notifications.Add(notification);
+        }
         if (item.CategoryId == (int)InventoryCategory.Blueprint)
         {
             NotifyBlueprintsUpdated(context, item.OwnerId);
