@@ -2,9 +2,9 @@ using System.Globalization;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;
 
-namespace Eden.Server.Administration;
+namespace Eden.Gameplay.Skills;
 
-internal sealed record SkillBonusTemplate(
+public sealed record SkillBonusTemplate(
     int EffectId,
     int InputId,
     int AttributeId,
@@ -16,12 +16,12 @@ internal sealed record SkillBonusTemplate(
     bool InlineScaling
 )
 {
-    internal string SearchTerms { get; init; } = "";
-    internal bool Multiplier => Operation is DogmaOperation.PreMultiply or DogmaOperation.PostMultiply;
-    internal bool Percent => Operation != DogmaOperation.Add;
-    internal bool CanScale => !Multiplier && (InlineScaling || ScalingId.HasValue);
-    internal string StatKey => $"{AttributeId}:{Percent}";
-    internal string StatName =>
+    public string SearchTerms { get; init; } = "";
+    public bool Multiplier => Operation is DogmaOperation.PreMultiply or DogmaOperation.PostMultiply;
+    public bool Percent => Operation != DogmaOperation.Add;
+    public bool CanScale => !Multiplier && (InlineScaling || ScalingId.HasValue);
+    public string StatKey => $"{AttributeId}:{Percent}";
+    public string StatName =>
         Name
         + (
             Percent ? " (%)"
@@ -29,17 +29,17 @@ internal sealed record SkillBonusTemplate(
             : $" ({Unit})"
         );
 
-    internal double StoredValue(double change) => Multiplier ? 1 + change / 100 : change;
+    public double StoredValue(double change) => Multiplier ? 1 + change / 100 : change;
 
-    internal double DisplayValue(double stored) => Multiplier ? (stored - 1) * 100 : stored;
+    public double DisplayValue(double stored) => Multiplier ? (stored - 1) * 100 : stored;
 }
 
-internal sealed class SkillBonusValue(SkillForm form, SkillBonusTemplate template, SkillForm.AttributeInput input, int? scalingId)
+public sealed class SkillBonusValue(SkillForm form, SkillBonusTemplate template, SkillForm.AttributeInput input, int? scalingId)
 {
-    internal SkillBonusTemplate Template { get; } = template;
-    internal int? ScalingId { get; set; } = scalingId;
-    internal SkillForm Form { get; } = form;
-    internal bool PerLevel => Template.InlineScaling || ScalingId.HasValue;
+    public SkillBonusTemplate Template { get; } = template;
+    public int? ScalingId { get; set; } = scalingId;
+    public SkillForm Form { get; } = form;
+    public bool PerLevel => Template.InlineScaling || ScalingId.HasValue;
     public bool Decrease
     {
         get => double.IsNegative(Template.DisplayValue(input.Value));
@@ -51,16 +51,16 @@ internal sealed class SkillBonusValue(SkillForm form, SkillBonusTemplate templat
         set => input.Value = Template.StoredValue(Math.CopySign(Math.Abs(value), Decrease ? -1 : 1));
     }
 
-    internal string Preview(int level)
+    public string Preview(int level)
     {
         double change = Template.DisplayValue(input.Value) * (PerLevel ? level : 1);
         return change.ToString("+0.##;-0.##;0", CultureInfo.CurrentCulture) + (Template.Percent ? "%" : " " + Template.Unit);
     }
 }
 
-internal static class SkillBonusBuilder
+public static class SkillBonusBuilder
 {
-    internal static IReadOnlyList<SkillBonusTemplate> Templates(SkillEditorChoices choices)
+    public static IReadOnlyList<SkillBonusTemplate> Templates(SkillEditorChoices choices)
     {
         var attributes = SkillChoiceSearch.Index(choices.Attributes);
         var scaling = choices
@@ -130,7 +130,7 @@ internal static class SkillBonusBuilder
         && modifier.TargetAttributeId == inputId
         && modifier.Operation is DogmaOperation.PreMultiply or DogmaOperation.PostMultiply;
 
-    internal static IReadOnlyList<SkillBonusValue> Read(
+    public static IReadOnlyList<SkillBonusValue> Read(
         SkillForm form,
         SkillEditorChoices choices,
         IReadOnlyList<SkillBonusTemplate> templates
@@ -176,7 +176,7 @@ internal static class SkillBonusBuilder
     private static bool References(SkillEditorModifier modifier, int inputId) =>
         modifier.SourceAttributeId == inputId || modifier.Local && modifier.TargetAttributeId == inputId;
 
-    internal static string? Conflict(SkillForm form, SkillEditorChoices choices, SkillBonusTemplate template)
+    public static string? Conflict(SkillForm form, SkillEditorChoices choices, SkillBonusTemplate template)
     {
         if (form.Attributes.Count(attribute => attribute.AttributeId == template.InputId) > 1)
         {
@@ -205,7 +205,7 @@ internal static class SkillBonusBuilder
         return null;
     }
 
-    internal static void Add(
+    public static void Add(
         SkillForm form,
         SkillEditorChoices choices,
         SkillBonusTemplate template,
@@ -242,12 +242,12 @@ internal static class SkillBonusBuilder
         }
     }
 
-    internal static void Remove(SkillBonusValue bonus)
+    public static void Remove(SkillBonusValue bonus)
     {
         bonus.Form.Effects.RemoveAll(effect => effect.EffectId == bonus.Template.EffectId || effect.EffectId == bonus.ScalingId);
     }
 
-    internal static void SetScaling(SkillBonusValue bonus, bool perLevel)
+    public static void SetScaling(SkillBonusValue bonus, bool perLevel)
     {
         if (bonus.PerLevel == perLevel)
         {

@@ -11,3 +11,10 @@ Restart activation verifies composed files and retains an interrupted-activation
 [modding guide](../modding.md#foundation-validation--november-9-2026) for commands, source references and automated evidence.
 
 Live acceptance: Not performed; agent client testing is disabled.
+
+## Offline authoring — November 9, 2026
+
+Skill validation, bonus composition and search are shared Gameplay APIs. Offline projects preserve original-skill
+protection and export portable logical references. Migrated projects retain numeric identities through a world-bound
+map; another world cannot admit it. No new native wire calls are introduced in this authoring milestone.
+See the [SDK and migration record](../modding.md#offline-sdk-and-skill-migration--november-9-2026) for validation.

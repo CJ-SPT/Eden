@@ -20,6 +20,21 @@ internal static class ModCommands
             await File.WriteAllTextAsync(reference, JsonSerializer.Serialize(store.Reference(), ModFormat.Json));
             return true;
         }
+        if (Value("--export-skill-project") is { } destination)
+        {
+            if (Directory.Exists(destination) && Directory.EnumerateFileSystemEntries(destination).Any())
+            {
+                throw new IOException("Export skill projects to an empty folder.");
+            }
+            var project = store.ExportLegacy("local.migrated-skills");
+            Directory.CreateDirectory(destination);
+            await File.WriteAllTextAsync(Path.Combine(destination, "project.json"), JsonSerializer.Serialize(project, ModFormat.Json));
+            await File.WriteAllTextAsync(
+                Path.Combine(destination, "reference.json"),
+                JsonSerializer.Serialize(store.Reference(), ModFormat.Json)
+            );
+            return true;
+        }
         if (Value("--mod-install") is { } archive)
         {
             Console.WriteLine(store.Install(archive));

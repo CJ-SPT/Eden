@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using Eden.Gameplay.Skills;
 
-namespace Eden.Server.Administration;
+namespace Eden.Gameplay.Skills;
 
 public sealed class SkillForm
 {

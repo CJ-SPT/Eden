@@ -2,18 +2,18 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Skills;
 
-namespace Eden.Server.Administration;
+namespace Eden.Gameplay.Skills;
 
-internal static class SkillBonusEditing
+public static class SkillBonusEditing
 {
     // Build 3662168 Mining/Astrogeology typedogma: 389 scales attribute 434 by
     // skillLevel; 391 applies it as a percentage to modules requiring Mining.
-    internal const int MiningScalingEffect = 389;
-    internal const int MiningYieldEffect = 391;
-    internal const int MiningBonusAttribute = 434;
-    internal const double ExampleMiningPercent = 25;
+    public const int MiningScalingEffect = 389;
+    public const int MiningYieldEffect = 391;
+    public const int MiningBonusAttribute = 434;
+    public const double ExampleMiningPercent = 25;
 
-    internal static bool SupportsMining(SkillEditorChoices choices) =>
+    public static bool SupportsMining(SkillEditorChoices choices) =>
         SkillChoiceSearch.Index(choices.Attributes).ContainsKey(MiningBonusAttribute)
         && SkillChoiceSearch.Index(choices.Effects).GetValueOrDefault(MiningScalingEffect) is { Available: true } scaling
         && scaling.Modifiers.Count == 1
@@ -35,12 +35,12 @@ internal static class SkillBonusEditing
                 RequiredSkillId: (int)MiningSkill.Mining,
             };
 
-    internal static IEnumerable<SkillEditorOption> SelectedEffects(SkillForm form, SkillEditorChoices choices) =>
+    public static IEnumerable<SkillEditorOption> SelectedEffects(SkillForm form, SkillEditorChoices choices) =>
         form
             .Effects.Select(effect => SkillChoiceSearch.Index(choices.Effects).GetValueOrDefault(effect.EffectId))
             .OfType<SkillEditorOption>();
 
-    internal static bool CanConfigureMining(SkillForm form, SkillEditorChoices choices) =>
+    public static bool CanConfigureMining(SkillForm form, SkillEditorChoices choices) =>
         SupportsMining(choices)
         && form.Attributes.Count(attribute => attribute.AttributeId == MiningBonusAttribute) <= 1
         && form.Effects.Count(effect => effect.EffectId == MiningScalingEffect) <= 1
@@ -56,17 +56,17 @@ internal static class SkillBonusEditing
             )
         );
 
-    internal static bool HasMiningBonus(SkillForm form, SkillEditorChoices choices) =>
+    public static bool HasMiningBonus(SkillForm form, SkillEditorChoices choices) =>
         CanConfigureMining(form, choices)
         && form.Attributes.Any(attribute => attribute.AttributeId == MiningBonusAttribute)
         && form.Effects.Any(effect => effect.EffectId == MiningScalingEffect)
         && form.Effects.Any(effect => effect.EffectId == MiningYieldEffect)
         && SelectedEffects(form, choices).All(effect => effect.Id == MiningYieldEffect || !IsMiningApplication(effect));
 
-    internal static bool HasMiningRules(SkillForm form, SkillEditorChoices choices) =>
+    public static bool HasMiningRules(SkillForm form, SkillEditorChoices choices) =>
         SelectedEffects(form, choices).Any(effect => effect.Id == MiningScalingEffect || IsMiningApplication(effect));
 
-    internal static void RemoveMining(SkillForm form, SkillEditorChoices choices)
+    public static void RemoveMining(SkillForm form, SkillEditorChoices choices)
     {
         if (!HasMiningBonus(form, choices))
         {
@@ -75,7 +75,7 @@ internal static class SkillBonusEditing
         form.Effects.RemoveAll(effect => effect.EffectId is MiningScalingEffect or MiningYieldEffect);
     }
 
-    internal static bool IsMiningApplication(SkillEditorOption effect) =>
+    public static bool IsMiningApplication(SkillEditorOption effect) =>
         effect.Modifiers.Count == 1
         && effect.Modifiers[0]
             is {
@@ -86,7 +86,7 @@ internal static class SkillBonusEditing
                 RequiredSkillId: (int)MiningSkill.Mining,
             };
 
-    internal static IEnumerable<int> InputIds(SkillEditorOption effect) =>
+    public static IEnumerable<int> InputIds(SkillEditorOption effect) =>
         effect
             .Modifiers.Select(modifier =>
                 modifier.Local && modifier.SourceAttributeId == (int)DogmaAttributeId.SkillLevel
@@ -96,7 +96,7 @@ internal static class SkillBonusEditing
             .Where(id => id != (int)DogmaAttributeId.SkillLevel)
             .Distinct();
 
-    internal static void EnsureInputs(SkillForm form, SkillEditorChoices choices)
+    public static void EnsureInputs(SkillForm form, SkillEditorChoices choices)
     {
         foreach (var effect in SelectedEffects(form, choices))
         {
@@ -113,7 +113,7 @@ internal static class SkillBonusEditing
         }
     }
 
-    internal static void AddMining(SkillForm form, SkillEditorChoices choices)
+    public static void AddMining(SkillForm form, SkillEditorChoices choices)
     {
         if (!CanConfigureMining(form, choices))
         {

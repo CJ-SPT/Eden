@@ -5,6 +5,7 @@ using Eden.Gameplay.Skills;
 using Eden.Modding;
 using Eden.Server.Modding;
 using Eden.World.Modding;
+using Eden.World.Skills;
 using Eden.World.Storage;
 
 namespace Eden.Protocol.Tests.Administration;
@@ -70,6 +71,40 @@ public sealed class ModFoundationTests
         Assert.False(store.BeginActivation());
         File.AppendAllText(Path.Combine(store.SetDirectory(published.Id), "code.ccp"), "corrupt");
         Assert.Throws<InvalidDataException>(() => store.VerifySet(published.Id));
+    }
+
+    [Fact]
+    public void MigratedProjectsPreserveLegacyIdsAndHistoryAndRejectAnotherWorld()
+    {
+        using TestWorld world = new();
+        var database = new WorldDatabase(world.Path);
+        var editor = new SkillEditorStore(database, TimeProvider.System);
+        var reference = editor.Read();
+        var draft = reference.Skills.First().Definition with { TypeId = 0, Name = "Legacy skill", Effects = [], Attributes = [] };
+        var created = editor.Create(reference.Generation, draft, "Migration test");
+        editor.Save(editor.Read().Generation, created.Definition with { Name = "Updated legacy skill" }, "Migration test");
+        var store = new ModStore(database);
+        var exported = store.ExportLegacy("test.migrated");
+        Assert.Equal(2, exported.History.Count);
+        Assert.Equal(created.Definition.TypeId, Assert.Single(exported.LegacyIdentities!.Skills).TypeId);
+        var package = new ModPackage(
+            exported.Manifest,
+            "A",
+            new Dictionary<string, byte[]>
+            {
+                ["skills.json"] = JsonSerializer.SerializeToUtf8Bytes(exported.Skills, ModFormat.Json),
+                ["legacy-identities.json"] = JsonSerializer.SerializeToUtf8Bytes(exported.LegacyIdentities, ModFormat.Json),
+            }
+        );
+        var composed = store.Compose([package]);
+        Assert.Equal(created.Definition.TypeId, Assert.Single(composed.Skills.Where(value => value.UserCreated)).Definition.TypeId);
+        Assert.Equal(
+            created.Definition.TypeId,
+            new ModStore(new WorldDatabase(world.Path)).ResolveSkill("test.migrated:skill-" + created.Definition.TypeId)
+        );
+        using TestWorld different = new();
+        Assert.Throws<InvalidDataException>(() => new ModStore(new WorldDatabase(different.Path)).Compose([package]));
+        Assert.Throws<InvalidDataException>(() => store.Prepare());
     }
 
     [Theory]

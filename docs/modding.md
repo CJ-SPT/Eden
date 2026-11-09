@@ -2,8 +2,8 @@
 
 The modding implementation is delivered in milestones. The foundation provides version-1 `.edenmod` archives,
 exact dependency resolution, explicit skill overrides, permanent per-world custom skill identities, offline
-reference export and immutable composed catalog/client packages. SDK authoring, plugin execution and launcher
-cutover follow this foundation; this page records each completed boundary.
+reference export and immutable composed catalog/client packages. The Avalonia SDK now authors offline projects and generates C# server projects; plugin execution and launcher
+cutover follow in the next milestones. This page records each completed boundary.
 
 ## Host commands
 
@@ -60,3 +60,29 @@ now restores the permitted code hash before validating its pinned original manif
 Live acceptance: Not performed; agent client testing is disabled.
 
 Optional maintainer checks: none for the foundation's noninteractive interfaces.
+
+## Offline SDK and skill migration — November 9, 2026
+
+The Avalonia solution lives directly at `F:/Git Repos/Eden Modding Tools/Eden.Modding.Tools.slnx`.
+It consumes versioned local-feed Eden.Modding and Eden.Gameplay preview packages, with no sibling project references.
+Generate Skills, Server, Client or Combined projects; server templates include a compilable C# solution and API reference.
+Build and export from the desktop app or CLI. Shared skill forms, bonus discovery, scaling and search now live in Gameplay.
+
+The modes are explicitly **Fixed bonus once learned** and **Bonus per skill level**. A fixed +25% remains +25%
+through levels I–V; a per-level +25% reaches +125% at V. These are persistent skill bonuses, not consumables.
+
+Export existing skills with `--export-skill-project ABSOLUTE_FOLDER`, then open that folder in the SDK. The export
+retains revisions, draft values and a world-bound logical/numeric identity map. The host rejects replacing legacy
+edits until the migrated package is included, and rejects using its map in a different world. Keep legacy artifacts
+until the imported mod set activates successfully.
+
+Automated validation: 75 focused Eden tests passed without skips (8 seconds in the runner; 12.04 seconds including
+runner setup, preceded by an 8.14-second feature build), covering the foundation, skill editing/bonus presentation,
+search/usability and dependency boundaries. Both policy suites (8 catalog, 9 formatting) and formatting verification
+passed. SDK build and four focused project/headless tests passed; a generated Combined project also built against
+an actual exported catalog reference. SDK tests cover C# compilation/API loading, reproducibility, debug symbols,
+project history/reopen, stale saves, prerequisites, draft retention and explicit bonus previews.
+
+Live acceptance: Not performed; agent client testing is disabled.
+
+Optional maintainer checks: inspect the SDK forms at preferred desktop scaling and confirm the two bonus modes read clearly.

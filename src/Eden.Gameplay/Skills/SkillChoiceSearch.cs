@@ -2,21 +2,21 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using Eden.Gameplay.Skills;
 
-namespace Eden.Server.Administration;
+namespace Eden.Gameplay.Skills;
 
-internal static class SkillChoiceSearch
+public static class SkillChoiceSearch
 {
-    internal const int ResultLimit = 30;
+    public const int ResultLimit = 30;
     private static readonly ConditionalWeakTable<IReadOnlyList<SkillEditorOption>, Dictionary<int, SkillEditorOption>> Indexes = new();
 
     private sealed record SearchEntry(SkillEditorOption Option, string Name, string Text);
 
     private static readonly ConditionalWeakTable<IReadOnlyList<SkillEditorOption>, SearchEntry[]> SearchIndexes = new();
 
-    internal static IReadOnlyDictionary<int, SkillEditorOption> Index(IReadOnlyList<SkillEditorOption> options) =>
+    public static IReadOnlyDictionary<int, SkillEditorOption> Index(IReadOnlyList<SkillEditorOption> options) =>
         Indexes.GetValue(options, values => values.ToDictionary(value => value.Id));
 
-    internal static IReadOnlyList<SkillEditorOption> Find(
+    public static IReadOnlyList<SkillEditorOption> Find(
         IReadOnlyList<SkillEditorOption> options,
         string search,
         int? selected,

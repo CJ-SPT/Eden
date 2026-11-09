@@ -52,6 +52,60 @@ public sealed class ModStore(WorldDatabase database)
             SkillEditorStore.LoadChoices(database)
         );
 
+    public string WorldIdentity()
+    {
+        lock (_gate)
+        {
+            string? saved = ReadState("", "world-identity");
+            if (saved is not null)
+            {
+                return JsonSerializer.Deserialize<string>(saved, ModFormat.Json)!;
+            }
+            string identity = Guid.NewGuid().ToString("N");
+            WriteState("", "world-identity", JsonSerializer.Serialize(identity, ModFormat.Json));
+            return identity;
+        }
+    }
+
+    public ModProjectDocument ExportLegacy(string id)
+    {
+        ModPackages.Identity(id);
+        var editor = new SkillEditorStore(database, TimeProvider.System);
+        var snapshot = editor.Read();
+        var edited = snapshot.Skills.Where(value => value.UserCreated || value.IsModified || value.Revision > 0).ToArray();
+        var skills = edited
+            .Select(value => new ModSkill("skill-" + value.Definition.TypeId, value.Definition)
+            {
+                Replaces = value.UserCreated ? null : "catalog:" + value.Definition.TypeId,
+                Retired = value.Deleted,
+            })
+            .ToList();
+        return new()
+        {
+            Manifest = new()
+            {
+                Id = id,
+                Name = "Migrated skill edits",
+                CatalogFingerprint = snapshot.CatalogFingerprint,
+                Overrides = skills.Where(value => value.Replaces is not null).Select(value => value.Replaces!).ToArray(),
+            },
+            Skills = skills,
+            History = edited.SelectMany(value => editor.History(value.Definition.TypeId)).OrderBy(value => value.Id).ToList(),
+            Generation = snapshot.Generation,
+            NextTypeId = Math.Max(
+                SkillEditingRules.FirstCustomTypeId,
+                edited.Where(value => value.UserCreated).Select(value => value.Definition.TypeId + 1).DefaultIfEmpty().Max()
+            ),
+            LegacyIdentities = new(
+                WorldIdentity(),
+                skills
+                    .Where(value => value.Replaces is null)
+                    .Select(value => new ModIdentityAllocation(id + ":" + value.Id, value.Definition.TypeId))
+                    .ToArray()
+            ),
+        };
+    }
+
     public string Install(string archive)
     {
         var package = ModPackages.Read(archive);
@@ -146,6 +200,17 @@ public sealed class ModStore(WorldDatabase database)
         lock (_gate)
         {
             var packages = Enabled();
+            if (
+                !OwnsCatalog
+                && File.Exists(SkillEditorDbContext.FilePath(database.Path))
+                && new SkillEditorStore(database, TimeProvider.System).Read().Skills.Any(value => value.UserCreated || value.IsModified)
+                && !packages.Any(value => value.Contents.ContainsKey("legacy-identities.json"))
+            )
+            {
+                throw new InvalidDataException(
+                    "Export and enable the migrated skill project before replacing this world's legacy skill edits."
+                );
+            }
             return (packages, Compose(packages));
         }
     }
@@ -159,9 +224,38 @@ public sealed class ModStore(WorldDatabase database)
             var definitions = originals.ToDictionary();
             Dictionary<string, string> owners = [];
             HashSet<int> retired = [];
+            string worldIdentity = WorldIdentity();
             using var db = Open();
             using var transaction = db.Database.BeginTransaction();
             var identities = db.Set<SavedModIdentity>().ToDictionary(value => value.LogicalId);
+            foreach (var package in packages.Where(value => value.Contents.ContainsKey("legacy-identities.json")))
+            {
+                var legacy =
+                    JsonSerializer.Deserialize<ModLegacyIdentities>(package.Contents["legacy-identities.json"], ModFormat.Json)
+                    ?? throw new InvalidDataException("Missing legacy identities.");
+                if (legacy.WorldIdentity != worldIdentity)
+                {
+                    throw new InvalidDataException("This migrated skill project belongs to a different saved world.");
+                }
+                foreach (var allocation in legacy.Skills)
+                {
+                    if (
+                        !allocation.LogicalId.StartsWith(package.Manifest.Id + ":", StringComparison.Ordinal)
+                        || allocation.TypeId < SkillEditingRules.FirstCustomTypeId
+                        || identities.Values.Any(value => value.TypeId == allocation.TypeId && value.LogicalId != allocation.LogicalId)
+                        || identities.TryGetValue(allocation.LogicalId, out var existing) && existing.TypeId != allocation.TypeId
+                    )
+                    {
+                        throw new InvalidDataException("Migrated skill identities conflict with retained world identities.");
+                    }
+                    if (!identities.ContainsKey(allocation.LogicalId))
+                    {
+                        var identity = new SavedModIdentity { LogicalId = allocation.LogicalId, TypeId = allocation.TypeId };
+                        identities.Add(identity.LogicalId, identity);
+                        db.Add(identity);
+                    }
+                }
+            }
             int next = Math.Max(
                 SkillEditingRules.FirstCustomTypeId,
                 identities.Values.Select(value => value.TypeId + 1).DefaultIfEmpty().Max()
