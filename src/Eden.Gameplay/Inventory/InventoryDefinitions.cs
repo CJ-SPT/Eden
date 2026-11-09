@@ -10,6 +10,7 @@ public enum InventoryCategory
     Module = 7,
     Charge = 8,
     Blueprint = 9,
+    Entity = 11,
     Skill = 16,
     Commodity = 17,
     Drone = 18,

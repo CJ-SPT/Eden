@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Native Type Browser item creation, November 8, 2026](#native-type-browser-item-creation-november-8-2026)
+
 - [Runtime TR destinations, November 8, 2026](#runtime-tr-destinations-november-8-2026)
 - [Direct station-to-space TR, November 8, 2026](#direct-station-to-space-tr-november-8-2026)
 - [Station-origin TR camera sequencing, November 8, 2026](#station-origin-tr-camera-sequencing-november-8-2026)
@@ -28,6 +30,32 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Native Type Browser item creation, November 8, 2026
+
+The native Insider Type Browser already searches the installed type catalog, expands categories/groups and offers type context menus. Eden now handles its inventory creation actions through the single selected-pilot `slash.SlashCmd` owner, `DeveloperCommandHandler`. No client files or browser UI are changed.
+
+Pinned build **3662168** inert bytecode inspection of `eve/devtools/script/svc_typebrowser.pyj` shows `TypeDBEntry.GetMenu` delegates to `menusvc.GetGMTypeMenu`; the individual menu emits `/create <typeID> <quantity>` and `/load me <typeID> <quantity>`. Group actions emit `/createitem <typeID> <quantity>` and `/load me <typeID> <quantity>` once per type. `svc_slash.cmd_createitem` also forwards the numeric type and quantity. Source archive SHA-256: **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. The client was inspected as data; its Python was never executed.
+
+`/create` and `/createitem` require WORLDMOD and a docked pilot, delivering to that pilot's current station Item Hangar. `/load me` requires GML or GMH and delivers to the active ship's cargo while docked or in space, with the existing fitted cargo capacity and packaged hull volumes. Quantity defaults to one and must fit a positive signed 32-bit integer. Commands reject extra arguments, other subjects, unknown types, null characters, excess command length, stack overflow, stale active ships and insufficient cargo capacity before committing any item change. An in-progress translocation blocks creation until the transition completes. These destination, role and capacity choices are Eden developer-tool policy.
+
+Physical inventory categories and original blueprints can be created, including packaged ship stacks. Creating a type does not admit its hull for assembly, its module for fitting or its behavior for gameplay. NPC/entity types, map objects, SKIN licenses and other noninventory types reject. The separate `/spawn`, `/spawnN`, `/entity deploy`, `/fit` and `/unload` actions remain unsupported. Group creation is a sequence of independent native calls; a failed type does not roll back earlier successful types.
+
+Creation merges into the oldest compatible packaged stack under the existing world transaction and identity allocator. The reply is the resulting 64-bit item identity. `OnItemChange` reports the old quantity for merged stacks and the old location/stack size for newly inserted stacks. Original blueprint creation also sends `OnBlueprintsUpdated`. Items persist through ordinary reopening and resident-world shutdown checkpoints. Wallets, markets, skills, ownership of existing ships and fittings are unaffected.
+
+Gameplay reference: [EVE University Singularity setup](https://wiki.eveuniversity.org/SingularitySetup) documents testing supplies and player slash commands; it does not establish privileged GM command semantics. The pinned client establishes the actual Type Browser call strings. [Carbon Blue at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/tree/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae) was consulted for engine scope. This change reuses Eden's existing native inventory row and notification adapters and changes no Blue codec, transport or Destiny behavior.
+
+**Automated validation:** Final milestone validation passed in **91.01 seconds**: pinned tool restore, solution restore/build (zero warnings/errors), **108 focused .NET tests** (about 65 seconds), **8 catalog-policy tests**, **9 formatting-policy tests**, full formatting/width verification and `git diff --check`. Changed documentation links, whitespace and final newlines also passed. Exact initial filter: `FullyQualifiedName=Eden.Protocol.Tests.Inventory.ItemSpawningTests.NativeBrowserCreatesStacksAndPackagedShipsWithInventoryNotifications`. Focused coverage includes item creation, packaged hull assembly, blueprint notifications, permissions, malformed requests, cargo boundaries, overflow rollback, another pilot's unchanged inventory, reopened saves, resident checkpoints and existing translocation/inventory dependencies. The full .NET suite was not requested or run.
+
+Final focused filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Inventory.ItemSpawningTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.TranslocationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFleetTests|FullyQualifiedName~Eden.Protocol.Tests.Docking.TypedInventoryTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Open Insider's Type Browser on a developer account; create a small item stack and packaged hull, then check its native inventory display. In space, load a small cargo stack and check the displayed hold usage. Native rendering and input remain unverified.
 
 ## Runtime TR destinations, November 8, 2026
 

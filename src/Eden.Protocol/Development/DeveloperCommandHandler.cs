@@ -2,17 +2,23 @@ using System.Globalization;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
+using Eden.Protocol.Inventory;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
-namespace Eden.Protocol.Flight;
+namespace Eden.Protocol.Development;
 
 [Injectable]
-internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemObjects objects, PilotUpdateCoordinator updates)
-    : ISelectedPilotCallHandler
+internal sealed class DeveloperCommandHandler(
+    IPilotTranslocation travel,
+    ISystemObjects objects,
+    PilotUpdateCoordinator updates,
+    DeveloperItemCommands items
+) : ISelectedPilotCallHandler
 {
     // Match the stock GM menu's ROLE_GML | ROLE_WORLDMOD visibility gate.
-    private const PilotRole AllowedRoles = PilotRole.GameMasterLow | PilotRole.WorldMod;
+    private const PilotRole TranslocationRoles = PilotRole.GameMasterLow | PilotRole.WorldMod;
     private const int MaximumCommandLength = 128;
 
     public PilotCallResult Call(
@@ -27,10 +33,6 @@ internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemOb
         {
             return PilotCallResult.Unsupported;
         }
-        if ((context.Roles & (long)AllowedRoles) == 0)
-        {
-            return new PilotCallResult.Failure("GM translocation requires a developer or game-master account.");
-        }
         try
         {
             if (context.Flight.Translocating)
@@ -39,14 +41,29 @@ internal sealed class TranslocationHandler(IPilotTranslocation travel, ISystemOb
             }
             if (args is not [string or byte[]] || keywords is { Count: > 0 })
             {
-                throw new InvalidDataException("Use /tr me followed by a destination ID.");
+                throw new InvalidDataException("Supply one developer command without additional arguments.");
             }
             string text = BlueMarshal.Text(args[0]);
-            if (text.Length > MaximumCommandLength)
+            if (text.Length > MaximumCommandLength || text.Contains('\0'))
             {
-                throw new InvalidDataException("The translocation command is too long.");
+                throw new InvalidDataException("The developer command is too long or contains a null character.");
             }
             string[] command = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+            if (
+                command.Length > 0
+                && (
+                    command[0].Equals("/createitem", StringComparison.OrdinalIgnoreCase)
+                    || command[0].Equals("/create", StringComparison.OrdinalIgnoreCase)
+                    || command[0].Equals("/load", StringComparison.OrdinalIgnoreCase)
+                )
+            )
+            {
+                return items.Create(context, command);
+            }
+            if ((context.Roles & (long)TranslocationRoles) == 0)
+            {
+                throw new InvalidDataException("GM translocation requires a developer or game-master account.");
+            }
             if (
                 command is not [var action, var subject, var destination]
                 || !action.Equals("/tr", StringComparison.OrdinalIgnoreCase)
