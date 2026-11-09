@@ -4,23 +4,17 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
-using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
-using Eden.Gameplay.Combat;
-using Eden.Gameplay.Content;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
-using Eden.Gameplay.Propulsion;
-using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Docking;
 using Eden.World.Economy;
-using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Skills;
@@ -150,73 +144,30 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
     private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
         catalog.Definitions.Attributes(typeId);
 
-    private static bool SupportedProduct(CatalogDbContext catalog, CatalogItemDefinition type)
-    {
-        if (BuildContentPolicy.Current.Manufacturing.HullTypes.Contains(type.Id))
-        {
-            return HullCatalog.CanAssemble(catalog, type, (int)InventoryCategory.Ship);
-        }
-        var attributes = Attributes(catalog, type.Id);
-        if (attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) != AmmunitionDefinitions.TechOne)
-        {
-            return false;
-        }
-        // Manufacturing expansion is separate from fitting/firing new weapon sizes.
-        if (
-            type.GroupId == CombatDefinitions.HybridWeaponGroup
-            && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) != AmmunitionDefinitions.SmallChargeSize
-        )
-        {
-            return false;
-        }
-        return BuildContentPolicy.Current.Manufacturing.UtilityTypes.Contains(type.Id)
-                && (
-                    FittingCatalog.Definition(catalog, type.Id) is not null
-                    || Eden.World.Exploration.ProbeCatalog.Probe(catalog, type.Id, type.GroupId)
-                )
-            || type.GroupId == AmmunitionDefinitions.HybridChargeGroup
-                && attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize) == AmmunitionDefinitions.SmallChargeSize
-            || (
-                (
-                    type.GroupId
-                    is InventoryDefinitions.MiningLaserGroup
-                        or ShieldBoostDefinitions.Group
-                        or PropulsionDefinitions.AfterburnerGroup
-                        or CombatDefinitions.HybridWeaponGroup
-                )
-                && FittingCatalog.Definition(catalog, type.Id) is not null
-                && !FittingCatalog.Effects(catalog, type.Id).Contains(DogmaEffect.Microwarpdrive)
-            );
-    }
-
     public IReadOnlyList<int> ScienceProductCategories()
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         return catalog.Definitions.Items.Values.Select(t => t.CategoryId).Distinct().Order().ToArray();
     }
 
-    public IReadOnlyList<int> ProductTypes()
+    public IReadOnlyList<int> ProductTypes(int? stationId = null)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return ProductTypes(catalog);
+        if (stationId is not int id)
+        {
+            return ProductTypes(catalog);
+        }
+        var station = Station(catalog, id, null);
+        if (!HasService(catalog, station))
+        {
+            return [];
+        }
+        double security = ManufacturingCatalog.Security(catalog, station.SolarSystemId);
+        return ProductTypes(catalog).Where(t => ManufacturingCatalog.Allowed(catalog, t, security)).ToArray();
     }
 
     internal static IReadOnlyList<int> ProductTypes(CatalogDbContext catalog) =>
-        catalog
-            .Definitions.Items.Values.Where(t =>
-                BuildContentPolicy.Current.Manufacturing.HullTypes.Contains(t.Id)
-                || BuildContentPolicy.Current.Manufacturing.UtilityTypes.Contains(t.Id)
-                || t.GroupId == AmmunitionDefinitions.HybridChargeGroup
-                || t.GroupId == CombatDefinitions.HybridWeaponGroup
-                || t.GroupId == InventoryDefinitions.MiningLaserGroup
-                || t.GroupId == ShieldBoostDefinitions.Group
-                || t.GroupId == PropulsionDefinitions.AfterburnerGroup
-            )
-            .OrderBy(t => t.Id)
-            .AsEnumerable()
-            .Where(t => SupportedProduct(catalog, t))
-            .Select(t => t.Id)
-            .ToArray();
+        ManufacturingCatalog.Recipes(catalog).Values.Select(r => r.ProductTypeId).Distinct().Order().ToArray();
 
     private static bool Active(IndustryJob job) => job.Status == IndustryJobStatus.Installed;
 
@@ -227,12 +178,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
     {
         var inventory = PilotInventoryStore.Read(catalog, item);
         if (
-            inventory.CategoryId != (int)InventoryCategory.Blueprint
+            inventory.CategoryId is not ((int)InventoryCategory.Blueprint or (int)InventoryCategory.Relic)
             || item.FlagId != (int)InventoryFlag.Hangar
             || item.LocationId > int.MaxValue
         )
         {
-            throw new InvalidDataException("Use an owned original blueprint in a station Item Hangar.");
+            throw new InvalidDataException("Use an owned blueprint or ancient relic in a station Item Hangar.");
         }
         var station =
             catalog.Definitions.FindStation(item.LocationId) ?? throw new InvalidDataException("The blueprint is not in a station hangar.");
@@ -242,7 +193,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             .Where(j => j.BlueprintId == item.Id && j.Status == IndustryJobStatus.Installed)
             .Select(j => (long?)j.Id)
             .SingleOrDefault();
-        return new(inventory, facility, job, item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns);
+        return inventory.CategoryId == (int)InventoryCategory.Relic
+            ? new(inventory, facility, job, RunsRemaining: item.Quantity)
+            : new(inventory, facility, job, item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns);
     }
 
     public IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, int? stationId = null)
@@ -250,7 +203,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var types = catalog
-            .Definitions.Items.Values.Where(t => t.CategoryId == (int)InventoryCategory.Blueprint)
+            .Definitions.Items.Values.Where(t => t.CategoryId is (int)InventoryCategory.Blueprint or (int)InventoryCategory.Relic)
             .Select(t => t.Id)
             .ToArray();
         return world
@@ -450,27 +403,18 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             throw new InvalidDataException("Choose an available blueprint and positive run count at this station.");
         }
         var recipe =
-            catalog.Definitions.ManufacturingRecipe(item.TypeId)
-            ?? throw new InvalidDataException("This blueprint has no manufacturing recipe.");
+            ManufacturingCatalog.Recipes(catalog).GetValueOrDefault(item.TypeId)
+            ?? throw new InvalidDataException("This blueprint has no valid published manufacturing recipe.");
         if (
-            recipe.Products is not [var product]
-            || product.TypeID is not > 0 or > int.MaxValue
-            || request.ProductTypeId.HasValue && product.TypeID != request.ProductTypeId
-            || product.Quantity is not > 0
-            || recipe.Time is not > 0
-            || !catalog.Definitions.Items.TryGetValue((int)product.TypeID.Value, out var productType)
-            || !SupportedProduct(catalog, productType)
+            request.ProductTypeId.HasValue && request.ProductTypeId != recipe.ProductTypeId
+            || !ManufacturingCatalog.Allowed(catalog, recipe.ProductTypeId, ManufacturingCatalog.Security(catalog, station.SolarSystemId))
         )
         {
-            throw new InvalidDataException("This blueprint product is outside the supported starter production and module cohorts.");
+            throw new InvalidDataException("This product cannot be manufactured at this station.");
         }
-        foreach (var skill in recipe.Skills ?? [])
+        foreach (var skill in recipe.Skills)
         {
-            if (
-                skill.TypeID is not > 0 or > int.MaxValue
-                || skill.Level is not >= 1 or > 5
-                || Level(world, catalog, pilotId, (int)skill.TypeID.Value) < skill.Level
-            )
+            if (Level(world, catalog, pilotId, skill.TypeId) < skill.Level)
             {
                 throw new InvalidDataException("Train the blueprint's required manufacturing skills first.");
             }
@@ -478,20 +422,20 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         var calculation = ManufacturingRules.Plan(
             request,
             new(
-                recipe.Time.Value,
+                recipe.Seconds,
                 world
                     .Set<IndustryJob>()
                     .Count(j =>
                         j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed && j.Activity == IndustryActivity.Manufacturing
                     ),
                 Bonuses(world, catalog, pilotId),
-                (recipe.Skills ?? [])
-                    .Select(skill => new ManufacturingSkillTimeBonus(
-                        Attributes(catalog, checked((int)skill.TypeID!.Value)).GetValueOrDefault(DogmaAttributeId.ManufactureTimePerLevel),
-                        Level(world, catalog, pilotId, (int)skill.TypeID.Value)
+                recipe
+                    .Skills.Select(skill => new ManufacturingSkillTimeBonus(
+                        Attributes(catalog, skill.TypeId).GetValueOrDefault(DogmaAttributeId.ManufactureTimePerLevel),
+                        Level(world, catalog, pilotId, skill.TypeId)
                     ))
                     .ToArray(),
-                (recipe.Materials ?? []).Select(material => new ManufacturingMaterial(material.TypeID, material.Quantity)).ToArray(),
+                recipe.Materials,
                 new(item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns)
             )
         );
@@ -511,9 +455,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     BlueprintId = item.Id,
                     BlueprintTypeId = item.TypeId,
                     StationId = request.FacilityId,
-                    ProductTypeId = checked((int)product.TypeID.Value),
+                    ProductTypeId = recipe.ProductTypeId,
                     Runs = request.Runs,
-                    OutputQuantity = checked((int)(product.Quantity.Value * request.Runs)),
+                    OutputQuantity = checked(recipe.OutputQuantity * request.Runs),
                     StartTime = now,
                     EndTime = checked(now + duration * TimeSpan.TicksPerSecond),
                     DurationSeconds = duration,
@@ -527,10 +471,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         {
             throw new InvalidDataException("Missing catalog industry security classification.");
         }
-        var baseMaterials = IndustryMaterials.Calculate(
-            (recipe.Materials ?? []).Select(m => new ManufacturingMaterial(m.TypeID, m.Quantity)).ToArray(),
-            request.Runs
-        );
+        var baseMaterials = IndustryMaterials.Calculate(recipe.Materials, request.Runs);
         var charge = EconomicStore.Manufacturing(world, pilotId, station.SolarSystemId, baseMaterials, security ?? 0);
         if (request.QuotedCharge is { } quoted && (quoted.CostCents != charge.CostCents || quoted.TaxCents != charge.TaxCents))
         {
@@ -592,19 +533,34 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             );
         }
         var source = world.Set<OwnedItem>().Find(job.BlueprintId);
-        if (job.BlueprintCopy)
+        bool relic = catalog.Definitions.Items[job.BlueprintTypeId].CategoryId == (int)InventoryCategory.Relic;
+        if (relic)
+        {
+            if (source is null || source.Quantity < job.Runs)
+            {
+                throw new InvalidDataException("The installed relic stack no longer has its reserved units.");
+            }
+            var before = PilotInventoryStore.Read(catalog, source);
+            source.Quantity -= job.Runs;
+            changes.Add(new(before with { Quantity = source.Quantity }, before));
+            if (source.Quantity == 0)
+            {
+                world.Remove(source);
+            }
+        }
+        else if (job.BlueprintCopy)
         {
             if (source is null || source.BlueprintRuns < job.Runs)
             {
                 throw new InvalidDataException("The installed copy no longer has its reserved runs.");
             }
             source.BlueprintRuns -= job.Runs;
-        }
-        if (source is { BlueprintRuns: 0 })
-        {
-            var before = PilotInventoryStore.Read(catalog, source);
-            changes.Add(new(before with { Quantity = 0 }, before));
-            world.Remove(source);
+            if (source.BlueprintRuns == 0)
+            {
+                var before = PilotInventoryStore.Read(catalog, source);
+                changes.Add(new(before with { Quantity = 0 }, before));
+                world.Remove(source);
+            }
         }
         // Cancellation releases the blueprint and slot, but consumes the paid
         // materials. A completed job delivers once, even after reconnect/retry.

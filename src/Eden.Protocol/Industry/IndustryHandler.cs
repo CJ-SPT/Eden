@@ -28,7 +28,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
     }
 
     private IndustryFacilityReply Facility(IndustryFacility facility) =>
-        new(facility, industry.ProductTypes(), industry.ScienceProductCategories());
+        new(facility, industry.ProductTypes(facility.Id), industry.ScienceProductCategories());
 
     private static BlueprintReply Blueprint(OwnedBlueprint blueprint) => new(blueprint);
 
@@ -223,10 +223,12 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                     var blueprints = industry.Blueprints(pilotId, args[1] is long facility ? checked((int)facility) : null);
                     return new BlueprintOwnerReply(blueprints, BlueprintResultLimit);
                 case ("facilityManager", "GetFacilities") when args.Length == 0:
-                    var products = industry.ProductTypes();
                     var categories = industry.ScienceProductCategories();
                     return new BlueList<IndustryFacilityReply>(
-                        industry.Facilities(pilotId).Select(f => new IndustryFacilityReply(f, products, categories)).ToArray()
+                        industry
+                            .Facilities(pilotId)
+                            .Select(f => new IndustryFacilityReply(f, industry.ProductTypes(f.Id), categories))
+                            .ToArray()
                     );
                 case ("facilityManager", "GetFacility") when args is [long station]:
                     return Facility(industry.Facility(pilotId, checked((int)station)));

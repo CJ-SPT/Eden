@@ -13,6 +13,7 @@ using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Industry;
 using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Storage;
@@ -103,19 +104,7 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
 
     internal static void SeedPrices(WorldDbContext world, CatalogDbContext catalog, EconomicConfiguration settings)
     {
-        var materials = catalog
-            .Definitions.Items.Values.Where(t => t.CategoryId == (int)InventoryCategory.Material)
-            .Select(t => t.Id)
-            .ToHashSet();
-        Dictionary<int, decimal> prices = [];
-        foreach (var record in catalog.Definitions.Pin(CatalogData.Client.Types))
-        {
-            int type = checked((int)record.Key);
-            if (materials.Contains(type) && record.Value.BasePrice is > 0 and var price && double.IsFinite(price))
-            {
-                prices[type] = (decimal)price;
-            }
-        }
+        var prices = IndustryReferencePrices(catalog);
         foreach (var price in settings.AdjustedPrices)
         {
             if (!catalog.Definitions.Items.ContainsKey(price.TypeId))
@@ -133,6 +122,42 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
             }
             world.Add(new SavedManufacturingIndex { SystemId = index.SystemId, Index = index.Index });
         }
+    }
+
+    private static Dictionary<int, decimal> IndustryReferencePrices(CatalogDbContext catalog)
+    {
+        var types = catalog
+            .Definitions.Items.Values.Where(t => t.CategoryId == (int)InventoryCategory.Material)
+            .Select(t => (long)t.Id)
+            .Concat(ManufacturingCatalog.Recipes(catalog).Values.SelectMany(r => r.Materials.Select(m => m.TypeId!.Value)))
+            .Distinct();
+        Dictionary<int, decimal> prices = [];
+        foreach (var (id, definition) in catalog.Definitions.FindMany(CatalogData.Client.Types, types))
+        {
+            decimal? price =
+                definition.BasePrice is > 0 and var value && double.IsFinite(value)
+                    ? (decimal)value
+                    : MarketSnapshotCatalog.Quotes.GetValueOrDefault((int)id)?.SellCents / (decimal?)MarketDefinitions.CentsPerIsk;
+            if (price > 0)
+            {
+                prices[(int)id] = price.Value;
+            }
+        }
+        return prices;
+    }
+
+    internal static void ReconcileIndustryPrices(WorldDbContext world, CatalogDbContext catalog)
+    {
+        if (!Enabled(world))
+        {
+            return;
+        }
+        var existing = world.Set<SavedAdjustedPrice>().Select(p => p.TypeId).ToHashSet();
+        foreach (var (id, price) in IndustryReferencePrices(catalog).Where(p => !existing.Contains(p.Key)))
+        {
+            world.Add(new SavedAdjustedPrice { TypeId = id, PriceIsk = price });
+        }
+        world.SaveChanges();
     }
 
     internal static ManufacturingCharge Manufacturing(

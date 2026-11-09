@@ -133,7 +133,7 @@ internal sealed partial class PilotIndustryStore
         var plan = ScienceRules.Plan(
             request,
             new(
-                new(item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns),
+                new(blueprint.MaterialEfficiency, blueprint.TimeEfficiency, blueprint.RunsRemaining),
                 baseSeconds.Value,
                 checked((int)(definition.MaxProductionLimit ?? 0)),
                 world
@@ -151,7 +151,10 @@ internal sealed partial class PilotIndustryStore
         );
         List<InventoryChange> changes = [];
         ConsumeMaterials(world, catalog, pilotId, station.Id, plan.Materials, changes);
-        item = ReserveBlueprint(world, catalog, item, changes);
+        if (blueprint.Item.CategoryId != (int)InventoryCategory.Relic)
+        {
+            item = ReserveBlueprint(world, catalog, item, changes);
+        }
         long now = Now;
         var job = world
             .Add(
@@ -216,8 +219,9 @@ internal sealed partial class PilotIndustryStore
         var recipe =
             BlueprintDefinition(catalog, typeId).Activities?.Manufacturing
             ?? throw new InvalidDataException("The blueprint has no manufacturing valuation.");
-        return (recipe.Materials ?? []).Sum(m =>
-            checked((int)m.Quantity!.Value) * (double)prices.GetValueOrDefault(checked((int)m.TypeID!.Value))
+        return EconomicRules.ClientValue(
+            IndustryMaterials.Calculate((recipe.Materials ?? []).Select(m => new ManufacturingMaterial(m.TypeID, m.Quantity)).ToArray(), 1),
+            prices
         );
     }
 

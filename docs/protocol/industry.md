@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Catalog-wide station production (November 9, 2026)](#catalog-wide-station-production-november-9-2026)
+
 - [Science integration on main (November 9, 2026)](#science-integration-on-main-november-9-2026)
 
 - [LP-wallet nearest-station lookup (November 9, 2026)](#lp-wallet-nearest-station-lookup-november-9-2026)
@@ -27,6 +29,40 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Manufacturing from mined minerals, November 2, 2026](#manufacturing-from-mined-minerals-november-2-2026)
 - [Tech I module manufacturing](#tech-i-module-manufacturing)
 - [Full catalog testing market (world version 28)](#full-catalog-testing-market-world-version-28)
+
+## Catalog-wide station production (November 9, 2026)
+
+Personal station manufacturing now uses a shared immutable catalog recipe index instead of the starter hull, Tech I, small-hybrid and selected-module whitelists. Of **4,890 manufacturing definitions**, **4,049** have published blueprint/product types, one positive output, a positive duration, nonempty valid material inputs and valid required skills. Exclusions are **809 unpublished blueprints, 3 unpublished products, 24 invalid output/time definitions, 4 invalid skill definitions and 1 invalid material definition**. This is recipe admission before station restrictions, not a claim that every input can be acquired or every product can be flown/used. Every owned installation independently resolves the same indexed recipe and validates skills, quoted quantities/time/fees, blueprint location/ownership, available inputs, licensed runs and slots. Ordinary packaged outputs follow existing inventory, contracts, trade and production-claim market unlock behavior. Unlocking still occurs on successful claim, not installation or readiness.
+
+The reproducible [production audit](../production-catalog.json) includes all manufacturing definitions and exclusions, source fingerprints, complete recipes and representative pinned metadata. Regenerate from the read-only build-3662168 catalog:
+
+```powershell
+python tools/Export-ProductionCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite"
+```
+
+Facility product filters and authoritative installation checks share typed station restrictions. Titans and supercarriers cannot be built in NPC stations. Carriers, dreadnoughts (including lancers), force auxiliaries, capital industrial ships and command carriers require low/null security; missing security rejects these capital jobs. The native security boundary is raw **0.45**, consistent with displayed high-security classification. Freighters, jump freighters and ordinary industrial command hulls retain high-security manufacturing. Originals use the client's ceil-of-30-days run limit; manufacturing copies use the lesser of licensed remaining runs and the hard cap, matching the pinned `Manufacturing.job_max_runs` override. The server retains checked output/inventory integer limits.
+
+The Industry blueprint browser and individual reads now include ancient relics (category **34**). Native `industryCommon.BlueprintInstance` marks relics as non-original independently of the physical quantity sentinel; replies retain the actual stack quantity and expose it as available attempts. Invention reserves the relic stack through the existing installed-job guard, consumes catalog datacores/decryptors and skills, and saves selected output, probability, output ME/TE/runs and individual success outcomes once. Finish or cancellation consumes one physical relic per attempt, preserves unreserved units, removes exhausted stacks, releases the science slot and cannot reroll or duplicate output. Installed relics cannot move, merge, enter contracts or be trashed; Stack All leaves them untouched. Blueprint copies retain their separate licensed-run accounting.
+
+World version **130** adds missing positive economic reference prices for valid manufacturing inputs while preserving every existing saved price override and service-cost policy. Defaults use the pinned catalog base price where positive, then the existing dated November-8 market snapshot's sell quote. These are explicit Eden installation-valuation defaults, not imported live adjusted-price claims. The same saved prices are sent to the native price adapter and used for component costs. This backfill creates no items, NPC offers, wallet credits or finished products. Priced science valuations now reject missing material prices rather than treating an absent component as free. Historical insurance policy and hull-admission scopes are unchanged.
+
+Material-source gaps intentionally remain unobtainable by maintainer request. This milestone introduces no moon, gas, ice, planetary, wormhole, exploration-reward or alternate NPC input supply. Jobs remain personal and station-local; corporation jobs, remote jobs, reaction facilities and supercapital infrastructure are separate unimplemented systems. Manufacture does not grant assembly, fitting, flight or structure deployment support to its product. These boundaries prevent a broader recipe list from implying a complete acquisition or operational chain.
+
+Gameplay references: [EVE University manufacturing](https://wiki.eveuniversity.org/Manufacturing), [Tech III production](https://wiki.eveuniversity.org/Tech_3_Production), [CCP manufacturing](https://support.eveonline.com/hc/en-us/articles/203210292-Manufacturing), [blueprints](https://support.eveonline.com/hc/en-us/articles/203269951-Blueprints), [invention](https://support.eveonline.com/hc/en-us/articles/203210642-Invention) and [ancient relics](https://support.eveonline.com/hc/en-us/articles/203210662-Ancient-Relics). Inert inspection used installed build-3662168 `code.ccp`, SHA-256 **76E969D2CDE0AC25359F0F9194725F741C5DB5D6C24F552B72B2184457DA6DC4**, especially `industry/activities/manufacturing.pyj`, `invention.pyj`, `reaction.pyj`, `industry/const.pyj`, `eve/client/script/industry/blueprintSvc.pyj` and `eve/common/script/util/industryCommon.pyj`. The earlier science record documents its comparison to the stock archive. Consulted [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp); native dictionary/tuple/KeyVal adapters and the codec are unchanged. No client Python code was executed.
+
+**Automated validation:** Exact development filter `FullyQualifiedName=Eden.Protocol.Tests.Industry.IndustryTests.FacilityProductListRequiresPublishedRecipesAndRejectsUnpublishedProducts` passed one case in 6.67 seconds after a 6.05-second build. Before final additions, `FullyQualifiedName~Eden.Protocol.Tests.Industry.Production|FullyQualifiedName~Eden.Protocol.Tests.Industry.ManufacturingRulesTests` passed **49 cases in 19.82 seconds**. Development failures corrected nullable catalog-array handling and missing fixture data for invalid recipes, the invention probability type list and the selected advanced-price input. The final validation covers those corrections and subsequent exhausted-relic/locking coverage.
+
+Final tool restore, solution restore and solution build passed with zero warnings/errors (build **3.65 seconds**). The affected filter below passed **392/392 tests in 4 minutes 35.63 seconds**, covering catalog admission, representative T1/T2/T3/components/structures, native facility and relic replies, capital rejection, quoted fees and rollback, unavailable inputs, blueprint/relic reservation, cancellation, exhaustion, exactly-once delivery/unlocks, current-save migrations, inventory/contracts, markets, explorer production, hosting and the existing mined-input trade/loss/replacement chains:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Industry|FullyQualifiedName~Eden.Protocol.Tests.Economy|FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.Inventory|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ContractTests|FullyQualifiedName~Eden.Protocol.Tests.Docking.TypedInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Exploration.ProbeScanningTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+Both Python policy suites passed (**8 catalog cases in 0.789 seconds; 9 formatting cases in 0.016 seconds**). Formatting and the 140-column check passed for **1,418 files**. The production audit reproduced byte-for-byte; changed text encoding/newlines/whitespace, added documentation targets/anchors and diff checks passed. The full .NET suite was neither requested nor run; native rendering, gameplay feel, unobtainable inputs and unavailable facilities are outside automated acceptance.
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native Industry rendering, input and presentation remain unverified.
+
+**Optional maintainer checks:** Inspect native manufacturing filters in a high-security and low-security factory; complete a copy-backed advanced job and inspect the delivered product; inspect an ancient-relic invention job's remaining units and result presentation. Use a copied save and existing legitimate inputs.
 
 ## Science integration on main (November 9, 2026)
 

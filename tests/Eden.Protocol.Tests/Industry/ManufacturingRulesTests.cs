@@ -48,4 +48,25 @@ public sealed class ManufacturingRulesTests
         Assert.Equal(21, request.QuotedMaterials[35]);
         Assert.Equal(0, inputs.InstalledJobs);
     }
+
+    [Fact]
+    public void CopiesUseTheirLicensedRunsWhileOriginalsUseTheThirtyDayLimit()
+    {
+        const int daysPerRun = 20;
+        const int runs = 3;
+        const int secondsPerDay = 24 * 60 * 60;
+        var inputs = Inputs with { BaseSeconds = daysPerRun * secondsPerDay, Bonuses = [] };
+        var request = Request with
+        {
+            Runs = runs,
+            QuotedSeconds = daysPerRun * secondsPerDay * runs,
+            QuotedMaterials = new Dictionary<int, int> { [34] = 81, [35] = 63 },
+        };
+        Assert.Throws<InvalidDataException>(() => ManufacturingRules.Plan(request, inputs));
+        var plan = ManufacturingRules.Plan(request, inputs with { Blueprint = new(RunsRemaining: runs) });
+        Assert.Equal(request.QuotedSeconds, plan.DurationSeconds);
+        Assert.Throws<InvalidDataException>(() =>
+            ManufacturingRules.Plan(request, inputs with { Blueprint = new(RunsRemaining: runs - 1) })
+        );
+    }
 }

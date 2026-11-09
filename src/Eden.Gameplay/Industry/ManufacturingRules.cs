@@ -36,9 +36,12 @@ public static class ManufacturingRules
             throw new InvalidDataException("Deliver or cancel an existing job to free a manufacturing slot.");
         }
         var blueprint = inputs.Blueprint ?? new BlueprintResearch();
-        if (blueprint.Copy && request.Runs > blueprint.RunsRemaining)
+        if (
+            blueprint.TimeEfficiency is < 0 or > IndustryDefinitions.MaximumTimeEfficiency
+            || blueprint.Copy && request.Runs > blueprint.RunsRemaining
+        )
         {
-            throw new InvalidDataException("There are not enough blueprint copy runs remaining.");
+            throw new InvalidDataException("Invalid blueprint efficiency or insufficient licensed copy runs.");
         }
         double seconds = inputs.BaseSeconds * request.Runs * (1 - blueprint.TimeEfficiency / 100d);
         foreach (var bonus in bonuses.Where(b => !b.Additive && b.Attribute == DogmaAttributeId.ManufactureTimeMultiplier))
@@ -50,14 +53,17 @@ public static class ManufacturingRules
             seconds *= 1 + skill.PercentPerLevel * skill.Level / 100;
         }
         // Activity.job_max_runs uses ceil(30 days / modified single-run time),
-        // capped at MAX_RUNS_HARD_CAP. An exact 30-day boundary adds no extra run.
+        // capped at MAX_RUNS_HARD_CAP. Manufacturing.job_max_runs exempts copies
+        // from the time limit and uses their remaining licensed runs instead.
         if (
             !double.IsFinite(seconds)
             || seconds <= 0
             || request.Runs
                 > Math.Min(
                     IndustryDefinitions.MaximumJobRuns,
-                    Math.Ceiling(IndustryDefinitions.MaximumJobSeconds / (seconds / request.Runs))
+                    blueprint.Copy
+                        ? IndustryDefinitions.MaximumJobRuns
+                        : Math.Ceiling(IndustryDefinitions.MaximumJobSeconds / (seconds / request.Runs))
                 )
         )
         {

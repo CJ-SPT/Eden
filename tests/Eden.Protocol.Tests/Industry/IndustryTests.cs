@@ -817,7 +817,7 @@ public sealed class IndustryTests
     }
 
     [Fact]
-    public void FacilityProductListAdmitsUsableTechOneModulesAndRejectsUnsupportedTiersAndWeaponSizes()
+    public void FacilityProductListRequiresPublishedRecipesAndRejectsUnpublishedProducts()
     {
         using Fixture f = new();
         f.AddModules();
@@ -840,12 +840,7 @@ public sealed class IndustryTests
         var request = f.ModuleRequest(IndustryBlueprintType.MinerI);
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
-            catalog
-                .Set<TypeAttribute>()
-                .AsTracking()
-                .Single(a => a.ItemTypeId == (int)MiningLaserType.MinerI && a.AttributeId == (int)DogmaAttributeId.TechLevel)
-                .Value = 2;
-            catalog.SaveChanges();
+            catalog.Database.ExecuteSqlRaw("UPDATE SourceRecord SET Data='{{\"published\":0}}' WHERE Dataset='client/types' AND Key='483'");
         }
         long tritanium = f.Quantity(34);
         Assert.Throws<InvalidDataException>(() => f.Store.Install(f.Pilot.PilotId, request));

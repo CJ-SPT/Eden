@@ -111,7 +111,7 @@ public interface IPilotIndustry : IPilotIndustrySkills
     void CheckStation(long pilotId, int stationId);
     IReadOnlyList<IndustryFacility> Facilities(long pilotId);
     IndustryFacility Facility(long pilotId, int stationId);
-    IReadOnlyList<int> ProductTypes();
+    IReadOnlyList<int> ProductTypes(int? stationId = null);
     IReadOnlyList<int> ScienceProductCategories();
     IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, int? stationId = null);
     OwnedBlueprint Blueprint(long pilotId, long itemId);
