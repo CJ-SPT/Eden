@@ -146,6 +146,7 @@ public sealed class CapsuleerInboundRuntimeTests
         _ = hauler.Read();
         job = hauler.ArmInbound(job, 0, s_gate);
         long originalDue = job.DueTicks;
+        long originalSequence = hauler.Read()!.Work.DwellSequence;
         long watched = TimeSpan.FromSeconds(10).Ticks;
         job = hauler.PauseInbound(job, watched);
         Assert.Equal(originalDue, job.DueTicks);
@@ -153,6 +154,7 @@ public sealed class CapsuleerInboundRuntimeTests
         long returned = TimeSpan.FromMinutes(10).Ticks;
         job = hauler.ArmInbound(job, returned, s_gate);
         Assert.Equal(originalDue - watched, job.DueTicks - returned);
+        Assert.Equal(originalSequence, hauler.Read()!.Work.DwellSequence);
         Assert.False(hauler.Read()!.Work.InboundPaused);
         Assert.Equal(Source, hauler.SystemId);
         f.Clock.Seconds += 700;
@@ -176,6 +178,37 @@ public sealed class CapsuleerInboundRuntimeTests
         var delays = Enumerable.Range(1, 100).Select(id => HaulingRules.InboundDwellSeconds(gates, stations, id)).ToArray();
         Assert.All(delays, delay => Assert.InRange(delay, minimum, maximum));
         Assert.True(delays.Distinct().Count() > 1);
+    }
+
+    [Fact]
+    public void SavedWaitSequenceVariesTripsWithinBoundsAndRoundTripsThroughLegacyAndCurrentProgress()
+    {
+        const long pilot = 90000123;
+        var gateDelays = Enumerable.Range(0, 32).Select(sequence => HaulingRules.InboundDwellSeconds(4, 0, pilot, sequence)).ToArray();
+        var stationDelays = Enumerable.Range(0, 32).Select(sequence => HaulingRules.StationDwellSeconds(pilot, sequence)).ToArray();
+        Assert.All(gateDelays, delay => Assert.InRange(delay, 35, 75));
+        Assert.All(stationDelays, delay => Assert.InRange(delay, 15, 45));
+        Assert.True(gateDelays.Distinct().Count() > 1);
+        Assert.True(stationDelays.Distinct().Count() > 1);
+        Assert.Throws<ArgumentOutOfRangeException>(() => HaulingRules.StationDwellSeconds(pilot, -1));
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        long actor = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(s_gate)!.Value;
+        using WorldDbContext world = new(f.Database.Path);
+        var saved = world.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == actor);
+        var work = HaulerCheckpoint.Read(saved.Progress)!;
+        Assert.Equal(1, work.DwellSequence);
+        var later = work with { DwellSequence = 17 };
+        new HaulerCheckpoint(actor, later).Apply(world);
+        using WorldDbContext reopened = new(f.Database.Path);
+        var restored = HaulerCheckpoint.Read(reopened.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == actor).Progress)!;
+        Assert.Equal(later, restored);
+        Assert.Equal(
+            HaulingRules.InboundDwellSeconds(4, 0, actor, later.DwellSequence),
+            HaulingRules.InboundDwellSeconds(4, 0, actor, restored.DwellSequence)
+        );
+        var legacy = System.Text.Json.Nodes.JsonNode.Parse(saved.Progress!)!.AsObject();
+        Assert.True(legacy.Remove(nameof(HaulerProgress.DwellSequence)));
+        Assert.Equal(0, HaulerCheckpoint.Read(legacy.ToJsonString())!.DwellSequence);
     }
 
     [Fact]

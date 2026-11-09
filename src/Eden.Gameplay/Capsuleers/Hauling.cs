@@ -35,7 +35,8 @@ public sealed record HaulerProgress(
     bool InboundPaused = false,
     long? ArrivalGateId = null,
     long? ArrivalAt = null,
-    long? DepartureAt = null
+    long? DepartureAt = null,
+    long DwellSequence = 0
 );
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth Health);
@@ -106,7 +107,7 @@ public static class HaulingRules
     public const decimal DestinationMultiplier = 1.25m;
     public const long MaximumLoadCents = 100000 * MarketDefinitions.CentsPerIsk;
 
-    public static int InboundDwellSeconds(int gates, int stations, long pilotId)
+    public static int InboundDwellSeconds(int gates, int stations, long pilotId, long dwellSequence = 0)
     {
         const int busyMinimumSeconds = 35;
         const int mediumMinimumSeconds = 65;
@@ -116,7 +117,27 @@ public static class HaulingRules
             gates >= 4 || stations >= 3 ? busyMinimumSeconds
             : gates >= 2 ? mediumMinimumSeconds
             : quietMinimumSeconds;
-        return minimum + (int)((ulong)pilotId % cadenceSpreadSeconds);
+        return minimum + DwellVariation(pilotId, dwellSequence, cadenceSpreadSeconds);
+    }
+
+    public static int StationDwellSeconds(long pilotId, long dwellSequence)
+    {
+        const int minimumSeconds = 15;
+        const int spreadSeconds = 31;
+        return minimumSeconds + DwellVariation(pilotId, dwellSequence, spreadSeconds);
+    }
+
+    private static int DwellVariation(long pilotId, long sequence, int spread)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(sequence);
+        // SplitMix64 gives each saved wait a stable choice independent of process Random state.
+        const ulong increment = 0x9E3779B97F4A7C15UL;
+        const ulong firstMultiplier = 0xBF58476D1CE4E5B9UL;
+        const ulong secondMultiplier = 0x94D049BB133111EBUL;
+        ulong value = unchecked((ulong)pilotId + (ulong)sequence * increment);
+        value = unchecked((value ^ (value >> 30)) * firstMultiplier);
+        value = unchecked((value ^ (value >> 27)) * secondMultiplier);
+        return (int)((value ^ (value >> 31)) % (ulong)spread);
     }
 
     // This is the founder's quote policy, using the catalog reference price per ore portion.

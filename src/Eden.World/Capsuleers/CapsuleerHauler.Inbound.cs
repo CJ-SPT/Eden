@@ -11,7 +11,9 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
-    private readonly Dictionary<int, int> _inboundDwells = [];
+    private sealed record InboundCadence(int Gates, int Stations);
+
+    private readonly Dictionary<int, InboundCadence> _inboundDwells = [];
 
     internal bool IsInbound => _loaded && Work.Activity == HaulerActivity.Inbound;
 
@@ -32,10 +34,9 @@ internal sealed partial class CapsuleerHauler
         }
         foreach (int system in new[] { lane.ObserverSystemId, lane.SourceSystemId })
         {
-            _inboundDwells[system] = HaulingRules.InboundDwellSeconds(
+            _inboundDwells[system] = new(
                 catalog.Definitions.GatesInSystem(system).Length,
-                catalog.Definitions.StationsInSystem(system).Length,
-                pilotId
+                catalog.Definitions.StationsInSystem(system).Length
             );
         }
     }
@@ -57,7 +58,8 @@ internal sealed partial class CapsuleerHauler
         }
         long delay = Math.Max(0, elapsed - Work.ActiveTicks);
         var leg = HaulingRouteRules.Crossing(_route.Systems, gate.SourceSystemId, gate.ObserverSystemId);
-        int dwell = _inboundDwells[gate.ObserverSystemId];
+        var cadence = _inboundDwells[gate.ObserverSystemId];
+        int dwell = HaulingRules.InboundDwellSeconds(cadence.Gates, cadence.Stations, pilotId, Work.DwellSequence);
         long due = Work.Activity == HaulerActivity.Inbound ? Work.DueTicks + delay : elapsed + TimeSpan.FromSeconds(dwell).Ticks;
         NavigationState navigation = new();
         var work = Work with
@@ -78,6 +80,7 @@ internal sealed partial class CapsuleerHauler
             ArrivalGateId = null,
             ArrivalAt = null,
             DepartureAt = null,
+            DwellSequence = Work.Activity == HaulerActivity.Inbound ? Work.DwellSequence : checked(Work.DwellSequence + 1),
         };
         var next = job.Next(Math.Max(elapsed + TimeSpan.TicksPerSecond, due), CapsuleerAction.GateTransfer);
         using CapsuleerOperation operation = new(database, job, marketSignal);

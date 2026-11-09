@@ -219,3 +219,15 @@ Tool/solution restore, solution build (zero warnings/errors), both Python policy
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** None required for this route correction beyond the historical presentation check above.
+
+### Traffic improvement stage 2 — saved trip timing
+
+`HaulerProgress.DwellSequence` defaults to zero for old JSON progress. New inbound waits and station layovers use a deterministic SplitMix64 choice keyed by pilot identity and this saved sequence, then commit the increment with the chosen deadline. The sequence does not advance on inbound pause/resume, and failed transactions retain the original sequence. A replacement hull retains the sequence. Existing waits retain their saved deadlines; there is no world-schema migration. Busy/medium/quiet inbound bounds remain 35–75, 65–105 and 95–135 seconds; station layovers remain 15–45 seconds. Hull selection is unchanged.
+
+**Automated validation.** The exact method `CapsuleerInboundRuntimeTests.SavedWaitSequenceVariesTripsWithinBoundsAndRoundTripsThroughLegacyAndCurrentProgress` passed in 5.19 seconds including runner startup. The focused filter `FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerHaulerTests` passed 40 cases in 11.77 seconds including runner startup. It covers variation/bounds, old progress, reopened sequence/deadline, paused remaining time, real station docking, rollback, destruction and repeated observed arrivals. The copied-save gate check remains opt-in and was not exercised. No full .NET regression was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+Solution build (zero warnings/errors), both Python policy suites (eight catalog and nine formatting cases), formatting verification and diff checks also passed. Dependencies and tools are unchanged from the passing stage-1 restores.
+
+**Optional maintainer checks.** None; timing variation is established by the deterministic checks.

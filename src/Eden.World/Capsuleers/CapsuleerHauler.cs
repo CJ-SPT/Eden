@@ -474,7 +474,8 @@ internal sealed partial class CapsuleerHauler(
                 0,
                 _navigation.Capture(),
                 RouteDirection: Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup ? -1 : 1,
-                TrafficLane: previous?.TrafficLane
+                TrafficLane: previous?.TrafficLane,
+                DwellSequence: previous?.DwellSequence ?? 0
             );
         }
         if (previous is null || previous.ShipId != Pilot.ShipId)
@@ -708,15 +709,14 @@ internal sealed partial class CapsuleerHauler(
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
             _navigation.Dock();
             _operation.TravelChanged = true;
-            const int minimumDwellSeconds = 15;
-            const int dwellSpreadSeconds = 31;
-            int dwell = minimumDwellSeconds + (int)(Pilot.PilotId % dwellSpreadSeconds);
+            int dwell = HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
             _work = Work with
             {
                 Activity = HaulerActivity.Docked,
                 TargetId = 0,
                 DueStamp = Work.Stamp + dwell,
                 DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(dwell).Ticks,
+                DwellSequence = checked(Work.DwellSequence + 1),
             };
         }
         else

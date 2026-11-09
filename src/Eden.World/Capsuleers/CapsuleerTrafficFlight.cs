@@ -58,6 +58,7 @@ internal static class CapsuleerTrafficFlight
             TargetId = gate.DepartureGateId,
             DueStamp = dwell,
             DueTicks = elapsed + TimeSpan.FromSeconds(dwell).Ticks,
+            DwellSequence = 1,
         };
     }
 
