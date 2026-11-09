@@ -241,6 +241,11 @@ public sealed class CapsuleerHaulerTests
                 );
             }
             WorldInitialization.Initialize(Database, Clock);
+            if (!legacyFounders)
+            {
+                using WorldDbContext state = new(Database.Path);
+                state.Database.ExecuteSqlRaw("INSERT OR IGNORE INTO WorldCapsuleerProvisioning(Id,WorldSeed) VALUES(1,1)");
+            }
             if (legacyFounders)
             {
                 using WorldDbContext founders = new(Database.Path);

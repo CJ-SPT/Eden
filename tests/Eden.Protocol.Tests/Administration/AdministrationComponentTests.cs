@@ -16,6 +16,16 @@ namespace Eden.Protocol.Tests.Administration;
 
 public sealed class AdministrationComponentTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SavingKeepsTheProgressiveMarketChoiceWhenDevelopmentSupplyChanges(bool enabled)
+    {
+        var form = SettingsForm.From(new WorldSettings { Economy = new(ProgressiveMarkets: enabled) });
+        form.TestingMarket = false;
+        Assert.Equal(enabled, form.Build().Economy.ProgressiveMarkets);
+    }
+
     [Fact]
     public void MoneyInputsKeepExactCentsAndRejectHiddenFractionalCents()
     {

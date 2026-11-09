@@ -45,7 +45,7 @@ public interface ICapsuleerProvisioning
 
 public static class CapsuleerProvisioningRules
 {
-    public const int Version = 1;
+    public const int Version = 2;
     public const int FoundersPerCommunity = 2;
     public const int StaggerMilliseconds = 30_000;
     public const double MinimumSecurity = 0.45;

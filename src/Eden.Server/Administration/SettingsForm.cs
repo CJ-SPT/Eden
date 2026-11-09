@@ -7,6 +7,7 @@ namespace Eden.Server.Administration;
 internal sealed class SettingsForm
 {
     public bool ServiceCosts { get; set; }
+    public bool ProgressiveMarkets { get; set; }
 
     [Range(typeof(decimal), "0", "1")]
     public decimal ManufacturingIndex { get; set; }
@@ -45,6 +46,7 @@ internal sealed class SettingsForm
         new()
         {
             ServiceCosts = settings.Economy.ChargeServiceCosts,
+            ProgressiveMarkets = settings.Economy.ProgressiveMarkets ?? !settings.DevelopmentSupply.TestingMarket,
             ManufacturingIndex = settings.Economy.DefaultManufacturingIndex,
             TestingMarket = settings.DevelopmentSupply.TestingMarket,
             TestingGrants = settings.DevelopmentSupply.TestingGrants,
@@ -69,7 +71,7 @@ internal sealed class SettingsForm
     internal WorldSettings Build() =>
         new()
         {
-            Economy = new(ServiceCosts, ManufacturingIndex),
+            Economy = new(ServiceCosts, ManufacturingIndex, ProgressiveMarkets),
             DevelopmentSupply = new(
                 TestingMarket,
                 TestingGrants,

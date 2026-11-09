@@ -11,7 +11,13 @@ namespace Eden.World.Capsuleers;
 
 internal sealed record CapsuleerOrigin(int RaceId, int BloodlineId, int SchoolId, int CorporationId);
 
-internal sealed record CapsuleerSite(int SystemId, CapsuleerEligibility Eligibility, int? HomeStationId, int? DestinationStationId);
+internal sealed record CapsuleerSite(
+    int SystemId,
+    CapsuleerEligibility Eligibility,
+    int? HomeStationId,
+    int? DestinationStationId,
+    bool SupportsMining = true
+);
 
 internal static class CapsuleerProvisioningCatalog
 {
@@ -54,19 +60,21 @@ internal static class CapsuleerProvisioningCatalog
             catalog.FittingType(CapsuleerCommunityStore.VentureType) is not null
             && catalog.FittingType(HaulingRules.BadgerType) is not null
             && catalog.FittingType((int)MiningLaserType.MinerI) is not null;
-        var content = catalog.ReadMany(CatalogData.Client.Solarsystemcontent, catalog.Definitions.Systems.Keys.Select(id => (long)id));
-        var security = catalog.Definitions.Systems.Keys.ToDictionary(id => id, id => content.GetValueOrDefault(id)?.Security);
-        // Eligibility visits every supported belt. Read that dataset once for this catalog generation.
-        _ = catalog.Records(CatalogData.Client.Asteroidcountbytypeidbeltid);
+        var selected = selectedSystems ?? catalog.Definitions.Systems.Keys.ToHashSet();
+        var routeSystems = selected
+            .SelectMany(system => catalog.Definitions.GatesInSystem(system).Select(g => g.DestinationSystemId))
+            .Union(selected)
+            .ToHashSet();
+        var content = catalog.ReadMany(CatalogData.Client.Solarsystemcontent, routeSystems.Select(id => (long)id));
+        var security = routeSystems.ToDictionary(id => id, id => content.GetValueOrDefault(id)?.Security);
         var markets = catalog
             .Stations()
+            .Where(s => routeSystems.Contains(s.SolarSystemId))
             .Where(s => StationCapabilities.Has(catalog, s.OperationId, StationService.Market))
             .GroupBy(s => s.SolarSystemId)
             .ToDictionary(g => g.Key, g => g.OrderBy(s => s.Id).ToArray());
         List<CapsuleerSite> sites = [];
-        foreach (
-            int system in catalog.Definitions.Systems.Keys.Where(id => selectedSystems is null || selectedSystems.Contains(id)).Order()
-        )
+        foreach (int system in selected.Order())
         {
             var stations = markets.GetValueOrDefault(system) ?? [];
             int? home = establishedHomes.TryGetValue(system, out int saved) ? saved : stations.FirstOrDefault()?.Id;
@@ -97,7 +105,11 @@ internal static class CapsuleerProvisioningCatalog
             var eligibility = CapsuleerProvisioningRules.Eligibility(
                 new(enabled, security[system], market, belt, ore, destination is not null, origins, equipment)
             );
-            sites.Add(new(system, eligibility, home, destination));
+            if (eligibility == CapsuleerEligibility.NoBelt && destination is not null && origins && equipment)
+            {
+                eligibility = CapsuleerEligibility.Eligible;
+            }
+            sites.Add(new(system, eligibility, home, destination, belt));
         }
         return sites.ToArray();
     }

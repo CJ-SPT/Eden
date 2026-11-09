@@ -125,7 +125,10 @@ public sealed class EconomicLifecycleTests
             world.Database.ExecuteSqlRaw("UPDATE WorldAsteroid SET Quantity=0");
         }
         f.Clock.AdvanceWallTime(TimeSpan.FromDays(30));
-        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        while (renewal.Renew(1) > 0)
+        {
+            // Exercise overdue renewal through the running world's owner.
+        }
         Assert.Equal(original, field.List(System));
         Assert.Equal(0, renewal.Renew());
         await LiveWorld.Find(f.Db.Path)!.FlushAsync();

@@ -8,7 +8,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 
 | Settings group | Editable server policies |
 | --- | --- |
-| Economy | Charge service costs; default manufacturing index. |
+| Economy | Charge service costs, default manufacturing index and progressive regional markets. |
 | Development supply | Testing market and initial wallet grants; institutional stock; testing stock/price; grant amount for future pilots. |
 | Resources | Enable belt renewal and set its UTC hour. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
@@ -16,6 +16,16 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 
 Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling a population prevents new spawns without deleting residents or changing their mechanics.
+
+## Progressive regional markets
+
+The Economy card exposes **Progressive regional markets**. Save the setting and restart the host to activate it. The saved `economy.progressiveMarkets` value accepts true or false. An omitted or null value follows the world's supply mode, enabling progression for economy saves and retaining configured development prices for development saves. This switch can be staged on an existing save and preserves personal orders, escrow, balances, inventories and history.
+
+Markets use one shared selected-human clock. Economic age and replenishment advance while at least one human pilot is selected, including while docked. Additional humans share the same elapsed interval. Training and installed industry retain their established deadline policies.
+
+The initial policy supplies materials immediately, equipment after four active hours, and the Venture, Merlin and Badger at hubs after eight, sixteen and twenty-four hours. Stock targets grow every eight active hours through three growth stages. Finite stock and demand recover in ten-minute intervals, by one sixth of capacity per interval. Repeated reads retain partial intervals. Local shortages move quotes up to fifteen percent from their station-specific anchors. Hull availability uses the audited starter cohort; other products require supported recipes and positively priced mineral inputs. These are Eden progression defaults.
+
+Regional quotes are prepared lazily for the current station, its regional hub and previously prepared stations in that region. Direct station trades consume the relevant finite order. Personal listings continue to trade between humans. Mining-area mineral supply and hub mineral demand provide an initial transport opportunity. Prices use saved adjusted mineral values, with pinned catalog reference values for remaining inputs, recipe quantities and output portions. Station roles use catalog market/manufacturing facilities, gate connectivity and station counts.
 
 ## Overrides and compatibility
 

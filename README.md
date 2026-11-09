@@ -2,6 +2,9 @@
 
 [Capsuleer encounters](docs/capsuleer-population.md) are created when humans visit supported high-security mining systems. Persistent miners can already be working and haulers carry owned cargo along real gate routes. Observers share the same ships, movement, damage and saved consequences. Empty systems do not execute career jobs or delay entry with catch-up work. Ambient pilots do not trade on the market.
 
+[Progressive regional markets](docs/protocol/industry.md#progressive-regional-markets--november-8-2026) independently develop finite stock and demand on shared human-active playtime. Direct trades cause local shortages, price changes and hauling opportunities. Economy saves enable progression by default; existing development saves can select it in local administration. Personal listings retain their human counterparties.
+
+
 
 Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It supports persistent local worlds and multiple pilots using separate Windows clients. Supply the matching EVE installation and resource cache separately.
 

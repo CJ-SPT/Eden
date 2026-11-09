@@ -6,6 +6,7 @@ public enum NpcMarketKind
 {
     Development,
     Institutional,
+    Regional,
 }
 
 public sealed record NpcSupplyType(int TypeId, InventoryCategory Category, bool Published, decimal BasePriceIsk, bool Offered);

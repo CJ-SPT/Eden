@@ -3,7 +3,11 @@ using Eden.Gameplay.Market;
 
 namespace Eden.Gameplay.Configuration;
 
-public sealed record EconomicPolicy(bool ChargeServiceCosts = false, decimal DefaultManufacturingIndex = 0.01m);
+public sealed record EconomicPolicy(
+    bool ChargeServiceCosts = false,
+    decimal DefaultManufacturingIndex = 0.01m,
+    bool? ProgressiveMarkets = null
+);
 
 public sealed record DevelopmentSupplyPolicy(
     bool TestingMarket = true,

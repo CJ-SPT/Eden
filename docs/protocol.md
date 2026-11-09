@@ -472,3 +472,5 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="gameplay-rejection-dialogs-november-2-2026"></a>[Gameplay rejection dialogs, November 2, 2026](protocol/compatibility.md#gameplay-rejection-dialogs-november-2-2026)
 
 Current encounter lifecycle and automated evidence are recorded under [observed capsuleer encounters](protocol/capsuleers.md#observed-capsuleer-encounters--november-8-2026).
+
+Progressive supply, demand, trade settlement and validation are recorded under [progressive regional markets](protocol/industry.md#progressive-regional-markets--november-8-2026).

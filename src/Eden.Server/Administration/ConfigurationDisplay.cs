@@ -26,6 +26,7 @@ internal static class ConfigurationDisplay
         ["npcPopulation.convoys"] = "New convoys",
         ["npcPopulation.mining"] = "New mining populations",
         ["npcPopulation.majorThreatAnomalies"] = "Major Threat anomaly tiers",
+        ["economy.progressiveMarkets"] = "Progressive regional markets",
         ["capsuleers.globalProvisioning"] = "Legacy global provisioning preference",
         ["progression.grantStartingSkills"] = "Starting skills for new pilots",
         ["simulation.checkpointSeconds"] = "Checkpoint interval (seconds)",

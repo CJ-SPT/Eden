@@ -16,9 +16,12 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Market;
 
 [Injectable]
-internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvider clock, MarketChangeSignal signal)
-    : IPilotMarket,
-        IPersonalMarket
+internal sealed partial class PilotMarketStore(
+    WorldDatabase database,
+    TimeProvider clock,
+    MarketChangeSignal signal,
+    Eden.World.Capsuleers.CapsuleerActivitySource? activity = null
+) : IPilotMarket, IPersonalMarket
 {
     private sealed record StarterOffer(int TypeId, string Name, long? BuyPriceCents, int Demand);
 
@@ -59,6 +62,12 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
 
     private void Seed(WorldDbContext world, CatalogDbContext catalog, CatalogStationDefinition station)
     {
+        if (RegionalMarketStore.Enabled(world))
+        {
+            SeedInstitutional(world, catalog, station);
+            new RegionalMarketStore(activity).Advance(world, catalog, station.RegionId, station.Id, Now);
+            return;
+        }
         if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
         {
             SeedInstitutional(world, catalog, station);
@@ -133,7 +142,10 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
 
     private void Refresh(WorldDbContext world, IQueryable<NpcMarketOrder> orders)
     {
-        if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
+        if (
+            RegionalMarketStore.Enabled(world)
+            || world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
+        )
         {
             int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
             NpcSupplyRules.ValidateStock(stock);
@@ -205,7 +217,25 @@ internal sealed partial class PilotMarketStore(WorldDatabase database, TimeProvi
         var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
             ? NpcMarketKind.Institutional
             : NpcMarketKind.Development;
-        query = query.Where(o => o.Kind == kind);
+        bool progressive = RegionalMarketStore.Enabled(world);
+        if (progressive)
+        {
+            var regional = new RegionalMarketStore(activity);
+            var knownStations = world
+                .Set<NpcMarketOrder>()
+                .Where(o => o.RegionId == region && o.Kind == NpcMarketKind.Regional)
+                .Select(o => o.StationId)
+                .Distinct()
+                .ToArray();
+            var hub = RegionalMarketCatalog
+                .Read(catalog)
+                .Stations.SingleOrDefault(s => s.Station.RegionId == region && s.Role == RegionalMarketRole.Hub);
+            foreach (int known in knownStations.Append(hub?.Station.Id ?? station.Id).Distinct().Where(id => id != station.Id))
+            {
+                regional.Advance(world, catalog, region, known, Now);
+            }
+        }
+        query = query.Where(o => progressive ? o.Kind == NpcMarketKind.Regional || o.Kind == NpcMarketKind.Institutional : o.Kind == kind);
         if (typeId.HasValue)
         {
             query = query.Where(o => o.TypeId == typeId.Value);

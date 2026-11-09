@@ -70,7 +70,6 @@ internal sealed class CapsuleerHauler(
     private bool _background;
     private CapsuleerOperation _operation = null!;
     private long _hullRevision;
-    private long _miner;
     private LiveWorld? Live => LiveWorld.Find(database.Path);
     private DockedPilot Pilot => _pilot!;
     private HaulerProgress Work => _work!;
@@ -162,6 +161,9 @@ internal sealed class CapsuleerHauler(
                 Navigation = _navigation.Capture(),
                 ArrivalUntil = Work.Stamp + GateTravelRules.ArrivalTicks,
             };
+            _operation = operation;
+            BeginTravel();
+            _work = Work with { Navigation = _navigation.Capture() };
             var next = resumed.Next(resumed.DueTicks, CapsuleerAction.Arrival);
             operation.TravelChanged = true;
             operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
@@ -350,11 +352,6 @@ internal sealed class CapsuleerHauler(
         {
             return;
         }
-        int community = world.Set<SavedCapsuleerAgent>().Single(a => a.PilotId == pilotId).CommunitySystemId;
-        _miner = world
-            .Set<SavedCapsuleerAgent>()
-            .Single(a => a.CommunitySystemId == community && a.Career == CapsuleerCareer.Mining)
-            .PilotId;
         long account = world.Pilots.Where(p => p.Id == Founder.PilotId).Select(p => p.AccountId).Single();
         _pilot = ships.FindPilot(account, Founder.PilotId)!;
         using CatalogDbContext catalog = new(database.CatalogPath);

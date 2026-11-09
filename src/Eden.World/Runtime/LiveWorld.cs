@@ -79,7 +79,11 @@ internal sealed class LiveWorld : IDisposable
                 CapsuleerHullRevisions[change.Id] = CapsuleerHullRevisions.GetValueOrDefault(change.Id) + 1;
             }
         }
-        if (changes.Any(c => c.Table == "WorldCapsuleerAgent"))
+        if (
+            changes.Any(c =>
+                c.Table is "WorldCapsuleerAgent" or "WorldCapsuleerSystem" or "WorldCapsuleerPopulation" or "WorldCapsuleerProvisioning"
+            )
+        )
         {
             CapsuleerRevision++;
         }

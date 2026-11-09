@@ -31,7 +31,7 @@ Native loyalty store behavior, offline offer provenance and exclusions are recor
 | Reference | Use it for |
 | --- | --- |
 | [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for simulated capsuleers, a developing economy, and local administration; includes a source-backed gameplay gap audit and prioritized prerequisites. Core gameplay systems come first. |
-| [Global capsuleer population](capsuleer-population.md) | Population, clock, scheduling and simulation handoff; schema 118 global provisioning, saved eligibility and administration diagnostics. |
+| [Capsuleer encounters](capsuleer-population.md) | Observed mining/hauling, remembered identities, pursuit, shared clock and historical global simulation evidence. |
 
 ## Features and implementation records
 

@@ -433,7 +433,7 @@ public sealed class StarterProductionTests
         Assert.Equal(hull, f.Pilot(Consumer).Ship.TypeId);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Single(saved.Set<ShipLoss>().Where(l => l.PilotId == Consumer));
-        Assert.All(saved.Set<NpcMarketOrder>(), order => Assert.Equal(NpcMarketKind.Institutional, order.Kind));
+        Assert.All(saved.Set<NpcMarketOrder>(), order => Assert.NotEqual(NpcMarketKind.Development, order.Kind));
         Assert.Empty(saved.Set<TestingWalletGrant>());
         Assert.All(quantities, q => Assert.Equal(q.Value, Assert.Single(f.Market.History(Consumer, [q.Key])).Volume));
     }
@@ -471,12 +471,17 @@ public sealed class StarterProductionTests
         long[] identities;
         using (WorldDbContext world = new(f.Db.Path))
         {
-            identities = world.Set<NpcMarketOrder>().OrderBy(o => o.Id).Select(o => o.Id).ToArray();
+            identities = world
+                .Set<NpcMarketOrder>()
+                .Where(o => o.Kind == NpcMarketKind.Institutional)
+                .OrderBy(o => o.Id)
+                .Select(o => o.Id)
+                .ToArray();
             world.Set<SavedWorldEconomy>().Single().InstitutionalStock = 2000;
             world.SaveChanges();
         }
         f.At(Producer, supplier.StationId);
-        var orders = f.Market.Orders(Producer);
+        var orders = f.Market.Orders(Producer).Where(o => identities.Contains(o.Id)).ToArray();
         Assert.All(
             orders,
             order =>
@@ -506,7 +511,7 @@ public sealed class StarterProductionTests
         Assert.NotNull(world.Set<PilotSkill>().Find(Producer, (int)IndustrySkill.Industry));
         using CatalogDbContext catalog = new(f.CatalogPath);
         Assert.All(
-            world.Set<NpcMarketOrder>(),
+            world.Set<NpcMarketOrder>().Where(o => o.Kind == NpcMarketKind.Institutional),
             order =>
             {
                 var type = catalog.Set<ItemType>().Include(t => t.Group).Single(t => t.Id == order.TypeId);

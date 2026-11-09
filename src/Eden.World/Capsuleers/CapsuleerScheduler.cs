@@ -196,7 +196,7 @@ internal sealed class CapsuleerScheduler(
             long throughTicks = Math.Min(activity.ElapsedTicks, horizon ?? activity.ElapsedTicks);
             Load();
             Reconcile(activity);
-            HashSet<long> pilots = _running;
+            HashSet<long> pilots = new(_running);
             Dictionary<long, MinerObservation> mining = [];
             Dictionary<long, HaulerObservation> hauling = [];
             CapsuleerTurn turn;
@@ -218,12 +218,12 @@ internal sealed class CapsuleerScheduler(
                             next = miner.Execute(job, destinyStamp, activity.ElapsedTicks, activity.Resumes, background);
                             Current[job.PilotId] = next;
                             _completed++;
+                            IndexLocation(job.PilotId, miner.SystemId);
+                            _systems.Register(miner.SystemId);
                             var observation = miner.Read(includeHealth: !background)!;
                             mining[job.PilotId] = observation;
                             Blocking(job.PilotId, observation.WaitingReason);
                             _pendingMiners[job.PilotId] = observation;
-                            IndexLocation(job.PilotId, observation.Pilot.SystemId);
-                            _systems.Register(observation.Pilot.SystemId);
                             RegisterShip(job.PilotId, observation.Pilot.ShipId);
                         }
                         else if (_haulers.TryGetValue(job.PilotId, out var hauler))
@@ -232,12 +232,12 @@ internal sealed class CapsuleerScheduler(
                             next = hauler.Execute(job, destinyStamp, background);
                             Current[job.PilotId] = next;
                             _completed++;
+                            IndexLocation(job.PilotId, hauler.SystemId);
+                            _systems.Register(hauler.SystemId);
                             var observation = hauler.Read()!;
                             hauling[job.PilotId] = observation;
                             Blocking(job.PilotId, observation.Work.WaitingReason);
                             _pendingHaulers[job.PilotId] = observation;
-                            IndexLocation(job.PilotId, observation.Pilot.SystemId);
-                            _systems.Register(observation.Pilot.SystemId);
                             RegisterShip(job.PilotId, observation.Pilot.ShipId);
                         }
                         else
@@ -245,11 +245,16 @@ internal sealed class CapsuleerScheduler(
                             throw new InvalidDataException("The capsuleer job has no supported role.");
                         }
                         Current[job.PilotId] = next;
+                        if (!activity.ActiveSystems.Contains(_locations[job.PilotId]) && next.Action != CapsuleerAction.GateTransfer)
+                        {
+                            pilots.Remove(job.PilotId);
+                        }
                         return next;
                     },
                     clock,
                     pilots
                 );
+                Reconcile(activity);
             }
             catch (Exception error)
             {
@@ -286,10 +291,13 @@ internal sealed class CapsuleerScheduler(
         {
             if (!_visited.Contains(system))
             {
-                new CapsuleerProvisioner(database, clock).EnsureSystem(system);
+                var prepared = new CapsuleerProvisioner(database, clock).EnsureSystem(system);
                 _visited.Add(system);
-                _loaded = false;
-                Load();
+                if (prepared.CreatedCommunities > 0)
+                {
+                    _loaded = false;
+                    Load();
+                }
             }
         }
         foreach (var state in _systems.Begin(activity.ActiveSystems))
@@ -297,6 +305,7 @@ internal sealed class CapsuleerScheduler(
             if (state.Mode == SystemSimulationMode.Deactivating)
             {
                 _activated.Remove(state.SystemId);
+                _visited.Remove(state.SystemId);
                 Live?.Combat?.ReleaseObserverContacts(state.SystemId);
             }
             if (state.Mode == SystemSimulationMode.Activating)
@@ -390,6 +399,8 @@ internal sealed class CapsuleerScheduler(
             Load();
             var activity = presence.Read();
             Reconcile(activity);
+            // Publish newly prepared metadata before observer frames begin.
+            Load();
             Settle(activity.ElapsedTicks);
         }
     }

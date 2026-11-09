@@ -31,6 +31,59 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
     private const int DestinationStation = 60003760;
 
     [Fact]
+    public void LocalPreparationDoesNotReadUnrelatedSystemPayloads()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/solarsystemcontent','30000144','invalid-unrelated-json')
+                """
+            );
+        }
+        Assert.Equal(1, new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source).CreatedCommunities);
+    }
+
+    [Fact]
+    public void BusyCorridorReceivesTrafficWhileQuietMiningAreaCanHaveOnlyAMiner()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed = 2;
+            world.SaveChanges();
+        }
+        var provisioner = new CapsuleerProvisioner(f.Database, f.Clock);
+        provisioner.EnsureSystem(Source);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            Assert.Equal(CapsuleerCareer.Mining, Assert.Single(world.Set<SavedCapsuleerAgent>()).Career);
+        }
+        AddSystem(f.Database, 31000001);
+        AddSystem(f.Database, 31000002);
+        provisioner.EnsureSystem(Source);
+        using WorldDbContext saved = new(f.Database.Path);
+        Assert.Equal(2, saved.Set<SavedCapsuleerAgent>().Count());
+        Assert.Single(saved.Set<SavedCapsuleerAgent>(), a => a.Career == CapsuleerCareer.Hauling);
+    }
+
+    [Fact]
+    public void MarketWithNoBeltsCanReceiveHaulingWithoutCreatingAMinerOrAsteroids()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed = Destination;
+            world.SaveChanges();
+        }
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination);
+        using WorldDbContext saved = new(f.Database.Path);
+        Assert.Equal(CapsuleerCareer.Hauling, Assert.Single(saved.Set<SavedCapsuleerAgent>()).Career);
+        Assert.Empty(saved.Set<WorldAsteroid>().Where(a => a.SystemId == Destination));
+    }
+
+    [Fact]
     public void UnchangedProvisioningUsesSavedEligibilityWithBoundedDatabaseWork()
     {
         using CapsuleerHaulerTests.Fixture f = new();
@@ -210,7 +263,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
         Assert.Equal(1, resumed.CreatedCommunities);
         Assert.Equal(0, resumed.PendingCommunities);
         using WorldDbContext reopened = new(f.Database.Path);
-        Assert.Equal(6, reopened.Set<SavedCapsuleerAgent>().Count());
+        Assert.Equal(5, reopened.Set<SavedCapsuleerAgent>().Count());
         Assert.Equal(names, reopened.Pilots.Where(p => p.AccountId < 0).OrderBy(p => p.Id).Take(names.Length).Select(p => p.Name));
         Assert.Equal(seed, reopened.Set<SavedCapsuleerProvisioning>().Single().WorldSeed);
         Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination).CreatedCommunities);
@@ -314,6 +367,10 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
 
     internal static void AddDestinationOre(WorldDatabase database)
     {
+        using (WorldDbContext world = new(database.Path))
+        {
+            world.Database.ExecuteSqlRaw("INSERT OR IGNORE INTO WorldCapsuleerProvisioning(Id,WorldSeed) VALUES(1,30000142)");
+        }
         using CatalogDbContext catalog = new(database.CatalogPath, writable: true);
         catalog.Database.ExecuteSqlRaw(
             """

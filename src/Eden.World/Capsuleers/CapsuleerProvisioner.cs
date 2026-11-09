@@ -61,7 +61,10 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 world.SaveChanges();
             }
             seed = state.WorldSeed;
-            homes = world.Set<SavedCapsuleerPopulation>().ToDictionary(c => c.SystemId, c => c.HomeStationId);
+            homes = world
+                .Set<SavedCapsuleerPopulation>()
+                .Where(c => c.SystemId == systemId)
+                .ToDictionary(c => c.SystemId, c => c.HomeStationId);
             transaction.Commit();
         }
         SavedCapsuleerSystem[] saved;
@@ -80,7 +83,15 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
             );
         var origins = reusable ? [] : CapsuleerProvisioningCatalog.Origins(catalog);
         var sites = reusable
-            ? saved.Select(s => new CapsuleerSite(s.SystemId, s.Eligibility, s.HomeStationId, s.DestinationStationId)).ToArray()
+            ? saved
+                .Select(s => new CapsuleerSite(
+                    s.SystemId,
+                    s.Eligibility,
+                    s.HomeStationId,
+                    s.DestinationStationId,
+                    catalog.CelestialsInSystem(s.SystemId).Any(c => c.GroupId == AsteroidDefinitions.BeltGroup)
+                ))
+                .ToArray()
             : CapsuleerProvisioningCatalog.Plan(catalog, enabled, homes, origins.Length != 0, new HashSet<int> { systemId });
         if (!reusable)
         {
@@ -109,6 +120,7 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
         {
             complete = world
                 .Set<SavedCapsuleerAgent>()
+                .Where(a => a.CommunitySystemId == systemId)
                 .GroupBy(a => a.CommunitySystemId)
                 .Where(g => g.Count() == CapsuleerProvisioningRules.FoundersPerCommunity)
                 .Select(g => g.Key)
@@ -152,7 +164,13 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();
             var agents = world.Set<SavedCapsuleerAgent>().Where(a => a.CommunitySystemId == site.SystemId).ToArray();
-            if (agents.Any(a => a.Career == CapsuleerCareer.Mining) && agents.Any(a => a.Career == CapsuleerCareer.Hauling))
+            var careers = CapsuleerEncounterRules.Careers(
+                seed,
+                site.SystemId,
+                catalog.Definitions.GatesInSystem(site.SystemId).Length,
+                site.SupportsMining
+            );
+            if (careers.All(c => agents.Any(a => a.Career == c)))
             {
                 continue;
             }
@@ -163,7 +181,10 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
             }
             // Materialize and validate the real deposits before granting this pair.
             // Existing saved fields are read as-is; Populate never replenishes them.
-            AsteroidFieldStore.Populate(world, catalog, site.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            if (site.SupportsMining)
+            {
+                AsteroidFieldStore.Populate(world, catalog, site.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            }
             world.SaveChanges();
             var available = world
                 .Set<WorldAsteroid>()
@@ -171,7 +192,7 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 .Select(a => a.TypeId)
                 .Distinct()
                 .ToArray();
-            if (!available.Any(type => CapsuleerProvisioningCatalog.SupportedOre(catalog, type)))
+            if (site.SupportsMining && !available.Any(type => CapsuleerProvisioningCatalog.SupportedOre(catalog, type)))
             {
                 world.Set<SavedCapsuleerSystem>().Single(s => s.SystemId == site.SystemId).Eligibility = CapsuleerEligibility.NoUsableOre;
                 world.SaveChanges();
@@ -200,7 +221,7 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 );
                 world.SaveChanges();
             }
-            foreach (var career in new[] { CapsuleerCareer.Mining, CapsuleerCareer.Hauling })
+            foreach (var career in careers)
             {
                 if (agents.Any(a => a.Career == career))
                 {
@@ -328,7 +349,15 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                 .Where(a => a.SystemId == site.SystemId && a.Quantity > 0)
                 .OrderBy(a => a.Id)
                 .Select(a => a.TypeId)
-                .First();
+                .FirstOrDefault();
+            if (ore == 0)
+            {
+                ore = catalog
+                    .Definitions.Items.Values.Where(i => CapsuleerProvisioningCatalog.SupportedOre(catalog, i.Id))
+                    .OrderBy(i => i.Id)
+                    .Select(i => i.Id)
+                    .First();
+            }
             world.Add(
                 new OwnedItem
                 {
@@ -370,7 +399,8 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
             // New encounters can begin midway through their first shift. This is
             // paid once, in the same transaction that creates their owned ship.
             var rocks = world.Set<WorldAsteroid>().Where(a => a.SystemId == site.SystemId && a.Quantity > 0).OrderBy(a => a.Id).ToArray();
-            if (rocks.Length > 0)
+            var openingPhase = CapsuleerEncounterRules.Opening(seed, site.SystemId);
+            if (rocks.Length > 0 && openingPhase != MinerEncounterOpening.Docked)
             {
                 var rock = rocks[(int)(CapsuleerProvisioningRules.Seed(seed, site.SystemId, career) % (ulong)rocks.Length)];
                 const double miningClearance = 750;
@@ -382,17 +412,24 @@ internal sealed class CapsuleerProvisioner(WorldDatabase database, TimeProvider 
                     site.SystemId,
                     now
                 );
-                var cycle = PilotMiningStore.Begin(world, catalog, pilot, module, rock.Id, now);
-                int seconds = checked((int)Math.Ceiling(cycle.Laser.DurationMilliseconds / 1000));
-                work = work with
+                if (openingPhase == MinerEncounterOpening.Returning)
                 {
-                    Activity = MinerActivity.Mining,
-                    TargetId = rock.Id,
-                    CycleSeconds = seconds,
-                    DueStamp = seconds,
-                    DueTicks = elapsed + TimeSpan.FromSeconds(seconds).Ticks,
-                    PaidUntil = now + TimeSpan.FromSeconds(seconds).Ticks,
-                };
+                    work = work with { Activity = MinerActivity.ReadyToReturn };
+                }
+                else
+                {
+                    var cycle = PilotMiningStore.Begin(world, catalog, pilot, module, rock.Id, now);
+                    int seconds = checked((int)Math.Ceiling(cycle.Laser.DurationMilliseconds / 1000));
+                    work = work with
+                    {
+                        Activity = MinerActivity.Mining,
+                        TargetId = rock.Id,
+                        CycleSeconds = seconds,
+                        DueStamp = seconds,
+                        DueTicks = elapsed + TimeSpan.FromSeconds(seconds).Ticks,
+                        PaidUntil = now + TimeSpan.FromSeconds(seconds).Ticks,
+                    };
+                }
             }
             new MinerCheckpoint(pilot, work).Apply(world);
         }

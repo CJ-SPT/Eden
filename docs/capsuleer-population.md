@@ -1,16 +1,16 @@
-# Global capsuleer population
+# Capsuleer encounters
 
 [Documentation index](README.md) / [Implementation evidence](protocol/capsuleers.md#shared-miner-and-hauler-jobs--november-8-2026)
 
-## Observed encounters — November 8, 2026
+## Observed encounters â€” November 8, 2026
 
-The encounter lifecycle supersedes the global autonomous economy below. First human entry prepares local supported mining and hauling encounters. New miners can start a paid cycle at an actual deposit. New haulers receive a finite owned cargo once. Ordinary navigation, gate travel, damage, losses and immutable checkpoints remain authoritative while observed. Multiple observers share one scene and identity.
+The encounter lifecycle supersedes the global autonomous economy below. First human entry prepares local supported mining and hauling encounters. New miners can start docked, returning from a deposit, or in a paid cycle at an actual deposit. New haulers receive a finite owned cargo once. Ordinary navigation, gate travel, damage, losses and immutable checkpoints remain authoritative while observed. Multiple observers share one scene and identity.
 
 Unobserved pilots retain compact progress and owned assets. Their jobs remain dormant. Re-entry rebases remaining activity time without replaying the absence. A witnessed gate transfer can finish once after its source loses its observers. After fifteen human-active minutes, a familiar hauler can reappear at its other connected endpoint, selected deterministically by identity and active hour. Cargo and losses remain saved. Lost ships are never granted again. Entry dispatch has no job-draining barrier.
 
 Startup no longer provisions every eligible catalog system or a first-human founder. Eligibility and new actors are prepared on visits. Existing founder identities, personal orders, assets and paid progress become remembered encounters. Native scenes and loaded role navigation are released when their system becomes unobserved. All saves adopt this lifecycle. The old global-provisioning switch no longer grants a global population.
 
-Initial encounters reuse the supported high-security Venture/Badger cohort and reciprocal station routes. Other systems can remain empty. Regional progressive markets are a separate milestone. Encounter mining and hauling never create or fill market orders.
+Initial encounters reuse the supported high-security Venture/Badger cohort and reciprocal station routes. Systems with three or more gate connections receive a hauler. Half of quieter systems receive a hauler, determined by the saved seed. A connected market system without belts can receive hauling independently of mining. Other systems can remain empty. Regional progressive markets now develop independently. Encounter mining and hauling never create or fill market orders.
 
 See the [implementation and validation record](protocol/capsuleers.md#observed-capsuleer-encounters--november-8-2026).
 

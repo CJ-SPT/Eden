@@ -179,7 +179,11 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
     public IReadOnlyList<int> ProductTypes()
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return catalog
+        return ProductTypes(catalog);
+    }
+
+    internal static IReadOnlyList<int> ProductTypes(CatalogDbContext catalog) =>
+        catalog
             .Definitions.Items.Values.Where(t =>
                 BuildContentPolicy.Current.Manufacturing.HullTypes.Contains(t.Id)
                 || BuildContentPolicy.Current.Manufacturing.UtilityTypes.Contains(t.Id)
@@ -194,7 +198,6 @@ internal sealed class PilotIndustryStore(WorldDatabase database, TimeProvider cl
             .Where(t => SupportedProduct(catalog, t))
             .Select(t => t.Id)
             .ToArray();
-    }
 
     private static bool Active(IndustryJob job) => job.Status == IndustryJobStatus.Installed;
 

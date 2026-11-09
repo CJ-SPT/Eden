@@ -528,6 +528,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         // Defaults preserve the identities previously returned by character selection.
         model.Entity<Account>().Property(a => a.UserName).HasDefaultValue("Eden");
         PersonalMarketSchema.Configure(model);
+        RegionalMarketSchema.Configure(model);
         model.Entity<Account>().Property(a => a.CreatedAt).HasDefaultValue(134000000000000000L);
         model.Entity<Pilot>().Property(p => p.CreatedAt).HasDefaultValue(134000000000000000L);
         model.Entity<Pilot>().Property(p => p.RaceId).HasDefaultValue(1);

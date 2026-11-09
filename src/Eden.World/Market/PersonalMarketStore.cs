@@ -258,6 +258,7 @@ internal sealed partial class PilotMarketStore
         var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
             ? NpcMarketKind.Institutional
             : NpcMarketKind.Development;
+        bool progressive = RegionalMarketStore.Enabled(world);
         var npcs = world
             .Set<NpcMarketOrder>()
             .Where(o =>
@@ -265,7 +266,11 @@ internal sealed partial class PilotMarketStore
                 && o.TypeId == incoming.TypeId
                 && o.Bid != incoming.Bid
                 && o.Issued > cutoff
-                && o.Kind == kind
+                && (
+                    progressive
+                        ? o.Kind == NpcMarketKind.Institutional || o.Kind == NpcMarketKind.Regional && incoming.DurationDays == 0
+                        : o.Kind == kind
+                )
             )
             .ToArray();
         var candidates = personal
@@ -386,6 +391,12 @@ internal sealed partial class PilotMarketStore
             }
             else if (candidate.Npc is { } npc)
             {
+                if (npc.Kind == NpcMarketKind.Regional)
+                {
+                    npc.Remaining -= quantity;
+                    RegionalMarketStore.Requote(world, npc);
+                    continue;
+                }
                 npc.Remaining =
                     npc.Bid ? npc.Remaining - quantity
                     : npc.Kind == NpcMarketKind.Institutional

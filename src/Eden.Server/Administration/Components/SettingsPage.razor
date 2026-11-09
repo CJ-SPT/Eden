@@ -28,6 +28,7 @@ else
         <DataAnnotationsValidator /><ValidationSummary />
         <div class="grid">
             <section class="card"><h2>Economy</h2>
+                <label><InputCheckbox @bind-Value="Form.ProgressiveMarkets" />Progressive regional markets</label>
                 <label><InputCheckbox @bind-Value="Form.ServiceCosts" />Charge service costs</label>
                 <label>Default manufacturing index<InputNumber @bind-Value="Form.ManufacturingIndex" min="0" max="1" step="0.001" /></label>
                 <p class="muted">0.01 means 1%. Service costs require adjusted material prices below.</p>

@@ -113,7 +113,12 @@ public sealed class CapsuleerJobQueue
             candidates.Remove(job);
             _jobs[job.PilotId] = next;
             Enqueue(next);
-            candidates.Add(next);
+            // A witnessed transfer can withdraw its pilot from this turn when
+            // the destination is empty. Its next canonical job stays dormant.
+            if (pilots is null || pilots.Contains(next.PilotId))
+            {
+                candidates.Add(next);
+            }
             completed++;
         }
         long? oldest = candidates.Min is { } pending && pending.DueTicks <= throughTicks ? pending.DueTicks : null;
