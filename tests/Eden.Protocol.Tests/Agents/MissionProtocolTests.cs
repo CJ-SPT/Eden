@@ -12,6 +12,107 @@ namespace Eden.Protocol.Tests.Agents;
 public sealed class MissionProtocolTests
 {
     [Theory]
+    [InlineData("IsCheatingWithAgent", false)]
+    [InlineData("IsCheatingWithAgent", true)]
+    [InlineData("ShouldAlwaysAllowReplay", false)]
+    [InlineData("ShouldAlwaysAllowReplay", true)]
+    public void OpportunitiesThreeDotMenuReadsDisabledCheatsWithoutChangingMissions(string method, bool accepted)
+    {
+        using MissionFixture f = new();
+        string service = $"@agent:{MissionFixture.AgentId}";
+        Assert.False(Assert.IsType<bool>(MissionFixture.Reply(f.Call(service, method, []))));
+        Assert.Empty(f.Missions.Journal(MissionFixture.PilotId));
+        var mission = f.Request();
+        if (accepted)
+        {
+            mission = f.Accept(mission);
+        }
+        for (int cycle = 0; cycle < 2; cycle++)
+        {
+            Assert.False(Assert.IsType<bool>(MissionFixture.Reply(f.Call(service, method, [], new() { ["machoVersion"] = 1L }))));
+        }
+        foreach (object?[] args in new object?[][] { [null], [MissionFixture.PilotId], [false] })
+        {
+            Assert.IsType<PilotCallResult.Failure>(f.Call(service, method, args));
+        }
+        Assert.IsType<PilotCallResult.Failure>(f.Call(service, method, [], new() { ["enabled"] = true }));
+        Assert.IsType<PilotCallResult.Failure>(f.Call($"@agent:{MissionFixture.PilotId}", method, []));
+        Assert.Equal(mission, f.Missions.Current(MissionFixture.PilotId, MissionFixture.AgentId));
+        Assert.Empty(f.Context.Notifications);
+    }
+
+    [Theory]
+    [InlineData(MissionRules.SecurityDivision, false)]
+    [InlineData(MissionRules.SecurityDivision, true)]
+    [InlineData(MissionRules.DistributionDivision, false)]
+    [InlineData(MissionRules.DistributionDivision, true)]
+    public void OpportunitiesObjectiveReadsAcceptNativeKeywordsAndPreserveMissionState(int division, bool accepted)
+    {
+        using MissionFixture f = new(division: division);
+        string service = $"@agent:{MissionFixture.AgentId}";
+        Dictionary<string, object?> keywords = new() { ["ignoreLocateCheck"] = true };
+        Assert.Empty(BlueRead.Fields(MissionFixture.Reply(f.Call(service, "GetMissionObjectiveInfo", [], keywords))));
+        Assert.Empty(f.Missions.Journal(MissionFixture.PilotId));
+        var mission = f.Request();
+        if (accepted)
+        {
+            mission = f.Accept(mission);
+        }
+        var expected = MissionFixture.Reply(f.Call(service, "GetMissionObjectiveInfo", []));
+        var opportunities = MissionFixture.Reply(f.Call(service, "GetMissionObjectiveInfo", [], keywords));
+        Assert.Equal(BlueMarshal.Encode(expected), BlueMarshal.Encode(opportunities));
+        foreach (bool ignoreLocateCheck in new[] { false, true })
+        {
+            foreach (object? character in new object?[] { null, MissionFixture.PilotId })
+            {
+                keywords = new()
+                {
+                    ["ignoreLocateCheck"] = ignoreLocateCheck,
+                    ["charID"] = character,
+                    ["machoVersion"] = 1L,
+                };
+                var native = MissionFixture.Reply(f.Call(service, "GetMissionObjectiveInfo", [], keywords));
+                Assert.Equal(BlueMarshal.Encode(expected), BlueMarshal.Encode(native));
+            }
+        }
+        Assert.Equal(mission, f.Missions.Current(MissionFixture.PilotId, MissionFixture.AgentId));
+        Assert.Empty(f.Context.Notifications);
+    }
+
+    [Fact]
+    public void OpportunitiesObjectiveKeywordsRejectForeignPilotsMalformedValuesAndOtherMethods()
+    {
+        using MissionFixture f = new();
+        var mission = f.Accept(f.Request());
+        string service = $"@agent:{MissionFixture.AgentId}";
+        foreach (
+            var keywords in new Dictionary<string, object?>[]
+            {
+                new() { ["ignoreLocateCheck"] = true, ["charID"] = MissionFixture.PilotId + 1 },
+                new() { ["ignoreLocateCheck"] = true, ["charID"] = MissionFixture.PilotId.ToString() },
+                new() { ["ignoreLocateCheck"] = true, ["charID"] = true },
+                new() { ["ignoreLocateCheck"] = null },
+                new() { ["ignoreLocateCheck"] = 1L },
+                new() { ["ignoreLocateCheck"] = "true" },
+                new() { ["ignoreLocateCheck"] = true, ["reward"] = 1L },
+            }
+        )
+        {
+            Assert.IsType<PilotCallResult.Failure>(f.Call(service, "GetMissionObjectiveInfo", [], keywords));
+        }
+        Dictionary<string, object?> valid = new() { ["ignoreLocateCheck"] = true };
+        foreach (string method in new[] { "DoAction", "GetMissionBriefingInfo", "GetAgentLocationWrap", "RemoveOfferFromJournal" })
+        {
+            Assert.IsType<PilotCallResult.Failure>(f.Call(service, method, [], valid));
+        }
+        Assert.IsType<PilotCallResult.Failure>(f.Call("agentMgr", "GetMyJournalDetails", [], valid));
+        Assert.IsType<PilotCallResult.Failure>(f.Call(service, "GetMissionObjectiveInfo", [MissionFixture.PilotId], valid));
+        Assert.IsType<PilotCallResult.Failure>(f.Call($"@agent:{MissionFixture.PilotId}", "GetMissionObjectiveInfo", [], valid));
+        Assert.Equal(mission, f.Missions.Current(MissionFixture.PilotId, MissionFixture.AgentId));
+        Assert.Empty(f.Context.Notifications);
+    }
+
+    [Theory]
     [InlineData(MissionRules.SecurityDivision)]
     [InlineData(MissionRules.DistributionDivision)]
     public void LegacyTrackerRefreshAndReadsUseNativeShapesWithoutChangingMissionState(int division)

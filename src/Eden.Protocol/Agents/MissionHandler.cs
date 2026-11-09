@@ -48,11 +48,27 @@ internal sealed class MissionHandler(
         }
         try
         {
-            if (keywords is { Count: > 0 })
+            long pilotId = context.Pilot.PilotId;
+            // Build 3662168 Opportunities reads objectives with ignoreLocateCheck=True.
+            // The flag changes no authority: charID must still identify the selected pilot.
+            if (
+                keywords is { Count: > 0 }
+                && (
+                    !bound
+                    || method != "GetMissionObjectiveInfo"
+                    || keywords.Any(pair =>
+                        pair.Key switch
+                        {
+                            "ignoreLocateCheck" => pair.Value is not bool,
+                            "charID" => pair.Value is not null && (pair.Value is not long character || character != pilotId),
+                            _ => true,
+                        }
+                    )
+                )
+            )
             {
                 throw new InvalidDataException("Unexpected mission keyword arguments.");
             }
-            long pilotId = context.Pilot.PilotId;
             if (!bound)
             {
                 return method switch
@@ -74,6 +90,12 @@ internal sealed class MissionHandler(
             if (method == "GetMyJournalDetails" && args.Length == 0)
             {
                 return new MissionJournal(missions.Journal(pilotId, agentId));
+            }
+            if (method is "IsCheatingWithAgent" or "ShouldAlwaysAllowReplay" && args.Length == 0)
+            {
+                // Build 3662168's mission three-dot menu reads both developer flags
+                // before displaying its entries. Eden has no mission cheat overrides.
+                return false;
             }
             if (method == "GetAgentLocationWrap" && args.Length == 0)
             {

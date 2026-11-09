@@ -33,6 +33,8 @@ Historical native observations apply only to the recorded revision and actions. 
 
 ## Record index
 
+- [Opportunities mission details and three-dot menu, November 9, 2026](protocol/agents.md#opportunities-mission-details-and-three-dot-menu--november-9-2026)
+
 - [Mining skill bonus configuration and search, November 9, 2026](protocol/characters.md#mining-skill-bonus-configuration-and-search--november-9-2026)
 
 - [CONCORD overview color during attacks, November 9, 2026](protocol/combat.md#concord-overview-color-during-attacks--november-9-2026)

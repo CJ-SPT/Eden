@@ -2,6 +2,37 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Opportunities mission details and three-dot menu — November 9, 2026
+
+The Opportunities mission details page reported **Unexpected mission keyword arguments** because its objective read uses a named argument that the legacy conversation does not send. Inert inspection of the staged build-3662168 `code.ccp` (current staged archive SHA-256 **051a2f027309aa9e806273200c9f5e969cad8675f49ef97313ff57a6b4549bb9**) confirmed `jobboard/client/features/agent_missions/job.pyj`, `AgentMissionJob._get_objective_info`, calls the bound agent's `GetMissionObjectiveInfo(ignoreLocateCheck=True)`. `FleetMembersAgentMissionJob._get_objective_info` also supplies `charID`. Earlier records retain their historical archive hashes.
+
+The bound objective read now accepts a boolean `ignoreLocateCheck` and optional `charID` equal to the selected pilot or None. Eden already reads its own saved objectives without an agent-location check, so the flag does not change gameplay authorization. Foreign pilot IDs, malformed values, unknown keywords, positional arguments and those keywords on other methods still reject. Reading fleet members' missions remains unsupported. Existing no-keyword conversations, empty objectives before an offer, combat/delivery objectives and committed mission state retain their behavior. No save, reward, Blue codec or Destiny changes are involved.
+
+The tracked mission's **three-dot menu** separately reported **Invalid or unsupported agent mission request**. The same archive's `AgentMissionJob.get_menu` calls `evemissions/client/qa_tools.pyj`, `get_agent_mission_context_menu` / `_get_agent_context_menu`. For developer roles, building this menu immediately calls `Agents.IsCheatingWithAgent(agentID)` and `Agents.ShouldAlwaysAllowReplay(agentID)`; the local service forwards each as a zero-argument bound-agent RPC. Both now return native boolean **False**, matching the absence of Eden mission cheat/replay overrides. Known-agent validation still applies; arguments and service keywords still reject. No cheat mutation or administrative slash command is added.
+
+The [EVE University mission guide](https://wiki.eveuniversity.org/Missions) describes Opportunities mission details and completion tracking. Consulted [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) for native boolean/None/dictionary preservation; mission-specific arguments are established by the pinned client above. The supplied screenshot is evidence of the rejection dialog, not post-fix live acceptance.
+
+### Automated validation
+
+The exact regression filter `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionProtocolTests.OpportunitiesObjectiveReadsAcceptNativeKeywordsAndPreserveMissionState` reproduced the rejection in **4/4 cases** before the fix (build **8.48 seconds**, tests **8.88 seconds**), then passed **4/4** after the fix (build **5.02 seconds**, tests **13.92 seconds**). It covers offered/accepted combat and delivery missions, empty pre-offer reads, native keywords, byte-identical legacy replies and unchanged mission/notification state. Additional rejection coverage checks foreign pilots, malformed values, unknown keywords, invalid agents, positional arguments and other methods.
+
+Before the three-dot-menu follow-up, tool restore, solution restore and solution build passed, with zero warnings/errors and a **4.98-second** build. That focused selection passed **70/70 in 46.76 seconds**:
+
+`FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.AgentDirectoryServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`
+
+The exact menu regression filter `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionProtocolTests.OpportunitiesThreeDotMenuReadsDisabledCheatsWithoutChangingMissions` reproduced both missing status calls in **4/4 cases** before the menu fix (build **7.41 seconds**, tests **16.49 seconds**), then passed **4/4** after the fix (build **4.14 seconds**, tests **22.86 seconds**). It checks no-offer, offered and accepted missions, repeated reads, native False replies, malformed arguments, keywords, invalid agents and unchanged mission/notification state.
+
+Final validation of both fixes passed tool restore, solution restore and solution build (**1.78 seconds**, zero warnings/errors). The focused selection above passed **74/74 in 66.89 seconds**. Both Python policy suites passed (**8 catalog and 9 formatting tests**, **1.56 seconds** together). Formatting, line width, documentation links/anchors and `git diff --check` passed. No full .NET suite was requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native rendering and input remain unverified.
+
+### Optional maintainer checks
+
+- After updating and restarting the server, reopen the tracked mission in Opportunities and confirm its details load without the dialog.
+- Open the tracked mission's three-dot menu and confirm it appears without the unsupported-request dialog.
+
 ## Supported mission content expansion — November 9, 2026
 
 Expanded the ordinary mission pool from **20 to 311 definitions**: **50 combat encounters, 177 ordinary deliveries and 84 delivery storylines**. The [content guide](../missions.md) lists combat families, reconstruction choices and delivery policy. The reproducible [catalog audit](../data/mission-support-3662168.csv) accounts for every one of the **2,892** pinned mission records. Its **2,581** blocked records distinguish specialized lifecycles, chains, missing roster/trigger research, singleton cargo, differing deadlines and known scripting gaps. Missing content remains a blocker even when the engine could represent the eventual verified encounter; this is not a claim that all historical mechanically feasible encounters have been reconstructed.
