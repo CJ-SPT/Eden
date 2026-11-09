@@ -429,6 +429,11 @@ internal sealed record FittingCalculation(
             .Concat(Enum.GetValues<NaniteRepairSkill>().Select(s => (int)s))
             // Drone work/damage skills remain owned by DroneRules.ApplySkills.
             .Concat([(int)DroneSkill.Drones, (int)DroneSkill.DroneAvionics, (int)DroneSkill.AdvancedDroneAvionics])
+            .Concat(
+                catalog
+                    .Definitions.PublishedSkills.Values.Where(skill => skill.UserCreated && !skill.Deleted)
+                    .Select(skill => skill.Definition.TypeId)
+            )
             .Distinct()
             .ToArray();
         var trained = world

@@ -255,6 +255,24 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
         return ticket;
     }
 
+    public void AuthorizeAccess(string access)
+    {
+        using var db = Open();
+        if (
+            Scalar(
+                db,
+                null,
+                "SELECT Id FROM LauncherSession WHERE AccessHash=$h AND AccessExpires>$now AND Revoked=0 AND Expires>$now",
+                ("$h", Hash(access)),
+                ("$now", Now)
+            )
+            is not string
+        )
+        {
+            throw Unauthorized();
+        }
+    }
+
     public long? ConsumeTicket(string ticket)
     {
         using var db = Open();

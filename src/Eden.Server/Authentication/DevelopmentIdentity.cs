@@ -101,7 +101,7 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
             : null;
     }
 
-    internal byte[] SignManifest(string encodedPrefix, string? chatBundleSha256 = null)
+    internal byte[] SignManifest(string encodedPrefix, string? chatBundleSha256 = null, string? skillCodeSha256 = null)
     {
         byte[] prefix;
         try
@@ -117,6 +117,7 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
             throw new LauncherException("invalid_manifest", "Only the original build 3662168 manifest is supported.");
         }
         prefix = ClientManifest.WithChatHash(prefix, chatBundleSha256);
+        prefix = ClientManifest.WithCodeHash(prefix, skillCodeSha256);
         lock (Key)
         {
             using MemoryStream buffer = new();

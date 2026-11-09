@@ -61,6 +61,17 @@
         summary { cursor: pointer; color: var(--accent); }
         .tree { border-left: 2px solid var(--border); margin-left: 10px; padding-left: 14px; }
         .login { max-width: 420px; margin: 80px auto; }
+        fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+        .skill-workspace { display: grid; grid-template-columns: 310px minmax(0, 1fr); gap: 20px; align-items: start; }
+        .skill-workspace .card { margin-top: 0; }
+        .skill-list { display: grid; gap: 6px; max-height: 650px; overflow-y: auto; }
+        .skill-choice { width: 100%; text-align: left; background: var(--background); color: var(--text); border: 1px solid var(--border); }
+        .skill-choice small { color: var(--muted); }
+        .skill-choice.selected { border-color: var(--accent); background: #18372f; }
+        .skill-input-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+        .skill-history { display: flex; gap: 16px; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); }
+        .danger { background: #692d3b; color: #ffe0e5; }
+        @@media (max-width: 900px) { .skill-workspace { grid-template-columns: 1fr; } .skill-input-row { grid-template-columns: 1fr; } }
         .performance-grid { margin-top: 20px; }
         .metric { font-size: 32px; font-weight: 600; margin: 12px 0; font-variant-numeric: tabular-nums; }
         .readings { display: flex; flex-wrap: wrap; gap: 20px 36px; margin: 0; }

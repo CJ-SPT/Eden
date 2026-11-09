@@ -40,6 +40,7 @@ public static class WorldInitialization
         {
             Eden.Gameplay.Economy.EconomicRules.Validate(economics);
         }
+        bool skillsChanged = Eden.World.Skills.SkillPackageActivation.Activate(database);
         if (!File.Exists(database.CatalogPath))
         {
             throw new FileNotFoundException(
@@ -54,6 +55,19 @@ public static class WorldInitialization
             EconomicStore.CheckCatalog(catalog, economics);
         }
         WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics);
+        if (skillsChanged)
+        {
+            world.Set<Eden.Data.World.Market.MarketStation>().ExecuteUpdate(setters => setters.SetProperty(row => row.SeedVersion, 0));
+            int[] retired = database
+                .PublishedSkills.Values.Where(skill => skill.Deleted || !skill.Definition.Published)
+                .Select(skill => skill.Definition.TypeId)
+                .ToArray();
+            world
+                .Set<Eden.Data.World.Market.NpcMarketOrder>()
+                .Where(order => retired.Contains(order.TypeId))
+                .ExecuteUpdate(setters => setters.SetProperty(order => order.Remaining, 0).SetProperty(order => order.Issued, 0));
+            Eden.World.Skills.SkillPackageActivation.CompleteActivation(database);
+        }
         database.LoadTraffic();
         WorldConfigurationStore.Activate(database);
         world.ChangeTracker.Clear();

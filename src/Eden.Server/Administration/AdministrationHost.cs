@@ -63,6 +63,8 @@ internal static class AdministrationHost
         builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
         builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
         builder.Services.AddScoped<AdministrationOperations>();
+        builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.Gameplay.Skills.ISkillEditor>());
+        builder.Services.AddSingleton(worldServices.GetRequiredService<SkillClientPublisher>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerPopulation>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerDiagnostics>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerScene>());
@@ -245,6 +247,37 @@ internal static class AdministrationHost
         );
         api.MapGet("/performance", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Performance(user));
         api.MapGet("/population", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Population(user));
+        api.MapGet("/skills", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Skills(user));
+        api.MapGet("/skills/options", (ClaimsPrincipal user, AdministrationOperations operations) => operations.SkillOptions(user));
+        api.MapGet("/skills/publication", (ClaimsPrincipal user, AdministrationOperations operations) => operations.SkillPublication(user));
+        api.MapGet(
+            "/skills/{id:int}/history",
+            (int id, ClaimsPrincipal user, AdministrationOperations operations) => operations.SkillHistory(user, id)
+        );
+        api.MapPost(
+            "/skills/save",
+            (AdminSkillSave request, ClaimsPrincipal user, AdministrationOperations operations) => operations.SaveSkill(user, request)
+        );
+        api.MapPost(
+            "/skills/create",
+            (AdminSkillSave request, ClaimsPrincipal user, AdministrationOperations operations) =>
+                operations.SaveSkill(user, request, create: true)
+        );
+        api.MapPost(
+            "/skills/{id:int}/restore",
+            (int id, AdminSkillRestore request, ClaimsPrincipal user, AdministrationOperations operations) =>
+                operations.RestoreSkill(user, id, request)
+        );
+        api.MapPost(
+            "/skills/{id:int}/delete",
+            (int id, AdminSkillDelete request, ClaimsPrincipal user, AdministrationOperations operations) =>
+                operations.DeleteSkill(user, id, request.Generation)
+        );
+        api.MapPost(
+            "/skills/publish",
+            (AdminSkillPublish request, ClaimsPrincipal user, AdministrationOperations operations) =>
+                operations.PublishSkills(user, request)
+        );
         api.MapGet("/configuration", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Read(user));
         api.MapGet(
             "/revisions",

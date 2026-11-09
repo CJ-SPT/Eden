@@ -3,7 +3,9 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Skills;
 using Eden.World.Catalog;
+using Eden.World.Skills;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Eden.Server.Administration;
@@ -25,7 +27,7 @@ internal sealed record AdminPopulationSnapshot(
 
 internal sealed record AdminRecordView(CatalogStoredRecord Record, IReadOnlyList<CatalogRelatedRecord> Relationships);
 
-internal sealed class AdministrationOperations(
+internal sealed partial class AdministrationOperations(
     AdministratorAccounts administrators,
     IAuthorizationService authorization,
     IWorldConfiguration configuration,
@@ -34,7 +36,9 @@ internal sealed class AdministrationOperations(
     ServerPerformanceMonitor performance,
     ICapsuleerPopulation population,
     ICapsuleerDiagnostics capsuleers,
-    ICapsuleerScene scene
+    ICapsuleerScene scene,
+    ISkillEditor skillEditor,
+    SkillClientPublisher skillPublisher
 )
 {
     private async Task Authorize(ClaimsPrincipal user)

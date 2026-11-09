@@ -32,6 +32,8 @@ class CatalogAccessPolicyTests(unittest.TestCase):
             self.assertEqual([], scan_code("tests/Fixtures/Example.cs", source))
         self.assertEqual([], scan_code(path, '// catalog.Set<ItemType>()\nvar text = "SourceRecord";'))
         self.assertTrue(scan_code("src/Eden.Server/Launcher/LauncherStore.cs", "SourceRecord raw;"))
+        self.assertEqual([], scan_code("src/Eden.World/Skills/SkillCatalogProjection.cs", "new SqliteConnection(path);"))
+        self.assertTrue(scan_code("src/Eden.World/Skills/OrdinarySkillReader.cs", "new SqliteConnection(path);"))
 
 
 class CatalogPublicationTests(unittest.TestCase):

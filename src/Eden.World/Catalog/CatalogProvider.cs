@@ -9,6 +9,7 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -45,6 +46,8 @@ public sealed partial class CatalogProvider
     private readonly CatalogMemo<int, ImmutableDictionary<DogmaAttributeId, double>> _attributes;
     private readonly CatalogMemo<int, ImmutableArray<DogmaEffect>> _effects;
     private readonly CatalogMemo<int, ImmutableDictionary<int, int>> _skills;
+    private readonly Lazy<ImmutableDictionary<int, PublishedSkillDefinition>> _publishedSkills;
+    internal IReadOnlyDictionary<int, PublishedSkillDefinition> PublishedSkills => _publishedSkills.Value;
     private long _loads;
     private long _hits;
     private long _pinnedRecords;
@@ -186,6 +189,23 @@ public sealed partial class CatalogProvider
         _attributes = new(this, "projection/type-attributes");
         _effects = new(this, "projection/type-effects");
         _skills = new(this, "projection/type-skills");
+        _publishedSkills = new(() =>
+        {
+            var folder = new DirectoryInfo(System.IO.Path.GetDirectoryName(path)!);
+            if (
+                folder.Name.Length != 64
+                || !folder.Name.All(char.IsAsciiHexDigit)
+                || folder.Parent?.Name.EndsWith(".skill-packages", StringComparison.Ordinal) != true
+            )
+            {
+                return ImmutableDictionary<int, PublishedSkillDefinition>.Empty;
+            }
+            string file = System.IO.Path.Combine(folder.FullName, "skills.json");
+            return (
+                JsonSerializer.Deserialize<PublishedSkillDefinition[]>(File.ReadAllText(file), Eden.World.Skills.SkillEditorStore.Json)
+                ?? []
+            ).ToImmutableDictionary(value => value.Definition.TypeId);
+        });
         _startup = timer.Elapsed;
     }
 

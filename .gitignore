@@ -12,6 +12,8 @@ artifacts/
 *.sqlite.owner
 *.sqlite.previous
 *.sqlite.save-*
+*.skills-active*
+*.skill-packages/
 chat-tls.pfx
 *.administrators.json
 *.admin-keys/

@@ -6,7 +6,7 @@ public sealed record SignInRequest(string UserName, string Password, bool Rememb
 
 public sealed record RefreshRequest(string RefreshToken);
 
-public sealed record LaunchRequest(int Build, string ManifestPrefix, string? ChatBundleSha256 = null);
+public sealed record LaunchRequest(int Build, string ManifestPrefix, string? ChatBundleSha256 = null, string? SkillPackageId = null);
 
 public sealed record AccountReply(long AccountId, string UserName, bool Developer = false);
 
@@ -30,7 +30,8 @@ public sealed record ServerReply(
     int ClientBuild,
     string GameAddress,
     string GatewayAddress,
-    string? ChatCertificatePem = null
+    string? ChatCertificatePem = null,
+    Eden.World.Skills.SkillClientPackage? SkillPackage = null
 );
 
 internal sealed class LauncherException(string code, string message, int status = 400) : Exception(message)

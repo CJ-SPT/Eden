@@ -1,6 +1,7 @@
 using System.Net;
 using System.Threading.RateLimiting;
 using Eden.Protocol.Transport;
+using Eden.Server.Administration;
 using Eden.Server.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -16,7 +17,8 @@ internal static class LauncherApi
         LauncherStore accounts,
         DevelopmentIdentity identity,
         TimeProvider clock,
-        string? chatCertificatePem = null
+        string? chatCertificatePem = null,
+        SkillClientPublisher? skillPublisher = null
     )
     {
         settings.Validate();
@@ -89,7 +91,8 @@ internal static class LauncherApi
                     CompatibilityHandshake.Build,
                     settings.GameAddress,
                     settings.GatewayAddress,
-                    chatCertificatePem
+                    chatCertificatePem,
+                    skillPublisher?.Status().Active
                 )
         );
         app.MapPost("/api/v1/accounts", (AccountRequest request) => accounts.Register(request)).RequireRateLimiting("register");
@@ -112,8 +115,18 @@ internal static class LauncherApi
                     {
                         throw new LauncherException("unsupported_build", "This server requires client build 3662168.");
                     }
+                    var package = skillPublisher?.Status().Active;
+                    if (package?.Id != request.SkillPackageId)
+                    {
+                        throw new LauncherException(
+                            "client_update_required",
+                            "Refresh the server and install its current skill package before playing.",
+                            409
+                        );
+                    }
+                    accounts.AuthorizeAccess(Access(context));
+                    byte[] manifest = identity.SignManifest(request.ManifestPrefix, request.ChatBundleSha256, package?.CodeSha256);
                     string ticket = accounts.IssueTicket(Access(context));
-                    byte[] manifest = identity.SignManifest(request.ManifestPrefix, request.ChatBundleSha256);
                     return new LaunchReply(
                         ticket,
                         clock.GetUtcNow().ToUnixTimeSeconds() + LauncherStore.TicketSeconds,
@@ -122,6 +135,22 @@ internal static class LauncherApi
                 }
             )
             .RequireRateLimiting("sign-in");
+        app.MapGet(
+            "/api/v1/skill-packages/{id}/code",
+            (string id, HttpContext context) =>
+            {
+                accounts.AuthorizeAccess(Access(context));
+                if (skillPublisher?.Status().Active?.Id != id)
+                {
+                    throw new LauncherException(
+                        "client_update_required",
+                        "This skill package is not active. Refresh the server information.",
+                        409
+                    );
+                }
+                return Results.File(skillPublisher.ActiveCodePath(id), "application/octet-stream", enableRangeProcessing: false);
+            }
+        );
         return app;
     }
 

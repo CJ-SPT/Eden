@@ -12,6 +12,22 @@ internal static class ClientManifest
     // The separate bin64/cacert.pem entry and all other hashes stay pinned.
     internal const int ChatHashOffset = 1479;
     internal const string OriginalChatHash = "54ABC073292AB1B3EA95361D7E9FBC0FDF3C2B74777F0A4E2B6EC26670F0A453";
+    internal const int CodeHashOffset = 34;
+    internal const string OriginalCodeHash = "37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368";
+
+    internal static byte[] WithCodeHash(byte[] prefix, string? hash)
+    {
+        byte[] result = prefix.ToArray();
+        if (hash is not null)
+        {
+            if (hash.Length != SHA256.HashSizeInBytes * 2 || !hash.All(char.IsAsciiHexDigit))
+            {
+                throw new InvalidDataException("Invalid skill archive hash.");
+            }
+            Convert.FromHexString(hash).CopyTo(result, CodeHashOffset);
+        }
+        return result;
+    }
 
     internal static byte[] ReadOriginalPrefix(byte[] manifest)
     {

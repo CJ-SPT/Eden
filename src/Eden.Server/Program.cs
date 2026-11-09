@@ -228,7 +228,8 @@ internal static class Program
             accounts,
             services.GetRequiredService<DevelopmentIdentity>(),
             TimeProvider.System,
-            services.GetRequiredService<ChatCertificate>().PublicPem
+            services.GetRequiredService<ChatCertificate>().PublicPem,
+            services.GetRequiredService<Eden.Server.Administration.SkillClientPublisher>()
         );
         await using var chat = services.GetRequiredService<ChatServer>();
         await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));

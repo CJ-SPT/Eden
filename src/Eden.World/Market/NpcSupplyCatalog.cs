@@ -22,7 +22,15 @@ internal sealed partial class PilotMarketStore
             .Set<NpcMarketOrder>()
             .Where(o => o.StationId == station.Id && o.Kind == NpcMarketKind.Institutional)
             .ToDictionary(o => (o.TypeId, o.Bid));
-        int[] offered = trades.Where(t => t.Value != 0).Select(t => int.Parse(t.Key, CultureInfo.InvariantCulture)).ToArray();
+        int[] offered = trades
+            .Where(t => t.Value != 0)
+            .Select(t => int.Parse(t.Key, CultureInfo.InvariantCulture))
+            .Union(
+                database
+                    .PublishedSkills.Values.Where(skill => skill.UserCreated && !skill.Deleted && skill.Definition.Published)
+                    .Select(skill => skill.Definition.TypeId)
+            )
+            .ToArray();
         var types = offered.Select(catalog.FittingType).OfType<CatalogItemDefinition>().OrderBy(type => type.Id).ToArray();
         var definitions = types.ToDictionary(type => type.Id, type => catalog.Read(CatalogData.Client.Types, (long)type.Id));
         HashSet<(int TypeId, bool Bid)> eligible = [];
@@ -30,7 +38,7 @@ internal sealed partial class PilotMarketStore
         {
             int typeId = type.Id;
             var definition = definitions.GetValueOrDefault(typeId);
-            bool bid = trades[typeId.ToString(CultureInfo.InvariantCulture)] < 0;
+            bool bid = trades.GetValueOrDefault(typeId.ToString(CultureInfo.InvariantCulture)) < 0;
             if (
                 !RegionalMarketRules.CanUnlock((InventoryCategory)type.CategoryId, type.GroupId, true, true)
                 && type.CategoryId != (int)InventoryCategory.Blueprint
@@ -65,7 +73,9 @@ internal sealed partial class PilotMarketStore
                     typeId,
                     (InventoryCategory)type.CategoryId,
                     definition?.Published == 1,
-                    (decimal)(price ?? 0) / MarketDefinitions.CentsPerIsk,
+                    database.PublishedSkills.TryGetValue(typeId, out var editedSkill) && editedSkill.PriceChanged
+                        ? (decimal)(definition?.BasePrice ?? 0)
+                        : (decimal)(price ?? 0) / MarketDefinitions.CentsPerIsk,
                     definition?.MarketGroupID is > 0
                 )
             );

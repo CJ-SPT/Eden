@@ -17,5 +17,11 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <Content Include="../../tools/Build-SkillClient.py" Link="skill-tools/Build-SkillClient.py" CopyToOutputDirectory="PreserveNewest" />
+    <Content
+      Include="../../tools/skill_client_overlay.py"
+      Link="skill-tools/skill_client_overlay.py"
+      CopyToOutputDirectory="PreserveNewest"
+    />
   </ItemGroup>
 </Project>

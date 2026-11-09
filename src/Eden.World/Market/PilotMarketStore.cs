@@ -170,11 +170,16 @@ internal sealed partial class PilotMarketStore(
         }
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
         long now = Now;
+        int[] retiredSkills = database
+            .PublishedSkills.Values.Where(skill => skill.Deleted || !skill.Definition.Published)
+            .Select(skill => skill.Definition.TypeId)
+            .ToArray();
         // Refresh only stations upgraded to this policy, leaving historical NPC bids finite.
         orders
             .Where(o =>
                 o.Kind == NpcMarketKind.Development
                 && !o.Bid
+                && !retiredSkills.Contains(o.TypeId)
                 && world.Set<MarketStation>().Any(s => s.StationId == o.StationId && s.SeedVersion == TestingMarketRules.SeedVersion)
             )
             .Where(o =>
