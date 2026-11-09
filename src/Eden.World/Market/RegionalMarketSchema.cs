@@ -10,6 +10,7 @@ internal static class RegionalMarketSchema
     {
         model.Entity<SavedRegionalMarketStock>().ToTable("WorldRegionalMarketStock").HasKey(s => s.OrderId);
         model.Entity<SavedRegionalMarketStock>().HasOne<NpcMarketOrder>().WithMany().HasForeignKey(s => s.OrderId);
+        model.Entity<SavedMarketUnlock>().ToTable("WorldMarketUnlock").HasKey(s => s.TypeId);
     }
 
     internal static void Upgrade(WorldDbContext world) =>

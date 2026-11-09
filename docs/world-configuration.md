@@ -19,7 +19,7 @@ Changes affect future operations. Balances, installed jobs and paid costs, quote
 
 ## Progressive regional markets
 
-The Economy card exposes **Progressive regional markets**. Save the setting and restart the host to activate it. The saved `economy.progressiveMarkets` value accepts true or false. An omitted or null value follows the world's supply mode, enabling progression for economy saves and retaining configured development prices for development saves. This switch can be staged on an existing save and preserves personal orders, escrow, balances, inventories and history.
+The Economy card exposes **Progressive regional markets**. Save the setting and restart the host to activate it. The saved `economy.progressiveMarkets` value accepts true or false. An omitted or null value follows the world's supply mode, enabling progression for economy saves and retaining configured development prices for development saves. This switch can be staged on an existing save and preserves personal orders, escrow, balances, inventories and history. Progression now means [claimed-production unlocks](protocol/industry.md#production-driven-market-progression--november-8-2026), rather than timed product unlocks. New server worlds start with testing market supply disabled; `--testing-market` explicitly creates a development market. Existing saves retain their saved supply mode.
 
 Markets use one shared selected-human clock. Economic age and replenishment advance while at least one human pilot is selected, including while docked. Additional humans share the same elapsed interval. Training and installed industry retain their established deadline policies.
 

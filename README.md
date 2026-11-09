@@ -2,7 +2,7 @@
 
 [Capsuleer encounters](docs/capsuleer-population.md) bring persistent ships to stations and gates across New Eden. A busy hub can support five or six home travelers, while a quiet branch can have none. An optional local zKill snapshot supplies real pilot names, varied supported hulls and complete victim fits. Travelers use real station and gate routes, including stationless transit systems. High-security miners work real deposits. Observers share ship identities, movement, damage and losses. Career jobs sleep when the system empties. Regional markets develop independently.
 
-[Progressive regional markets](docs/protocol/industry.md#progressive-regional-markets--november-8-2026) independently develop finite stock and demand on shared human-active playtime. Direct trades cause local shortages, price changes and hauling opportunities. Economy saves enable progression by default; existing development saves can select it in local administration. Personal listings retain their human counterparties.
+[Production-driven regional markets](docs/protocol/industry.md#production-driven-market-progression--november-8-2026) start with catalog NPC offers. A player's claimed manufacturing output permanently unlocks that product for the whole world. Real market snapshots price generated buy/sell orders; each eligible region has one high-security hub, with smaller selections at secondary factories. New server worlds use this market by default; existing development saves can select it in local administration.
 
 
 

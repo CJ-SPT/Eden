@@ -11,6 +11,7 @@
     <EmbeddedResource Include="Exploration/combat-anomaly-encounters-3662168.json" LogicalName="Eden.World.AnomalyEncounters.json" />
     <EmbeddedResource Include="Market/starter-market.json" LogicalName="Eden.Server.Persistence.starter-market.json" />
     <EmbeddedResource Include="Market/loyalty-offers.json" LogicalName="Eden.World.LoyaltyOffers.json" />
+    <EmbeddedResource Include="Market/market-prices.json" LogicalName="Eden.World.MarketSnapshot.json" />
     <EmbeddedResource Include="Fittings/ship-content-roadmap-3662168.json" LogicalName="Eden.World.ShipContentRoadmap.json" />
   </ItemGroup>
 </Project>
