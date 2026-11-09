@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
 using Eden.World.Catalog;
@@ -31,6 +32,7 @@ public sealed partial class SkillEditorStore
         var skills = catalog.Items.Values.Where(item => item.CategoryId == SkillCategory).ToArray();
         var groupIds = skills.Select(skill => (long)skill.GroupId).Distinct().ToArray();
         var groups = catalog.FindMany(CatalogData.Client.Groups, groupIds);
+        var allGroups = catalog.Pin(CatalogData.Client.Groups);
         var types = catalog.FindMany(CatalogData.Client.Types, skills.Select(skill => (long)skill.Id));
         var texts = catalog.FindMany(
             CatalogData.Client.LocalizationFsdEnUs,
@@ -39,13 +41,47 @@ public sealed partial class SkillEditorStore
                 .Concat(effects.Values.SelectMany(value => new[] { value.DisplayNameID, value.DescriptionID }))
                 .Concat(markets.Values.SelectMany(value => new[] { value.NameID, value.DescriptionID }))
                 .Concat(units.Values.SelectMany(value => new[] { value.DisplayNameID, value.DescriptionID }))
-                .Concat(groups.Values.Select(value => value.GroupNameID))
+                .Concat(allGroups.Values.Select(value => value.GroupNameID))
                 .OfType<long>()
         );
         string Text(long? id) => id is long key ? texts.GetValueOrDefault(key)?.Text ?? "" : "";
         string Name(long? id, string? fallback) => Text(id) is { Length: > 0 } text ? text : Humanize(fallback);
         string AttributeName(long? id) =>
             id is long key && attributes.TryGetValue(key, out var value) ? Name(value.DisplayNameID, value.Name) : "Unknown attribute";
+        string Target(ClientDogmaeffectsModifierInfoItem modifier) =>
+            modifier.Func switch
+            {
+                "LocationRequiredSkillModifier" => "fitted items requiring "
+                    + (catalog.Items.GetValueOrDefault((int)(modifier.SkillTypeID ?? 0))?.Name ?? "the selected skill"),
+                "LocationGroupModifier" =>
+                    $"fitted items in {Name(allGroups.GetValueOrDefault(modifier.GroupID ?? 0)?.GroupNameID, $"group {modifier.GroupID}")}",
+                "ItemModifier" when modifier.Domain == "itemID" => "this skill",
+                "ItemModifier" when modifier.Domain == "shipID" => "your ship",
+                _ => $"{modifier.Domain} / {modifier.Func}",
+            };
+        SkillEditorModifier Describe(ClientDogmaeffectsModifierInfoItem modifier)
+        {
+            string source =
+                modifier.ModifyingAttributeID == (int)DogmaAttributeId.SkillLevel
+                    ? "trained skill level"
+                    : AttributeName(modifier.ModifyingAttributeID);
+            string target = $"{AttributeName(modifier.ModifiedAttributeID)} on {Target(modifier)}";
+            string description = (DogmaOperation?)modifier.Operation switch
+            {
+                DogmaOperation.PreMultiply or DogmaOperation.PostMultiply => $"Multiply {target} by {source}.",
+                DogmaOperation.Add => $"Add {source} to {target}.",
+                DogmaOperation.PostPercent => $"Change {target} by {source} percent (25 means +25%; -25 means -25%).",
+                _ => $"{source} changes {target}; this operation cannot be edited here.",
+            };
+            return new(
+                (int)(modifier.ModifyingAttributeID ?? 0),
+                (int)(modifier.ModifiedAttributeID ?? 0),
+                (DogmaOperation)(modifier.Operation ?? 0),
+                modifier.Domain == "itemID" && modifier.Func == "ItemModifier",
+                description,
+                modifier.Domain == "shipID" && modifier.Func == "LocationRequiredSkillModifier" ? (int?)modifier.SkillTypeID : null
+            );
+        }
         string MarketPath(long id)
         {
             List<string> names = [];
@@ -83,26 +119,38 @@ public sealed partial class SkillEditorStore
                             (int)pair.Key,
                             Name(value.DisplayNameID, value.Name),
                             $"{value.Name}. {Text(value.TooltipDescriptionID)} {value.Description} {unitText}".Trim()
-                        );
+                        )
+                        {
+                            DefaultValue = value.DefaultValue ?? 0,
+                        };
                     })
             ),
             Sort(
                 effects.Select(pair => new SkillEditorOption(
                     (int)pair.Key,
-                    Name(pair.Value.DisplayNameID, pair.Value.EffectName),
+                    pair.Value.ModifierInfo is { Length: > 0 } modifiers
+                        ? AttributeName(modifiers[0].ModifiedAttributeID)
+                            + (
+                                modifiers[0].ModifyingAttributeID == (int)DogmaAttributeId.SkillLevel ? " · scale by skill level"
+                                : (DogmaOperation?)modifiers[0].Operation == DogmaOperation.PostPercent
+                                    ? " · percent · " + Target(modifiers[0])
+                                : " · " + Target(modifiers[0])
+                            )
+                        : Name(pair.Value.DisplayNameID, pair.Value.EffectName),
                     pair.Key == SkillLevelEffect
                         ? "Skill level marker; no ship or module bonus."
                         : string.Join(
                             " ",
                             new[] { pair.Value.EffectName, Text(pair.Value.DescriptionID) }.Concat(
-                                (pair.Value.ModifierInfo ?? []).Select(modifier =>
-                                    $"{AttributeName(modifier.ModifyingAttributeID)} → "
-                                    + $"{AttributeName(modifier.ModifiedAttributeID)} ({modifier.Domain})."
-                                )
+                                (pair.Value.ModifierInfo ?? []).Select(modifier => Describe(modifier).Description)
                             )
                         ),
-                    SupportedEffect((int)pair.Key, pair.Value)
-                ))
+                    SupportedEffect((int)pair.Key, pair.Value),
+                    pair.Value.EffectName ?? ""
+                )
+                {
+                    Modifiers = (pair.Value.ModifierInfo ?? []).Select(Describe).ToArray(),
+                })
             ),
             icons
                 .OrderByDescending(pair => iconSkills.ContainsKey(pair.Key))

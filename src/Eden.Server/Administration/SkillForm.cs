@@ -4,7 +4,7 @@ using Eden.Gameplay.Skills;
 
 namespace Eden.Server.Administration;
 
-internal sealed class SkillForm
+public sealed class SkillForm
 {
     public int TypeId { get; set; }
 
@@ -26,25 +26,25 @@ internal sealed class SkillForm
     public List<AttributeInput> Attributes { get; set; } = [];
     public List<EffectInput> Effects { get; set; } = [];
 
-    internal sealed class PrerequisiteInput
+    public sealed class PrerequisiteInput
     {
         public int TypeId { get; set; }
         public int Level { get; set; } = 1;
     }
 
-    internal sealed class AlphaInput
+    public sealed class AlphaInput
     {
         public int RaceId { get; set; }
         public int Level { get; set; }
     }
 
-    internal sealed class AttributeInput
+    public sealed class AttributeInput
     {
         public int AttributeId { get; set; }
         public double Value { get; set; }
     }
 
-    internal sealed class EffectInput
+    public sealed class EffectInput
     {
         public int EffectId { get; set; }
         public bool IsDefault { get; set; }

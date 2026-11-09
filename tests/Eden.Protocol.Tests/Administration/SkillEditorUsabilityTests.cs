@@ -145,6 +145,8 @@ public sealed class SkillEditorUsabilityTests
     public async Task LargeNamedPickersKeepCurrentValuesVisibleWithBoundedEscapedMarkup()
     {
         var options = Enumerable.Range(1, 10000).Select(id => new SkillEditorOption(id, $"Skill {id}", "Find this bonus")).ToArray();
+        string longName = "Long effect " + new string('x', 200) + " unique ending";
+        options[0] = options[0] with { Name = longName };
         Assert.Equal(30, SkillChoiceSearch.Find(options, "", null).Count);
         Assert.Equal(30, SkillChoiceSearch.Find(options, "bonus", null).Count);
         Assert.DoesNotContain(SkillChoiceSearch.Find(options, "", 1), option => option.Id == 1);
@@ -175,6 +177,10 @@ public sealed class SkillEditorUsabilityTests
             Assert.Contains("selected", html);
             Assert.Contains("Search names or descriptions", html);
             Assert.DoesNotContain("Skill 9998", html);
+            string decoded = System.Net.WebUtility.HtmlDecode(html);
+            Assert.Contains($"{longName[..68]}… · 1</option>", decoded);
+            Assert.DoesNotContain($">{longName}</option>", decoded);
+            Assert.Contains($"title=\"{longName}\"", decoded);
         });
     }
 

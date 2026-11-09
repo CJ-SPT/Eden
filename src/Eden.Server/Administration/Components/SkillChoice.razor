@@ -9,15 +9,17 @@
             <option value="">@EmptyLabel</option>
             @if (Selected is { } selected)
             {
-                <option value="@selected.Id">@selected.Name@(!selected.Available ? " (retained)" : "")</option>
+                <option value="@selected.Id" title="@selected.Name">@Caption(selected)@(!selected.Available ? " (retained)" : "")</option>
             }
             @foreach (var option in Matches)
             {
-                <option value="@option.Id">@option.Name</option>
+                <option value="@option.Id" title="@option.Name">@Caption(option)</option>
             }
         </select>
     </label>
-    <label class="muted">Find @Label.ToLowerInvariant()
+    <details class="skill-search">
+    <summary>Find @Label.ToLowerInvariant()</summary>
+    <label class="muted">Search choices
         <input type="search" value="@Search" @oninput="SearchChanged" placeholder="Search names or descriptions…" />
     </label>
     <small class="muted">Showing up to @SkillChoiceSearch.ResultLimit matches. Narrow the search to find more.</small>
@@ -25,9 +27,10 @@
     {
         <p class="muted" role="status">No matching choices. Your current selection is kept.</p>
     }
-    @if (Selected is { Description.Length: > 0 } choice)
+    </details>
+    @if (ShowDescription && Selected is { Description.Length: > 0 } choice)
     {
-        <p class="muted">@choice.Description</p>
+        <p class="muted skill-description">@choice.Description</p>
     }
     @if (Selected is { Available: false })
     {
@@ -39,6 +42,11 @@
     [Parameter, EditorRequired] public IReadOnlyList<SkillEditorOption> Options { get; set; } = [];
     [Parameter, EditorRequired] public string Label { get; set; } = "Choice";
     [Parameter] public string EmptyLabel { get; set; } = "Choose…";
+    [Parameter] public bool ShowDescription { get; set; } = true;
+    [Parameter] public bool IncludeId { get; set; }
+    private string Caption(SkillEditorOption option) =>
+        (option.Name.Length > 72 ? option.Name[..68] + "…" : option.Name)
+            + (IncludeId || option.Name.Length > 72 ? $" · {option.Id}" : "");
     private IReadOnlyList<SkillEditorOption>? PreviousOptions;
     private IReadOnlyDictionary<int, SkillEditorOption> ById = new Dictionary<int, SkillEditorOption>();
     private string Search = "";

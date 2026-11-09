@@ -70,7 +70,7 @@ The native [Trash Item action](docs/protocol/inventory.md#trashing-personal-item
 
 ## Build and run
 
-The local [skill editor](docs/world-configuration.md#skill-editor) edits and restores skill definitions, creates custom skills and stages matching server/client packages. The updated Eden Launcher installs the active signed package before login. Only custom skills can be removed.
+The local [skill editor](docs/world-configuration.md#skill-editor) edits and restores skill definitions, creates custom skills with guided bonus controls and level previews, and stages matching server/client packages. The updated Eden Launcher installs the active signed package before login. Only custom skills can be removed.
 
 Use the SDK pinned in [global.json](global.json), 64-bit Python 3.11 or later, and PowerShell 7 on Windows. Run from the repository root. After a code milestone is stable, validate in this order; select a .NET filter for the affected behavior and immediate dependencies, and stop to investigate a failed step.
 

@@ -30,10 +30,16 @@ public partial class SkillsPage
     private bool Deleting;
     private Func<Task>? DiscardAction;
     private bool Dirty => ExtraDirty || Context?.IsModified() == true;
-    private bool ShowAdvanced;
+    private int EditorTab;
+    private static readonly (int Id, string Name)[] EditorTabs =
+    [
+        (0, "Identity & training"),
+        (1, "Bonuses & effects"),
+        (2, "Requirements & access"),
+    ];
     private IReadOnlyList<SkillEditorOption> PrerequisiteOptions = [];
 
-    private void ToggleAdvanced() => ShowAdvanced = !ShowAdvanced;
+    private void MarkDraftChanged() => ExtraDirty = true;
 
     private async Task<ClaimsPrincipal> User() => (await Authentication.GetAuthenticationStateAsync()).User;
 
@@ -134,7 +140,7 @@ public partial class SkillsPage
         Context = new(Form);
         ExtraDirty = false;
         Deleting = false;
-        ShowAdvanced = false;
+        EditorTab = 0;
         PrerequisiteOptions = Snapshot!
             .Skills.Where(entry => !entry.Deleted && entry.Definition.TypeId != skill.TypeId)
             .Select(entry => new SkillEditorOption(entry.Definition.TypeId, entry.Definition.Name))
@@ -265,30 +271,6 @@ public partial class SkillsPage
     private void RemovePrerequisite(SkillForm.PrerequisiteInput value)
     {
         Form!.Prerequisites.Remove(value);
-        ExtraDirty = true;
-    }
-
-    private void AddAttribute()
-    {
-        Form!.Attributes.Add(new());
-        ExtraDirty = true;
-    }
-
-    private void RemoveAttribute(SkillForm.AttributeInput value)
-    {
-        Form!.Attributes.Remove(value);
-        ExtraDirty = true;
-    }
-
-    private void AddEffect()
-    {
-        Form!.Effects.Add(new());
-        ExtraDirty = true;
-    }
-
-    private void RemoveEffect(SkillForm.EffectInput value)
-    {
-        Form!.Effects.Remove(value);
         ExtraDirty = true;
     }
 }

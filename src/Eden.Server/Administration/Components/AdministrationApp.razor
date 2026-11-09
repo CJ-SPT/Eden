@@ -28,7 +28,7 @@
         nav { display: flex; gap: 22px; margin-left: auto; align-items: center; flex-wrap: wrap; }
         nav a { color: var(--muted); text-decoration: none; padding: 8px 0; }
         nav a.active { color: var(--text); border-bottom: 2px solid var(--accent); }
-        main { max-width: 1240px; margin: 32px auto; padding: 0 24px 60px; }
+        main { max-width: 1480px; margin: 32px auto; padding: 0 24px 60px; }
         h1 { font-size: 28px; margin: 0 0 8px; }
         h2 { font-size: 19px; margin-top: 0; }
         h3 { font-size: 16px; }
@@ -68,10 +68,27 @@
         .skill-choice { width: 100%; text-align: left; background: var(--background); color: var(--text); border: 1px solid var(--border); }
         .skill-choice small { color: var(--muted); }
         .skill-choice.selected { border-color: var(--accent); background: #18372f; }
-        .skill-input-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+        .skill-input-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px auto; gap: 16px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .skill-editor label { margin: 8px 0; }
+        .skill-editor .grid { gap: 8px 20px; align-items: start; }
+        .skill-tabs { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+        .skill-section { padding: 18px 0; border-bottom: 1px solid var(--border); }
+        .skill-section h3 { margin: 0 0 10px; }
+        .skill-lookup { min-width: 0; }
+        .skill-lookup select { max-width: 100%; min-width: 0; text-overflow: ellipsis; }
+        .skill-search { margin: 6px 0; font-size: 13px; }
+        .skill-description, .skill-effect-card small { overflow-wrap: anywhere; line-height: 1.6; }
+        .skill-effect-card { padding: 16px; margin: 16px 0; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+        .skill-effect-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: start; }
+        .skill-effect-heading button { margin-top: 29px; }
+        .skill-recipe, .skill-preview { padding: 16px; background: var(--background); border-radius: 8px; }
+        .skill-recipe p, .skill-preview p { margin: 8px 0 12px; }
+        .skill-preview { margin: 16px 0; }
+        .skill-preview caption { text-align: left; color: var(--muted); }
+        .skill-save-bar { position: sticky; bottom: 0; padding: 14px 0; margin-bottom: 0; background: var(--surface); border-top: 1px solid var(--border); }
         .skill-history { display: flex; gap: 16px; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); }
         .danger { background: #692d3b; color: #ffe0e5; }
-        @@media (max-width: 900px) { .skill-workspace { grid-template-columns: 1fr; } .skill-input-row { grid-template-columns: 1fr; } }
+        @@media (max-width: 900px) { .skill-workspace { grid-template-columns: 1fr; } .skill-input-row, .skill-effect-heading { grid-template-columns: 1fr; } .skill-effect-heading button { margin-top: 0; } }
         .performance-grid { margin-top: 20px; }
         .metric { font-size: 32px; font-weight: 600; margin: 12px 0; font-variant-numeric: tabular-nums; }
         .readings { display: flex; flex-wrap: wrap; gap: 20px 36px; margin: 0; }

@@ -30,8 +30,8 @@
 }
 else
 {
-    <section class="card">
-        <h2>Publish to game clients</h2>
+    <details class="card skill-publication">
+        <summary>Publish saved changes to game clients</summary>
         <p>Save your edits, then build a package. Restart the server to activate it. The launcher installs the matching package before login.</p>
         <p class="muted">Active: @(Publication?.Active is { } active ? $"revision {active.Generation}" : "Original skills") ·
             Pending restart: @(Publication?.Pending is { } pending ? $"revision {pending.Generation}" : "None") · Saved revision @Snapshot.Generation</p>
@@ -40,11 +40,11 @@ else
         </label>
         <p class="muted">Use a build-3662168 copy containing tq and ResFiles. Packaging reads this copy; players receive the package through the launcher.</p>
         <button disabled="@(Busy || Dirty || string.IsNullOrWhiteSpace(ClientRoot))" @onclick="Publish">@(Busy ? "Working…" : "Build and stage package")</button>
-    </section>
+    </details>
     <div class="skill-workspace">
         <SkillBrowser Snapshot="Snapshot" SelectedId="Selected?.Definition.TypeId" Busy="Busy"
                       OnChoose="Choose" OnNew="New" OnReload="Reload" />
-        <section class="card">
+        <section class="card skill-editor">
             @if (Form is null || Context is null)
             {
                 <h2>Choose a skill</h2>
@@ -59,82 +59,91 @@ else
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <fieldset disabled="@(Busy || Selected?.Deleted == true)">
-                        <label>Name <InputText @bind-Value="Form.Name" /></label>
-                        <label>Description <InputTextArea rows="5" @bind-Value="Form.Description" /></label>
-                        <div class="grid">
-                            <SkillChoice TValue="int" Label="Skill group" Options="Options.Groups" @bind-Value="Form.GroupId" />
-                            <label>Skillbook base price (ISK) <InputNumber @bind-Value="Form.BasePrice" min="0" step="any" /></label>
-                            <label>Training multiplier <InputNumber @bind-Value="Form.Rank" min="0.01" max="1000" step="any" /></label>
-                            <label>Primary attribute
-                                <InputSelect @bind-Value="Form.PrimaryAttribute">
-                                    @foreach (var attribute in TrainingAttributes) { <option value="@(attribute.Id)">@(attribute.Name)</option> }
-                                </InputSelect>
-                            </label>
-                            <label>Secondary attribute
-                                <InputSelect @bind-Value="Form.SecondaryAttribute">
-                                    @foreach (var attribute in TrainingAttributes) { <option value="@(attribute.Id)">@(attribute.Name)</option> }
-                                </InputSelect>
-                            </label>
-                        </div>
-                        <label><InputCheckbox @bind-Value="Form.Published" /> Published and available for injection</label>
-                        <h3>Prerequisites</h3>
-                        @foreach (var required in Form.Prerequisites)
-                        {
-                            <div class="skill-input-row" @key="required">
-                                <SkillChoice TValue="int" Label="Required skill" Options="PrerequisiteOptions" @bind-Value="required.TypeId" />
-                                <label>Level <InputNumber @bind-Value="required.Level" min="1" max="5" /></label>
-                                <button type="button" class="secondary" @onclick="() => RemovePrerequisite(required)">Remove prerequisite</button>
-                            </div>
-                        }
-                        <button type="button" class="secondary" disabled="@(Form.Prerequisites.Count >= 6)" @onclick="AddPrerequisite">Add prerequisite</button>
-                        <h3>Alpha training limits</h3>
-                        <p class="muted">Zero requires Omega. Omega skills can train through level V.</p>
-                        <div class="grid">
-                            @foreach (var limit in Form.AlphaLimits)
+                        <div class="skill-tabs" role="group" aria-label="Skill sections">
+                            @foreach (var tab in EditorTabs)
                             {
-                                <label>@RaceName(limit.RaceId) <InputNumber @bind-Value="limit.Level" min="0" max="5" /></label>
+                                <button type="button" id="skill-tab-@tab.Id" aria-controls="skill-panel"
+                                        aria-pressed="@(EditorTab == tab.Id)" class="@(EditorTab == tab.Id ? "selected" : "secondary")"
+                                        @onclick="() => EditorTab = tab.Id">@tab.Name</button>
                             }
                         </div>
-                        <h3>Appearance and bonuses</h3>
-                        <button type="button" class="secondary" aria-expanded="@ShowAdvanced" @onclick="ToggleAdvanced">
-                            @(ShowAdvanced ? "Hide appearance and bonuses" : "Edit appearance and bonuses")
-                        </button>
-                        @if (ShowAdvanced)
+                        <div role="region" id="skill-panel" aria-labelledby="skill-tab-@EditorTab">
+                        @if (EditorTab == 0)
                         {
-                            <div class="grid">
-                                <SkillChoice TValue="int?" Label="Icon" EmptyLabel="No icon" Options="Options.Icons" @bind-Value="Form.IconId" />
-                                <SkillChoice TValue="int?" Label="Market group" EmptyLabel="No market group" Options="Options.MarketGroups" @bind-Value="Form.MarketGroupId" />
-                            </div>
-                            <p class="muted">Search by name or description. Effect details show the attributes used by a bonus. Values use the catalog's stored units.</p>
-                            @if (Selected is { CanEditBonuses: false })
-                            {
-                                <p class="muted">This original skill's bonuses have a dedicated gameplay calculation and are retained.</p>
-                            }
-                            <fieldset disabled="@(Selected is { CanEditBonuses: false })">
-                                <h3>Additional attributes</h3>
-                                @foreach (var attribute in Form.Attributes)
-                                {
-                                    <div class="skill-input-row" @key="attribute">
-                                        <SkillChoice TValue="int" Label="Bonus attribute" Options="Options.Attributes" @bind-Value="attribute.AttributeId" />
-                                        <label>Value <InputNumber @bind-Value="attribute.Value" step="any" /></label>
-                                        <button type="button" class="secondary" @onclick="() => RemoveAttribute(attribute)">Remove attribute</button>
-                                    </div>
-                                }
-                                <button type="button" class="secondary" @onclick="AddAttribute">Add attribute</button>
-                                <h3>Effects</h3>
-                                <p class="muted">Only passive ship and module effects supported by Eden can be added. Existing effects remain visible.</p>
-                                @foreach (var effect in Form.Effects)
-                                {
-                                    <div class="skill-input-row" @key="effect">
-                                        <SkillChoice TValue="int" Label="Bonus effect" Options="Options.Effects" @bind-Value="effect.EffectId" />
-                                        <label><InputCheckbox @bind-Value="effect.IsDefault" /> Default effect</label>
-                                        <button type="button" class="secondary" @onclick="() => RemoveEffect(effect)">Remove effect</button>
-                                    </div>
-                                }
-                                <button type="button" class="secondary" @onclick="AddEffect">Add effect</button>
-                            </fieldset>
+                            <section class="skill-section">
+                                <h3>Skill identity</h3>
+                                <label>Name <InputText @bind-Value="Form.Name" /></label>
+                                <label>Description <InputTextArea rows="4" @bind-Value="Form.Description" /></label>
+                                <p class="muted">Shown to players. Describe the bonus in plain language; this text does not apply the bonus.</p>
+                                <div class="grid">
+                                    <SkillChoice TValue="int" Label="Skill group" Options="Options.Groups" @bind-Value="Form.GroupId" />
+                                    <label>Skillbook base price (ISK) <InputNumber @bind-Value="Form.BasePrice" min="0" step="any" /></label>
+                                </div>
+                                <label><InputCheckbox @bind-Value="Form.Published" /> Published and available for injection</label>
+                            </section>
+                            <section class="skill-section">
+                                <h3>Training speed</h3>
+                                <p class="muted">Primary and secondary attributes are the pilot's learning stats, not bonus values.
+                                    Skill points per minute = primary + half of secondary, before account training modifiers.
+                                    Intelligence, Memory, Perception, Willpower and Charisma work the same way in this formula.</p>
+                                <div class="grid">
+                                    <label>Primary learning attribute
+                                        <InputSelect @bind-Value="Form.PrimaryAttribute">
+                                            @foreach (var attribute in TrainingAttributes) { <option value="@(attribute.Id)">@(attribute.Name)</option> }
+                                        </InputSelect>
+                                    </label>
+                                    <label>Secondary learning attribute
+                                        <InputSelect @bind-Value="Form.SecondaryAttribute">
+                                            @foreach (var attribute in TrainingAttributes) { <option value="@(attribute.Id)">@(attribute.Name)</option> }
+                                        </InputSelect>
+                                    </label>
+                                    <label>Training multiplier (rank) <InputNumber @bind-Value="Form.Rank" min="0.01" max="1000" step="any" /></label>
+                                </div>
+                                <p class="muted">Rank multiplies the skill points needed for every level: rank 5 needs five times rank 1's points.
+                                    It does not multiply the skill's gameplay bonus. Configure that in Bonuses &amp; effects.</p>
+                            </section>
+                            <details class="skill-section">
+                                <summary>Skillbook appearance and market</summary>
+                                <div class="grid">
+                                    <SkillChoice TValue="int?" Label="Icon" EmptyLabel="No icon" Options="Options.Icons" @bind-Value="Form.IconId" />
+                                    <SkillChoice TValue="int?" Label="Market group" EmptyLabel="No market group" Options="Options.MarketGroups" @bind-Value="Form.MarketGroupId" />
+                                </div>
+                            </details>
                         }
-                        <div class="toolbar">
+                        else if (EditorTab == 1)
+                        {
+                            <SkillBonuses Form="Form" Options="Options" Editable="@(Selected is not { CanEditBonuses: false })"
+                                          Changed="MarkDraftChanged" />
+                        }
+                        else
+                        {
+                            <section class="skill-section">
+                                <h3>Prerequisites</h3>
+                                <p class="muted">Skills a pilot must train before this one. These requirements do not grant bonuses.</p>
+                                @foreach (var required in Form.Prerequisites)
+                                {
+                                    <div class="skill-input-row" @key="required">
+                                        <SkillChoice TValue="int" Label="Required skill" Options="PrerequisiteOptions" @bind-Value="required.TypeId" />
+                                        <label>Level <InputNumber @bind-Value="required.Level" min="1" max="5" /></label>
+                                        <button type="button" class="secondary" @onclick="() => RemovePrerequisite(required)">Remove</button>
+                                    </div>
+                                }
+                                <button type="button" class="secondary" disabled="@(Form.Prerequisites.Count >= 6)" @onclick="AddPrerequisite">Add prerequisite</button>
+                            </section>
+                            <section class="skill-section">
+                                <h3>Alpha training limits</h3>
+                                <p class="muted">Highest level an Alpha pilot of each race can train. Zero requires Omega.
+                                    Omega pilots can train through level V.</p>
+                                <div class="grid">
+                                    @foreach (var limit in Form.AlphaLimits)
+                                    {
+                                        <label>@RaceName(limit.RaceId) <InputNumber @bind-Value="limit.Level" min="0" max="5" /></label>
+                                    }
+                                </div>
+                            </section>
+                        }
+                        </div>
+                        <div class="toolbar skill-save-bar">
                             <button type="submit">@(Form.TypeId == 0 ? "Create skill" : "Save skill")</button>
                             <button type="button" class="secondary" @onclick="ResetDraft">Discard draft</button>
                         </div>

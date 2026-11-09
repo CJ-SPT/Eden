@@ -60,7 +60,20 @@ public static class SkillEditingRules
         && left.Effects.OrderBy(value => value.EffectId).SequenceEqual(right.Effects.OrderBy(value => value.EffectId));
 }
 
-public sealed record SkillEditorOption(int Id, string Name, string Description = "", bool Available = true, string SearchTerms = "");
+public sealed record SkillEditorModifier(
+    int SourceAttributeId,
+    int TargetAttributeId,
+    DogmaOperation Operation,
+    bool Local,
+    string Description,
+    int? RequiredSkillId = null
+);
+
+public sealed record SkillEditorOption(int Id, string Name, string Description = "", bool Available = true, string SearchTerms = "")
+{
+    public double DefaultValue { get; init; }
+    public IReadOnlyList<SkillEditorModifier> Modifiers { get; init; } = [];
+}
 
 public sealed record SkillEditorChoices(
     IReadOnlyList<SkillEditorOption> Groups,
