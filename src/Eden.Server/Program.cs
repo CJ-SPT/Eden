@@ -132,6 +132,10 @@ internal static class Program
             }
             Eden.Gameplay.Market.NpcSupplyRules.ValidateStock(npcStock);
         }
+        if (await Eden.Server.Modding.ModCommands.TryRun(args, new WorldDatabase(worldPath)))
+        {
+            return;
+        }
         var options = LauncherOptions.Load(Value("--config"));
         if (args.Contains("--development-login"))
         {
@@ -204,6 +208,7 @@ internal static class Program
             Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
             return;
         }
+        services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
         services.GetRequiredService<CatalogProvider>().PreloadCore();
         int administrationPort = Value("--admin-port") is { } adminPort
             ? int.TryParse(adminPort, out int parsedPort) && parsedPort is > 0 and <= 65535

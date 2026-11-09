@@ -23,7 +23,7 @@ public sealed partial class SkillEditorStore
                 PassiveCatalog.Parse(value, effect.EffectCategory.Value) is { Domain: ModifierDomain.Ship or ModifierDomain.Item }
             );
 
-    private static SkillEditorChoices LoadChoices(WorldDatabase database)
+    public static SkillEditorChoices LoadChoices(WorldDatabase database)
     {
         using var scope = new CatalogConnectionScope().Begin();
         var catalog = CatalogProvider.Open(database.OriginalCatalogPath);

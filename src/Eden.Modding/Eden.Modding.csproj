@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <Description>Versioned Eden mod package and trusted server plugin contracts.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Eden.Gameplay/Eden.Gameplay.csproj" />
+  </ItemGroup>
+</Project>

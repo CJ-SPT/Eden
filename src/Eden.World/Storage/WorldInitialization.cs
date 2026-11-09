@@ -41,7 +41,9 @@ public static class WorldInitialization
         {
             Eden.Gameplay.Economy.EconomicRules.Validate(economics);
         }
-        bool skillsChanged = Eden.World.Skills.SkillPackageActivation.Activate(database);
+        var mods = new Eden.World.Modding.ModStore(database);
+        bool modsChanged = mods.BeginActivation();
+        bool skillsChanged = modsChanged || (!mods.OwnsCatalog && Eden.World.Skills.SkillPackageActivation.Activate(database));
         if (!File.Exists(database.CatalogPath))
         {
             throw new FileNotFoundException(
@@ -70,7 +72,10 @@ public static class WorldInitialization
                 .Set<Eden.Data.World.Market.NpcMarketOrder>()
                 .Where(order => retired.Contains(order.TypeId))
                 .ExecuteUpdate(setters => setters.SetProperty(order => order.Remaining, 0).SetProperty(order => order.Issued, 0));
-            Eden.World.Skills.SkillPackageActivation.CompleteActivation(database);
+            if (!modsChanged)
+            {
+                Eden.World.Skills.SkillPackageActivation.CompleteActivation(database);
+            }
         }
         database.LoadTraffic();
         WorldConfigurationStore.Activate(database);

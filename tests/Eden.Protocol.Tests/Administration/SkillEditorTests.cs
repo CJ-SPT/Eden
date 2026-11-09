@@ -172,7 +172,10 @@ public sealed class SkillEditorTests
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
         byte[] downloaded = await http.GetByteArrayAsync($"skill-packages/{package.Id}/code");
         Assert.Equal(package.CodeSha256, Convert.ToHexString(SHA256.HashData(downloaded)));
-        byte[] prefix = ClientManifest.ReadOriginalPrefix(File.ReadAllBytes(Path.Combine(clientRoot, "tq", "manifest.dat")));
+        byte[] stagedManifest = File.ReadAllBytes(Path.Combine(clientRoot, "tq", "manifest.dat"));
+        // The compiler accepts prepared clients; restore its permitted code-hash edit before checking the pinned prefix.
+        Convert.FromHexString(ClientManifest.OriginalCodeHash).CopyTo(stagedManifest, ClientManifest.CodeHashOffset);
+        byte[] prefix = ClientManifest.ReadOriginalPrefix(stagedManifest);
         using var stale = await http.PostAsJsonAsync("launch-tickets", new LaunchRequest(3662168, Convert.ToBase64String(prefix)));
         Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
         using var launched = await http.PostAsJsonAsync(

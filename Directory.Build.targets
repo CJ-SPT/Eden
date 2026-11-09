@@ -7,13 +7,21 @@
     <PropertyGroup>
       <_EdenRuntimeOnly Condition="'$(MSBuildProjectName)' == 'Eden.Gameplay' Or '$(MSBuildProjectName)' == 'Eden.Infrastructure'"
         >true</_EdenRuntimeOnly>
+      <_EdenRuntimeOnly Condition="'$(MSBuildProjectName)' == 'Eden.Modding'">true</_EdenRuntimeOnly>
     </PropertyGroup>
     <ItemGroup>
+      <_AllowedEdenReference Include="Eden.Gameplay" Condition="'$(MSBuildProjectName)' == 'Eden.Modding'" />
       <_AllowedEdenReference Include="Eden.Gameplay" Condition="'$(MSBuildProjectName)' == 'Eden.Data'" />
-      <_AllowedEdenReference Include="Eden.Data;Eden.Gameplay;Eden.Infrastructure" Condition="'$(MSBuildProjectName)' == 'Eden.World'" />
-      <_AllowedEdenReference Include="Eden.Gameplay;Eden.Infrastructure" Condition="'$(MSBuildProjectName)' == 'Eden.Protocol'" />
       <_AllowedEdenReference
-        Include="Eden.Data;Eden.Gameplay;Eden.Infrastructure;Eden.Protocol;Eden.World"
+        Include="Eden.Data;Eden.Gameplay;Eden.Infrastructure;Eden.Modding"
+        Condition="'$(MSBuildProjectName)' == 'Eden.World'"
+      />
+      <_AllowedEdenReference
+        Include="Eden.Gameplay;Eden.Infrastructure;Eden.Modding"
+        Condition="'$(MSBuildProjectName)' == 'Eden.Protocol'"
+      />
+      <_AllowedEdenReference
+        Include="Eden.Data;Eden.Gameplay;Eden.Infrastructure;Eden.Modding;Eden.Protocol;Eden.World"
         Condition="'$(MSBuildProjectName)' == 'Eden.Server'"
       />
       <_ForbiddenEdenReference Include="@(ProjectReference->'%(Filename)')" />

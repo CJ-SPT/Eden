@@ -26,17 +26,18 @@ public sealed class GameplayDependenciesTests
     [Fact]
     public void WorldAndProtocolReferenceOnlyTheirSharedBoundaries()
     {
-        AssertAdapter(typeof(WorldDatabase).Assembly, "Eden.Data", "Eden.Gameplay", "Eden.Infrastructure");
+        AssertAdapter(typeof(WorldDatabase).Assembly, "Eden.Data", "Eden.Gameplay", "Eden.Infrastructure", "Eden.Modding");
         AssertAdapter(typeof(BlueModel).Assembly);
     }
 
     [Theory]
     [InlineData("Eden.Gameplay", "")]
     [InlineData("Eden.Infrastructure", "")]
+    [InlineData("Eden.Modding", "Eden.Gameplay")]
     [InlineData("Eden.Data", "Eden.Gameplay")]
-    [InlineData("Eden.World", "Eden.Data,Eden.Gameplay,Eden.Infrastructure")]
-    [InlineData("Eden.Protocol", "Eden.Gameplay,Eden.Infrastructure")]
-    [InlineData("Eden.Server", "Eden.Data,Eden.Gameplay,Eden.Infrastructure,Eden.Protocol,Eden.World")]
+    [InlineData("Eden.World", "Eden.Data,Eden.Gameplay,Eden.Infrastructure,Eden.Modding")]
+    [InlineData("Eden.Protocol", "Eden.Gameplay,Eden.Infrastructure,Eden.Modding")]
+    [InlineData("Eden.Server", "Eden.Data,Eden.Gameplay,Eden.Infrastructure,Eden.Modding,Eden.Protocol,Eden.World")]
     public void ProjectReferencesFollowTheDependencyGraphEvenWhenUnused(string project, string allowed)
     {
         DirectoryInfo? root = new(AppContext.BaseDirectory);

@@ -95,6 +95,8 @@ reward stacks. Command discovery, native redemption arguments and the batch-SP t
 
 The native [Trash Item action](docs/protocol/inventory.md#trashing-personal-items-and-ships-november-8-2026) permanently removes personal station items, containers and inactive ships with their contents, including remote personal assets. Active ships, space inventory and assets committed to contracts or industry are protected.
 
+The [modding foundation](docs/modding.md) adds portable mod packages, offline reference export and staged host composition.
+
 ## Build and run
 
 The local [skill editor](docs/world-configuration.md#skill-editor) edits and restores skill definitions, creates custom skills with a bonus builder, target choices, level previews and technical controls, and stages matching server/client packages. The updated Eden Launcher installs the active signed package before login. Only custom skills can be removed.

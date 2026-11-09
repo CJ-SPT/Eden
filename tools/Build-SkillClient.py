@@ -42,7 +42,7 @@ def CloneGradeStorage():
 }
 
 
-def build(root, overlay, output):
+def build(root, overlay, output, mods=None):
     root, overlay, output = root.resolve(), overlay.resolve(), output.resolve()
     if output.is_relative_to(root):
         raise ValueError('Skill package output must be outside the source client')
@@ -117,5 +117,6 @@ if __name__ == '__main__':
     parser.add_argument('--client', type=Path, required=True)
     parser.add_argument('--overlay', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--mods', type=Path)
     args = parser.parse_args()
-    build(args.client, args.overlay, args.output)
+    build(args.client, args.overlay, args.output, args.mods)

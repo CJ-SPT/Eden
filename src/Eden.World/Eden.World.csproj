@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <ProjectReference Include="../Eden.Modding/Eden.Modding.csproj" />
     <ProjectReference Include="../Eden.Data/Eden.Data.csproj" />
     <ProjectReference Include="../Eden.Gameplay/Eden.Gameplay.csproj" />
     <ProjectReference Include="../Eden.Infrastructure/Eden.Infrastructure.csproj" />

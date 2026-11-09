@@ -12,6 +12,8 @@
 | [Saved world configuration](world-configuration.md) | Use the local Blazor editor or commands to browse catalogs, stage settings, compare history and restore revisions. |
 | [Desktop launcher hosting](launcher.md) | Register accounts, configure developer access, host remotely and provision native chat trust. |
 
+[Modding](modding.md) covers portable packages, offline references and host composition.
+
 ## Development
 
 [Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) covers pathfinder history caching, weather baseline replies and simulated search/navigation requests.
