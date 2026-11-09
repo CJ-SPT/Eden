@@ -74,7 +74,7 @@ internal static class NpcMotion
         int destinyStamp
     )
     {
-        if (type.GroupId == NpcEncounterDefinitions.SentryGroup)
+        if (type.GroupId == NpcEncounterDefinitions.SentryGroup || npc.Role == NpcRole.MissionStructure)
         {
             return;
         }
@@ -107,7 +107,7 @@ internal static class NpcMotion
         SpacePosition? orbitDirection = null
     )
     {
-        if (type.GroupId == NpcEncounterDefinitions.SentryGroup)
+        if (type.GroupId == NpcEncounterDefinitions.SentryGroup || npc.Role == NpcRole.MissionStructure)
         {
             npc.Navigation = NpcNavigationState.Idle;
             return;

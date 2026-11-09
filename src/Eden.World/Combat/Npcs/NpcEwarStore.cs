@@ -189,6 +189,7 @@ internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, N
                 && n.DestroyedAt == null
                 && n.RetiredAt == null
                 && n.Navigation != NpcNavigationState.Warping
+                && n.Role != NpcRole.MissionStructure
                 && n.Role != NpcRole.Convoy
                 && n.Role != NpcRole.MiningMiner
                 && n.Role != NpcRole.MiningHauler

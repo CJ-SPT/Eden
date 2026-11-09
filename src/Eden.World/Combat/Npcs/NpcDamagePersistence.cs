@@ -86,7 +86,10 @@ internal static class NpcDamagePersistence
             {
                 world.Remove(aggression);
             }
-            PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
+            if (npc.Role != NpcRole.MissionStructure)
+            {
+                PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
+            }
             npc.DestroyedAt = now;
             NpcPopulationSeeder.RecordKill(world, npc, now);
             Eden.World.Exploration.CombatAnomalyStore.Killed(world, catalog, npc, now);

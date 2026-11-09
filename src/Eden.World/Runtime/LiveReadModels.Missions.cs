@@ -7,7 +7,8 @@ internal sealed partial class LiveReadModels
     private readonly ResidentSnapshot<int, MissionSitesView> _missionSites = new(
         "resident.missionSites",
         "WorldMission",
-        "WorldMissionRoom"
+        "WorldMissionRoom",
+        "WorldMissionStructure"
     );
 
     internal MissionSitesView MissionSites(int systemId, long now, Func<MissionSitesView> load) =>

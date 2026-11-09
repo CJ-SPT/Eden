@@ -275,6 +275,11 @@ internal sealed class FlightScene(
         {
             update(new DestinyCommand.RemoveBall(removed.Id, false));
         }
+        var before = previous.ToDictionary(o => o.Id);
+        foreach (var changed in objects.Where(o => before.TryGetValue(o.Id, out var old) && old != o))
+        {
+            update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+        }
         var added = objects.ExceptBy(previous.Select(o => o.Id), o => o.Id).ToArray();
         if (added.Length > 0)
         {

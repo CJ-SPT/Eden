@@ -94,7 +94,8 @@ public static class LiveSystemMotionRules
                     initial,
                     next.Position,
                     next.Velocity,
-                    npc.Navigation != NpcNavigationState.Warping
+                    npc.Navigation != NpcNavigationState.Warping,
+                    Fixed: npc.Role == NpcRole.MissionStructure
                 )
             );
             moved.Add(next);
@@ -124,7 +125,7 @@ public static class LiveSystemMotionRules
         bool contactsOnly = false
     )
     {
-        if (npc.GroupId == NpcEncounterDefinitions.SentryGroup)
+        if (npc.GroupId == NpcEncounterDefinitions.SentryGroup || npc.Role == NpcRole.MissionStructure)
         {
             return npc with { Velocity = SpacePosition.Zero, Navigation = NpcNavigationState.Idle, MotionAt = now };
         }

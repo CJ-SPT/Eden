@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Flight;
 
@@ -19,6 +20,7 @@ public sealed record StaticSpaceObject(
     public bool IsGlobal { get; init; } = true;
     public string? Name { get; init; }
     public NpcStandingThresholds? StandingThresholds { get; init; }
+    public SpaceContainerState? Container { get; init; }
 }
 
 public interface ISystemObjects

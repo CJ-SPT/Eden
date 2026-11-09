@@ -151,6 +151,17 @@ def export(catalog, output):
     for wave, room in zip(stash['waves'], [18411, 18412]):
         wave['roomId'] = room
 
+    # The catalog retains an empty gate lobby omitted by the single-pocket gameplay report.
+    combat(1226, 1, 500, 'HiddenStash1an', 'EVE University oldid=192015 (2022-08-27 15:59 UTC)', [
+        [group('Gistii Hijacker', 8, 20000, required=False), group('Gistii Hijacker', 4, 25000, required=False)]])
+    hidden = missions[-1]
+    hidden['rooms'] = [dict(roomId=3399, entryObjectId=66426), dict(roomId=3400, entryObjectId=66471)]
+    hidden['gates'] = [dict(fromObjectId=66425, destinationRoomId=3400)]
+    hidden['waves'][0]['roomId'] = 3400
+    hidden['structures'] = [dict(objectId=66472, required=True, completesMission=True,
+                                 drop=dict(typeId=16044, quantity=15)),
+                            *[dict(objectId=oid) for oid in [66431, 66432, 66433, 66434]]]
+
     for level, mid in enumerate([2912, 2913, 2914, 2915], 1):
         missions.append(dict(missionId=mid, level=level, difficulty=500, storyline=False,
                              source='build-3662168 client/missions; Eden courier offer policy', sourceRevision='3662168', waves=[]))

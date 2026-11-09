@@ -1007,6 +1007,76 @@
       ]
     },
     {
+      "missionId": 1226,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://eve-survival.org/?wakka=HiddenStash1an",
+      "sourceRevision": "EVE University oldid=192015 (2022-08-27 15:59 UTC)",
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 8,
+              "range": 20000,
+              "required": false
+            },
+            {
+              "types": [
+                16877
+              ],
+              "count": 4,
+              "range": 25000,
+              "required": false
+            }
+          ],
+          "roomId": 3400
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3399,
+          "entryObjectId": 66426
+        },
+        {
+          "roomId": 3400,
+          "entryObjectId": 66471
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 66425,
+          "destinationRoomId": 3400
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 66472,
+          "required": true,
+          "completesMission": true,
+          "drop": {
+            "typeId": 16044,
+            "quantity": 15
+          }
+        },
+        {
+          "objectId": 66431
+        },
+        {
+          "objectId": 66432
+        },
+        {
+          "objectId": 66433
+        },
+        {
+          "objectId": 66434
+        }
+      ]
+    },
+    {
       "missionId": 2912,
       "level": 1,
       "difficulty": 500,

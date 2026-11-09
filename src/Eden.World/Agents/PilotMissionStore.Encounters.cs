@@ -43,24 +43,39 @@ internal sealed partial class PilotMissionStore
                     var profile = MissionCatalog.Find(catalog, m.MissionId);
                     var position = new SpacePosition(m.X, m.Y, m.Z);
                     var progress = world.Set<SavedMissionRoom>().Where(r => r.MissionId == m.Id).ToDictionary(r => r.RoomId);
-                    int objectIndex = 0;
+                    var indices = profile
+                        .Rooms.SelectMany(r => r.Objects)
+                        .Select((o, index) => KeyValuePair.Create(o.Id, index))
+                        .ToDictionary();
+                    var structures = world.Set<SavedMissionStructure>().Where(s => s.MissionId == m.Id).ToDictionary(s => s.ObjectId);
                     return profile
                         .Rooms.Select(room =>
                         {
                             var objects = room
-                                .Objects.Select(o =>
+                                .Objects.Where(o => !profile.Definition.Structures.Any(s => s.ObjectId == o.Id))
+                                .Select(o =>
                                     o with
                                     {
-                                        Id = SceneObjectId(profile, m.Id, o.Id, objectIndex++),
+                                        Id = SceneObjectId(profile, m.Id, o.Id, indices[o.Id]),
                                         Position = position + o.Position,
                                     }
+                                )
+                                .Concat(
+                                    profile
+                                        .Definition.Structures.Select((definition, index) => KeyValuePair.Create(index, definition))
+                                        .Where(s =>
+                                            s.Value.Drop is not null
+                                            && room.Objects.Any(o => o.Id == s.Value.ObjectId)
+                                            && structures.GetValueOrDefault(s.Value.ObjectId)?.DestroyedAt is not null
+                                        )
+                                        .Select(s => RecoveryContainer(catalog, m, profile, s.Key, structures[s.Value.ObjectId].LootEmpty))
                                 )
                                 .ToArray();
                             var gates = room
                                 .Gates.Select(g =>
                                 {
-                                    int index = Array.FindIndex(room.Objects.ToArray(), o => o.Id == g.ObjectId);
-                                    var item = objects[index];
+                                    long id = SceneObjectId(profile, m.Id, g.ObjectId, indices[g.ObjectId]);
+                                    var item = objects.Single(o => o.Id == id);
                                     var destination = position + profile.Rooms.Single(r => r.Id == g.DestinationRoomId).Position;
                                     return new MissionGate(item.Id, item.Position, item.Radius, destination, g.RequiresClear)
                                     {
@@ -137,6 +152,11 @@ internal sealed partial class PilotMissionStore
             ?? throw new InvalidDataException("Mission NPC has no saved mission.");
         if (mission.State != MissionState.Accepted || Expire(world, mission, now))
         {
+            return;
+        }
+        if (npc.Role == NpcRole.MissionStructure)
+        {
+            StructureKilled(world, catalog, mission, npc, now);
             return;
         }
         var member = world.Set<SavedMissionMember>().Find(npc.Id)!;
@@ -221,7 +241,8 @@ internal sealed partial class PilotMissionStore
         }
         if (decision.Complete)
         {
-            mission.ObjectiveComplete = true;
+            mission.ObjectiveComplete =
+                member.CompletesMission || MissionStructureRules.Complete(true, StructureProgress(world, mission.Id));
         }
     }
 
@@ -307,6 +328,10 @@ internal sealed partial class PilotMissionStore
         }
         var mission = world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId);
         if (mission is null || mission.State != MissionState.Accepted || mission.ExpiresAt <= now)
+        {
+            return [];
+        }
+        if (npc.Role == NpcRole.MissionStructure)
         {
             return [];
         }

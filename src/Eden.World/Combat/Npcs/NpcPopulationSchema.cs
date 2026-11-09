@@ -14,6 +14,7 @@ internal static class NpcPopulationSchema
     {
         Column[] columns =
         [
+            new("Name", "TEXT"),
             new("CorporationId", "INTEGER NOT NULL DEFAULT 1000127"),
             new("FactionId", "INTEGER NOT NULL DEFAULT 500010"),
             new("Role", "INTEGER NOT NULL DEFAULT 0"),

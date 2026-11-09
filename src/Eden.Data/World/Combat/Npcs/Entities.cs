@@ -15,6 +15,7 @@ public sealed class WorldNpc
     public int BeltId { get; set; }
     public int SystemId { get; set; }
     public int TypeId { get; set; }
+    public string? Name { get; set; }
     public int CorporationId { get; set; } = NpcEncounterDefinitions.GuristasCorporation;
     public int FactionId { get; set; }
     public NpcRole Role { get; set; }

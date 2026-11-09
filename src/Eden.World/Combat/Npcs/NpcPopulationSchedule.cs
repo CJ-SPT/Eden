@@ -15,9 +15,13 @@ internal static class NpcPopulationSchedule
         var encounters = world.Set<WorldNpcEncounter>().AsNoTracking().Where(e => e.SystemId == system).ToArray();
         // Guards respawn per slot. Legacy fixture pirates have no encounter row.
         var tracked = encounters.Select(e => e.Id).ToHashSet();
-        // Anomaly losses advance their site's waves. They never use regional
-        // slot respawns, even though their encounter IDs have no regional row.
-        var rows = world.Set<WorldNpc>().AsNoTracking().Where(n => n.SystemId == system && n.AnchorKind != NpcAnchorKind.Anomaly).ToArray();
+        // Authored anomaly and mission losses advance their own objectives. They never
+        // use regional slot respawns, even without a regional encounter row.
+        var rows = world
+            .Set<WorldNpc>()
+            .AsNoTracking()
+            .Where(n => n.SystemId == system && n.AnchorKind != NpcAnchorKind.Anomaly && n.AnchorKind != NpcAnchorKind.Mission)
+            .ToArray();
         long due = long.MaxValue;
         foreach (var encounter in encounters.Where(e => e.Occupied && e.NextSpawnAt != null))
         {

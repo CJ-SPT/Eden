@@ -15,7 +15,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 126;
+    internal const int CurrentVersion = 127;
 
     public static void Open(
         WorldDbContext world,
@@ -116,7 +116,7 @@ internal static class WorldMigration
         }
         Eden.World.Agents.MissionSchema.Upgrade(world);
         ConcordSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=126");
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=127");
         history.Commit();
     }
 }

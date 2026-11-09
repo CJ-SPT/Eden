@@ -216,7 +216,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     private void Hostility(LiveCombatNpc attacked, long shipId, long now)
     {
-        if (attacked.Role == NpcRole.Convoy)
+        if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure)
         {
             return;
         }
