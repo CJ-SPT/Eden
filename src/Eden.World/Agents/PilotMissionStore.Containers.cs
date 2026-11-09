@@ -43,7 +43,7 @@ internal sealed partial class PilotMissionStore
         }
     }
 
-    private sealed record ContainerAccess(Pilot Pilot, StaticSpaceObject Container, int SystemId);
+    private sealed record ContainerAccess(Pilot Pilot, StaticSpaceObject Container, int SystemId, SavedMissionStructure? Structure = null);
 
     private ContainerAccess AccessContainer(WorldDbContext world, CatalogDbContext catalog, long pilotId, long containerId)
     {
@@ -67,7 +67,25 @@ internal sealed partial class PilotMissionStore
         var profile = MissionCatalog.Find(catalog, mission.MissionId);
         if (index >= profile.Definition.Containers.Length)
         {
-            throw new InvalidDataException("This mission container is unavailable.");
+            int structureIndex = index - profile.Definition.Containers.Length;
+            if (structureIndex >= profile.Definition.Structures.Length || profile.Definition.Structures[structureIndex].Drop is null)
+            {
+                throw new InvalidDataException("This mission container is unavailable.");
+            }
+            long source = profile.Definition.Structures[structureIndex].ObjectId;
+            var structure = world.Set<SavedMissionStructure>().SingleOrDefault(s => s.MissionId == missionId && s.ObjectId == source);
+            if (structure?.DestroyedAt is null)
+            {
+                throw new InvalidDataException("Destroy the mission structure before recovering its cargo.");
+            }
+            var recovery = RecoveryContainer(catalog, mission, profile, structureIndex, structure.LootEmpty);
+            MissionContainerRules.Validate(
+                new(position.X, position.Y, position.Z),
+                catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0,
+                recovery,
+                false
+            );
+            return new(pilot, recovery, mission.SystemId, structure);
         }
         var definition = profile.Definition.Containers[index];
         var room = profile.Rooms.Single(r => r.Objects.Any(o => o.Id == definition.ObjectId));
@@ -129,6 +147,11 @@ internal sealed partial class PilotMissionStore
                 (InventoryFlag)request.FlagId
             );
             world.SaveChanges();
+            if (access.Structure is { } structure)
+            {
+                structure.LootEmpty = !world.Set<OwnedItem>().Any(i => i.LocationId == request.SourceId && i.Quantity > 0);
+                world.SaveChanges();
+            }
             transaction.Commit();
             return changes;
         }

@@ -210,6 +210,7 @@ internal sealed partial class PilotMissionStore(
                         );
                     }
                     SeedContainers(world, catalog, row, profile);
+                    SeedStructures(world, catalog, row, profile, now);
                     eventName = "accepted";
                     break;
                 case MissionAction.Complete:

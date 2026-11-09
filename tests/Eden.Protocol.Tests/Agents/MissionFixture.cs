@@ -33,6 +33,7 @@ internal sealed class MissionFixture : IDisposable
     private ServiceProvider? _live;
     private IServiceScope? _scope;
     private PilotCallContext? _context;
+    private readonly bool _combatScene;
     internal IServiceProvider Services => _live ?? Db.Services;
     internal IPilotMissions Missions => Services.GetRequiredService<IPilotMissions>();
     internal PilotCallContext Context => _context ??= CreateContext();
@@ -41,9 +42,11 @@ internal sealed class MissionFixture : IDisposable
         int level = 1,
         int division = MissionRules.DistributionDivision,
         bool live = false,
-        Action<CatalogDbContext>? configure = null
+        Action<CatalogDbContext>? configure = null,
+        bool combatScene = false
     )
     {
+        _combatScene = combatScene;
         Db = new(clock: Clock);
         string path = new WorldDatabase(Db.Path).CatalogPath;
         PassiveCatalogFixture.LoadMissions(path);
@@ -153,7 +156,15 @@ internal sealed class MissionFixture : IDisposable
             1000001,
             pilot.Account,
             [pilot],
-            p => new FlightSession(Db.Store, p, Clock, new(), Db.Objects, missions: Missions),
+            p => new FlightSession(
+                Db.Store,
+                p,
+                Clock,
+                new(),
+                Db.Objects,
+                missions: Missions,
+                encounters: _combatScene ? Services.GetRequiredService<INpcEncounters>() : null
+            ),
             42,
             SignedSettings.Empty
         );
@@ -167,6 +178,13 @@ internal sealed class MissionFixture : IDisposable
         return _scope!
             .ServiceProvider.GetRequiredService<PilotCallRouter>()
             .Call(context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+    }
+
+    internal T Handler<T>()
+        where T : notnull
+    {
+        _ = Context;
+        return _scope!.ServiceProvider.GetRequiredService<T>();
     }
 
     internal static object? Reply(PilotCallResult reply) =>

@@ -40,6 +40,17 @@ public sealed class SavedMissionMember
     public int LootQuantity { get; set; }
 }
 
+public sealed class SavedMissionStructure
+{
+    public long NpcId { get; set; }
+    public long MissionId { get; set; }
+    public long ObjectId { get; set; }
+    public bool Required { get; set; }
+    public bool CompletesMission { get; set; }
+    public long? DestroyedAt { get; set; }
+    public bool LootEmpty { get; set; }
+}
+
 public sealed class SavedMissionGateUnlock
 {
     public long MissionId { get; set; }

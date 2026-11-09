@@ -164,12 +164,13 @@ internal static class MissionCatalog
                 var type = catalog.FittingType(item.TypeID!.Value);
                 bool gate = definition.Gates.Any(g => g.FromObjectId == item.ObjectID);
                 bool container = definition.Containers.Any(c => c.ObjectId == item.ObjectID);
+                bool structure = definition.Structures.Any(s => s.ObjectId == item.ObjectID);
                 if (
                     type is null
-                    || !container && type.CategoryId is not (2 or 25)
+                    || !container && !structure && type.CategoryId is not (2 or 25)
                     || type.GroupId == InvisibleBeaconGroup
                     || item.ObjectID == binding.EntryObjectId
-                    || !gate && !container && item.Entities is { Count: > 0 }
+                    || !gate && !container && !structure && item.Entities is { Count: > 0 }
                 )
                 {
                     continue;
@@ -192,10 +193,10 @@ internal static class MissionCatalog
                         IsGlobal = false,
                         Solid = !gate && type.GroupId is not (CloudGroup or EnvironmentGroup),
                         Name =
-                            container && item.ObjectNameID is long name
+                            (container || structure) && item.ObjectNameID is long name
                                 ? catalog.Read(CatalogData.Client.LocalizationFsdEnUs, name)?.Text
                                 : null,
-                        StandingThresholds = container ? NpcProfileCatalog.ReadStandingThresholds(catalog, type.Id) : null,
+                        StandingThresholds = container || structure ? NpcProfileCatalog.ReadStandingThresholds(catalog, type.Id) : null,
                     }
                 );
             }
@@ -255,6 +256,36 @@ internal static class MissionCatalog
                 throw new InvalidDataException("Mission container has invalid contents or geometry.");
             }
             _ = catalog.RequireItem(container.TypeId);
+        }
+        if (
+            definition.Structures.Length > MissionRules.NpcsPerMission
+            || definition.Structures.Length + definition.Containers.Length > MissionRules.NpcsPerMission
+            || definition.Structures.Select(s => s.ObjectId).Distinct().Count() != definition.Structures.Length
+        )
+        {
+            throw new InvalidDataException("Invalid mission structure identities.");
+        }
+        foreach (var structure in definition.Structures)
+        {
+            var item = rooms.SelectMany(r => r.Objects).SingleOrDefault(o => o.Id == structure.ObjectId);
+            if (
+                item is null
+                || item.GroupId != MissionStructureRules.LargeCollidableStructureGroup
+                || definition.Containers.Any(c => c.ObjectId == structure.ObjectId)
+                || new NpcProfileCatalog().Read(catalog, item.TypeId).Defense.Structure <= 0
+            )
+            {
+                throw new InvalidDataException("A mission structure needs destructible catalog geometry and positive hull health.");
+            }
+            if (structure.Drop is { } drop)
+            {
+                if (drop.TypeId <= 0 || drop.Quantity <= 0)
+                {
+                    throw new InvalidDataException("Invalid mission structure objective drop.");
+                }
+                _ = catalog.RequireItem(drop.TypeId);
+                _ = catalog.RequireItem(MissionStructureRules.RecoveryContainerType);
+            }
         }
         foreach (var group in definition.Waves.SelectMany(w => w.Groups))
         {

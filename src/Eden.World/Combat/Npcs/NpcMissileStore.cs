@@ -38,7 +38,8 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
     {
         int chargeId = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityMissileType));
         if (
-            NpcPopulationRules.IsCivilian(npc.Role)
+            npc.Role == NpcRole.MissionStructure
+            || NpcPopulationRules.IsCivilian(npc.Role)
             || npc.Navigation == NpcNavigationState.Warping
             || chargeId == 0
             || now < aggression.MissileReadyAt

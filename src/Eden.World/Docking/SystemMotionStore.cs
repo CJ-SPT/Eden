@@ -138,7 +138,13 @@ public sealed partial class SqliteWorld
             var effective = effectiveByNpc[npc.Id];
             var aggression = aggressionByNpc.GetValueOrDefault(npc.Id);
             var initialVelocity = velocities[npc.Id];
-            if (npc.Navigation == NpcNavigationState.Warping)
+            if (npc.Role == NpcRole.MissionStructure)
+            {
+                npc.Navigation = NpcNavigationState.Idle;
+                npc.VelocityX = npc.VelocityY = npc.VelocityZ = 0;
+                initialVelocity = SpacePosition.Zero;
+            }
+            else if (npc.Navigation == NpcNavigationState.Warping)
             {
                 // Operation transits use WarpCourse samples and are nonsolid.
                 npc.MotionAt = now;
@@ -187,7 +193,8 @@ public sealed partial class SqliteWorld
                     initialVelocity,
                     NpcMotion.Position(npc),
                     NpcMotion.Velocity(npc),
-                    npc.Navigation != NpcNavigationState.Warping
+                    npc.Navigation != NpcNavigationState.Warping,
+                    Fixed: npc.Role == NpcRole.MissionStructure
                 )
             );
         }

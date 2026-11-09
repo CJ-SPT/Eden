@@ -4,6 +4,7 @@ namespace Eden.Gameplay.Inventory;
 
 public enum InventoryCategory
 {
+    Celestial = 2,
     Station = 3,
     Material = 4,
     Ship = 6,

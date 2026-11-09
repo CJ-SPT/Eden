@@ -21,6 +21,14 @@ internal static class MissionSchema
             .HasForeignKey(m => m.MissionId)
             .OnDelete(DeleteBehavior.Cascade);
         model.Entity<SavedMissionMember>().HasIndex(m => new { m.MissionId, m.Wave });
+        model.Entity<SavedMissionStructure>().ToTable("WorldMissionStructure").HasKey(s => s.NpcId);
+        model
+            .Entity<SavedMissionStructure>()
+            .HasOne<SavedMission>()
+            .WithMany()
+            .HasForeignKey(s => s.MissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+        model.Entity<SavedMissionStructure>().HasIndex(s => new { s.MissionId, s.ObjectId }).IsUnique();
         model.Entity<SavedMissionRoom>().ToTable("WorldMissionRoom").HasKey(r => new { r.MissionId, r.RoomId });
         model.Entity<SavedMissionRoom>().HasOne<SavedMission>().WithMany().HasForeignKey(r => r.MissionId).OnDelete(DeleteBehavior.Cascade);
         model
@@ -71,6 +79,12 @@ internal static class MissionSchema
                 NpcId INTEGER PRIMARY KEY, MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
                 Wave INTEGER NOT NULL, Trigger INTEGER NOT NULL, CompletesMission INTEGER NOT NULL, Required INTEGER NOT NULL);
             CREATE INDEX IF NOT EXISTS IX_WorldMissionMember_MissionId_Wave ON WorldMissionMember(MissionId,Wave);
+            CREATE TABLE IF NOT EXISTS WorldMissionStructure (
+                NpcId INTEGER PRIMARY KEY, MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
+                ObjectId INTEGER NOT NULL, Required INTEGER NOT NULL, CompletesMission INTEGER NOT NULL,
+                DestroyedAt INTEGER, LootEmpty INTEGER NOT NULL);
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldMissionStructure_MissionId_ObjectId
+                ON WorldMissionStructure(MissionId,ObjectId);
             CREATE TABLE IF NOT EXISTS WorldMissionRoom (
                 MissionId INTEGER NOT NULL REFERENCES WorldMission(Id) ON DELETE CASCADE,
                 RoomId INTEGER NOT NULL, Wave INTEGER NOT NULL, PRIMARY KEY(MissionId,RoomId));

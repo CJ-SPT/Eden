@@ -238,6 +238,7 @@ internal sealed class NpcCombatStore(
             || npc is null
             || npc.DestroyedAt.HasValue
             || npc.RetiredAt.HasValue
+            || npc.Role == NpcRole.MissionStructure
             || NpcPopulationRules.IsCivilian(npc.Role)
             || npc.SystemId != system
         )

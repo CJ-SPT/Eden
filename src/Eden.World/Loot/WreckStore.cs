@@ -35,6 +35,10 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
     // bounty debit rolls back the wreck and its contents along with the kill.
     internal static void Create(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, Pilot pilot, long now)
     {
+        if (npc.Role == NpcRole.MissionStructure)
+        {
+            return;
+        }
         var definition = catalog.Read(CatalogData.Client.Types, (long)npc.TypeId);
         var type = definition?.WreckTypeID is long wreckType
             ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)

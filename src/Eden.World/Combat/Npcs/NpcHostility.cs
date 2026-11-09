@@ -20,7 +20,7 @@ internal static class NpcHostility
             NpcMiningSeeder.Alert(world, attacked, shipId, now);
             return;
         }
-        if (attacked.Role == NpcRole.Convoy)
+        if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure)
         {
             return;
         }

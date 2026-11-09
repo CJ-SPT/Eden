@@ -215,6 +215,14 @@ internal static partial class Ballpark
 
     private static SlimItem WriteNpc(BinaryWriter writer, NpcContact npc, int stamp)
     {
+        if (npc.Role == NpcRole.MissionStructure)
+        {
+            // Carbon Thunkers.cpp omits the free-ball fields for rigid mode. Structures
+            // retain their entity slim and damage state while remaining fixed local balls.
+            WriteBallHeader(writer, npc.Id, (byte)NavigationMode.Rigid, npc.Radius, npc.Position, (byte)DestinyBallFlags.Massive);
+            writer.Write((sbyte)-1);
+            return new NpcSlimItem(npc);
+        }
         // Entity ships share the free-ball movement layout with player ships.
         // EntityShip fits its graphics turret from the type catalog.
         var course = npc.Navigation;

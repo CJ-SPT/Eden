@@ -2,6 +2,30 @@
   "build": 3662168,
   "types": [
     {
+      "id": 23,
+      "name": "Cargo Container",
+      "groupId": 12,
+      "groupName": "Cargo Container",
+      "categoryId": 2,
+      "mass": 10000.0,
+      "radius": 14.0,
+      "capacity": 55000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 500.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 5000.0
+        }
+      ]
+    },
+    {
       "id": 185,
       "name": "EMP S",
       "groupId": 83,
@@ -4292,6 +4316,94 @@
       ]
     },
     {
+      "id": 13034,
+      "name": "Power Generator",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 79.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 200.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 1.0
+        },
+        {
+          "id": 251,
+          "value": 3.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 930.0
+        },
+        {
+          "id": 265,
+          "value": 930.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 1.0
+        },
+        {
+          "id": 457,
+          "value": 3.0
+        },
+        {
+          "id": 479,
+          "value": 86400.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 13835,
       "name": "Abandoned Drill - Ruined",
       "groupId": 226,
@@ -5818,6 +5930,94 @@
         {
           "id": 265,
           "value": 1000.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 5.0
+        },
+        {
+          "id": 457,
+          "value": 10.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 16856,
+      "name": "Pressure Silo",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 1226.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10000.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 5.0
+        },
+        {
+          "id": 251,
+          "value": 10.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 500.0
+        },
+        {
+          "id": 265,
+          "value": 5000.0
         },
         {
           "id": 416,
@@ -17137,6 +17337,94 @@
         {
           "id": 456,
           "value": 3.0
+        },
+        {
+          "id": 457,
+          "value": 5.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 17401,
+      "name": "Habitation Module - Roadhouse",
+      "groupId": 319,
+      "groupName": "Large Collidable Structure",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 416.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 1000.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 2.0
+        },
+        {
+          "id": 251,
+          "value": 5.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 250.0
+        },
+        {
+          "id": 265,
+          "value": 500.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 2.0
         },
         {
           "id": 457,
@@ -40652,6 +40940,375 @@
     },
     {
       "dataset": "client/dungeons",
+      "key": 314,
+      "data": {
+        "entryTypeID": 10124,
+        "entryObjectID": 66426,
+        "archetypeID": 20,
+        "connections": [
+          {
+            "fromObjectID": 66425
+          }
+        ],
+        "difficulty": 1,
+        "missionBriefingID": 114978,
+        "rooms": {
+          "3400": {
+            "messageIcon": "",
+            "roomName": "﻿The Hidden Stash",
+            "objects": {
+              "66432": {
+                "typeID": 16856,
+                "groupTag": "default",
+                "objectID": 66432,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 30000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "roll": 0.05595291033387184,
+                "pitch": -2.501280960132135e-09,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -883.0,
+                  "x": 1389.0,
+                  "n_fields": 3,
+                  "z": 3604.0
+                },
+                "yaw": 180.03956604003906,
+                "roomID": 3400,
+                "order": 5
+              },
+              "66433": {
+                "typeID": 13034,
+                "groupTag": "default",
+                "objectID": 66433,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 336.0,
+                  "x": -601.0,
+                  "n_fields": 3,
+                  "z": 3335.0
+                },
+                "roomID": 3400,
+                "order": 6
+              },
+              "66434": {
+                "typeID": 17401,
+                "groupTag": "default",
+                "objectID": 66434,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 30000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 149589,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -955.0,
+                  "x": -217.0,
+                  "n_fields": 3,
+                  "z": 4754.0
+                },
+                "roomID": 3400,
+                "order": 7
+              },
+              "66435": {
+                "typeID": 10783,
+                "groupTag": "default",
+                "objectID": 66435,
+                "yaw": 301.99615478515625,
+                "roll": -64.02787780761719,
+                "radius": 90000.0,
+                "pitch": 19.36712074279785,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -21.0,
+                  "x": 24.0,
+                  "n_fields": 3,
+                  "z": 10300.0
+                },
+                "roomID": 3400,
+                "order": 8
+              },
+              "66436": {
+                "typeID": 10783,
+                "groupTag": "default",
+                "objectID": 66436,
+                "yaw": 83.20475769042969,
+                "roll": 52.12160873413086,
+                "radius": 90000.0,
+                "pitch": 49.1558952331543,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 9424.0,
+                  "x": 114.0,
+                  "n_fields": 3,
+                  "z": -5942.0
+                },
+                "roomID": 3400,
+                "order": 9
+              },
+              "66437": {
+                "typeID": 10783,
+                "groupTag": "default",
+                "objectID": 66437,
+                "yaw": 354.21527099609375,
+                "roll": 26.482036590576172,
+                "radius": 90000.0,
+                "pitch": -13.52808666229248,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -11816.0,
+                  "x": 14.0,
+                  "n_fields": 3,
+                  "z": -5999.0
+                },
+                "roomID": 3400,
+                "order": 10
+              },
+              "66470": {
+                "typeID": 3073,
+                "groupTag": "default",
+                "objectID": 66470,
+                "radius": 30000.0,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3400,
+                "order": 43
+              },
+              "66471": {
+                "typeID": 10124,
+                "groupTag": "default",
+                "objectID": 66471,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 0.0,
+                  "x": -8414.0,
+                  "n_fields": 3,
+                  "z": -8055.0
+                },
+                "roomID": 3400,
+                "order": 44
+              },
+              "66472": {
+                "typeID": 17787,
+                "groupTag": "default",
+                "objectID": 66472,
+                "roll": 0.039587777107954025,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 10000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "objectNameID": 149590,
+                "entities": {
+                  "17376": {
+                    "npcGroupingID": 30956,
+                    "entityID": 17376,
+                    "triggerSpawn": 0,
+                    "objectID": 66472
+                  }
+                },
+                "pitch": 1.5421619536937214e-09,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -956.0,
+                  "x": -1533.0,
+                  "n_fields": 3,
+                  "z": 3413.0
+                },
+                "yaw": 1.730284384393599e-05,
+                "roomID": 3400,
+                "order": 45
+              },
+              "66427": {
+                "typeID": 10140,
+                "groupTag": "default",
+                "objectID": 66427,
+                "objectNameID": 149585,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -542.0,
+                  "x": -391.0,
+                  "n_fields": 3,
+                  "z": 74.0
+                },
+                "roomID": 3400
+              },
+              "66428": {
+                "typeID": 10141,
+                "groupTag": "default",
+                "objectID": 66428,
+                "objectNameID": 149586,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 54.0,
+                  "x": -5.0,
+                  "n_fields": 3,
+                  "z": -845.0
+                },
+                "roomID": 3400,
+                "order": 1
+              },
+              "66429": {
+                "typeID": 10142,
+                "groupTag": "default",
+                "objectID": 66429,
+                "objectNameID": 149587,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 1041.0,
+                  "x": 371.0,
+                  "n_fields": 3,
+                  "z": 845.0
+                },
+                "roomID": 3400,
+                "order": 2
+              },
+              "66430": {
+                "typeID": 10143,
+                "groupTag": "default",
+                "objectID": 66430,
+                "objectNameID": 149588,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -1931.0,
+                  "x": 3772.0,
+                  "n_fields": 3,
+                  "z": 3854.0
+                },
+                "roomID": 3400,
+                "order": 3
+              },
+              "66431": {
+                "typeID": 16729,
+                "groupTag": "default",
+                "objectID": 66431,
+                "guardCommand": {
+                  "entityMaxRespawnDelay": 86400,
+                  "objectMinRespawnDelay": 86400,
+                  "entitySpawnOnce": 0,
+                  "entityMinRespawnDelay": 86400,
+                  "objectMaxRespawnDelay": 86400,
+                  "aggressionRange": 80000.0,
+                  "orbitRange": 1500.0,
+                  "objectDelaySpawn": 0,
+                  "entityDelaySpawn": 0,
+                  "objectTriggerSpawn": 0
+                },
+                "entities": {
+                  "17375": {
+                    "npcGroupingID": 27651,
+                    "entityID": 17375,
+                    "triggerSpawn": 0,
+                    "objectID": 66431
+                  }
+                },
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -919.0,
+                  "x": -201.0,
+                  "n_fields": 3,
+                  "z": 3597.0
+                },
+                "roomID": 3400,
+                "order": 4
+              }
+            },
+            "y": 0,
+            "x": 1,
+            "shortName": "Room1",
+            "z": 0
+          },
+          "3399": {
+            "messageIcon": "",
+            "roomName": "﻿Forward Point",
+            "objects": {
+              "66425": {
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": -750.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "groupTag": "default",
+                "roomID": 3399,
+                "objectID": 66425,
+                "typeID": 17831
+              },
+              "66426": {
+                "typeID": 10124,
+                "groupTag": "default",
+                "objectID": 66426,
+                "position": {
+                  "n_sequence_fields": 3,
+                  "n_unnamed_fields": 0,
+                  "y": 750.0,
+                  "x": 0.0,
+                  "n_fields": 3,
+                  "z": 0.0
+                },
+                "roomID": 3399,
+                "order": 1
+              }
+            },
+            "y": 0,
+            "x": 0,
+            "shortName": "Entrance",
+            "z": 0
+          }
+        },
+        "factionID": 500011,
+        "useDefaultSpaceMusic": 0,
+        "dungeonNameID": 113341,
+        "dungeonID": 314
+      }
+    },
+    {
+      "dataset": "client/dungeons",
       "key": 558,
       "data": {
         "entryTypeID": 10124,
@@ -48404,6 +49061,16 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 54370,
+      "data": {
+        "language": "en-us",
+        "text": "The Hidden Stash",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 54654,
       "data": {
         "language": "en-us",
@@ -48689,6 +49356,25 @@
         "text": "I have taken care of the little pest.  Now hand me my reward.",
         "metadata": null,
         "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 127603,
+      "data": {
+        "language": "en-us",
+        "text": "We have reason to believe that the owner of a certain warehouse located in a remote area of space in {[location]dungeonLocationID.name} is secretly collaborating with the Cartel.  We haven't been able to pin anything on him yet, but I have my orders to launch a full scale investigation.  I want you to personally see to it that his property is thoroughly searched from top to bottom.  Retrieve any suspicious looking goods that you find there and bring them back here.  If you see any Angel activity in the area, then I expect you to neutralize it immediately, let none escape.",
+        "metadata": null,
+        "tokens": {
+          "{[location]dungeonLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "dungeonLocationID"
+          }
+        }
       }
     },
     {
@@ -49961,6 +50647,26 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 149589,
+      "data": {
+        "language": "en-us",
+        "text": "Habitation Module",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 149590,
+      "data": {
+        "language": "en-us",
+        "text": "Warehouse",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 153468,
       "data": {
         "language": "en-us",
@@ -50095,6 +50801,25 @@
           "objectiveQuantity": 0
         },
         "nameID": 54287
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 1226,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicKillMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.briefing": 127603
+        },
+        "fixedLpRewardOmega": 0,
+        "killMission": {
+          "dungeonID": 314,
+          "objectiveTypeID": 16044,
+          "objectiveQuantity": 15
+        },
+        "nameID": 54370
       }
     },
     {
@@ -51237,6 +51962,16 @@
     },
     {
       "dataset": "client/spacecomponentsbytype",
+      "key": 13034,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
       "key": 16729,
       "data": {
         "entityStandings": {
@@ -51358,6 +52093,16 @@
     {
       "dataset": "client/spacecomponentsbytype",
       "key": 16848,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 16856,
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": -11.0,
@@ -51688,6 +52433,16 @@
     {
       "dataset": "client/spacecomponentsbytype",
       "key": 17395,
+      "data": {
+        "entityStandings": {
+          "hostileResponseThreshold": -11.0,
+          "friendlyResponseThreshold": 11.0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 17401,
       "data": {
         "entityStandings": {
           "hostileResponseThreshold": -11.0,
@@ -52303,6 +53058,27 @@
           "hostileResponseThreshold": -11.0,
           "friendlyResponseThreshold": 11.0
         }
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 23,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 500.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 5000.0
+          }
+        ],
+        "dogmaEffects": []
       }
     },
     {
@@ -56652,6 +57428,91 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 13034,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 200.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 1.0
+          },
+          {
+            "attributeID": 251,
+            "value": 3.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 930.0
+          },
+          {
+            "attributeID": 265,
+            "value": 930.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 1.0
+          },
+          {
+            "attributeID": 457,
+            "value": 3.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 13835,
       "data": {
         "dogmaAttributes": [
@@ -58134,6 +58995,91 @@
           {
             "attributeID": 265,
             "value": 1000.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 5.0
+          },
+          {
+            "attributeID": 457,
+            "value": 10.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 16856,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 5.0
+          },
+          {
+            "attributeID": 251,
+            "value": 10.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 500.0
+          },
+          {
+            "attributeID": 265,
+            "value": 5000.0
           },
           {
             "attributeID": 416,
@@ -69699,6 +70645,91 @@
           {
             "attributeID": 456,
             "value": 3.0
+          },
+          {
+            "attributeID": 457,
+            "value": 5.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 17401,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 2.0
+          },
+          {
+            "attributeID": 251,
+            "value": 5.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 250.0
+          },
+          {
+            "attributeID": 265,
+            "value": 500.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 2.0
           },
           {
             "attributeID": 457,
@@ -88052,6 +89083,25 @@
     },
     {
       "dataset": "client/types",
+      "key": 23,
+      "data": {
+        "descriptionID": 79830,
+        "typeID": 23,
+        "graphicID": 1176,
+        "capacity": 55000.0,
+        "typeNameID": 67726,
+        "iconID": 16,
+        "published": 0,
+        "radius": 14.0,
+        "volume": 55000.0,
+        "mass": 10000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 12
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 185,
       "data": {
         "descriptionID": 86603,
@@ -89791,6 +90841,25 @@
     },
     {
       "dataset": "client/types",
+      "key": 13034,
+      "data": {
+        "descriptionID": 80279,
+        "typeID": 13034,
+        "graphicID": 1684,
+        "capacity": 10000.0,
+        "typeNameID": 68730,
+        "published": 0,
+        "radius": 79.0,
+        "volume": 100000000.0,
+        "soundID": 20178,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 13835,
       "data": {
         "descriptionID": 83808,
@@ -90290,6 +91359,24 @@
         "typeNameID": 72747,
         "published": 0,
         "radius": 3103.0,
+        "volume": 100000000.0,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 16856,
+      "data": {
+        "descriptionID": 83545,
+        "typeID": 16856,
+        "graphicID": 2007,
+        "capacity": 10000.0,
+        "typeNameID": 72591,
+        "published": 0,
+        "radius": 1226.0,
         "volume": 100000000.0,
         "mass": 100000.0,
         "basePrice": 0.0,
@@ -91072,6 +92159,24 @@
         "typeNameID": 72597,
         "published": 0,
         "radius": 379.0,
+        "volume": 100000000.0,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 319
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 17401,
+      "data": {
+        "descriptionID": 83379,
+        "typeID": 17401,
+        "graphicID": 2521,
+        "capacity": 10000.0,
+        "typeNameID": 72410,
+        "published": 0,
+        "radius": 416.0,
         "volume": 100000000.0,
         "mass": 100000.0,
         "basePrice": 0.0,
@@ -93089,6 +94194,41 @@
           "ko": "해적 소탕",
           "ru": "Уничтожить досаждающих пиратов (Eliminate a Pirate Nuisance)",
           "zh": "恼人的海盗"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 1226,
+      "data": {
+        "hasStandingRewards": true,
+        "killMission": {
+          "dungeonID": 314,
+          "objectiveQuantity": 15,
+          "objectiveTypeID": 16044
+        },
+        "messages": [
+          {
+            "_key": "messages.mission.briefing",
+            "de": "Wir haben Grund zur Annahme, dass der Besitzer eines gewissen Warenlagers, das sich in einem entfernten Gebiet im Raum von {[location]dungeonLocationID.name} befindet, insgeheim mit dem Angel Cartel zusammenarbeitet. Wir sind bisher nicht in der Lage gewesen, ihm etwas anhängen zu können, aber ich habe den Befehl, eine umfassende Untersuchung einzuleiten. Ich möchte, dass Sie persönlich ein Auge darauf haben, dass sein gesamter Besitz sorgfältig von oben bis unten durchsucht wird. Stellen Sie alle verdächtig aussehenden Waren, die Sie dort finden, sicher und bringen Sie sie hierher zurück. Wenn Sie in dem Gebiet irgendeine Angel-Aktivität feststellen, erwarte ich von Ihnen, dass Sie diese umgehend neutralisieren. Lassen Sie niemanden entkommen.",
+            "en": "We have reason to believe that the owner of a certain warehouse located in a remote area of space in {[location]dungeonLocationID.name} is secretly collaborating with the Cartel.  We haven't been able to pin anything on him yet, but I have my orders to launch a full scale investigation.  I want you to personally see to it that his property is thoroughly searched from top to bottom.  Retrieve any suspicious looking goods that you find there and bring them back here.  If you see any Angel activity in the area, then I expect you to neutralize it immediately, let none escape.",
+            "es": "Creemos que el propietario de un almacén situado en una zona remota del espacio en {[location]dungeonLocationID.name} colabora en secreto con el Cártel de los Ángeles. Todavía no tenemos nada en su contra, pero me han ordenado abrir una investigación a gran escala. Quiero que te ocupes personalmente de registrar la propiedad de arriba a abajo. Recupera cualquier objeto sospechoso que encuentres y tráelo de vuelta. Si detectas actividad de los Ángeles en las inmediaciones, córtala de raíz y no dejes que nadie escape.",
+            "fr": "Nous pensons que le propriétaire d'un entrepôt situé dans un secteur éloigné de l'espace, dans {[location]dungeonLocationID.name}, collabore en secret avec le cartel.  Nous ne sommes pas encore parvenus à le localiser, mais j'ai reçu l'ordre de lancer une enquête tous azimuts.  Je tiens à ce que vous passiez personnellement sa propriété au peigne fin.  Récupérez les marchandises suspectes que vous y trouveriez et ramenez-les-moi.  Au moindre signe d'activité du cartel angel dans cette zone, vous devrez aussitôt faire le ménage. Pas un ne doit vous échapper.",
+            "ja": "{[location]dungeonLocationID.name}の辺境にある倉庫の所有者が、裏でエンジェルカルテルと共謀していることは確かだろう。動かぬ証拠を突き付けるまでには至ってないが、ここにきて全面調査に乗り出すことになった。君には単独で動いてもらい、やつの所有地をしらみつぶしに捜索して欲しい。不審物があればその場で押収して持ち帰るんだ。付近でエンジェルカルテルの活動に気付いたら、速やかに制圧してもらいたい。取り逃がしてはならんぞ。",
+            "ko": "{[location]dungeonLocationID.name} 외딴 곳에 물류창고가 있는데, 그곳 주인이 카르텔과 몰래 거래를 하고 있다는 정보가 입수되었습니다. 확실한 증거는 없으나, 상부에서 그곳을 철저히 조사할 것을 요청했습니다. 당신이 직접 물류창고로 가서 상태를 확인해주십시오. 수상한 물건이 있다면 회수하시고, 엔젤 카르텔을 발견하면 전부 처치하세요.",
+            "ru": "У нас есть основания полагать, что владелец одного склада в удаленной области пространства в {[location]dungeonLocationID.name} тайно сотрудничает с пиратами Картеля Angel. На данный момент мы не можем предъявить доказательства, но я отдал приказ о проведении крупномасштабного расследования. Я хочу, чтобы вы лично проконтролировали процесс расследования, и чтобы его владения были обысканы со всей тщательностью. Доставьте мне любые подозрительные товары, найденные там. Если вы обнаружите какие-либо признаки деятельности Angel в области, я хочу, чтобы вы немедленно расправились с ними и не дали никому уйти.",
+            "zh": "我们有理由相信{[location]dungeonLocationID.name}边远地区一个库房的主人和天使企业联合体有秘密勾结。我们暂时还没有任何证据，但是我接到命令进行全面调查。我希望你亲自去把他的仓库查个底朝天。把在那里找到的任何可疑物品都带回来。如果你在那里附近发现有天使活动，就立刻干掉他们，一个都不要放走。"
+          }
+        ],
+        "name": {
+          "de": "Die versteckte Ladung",
+          "en": "The Hidden Stash",
+          "es": "El alijo oculto",
+          "fr": "La réserve cachée",
+          "ja": "秘密の隠し場所",
+          "ko": "비밀 은닉품",
+          "ru": "Тайник (The Hidden Stash)",
+          "zh": "隐蔽的储藏点"
         }
       }
     },

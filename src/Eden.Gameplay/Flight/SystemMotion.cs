@@ -85,6 +85,10 @@ public static class ShipCollisions
 
     private static CollisionResult ResolveOne(CollisionMotion ship, IEnumerable<CollisionMotion> others)
     {
+        if (ship.Fixed)
+        {
+            return new(ship.Id, ship.Position, SpacePosition.Zero, false);
+        }
         double lastTime = -1;
         var correction = SpacePosition.Zero;
         foreach (var other in others)

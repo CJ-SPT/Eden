@@ -412,7 +412,7 @@ internal sealed partial class LiveCombatRuntime
             Mass = type.Mass ?? 0,
             GroupId = type.GroupId,
             CategoryId = type.CategoryId,
-            Name = type.Name,
+            Name = npc.Name ?? type.Name,
             StandingThresholds = profile.StandingThresholds,
             MissileRange = missileRange,
             RepairProfile = NpcRepairRules.Profile(attributes),

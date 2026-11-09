@@ -154,7 +154,7 @@ internal sealed class NpcEncounterStore(
                         type.GroupId,
                         type.CategoryId,
                         n.CorporationId,
-                        type.Name,
+                        n.Name ?? type.Name,
                         systemId,
                         new(n.X, n.Y, n.Z),
                         type.Mass ?? 0,

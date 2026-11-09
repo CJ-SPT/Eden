@@ -81,6 +81,11 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.Container is { } container)
+        {
+            fields["isEmpty"] = container.Empty;
+            fields["lootRights"] = new object?[] { container.OwnerId, null, null, false };
+        }
         if (Body.Name is { } name)
         {
             fields["name"] = new BlueUnicode(name);

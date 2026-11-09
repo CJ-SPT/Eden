@@ -12,6 +12,7 @@ public enum NpcRole
     MiningHauler,
     MiningDefender,
     MiningLogistics,
+    MissionStructure,
 }
 
 public enum NpcAnchorKind

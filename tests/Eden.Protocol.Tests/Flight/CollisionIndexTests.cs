@@ -9,7 +9,7 @@ public sealed class CollisionIndexTests
     private static readonly FlightProperties Hull = new(0, 50, 1500100, 1, 1000, 0);
 
     [Fact]
-    public void SweptIndexMatchesAllPairsAcrossRandomizedFleetsAndOriginalOrders()
+    public void SweptIndexPreservesMovingResponsesAndFixedBodiesAcrossOriginalOrders()
     {
         Random random = new(3662168);
         for (int scene = 0; scene < 120; scene++)
@@ -49,7 +49,7 @@ public sealed class CollisionIndexTests
                 })
                 .OrderBy(_ => random.Next())
                 .ToArray();
-            Assert.Equal(LegacyShipCollisions.Resolve(ships), ShipCollisions.Resolve(ships));
+            AssertMovingResponsesAndFixedBodies(ships);
         }
     }
 
@@ -71,7 +71,25 @@ public sealed class CollisionIndexTests
         {
             var expected = LegacyShipCollisions.Resolve(ordered);
             Assert.Contains(expected, r => r.Bumped);
-            Assert.Equal(expected, ShipCollisions.Resolve(ordered));
+            AssertMovingResponsesAndFixedBodies(ordered);
+        }
+    }
+
+    private static void AssertMovingResponsesAndFixedBodies(IReadOnlyList<CollisionMotion> ships)
+    {
+        var fixedBodies = ships.Where(s => s.Fixed).ToDictionary(s => s.Id);
+        var actual = ShipCollisions.Resolve(ships);
+        // Retain the historical all-pairs math as the oracle for moving actors.
+        // Fixed actors now stay anchored, including when they are resolver inputs.
+        Assert.Equal(
+            LegacyShipCollisions.Resolve(ships).Where(r => !fixedBodies.ContainsKey(r.Id)),
+            actual.Where(r => !fixedBodies.ContainsKey(r.Id))
+        );
+        foreach (var result in actual.Where(r => fixedBodies.ContainsKey(r.Id)))
+        {
+            Assert.Equal(fixedBodies[result.Id].Position, result.Position);
+            Assert.Equal(SpacePosition.Zero, result.Velocity);
+            Assert.False(result.Bumped);
         }
     }
 

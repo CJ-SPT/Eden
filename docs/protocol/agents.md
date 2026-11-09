@@ -2,6 +2,55 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Destructible mission structures and objectives — November 9, 2026
+
+Authored mission structures are now real combat targets with catalog shield, armor, hull, resistances and signature radius. Their destruction can be required alongside enemy clearance, complete a designated objective directly, and release mission-owned recovery cargo. Added **The Hidden Stash (Angel Cartel), level 1**, mission **1226**, dungeon **314**. The ordinary pool now contains **twelve combat definitions**, four couriers and four delivery storylines. This supersedes earlier exclusions for authored destructible structures and destruction-released objective containers.
+
+### Content and objective rules
+
+The [EVE University report, revision 192015](https://wiki.eveuniversity.org/index.php?title=The_Hidden_Stash_(Angel_Cartel)_(Level_1)&oldid=192015), edited August 27, 2022 at 15:59, identifies a warehouse destruction/retrieval blitz, two groups of eight and four Gistii Hijackers, and **150 m³** of required cargo. The [EVE-Survival report](https://eve-survival.org/wikka.php?wakka=HiddenStash1an) is retained as the content source pointer. Pinned mission **1226** supplies **15 Small Sealed Cargo Containers**, type **16044**, **10 m³** each. Catalog geometry retains an empty gate lobby omitted from the report's single-pocket description: room **3399**, entry **66426**, gate **66425**, then room **3400**, entry **66471**.
+
+Warehouse object **66472**, type **17787 (Starbase Storage Facility)**, is the explicit completion target and releases the required cargo. Objects **66431/66432/66433/66434** are optional destructible Cargo Rig, Pressure Silo, Power Generator and habitation-module structures. Their health comes from the pinned catalog. The warehouse's 600 shield, 500 armor and 700 hull are not substituted with ship health. The gate stays unlocked and defenders are optional for the documented warehouse blitz. NPC placement/alternative selection and shared acquisition behavior retain Eden's existing authored mission policy; exact report-specific group hold/aggro scripting and unspecified trade/ammunition loot are not reconstructed.
+
+Typed objective rules combine enemy clearance with every required structure. Explicit completion targets can finish the combat requirement while optional structures and escorts remain alive. Clearing defenders alone cannot finish an outstanding structure requirement. Retrieval possession remains a separate requirement, recomputed from active Cargo Hold and the agent-station hangar, and turn-in consumes the exact cargo in the existing reward transaction. Killing an optional structure never invents objective cargo.
+
+### Saved state and combat integration
+
+World version **126** adds `WorldMissionStructure` membership, source-object identity, required/completion flags, destruction time and recovery-container emptiness, plus nullable NPC display names. Existing missions, inventory, quotes and NPCs retain their state; earlier NPC names remain catalog-derived. Structure targets use ordinary allocated global NPC identities recorded in their membership, avoiding a separate manually assigned NPC identity range. Acceptance creates their actor state and membership in one transaction; a failed acceptance leaves the offer and actor population unchanged.
+
+The shared combat owner handles targeting, turret shots, physical missile impacts, manual drone attacks, health recharge, damage projection and checkpoints. A distinct `MissionStructure` role has no acquisition, retaliation, offensive EWAR, outgoing missiles, pursuit, regional respawn, pirate bounty, skill-point award or NPC-kill task credit. Catalog destruction-related standing/history handling remains with its existing owner. Structure bodies stay fixed in both resident and database-backed motion. The collision resolver preserves fixed input bodies while retaining the historical all-pairs response for moving actors; randomized swept-index comparisons now assert both contracts separately.
+
+Fatal damage, saved destruction, objective progress and cargo creation commit together. Fatal retries, rollback, duplicate impacts, arrivals and reconnects cannot release another copy. Recovery cargo belongs to the mission pilot even when another pilot delivers the fatal shot. Structure actors never create ship wrecks or salvage. The dropped **Cargo Container type 23** uses the existing mission-container identity range and access/hold/capacity checks. It appears only after committed destruction, at the structure's location, and persists with the mission. Partial looting leaves the remainder; full looting saves an empty state and queues a native slim update. Completion, abandonment and exact expiry remove unclaimed cargo and retire surviving mission actors while preserving items already recovered.
+
+Mission-site snapshots invalidate on mission structure membership/destruction/empty changes rather than every NPC coordinate or damage update. Authored mission losses are excluded from the regional population deadline, as anomalies already were, preventing a dead warehouse from forcing repeated population reloads after the ordinary respawn interval. Warm resident shots, observer reads and unchanged site reads have SQL, connection and fitting-calculation assertions.
+
+### Native protocol and references
+
+Inert inspection of build-3662168 `code.ccp`, SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**, covered `spaceObject/LargeCollidableStructure.pyj` (`Assemble`, `LoadModel`), `spaceObject/cargo.pyj` and the previously recorded agent fetch/targeting routes. The structure renderer sets static rotation; its native entity slim still supplies catalog group/type, localized name, standings and damage state. Existing target-lock, weapon and drone calls own interaction; no new client RPC is introduced. A structure serializes as a local **rigid, massive ball**, without free-ball motion fields. Its health remains in the ballpark damage map, and committed destruction uses the existing exploding `RemoveBall` path. Recovery cans include personal loot rights and saved `isEmpty`; retained static-scene changes now publish `OnSlimItemChange`.
+
+Consulted [Carbon Destiny `Thunkers.cpp`, revision 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Thunkers.cpp) for rigid-mode field omissions and [the same revision's `Ballpark.cpp`](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp) for `SetBallRigid`. Existing Carbon-backed collision response math is retained for moving participants. Source inspection and automated wire assertions do not establish native rendering or input acceptance.
+
+Only explicitly bound large-collidable structures (group **319**) are admitted as damageable mission actors. Other scenery remains inert. This milestone does not add proximity/attack/threshold-triggered reinforcements, structure explosion area damage, repair-station support networks, optional randomized trade loot or every historical mission variant. Damsel/repair-station missions with those extra scripts are not silently admitted.
+
+### Automated validation
+
+Exact starting filter: `FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionStructureTests.HiddenStashWarehouseDestructionReleasesPersistentCargoAndCompletesOnlyAfterRetrieval` passed both file-backed and resident cases in **11.41 seconds**. The new turret fixture initially lacked targeting attributes; after supplying its range, scan resolution and lock slots, the exact turret/rollback filter passed **2/2 in 8.71 seconds**. The structure class then passed **19/19 in 30.67 seconds**. After adding acceptance rollback and regional-deadline coverage, the combined structure/collision selection passed **44/44 in 23.73 seconds**. The initial formatting pass identified one long SQL definition; it was split without an exception.
+
+Stable-code tool restore, solution restore and solution build passed; the build took **5.92 seconds**, with zero warnings/errors. The affected selection passed **876/876 in 339.67 seconds**, including **21 new structure cases**, and covered the shared turret, missile, drone, collision, scene, NPC population/AI, migration, wreck, anomaly and registration boundaries:
+
+`FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~LiveCombatObjectTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~NpcGuardTests|FullyQualifiedName~NpcSceneUpdateTests|FullyQualifiedName~NpcCatalogSharingTests|FullyQualifiedName~NpcSkillPointRewardTests|FullyQualifiedName~MissileCombatTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Loot.WreckTests|FullyQualifiedName~CombatAnomaly|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~TypedCallResultTests`
+
+Both Python policy suites passed **8/8** and **9/9** in **1.68 seconds** for the policy commands. Formatting verification, the 140-column check and `git diff --check` passed. Both exporters reproduced checked-in data: **20 definitions, 243 types and 961 source records**. Documentation links, UTF-8/final newlines and preservation of historical mission records were verified. No full .NET suite was requested or run. The primary checkout contained unrelated in-progress changes; integration uses the clean task checkout so those files remain intact.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native structure graphics, destruction effects, health bars and cargo interaction remain unverified.
+
+### Optional maintainer checks
+
+- Accept The Hidden Stash, use the entrance gate, lock and destroy the warehouse, recover the 150 m³ objective cargo (or make multiple trips), and turn it in at the agent's station.
+- Partially damage a structure and reconnect; confirm its health and location, then destroy it and check the recovery can appears once and changes to empty after looting.
+
 ## Combat item retrieval and mission containers — November 9, 2026
 
 Combat retrieval now combines saved combat progress with personally owned objective cargo. Added **The Spy Stash (Guristas), level 3**, mission **1770**, dungeon **558**: an empty entrance, two combat pockets, unlocked acceleration gates and a protected Officer's Quarters containing **five Classified Report - Station Defenses**, type **22222**, totaling **0.5 m³**. The ordinary pool now contains **eleven combat definitions**, four couriers and four delivery storylines. This supersedes earlier blanket exclusions for combat retrieval and mission containers; other bespoke mission scripts remain separate work.
