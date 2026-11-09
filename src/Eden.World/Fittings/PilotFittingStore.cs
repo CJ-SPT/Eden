@@ -154,7 +154,8 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         IReadOnlyList<long> itemIds,
         long sourceId,
         int flagId,
-        long now
+        long now,
+        IReadOnlyDictionary<long, int>? placements = null
     )
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
@@ -164,6 +165,7 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             || (sourceId != ship.Id && sourceId != ship.StationId)
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
+            || placements is not null && (placements.Count != itemIds.Count || itemIds.Any(id => !placements.ContainsKey(id)))
             || (flagId != (int)InventoryFlag.AutoFit && (!InventoryDefinitions.IsFittedSlot(flagId) || itemIds.Count != 1))
         )
         {
@@ -215,11 +217,11 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             var (first, slots) = SlotsFor(item.TypeId);
             bool moving = InventoryDefinitions.IsFittedSlot(item.FlagId);
             int slot =
-                flagId == (int)InventoryFlag.AutoFit
-                    ? moving
-                        ? item.FlagId
+                placements is not null ? placements[item.Id]
+                : flagId == (int)InventoryFlag.AutoFit
+                    ? moving ? item.FlagId
                         : Enumerable.Range(first, slots).FirstOrDefault(f => !occupied.Contains(f))
-                    : flagId;
+                : flagId;
             if (slot < first || slot >= first + slots)
             {
                 throw new InvalidDataException("No compatible module slot is available.");
@@ -464,6 +466,60 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         world.SaveChanges();
         var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
         return new[] { new InventoryChange(previous with { Online = online }, previous) }.Concat(cascaded).ToArray();
+    }
+
+    // Traffic reconstructs a complete saved fit atomically. Validate its final
+    // online graph together so resource providers need no artificial fit order.
+    internal static void OnlineCompleteFit(WorldDbContext world, CatalogDbContext catalog, long pilotId, long shipId, long now)
+    {
+        var pilot = world
+            .Pilots.Include(value => value.ActiveShip)
+                .ThenInclude(value => value.Position)
+            .Single(value => value.Id == pilotId);
+        if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is not null)
+        {
+            throw new InvalidDataException("Bring a complete fit online only on a docked active ship.");
+        }
+        var before = FittingChanges.Capture(world, catalog, pilot, now);
+        var modules = world
+            .Set<OwnedItem>()
+            .Where(item =>
+                item.OwnerId == pilotId
+                && item.LocationId == shipId
+                && item.FlagId >= (int)InventoryFlag.LowSlot0
+                && item.FlagId <= (int)InventoryFlag.HighSlot7
+            )
+            .ToArray();
+        foreach (var item in modules)
+        {
+            _ =
+                FittingCatalog.Definition(catalog, item.TypeId)
+                ?? throw new InvalidDataException("This module effect is not supported yet.");
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+            CheckHull(catalog, item.TypeId, pilot.ActiveShip.TypeId);
+            if (
+                world.Set<SavedModuleCondition>().Find(item.Id) is not null
+                && ModuleConditionPersistence.Read(world, catalog, item).BurnedOut
+            )
+            {
+                throw new InvalidDataException("Repair burned-out equipment before bringing it online.");
+            }
+            item.Online = true;
+        }
+        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        ModuleFittingConstraints.CheckOnline(FittingChanges.ReadConstraints(catalog, calculation));
+        var attributes = ShipAttributes(world, catalog, pilot, calculation: calculation);
+        if (
+            attributes.GetValueOrDefault(DogmaAttributeId.CpuLoad)
+                > attributes.GetValueOrDefault(DogmaAttributeId.CpuOutput) + InventoryDefinitions.ResourceTolerance
+            || attributes.GetValueOrDefault(DogmaAttributeId.PowerLoad)
+                > attributes.GetValueOrDefault(DogmaAttributeId.PowerOutput) + InventoryDefinitions.ResourceTolerance
+        )
+        {
+            throw new InvalidDataException("Insufficient CPU or power grid for the complete fit.");
+        }
+        world.SaveChanges();
+        FittingChanges.Finish(world, catalog, pilot, before, now);
     }
 
     public IReadOnlyList<FittingSkillBonus> SkillBonuses(long pilotId)

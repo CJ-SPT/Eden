@@ -67,6 +67,7 @@ internal sealed partial class CapsuleerHauler(
     private long _threatenedShip;
     private bool _loaded;
     private bool _background;
+    private bool _trafficRefreshChecked;
     private CapsuleerOperation _operation = null!;
     private long _hullRevision;
     private LiveWorld? Live => LiveWorld.Find(database.Path);
@@ -333,6 +334,7 @@ internal sealed partial class CapsuleerHauler(
         }
         catch (Exception error) when (error is InvalidDataException or CargoCapacityException)
         {
+            _trafficRefreshChecked = false;
             _operation.Dispose();
             _pilot = beforePilot;
             _work = before;
@@ -371,6 +373,7 @@ internal sealed partial class CapsuleerHauler(
         catch
         {
             _pilot = beforePilot;
+            _trafficRefreshChecked = false;
             _work = before;
             _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
             _target = beforeTarget;
@@ -573,6 +576,16 @@ internal sealed partial class CapsuleerHauler(
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
             throw new InvalidDataException("Waiting for a replacement hauling ship.");
+        }
+        if (!_trafficRefreshChecked && database.Traffic.Profiles.Count > 0)
+        {
+            if (TrafficProvisioning.Refresh(database, _operation.World, _operation.Catalog, pilotId, _route, Now))
+            {
+                long account = _operation.World.Pilots.Where(value => value.Id == pilotId).Select(value => value.AccountId).Single();
+                _pilot = ships.FindPilot(_operation.World, account, pilotId)!;
+                _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
+            }
+            _trafficRefreshChecked = true;
         }
         // The cargo belongs to this encounter. A dock changes its route, never
         // purchases or lists goods on behalf of the independent regional economy.

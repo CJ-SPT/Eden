@@ -2,6 +2,30 @@
 
 [Documentation index](README.md) / [Implementation evidence](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic)
 
+## zKill-backed travelers
+
+An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot leaves generated Badger traffic available. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.
+
+Create or refresh the snapshot from the repository root:
+
+```powershell
+dotnet run --project src/Eden.Server --configuration Release -- --import-traffic "$env:LOCALAPPDATA\Eden\traffic.sqlite"
+```
+
+The default window is the latest **seven published complete UTC days** in zKill's archive totals. Publication can lag the UTC day boundary. `--from yyyy-MM-dd` and `--through yyyy-MM-dd` select an explicit range; both dates are inclusive. `--catalog <path>` selects the pinned catalog, defaulting to `catalog.sqlite` beside the output. Restart the server separately to adopt the new snapshot. Importing does not open or alter a saved world and may run while gameplay continues using the previous snapshot.
+
+Completed archives, resolved names and fitting-validation decisions are cached in `<output>.cache`. Downloaded archives retain their SHA-256 checksums in the snapshot manifest. Fit decisions are keyed by catalog fingerprint, validator assembly and equipment configuration; every ammunition quantity still receives an individual capacity check. Failed downloads, cancellation, unsupported-only samples and failed validation preserve the installed snapshot. The command refuses to replace a world or catalog database.
+
+Selection prefers the route's region and security band, then the same security band elsewhere, then compatible global observations. Each pool samples unique characters using the saved world seed. The importer retains the newest supported observation for each character, hull, region and security band; older observations of that same combination cannot improve the available selection and are counted as superseded. Unsupported newer fits do not hide older supported observations. Each imported character is reserved once per world, including after loss or deletion. Conflicting local names are skipped without modifying either name.
+
+Every selected hull must be published and admitted by build 3662168's existing support policy. A complete fit must reproduce every fitted module, rig, subsystem and loaded charge at its recorded slot. Unsupported subsystems and other equipment reject their entire record. Normal fitting rules check skills, slots, hardpoints, CPU, power, calibration, module limits and ammunition compatibility. Required skills and supported fitting/navigation skills are granted at level V. Every module must remain legally online; rigs apply their normal fitted effects. No equipment is substituted or omitted.
+
+Imported travelers receive no starter ore or recorded cargo, drones, implants, corporations or alliances. Fitted passive effects alter ordinary ship statistics. Travelers retain existing travel and retreat behavior; they do not activate weapons or other combat equipment. True capitals cannot use routes entering high security, and supercapitals are excluded. Existing build support restrictions can narrow this pool further.
+
+Schema 121 saves each imported pilot's source character, kill and snapshot identity. Untouched generated Badger traffic can convert once while docked and undamaged, preserving the pilot and ship IDs, wallet, owned cargo, route and saved timing. Customized names, altered equipment and lost ships are retained. A smaller hull is deferred when existing cargo cannot fit. Grants, conversion and source reservation share the owning transaction. Miners and traffic density remain unchanged.
+
+See the [implementation and automated evidence](protocol/capsuleers.md#zkill-backed-traffic--november-8-2026).
+
 ## Galaxy-wide station and gate traffic
 
 On the first human visit, Eden looks for real stations and usable reciprocal gates in the build-3662168 catalog. Routes can connect stations in one system, pass through stationless systems, or turn back to a station through a dead end. All security bands use the same traffic policy. Isolated systems need at least two usable stations for local traffic. Gate-free systems with no station pair stay quiet.

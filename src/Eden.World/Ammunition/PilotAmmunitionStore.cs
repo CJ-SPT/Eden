@@ -210,6 +210,22 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Load(world, catalog, pilotId, shipId, moduleIds, chargeIds, sourceId, now);
+        transaction.Commit();
+        return result;
+    }
+
+    internal static AmmunitionTransfer Load(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        IReadOnlyList<long> moduleIds,
+        IReadOnlyList<long> chargeIds,
+        long sourceId,
+        long now
+    )
+    {
         var pilot = Pilot(world, pilotId, shipId);
         int sourceFlag = sourceId == shipId ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar;
         if (
@@ -398,7 +414,6 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
             }
         }
         CheckCargo(world, catalog, pilot);
-        transaction.Commit();
         return new(changes, magazines, duration);
     }
 

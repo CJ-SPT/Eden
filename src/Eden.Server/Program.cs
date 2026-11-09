@@ -23,6 +23,10 @@ internal static class Program
 {
     private static async Task Main(string[] args)
     {
+        if (await Eden.Server.Capsuleers.TrafficImportCommand.TryRun(args))
+        {
+            return;
+        }
         if (args is ["--create-catalog", var candidate])
         {
             if (File.Exists(candidate))
@@ -130,13 +134,14 @@ internal static class Program
             options.Validate();
         }
         string? preparationRoot = Value("--prepare-login");
+        WorldDatabase database = new(worldPath);
         if (preparationRoot is null)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
             using FileStream startupOwnership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             long reconciliationStarted = Stopwatch.GetTimestamp();
             WorldInitialization.Initialize(
-                new WorldDatabase(worldPath),
+                database,
                 economy: economyWorld ? new Eden.Gameplay.Market.WorldEconomySettings(false, false, npcStock) : null,
                 economics: economicConfiguration
             );
@@ -147,7 +152,7 @@ internal static class Program
         long hostStarted = Stopwatch.GetTimestamp();
         // Ticket preparation signs a local claim without opening the saved world.
         using var services = ServerServices.Build(
-            new WorldDatabase(worldPath),
+            database,
             options: options,
             liveWorld: preparationRoot is null,
             loadConfiguration: preparationRoot is null

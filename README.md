@@ -1,6 +1,6 @@
 # Eden
 
-[Capsuleer encounters](docs/capsuleer-population.md) bring persistent ships to stations and gates across New Eden. A busy hub can support five or six home haulers, while a quiet branch can have none. Haulers carry owned cargo and use real station and gate routes, including stationless transit systems. High-security miners work real deposits. Observers share ship identities, movement, damage and losses. Career jobs sleep when the system empties. Regional markets develop independently.
+[Capsuleer encounters](docs/capsuleer-population.md) bring persistent ships to stations and gates across New Eden. A busy hub can support five or six home travelers, while a quiet branch can have none. An optional local zKill snapshot supplies real pilot names, varied supported hulls and complete victim fits. Travelers use real station and gate routes, including stationless transit systems. High-security miners work real deposits. Observers share ship identities, movement, damage and losses. Career jobs sleep when the system empties. Regional markets develop independently.
 
 [Progressive regional markets](docs/protocol/industry.md#progressive-regional-markets--november-8-2026) independently develop finite stock and demand on shared human-active playtime. Direct trades cause local shortages, price changes and hauling opportunities. Economy saves enable progression by default; existing development saves can select it in local administration. Personal listings retain their human counterparties.
 

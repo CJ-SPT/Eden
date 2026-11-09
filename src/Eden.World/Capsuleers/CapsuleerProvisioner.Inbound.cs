@@ -63,8 +63,7 @@ internal sealed partial class CapsuleerProvisioner
             if (
                 Math.Max(observerCount, sourceCount) == 0
                 || origins.Length == 0
-                || catalog.FittingType(HaulingRules.BadgerType) is null
-                || CapsuleerProvisioningCatalog.FreightOre(catalog) == 0
+                || database.Traffic.Profiles.Count == 0 && !TrafficProvisioning.HasFallback(catalog)
             )
             {
                 world.SaveChanges();
@@ -86,7 +85,7 @@ internal sealed partial class CapsuleerProvisioner
             EnsureAccount(world);
             world.SaveChanges();
             CapsuleerSite site = new(community, CapsuleerEligibility.Eligible, route.SourceStationId, route.DestinationStationId);
-            long pilot = CreateFounder(
+            long? pilot = CreateFounder(
                 world,
                 catalog,
                 site,

@@ -65,8 +65,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         var traffic = CapsuleerTrafficRoutes.Read(catalog, systemId);
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         bool hasRoute = traffic.Routes.Length > 0;
-        bool canHaul =
-            hasRoute && catalog.FittingType(HaulingRules.BadgerType) is not null && CapsuleerProvisioningCatalog.FreightOre(catalog) != 0;
+        bool canHaul = hasRoute && (database.Traffic.Profiles.Count > 0 || TrafficProvisioning.HasFallback(catalog));
         int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic.GateCount, traffic.StationCount) : 0;
         var agents = world
             .Set<SavedCapsuleerAgent>()
@@ -144,15 +143,16 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         int offset = (int)(
             CapsuleerProvisioningRules.Seed(seed, systemId, CapsuleerCareer.Hauling) % (ulong)Math.Max(1, traffic.Routes.Length)
         );
+        bool created = addMiner;
         foreach (int slot in newSlots)
         {
             var opening = CapsuleerEncounterRules.TrafficOpening(seed, systemId, slot, count);
             var route = SelectRoute(catalog, traffic, systemId, slot, opening, offset);
             var site = mining with { HomeStationId = route.SourceStationId, DestinationStationId = route.DestinationStationId };
-            CreateFounder(world, catalog, site, origins, CapsuleerCareer.Hauling, seed, slot, route, opening);
+            created |= CreateFounder(world, catalog, site, origins, CapsuleerCareer.Hauling, seed, slot, route, opening) is not null;
         }
         transaction.Commit();
-        return new(1, 1, 0);
+        return new(1, created ? 1 : 0, 0);
     }
 
     private static CapsuleerTrafficRoute SelectRoute(
@@ -214,7 +214,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         world.SaveChanges();
     }
 
-    private long CreateFounder(
+    private long? CreateFounder(
         WorldDbContext world,
         CatalogDbContext catalog,
         CapsuleerSite site,
@@ -230,17 +230,33 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
     {
         long pilot = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
         long ship = InventoryPersistence.NextId(world);
-        int hull = career == CapsuleerCareer.Mining ? CapsuleerCommunityStore.VentureType : HaulingRules.BadgerType;
+        var trafficProfile =
+            career == CapsuleerCareer.Hauling
+                ? TrafficProvisioning.Select(database, world, catalog, seed, site.SystemId, slot, route!)
+                : null;
+        if (career == CapsuleerCareer.Hauling && trafficProfile is null && !TrafficProvisioning.HasFallback(catalog))
+        {
+            return null;
+        }
+        int hull =
+            career == CapsuleerCareer.Mining ? CapsuleerCommunityStore.VentureType : trafficProfile?.HullTypeId ?? HaulingRules.BadgerType;
         int station = site.HomeStationId!.Value;
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, site.SystemId, career, slot);
         var origin = origins[(int)(roleSeed % (ulong)origins.Length)];
         int attempt = 0;
         string name;
-        do
+        if (trafficProfile is not null)
         {
-            name = CapsuleerProvisioningRules.Name(seed, site.SystemId, career, slot, attempt++);
-        } while (world.Pilots.Any(p => EF.Functions.Collate(p.Name, "NOCASE") == name));
+            name = trafficProfile.Name;
+        }
+        else
+        {
+            do
+            {
+                name = CapsuleerProvisioningRules.Name(seed, site.SystemId, career, slot, attempt++);
+            } while (world.Pilots.Any(p => EF.Functions.Collate(p.Name, "NOCASE") == name));
+        }
         int gender = (int)(roleSeed % 2);
         CharacterRules.ValidateOrigin(
             new(name, origin.RaceId, origin.BloodlineId, gender, CharacterRules.UnspecifiedAncestry, [], [], origin.SchoolId),
@@ -307,7 +323,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 }
             );
         }
-        if (career == CapsuleerCareer.Hauling)
+        if (career == CapsuleerCareer.Hauling && trafficProfile is null)
         {
             const int starterOreUnits = 100;
             int ore = CapsuleerProvisioningCatalog.FreightOre(catalog);
@@ -326,6 +342,11 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         world.Add(new SavedHomeStation { PilotId = pilot, StationId = station });
         world.Add(new PilotWallet { PilotId = pilot, Cents = cents });
         world.SaveChanges();
+        if (trafficProfile is not null)
+        {
+            TrafficFitting.Apply(world, catalog, pilot, ship, trafficProfile, now);
+            TrafficProvisioning.Record(database, world, pilot, trafficProfile);
+        }
         if (career == CapsuleerCareer.Mining)
         {
             PilotFittingStore.Fit(world, catalog, pilot, [module], station, (int)InventoryFlag.AutoFit, now);

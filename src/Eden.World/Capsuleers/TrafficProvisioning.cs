@@ -1,0 +1,141 @@
+using Eden.Data.Catalog.Capsuleers;
+using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Inventory;
+using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
+using Eden.World.Catalog;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
+
+namespace Eden.World.Capsuleers;
+
+internal static class TrafficProvisioning
+{
+    internal static bool HasFallback(CatalogDbContext catalog) =>
+        catalog.FittingType(HaulingRules.BadgerType) is not null && CapsuleerProvisioningCatalog.FreightOre(catalog) != 0;
+
+    internal static TrafficProfile? Select(
+        WorldDatabase database,
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long seed,
+        int system,
+        int slot,
+        CapsuleerTrafficRoute route,
+        double cargoVolume = 0
+    )
+    {
+        if (database.Traffic.Profiles.Count == 0)
+        {
+            return null;
+        }
+        int region = catalog.RequireSystem(system).RegionId;
+        var band = TrafficRules.SecurityBand(catalog.Read(CatalogData.Client.Solarsystemcontent, (long)system)?.Security ?? 0);
+        bool visitsHighSecurity = route.Systems.Any(id =>
+            TrafficRules.SecurityBand(catalog.Read(CatalogData.Client.Solarsystemcontent, (long)id)?.Security ?? 0)
+            == TrafficSecurityBand.High
+        );
+        var reserved = world.Set<SavedTrafficIdentity>().Select(value => value.CharacterId).ToHashSet();
+        var names = world.Pilots.Select(value => value.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        bool Compatible(TrafficProfile profile)
+        {
+            var hull = catalog.FittingType(profile.HullTypeId);
+            return hull is not null
+                && TrafficRules.RouteAllows((HullClass)hull.GroupId, visitsHighSecurity)
+                && (cargoVolume == 0 || (hull.Capacity ?? 0) >= cargoVolume);
+        }
+        return database
+            .Traffic.Candidates(seed, system, slot, region, band, Compatible)
+            .FirstOrDefault(profile => !reserved.Contains(profile.CharacterId) && !names.Contains(profile.Name));
+    }
+
+    internal static void Record(WorldDatabase database, WorldDbContext world, long pilot, TrafficProfile profile)
+    {
+        world.Add(
+            new SavedTrafficIdentity
+            {
+                PilotId = pilot,
+                CharacterId = profile.CharacterId,
+                KillId = profile.KillId,
+                SnapshotId = database.Traffic.Manifest!.Identity,
+            }
+        );
+        world.SaveChanges();
+    }
+
+    internal static bool Refresh(
+        WorldDatabase database,
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        CapsuleerTrafficRoute route,
+        long now
+    )
+    {
+        var agent = world.Set<SavedCapsuleerAgent>().Find(pilotId);
+        if (agent is null || agent.Career != CapsuleerCareer.Hauling || world.Set<SavedTrafficIdentity>().Find(pilotId) is not null)
+        {
+            return false;
+        }
+        var pilot = world
+            .Pilots.Include(value => value.ActiveShip)
+                .ThenInclude(value => value.Position)
+            .Single(value => value.Id == pilotId);
+        var ship = pilot.ActiveShip;
+        if (
+            ship.Id != agent.FounderShipId
+            || ship.TypeId != HaulingRules.BadgerType
+            || ship.Position is not null
+            || ship.OwnerId != pilotId
+            || ship.Name != pilot.Name
+            || pilot.AccountId != CapsuleerCommunityStore.MinerAccountId
+            || world.Set<OwnedItem>().Any(item => item.LocationId == ship.Id && item.FlagId != (int)InventoryFlag.Cargo)
+            || world.Set<ShipLoss>().Any(loss => loss.ShipId == ship.Id)
+        )
+        {
+            return false;
+        }
+        var health = world.Set<ShipHealthState>().Find(ship.Id);
+        if (
+            health is not null
+            && (
+                health.ArmorDamage != 0
+                || health.StructureDamage != 0
+                || health.ShieldCharge + InventoryDefinitions.ResourceTolerance
+                    < PilotFittingStore.ShipAttributes(world, catalog, pilot).GetValueOrDefault(DogmaAttributeId.ShieldCapacity)
+            )
+        )
+        {
+            return false;
+        }
+        long seed = world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed;
+        // Provisioning probes names in order, so a finite occupied-name bound also
+        // recognizes collision suffixes without scanning the whole name space.
+        int attempts = world.Pilots.Count() + 1;
+        bool generated = Enumerable
+            .Range(0, Math.Min(attempts, CapsuleerProvisioningRules.MaximumNameAttempts))
+            .Any(attempt =>
+                CapsuleerProvisioningRules.Name(seed, agent.CommunitySystemId, agent.Career, agent.Slot, attempt) == pilot.Name
+            );
+        if (!generated)
+        {
+            return false;
+        }
+        double cargo = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, (int)InventoryFlag.Cargo);
+        var profile = Select(database, world, catalog, seed, agent.CommunitySystemId, agent.Slot, route, cargo);
+        if (profile is null)
+        {
+            return false;
+        }
+        TrafficFitting.Apply(world, catalog, pilotId, ship.Id, profile, now);
+        pilot.Name = profile.Name;
+        ship.Name = profile.Name;
+        Record(database, world, pilotId, profile);
+        return true;
+    }
+}

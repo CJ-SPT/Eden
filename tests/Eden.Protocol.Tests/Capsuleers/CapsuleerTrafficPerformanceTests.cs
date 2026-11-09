@@ -12,12 +12,19 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed class CapsuleerTrafficPerformanceTests(ITestOutputHelper output)
 {
     [Theory]
-    [InlineData(false, 1)]
-    [InlineData(true, 1)]
-    [InlineData(true, 2)]
-    public async Task WarmedMaintenanceIncludesSharedPresentationWithoutSqlOrFittingWork(bool occupied, int observers)
+    [InlineData(false, 1, false)]
+    [InlineData(true, 1, false)]
+    [InlineData(true, 2, false)]
+    [InlineData(false, 1, true)]
+    [InlineData(true, 1, true)]
+    [InlineData(true, 2, true)]
+    public async Task WarmedMaintenanceIncludesSharedPresentationWithoutSqlOrFittingWork(bool occupied, int observers, bool imported)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        if (imported)
+        {
+            TrafficSnapshotTests.Install(f.Database, TrafficSnapshotTests.Profile());
+        }
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         var leases = Enumerable.Range(0, observers).Select(i => presence.Select(90000001 + i, occupied ? 30000141 : 30000144)).ToArray();

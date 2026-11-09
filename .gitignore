@@ -17,3 +17,5 @@ chat-tls.pfx
 *.admin-keys/
 eve-online-static-data-*-jsonl.zip
 __pycache__/
+*.sqlite.cache/
+*.import.owner

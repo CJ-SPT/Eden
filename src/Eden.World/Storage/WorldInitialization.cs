@@ -54,6 +54,7 @@ public static class WorldInitialization
             EconomicStore.CheckCatalog(catalog, economics);
         }
         WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics);
+        database.LoadTraffic();
         WorldConfigurationStore.Activate(database);
         world.ChangeTracker.Clear();
         using (var reconciliation = world.Database.BeginTransaction())

@@ -22,6 +22,8 @@ public sealed class PilotLoginTests
     [InlineData(true)]
     public async Task RequiresBothLocalTicketAndChallengeProof(bool validTicket)
     {
+        // Cold seed preparation is unrelated to the five-second wire exchange.
+        using TestWorld world = new();
         using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(5));
         using RSA key = RSA.Create(2048);
         using Aes aes = Aes.Create();
@@ -32,7 +34,6 @@ public sealed class PilotLoginTests
         using TcpClient server = await listener.AcceptTcpClientAsync(timeout.Token);
         NetworkStream wire = client.GetStream();
         List<string> messages = [];
-        using TestWorld world = new();
         using var scope = world.Services.CreateScope();
         PilotLogin login = new(new FixtureIdentity(key), scope.ServiceProvider.GetRequiredService<IPilotSession>());
         byte[] request = BlueMarshal.Encode(new object?[] { null, "VK", Array.Empty<byte>() });

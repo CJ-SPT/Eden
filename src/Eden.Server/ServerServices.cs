@@ -48,6 +48,7 @@ internal static class ServerServices
         if (loadConfiguration)
         {
             WorldConfigurationStore.LoadActive(database);
+            _ = database.Traffic;
         }
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(database);

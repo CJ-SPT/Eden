@@ -42,6 +42,8 @@ Preparation copies the client files and resources. It checks SHA-256 hashes for 
 
 ## Creating and recreating the databases
 
+Optional [zKill-backed traffic snapshots](capsuleer-population.md#zkill-backed-travelers) add real pilot names and complete supported victim fits. Import them separately; normal catalog setup and gameplay remain offline. A replacement snapshot is adopted on the next server restart.
+
 From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'` after staging the client. Use 64-bit Windows Python 3.11 or later with the standard library, PowerShell 7, the pinned .NET SDK, and at least 8 GB free for the catalog, temporary records, and an existing installation. The first run downloads the [CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip). To rebuild offline, reuse the cached export under `%LOCALAPPDATA%\Eden\catalog-input` or pass `-Archive` with a local copy.
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.

@@ -28,9 +28,11 @@ public sealed class CapsuleerInboundRuntimeTests
     private static readonly WatchedTrafficGate s_gate = new(Observer, Source, 50009991, 50009992);
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task StationlessLaneContinuesToItsSavedRemoteStationAndPersistsCursor(bool reverseGate)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task StationlessLaneContinuesToItsSavedRemoteStationAndPersistsCursor(bool reverseGate, bool imported)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
         const int remote = 30000144;
@@ -38,6 +40,10 @@ public sealed class CapsuleerInboundRuntimeTests
         using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw("UPDATE Station SET SolarSystemId=30000144");
+        }
+        if (imported)
+        {
+            TrafficSnapshotTests.Install(f.Database, TrafficSnapshotTests.Profile());
         }
         var gate = reverseGate ? new(Source, Observer, s_gate.DepartureGateId, s_gate.ArrivalGateId) : s_gate;
         long pilot = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(gate)!.Value;
@@ -248,10 +254,16 @@ public sealed class CapsuleerInboundRuntimeTests
         Assert.Equal(before.Pilot.ShipId, hauler.Read()!.Pilot.ShipId);
     }
 
-    [Fact]
-    public void DestroyedInboundShipCannotCrossOrRegainItsLostHull()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DestroyedInboundShipCannotCrossOrRegainItsLostHull(bool imported)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        if (imported)
+        {
+            TrafficSnapshotTests.Install(f.Database, TrafficSnapshotTests.Profile());
+        }
         long pilotId = new CapsuleerProvisioner(f.Database, f.Clock).EnsureInbound(s_gate)!.Value;
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilotId);

@@ -95,7 +95,7 @@ public sealed class CapsuleerTrafficMigrationTests
             Assert.Equal(jobs, CapsuleerPopulationStore.Jobs(world));
             Assert.All(world.Set<SavedCapsuleerAgent>(), a => Assert.Equal(0, a.Slot));
             Assert.All(world.Set<SavedCapsuleerHauler>(), h => Assert.Null(h.RouteSystems));
-            Assert.Equal(120, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+            Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
         }
     }
 
