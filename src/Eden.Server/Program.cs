@@ -11,6 +11,7 @@ using Eden.Server.Chat;
 using Eden.Server.Configuration;
 using Eden.Server.Gateway;
 using Eden.Server.Launcher;
+using Eden.Server.Logging;
 using Eden.Server.Maintenance;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -23,6 +24,7 @@ internal static class Program
 {
     private static async Task Main(string[] args)
     {
+        await using var logging = BufferedServerLog.Start();
         if (await Eden.Server.Capsuleers.TrafficImportCommand.TryRun(args))
         {
             return;

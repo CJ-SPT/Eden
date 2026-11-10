@@ -1,3 +1,6 @@
+using System.Buffers.Binary;
+using System.Text;
+using CommunityToolkit.HighPerformance.Buffers;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
 
@@ -5,6 +8,121 @@ namespace Eden.Protocol.Tests.Serialization;
 
 public sealed class BlueMarshalTests
 {
+    [Theory]
+    [InlineData(-1L, "07")]
+    [InlineData(0L, "08")]
+    [InlineData(1L, "09")]
+    [InlineData(-128L, "0680")]
+    [InlineData(127L, "067F")]
+    [InlineData(-129L, "057FFF")]
+    [InlineData(128L, "058000")]
+    [InlineData(-32768L, "050080")]
+    [InlineData(32767L, "05FF7F")]
+    [InlineData(-32769L, "04FF7FFFFF")]
+    [InlineData(32768L, "0400800000")]
+    [InlineData(int.MinValue, "0400000080")]
+    [InlineData(int.MaxValue, "04FFFFFF7F")]
+    [InlineData((long)int.MinValue - 1, "03FFFFFF7FFFFFFFFF")]
+    [InlineData((long)int.MaxValue + 1, "030000008000000000")]
+    [InlineData(long.MinValue, "030000000000000080")]
+    [InlineData(long.MaxValue, "03FFFFFFFFFFFFFF7F")]
+    public void DirectIntegerWritesKeepNativeWidthsAndLittleEndianBytes(long number, string payload)
+    {
+        byte[] expected = Convert.FromHexString("7E00000000" + payload);
+        Assert.Equal(expected, BlueMarshal.Encode(number));
+        Assert.Equal(number, BlueMarshal.Decode(expected));
+    }
+
+    [Theory]
+    [InlineData("0000000000000080")]
+    [InlineData("010000000000F87F")]
+    [InlineData("000000000000F07F")]
+    [InlineData("000000000000F0FF")]
+    [InlineData("000000000000F83F")]
+    [InlineData("0100000000000000")]
+    public void DirectFloatingPointWritesKeepEveryPayloadBit(string payload)
+    {
+        long bits = BinaryPrimitives.ReadInt64LittleEndian(Convert.FromHexString(payload));
+        double number = BitConverter.Int64BitsToDouble(bits);
+        byte[] expected = Convert.FromHexString("7E000000000A" + payload);
+        Assert.Equal(expected, BlueMarshal.Encode(number));
+        Assert.Equal(bits, BitConverter.DoubleToInt64Bits(Assert.IsType<double>(BlueMarshal.Decode(expected))));
+    }
+
+    [Fact]
+    public void WarmedBufferEncodingDoesNotAllocateAnArrayForEachTextField()
+    {
+        const int fields = 256;
+        const int repeats = 16;
+        const int allocationBudgetPerEncode = 1024;
+        const string text = "星間旅行 — pilot 🚀";
+        var values = Enumerable.Repeat<object?>(new BlueUnicode(text), fields).ToList();
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        for (int index = 0; index < 2; index++)
+        {
+            buffer.Clear();
+            BlueMarshal.Encode(buffer, values);
+        }
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int index = 0; index < repeats; index++)
+        {
+            buffer.Clear();
+            BlueMarshal.Encode(buffer, values);
+        }
+        Assert.InRange(GC.GetAllocatedBytesForCurrentThread() - before, 0, repeats * allocationBudgetPerEncode);
+        var decoded = Assert.IsType<List<object?>>(BlueMarshal.Decode(buffer.WrittenSpan.ToArray()));
+        Assert.Equal(fields, decoded.Count);
+        Assert.All(decoded, value => Assert.Equal(text, value));
+    }
+
+    [Theory]
+    [InlineData("", "7E000000000E", "7E000000002E00")]
+    [InlineData("A", "7E000000000F41", "7E000000002E0141")]
+    [InlineData("星", "7E000000001303E6989F", "7E000000002E03E6989F")]
+    public void PooledOutputKeepsGoldenByteStringAndUnicodeEncodings(string text, string bytesHex, string unicodeHex)
+    {
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        BlueMarshal.Encode(buffer, text);
+        Assert.Equal(Convert.FromHexString(bytesHex), buffer.WrittenSpan.ToArray());
+        buffer.Clear();
+        BlueMarshal.Encode(buffer, new BlueUnicode(text));
+        Assert.Equal(Convert.FromHexString(unicodeHex), buffer.WrittenSpan.ToArray());
+    }
+
+    [Theory]
+    [InlineData(254)]
+    [InlineData(255)]
+    [InlineData(256)]
+    [InlineData(65536)]
+    public void PooledTextRetainsLengthBoundariesAndOwnedResultsAcrossReuse(int length)
+    {
+        string text = new('x', length);
+        byte[] expectedText = Encoding.UTF8.GetBytes(text);
+        byte[] owned = BlueMarshal.Encode(new BlueUnicode(text));
+        using BinaryReader reader = new(new MemoryStream(owned));
+        Assert.Equal(Convert.FromHexString("7E000000002E"), reader.ReadBytes(6));
+        if (length < byte.MaxValue)
+        {
+            Assert.Equal(length, reader.ReadByte());
+        }
+        else
+        {
+            Assert.Equal(byte.MaxValue, reader.ReadByte());
+            Assert.Equal(length, reader.ReadInt32());
+        }
+        Assert.Equal(expectedText, reader.ReadBytes(length));
+        Assert.Equal(reader.BaseStream.Length, reader.BaseStream.Position);
+        using ArrayPoolBufferWriter<byte> reused = new();
+        BlueMarshal.Encode(reused, new BlueUnicode(new string('y', length)));
+        Assert.Equal(text, BlueMarshal.Decode(owned));
+        reused.Clear();
+        BlueMarshal.Encode(reused, new object?[] { new BlueGlobal("name"), new BlueUnicode("🚀"), "\ud800" });
+        var tuple = Assert.IsType<object?[]>(BlueMarshal.Decode(reused.WrittenSpan.ToArray()));
+        Assert.Equal(new BlueGlobal("name"), tuple[0]);
+        Assert.Equal("🚀", tuple[1]);
+        Assert.Equal(Encoding.UTF8.GetBytes("\ud800"), Assert.IsType<byte[]>(tuple[2]));
+    }
+
     [Fact]
     public void BillingDictionaryPreservesNumericAndTextKeysAlongsideNone()
     {

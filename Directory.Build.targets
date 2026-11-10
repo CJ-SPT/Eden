@@ -24,6 +24,10 @@
         Include="Eden.Data;Eden.Gameplay;Eden.Infrastructure;Eden.Modding;Eden.Protocol;Eden.World"
         Condition="'$(MSBuildProjectName)' == 'Eden.Server'"
       />
+      <_AllowedEdenReference
+        Include="Eden.Gameplay;Eden.Infrastructure;Eden.Modding;Eden.Protocol"
+        Condition="'$(MSBuildProjectName)' == 'Eden.Benchmarks'"
+      />
       <_ForbiddenEdenReference Include="@(ProjectReference->'%(Filename)')" />
       <_ForbiddenEdenReference Remove="@(_AllowedEdenReference)" />
     </ItemGroup>

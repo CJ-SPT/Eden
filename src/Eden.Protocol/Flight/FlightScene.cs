@@ -6,6 +6,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.Protocol.Targeting;
+using ZLinq;
 
 namespace Eden.Protocol.Flight;
 
@@ -119,6 +120,7 @@ internal sealed class FlightScene(
 
     private StaticSpaceObject[] VisibleObjects(FlightSceneContext context) =>
         Objects
+            .AsValueEnumerable()
             .Where(o =>
                 !MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
                 || (context.Pilot.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)

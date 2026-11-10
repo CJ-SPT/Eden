@@ -1,5 +1,8 @@
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Numerics;
 using System.Text;
+using CommunityToolkit.HighPerformance.Buffers;
 
 namespace Eden.Protocol.Serialization;
 
@@ -33,15 +36,24 @@ internal sealed record BlueDictionary(IReadOnlyList<(object? Key, object? Value)
 internal static class BlueMarshal
 {
     private const string PaperDollNamespace = "eve.common.script.paperDoll.paperDollDefinitions.";
+    private const byte EmptyByteString = 14;
+    private const byte SingleByteString = 15;
+    private const byte ByteString = 19;
 
     public static byte[] Encode(object? value)
     {
-        using MemoryStream buffer = new();
-        using BinaryWriter writer = new(buffer);
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        Encode(buffer, value);
+        return buffer.WrittenSpan.ToArray();
+    }
+
+    internal static void Encode(IBufferWriter<byte> output, object? value)
+    {
+        // The caller retains its buffer through encoding and any asynchronous send.
+        Writer writer = new(output);
         writer.Write((byte)126);
         writer.Write(0);
         Write(writer, value);
-        return buffer.ToArray();
     }
 
     public static object? Decode(byte[] bytes)
@@ -349,7 +361,7 @@ internal static class BlueMarshal
             _ => throw new InvalidDataException("Expected a byte string."),
         };
 
-    private static void Size(BinaryWriter writer, int size)
+    private static void Size(Writer writer, int size)
     {
         if (size < 255)
         {
@@ -361,7 +373,89 @@ internal static class BlueMarshal
         writer.Write(size);
     }
 
-    private static void Write(BinaryWriter writer, object? value)
+    private readonly struct Writer(IBufferWriter<byte> output)
+    {
+        // Blue integers and floating-point values use little-endian bytes on every host.
+        // Write primitives directly so numeric-heavy Destiny updates need no stream adapter or temporary arrays.
+        internal void Write(byte value)
+        {
+            output.GetSpan(1)[0] = value;
+            output.Advance(1);
+        }
+
+        internal void Write(sbyte value) => Write(unchecked((byte)value));
+
+        internal void Write(short value)
+        {
+            BinaryPrimitives.WriteInt16LittleEndian(output.GetSpan(sizeof(short)), value);
+            output.Advance(sizeof(short));
+        }
+
+        internal void Write(int value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(output.GetSpan(sizeof(int)), value);
+            output.Advance(sizeof(int));
+        }
+
+        internal void Write(long value)
+        {
+            BinaryPrimitives.WriteInt64LittleEndian(output.GetSpan(sizeof(long)), value);
+            output.Advance(sizeof(long));
+        }
+
+        internal void Write(double value)
+        {
+            BinaryPrimitives.WriteDoubleLittleEndian(output.GetSpan(sizeof(double)), value);
+            output.Advance(sizeof(double));
+        }
+
+        internal void Write(ReadOnlySpan<byte> value)
+        {
+            if (!value.IsEmpty)
+            {
+                value.CopyTo(output.GetSpan(value.Length));
+                output.Advance(value.Length);
+            }
+        }
+
+        internal void WriteText(string text, Encoding encoding)
+        {
+            int length = encoding.GetByteCount(text);
+            Size(this, length);
+            WriteCharacters(text, encoding, length);
+        }
+
+        internal void WriteByteString(string text)
+        {
+            int length = Encoding.UTF8.GetByteCount(text);
+            ByteStringHeader(this, length);
+            WriteCharacters(text, Encoding.UTF8, length);
+        }
+
+        private void WriteCharacters(string text, Encoding encoding, int length)
+        {
+            if (length > 0)
+            {
+                int written = encoding.GetBytes(text, output.GetSpan(length));
+                output.Advance(written);
+            }
+        }
+    }
+
+    private static void ByteStringHeader(Writer writer, int length)
+    {
+        writer.Write(
+            length == 0 ? EmptyByteString
+            : length == 1 ? SingleByteString
+            : ByteString
+        );
+        if (length > 1)
+        {
+            Size(writer, length);
+        }
+    }
+
+    private static void Write(Writer writer, object? value)
     {
         switch (value)
         {
@@ -407,28 +501,15 @@ internal static class BlueMarshal
                 writer.Write(number);
                 break;
             case string text:
-                Write(writer, Encoding.UTF8.GetBytes(text));
+                writer.WriteByteString(text);
                 break;
             case BlueUnicode text:
                 // Carbon TY_UTF8 constructs Python unicode, including empty strings.
                 writer.Write((byte)46);
-                byte[] utf8 = Encoding.UTF8.GetBytes(text.Value);
-                Size(writer, utf8.Length);
-                writer.Write(utf8);
+                writer.WriteText(text.Value, Encoding.UTF8);
                 break;
             case byte[] bytes:
-                if (bytes.Length == 0)
-                {
-                    writer.Write((byte)14);
-                    break;
-                }
-
-                writer.Write((byte)(bytes.Length == 1 ? 15 : 19));
-                if (bytes.Length != 1)
-                {
-                    Size(writer, bytes.Length);
-                }
-
+                ByteStringHeader(writer, bytes.Length);
                 writer.Write(bytes);
                 break;
             case PaperDollRow row:
@@ -440,9 +521,7 @@ internal static class BlueMarshal
                 break;
             case BlueGlobal global:
                 writer.Write((byte)2);
-                byte[] name = Encoding.ASCII.GetBytes(global.Name);
-                Size(writer, name.Length);
-                writer.Write(name);
+                writer.WriteText(global.Name, Encoding.ASCII);
                 break;
             case BlueRowDescriptor descriptor:
                 Write(
@@ -481,9 +560,7 @@ internal static class BlueMarshal
                     Size(writer, 3);
                 }
                 writer.Write((byte)2);
-                byte[] globalName = Encoding.ASCII.GetBytes(constructor.Name);
-                Size(writer, globalName.Length);
-                writer.Write(globalName);
+                writer.WriteText(constructor.Name, Encoding.ASCII);
                 Write(writer, constructor.Arguments);
                 if (constructor.State is not null)
                 {

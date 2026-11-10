@@ -10,6 +10,71 @@ namespace Eden.Protocol.Tests.Transport;
 public sealed class EncryptedPacketsTests
 {
     [Fact]
+    public async Task IncompressibleRepliesKeepTheirOriginalPayloadAcrossRepeatedPoolReuse()
+    {
+        byte[] data = new byte[EncryptedPackets.CompressionThreshold * 2];
+        new Random(42).NextBytes(data);
+        using Aes aes = Aes.Create();
+        using MemoryStream stream = new();
+        EncryptedPackets packets = new(stream, aes, default);
+        for (int index = 0; index < 8; index++)
+        {
+            stream.SetLength(0);
+            await packets.WriteAsync(data);
+            stream.Position = 0;
+            byte[] ciphertext = await PacketStream.ReadAsync(stream, default, PacketStream.MaxSessionBytes);
+            Assert.Equal(BlueMarshal.Encode(data), aes.DecryptCbc(ciphertext, aes.IV));
+            stream.Position = 0;
+            Assert.Equal(data, Assert.IsType<byte[]>(await packets.ReadAsync()));
+        }
+    }
+
+    [Theory]
+    [InlineData(4096)]
+    [InlineData(EncryptedPackets.CompressionThreshold * 2)]
+    public async Task PooledCiphertextStaysOwnedUntilTheAsynchronousWriteCompletes(int length)
+    {
+        using Aes aes = Aes.Create();
+        using DelayedStream stream = new();
+        EncryptedPackets packets = new(stream, aes, default);
+        var value = new BlueUnicode(new string('a', length));
+        Task pending = packets.WriteAsync(value);
+        await stream.Writing.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        try
+        {
+            using MemoryStream other = new();
+            for (int index = 0; index < 16; index++)
+            {
+                await new EncryptedPackets(other, aes, default).WriteAsync(new BlueUnicode(new string('z', length)));
+            }
+            Assert.False(pending.IsCompleted);
+        }
+        finally
+        {
+            stream.Release.TrySetResult();
+        }
+        await pending;
+        stream.Position = 0;
+        Assert.Equal(value.Value, await packets.ReadAsync());
+    }
+
+    private sealed class DelayedStream : MemoryStream
+    {
+        internal TaskCompletionSource Writing { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            if (buffer.Length > sizeof(uint))
+            {
+                Writing.TrySetResult();
+                await Release.Task.WaitAsync(cancellationToken);
+            }
+            await base.WriteAsync(buffer, cancellationToken);
+        }
+    }
+
+    [Fact]
     public async Task FullCatalogSummaryCompressesIntoOneEncryptedFrameWithoutChangingNativeRows()
     {
         var rows = Enumerable

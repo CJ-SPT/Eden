@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
+using CommunityToolkit.HighPerformance;
+using CommunityToolkit.HighPerformance.Buffers;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Transport;
@@ -29,26 +31,31 @@ internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken
 
     public async Task WriteAsync(object? value)
     {
-        byte[] plain = BlueMarshal.Encode(value);
-        if (plain.Length > MaximumOutgoingBytes)
+        using ArrayPoolBufferWriter<byte> plain = new();
+        BlueMarshal.Encode(plain, value);
+        if (plain.WrittenCount > MaximumOutgoingBytes)
         {
             throw new InvalidDataException("Oversized outgoing session message.");
         }
-        if (plain.Length > CompressionThreshold)
+        if (plain.WrittenCount > CompressionThreshold)
         {
             // Build 3662168's transport inflates a zlib envelope after decryption,
             // the same form accepted by ReadAsync. Incoming bounds stay unchanged.
-            using MemoryStream buffer = new();
-            using (ZLibStream compressor = new(buffer, CompressionLevel.Fastest, leaveOpen: true))
+            using ArrayPoolBufferWriter<byte> buffer = new();
+            using (ZLibStream compressor = new(buffer.AsStream(), CompressionLevel.Fastest))
             {
-                compressor.Write(plain);
+                compressor.Write(plain.WrittenSpan);
             }
-            if (buffer.Length < plain.Length)
-            {
-                plain = buffer.ToArray();
-            }
+            await WriteEncryptedAsync(buffer.WrittenCount < plain.WrittenCount ? buffer.WrittenMemory : plain.WrittenMemory);
+            return;
         }
-        byte[] ciphertext = aes.EncryptCbc(plain, aes.IV);
-        await PacketStream.WriteAsync(stream, ciphertext, cancellationToken, PacketStream.MaxSessionBytes);
+        await WriteEncryptedAsync(plain.WrittenMemory);
+    }
+
+    private async Task WriteEncryptedAsync(ReadOnlyMemory<byte> plain)
+    {
+        using var ciphertext = MemoryOwner<byte>.Allocate(aes.GetCiphertextLengthCbc(plain.Length));
+        int written = aes.EncryptCbc(plain.Span, aes.IV, ciphertext.Span);
+        await PacketStream.WriteAsync(stream, ciphertext.Memory[..written], cancellationToken, PacketStream.MaxSessionBytes);
     }
 }

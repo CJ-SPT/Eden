@@ -6,6 +6,124 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Pooled protocol buffers and selective libraries, November 9, 2026
+
+The library evaluation uses .NET SDK 10.0.403 and retains Eden's native Blue/Destiny wire formats and SQLite save path.
+Runtime additions are [CommunityToolkit.HighPerformance 8.4.2](https://github.com/CommunityToolkit/dotnet),
+[ZLinq 1.6.1](https://github.com/Cysharp/ZLinq) and [ZLogger 2.6.1](https://github.com/Cysharp/ZLogger).
+[BenchmarkDotNet 0.15.8](https://github.com/dotnet/BenchmarkDotNet) is confined to development tooling.
+Gameplay and Infrastructure retain their .NET-only dependency boundaries.
+
+Blue encoding can write into a caller-owned `IBufferWriter<byte>`. Its primitive writer emits explicit little-endian values;
+text encodes directly into the destination rather than allocating a byte array per field. The existing owned-array entry point
+remains available for immutable snapshots and callers that retain bytes. Native ballpark builders rent their temporary storage
+but return independent arrays. The encrypted send path retains rented plaintext, compression and ciphertext buffers until
+the asynchronous write completes. Compression thresholds, zlib envelope, AES mode and frame limits retain their existing rules.
+
+Consulted [Carbon Blue `Marshal.cpp`, revision af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+for byte-string and Unicode forms. Golden fixtures cover native string tokens, length transitions, all integer-width boundaries,
+negative zero, infinities and a NaN payload. Other regressions cover invalid-surrogate replacement, packed rows, nested values,
+independent owned output, allocation budgets, compression fallback and delayed writes with concurrent pool reuse.
+
+ZLinq is limited to in-memory NPC/contact and static-object visibility filtering. EF queries remain translated to SQL.
+The benchmark uses the same visibility predicate and source order for both implementations; selected scene regressions cover
+exact range boundaries, wrong-system contacts, undocked/docked views and off-grid warp tracking. This is selective adoption,
+not a repository-wide LINQ replacement.
+
+The executable attaches a host-owned ZLogger sink to the existing typed Infrastructure log. Quiet/verbose behavior,
+explicit tracing, event timestamps, Unicode output and warning/error routing to stderr are preserved. Independent output/error
+queues each hold at most 4,096 entries. A full queue waits rather than dropping messages or growing without a bound.
+Normal shutdown detaches the sink and drains both queues. Existing callbacks can still construct strings before logging;
+this integration does not claim that every log call is allocation-free. Tests stall output, continue producers while queue
+space remains, fill the bounded queue and verify per-stream ordered delivery and shutdown flushing.
+
+RecyclableMemoryStream was not added alongside the chosen pooled writer. Dapper is deferred because the measured warmed
+simulation already avoids SQL; changing row mappers would not accelerate that work. UniTask is deferred because Eden uses
+`AsyncLocal` catalog scopes and diagnostics. MemoryPack would require a separate internal format use case; it does not replace
+the native client protocol or SQLite checkpoints. No separate ZString package is needed for the selected changes.
+
+### Measurements
+
+The baseline production source was `3029517e`. Baseline and final runs used Release builds, the same generated workloads,
+.NET 10.0.14 and the same desktop. Benchmarks and replay runs were serial, without concurrent builds/tests. Other desktop
+activity was not controlled. Reports are retained under ignored `artifacts/library-performance`.
+These measurements preceded integration of the separate mod-administration changes through `18082c4b`; the combined main
+checkout receives its own affected validation below.
+
+BenchmarkDotNet ShortRun used one process, three warmups and three measured iterations per case. The four serialization cases
+use native market-order rows and either return owned encoded bytes or send through compression/encryption to `Stream.Null`.
+Numbers are mean microseconds and managed KiB allocated per operation; short-run confidence intervals are broad.
+
+| Operation / orders | Baseline us | Final us | Baseline KiB | Final KiB |
+| --- | ---: | ---: | ---: | ---: |
+| Encode / 32 | 76.22 | 51.54 | 136.71 | 83.49 |
+| Encrypted send / 32 | 66.55 | 53.88 | 147.54 | 73.85 |
+| Encode / 4,096 | 15,038.05 | 8,974.02 | 17,485.38 | 12,097.77 |
+| Encrypted send / 4,096 | 13,375.17 | 6,795.68 | 17,722.34 | 9,517.61 |
+
+The large encrypted-reply case allocates approximately 46% less and its sampled mean time falls approximately 49%.
+Raw reports are in `micro-baseline`, `micro-optimized` and `micro-final`; the middle run used the initial stream-adapter
+encoder and is not the final primitive writer. Only the baseline and final columns above describe the retained encoder.
+
+The scene-filter comparison is deliberately retained as mixed evidence. At 64 objects, standard LINQ measured 409.2 ns / 648 B
+against ZLinq's 444.5 ns / 600 B. At 4,096 objects it measured 7,505.1 ns / 2,144 B against 7,147.3 ns / 2,096 B.
+That is a small allocation reduction in both cases, a slower small-scene sample and a faster larger-scene sample. Final result
+arrays still allocate. This does not justify a global replacement or establish a material full-frame speedup.
+
+Complete-session replays retain four warmups and thirty measured frames per case. They exercise owners, observers, output
+encoding and periodic checkpoints with a fixed test clock. Every measured warmed frame retains the assertions for zero SQL
+commands, zero connection opens, zero fitting calculations and no live-world projection. A clean archived baseline source copy
+was built under `baseline-source` for a fresh control immediately before the final populated run.
+
+| Case | Initial baseline median / p95 ms | Fresh baseline control ms | Final median / p95 ms | Allocated MiB before / final |
+| --- | ---: | ---: | ---: | ---: |
+| 1 player / 0 NPCs, idle | 0.18 / 0.34 | Not repeated | 0.24 / 1.13 | 0.159 / 0.160 |
+| 10 players / 1,000 NPCs, combat | 65.08 / 98.46 | 71.09 / 109.69 | 72.99 / 112.74 | 89.27 / 73.85 |
+
+The populated frame allocates approximately 17% less; encoded output remains approximately 2.703 MiB per frame. Full-frame
+timing did not improve: the final median/p95 is slightly slower than the fresh control and slower than the initial baseline.
+The baseline controls themselves differ, so these runs establish allocation savings rather than a complete-session latency win.
+The idle case also establishes no latency gain. The fixture's socket sink encodes output but excludes encryption and network
+backpressure; the separate encrypted-send benchmark covers that CPU/allocation path without real network I/O.
+
+Checkpoint costs remain separate from frame timing. Medians of the last three populated checkpoints were:
+
+| Checkpoint phase | Fresh baseline control ms | Final ms |
+| --- | ---: | ---: |
+| Owner capture | 0.62 | 0.56 |
+| Detached projection | 64.57 | 53.18 |
+| Durable write | 17.60 | 17.16 |
+
+These three samples do not establish a checkpoint optimization; its persistence implementation and schema did not change.
+Whole-database checkpoint copying and repeated scene work remain independent optimization targets. Pooling also retains
+reusable buffers, so reduced allocated bytes are not a measurement of reduced process working set.
+
+### Validation
+
+**Automated validation.** After integrating remote main through `18082c4b`, tool restore, solution restore and the complete
+solution build passed (7.92 seconds, zero warnings/errors). The affected selection passed 401 tests with three optional
+installed-client mod package tests skipped because `EDEN_TEST_CLIENT_ROOT` was unset (404 selected, 89.76 seconds).
+Both Python policy suites passed: eight catalog cases in 0.785 seconds and nine formatting cases in 0.015 seconds.
+Formatting and the 140-column policy passed. The full .NET suite was not run.
+
+The first exact feature filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Transport.EncryptedPacketsTests.FullCatalogSummaryCompressesIntoOneEncryptedFrameWithoutChangingNativeRows`.
+The combined final filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Serialization.|FullyQualifiedName~Eden.Protocol.Tests.Transport.|FullyQualifiedName~Eden.Protocol.Tests.Flight.|FullyQualifiedName~Eden.Protocol.Tests.Hosting.|FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcSceneUpdateTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcCapacityBenchmarkTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.TypedCallResultTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CooperativeFleetTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.ModRuntimeTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.ModFoundationTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.ModLauncherApiTests
+```
+
+The final four encoding benchmarks completed in 46.39 seconds; the initial four-case baseline completed in 54.50 seconds.
+The combined stream-adapter/scene-filter comparison completed eight cases in 80.92 seconds. The final populated/empty
+Release replays and the fresh baseline control passed their frame budgets and database/fitting counters. Their frame and
+checkpoint measurements above precede the mod-administration integration; the combined validation also passes the ordinary
+small normal-session capacity replay. No new live-client evidence is claimed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Hauler return-route stalls, November 9, 2026
 
 A subsequent maintainer capture showed a **5,586.11 ms** traffic maintenance hold and **5,147.53 ms** of world wait on the next tick. The running server already had the per-job lock change described below. That capture did not identify an individual NPC action. Slow owner warnings now include the NPC job, pilot and starting system when a job ran during the hold.

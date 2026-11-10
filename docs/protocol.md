@@ -46,6 +46,8 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Pooled protocol buffers and selective libraries, November 9, 2026](protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)
+
 - [Probe launcher undocking crash correction, November 9, 2026](protocol/information.md#probe-launcher-undocking-crash-correction-november-9-2026)
 
 - [Mission layout corrections, November 9, 2026](protocol/agents.md#mission-layout-corrections--november-9-2026)

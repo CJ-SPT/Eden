@@ -1,3 +1,5 @@
+using CommunityToolkit.HighPerformance;
+using CommunityToolkit.HighPerformance.Buffers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
@@ -28,8 +30,8 @@ internal static partial class Ballpark
     )
     {
         var pilot = own.Pilot;
-        using MemoryStream stream = new();
-        using BinaryWriter writer = new(stream);
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0); // DESTINY_FULLSTATE
         writer.Write(stamp);
         List<SlimItem> items = [];
@@ -66,7 +68,7 @@ internal static partial class Ballpark
             .Concat((drones ?? []).Select(d => d.Health))
             .ToDictionary(s => s.ShipId, s => s.DamageState());
         return new(
-            stream.ToArray(),
+            buffer.WrittenSpan.ToArray(),
             pilot.ShipId,
             items,
             new SolarSystemSlim(pilot.SystemId),
@@ -89,18 +91,18 @@ internal static partial class Ballpark
 
     internal static BallparkAddition AddObjects(IEnumerable<StaticSpaceObject> objects, int stamp)
     {
-        using MemoryStream stream = new();
-        using BinaryWriter writer = new(stream);
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0); // DESTINY_FULLSTATE, consumed by AddBalls in partial mode.
         writer.Write(stamp);
         var slims = objects.Select(body => WriteObject(writer, body)).ToList();
-        return new(stream.ToArray(), slims, new Dictionary<long, ShipDamageState>());
+        return new(buffer.WrittenSpan.ToArray(), slims, new Dictionary<long, ShipDamageState>());
     }
 
     internal static BallparkAddition AddShip(ShipContact ship, int stamp)
     {
-        using MemoryStream stream = new();
-        using BinaryWriter writer = new(stream);
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0); // AddBalls reads the full-state format in partial mode.
         writer.Write(stamp);
         var slim = WriteShip(writer, ship, stamp);
@@ -109,38 +111,38 @@ internal static partial class Ballpark
         {
             damage[ship.Pilot.ShipId] = ship.Health.DamageState();
         }
-        return new(stream.ToArray(), [slim], damage);
+        return new(buffer.WrittenSpan.ToArray(), [slim], damage);
     }
 
     internal static BallparkAddition AddNpcs(IEnumerable<NpcContact> npcs, int stamp)
     {
-        using MemoryStream stream = new();
-        using BinaryWriter writer = new(stream);
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0);
         writer.Write(stamp);
         var contacts = npcs.ToArray();
         var slims = contacts.Select(n => WriteNpc(writer, n, stamp)).ToList();
-        return new(stream.ToArray(), slims, contacts.ToDictionary(n => n.Id, n => n.Health.DamageState()));
+        return new(buffer.WrittenSpan.ToArray(), slims, contacts.ToDictionary(n => n.Id, n => n.Health.DamageState()));
     }
 
     internal static BallparkAddition AddWrecks(IEnumerable<WreckContact> wrecks, int stamp)
     {
-        using MemoryStream stream = new();
-        using BinaryWriter writer = new(stream);
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0);
         writer.Write(stamp);
         var slims = wrecks.Select(w => WriteWreck(writer, w)).ToList();
-        return new(stream.ToArray(), slims, new Dictionary<long, ShipDamageState>());
+        return new(buffer.WrittenSpan.ToArray(), slims, new Dictionary<long, ShipDamageState>());
     }
 
     internal static BallparkAddition AddMissiles(IEnumerable<MissileContact> missiles, int stamp)
     {
-        using MemoryStream stream = new();
-        using BinaryWriter writer = new(stream);
+        using ArrayPoolBufferWriter<byte> buffer = new();
+        using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0);
         writer.Write(stamp);
         var slims = missiles.Select(missile => WriteMissile(writer, missile)).ToList();
-        return new(stream.ToArray(), slims, new Dictionary<long, ShipDamageState>());
+        return new(buffer.WrittenSpan.ToArray(), slims, new Dictionary<long, ShipDamageState>());
     }
 
     private static SlimItem WriteMissile(BinaryWriter writer, MissileContact missile)

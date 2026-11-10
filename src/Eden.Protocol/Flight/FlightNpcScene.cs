@@ -3,6 +3,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Combat;
+using ZLinq;
 
 namespace Eden.Protocol.Flight;
 
@@ -52,8 +53,13 @@ internal sealed class FlightNpcScene(
         var contacts = context.Pilot.Position is null
             ? []
             : encounters?.List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [];
-        _transitingNpcs = contacts.Where(n => n.SystemId == context.Pilot.SystemId && n.Warp is not null).Select(n => n.Id).ToHashSet();
+        _transitingNpcs = contacts
+            .AsValueEnumerable()
+            .Where(n => n.SystemId == context.Pilot.SystemId && n.Warp is not null)
+            .Select(n => n.Id)
+            .ToHashSet();
         return contacts
+            .AsValueEnumerable()
             .Where(n =>
                 n.SystemId == context.Pilot.SystemId
                 && context.Pilot.Position!.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange

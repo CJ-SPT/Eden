@@ -167,6 +167,20 @@ Gameplay builds independently of Protocol, Server, EF Core and the host containe
 
 ### Session performance diagnostics
 
+The host uses pooled protocol buffers and buffered console logging. See the
+[library evaluation and measurements](docs/protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)
+for the dependency choices, compatibility coverage and limits of the measurements.
+
+Run isolated encoding or scene-filter comparisons from the repository root:
+
+```powershell
+dotnet run --project tools/Benchmarks/Eden.Benchmarks.csproj -c Release -- --filter '*SerializationBenchmarks*' --job short
+dotnet run --project tools/Benchmarks/Eden.Benchmarks.csproj -c Release -- --filter '*SceneFilteringBenchmarks*' --job short
+```
+
+BenchmarkDotNet writes reports under ignored `artifacts/library-benchmarks` by default. Use `--artifacts <directory>` to retain
+separate comparisons. These small benchmarks complement the complete-session replays below; they do not establish player capacity.
+
 Bound-call warnings now identify their embedded method. Fitting and brain primes share committed fitting snapshots and operation-local catalog reads; see the [dogma and ship-call latency record](docs/protocol/performance.md#bound-dogma-and-ship-call-latency-november-7-2026).
 
 Unchanged player-frame polling and stable NPC observer records now share resident inputs; see the [multi-player frame comparison](docs/protocol/performance.md#shared-work-across-player-frames-november-7-2026).

@@ -1,10 +1,36 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Flight;
 using Eden.Protocol.Flight;
 
 namespace Eden.Protocol.Tests.Combat;
 
 public sealed class NpcSceneUpdateTests
 {
+    [Fact]
+    public void ValueFilteringRetainsBoundaryContactsOrderingAndOffGridWarpTracking()
+    {
+        using NpcCombatTests.Fixture f = new(useTestClock: true);
+        var pilot = f.Pilot with { Position = SpacePosition.Zero };
+        var boundary = f.Npc with { Position = new(NpcEncounterDefinitions.VisibilityRange, 0, 0) };
+        var inside = boundary with { Id = boundary.Id + 1, Position = SpacePosition.Zero };
+        var outside = boundary with { Id = boundary.Id + 2, Position = new(NpcEncounterDefinitions.VisibilityRange + 1, 0, 0) };
+        var warping = outside with { Id = boundary.Id + 3, Warp = new(SpacePosition.Zero, outside.Position, 1, pilot.Flight, 1) };
+        var elsewhere = inside with { Id = boundary.Id + 4, SystemId = pilot.SystemId + 1, Warp = warping.Warp };
+        Encounters encounters = new([outside, inside, elsewhere, boundary, warping]);
+        List<DestinyCommand> commands = [];
+        FlightNpcScene scene = new(new(), f.Clock, encounters, new(commands.Add), commands.Add, _ => { });
+        FlightSceneContext context = new(pilot, true, true, 1);
+        scene.Capture(context);
+        Assert.Equal(new[] { inside.Id, boundary.Id }, scene.Contacts.Select(n => n.Id));
+        Assert.True(scene.InWarp(warping.Id));
+        Assert.False(scene.InWarp(elsewhere.Id));
+        scene.RefreshNpcs(context);
+        Assert.Empty(commands);
+        scene.Capture(context with { Pilot = pilot with { Position = null } });
+        Assert.Empty(scene.Contacts);
+        Assert.False(scene.InWarp(warping.Id));
+    }
+
     private sealed class Encounters(IReadOnlyList<NpcContact> contacts) : INpcEncounters
     {
         internal IReadOnlyList<NpcContact> Current { get; set; } = contacts;

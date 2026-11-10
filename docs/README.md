@@ -16,6 +16,9 @@
 
 ## Development
 
+[Protocol buffer and library evaluation](protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)
+covers pooled encoding, selected in-memory LINQ queries, bounded console logging and repeatable library benchmarks.
+
 [Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) covers pathfinder history caching, weather baseline replies and simulated search/navigation requests.
 
 [Universal native search](protocol/characters.md#universal-native-search-november-9-2026) covers mixed categories, current saved names, catalog indexing and owner-name resolution.
