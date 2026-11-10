@@ -22,6 +22,33 @@ public sealed class CapsuleerRuntimeTests
     private const int OreType = 1230;
 
     [Fact]
+    public void UnchangedSchedulerReadsDoNotRebuildMembershipBetweenJobs()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        scheduler.Run(0);
+        scheduler.Capture();
+        long reconciliations = scheduler.Reconciliations;
+        using (var metrics = SessionPerformance.Begin("unchanged scheduler membership", _ => { }, force: true)!)
+        {
+            for (int repeat = 0; repeat < 20; repeat++)
+            {
+                Assert.Equal(0, scheduler.Run(0, maximumActions: 1).Turn.Completed);
+                scheduler.Capture();
+            }
+            Assert.Equal(reconciliations, scheduler.Reconciliations);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        selected.Transfer(30000144);
+        scheduler.Capture();
+        Assert.True(scheduler.Reconciliations > reconciliations);
+    }
+
+    [Fact]
     public async Task ConcurrentWakesExecuteEachDueRoleOnceAndCheckpointTheSameJobGeneration()
     {
         using CapsuleerHaulerTests.Fixture f = new();

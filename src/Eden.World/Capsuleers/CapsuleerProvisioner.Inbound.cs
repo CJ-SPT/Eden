@@ -42,7 +42,7 @@ internal sealed partial class CapsuleerProvisioner
         int[] roster;
         TrafficProvisioning.Reservations reservations;
         using (synchronization.Enter("inbound preparation snapshot", community))
-        using (WorldDbContext world = new(database.Path))
+        using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
         {
             var existing = world
                 .Set<SavedCapsuleerAgent>()
@@ -94,7 +94,7 @@ internal sealed partial class CapsuleerProvisioner
         using var owner = synchronization.Enter("inbound prepared founder", community);
         try
         {
-            using (WorldDbContext world = new(database.Path))
+            using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
             {
                 _startupReservations = BackgroundReservations(world);
             }
@@ -135,7 +135,7 @@ internal sealed partial class CapsuleerProvisioner
             int gateSlot = checked((int)Math.Min(gate.ArrivalGateId, gate.DepartureGateId));
             int slot = visitor == 0 ? gateSlot : checked(gateSlot + visitor * TrafficJourneyRules.VisitorSlotStride);
             int community = gate.ArrivalGateId == gateSlot ? gate.ObserverSystemId : gate.SourceSystemId;
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
             using var transaction = world.Database.BeginTransaction();
             long? existing = world
                 .Set<SavedCapsuleerAgent>()

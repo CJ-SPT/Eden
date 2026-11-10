@@ -374,6 +374,20 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void OverdueDecommissioningRefreshesContactsAfterTheLastDockedShipLeaves()
+    {
+        using Fixture f = new(liveWorld: true);
+        var structure = f.Online();
+        f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
+        f.Structures.Unanchor(f.PilotId, structure.Id);
+        f.Clock.AdvanceWallTime(TimeSpan.FromDays(7));
+        var contacts = f.Db.Services.GetRequiredService<IStructureContacts>();
+        Assert.Equal(StructureState.ShieldVulnerable, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.State);
+        f.Db.Store.SetPosition(f.ShipId, Fixture.Point, Fixture.SystemId);
+        Assert.Equal(StructureState.Unanchored, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.State);
+    }
+
+    [Fact]
     public void VisitorCanMovePersonalItemsWithoutStructureManagementAuthority()
     {
         using Fixture f = new();

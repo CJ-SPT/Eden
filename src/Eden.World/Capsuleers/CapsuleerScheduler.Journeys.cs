@@ -6,7 +6,7 @@ internal sealed partial class CapsuleerScheduler
     {
         if (hauler.HasJourney)
         {
-            _travelers.Add(pilot);
+            _membershipDirty |= _travelers.Add(pilot);
         }
         IndexRoute(pilot, hauler.RouteSystems);
     }
@@ -17,6 +17,7 @@ internal sealed partial class CapsuleerScheduler
         {
             return;
         }
+        _membershipDirty = true;
         if (previous is not null)
         {
             foreach (int system in previous)

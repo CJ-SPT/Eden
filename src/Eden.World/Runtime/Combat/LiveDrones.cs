@@ -65,7 +65,10 @@ internal sealed partial class LiveCombatRuntime
             });
             foreach (var row in rows)
             {
-                _liveDrones[row.Contact.Id] = row;
+                if (!_dirtyDrones.Contains(row.Contact.Id))
+                {
+                    _liveDrones[row.Contact.Id] = row;
+                }
             }
             ids = rows.Select(d => d.Contact.Id).ToArray();
             _droneSystems[system] = ids;
@@ -520,6 +523,57 @@ internal sealed partial class LiveCombatRuntime
                 WHERE ItemId={contact.Id}
                 """
             );
+        }
+    }
+
+    private void ObserveDrones(IReadOnlyCollection<CombatRowChange> changes)
+    {
+        foreach (var change in changes)
+        {
+            if (change.Table is "WorldPilot" or "WorldFitRevision" or "WorldDroneSettings")
+            {
+                _dronePilots.Remove(change.Id);
+                _dronePilotSystems.Remove(change.Id);
+            }
+            var affected = _liveDrones
+                .Values.Where(d =>
+                    change.Table switch
+                    {
+                        "WorldPilot" or "WorldFitRevision" or "WorldDroneSettings" => d.Contact.PilotId == change.Id,
+                        "WorldShip" => d.Contact.ShipId == change.Id,
+                        "WorldDrone" or "WorldItem" => d.Contact.Id == change.Id,
+                        _ => false,
+                    }
+                )
+                .ToArray();
+            foreach (var drone in affected)
+            {
+                _droneSystems.Remove(drone.Contact.SystemId);
+                _dronePilotSystems.Remove(drone.Contact.PilotId);
+                _dronePilots.Remove(drone.Contact.PilotId);
+                // Projection of another participant must never discard paid drone motion.
+                if (!_dirtyDrones.Contains(drone.Contact.Id))
+                {
+                    _liveDrones.Remove(drone.Contact.Id);
+                }
+            }
+        }
+        var ids = changes.Where(c => c.Table == "WorldDrone").Select(c => c.Id).ToArray();
+        if (ids.Length > 0)
+        {
+            Loading(() =>
+            {
+                using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+                foreach (var drone in world.Set<WorldDrone>().Where(d => ids.Contains(d.ItemId)).Select(d => new { d.PilotId, d.SystemId }))
+                {
+                    _dronePilotSystems.Remove(drone.PilotId);
+                    if (drone.SystemId is int system)
+                    {
+                        _droneSystems.Remove(system);
+                    }
+                }
+                return true;
+            });
         }
     }
 

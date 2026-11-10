@@ -324,12 +324,28 @@ internal sealed partial class LiveCombatRuntime
         _droneSecurity.Clear();
     }
 
-    private void ClearProjectedDroneCombat()
+    private void ObserveDronePlayers(IReadOnlyCollection<CombatRowChange> changes)
     {
-        _droneTimers.Clear();
-        _droneEngagements.Clear();
-        _droneHostilities.Clear();
-        _residentAttackers.Clear();
-        ClearDronePlayers();
+        if (changes.Any(c => c.Table is "WorldAccount" or "WorldEngagement" or "WorldPilotHostility" or "schema"))
+        {
+            ClearDronePlayers();
+            return;
+        }
+        foreach (var change in changes)
+        {
+            if (change.Table is "WorldPilot" or "WorldCrimewatch" or "WorldLogoff" or "WorldPilotSecurity")
+            {
+                foreach (long ship in _dronePlayers.Where(p => p.Value?.PilotId == change.Id).Select(p => p.Key).ToArray())
+                {
+                    _dronePlayers.Remove(ship);
+                    _droneAttackers.Remove(ship);
+                }
+            }
+            if (change.Table is "WorldShip" or "WorldPositionMembership" or "WorldShipLoss")
+            {
+                _dronePlayers.Remove(change.Id);
+                _droneAttackers.Remove(change.Id);
+            }
+        }
     }
 }

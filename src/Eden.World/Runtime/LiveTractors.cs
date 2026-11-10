@@ -31,6 +31,7 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
     private readonly Dictionary<long, Tractor> _cycles = [];
     private readonly Dictionary<long, SpacePosition> _positions = [];
     private readonly HashSet<long> _dirty = [];
+    private readonly Dictionary<long, (long Pilot, long Ship, int System)> _owners = [];
     private bool _writing;
     private long _revision;
 
@@ -40,11 +41,19 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
 
     internal SpacePosition? Position(long id) => _positions.GetValueOrDefault(id);
 
-    internal void Start(InformationCycle cycle, SpacePosition source, SpacePosition wreck, double radii, ICooperativeFleets? fleets)
+    internal void Start(
+        InformationCycle cycle,
+        SpacePosition source,
+        SpacePosition wreck,
+        double radii,
+        ICooperativeFleets? fleets,
+        int system
+    )
     {
         using var ownership = owner.Enter();
         _cycles[cycle.Module.ItemId] = new(cycle, source, radii, cycle.StartedAt, fleets);
         _positions[cycle.TargetId] = wreck;
+        _owners[cycle.TargetId] = (cycle.PilotId, cycle.ShipId, system);
         _revision++;
     }
 
@@ -130,7 +139,7 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
         }
     }
 
-    internal void Flush()
+    internal void Flush(TransactionParticipants? participants = null)
     {
         if (_writing || _dirty.Count == 0)
         {
@@ -139,15 +148,31 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
         _writing = true;
         try
         {
-            using WorldDbContext world = new(database.Path);
+            var targets = _dirty
+                .Where(id =>
+                    participants is null
+                    || participants.Includes(SharedSimulationResource.Wreck, id)
+                    || _owners.TryGetValue(id, out var source)
+                        && (
+                            participants.Includes(source.Pilot, source.Ship, source.System)
+                            || owner.Combat?.Participates(participants, source.Pilot, source.Ship) == true
+                        )
+                )
+                .ToArray();
+            if (targets.Length == 0)
+            {
+                return;
+            }
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
             using var transaction = world.Database.BeginTransaction();
-            Capture().Apply(world);
+            new TractorCheckpoint(targets.Select(id => new TractorPosition(id, _positions[id])).ToArray()).Apply(world);
             transaction.Commit();
-            _dirty.Clear();
+            _dirty.ExceptWith(targets);
             var active = _cycles.Values.Select(c => c.Cycle.TargetId).ToHashSet();
-            foreach (long target in _positions.Keys.Where(id => !active.Contains(id)).ToArray())
+            foreach (long target in _positions.Keys.Where(id => !active.Contains(id) && !_dirty.Contains(id)).ToArray())
             {
                 _positions.Remove(target);
+                _owners.Remove(target);
                 _revision++;
             }
         }
@@ -181,6 +206,7 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
         foreach (var change in changes.Where(c => c.Table == "WorldWreck"))
         {
             _positions.Remove(change.Id);
+            _owners.Remove(change.Id);
             _dirty.Remove(change.Id);
             _revision++;
         }

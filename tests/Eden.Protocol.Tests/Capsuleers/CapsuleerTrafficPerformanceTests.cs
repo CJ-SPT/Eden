@@ -41,6 +41,10 @@ public sealed class CapsuleerTrafficPerformanceTests(ITestOutputHelper output)
                 host.GetRequiredService<ICapsuleerUpdateDiagnostics>(),
                 scoped ? host.GetRequiredService<IPilotOperationScope>() : null
             );
+            // Measure equivalent warmed turns. Initial NPC/learning hydration belongs
+            // to cold entry and may take a different path in independent fixture worlds.
+            f.Clock.Seconds++;
+            worker.Tick();
             using var metrics = SessionPerformance.Begin($"maintenance scoped={scoped}", output.WriteLine, force: true)!;
             for (int step = 0; step < 12; step++)
             {

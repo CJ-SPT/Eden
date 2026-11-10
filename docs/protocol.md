@@ -10,6 +10,9 @@ native docking/storage, supported services, configuration speeds and explicit re
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) records native provider contracts,
 saved signature and ice discovery, source fingerprints and automated validation.
 
+[Classified transactions and scheduler reuse](protocol/performance.md#classified-transactions-and-scheduler-reuse-november-10-2026)
+records milestone 2 projection isolation, committed invalidation, shared views and deadline checks.
+
 [Incremental population admission](protocol/performance.md#incremental-population-admission-november-10-2026) records resumable founder batches and background gate preparation.
 
 [Shared-owner stall relief](protocol/performance.md#shared-owner-stall-relief-november-10-2026) records the frozen

@@ -266,21 +266,25 @@ internal sealed partial class LiveReadModels
 
     private void ObserveSpace(IReadOnlyCollection<CombatRowChange> changes)
     {
-        _signatureSuppression.Observe(changes);
+        _assaultDamageControls.Observe(changes, (key, change) => key.Module == change.Id);
+        _capacitorOnline.Observe(changes, (key, change) => change.Table == "WorldContractEscrow" || key.Module == change.Id);
+        _signatureSuppression.Observe(changes, (key, change) => change.Table == "WorldContractEscrow" || key.Module == change.Id);
         _missileWork.Observe(changes);
         _missileContacts.Observe(changes);
         _tackle.Observe(changes);
         _activeCores.Observe(changes);
         _npcEwar.Observe(changes);
         _playerEwar.Observe(changes);
-        _ewarOnline.Observe(changes);
-        _remoteRepairOnline.Observe(changes);
+        _ewarOnline.Observe(changes, (key, change) => change.Table == "WorldContractEscrow" || key.Module == change.Id);
+        _remoteRepairOnline.Observe(changes, (key, change) => change.Table == "WorldContractEscrow" || key.Module == change.Id);
         _remoteAssistance.Observe(changes);
-        _remoteAssistanceActive.Observe(changes);
+        _remoteAssistanceActive.Observe(changes, (key, change) => change.Table == "WorldContractEscrow" || key.Module == change.Id);
     }
 
     private void ClearSpace()
     {
+        _assaultDamageControls.Clear();
+        _capacitorOnline.Clear();
         _signatureSuppression.Clear();
         _missileWork.Clear();
         _missileContacts.Clear();

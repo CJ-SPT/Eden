@@ -389,6 +389,8 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 + _dirtyDrones.Count
                 + _dirtyDroneCombatTriggers.Count
                 + _droneTimers.Count
+                + _droneEngagements.Count
+                + _droneHostilities.Count
                 == 0
         )
         {
@@ -420,7 +422,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         }
     }
 
-    internal void Flush()
+    internal void Flush(TransactionParticipants? participants = null)
     {
         if (
             _internal != 0
@@ -431,6 +433,8 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 + _dirtyDrones.Count
                 + _dirtyDroneCombatTriggers.Count
                 + _droneTimers.Count
+                + _droneEngagements.Count
+                + _droneHostilities.Count
                 == 0
         )
         {
@@ -439,28 +443,62 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         _internal++;
         try
         {
-            using WorldDbContext world = new(database.Path);
+            var checkpoint = CaptureCheckpoint(participants);
+            if (
+                checkpoint.Ships.Count
+                    + checkpoint.Npcs.Count
+                    + checkpoint.Positions.Count
+                    + checkpoint.Drones.Count
+                    + checkpoint.Aggressions.Count
+                    + checkpoint.DroneTimers.Count
+                    + checkpoint.DroneEngagements.Count
+                    + checkpoint.DroneHostilities.Count
+                    + checkpoint.DroneTriggers.Count
+                == 0
+            )
+            {
+                return;
+            }
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
             using var timing = SessionLatency.Measure(SessionLatencyPhase.Projection);
-            CaptureCheckpoint().Apply(world);
-            foreach (long id in _dirtyShips)
+            checkpoint.Apply(world);
+            foreach (var change in checkpoint.Ships)
             {
-                _savedShips[id] = _ships[id];
+                long id = change.After.PilotId;
+                _savedShips[id] = change.After;
+                _dirtyShips.Remove(id);
             }
-            foreach (long id in _dirtyNpcs)
+            foreach (var change in checkpoint.Npcs)
             {
-                _savedNpcs[id] = _npcs[id];
+                _savedNpcs[change.After.Id] = change.After;
+                _dirtyNpcs.Remove(change.After.Id);
             }
-            foreach (long id in _dirtyPositions)
+            foreach (var position in checkpoint.Positions)
             {
-                _savedPositions[id] = _positions[id];
+                _savedPositions[position.ShipId] = _positions[position.ShipId];
+                _dirtyPositions.Remove(position.ShipId);
             }
-            _dirtyDrones.Clear();
-            _dirtyDroneCombatTriggers.Clear();
-            _dirtyPositions.Clear();
-            _dirtyShips.Clear();
-            _dirtyNpcs.Clear();
-            _dirtyAggressions.Clear();
-            ClearProjectedDroneCombat();
+            _dirtyDrones.ExceptWith(checkpoint.Drones.Select(d => d.Contact.Id));
+            _dirtyDroneCombatTriggers.ExceptWith(checkpoint.DroneTriggers.Select(t => t.ShipId));
+            _dirtyAggressions.ExceptWith(checkpoint.Aggressions.Select(a => a.NpcId));
+            foreach (var timer in checkpoint.DroneTimers)
+            {
+                _droneTimers.Remove(timer.PilotId);
+                foreach (long ship in _dronePlayers.Where(p => p.Value?.PilotId == timer.PilotId).Select(p => p.Key).ToArray())
+                {
+                    _dronePlayers.Remove(ship);
+                }
+            }
+            foreach (var engagement in checkpoint.DroneEngagements)
+            {
+                _droneEngagements.Remove((engagement.LowerPilotId, engagement.HigherPilotId));
+            }
+            foreach (var hostility in checkpoint.DroneHostilities)
+            {
+                _droneHostilities.Remove((hostility.SourceShipId, hostility.TargetShipId));
+                _residentAttackers.GetValueOrDefault(hostility.TargetShipId)?.Remove(hostility.SourceShipId);
+                _droneAttackers.Remove(hostility.TargetShipId);
+            }
         }
         finally
         {
@@ -478,31 +516,14 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         {
             ObserveAsteroidPopulation(changes);
         }
-        if (
-            changes.Any(c =>
-                c.Table
-                    is "WorldPilot"
-                        or "WorldShip"
-                        or "WorldPositionMembership"
-                        or "WorldAccount"
-                        or "WorldCrimewatch"
-                        or "WorldEngagement"
-                        or "WorldPilotHostility"
-                        or "WorldLogoff"
-                        or "WorldShipLoss"
-                        or "WorldPilotSecurity"
-            )
-        )
-        {
-            ClearDronePlayers();
-        }
+        ObserveDronePlayers(changes);
         if (
             changes.Any(c =>
                 c.Table is "WorldDrone" or "WorldDroneSettings" or "WorldFitRevision" or "WorldPilot" or "WorldShip" or "WorldItem"
             )
         )
         {
-            ClearDrones();
+            ObserveDrones(changes);
         }
         bool membershipChanged = changes.Any(c => c.Table == "WorldPositionMembership");
         foreach (var change in changes)

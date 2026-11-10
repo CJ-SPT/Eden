@@ -42,6 +42,11 @@ internal sealed partial class CapsuleerScheduler(
     private readonly Dictionary<long, string> _blocked = [];
     private IReadOnlyList<CapsuleerBlockingReason> _blockingReasons = [];
     private bool _blockingChanged;
+    private bool _membershipDirty = true;
+    private int[] _reconciledSystems = [];
+    private long _reconciledResumes = -1;
+    private IReadOnlyList<WatchedTrafficGate> _reconciledGates = [];
+    internal long Reconciliations { get; private set; }
     private long _completed;
     private long _failures;
     private string? _lastFailure;
@@ -87,6 +92,8 @@ internal sealed partial class CapsuleerScheduler(
             _blockingChanged = false;
         }
         var status = _queue.Inspect(activity.ElapsedTicks);
+        var elapsed = clock.GetElapsedTime(started);
+        var overrun = elapsed > CapsuleerJobQueue.ExecutionBudget ? elapsed - CapsuleerJobQueue.ExecutionBudget : TimeSpan.Zero;
         Volatile.Write(
             ref _diagnostics,
             new(
@@ -106,6 +113,8 @@ internal sealed partial class CapsuleerScheduler(
                 ScheduledAgents = _running.Count,
                 LastUpdate = _diagnostics.LastUpdate,
                 LastPresentation = _diagnostics.LastPresentation,
+                BudgetOverruns = _diagnostics.BudgetOverruns + (overrun > TimeSpan.Zero ? 1 : 0),
+                MaximumTurnOverrun = overrun > _diagnostics.MaximumTurnOverrun ? overrun : _diagnostics.MaximumTurnOverrun,
             }
         );
     }
@@ -122,6 +131,16 @@ internal sealed partial class CapsuleerScheduler(
 
     private void IndexLocation(long pilot, int system)
     {
+        if (
+            _locations.TryGetValue(pilot, out int current)
+            && current == system
+            && _systemAgents.TryGetValue(system, out var existing)
+            && existing.Contains(pilot)
+        )
+        {
+            return;
+        }
+        _membershipDirty = true;
         if (_locations.TryGetValue(pilot, out int previous) && (!_routes.TryGetValue(pilot, out var route) || !route.Contains(previous)))
         {
             _systemAgents.GetValueOrDefault(previous)?.Remove(pilot);
@@ -168,6 +187,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             return;
         }
+        _membershipDirty = true;
         using WorldDbContext world = new(database.Path);
         bool regional = Live is not null;
         bool incremental = _loaded && (preparedSystem is not null || preparedPilot is not null);
@@ -192,7 +212,7 @@ internal sealed partial class CapsuleerScheduler(
                 ? agentQuery.Where(a => a.PilotId == pilotId)
                 : agentQuery.Where(a => a.CommunitySystemId == preparedSystem);
         }
-        if (!_loaded)
+        if (!_loaded || _populationRevision != (Live?.CapsuleerRevision ?? 0))
         {
             _suspended = world.Set<SavedCapsuleerSuspension>().Select(s => s.PilotId).ToHashSet();
         }
@@ -429,6 +449,19 @@ internal sealed partial class CapsuleerScheduler(
 
     private void Reconcile(HumanActivitySnapshot activity)
     {
+        var policy = _populationSettings.Settings.Capsuleers;
+        IReadOnlyList<WatchedTrafficGate> gates = policy.Enabled && policy.GateVisitors > 0 ? gateWatch.Read(activity) : [];
+        if (
+            !_membershipDirty
+            && _reconciledResumes == activity.Resumes
+            && _reconciledSystems.SequenceEqual(activity.ActiveSystems)
+            && _reconciledGates.SequenceEqual(gates)
+        )
+        {
+            return;
+        }
+        using var phase = SessionPerformance.Phase("traffic.membership");
+        Reconciliations++;
         foreach (int system in activity.ActiveSystems)
         {
             if (!_visited.Contains(system))
@@ -503,7 +536,7 @@ internal sealed partial class CapsuleerScheduler(
                 IndexLocation(pilot, hauler.SystemId);
             }
         }
-        var inbound = ReconcileInbound(activity);
+        var inbound = ReconcileInbound(activity, gates);
         var running = _nextRunning;
         running.Clear();
         foreach (int system in activity.ActiveSystems)
@@ -551,6 +584,11 @@ internal sealed partial class CapsuleerScheduler(
         }
         _nextRunning = _running;
         _running = running;
+        _membershipDirty = false;
+        _reconciledSystems = activity.ActiveSystems.ToArray();
+        _reconciledResumes = activity.Resumes;
+        _reconciledGates = gates.ToArray();
+        _activated.Clear();
         if (_diagnostics.ScheduledAgents != running.Count)
         {
             Volatile.Write(ref _diagnostics, _diagnostics with { ScheduledAgents = running.Count });

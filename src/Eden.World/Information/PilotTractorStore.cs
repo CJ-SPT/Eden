@@ -49,7 +49,8 @@ internal sealed partial class PilotInformationStore
                     Position(source),
                     new(target.X, target.Y, target.Z),
                     (catalog.FittingType(source.ActiveShip.TypeId)!.Radius ?? 0) + (catalog.FittingType(target.TypeId)!.Radius ?? 0),
-                    fleets
+                    fleets,
+                    target.SystemId
                 );
             }
             live.Tractors.Advance(now);

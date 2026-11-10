@@ -25,7 +25,12 @@ internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob ex
         {
             if (_world is null)
             {
-                _world = new(database.Path);
+                var live = LiveWorld.Find(database.Path);
+                long ship =
+                    live?.MinerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
+                    ?? live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
+                    ?? 0;
+                _world = new(database.Path) { Participants = new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []) };
                 _transaction = _world.Database.BeginTransaction();
                 // Resident scheduling is canonical between checkpoints. Bring its
                 // expected revision into the same transaction before the mutation.

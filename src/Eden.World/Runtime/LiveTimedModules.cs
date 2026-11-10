@@ -24,7 +24,17 @@ internal sealed class LiveTimedModules(WorldDatabase database)
         {
             return;
         }
-        using WorldDbContext expiry = new(database.Path);
+        long[] ships;
+        using (WorldDbContext selection = new(database.Path))
+        {
+            ships = selection
+                .Set<ActiveFittedModule>()
+                .Where(m => m.ExpiresAt > 0 && m.ExpiresAt <= now)
+                .Select(m => m.ShipId)
+                .Distinct()
+                .ToArray();
+        }
+        using WorldDbContext expiry = new(database.Path) { Participants = new(ships: ships) };
         using var transaction = expiry.Database.BeginTransaction();
         expiry.Set<ActiveFittedModule>().Where(m => m.ExpiresAt > 0 && m.ExpiresAt <= now).ExecuteDelete();
         transaction.Commit();

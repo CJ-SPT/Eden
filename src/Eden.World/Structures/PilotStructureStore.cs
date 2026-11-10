@@ -581,7 +581,11 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     .Select(d => d!.Value)
                     .DefaultIfEmpty(long.MaxValue)
                     .Min();
-                return new Eden.World.Runtime.StructureContactView(Array.AsReadOnly(contacts), deadline);
+                return new Eden.World.Runtime.StructureContactView(
+                    Array.AsReadOnly(contacts),
+                    deadline,
+                    structures.Any(s => s.UnanchorAt <= Now)
+                );
             }
         );
 }

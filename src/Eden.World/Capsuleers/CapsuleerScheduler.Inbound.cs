@@ -23,6 +23,7 @@ internal sealed partial class CapsuleerScheduler
     internal void InboundPrepared(InboundPreparation request, long? pilot)
     {
         using var owner = synchronization.Enter("inbound preparation publication");
+        _membershipDirty = true;
         long key = Math.Min(request.Gate.ArrivalGateId, request.Gate.DepartureGateId);
         if (pilot is long committed)
         {
@@ -48,10 +49,9 @@ internal sealed partial class CapsuleerScheduler
         presence.Wake();
     }
 
-    private HashSet<long> ReconcileInbound(HumanActivitySnapshot activity)
+    private HashSet<long> ReconcileInbound(HumanActivitySnapshot activity, IReadOnlyList<WatchedTrafficGate> gates)
     {
         var policy = _populationSettings.Settings.Capsuleers;
-        IReadOnlyList<WatchedTrafficGate> gates = policy.Enabled && policy.GateVisitors > 0 ? gateWatch.Read(activity) : [];
         foreach (var gate in gates)
         {
             long key = Math.Min(gate.ArrivalGateId, gate.DepartureGateId);

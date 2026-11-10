@@ -80,16 +80,68 @@ internal sealed record CombatCheckpoint(
 
 internal sealed partial class LiveCombatRuntime
 {
-    internal CombatCheckpoint CaptureCheckpoint() =>
+    internal bool Participates(TransactionParticipants participants, long pilot, long ship, int? system = null) =>
+        participants.Includes(pilot, ship, system ?? _positions.GetValueOrDefault(ship)?.System)
+        || _shipPilots.TryGetValue(ship, out long ownerPilot)
+            && (
+                participants.Pilots.Contains(ownerPilot)
+                || _ships.TryGetValue(ownerPilot, out var ownerShip) && participants.Systems.Contains(ownerShip.SystemId)
+            )
+        || _ships.TryGetValue(pilot, out var state) && participants.Includes(pilot, state.ShipId, state.SystemId);
+
+    internal CombatCheckpoint CaptureCheckpoint(TransactionParticipants? participants = null) =>
         new(
-            _dirtyShips.Select(id => new CombatShipChange(_savedShips[id], _ships[id])).ToArray(),
-            _dirtyNpcs.Select(id => new CombatNpcChange(_savedNpcs[id], _npcs[id])).ToArray(),
-            _dirtyPositions.Select(id => new CombatPosition(id, _positions[id].System, _positions[id].Position)).ToArray(),
-            _dirtyDrones.Select(id => _liveDrones[id]).ToArray(),
-            _dirtyAggressions.Select(id => _aggressions![id]).ToArray(),
-            _droneTimers.Values.ToArray(),
-            _droneEngagements.Values.ToArray(),
-            _droneHostilities.Values.ToArray(),
-            _dirtyDroneCombatTriggers.Select(id => _droneCombatTriggers[id]).ToArray()
+            _dirtyShips
+                .Where(id => participants is null || Participates(participants, id, _ships[id].ShipId, _ships[id].SystemId))
+                .Select(id => new CombatShipChange(_savedShips[id], _ships[id]))
+                .ToArray(),
+            _dirtyNpcs
+                .Where(id =>
+                    participants is null
+                    || participants.Systems.Contains(_npcs[id].SystemId)
+                    || participants.Includes(SharedSimulationResource.Npc, id)
+                )
+                .Select(id => new CombatNpcChange(_savedNpcs[id], _npcs[id]))
+                .ToArray(),
+            _dirtyPositions
+                .Where(id => participants is null || Participates(participants, 0, id))
+                .Select(id => new CombatPosition(id, _positions[id].System, _positions[id].Position))
+                .ToArray(),
+            _dirtyDrones
+                .Where(id =>
+                    participants is null
+                    || Participates(
+                        participants,
+                        _liveDrones[id].Contact.PilotId,
+                        _liveDrones[id].Contact.ShipId,
+                        _liveDrones[id].Contact.SystemId
+                    )
+                )
+                .Select(id => _liveDrones[id])
+                .ToArray(),
+            _dirtyAggressions
+                .Where(id =>
+                    participants is null
+                    || Participates(participants, 0, _aggressions![id].ShipId)
+                    || participants.Includes(SharedSimulationResource.Npc, id)
+                    || _npcs.TryGetValue(id, out var npc) && participants.Systems.Contains(npc.SystemId)
+                )
+                .Select(id => _aggressions![id])
+                .ToArray(),
+            _droneTimers.Values.Where(t => participants is null || Participates(participants, t.PilotId, 0, t.SystemId)).ToArray(),
+            _droneEngagements
+                .Values.Where(e =>
+                    participants is null || Participates(participants, e.LowerPilotId, 0) || Participates(participants, e.HigherPilotId, 0)
+                )
+                .ToArray(),
+            _droneHostilities
+                .Values.Where(h =>
+                    participants is null || Participates(participants, 0, h.SourceShipId) || Participates(participants, 0, h.TargetShipId)
+                )
+                .ToArray(),
+            _dirtyDroneCombatTriggers
+                .Where(id => participants is null || Participates(participants, 0, id))
+                .Select(id => _droneCombatTriggers[id])
+                .ToArray()
         );
 }

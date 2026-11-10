@@ -29,6 +29,30 @@ public sealed class LiveCombatObjectTests
     }
 
     [Fact]
+    public void SharedNpcParticipantProjectsItsDamageWithoutProjectingTheAttackingShip()
+    {
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        Ready(fixture);
+        var shot = fixture.Fire();
+        var live = LiveWorld.Find(fixture.Db.Path)!;
+        using var owner = live.Enter();
+        Assert.NotEmpty(live.Combat!.CaptureCheckpoint().Ships);
+        using (
+            WorldDbContext world = new(fixture.Db.Path)
+            {
+                Participants = new(resources: [new(SharedSimulationResource.Npc, fixture.Npc.Id)]),
+            }
+        )
+        using (var transaction = world.Database.BeginTransaction())
+        {
+            Assert.Equal(shot.Health.Remaining.Shield, world.Set<WorldNpc>().Find(fixture.Npc.Id)!.ShieldCharge);
+            transaction.Commit();
+        }
+        Assert.Empty(live.Combat.CaptureCheckpoint().Npcs);
+        Assert.NotEmpty(live.Combat.CaptureCheckpoint().Ships);
+    }
+
+    [Fact]
     public async Task WarmShotsAndHealthReadsUseObjectsUntilAnExplicitProjectionAndReopen()
     {
         using AmmunitionTests.Fixture fixture = new(liveWorld: true);

@@ -19,6 +19,8 @@ public sealed record CapsuleerRuntimeSummary(
     public int ScheduledAgents { get; init; }
     public TimeSpan LastUpdate { get; init; }
     public TimeSpan LastPresentation { get; init; }
+    public long BudgetOverruns { get; init; }
+    public TimeSpan MaximumTurnOverrun { get; init; }
 
     public static CapsuleerRuntimeSummary Empty { get; } = new(new(0, 0, 0, 0, 0), 0, 0, 0, 0, 0, 0, 0, TimeSpan.Zero, [], null);
 }
