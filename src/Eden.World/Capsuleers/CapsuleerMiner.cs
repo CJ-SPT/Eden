@@ -151,12 +151,7 @@ internal sealed class CapsuleerMiner(
         {
             return job;
         }
-        var resumed = Work with
-        {
-            ActiveTicks = Work.ActiveTicks + delay,
-            ClockOffsetTicks = Work.ClockOffsetTicks + delay,
-            DueTicks = Work.DueTicks == 0 ? 0 : Work.DueTicks + delay,
-        };
+        var resumed = CapsuleerPauseRules.Resume(Work, delay);
         var next = job.Next(Math.Max(elapsed + TimeSpan.TicksPerSecond, job.DueTicks + delay), job.Action);
         using CapsuleerOperation operation = new(database, job, marketSignal);
         operation.Commit(next, new MinerCheckpoint(pilotId, resumed), null);

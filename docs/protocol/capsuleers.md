@@ -661,3 +661,64 @@ and remote ask prices. Focused checks were rerun after those corrections; the fi
 
 **Optional maintainer checks.** Observe a belt fight, wreck approach and subsequent resupply trip to assess native effects
 and gameplay feel.
+
+## Configurable simulated-pilot population — November 9, 2026
+
+The restart-only config editor now exposes an overall enable switch, a simulated-miner switch, station traffic density
+(0–10×, default 1×) and watched-gate visitors (0–16, default four). The hidden legacy `GlobalProvisioning` preference
+round-trips independently. Existing configuration documents receive unchanged defaults for missing fields. Normal immutable
+revisions, validation, changed-values comparisons and export/import apply to all four controls.
+
+Startup reconciles saved roster slots against the activated policy before accepting sessions. `WorldCapsuleerSuspension`
+records a durable pause anchor for excess agents. Pilots, ships, inventory, identities, wallet balances, losses and grant
+ledgers remain intact. Returning slots reactivate their saved jobs/progress in the same transaction that removes the pause;
+missing slots are provisioned only when their community or gate is next visited. Reciprocal watched gates retain one visitor
+identity per ordinal, including ordinals above the former four-visitor default. Home roster slots remain disjoint from gates.
+
+Suspended agents are excluded from scheduling and presentation. Saved positions are retained while directional scanning,
+cloak proximity, NPC target acquisition and deployed-drone contacts omit dormant ownership. Startup already cancels live
+projectiles and releases NPC/drone control; suspension introduces no unobserved attacks. Resume adjusts active-clock deadlines
+and ratting controller timing without replaying work or resetting any loss or paid visit budget. Membership is loaded on
+population changes rather than queried every frame. The config editor applies these changes at restart; it does not stop or
+restart the server itself.
+
+Gameplay reference: [EVE University NPC mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations), used to keep
+simulated capsuleers separate from NPC mining-fleet controls. Population policy introduces no new movement rules;
+the existing [Carbon Ball.cpp revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp)
+and pinned build-3662168 catalog remain the movement reference.
+
+**Automated validation.** Development began with the exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerPopulationSettingsTests.RestartSuspendsAndReusesSavedPilotsWithoutChangingTheirPossessionsOrReplayingJobs`.
+Coverage includes pending-versus-active configuration, repeated restart and reactivation, exact saved identities/possessions,
+partial limits, maximum reciprocal visitors, transaction rejection/rollback, ratting deadlines/loot/budget retention,
+legacy documents, deterministic fractional density, invalid ranges, authenticated editor save/export, and rendered labels.
+
+Tool/solution restore and the solution build passed with zero warnings/errors (build 7.45 seconds). The final affected run
+passed **476 tests**, with no skips, in **262.89 seconds** including runner startup (feature build 1.43 seconds).
+An added maximum-density provisioning/reuse case then passed independently in 5.92 seconds (build 3.69 seconds).
+Both Python policy suites passed: eight catalog checks in 0.741 seconds and nine formatting checks in 0.015 seconds.
+Formatting and the 140-character policy passed. An earlier wider development run passed 541 cases with four unrelated
+client-package-dependent cases skipped, in 250.75 seconds; development test API/exception expectations were corrected
+before these results. No full .NET regression suite was requested or run.
+
+Final affected filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~AdministrationTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~AdministrationComponentTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~InformationTests|FullyQualifiedName~SpatialModuleTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~PilotDroneTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~LiveSimulationTests`.
+
+One hundred warmed disabled-population maintenance frames took 1.47 ms total with zero SQL commands, connections or fitting
+calculations. Existing complete maintenance/two-observer frame and checkpoint assertions also passed. Those fixture timings
+were collected alongside other work and are diagnostic evidence rather than a server capacity claim.
+
+Integration onto main `1a036454` retained the deadline scheduler and the agent-header/courier fixes. The merged solution
+built with zero warnings/errors in 8.05 seconds; the exact suspension/reuse regression passed again. The combined affected
+filter passed **386 tests**, with no skips, in **204.24 seconds** including runner startup (feature build 1.22 seconds).
+Both Python policy suites passed again (eight catalog cases in 0.977 seconds and nine formatting cases in 0.022 seconds),
+followed by formatting and diff verification.
+
+Integration filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~AgentDirectoryTests|FullyQualifiedName~AgentDirectoryServiceTests|FullyQualifiedName~AgentInformationRulesTests|FullyQualifiedName~CourierServiceTests`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After saving and restarting, verify that lowering the controls removes pilots from Local,
+space and station guests; raise them and restart to observe the returning identities. Browser interaction and native rendering
+remain unverified.

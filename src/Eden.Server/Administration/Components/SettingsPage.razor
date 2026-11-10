@@ -128,7 +128,22 @@ else
                 <label><InputCheckbox @bind-Value="Form.Mining" />Mining fleets</label>
                 <label><InputCheckbox @bind-Value="Form.MajorThreatAnomalies" />Allow Major Threat anomaly tiers in nullsec</label>
             </section>
-                <p class="muted">Capsuleer encounters are prepared when a system is visited. Player rates do not change NPC production.</p>
+            <section class="card"><h2>Simulated pilots</h2>
+                <label><InputCheckbox @bind-Value="Form.SimulatedPilots" />Enable simulated pilots</label>
+                <label><InputCheckbox @bind-Value="Form.SimulatedMiners" />Simulated miners</label>
+                <label>Station traffic density (×)
+                    <InputNumber @bind-Value="Form.TrafficMultiplier" min="0" max="10" step="0.1" />
+                </label>
+                <p class="muted">1× keeps the usual traffic, 0 pauses station traffic, and 10× is the maximum.
+                    Simulated miners add up to one pilot per eligible system.</p>
+                <label>Visitors per watched gate
+                    <InputNumber @bind-Value="Form.GateVisitors" min="0" max="16" step="1" />
+                </label>
+                <p class="muted">Changes apply after restart. Lower populations despawn and pause excess pilots without deleting them.
+                    Higher populations reuse saved pilots before creating new ones. Ships, possessions, losses and progress are retained.</p>
+                <p class="muted">Pilots are prepared as systems are visited and gates are watched. Traffic density and gate visitors
+                    are separate limits. These controls do not change NPC pirates or mining fleets.</p>
+            </section>
             </div>
             <div id="settings-Advanced" hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
             <section class="card"><h2>Simulation</h2>

@@ -34,6 +34,9 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                 a.Slot,
             })
             .IsUnique();
+        var suspended = model.Entity<SavedCapsuleerSuspension>();
+        suspended.ToTable("WorldCapsuleerSuspension").HasKey(s => s.PilotId);
+        suspended.HasOne<SavedCapsuleerAgent>().WithMany().HasForeignKey(s => s.PilotId);
         var jobs = model.Entity<SavedCapsuleerJob>();
         jobs.ToTable("WorldCapsuleerJob").HasKey(j => j.PilotId);
         jobs.HasOne<SavedCapsuleerAgent>().WithMany().HasForeignKey(j => j.PilotId);
@@ -59,6 +62,9 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                 Career INTEGER NOT NULL CHECK(Career IN (1,2)), FounderShipId INTEGER NOT NULL,
                 FounderModuleId INTEGER NOT NULL, StartingCents INTEGER NOT NULL CHECK(StartingCents>=0),
                 Slot INTEGER NOT NULL DEFAULT 0 CHECK(Slot>=0));
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerSuspension(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldCapsuleerAgent(PilotId),
+                StartedTicks INTEGER NOT NULL CHECK(StartedTicks>=0));
             CREATE TABLE IF NOT EXISTS WorldCapsuleerJob(
                 PilotId INTEGER PRIMARY KEY REFERENCES WorldCapsuleerAgent(PilotId),
                 Revision INTEGER NOT NULL CHECK(Revision>=0), Sequence INTEGER NOT NULL CHECK(Sequence>=0),

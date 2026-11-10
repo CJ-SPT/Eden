@@ -37,6 +37,39 @@ public sealed class AdministrationTests
         Assert.Contains("Training speed and skill requirements are unchanged", html);
     }
 
+    [Fact]
+    public async Task PopulationControlsRenderAndSavePendingValuesThroughTheAuthenticatedEditor()
+    {
+        await using var fixture = await Fixture.Start();
+        await fixture.SignIn();
+        string html = WebUtility.HtmlDecode(await fixture.Client.GetStringAsync("/"));
+        Assert.Contains("Enable simulated pilots", html);
+        Assert.Contains("Simulated miners", html);
+        Assert.Contains("Station traffic density (×)", html);
+        Assert.Contains("Visitors per watched gate", html);
+        Assert.Contains("without deleting them", html);
+        var state = (await fixture.Client.GetFromJsonAsync<ConfigurationState>("/api/admin/configuration"))!;
+        var policy = new CapsuleerPopulationPolicy(false, false, false, 0.5m, 2);
+        var draft = state.Active.Draft with { Settings = state.Active.Draft.Settings with { Capsuleers = policy } };
+        using var saved = await fixture.Client.PostAsJsonAsync("/api/admin/revisions", new AdminSaveRequest(state.Generation, draft));
+        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+        var pending = (await saved.Content.ReadFromJsonAsync<ConfigurationState>())!;
+        Assert.Equal(new(), pending.Active.Draft.Settings.Capsuleers);
+        Assert.Equal(policy, pending.Pending!.Draft.Settings.Capsuleers);
+        using var export = await fixture.Client.GetAsync($"/api/admin/export/{pending.Pending.Id}");
+        Assert.Equal(policy, (await export.Content.ReadFromJsonAsync<WorldConfigurationDraft>())!.Settings.Capsuleers);
+        var differences = await fixture.Client.GetFromJsonAsync<RevisionDifference[]>("/api/admin/compare?left=1&right=2");
+        Assert.Contains(differences!, c => c.Field == "Station traffic density");
+        using var invalid = await fixture.Client.PostAsJsonAsync(
+            "/api/admin/validate",
+            draft with
+            {
+                Settings = draft.Settings with { Capsuleers = policy with { GateVisitors = 17 } },
+            }
+        );
+        Assert.False((await invalid.Content.ReadFromJsonAsync<AdminValidationResult>())!.Valid);
+    }
+
     private const string Password = "local administrator password";
 
     private sealed class Fixture : IAsyncDisposable

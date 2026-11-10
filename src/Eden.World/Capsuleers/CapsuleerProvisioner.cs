@@ -56,7 +56,12 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         long seed = state.WorldSeed;
         var summary = world.Set<SavedCapsuleerSystem>().Find(systemId);
         FileInfo file = new(database.CatalogPath);
-        string fingerprint = $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}";
+        var policy = world.Settings.Capsuleers;
+        string settingsIdentity = FormattableString.Invariant(
+            $"{policy.Enabled}|{policy.Miners}|{policy.TrafficMultiplier}|{policy.GateVisitors}"
+        );
+        string fingerprint =
+            $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|{settingsIdentity}";
         if (summary?.PolicyVersion == CapsuleerProvisioningRules.Version && summary.CatalogFingerprint == fingerprint)
         {
             return new(1, 0, 0);
@@ -66,14 +71,16 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         bool hasRoute = traffic.Routes.Length > 0;
         bool canHaul = hasRoute && (database.Traffic.Profiles.Count > 0 || TrafficProvisioning.HasFallback(catalog));
-        int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic.GateCount, traffic.StationCount) : 0;
+        int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic.GateCount, traffic.StationCount, policy) : 0;
         var agents = world
             .Set<SavedCapsuleerAgent>()
             .Where(a => a.CommunitySystemId == systemId)
             .Select(a => new { a.Career, a.Slot })
             .ToArray();
         bool addMiner =
-            origins.Length > 0
+            policy.Enabled
+            && policy.Miners
+            && origins.Length > 0
             && mining.Eligibility == CapsuleerEligibility.Eligible
             && !agents.Any(a => a.Career == CapsuleerCareer.Mining);
         bool awaitingOre = false;
@@ -102,7 +109,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         }
         var first = traffic.Routes.FirstOrDefault();
         summary.Eligibility =
-            origins.Length == 0 ? CapsuleerEligibility.MissingOrigin
+            !policy.Enabled ? CapsuleerEligibility.Disabled
+            : origins.Length == 0 ? CapsuleerEligibility.MissingOrigin
             : canHaul || mining.Eligibility == CapsuleerEligibility.Eligible ? CapsuleerEligibility.Eligible
             : hasRoute ? CapsuleerEligibility.MissingEquipment
             : CapsuleerEligibility.NoReciprocalRoute;

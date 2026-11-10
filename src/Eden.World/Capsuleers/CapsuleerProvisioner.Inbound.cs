@@ -13,7 +13,7 @@ internal sealed partial class CapsuleerProvisioner
     internal long? EnsureInbound(WatchedTrafficGate gate, bool sourceObserved = false, int visitor = 0)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(visitor);
-        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(visitor, TrafficJourneyRules.GateVisitorCount);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(visitor, CapsuleerPopulationRules.MaximumGateVisitors);
         lock (database.MotionLock)
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -40,6 +40,11 @@ internal sealed partial class CapsuleerProvisioner
             if (existing is not null)
             {
                 return existing;
+            }
+            var policy = world.Settings.Capsuleers;
+            if (!policy.Enabled || visitor >= policy.GateVisitors)
+            {
+                return null;
             }
             var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
             if (state is null)

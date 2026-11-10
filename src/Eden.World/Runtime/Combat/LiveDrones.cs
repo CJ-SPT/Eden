@@ -1,3 +1,4 @@
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Drones;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
@@ -50,7 +51,7 @@ internal sealed partial class LiveCombatRuntime
                 using CatalogDbContext catalog = new(database.CatalogPath);
                 return world
                     .Set<WorldDrone>()
-                    .Where(d => d.SystemId == system)
+                    .Where(d => d.SystemId == system && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == d.PilotId))
                     .AsEnumerable()
                     .Select(d => new LiveDrone(
                         PilotDroneStore.Contact(world, catalog, d),

@@ -15,6 +15,9 @@ Historical native observations apply only to the recorded revision and actions. 
 [Belt ratting, resupply and ship variety](protocol/capsuleers.md#belt-ratting-resupply-and-ship-variety--november-9-2026)
 records fit-aware pirate encounters, owned loot, paid shopping and starter corrections.
 
+[Configurable simulated-pilot population](protocol/capsuleers.md#configurable-simulated-pilot-population--november-9-2026)
+records editor controls, saved suspension, retained possessions and reuse when limits increase.
+
 ## Topics
 
 [Ice harvesting and public ice fields, November 9, 2026](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)

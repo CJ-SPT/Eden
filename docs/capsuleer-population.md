@@ -2,6 +2,20 @@
 
 [Documentation index](README.md) / [Implementation evidence](protocol/capsuleers.md#galaxy-wide-station-and-gate-traffic)
 
+## Population controls
+
+Open **World & economy → Simulated pilots** in the local config editor. Enable/pause the whole simulated population,
+allow simulated miners, choose station traffic density (**0–10×**, default **1×**), and set visitors per watched gate
+(**0–16**, default **4**). Save for restart, then restart the server separately to apply the revision.
+These are simulated capsuleer controls; the adjacent NPC switches manage pirates, empire forces and mining fleets.
+
+Reducing a limit despawns and pauses excess saved pilots without deleting their identities, ships, possessions, losses or
+activity. Increasing it reuses the same eligible saved pilots before creating missing roster slots as systems are visited.
+Station traffic and gate visitors have independent limits. A zero station density can still admit configured gate visitors;
+the main population switch pauses both, including miners. Reciprocal gate observers share visitor identities.
+Suspended jobs retain their remaining timing and cannot produce offline rewards or duplicate starter grants.
+See [configuration details](world-configuration.md#autonomous-population).
+
 ## zKill-backed travelers
 
 An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot leaves generated Badger traffic available. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.
@@ -230,6 +244,9 @@ Background warps schedule the first strict exit sample of the existing analytic 
 Presentation batches carry increasing revisions and system generations. Applying a newer batch prevents an older captured batch from rematerializing a departed system. Deactivation removes autonomous native contacts, movement orders and NPC observer caches, while retaining canonical encounter membership, targets, health, missiles and effect deadlines. Local chat and station guests continue to follow canonical membership in background systems. Activation reconstructs native warp/beam/health presentation from current authoritative progress. Checkpoints continue capturing canonical jobs, role progress, clock and combat state together; no second active/background state is merged or substituted.
 
 ## Global provisioning and diagnostics
+
+The following records the earlier global-provisioning design. Current encounter creation and suspension use the
+[population controls](#population-controls) above; the old global-provisioning preference is retained only for compatibility.
 
 Startup reconciles catalog eligibility before the host listens. The saved world seed and versioned policy determine stable unique names, valid school/bloodline/race origins and initial job deadlines spread over 30 active seconds. Each community has its own transaction: actual generated deposits, both pilots, starting skills, ordinary owned ships/equipment/wallets, fitted miner laser, founder records and jobs commit together. A failed second founder rolls the pair back; restart resumes missing pairs. Existing founders, ownership, cargo, routes, funded work and job deadlines are preserved. A depleted saved field does not receive new ore through provisioning.
 

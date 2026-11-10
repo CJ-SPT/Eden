@@ -145,33 +145,7 @@ internal sealed partial class CapsuleerHauler(
         {
             return job;
         }
-        long wallDelay = Work.Ratting is { LastObservedAt: > 0 } activity ? Math.Max(0, Now - activity.LastObservedAt) : 0;
-        var pausedDefense = Work.Defense;
-        if (wallDelay > 0 && pausedDefense is not null)
-        {
-            pausedDefense = pausedDefense with
-            {
-                Locks = pausedDefense.Locks.Select(scan => scan with { ReadyAt = checked(scan.ReadyAt + wallDelay) }).ToArray(),
-                Cycles = pausedDefense
-                    .Cycles.Select(cycle =>
-                        cycle with
-                        {
-                            StartedAt = checked(cycle.StartedAt + wallDelay),
-                            ReadyAt = checked(cycle.ReadyAt + wallDelay),
-                        }
-                    )
-                    .ToArray(),
-                RecallUntil = pausedDefense.RecallUntil == 0 ? 0 : checked(pausedDefense.RecallUntil + wallDelay),
-            };
-        }
-        var resumed = Work with
-        {
-            Defense = pausedDefense,
-            Ratting = Work.Ratting is { } rattingWork ? rattingWork with { LastObservedAt = Now } : null,
-            ActiveTicks = Work.ActiveTicks + delay,
-            ClockOffsetTicks = Work.ClockOffsetTicks + delay,
-            DueTicks = Work.DueTicks == 0 ? 0 : Work.DueTicks + delay,
-        };
+        var resumed = CapsuleerPauseRules.Resume(Work, delay, Now);
         var next = job.Next(Math.Max(elapsed + TimeSpan.TicksPerSecond, job.DueTicks + delay), job.Action);
         using CapsuleerOperation operation = new(database, job, marketSignal);
         operation.Commit(next, null, new HaulerCheckpoint(pilotId, resumed));

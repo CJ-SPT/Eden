@@ -15,14 +15,15 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
 | Progression | NPC kill-SP multiplier; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
+| Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 
-Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling a population prevents new spawns without deleting residents or changing their mechanics.
+Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling an NPC population prevents new spawns without deleting residents or changing their mechanics. Simulated-pilot limits also pause and despawn excess saved pilots at restart, as described below.
 
 ## World tuning
 
 The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Industry**, **World & economy** and **Advanced**.
-Switching categories retains the draft. Every multiplier shows its unit, range, explanation and an illustrative example.
+Switching categories retains the draft. Activity reward/yield multipliers show their unit, range, explanation and an illustrative example.
 **Reset to 1×** resets that control; **Reset draft to original** restores the world's original revision into the draft.
 **Discard unsaved changes** returns to the last loaded or saved draft, including any already pending revision.
 The shared **Save for restart** bar shows unsaved, active or pending-restart status. Review the changed-values summary before saving;
@@ -267,4 +268,22 @@ Catalog facts stay in generated models/shared definitions. Native service IDs, e
 
 ## Autonomous population
 
-The restart-only `Capsuleers.GlobalProvisioning` setting defaults to true. Startup records eligibility for every catalog system and provisions missing miner/hauler pairs in eligible locations. Disabling additional provisioning retains established pilots, grants and saved jobs. Re-enabling it resumes missing communities without replacing existing assets. See the [population guide](capsuleer-population.md) and local administration population/performance pages for coverage, deferral reasons and queue diagnostics.
+In **World & economy → Simulated pilots**, configure the saved world's population:
+
+- **Enable simulated pilots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
+- **Simulated miners** allows up to one miner per eligible visited system.
+- **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,
+  up to 60 travelers per community. Fractional densities use a saved-seed draw to distribute smaller rosters consistently.
+  Zero pauses station traffic; gate visitors remain independently configurable.
+- **Visitors per watched gate** accepts **0–16**, default **4**. Reciprocal gate observers share the same saved visitor identities.
+
+All edits use the ordinary pending revision, comparison, history, export/import and restart workflow. Lower limits hide excess
+pilots from space, Local, station guests and directional scans and exclude them from scheduled work. No pilot, ship, cargo,
+equipment, wallet, loss, grant record or saved activity is deleted. Raising a limit reactivates the eligible saved roster slots
+before any missing slots are provisioned on subsequent system visits or gate watches. A lost ship remains lost.
+Activity deadlines shift by the paused interval; suspended pilots earn no catch-up actions, items or rewards.
+Repeated restarts preserve the original pause and never replay a supply or wallet grant.
+
+Defaults preserve the existing population policy. Older revision documents receive the new defaults automatically;
+`Capsuleers.GlobalProvisioning` remains a preserved legacy preference and is not the population switch.
+See the [population guide](capsuleer-population.md) and [implementation record](protocol/capsuleers.md#configurable-simulated-pilot-population--november-9-2026).

@@ -136,6 +136,7 @@ internal sealed partial class CapsuleerScheduler(
 
     private sealed record SavedLocation(long PilotId, int StationId, int? SystemId);
 
+    private HashSet<long> _suspended = [];
     private bool _loaded;
     private long _populationRevision;
     private LiveWorld? Live => LiveWorld.Find(database.Path);
@@ -163,6 +164,10 @@ internal sealed partial class CapsuleerScheduler(
             agentQuery = preparedPilot is { } pilotId
                 ? agentQuery.Where(a => a.PilotId == pilotId)
                 : agentQuery.Where(a => a.CommunitySystemId == preparedSystem);
+        }
+        if (!_loaded)
+        {
+            _suspended = world.Set<SavedCapsuleerSuspension>().Select(s => s.PilotId).ToHashSet();
         }
         var agents = agentQuery.OrderBy(a => a.PilotId).ToArray();
         var pilotIds = agents.Select(a => a.PilotId).ToArray();
@@ -204,7 +209,7 @@ internal sealed partial class CapsuleerScheduler(
             {
                 _travelers.Add(route.PilotId);
             }
-            if (progress is { Activity: HaulerActivity.Inbound, InboundPaused: true })
+            if (!_suspended.Contains(route.PilotId) && progress is { Activity: HaulerActivity.Inbound, InboundPaused: true })
             {
                 var job = Current.GetValueOrDefault(route.PilotId) ?? jobs.Single(value => value.PilotId == route.PilotId);
                 long elapsed = world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
@@ -409,6 +414,10 @@ internal sealed partial class CapsuleerScheduler(
         {
             foreach (long pilot in _systemAgents.GetValueOrDefault(system) ?? [])
             {
+                if (_suspended.Contains(pilot))
+                {
+                    continue;
+                }
                 if (_legacyTravelers.Contains(pilot) && _haulers.TryGetValue(pilot, out var legacy))
                 {
                     if (!_running.Contains(pilot) && legacy.Read()!.Work.Activity != HaulerActivity.Jumping)
@@ -450,7 +459,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             foreach (long pilot in _systemAgents.GetValueOrDefault(system) ?? [])
             {
-                if (activity.ActiveSystems.Contains(_locations[pilot]))
+                if (!_suspended.Contains(pilot) && activity.ActiveSystems.Contains(_locations[pilot]))
                 {
                     running.Add(pilot);
                 }
@@ -555,7 +564,7 @@ internal sealed partial class CapsuleerScheduler(
                 var location in active
                     .SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? [])
                     .Distinct()
-                    .Where(pilot => active.Contains(_locations[pilot]))
+                    .Where(pilot => !_suspended.Contains(pilot) && active.Contains(_locations[pilot]))
                     .Select(pilot => new KeyValuePair<long, int>(pilot, _locations[pilot]))
             )
             {
