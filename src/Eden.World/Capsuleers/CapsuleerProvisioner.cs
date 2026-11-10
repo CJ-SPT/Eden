@@ -55,13 +55,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         }
         long seed = state.WorldSeed;
         var summary = world.Set<SavedCapsuleerSystem>().Find(systemId);
-        FileInfo file = new(database.CatalogPath);
         var policy = world.Settings.Capsuleers;
-        string settingsIdentity = FormattableString.Invariant(
-            $"{policy.Enabled}|{policy.Miners}|{policy.TrafficMultiplier}|{policy.GateVisitors}"
-        );
-        string fingerprint =
-            $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|{settingsIdentity}";
+        string fingerprint = Fingerprint(database, catalog, seed, policy);
         if (summary?.PolicyVersion == CapsuleerProvisioningRules.Version && summary.CatalogFingerprint == fingerprint)
         {
             return new(1, 0, 0);
@@ -161,6 +156,20 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         }
         transaction.Commit();
         return new(1, created ? 1 : 0, 0);
+    }
+
+    internal static string Fingerprint(
+        WorldDatabase database,
+        CatalogDbContext catalog,
+        long seed,
+        Eden.Gameplay.Configuration.CapsuleerPopulationPolicy policy
+    )
+    {
+        FileInfo file = new(database.CatalogPath);
+        string settingsIdentity = FormattableString.Invariant(
+            $"{policy.Enabled}|{policy.Miners}|{policy.TrafficMultiplier}|{policy.GateVisitors}"
+        );
+        return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|{settingsIdentity}";
     }
 
     private static CapsuleerTrafficRoute SelectRoute(

@@ -16,6 +16,13 @@ the main population switch pauses both, including miners. Reciprocal gate observ
 Suspended jobs retain their remaining timing and cannot produce offline rewards or duplicate starter grants.
 See [configuration details](world-configuration.md#autonomous-population).
 
+The **Population** page shows the active settings and separates saved, enabled, paused, scheduled and watched-system pilots.
+Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Current prepared-system counts
+exclude older catalog/settings records, which are retained and marked to refresh on a visit. Use **Refresh population** while
+pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
+visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
+
+
 ## zKill-backed travelers
 
 An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot leaves generated Badger traffic available. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.

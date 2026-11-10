@@ -722,3 +722,28 @@ Integration filter:
 **Optional maintainer checks.** After saving and restarting, verify that lowering the controls removes pilots from Local,
 space and station guests; raise them and restart to observe the returning identities. Browser interaction and native rendering
 remain unverified.
+
+## Population diagnostics and Local membership — November 9, 2026
+
+The Population page's old one-miner/one-hauler/restart-provisioning description no longer matched encounter-driven spawning.
+Its retained system/pilot totals also failed to distinguish historical records from prepared systems and paused pilots.
+The page now shows the active population policy, systems prepared under that exact catalog/policy fingerprint, their eligibility,
+saved communities/pilots, enabled versus paused pilots, scheduled work and pilots represented in watched systems (including docked
+guests). Legacy system records remain visible with a refresh-on-visit label. Saved totals retain all pilots; they are not Local
+population counts. A top-level refresh updates the snapshot while pilots travel.
+
+Population metadata reuses the provisioning fingerprint and remains cached against its existing membership revision. Scheduled
+counts update when enrollment changes even if no job has executed. Diagnostic reads never advance jobs. Local publication is
+batched as documented in the [social record](social.md#simulated-pilot-local-roster-batches--november-9-2026).
+
+**Automated validation.** The combined chat/population filter passed 150 tests in 60.89 seconds, with tool/solution restore,
+solution build, both Python policy suites and formatting verification passing. See the [social validation record](social.md#simulated-pilot-local-roster-batches--november-9-2026)
+for exact filters and corrected development expectations. Regressions cover authenticated HTML/API fields, unchanged jobs,
+current-versus-old policy preparation records, retained paused totals, real high-density guest/Local agreement, and zero SQL,
+connections, fitting calculations or new chat deliveries across twenty warmed unchanged maintenance/diagnostic reads.
+Existing complete maintenance/two-observer and detached-checkpoint assertions also passed. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Refresh Population after visiting a new system or applying a lower limit and restarting; compare
+saved/paused counts with the pilots visible in the current system.

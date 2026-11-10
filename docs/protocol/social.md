@@ -318,3 +318,47 @@ dotnet test --no-build -c Release --filter 'FullyQualifiedName~Eden.Protocol.Tes
 **Live acceptance.** Not performed; agent client testing is disabled. The user's second screenshot demonstrates the previous implementation's failure, not acceptance of this correction.
 
 **Optional maintainer checks.** Rebuild/restart the server and reconnect both pilots; confirm both guest lists populate and still update on undocking/redocking.
+
+## Simulated-pilot Local roster batches — November 9, 2026
+
+The user reported 19 station guests but only four Local members after selecting 10× station traffic and six gate visitors.
+A read-only saved-world check confirmed those population settings were active. This is user-provided evidence for the
+pre-correction build, not agent client acceptance.
+
+Inert build-3662168 inspection of `xmppchatclient/xmppchatsvc.pyj` confirms that `_HandleMessageFromAdmin` updates individual
+window arrivals/departures, while `_UnpackVikingPresence` also supplies user metadata and the per-channel participant registry.
+The pinned `code.ccp` archive has SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+No game module bodies, game executable, renderer or interactive session were launched.
+
+Previously maintenance published simulated pilots individually and never refreshed an already joined Local's complete roster.
+Those cached individual updates did not establish a later complete snapshot. Maintenance now publishes its changed pilots in
+one chat operation. Gameplay applies the whole membership batch before constructing one shared ordinary-Local roster per
+affected room. Each observer receives the existing `/viking` wire format with all visible humans and simulated pilots.
+Arrivals use this full snapshot, avoiding a burst of per-pilot join messages; departures retain explicit `/admin` leaves because
+the native roster handler adds members rather than clearing absent entries. Unchanged batches produce no chat delivery.
+Joining or retrying Local still sends the ordinary initial full roster. Wormhole/Pochven delayed Local remains unchanged.
+
+This uses the existing TLS/XMPP adapter; no Blue or Destiny format changed. Gameplay reference:
+[EVE University Local membership](https://wiki.eveuniversity.org/Identifying_war_targets_in_Local), including docked capsuleers
+in the same system. Traffic multipliers determine roster provisioning, not how many travelers must remain in one system.
+
+**Automated validation.** The initial exact regression
+`FullyQualifiedName=Eden.Protocol.Tests.Chat.ChatWorldTests.SimulatedLocalArrivalIncludesAnAuthoritativeRosterForNativeParticipantState`
+failed on the old implementation because no roster was emitted, then passed after the correction. Further cases cover a
+1,000-pilot/two-observer batch sharing one roster, unchanged reads, explicit departure, delayed-Local privacy, a sixty-pilot
+burst over TLS, reconnect/retry, and high-density real-world station guests matching Local membership.
+
+Tool/solution restore and the solution build passed with zero warnings/errors (5.71 seconds). The final affected run passed
+**150 tests**, with no skips, in **60.89 seconds** including runner startup (feature build 2.32 seconds). Both Python policy
+suites passed: eight catalog checks in 1.692 seconds and nine formatting checks in 0.028 seconds. Formatting, width and diff
+verification passed. An earlier run passed 148 cases and failed two new delayed-Local fixture expectations: those incorrectly
+excluded the querying pilot itself. The corrected two-case exact filter and the complete affected filter then passed.
+No full .NET regression suite was requested or run.
+
+Final filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~CapsuleerHaulerTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerEncounterTests|FullyQualifiedName~CapsuleerPopulationTests|FullyQualifiedName~CapsuleerPopulationSettingsTests|FullyQualifiedName~CapsuleerDeadlineTests|FullyQualifiedName~CapsuleerDefenseFrameTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~AdministrationComponentTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~ServerPerformanceTests|FullyQualifiedName~StationGuest`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After rebuilding/restarting the server, reconnect chat and compare Local against docked guests;
+observe one arrival/departure while Local remains open. Native timing and rendering remain unverified.

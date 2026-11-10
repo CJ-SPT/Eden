@@ -103,6 +103,7 @@ internal sealed partial class CapsuleerScheduler(
                 _lastFailure
             )
             {
+                ScheduledAgents = _running.Count,
                 LastUpdate = _diagnostics.LastUpdate,
                 LastPresentation = _diagnostics.LastPresentation,
             }
@@ -500,6 +501,10 @@ internal sealed partial class CapsuleerScheduler(
         }
         _nextRunning = _running;
         _running = running;
+        if (_diagnostics.ScheduledAgents != running.Count)
+        {
+            Volatile.Write(ref _diagnostics, _diagnostics with { ScheduledAgents = running.Count });
+        }
     }
 
     private void Settle(long throughTicks)

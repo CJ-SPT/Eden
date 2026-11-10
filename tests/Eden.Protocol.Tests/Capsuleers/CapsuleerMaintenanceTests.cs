@@ -1,11 +1,18 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Chat;
+using Eden.Gameplay.Configuration;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
+using Eden.Protocol.Docking;
 using Eden.Server;
 using Eden.Server.Chat;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
+using Eden.World.Configuration;
+using Eden.World.Docking;
 using Eden.World.Market;
 using Eden.World.Runtime;
+using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,6 +20,65 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed class CapsuleerMaintenanceTests
 {
+    [Fact]
+    public void HighDensityDockedGuestsReceiveOneSharedLocalRosterAndUnchangedFramesStayQuiet()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        WorldConfigurationStore configuration = new(f.Database, f.Clock);
+        var state = configuration.Read();
+        configuration.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with { Capsuleers = new(TrafficMultiplier: 10, GateVisitors: 6) },
+            },
+            "test"
+        );
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var chat = host.GetRequiredService<ChatRuntime>();
+        Guid session = Guid.NewGuid();
+        const long humanId = 90000001;
+        const int system = 30000141;
+        ChatRoom local = new(ChatRoomKind.Local, system);
+        chat.Update(session, new(humanId, "Observer", 1000044, system, 0));
+        var connection = chat.Authenticate(humanId.ToString(), chat.IssueToken(session));
+        chat.Join(connection.Id, local, "joined");
+        while (connection.Events.TryRead(out _)) { }
+        using var presence = host.GetRequiredService<IHumanPresence>().Select(humanId, system);
+        var worker = host.GetRequiredService<CapsuleerMaintenance>();
+        worker.Refresh();
+        var human = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+        var guests = host.GetRequiredService<SharedStationGuests>().List(human);
+        Assert.NotEmpty(guests);
+        var members = chat.Members(connection.Id, local);
+        Assert.All(guests, guest => Assert.Contains(members, member => member.Id == guest.PilotId));
+        List<ChatDelivery> deliveries = [];
+        while (connection.Events.TryRead(out var delivery))
+        {
+            deliveries.Add(delivery);
+        }
+        var roster = Assert.Single(deliveries.Select(d => d.Event).OfType<ChatEvent.Roster>());
+        Assert.Equal(members.Select(p => p.Id), roster.Pilots.Select(p => p.Id));
+        var population = host.GetRequiredService<ICapsuleerPopulation>();
+        Assert.True(population.Summary().PreparedSystems > 0);
+        Assert.True(host.GetRequiredService<ICapsuleerDiagnostics>().Read().ScheduledAgents > 0);
+        Assert.True(Assert.Single(population.Systems(), value => value.SystemId == system).CurrentPolicy);
+        using (var metrics = SessionPerformance.Begin("unchanged Local and population reads", _ => { }, force: true)!)
+        {
+            for (int i = 0; i < 20; i++)
+            {
+                worker.Refresh();
+                _ = population.Summary();
+                _ = population.Systems();
+            }
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        Assert.False(connection.Events.TryRead(out _));
+    }
+
     [Fact]
     public async Task ObserverCanCheckpointBetweenTwoDueJobsInOneMaintenanceTurn()
     {

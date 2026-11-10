@@ -216,6 +216,17 @@ public sealed class AdministrationTests
         string html = await fixture.Client.GetStringAsync("/population");
         Assert.Contains("Autonomous population", html);
         Assert.Contains("href=\"/population\"", html);
+        Assert.Contains("Active population settings", html);
+        Assert.Contains("Saved pilots", html);
+        Assert.Contains("Paused pilots", html);
+        Assert.Contains("Enabled pilots", html);
+        Assert.Contains("Scheduled pilots", html);
+        Assert.Contains("Pilots in watched systems", html);
+        Assert.Contains("Prepared systems", html);
+        Assert.Contains("Refresh population", html);
+        Assert.DoesNotContain("One miner and hauler per supported system", html);
+        Assert.Equal(snapshot.Population.Agents, snapshot.Population.EnabledAgents + snapshot.Population.PausedAgents);
+        Assert.True(snapshot.Systems.Count(system => system.CurrentPolicy) == snapshot.Population.PreparedSystems);
     }
 
     [Fact]

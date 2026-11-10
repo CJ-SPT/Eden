@@ -26,6 +26,7 @@ internal sealed class CapsuleerMaintenance(
     private Task _loop = Task.CompletedTask;
     private volatile bool _stopping;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
+    private readonly List<ChatPilot> _presenceChanges = [];
     private CapsuleerBatch? _retryPresentation;
     private CapsuleerBatch? _publishedPresentation;
 
@@ -195,6 +196,7 @@ internal sealed class CapsuleerMaintenance(
             }
             _retryPresentation = batch;
             scene.Apply(batch);
+            _presenceChanges.Clear();
             foreach (var observation in batch.Miners)
             {
                 PublishPresence(observation.Pilot);
@@ -202,6 +204,14 @@ internal sealed class CapsuleerMaintenance(
             foreach (var observation in batch.Haulers)
             {
                 PublishPresence(observation.Pilot);
+            }
+            if (_presenceChanges.Count > 0)
+            {
+                chat.PublishCapsuleers(_presenceChanges);
+                foreach (var pilot in _presenceChanges)
+                {
+                    _lastPresence[pilot.Id] = pilot;
+                }
             }
             _publishedPresentation = batch;
             _retryPresentation = null;
@@ -221,8 +231,7 @@ internal sealed class CapsuleerMaintenance(
         );
         if (presence != _lastPresence.GetValueOrDefault(pilot.PilotId))
         {
-            chat.PublishCapsuleer(presence);
-            _lastPresence[pilot.PilotId] = presence;
+            _presenceChanges.Add(presence);
         }
     }
 

@@ -56,6 +56,10 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
         }
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         Assert.Equal(original, Assets(fixture));
+        var disabledSummary = new CapsuleerPopulationStore(fixture.Database).Summary();
+        Assert.Equal(original.Pilots.Length, disabledSummary.PausedAgents);
+        Assert.Equal(0, disabledSummary.EnabledAgents);
+        Assert.Equal(0, disabledSummary.PreparedSystems);
         using (WorldDbContext world = new(fixture.Database.Path))
         {
             Assert.Equal(world.Set<SavedCapsuleerAgent>().Count(), world.Set<SavedCapsuleerSuspension>().Count());

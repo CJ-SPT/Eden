@@ -27,20 +27,41 @@ public sealed class ChatWorld(long roomSeed = 0)
     private IEnumerable<ChatPilot> LocalCapsuleers(ChatRoom room) =>
         room.Kind == ChatRoomKind.Local ? _capsuleers.Values.Where(p => p.SystemId == room.Id && p.LocalKind == room.Kind) : [];
 
-    public IReadOnlyList<ChatDelivery> UpdateCapsuleer(ChatPilot pilot)
+    public IReadOnlyList<ChatDelivery> UpdateCapsuleer(ChatPilot pilot) => UpdateCapsuleers([pilot]);
+
+    public IReadOnlyList<ChatDelivery> UpdateCapsuleers(IReadOnlyList<ChatPilot> pilots)
     {
-        var previous = _capsuleers.GetValueOrDefault(pilot.Id);
-        if (previous == pilot)
-        {
-            return [];
-        }
-        _capsuleers[pilot.Id] = pilot;
         List<ChatDelivery> events = [];
-        if (previous is not null)
+        HashSet<ChatRoom> changed = [];
+        foreach (var pilot in pilots)
         {
-            Notify(previous, false);
+            var previous = _capsuleers.GetValueOrDefault(pilot.Id);
+            if (previous == pilot)
+            {
+                continue;
+            }
+            _capsuleers[pilot.Id] = pilot;
+            if (previous is not null)
+            {
+                Notify(previous, false);
+            }
+            Notify(pilot, true);
         }
-        Notify(pilot, true);
+        foreach (var room in changed.OrderBy(room => room.Id))
+        {
+            var connections = _members[room];
+            if (connections.Count == 0)
+            {
+                continue;
+            }
+            // Ordinary Local has one shared roster. /viking supplies native user data
+            // and participant roles together without a burst of arrival messages.
+            ChatEvent.Roster roster = new(room, Members(connections.First(), room));
+            foreach (var connection in connections)
+            {
+                events.Add(new(connection, roster));
+            }
+        }
         return events;
 
         void Notify(ChatPilot member, bool available)
@@ -48,9 +69,14 @@ public sealed class ChatWorld(long roomSeed = 0)
             var room = new ChatRoom(member.LocalKind, member.SystemId);
             if (room.Kind == ChatRoomKind.Local && _members.TryGetValue(room, out var connections))
             {
-                events.AddRange(
-                    connections.Select(connection => new ChatDelivery(connection, new ChatEvent.Presence(room, member, available)))
-                );
+                changed.Add(room);
+                if (!available)
+                {
+                    // The native snapshot adds members; explicit leaves remove old ones.
+                    events.AddRange(
+                        connections.Select(connection => new ChatDelivery(connection, new ChatEvent.Presence(room, member, false)))
+                    );
+                }
             }
         }
     }

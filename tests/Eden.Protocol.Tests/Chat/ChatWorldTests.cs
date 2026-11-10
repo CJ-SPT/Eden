@@ -12,6 +12,75 @@ public sealed class ChatWorldTests
     private static readonly ChatPilot Second = new(90000002, "Second pilot", 1000044, 30000142, 0);
 
     [Fact]
+    public void SimulatedLocalArrivalIncludesAnAuthoritativeRosterForNativeParticipantState()
+    {
+        ChatWorld world = new();
+        Guid session = Guid.NewGuid(),
+            connection = Guid.NewGuid();
+        world.Update(session, First);
+        world.Connect(session, connection);
+        world.Join(connection, Local, "initial");
+        var arrived = world.UpdateCapsuleer(Second);
+        var roster = Assert.Single(arrived.Select(delivery => delivery.Event).OfType<ChatEvent.Roster>());
+        Assert.Equal(new[] { First.Id, Second.Id }, roster.Pilots.Select(pilot => pilot.Id));
+    }
+
+    [Fact]
+    public void PopulationBatchesPublishOneCompleteRosterPerObserverAndKeepDelayedLocalPrivate()
+    {
+        ChatWorld world = new();
+        Guid session = Guid.NewGuid(),
+            connection = Guid.NewGuid(),
+            second = Guid.NewGuid(),
+            observer = Guid.NewGuid();
+        world.Update(session, First);
+        world.Update(second, Second);
+        world.Connect(session, connection);
+        world.Connect(second, observer);
+        world.Join(connection, Local, "first");
+        world.Join(observer, Local, "second");
+        ChatPilot[] pilots = Enumerable
+            .Range(0, 1000)
+            .Select(i => new ChatPilot(91000000 + i, $"Visitor {i}", 1000044, First.SystemId, 0))
+            .ToArray();
+        var burst = world.UpdateCapsuleers(pilots);
+        Assert.Equal(2, burst.Count);
+        Assert.Same(burst[0].Event, burst[1].Event);
+        Assert.All(burst, delivery => Assert.Equal(1002, Assert.IsType<ChatEvent.Roster>(delivery.Event).Pilots.Count));
+        Assert.Equal(new[] { connection, observer }.Order(), burst.Select(e => e.Recipient).Order());
+        Assert.Empty(world.UpdateCapsuleers(pilots));
+        var departed = world.UpdateCapsuleers([pilots[0] with { SystemId = 30000143 }]);
+        Assert.Equal(2, departed.Count(e => e.Event is ChatEvent.Presence { Available: false }));
+        Assert.All(
+            departed.Select(e => e.Event).OfType<ChatEvent.Roster>(),
+            roster =>
+            {
+                Assert.Equal(1001, roster.Pilots.Count);
+                Assert.DoesNotContain(roster.Pilots, p => p.Id == pilots[0].Id);
+            }
+        );
+        var delayed = world.UpdateCapsuleers([pilots[1] with { SystemId = 31000001, LocalKind = ChatRoomKind.Wormhole }]);
+        Assert.DoesNotContain(delayed, e => e.Event is ChatEvent.Roster { Room.Kind: ChatRoomKind.Wormhole });
+    }
+
+    [Theory]
+    [InlineData(ChatRoomKind.Wormhole)]
+    [InlineData(ChatRoomKind.Triglavian)]
+    public void SimulatedPopulationBatchesDoNotRevealSilentPilotsInDelayedLocal(ChatRoomKind kind)
+    {
+        ChatWorld world = new();
+        Guid session = Guid.NewGuid(),
+            connection = Guid.NewGuid();
+        var pilot = First with { LocalKind = kind };
+        ChatRoom room = new(kind, pilot.SystemId);
+        world.Update(session, pilot);
+        world.Connect(session, connection);
+        world.Join(connection, room, "delayed");
+        Assert.Empty(world.UpdateCapsuleers([Second with { LocalKind = kind }]));
+        Assert.DoesNotContain(world.Members(connection, room), member => member.Id == Second.Id);
+    }
+
+    [Fact]
     public void LocalTransferReusesItsRoomSlotAndPreservesOtherMemberships()
     {
         ChatWorld world = new();

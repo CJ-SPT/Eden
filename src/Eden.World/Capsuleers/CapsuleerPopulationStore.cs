@@ -215,6 +215,9 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             }
             using WorldDbContext world = new(database.Path);
             var communities = world.Set<SavedCapsuleerPopulation>().Select(c => c.SystemId).ToHashSet();
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            long seed = world.Set<SavedCapsuleerProvisioning>().Select(p => p.WorldSeed).SingleOrDefault();
+            string fingerprint = CapsuleerProvisioner.Fingerprint(database, catalog, seed, world.Settings.Capsuleers);
             var systems = world
                 .Set<SavedCapsuleerSystem>()
                 .AsNoTracking()
@@ -226,15 +229,23 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                     s.HomeStationId,
                     s.DestinationStationId,
                     communities.Contains(s.SystemId)
-                ))
+                )
+                {
+                    CurrentPolicy = s.PolicyVersion == CapsuleerProvisioningRules.Version && s.CatalogFingerprint == fingerprint,
+                })
                 .ToArray();
             CapsuleerPopulationSummary summary = new(
                 systems.Length,
                 systems.Count(s => s.Eligibility == CapsuleerEligibility.Eligible),
                 communities.Count,
                 world.Set<SavedCapsuleerAgent>().Count(),
-                world.Set<SavedCapsuleerProvisioning>().Select(p => p.WorldSeed).SingleOrDefault()
-            );
+                seed
+            )
+            {
+                PausedAgents = world.Set<SavedCapsuleerSuspension>().Count(),
+                PreparedSystems = systems.Count(s => s.CurrentPolicy),
+                PreparedEligibleSystems = systems.Count(s => s.CurrentPolicy && s.Eligibility == CapsuleerEligibility.Eligible),
+            };
             var metadata = new Metadata(live?.CapsuleerRevision ?? 0, summary, Array.AsReadOnly(systems));
             if (live is not null)
             {
