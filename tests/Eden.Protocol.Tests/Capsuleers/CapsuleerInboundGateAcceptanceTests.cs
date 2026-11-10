@@ -116,6 +116,7 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         first.Snapshot();
         using var second = factory.Create(secondPilot);
         second.Snapshot();
+        host.PrepareActivatedPopulations();
         var firstSession = Guid.NewGuid();
         var secondSession = Guid.NewGuid();
         chat.Update(firstSession, new(firstPilot.PilotId, firstPilot.Name, firstPilot.CorpId, receivingSystem, 0));
@@ -369,6 +370,7 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
             first.Snapshot();
             using var second = factory.Create(FindHuman(ships, database, humans[1]));
             second.Snapshot();
+            host.PrepareActivatedPopulations();
             clock.Seconds += 10;
             host.GetRequiredService<CapsuleerMaintenance>().Tick();
             using WorldDbContext world = new(database.Path);

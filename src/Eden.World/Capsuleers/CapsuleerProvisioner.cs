@@ -124,7 +124,13 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         return Provision(systemId, catalog, world);
     }
 
-    private CapsuleerProvisioningTurn Provision(int systemId, CatalogDbContext catalog, WorldDbContext world, bool globalStartup = false)
+    private CapsuleerProvisioningTurn Provision(
+        int systemId,
+        CatalogDbContext catalog,
+        WorldDbContext world,
+        bool globalStartup = false,
+        int maximumFounders = int.MaxValue
+    )
     {
         using var transaction = world.Database.BeginTransaction();
         var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
@@ -220,22 +226,38 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         EnsureAccount(world);
         world.SaveChanges();
         bool created = false;
+        long? createdPilot = null;
         bool pending = awaitingOre;
+        int attempted = 0;
         if (addMiner)
         {
-            bool added =
-                CreateFounder(world, catalog, mining, origins, CapsuleerCareer.Mining, seed, 0, null, HaulerEncounterOpening.Docked)
-                is not null;
-            created |= added;
-            pending |= !added;
+            attempted++;
+            long? added = CreateFounder(
+                world,
+                catalog,
+                mining,
+                origins,
+                CapsuleerCareer.Mining,
+                seed,
+                0,
+                null,
+                HaulerEncounterOpening.Docked,
+                startDocked: maximumFounders != int.MaxValue
+            );
+            created |= added is not null;
+            pending |= added is null;
+            createdPilot = added;
         }
         int offset = (int)(
             CapsuleerProvisioningRules.Seed(seed, systemId, CapsuleerCareer.Hauling) % (ulong)Math.Max(1, traffic.Routes.Length)
         );
-        foreach (int slot in newSlots)
+        int remaining = Math.Max(0, newSlots.Length - (maximumFounders - attempted));
+        foreach (int slot in newSlots.Take(maximumFounders - attempted))
         {
-            var opening = CapsuleerEncounterRules.TrafficOpening(seed, systemId, slot, count);
-            var route = SelectRoute(catalog, traffic, systemId, slot, opening, offset);
+            var plannedOpening = CapsuleerEncounterRules.TrafficOpening(seed, systemId, slot, count);
+            var route = SelectRoute(catalog, traffic, systemId, slot, plannedOpening, offset);
+            // Incremental live preparation introduces new residents through normal departures.
+            var opening = maximumFounders == int.MaxValue ? plannedOpening : HaulerEncounterOpening.Docked;
             var site = mining with { HomeStationId = route.SourceStationId, DestinationStationId = route.DestinationStationId };
             TrafficJourney? journey = globalStartup
                 ? new(
@@ -247,19 +269,33 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                     0
                 )
                 : null;
-            bool added =
-                CreateFounder(world, catalog, site, origins, CapsuleerCareer.Hauling, seed, slot, route, opening, initialJourney: journey)
-                is not null;
-            created |= added;
-            pending |= !added;
+            long? added = CreateFounder(
+                world,
+                catalog,
+                site,
+                origins,
+                CapsuleerCareer.Hauling,
+                seed,
+                slot,
+                route,
+                opening,
+                initialJourney: journey
+            );
+            created |= added is not null;
+            pending |= added is null;
+            createdPilot = added ?? createdPilot;
         }
-        if (pending)
+        if (pending || remaining > 0)
         {
             summary.CatalogFingerprint = "";
         }
         world.SaveChanges();
         transaction.Commit();
-        return new(1, created ? 1 : 0, pending ? 1 : 0);
+        return new(1, created ? 1 : 0, pending ? 1 : 0)
+        {
+            HasMoreWork = remaining > 0,
+            CreatedPilotId = maximumFounders == 1 ? createdPilot : null,
+        };
     }
 
     internal static string Fingerprint(
@@ -350,7 +386,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         WatchedTrafficGate? watchedGate = null,
         bool sourceObserved = false,
         int visitor = 0,
-        TrafficJourney? initialJourney = null
+        TrafficJourney? initialJourney = null,
+        bool startDocked = false
     )
     {
         long pilot = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
@@ -408,7 +445,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         world.Database.ExecuteSql(
             $"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({ship},{pilot},{hull},{station},{name})"
         );
-        bool blueprint = career == CapsuleerCareer.Hauling && _startupReservations is not null;
+        bool blueprint = _startupReservations is not null && (career == CapsuleerCareer.Hauling || _requirePreparedBlueprints);
         if (!blueprint)
         {
             StartingSkills.Grant(world, catalog, pilot, origin.RaceId);
@@ -419,18 +456,21 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         if (career == CapsuleerCareer.Mining)
         {
             module = ship + 1;
-            CapsuleerCommunityStore.GrantRequirements(world, catalog, pilot, (int)MiningLaserType.MinerI, []);
-            world.Add(
-                new OwnedItem
-                {
-                    Id = module,
-                    OwnerId = pilot,
-                    TypeId = (int)MiningLaserType.MinerI,
-                    LocationId = station,
-                    FlagId = (int)InventoryFlag.Hangar,
-                    Quantity = 1,
-                }
-            );
+            if (!blueprint)
+            {
+                CapsuleerCommunityStore.GrantRequirements(world, catalog, pilot, (int)MiningLaserType.MinerI, []);
+                world.Add(
+                    new OwnedItem
+                    {
+                        Id = module,
+                        OwnerId = pilot,
+                        TypeId = (int)MiningLaserType.MinerI,
+                        LocationId = station,
+                        FlagId = (int)InventoryFlag.Hangar,
+                        Quantity = 1,
+                    }
+                );
+            }
             world.Add(
                 new SavedCapsuleerCommunity
                 {
@@ -492,7 +532,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 ship,
                 station,
                 now,
-                requirePrepared: _requirePreparedBlueprints
+                requirePrepared: _requirePreparedBlueprints,
+                mining: career == CapsuleerCareer.Mining
             );
         }
         if (trafficProfile is not null)
@@ -503,7 +544,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             }
             TrafficProvisioning.Record(database, world, pilot, trafficProfile);
         }
-        if (career == CapsuleerCareer.Mining)
+        if (career == CapsuleerCareer.Mining && !blueprint)
         {
             PilotFittingStore.Fit(world, catalog, pilot, [module], station, (int)InventoryFlag.AutoFit, now);
             PilotFittingStore.SetOnline(world, catalog, pilot, ship, module, true, now);
@@ -535,7 +576,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             // New encounters can begin midway through their first shift. This is
             // paid once, in the same transaction that creates their owned ship.
             var rocks = world.Set<WorldAsteroid>().Where(a => a.SystemId == site.SystemId && a.Quantity > 0).OrderBy(a => a.Id).ToArray();
-            var openingPhase = CapsuleerEncounterRules.Opening(seed, site.SystemId);
+            var openingPhase = startDocked ? MinerEncounterOpening.Docked : CapsuleerEncounterRules.Opening(seed, site.SystemId);
             if (rocks.Length > 0 && openingPhase != MinerEncounterOpening.Docked)
             {
                 var rock = rocks[(int)(CapsuleerProvisioningRules.Seed(seed, site.SystemId, career) % (ulong)rocks.Length)];

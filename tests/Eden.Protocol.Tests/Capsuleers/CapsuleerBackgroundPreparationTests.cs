@@ -20,6 +20,165 @@ public sealed class CapsuleerBackgroundPreparationTests
     private const int Fourth = 31000002;
 
     [Fact]
+    public void MinerBlueprintIsPreparedOutsideOwnershipAndFailedNextFounderPreservesIt()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+        var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
+        var synchronization = host.GetRequiredService<IWorldSynchronization>();
+        int blueprints = 0;
+        using (
+            var metrics = SessionPerformance.Begin(
+                "miner preparation",
+                line =>
+                {
+                    if (line.StartsWith("Performance startup.shipBlueprint:", StringComparison.Ordinal))
+                    {
+                        Assert.False(synchronization.IsEntered);
+                        blueprints++;
+                    }
+                },
+                force: true
+            )
+        )
+        {
+            Assert.Null(preparation.PrepareNext().Failure);
+        }
+        Assert.True(blueprints > 0);
+        using WorldDbContext saved = new(f.Database.Path);
+        var miner = Assert.Single(saved.Set<SavedCapsuleerAgent>());
+        Assert.Equal(CapsuleerCareer.Mining, miner.Career);
+        Assert.Null(saved.Positions.SingleOrDefault(p => p.ShipId == miner.FounderShipId));
+        var module = saved.Set<Eden.Data.World.Inventory.OwnedItem>().Single(i => i.Id == miner.FounderModuleId);
+        Assert.True(module.Online);
+        Assert.Equal(miner.FounderShipId, module.LocationId);
+        saved.Database.ExecuteSqlRaw(
+            """
+            CREATE TRIGGER reject_next_founder BEFORE INSERT ON WorldCapsuleerAgent
+            WHEN NEW.Career=2 BEGIN SELECT RAISE(ABORT,'next founder rejected'); END;
+            """
+        );
+        var failed = preparation.PrepareNext();
+        Assert.NotNull(failed.Failure);
+        Assert.Equal(miner.PilotId, Assert.Single(saved.Set<SavedCapsuleerAgent>()).PilotId);
+        Assert.Single(saved.Set<SavedCapsuleerJob>());
+        saved.Database.ExecuteSqlRaw("DROP TRIGGER reject_next_founder");
+    }
+
+    [Fact]
+    public void WatchingGateQueuesVisitorsWithoutCreatingThemOnPlayerPath()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        var configuration = new WorldConfigurationStore(f.Database, f.Clock);
+        var state = configuration.Read();
+        configuration.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with { Capsuleers = new(Miners: false, GateVisitors: 3) },
+            },
+            "background gate visitors"
+        );
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var ships = host.GetRequiredService<Eden.World.Docking.SqliteWorld>();
+        var pilot = ships.FindPilot(1000001)!;
+        var gate = host.GetRequiredService<Eden.Gameplay.Flight.ISystemObjects>()
+            .Load(pilot.SystemId)
+            .First(g => g.DestinationSystemId is not null);
+        ships.SetPosition(pilot.ShipId, gate.Position, pilot.SystemId);
+        using var human = host.GetRequiredService<IHumanPresence>().Select(pilot.PilotId, pilot.SystemId);
+        using (WorldDbContext saved = new(f.Database.Path))
+        {
+            Assert.Empty(saved.Set<SavedCapsuleerAgent>());
+        }
+        var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
+        var synchronization = host.GetRequiredService<IWorldSynchronization>();
+        int planned = 0;
+        int identityLoads = 0;
+        using var metrics = SessionPerformance.Begin(
+            "incremental gate visitors",
+            line =>
+            {
+                if (line.StartsWith("Performance startup.shipBlueprint:", StringComparison.Ordinal))
+                {
+                    Assert.False(synchronization.IsEntered);
+                    planned++;
+                }
+                if (line.StartsWith("Performance population.identitySnapshot:", StringComparison.Ordinal))
+                {
+                    identityLoads++;
+                }
+            },
+            force: true
+        );
+        for (int count = 1; count <= 3; count++)
+        {
+            var turn = preparation.PrepareNext();
+            Assert.Null(turn.Failure);
+            using WorldDbContext saved = new(f.Database.Path);
+            Assert.Equal(count, saved.Set<SavedCapsuleerAgent>().Count());
+            Assert.Equal(count, saved.Set<SavedCapsuleerJob>().Count());
+        }
+        Assert.True(planned > 0);
+        Assert.Equal(1, identityLoads);
+    }
+
+    [Fact]
+    public void LiveEntryDefersCreationAndEachBatchCommitsOneFounderAcrossRestart()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        PrepareStartup(f);
+        long firstPilot;
+        int expected;
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+            using (WorldDbContext world = new(f.Database.Path))
+            {
+                Assert.Empty(world.Set<SavedCapsuleerAgent>());
+                using CatalogDbContext catalog = new(f.Database.CatalogPath);
+                var route = CapsuleerTrafficRoutes.Read(catalog, Source);
+                long seed = world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed;
+                expected = CapsuleerEncounterRules.Haulers(seed, Source, route.GateCount, route.StationCount, world.Settings.Capsuleers);
+                Assert.True(expected > 1);
+            }
+            var turn = host.GetRequiredService<ICapsuleerBackgroundPreparation>().PrepareNext();
+            Assert.Null(turn.Failure);
+            Assert.False(turn.Complete);
+            Assert.Equal(0, turn.Progress.CompletedSystems);
+            using WorldDbContext saved = new(f.Database.Path);
+            var agent = Assert.Single(saved.Set<SavedCapsuleerAgent>());
+            firstPilot = agent.PilotId;
+            Assert.Equal(Source, agent.CommunitySystemId);
+            Assert.Equal("", saved.Set<SavedCapsuleerSystem>().Single(s => s.SystemId == Source).CatalogFingerprint);
+            Assert.Single(saved.Set<SavedCapsuleerJob>());
+            Assert.Null(saved.Ships.Single(s => s.Id == agent.FounderShipId).Position);
+        }
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        WorldInitialization.PrepareCapsuleers(f.Database, f.Clock, maximumCommunities: 0);
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+            var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
+            for (int count = 2; count <= expected; count++)
+            {
+                var turn = preparation.PrepareNext();
+                Assert.Null(turn.Failure);
+                Assert.Equal(Source, turn.SystemId);
+                using WorldDbContext saved = new(f.Database.Path);
+                Assert.Equal(count, saved.Set<SavedCapsuleerAgent>().Count(a => a.CommunitySystemId == Source));
+                Assert.Single(saved.Set<SavedCapsuleerAgent>().Where(a => a.PilotId == firstPilot));
+                Assert.Equal(
+                    count == expected,
+                    saved.Set<SavedCapsuleerSystem>().Single(s => s.SystemId == Source).CatalogFingerprint != ""
+                );
+            }
+        }
+    }
+
+    [Fact]
     public void RegionsWaitForEntryAndEnteredSystemPrecedesItsNeighbours()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
@@ -49,9 +208,21 @@ public sealed class CapsuleerBackgroundPreparationTests
         Assert.Equal(Fourth, first.SystemId);
         Assert.Equal(2, first.Progress.TotalSystems);
         Assert.False(first.Complete);
+        while (first.Progress.CompletedSystems == 0)
+        {
+            first = preparation.PrepareNext();
+            Assert.Null(first.Failure);
+            Assert.Equal(Fourth, first.SystemId);
+        }
         var second = preparation.PrepareNext();
         Assert.Null(second.Failure);
         Assert.Equal(Third, second.SystemId);
+        while (!second.Complete)
+        {
+            second = preparation.PrepareNext();
+            Assert.Null(second.Failure);
+            Assert.Equal(Third, second.SystemId);
+        }
         Assert.True(second.Complete);
         using WorldDbContext world = new(f.Database.Path);
         Assert.DoesNotContain(world.Set<SavedCapsuleerAgent>(), agent => agent.CommunitySystemId == Source);

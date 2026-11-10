@@ -59,6 +59,12 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
 
     internal Task MembershipChanged => Volatile.Read(ref _membershipChanged).Task;
 
+    internal void RequestPreparation()
+    {
+        var previous = Interlocked.Exchange(ref _membershipChanged, new(TaskCreationOptions.RunContinuationsAsynchronously));
+        previous.TrySetResult();
+    }
+
     // Scheduling reads this under the same owner as the queue and activity clock.
     internal Task Changed => (LiveWorld.Find(database.Path)?.CapsuleerActivity ?? _standalone).Changed;
 
@@ -216,6 +222,10 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
 
         public void Dispose()
         {
+            if (_disposed)
+            {
+                return;
+            }
             try
             {
                 presence.Change(session, null, () => !_disposed, () => _disposed = true, _system, pilotId);

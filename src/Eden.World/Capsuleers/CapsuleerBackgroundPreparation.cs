@@ -32,9 +32,37 @@ internal sealed class CapsuleerBackgroundPreparation(
         lock (_gate)
         {
             using var scope = new CatalogReadScope().Begin();
+            if (scheduler.NextInboundPreparation() is { } inbound)
+            {
+                try
+                {
+                    long? pilot = _provisioner.PrepareBackgroundInbound(inbound, synchronization, cancellationToken);
+                    scheduler.InboundPrepared(inbound, pilot);
+                }
+                catch (CapsuleerBlueprintNotPreparedException)
+                {
+                    // Re-plan a changed reservation on the next bounded turn.
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    scheduler.InboundPrepared(inbound, null);
+                    return new(new(_completed, _total, _deferred), inbound.Gate.ObserverSystemId, false) { Failure = error.Message };
+                }
+                return new(new(_completed, _total, _deferred), inbound.Gate.ObserverSystemId, false);
+            }
             var occupied = activity.Read().ActiveSystems;
             ActivateRegions(occupied);
             int? selected = occupied.Where(_pending.Contains).Order().Cast<int?>().FirstOrDefault();
+            if (selected is null && occupied.Count > 0)
+            {
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                selected = occupied
+                    .SelectMany(system => CapsuleerTrafficRoutes.Neighbours(catalog, system))
+                    .Where(_pending.Contains)
+                    .Order()
+                    .Cast<int?>()
+                    .FirstOrDefault();
+            }
             if (selected is null)
             {
                 while (_systems.TryPeek(out int next) && !_pending.Contains(next))
@@ -51,7 +79,11 @@ internal sealed class CapsuleerBackgroundPreparation(
             {
                 var turn = _provisioner.PrepareBackgroundSystem(target, synchronization, cancellationToken);
                 // Register only this committed community, rather than reloading every saved pilot on the next wake.
-                scheduler.PopulationPrepared(target);
+                scheduler.PopulationPrepared(target, turn.CreatedPilotId);
+                if (turn.HasMoreWork)
+                {
+                    return new(new(_completed, _total, _deferred), target, false);
+                }
                 _pending.Remove(target);
                 _completed++;
                 _deferred += turn.PendingCommunities;

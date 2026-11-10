@@ -35,7 +35,11 @@ public sealed record CapsuleerSystemSummary(
     public bool CurrentPolicy { get; init; }
 }
 
-public sealed record CapsuleerProvisioningTurn(int RegisteredSystems, int CreatedCommunities, int PendingCommunities);
+public sealed record CapsuleerProvisioningTurn(int RegisteredSystems, int CreatedCommunities, int PendingCommunities)
+{
+    public bool HasMoreWork { get; init; }
+    public long? CreatedPilotId { get; init; }
+}
 
 // Completed counts include cached systems and systems examined but deferred this run.
 public sealed record CapsuleerPreparationProgress(int CompletedSystems, int TotalSystems, int DeferredSystems);

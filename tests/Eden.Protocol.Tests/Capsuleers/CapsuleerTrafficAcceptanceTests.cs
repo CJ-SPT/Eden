@@ -232,6 +232,7 @@ public sealed class CapsuleerTrafficAcceptanceTests(ITestOutputHelper output)
         var human = Human(host, database);
         long start = Stopwatch.GetTimestamp();
         using var first = presence.Select(human.PilotId, system);
+        host.PrepareActivatedPopulations();
         worker.Refresh();
         double entryMilliseconds = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
         var identities = population.Agents(system).OrderBy(a => a.PilotId).ToArray();

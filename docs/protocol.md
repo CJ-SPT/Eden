@@ -7,6 +7,8 @@
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) records native provider contracts,
 saved signature and ice discovery, source fingerprints and automated validation.
 
+[Incremental population admission](protocol/performance.md#incremental-population-admission-november-10-2026) records resumable founder batches and background gate preparation.
+
 [Shared-owner stall relief](protocol/performance.md#shared-owner-stall-relief-november-10-2026) records the frozen
 concurrent-player replay, ordered admission, grouped frame updates and remaining per-system ownership work.
 

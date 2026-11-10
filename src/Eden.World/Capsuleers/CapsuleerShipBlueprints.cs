@@ -10,6 +10,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -31,6 +32,10 @@ internal sealed class CapsuleerShipBlueprints : IDisposable
     private const int StationContainer = -2;
     private readonly TrafficValidationImage _image = new();
     private readonly Dictionary<(int Race, string Fit), Blueprint> _blueprints = [];
+    private readonly Dictionary<(int Race, string Fit), Blueprint> _prepared = [];
+
+    internal void BeginPreparation() => _prepared.Clear();
+
     private readonly int _station;
 
     private sealed record Skill(int TypeId, long Points);
@@ -110,24 +115,30 @@ internal sealed class CapsuleerShipBlueprints : IDisposable
         long ship,
         int station,
         long now,
-        bool requirePrepared = false
+        bool requirePrepared = false,
+        bool mining = false
     )
     {
-        string signature = profile is null ? $"generated:{hull}" : TrafficSnapshot.Signature(profile);
-        if (!_blueprints.TryGetValue((race, signature), out var blueprint))
+        string signature =
+            mining ? $"mining:{hull}"
+            : profile is null ? $"generated:{hull}"
+            : TrafficSnapshot.Signature(profile);
+        if (!(requirePrepared ? _prepared : _blueprints).TryGetValue((race, signature), out var blueprint))
         {
             if (requirePrepared)
             {
                 throw new CapsuleerBlueprintNotPreparedException();
             }
-            blueprint = Build(catalog, race, hull, profile);
+            blueprint = Build(catalog, race, hull, profile, mining);
             if (_blueprints.Count == MaximumBlueprints)
             {
                 _blueprints.Clear();
             }
             _blueprints.Add((race, signature), blueprint);
         }
-        long first = InventoryPersistence.NextId(world);
+        // The caller reserved the next shared inventory ID for this new ship under
+        // the transaction owner. No inventory is inserted before its blueprint.
+        long first = checked(ship + 1);
         var items = blueprint
             .Items.Select(
                 (item, index) =>
@@ -208,22 +219,27 @@ internal sealed class CapsuleerShipBlueprints : IDisposable
         world.StageFit(new(pilot, ship, 0), world.FitRevision(pilot), blueprint.Attributes);
     }
 
-    internal void Prepare(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile)
+    internal void Prepare(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile, bool mining = false)
     {
-        string signature = profile is null ? $"generated:{hull}" : TrafficSnapshot.Signature(profile);
-        if (_blueprints.ContainsKey((race, signature)))
+        string signature =
+            mining ? $"mining:{hull}"
+            : profile is null ? $"generated:{hull}"
+            : TrafficSnapshot.Signature(profile);
+        if (_blueprints.TryGetValue((race, signature), out var cached))
         {
+            _prepared[(race, signature)] = cached;
             return;
         }
-        var blueprint = Build(catalog, race, hull, profile);
+        var blueprint = Build(catalog, race, hull, profile, mining);
         if (_blueprints.Count == MaximumBlueprints)
         {
             _blueprints.Clear();
         }
         _blueprints.Add((race, signature), blueprint);
+        _prepared[(race, signature)] = blueprint;
     }
 
-    private Blueprint Build(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile)
+    private Blueprint Build(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile, bool mining)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.shipBlueprint");
         using WorldDbContext world = _image.Open();
@@ -233,7 +249,26 @@ internal sealed class CapsuleerShipBlueprints : IDisposable
         world.SaveChanges();
         StartingSkills.Grant(world, catalog, TemplatePilot, race);
         CapsuleerCommunityStore.GrantRequirements(world, catalog, TemplatePilot, hull, []);
-        if (profile is not null)
+        if (mining)
+        {
+            long module = InventoryPersistence.NextId(world);
+            CapsuleerCommunityStore.GrantRequirements(world, catalog, TemplatePilot, (int)MiningLaserType.MinerI, []);
+            world.Add(
+                new OwnedItem
+                {
+                    Id = module,
+                    OwnerId = TemplatePilot,
+                    TypeId = (int)MiningLaserType.MinerI,
+                    LocationId = _station,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 1,
+                }
+            );
+            world.SaveChanges();
+            PilotFittingStore.Fit(world, catalog, TemplatePilot, [module], _station, (int)InventoryFlag.AutoFit, TemplateTime);
+            PilotFittingStore.SetOnline(world, catalog, TemplatePilot, TemplateShip, module, true, TemplateTime);
+        }
+        else if (profile is not null)
         {
             TrafficFitting.Apply(world, catalog, TemplatePilot, TemplateShip, profile, TemplateTime);
         }

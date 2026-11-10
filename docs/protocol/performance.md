@@ -1462,3 +1462,51 @@ Native rendering, input and gameplay feel remain unverified.
 
 **Optional maintainer checks.** Rebuild/restart the server and compare the same route's frame waits, arrival-to-reply
 latency and oldest due-job age. Native rendering, input and gameplay feel remain unverified.
+
+
+## Incremental population admission, November 10, 2026
+
+Live human entry registers saved residents and requests background population through presence changes; it no longer
+creates a home community in scheduler reconciliation. Gate watches likewise enqueue idempotent lane requests instead
+of creating every visitor on the player path. The existing background worker processes one complete founder per step,
+with occupied systems ahead of their pending reciprocal neighbours and other systems in activated regions. Its 25 ms
+turn budget is checked between steps, not presented as a bound on one atomic founder or initial asteroid-field creation.
+
+Every founder's identity, inventory, skills, wallet, role progress and first job commit together. The system fingerprint
+stays incomplete while more slots remain. Restart uses saved slots to resume without replacing existing pilots. New home
+residents begin docked and depart normally; previously saved openings and explicit offline reconciliation retain their
+existing behavior. A failed founder does not roll back earlier committed founders. Failed regions are deferred for the
+run and retried after restart, as before. Gate failures no longer block other queued work for that run.
+
+Hauler and miner blueprints are constructed in the isolated validation image outside world ownership. Prepared blueprints
+are pinned for the current step independently of the bounded reusable cache. Reservation views survive the worker's own
+successful commits and reload after external pilot/traffic identity changes; failure discards speculative reservations.
+The inserted ship and its blueprint use one contiguous inventory ID allocation. Each completed founder is registered
+individually with the scheduler, avoiding a complete community reload after every slot.
+
+This is the population-admission slice of the simulation scaling plan. Global transaction projection, table-wide resident
+cache invalidation, per-system simulation ownership, remote mining progression, selective runtime eviction, and checkpoint
+copying outside system owners remain outstanding. No latency or capacity target for the full installed world is claimed
+by these fixture regressions. Existing replay reports are historical measurements and are not acceptance for this change.
+
+The gameplay reference is [EVE University server ticks](https://wiki.eveuniversity.org/Server_tick). This slice changes
+population scheduling and persistence, not native movement or serialization. The previously recorded Carbon Destiny
+revision remains the engine reference. SQLite batch work follows Microsoft's
+[transaction and command reuse guidance](https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/bulk-insert).
+
+**Automated validation.** Tool and solution restore, warning-free solution build (5.96 seconds), 362 affected .NET tests
+(3 minutes 30 seconds), eight catalog Python tests, nine formatting policy tests and formatting verification passed.
+The final filter was `FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Persistence.OwnershipTimingTests`.
+Exact development regressions were `CapsuleerBackgroundPreparationTests.LiveEntryDefersCreationAndEachBatchCommitsOneFounderAcrossRestart`,
+`WatchingGateQueuesVisitorsWithoutCreatingThemOnPlayerPath`, and
+`MinerBlueprintIsPreparedOutsideOwnershipAndFailedNextFounderPreservesIt`. The gate regression also verifies one identity
+snapshot across three founder commits. Opt-in installed-save replays without configured inputs did not measure workloads.
+Initial affected tests exposed fixtures depending on synchronous
+entry creation; encounter/performance fixtures now explicitly seed saved populations, and background-admission tests
+exercise incremental creation. A concurrent feature build was rejected by Windows because the test assembly was in use;
+subsequent validation is serialized. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Rebuild/restart and enter an unprepared region; compare responsiveness while new residents
+depart or arrive. Native rendering, input and gameplay feel remain unverified.

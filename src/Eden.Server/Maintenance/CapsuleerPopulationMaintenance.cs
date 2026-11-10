@@ -13,7 +13,7 @@ internal sealed class CapsuleerPopulationMaintenance(
     IPilotOperationScope operations
 ) : IDisposable
 {
-    private const int MaximumSystemsPerTurn = 16;
+    private const int MaximumStepsPerTurn = 16;
     private static readonly TimeSpan ExecutionBudget = TimeSpan.FromMilliseconds(25);
     private static readonly TimeSpan YieldInterval = TimeSpan.FromMilliseconds(100);
     private readonly PopulationStartupProgress _progress = new(ServerLog.Console.Information, clock);
@@ -37,7 +37,7 @@ internal sealed class CapsuleerPopulationMaintenance(
     {
         using var operation = operations.Begin();
         long started = clock.GetTimestamp();
-        for (int systems = 0; systems < MaximumSystemsPerTurn; systems++)
+        for (int step = 0; step < MaximumStepsPerTurn; step++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var turn = preparation.PrepareNext(cancellationToken);

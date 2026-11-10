@@ -35,6 +35,7 @@ public sealed class CapsuleerMaintenanceTests
             "test"
         );
         WorldInitialization.Initialize(f.Database, f.Clock);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(30000141);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var chat = host.GetRequiredService<ChatRuntime>();
         Guid session = Guid.NewGuid();

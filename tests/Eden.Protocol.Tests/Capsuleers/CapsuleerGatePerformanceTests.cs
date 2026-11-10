@@ -398,6 +398,7 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
             "gate performance test"
         );
         Eden.World.Storage.WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        new CapsuleerProvisioner(fixture.Database, fixture.Clock).EnsureSystem(30000141);
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, 30000141);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();

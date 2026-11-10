@@ -6,6 +6,7 @@ using Eden.Infrastructure.Operations;
 using Eden.Server;
 using Eden.Server.Chat;
 using Eden.Server.Maintenance;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Runtime;
@@ -24,6 +25,7 @@ public sealed class CapsuleerTrafficPerformanceTests(ITestOutputHelper output)
         (int Connections, CapsuleerJob[] Jobs) Measure(bool scoped)
         {
             using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+            new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(30000141);
             using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
             using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, 30000141);
             using var worker = new CapsuleerMaintenance(
@@ -59,6 +61,7 @@ public sealed class CapsuleerTrafficPerformanceTests(ITestOutputHelper output)
     public void CaptureReflectsSameTickDamageAndSubsecondRechargeWithoutAnotherTrafficTurn()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(30000141);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, 30000141);
         host.GetRequiredService<CapsuleerMaintenance>().Tick();
@@ -99,6 +102,7 @@ public sealed class CapsuleerTrafficPerformanceTests(ITestOutputHelper output)
         {
             TrafficSnapshotTests.Install(f.Database, TrafficSnapshotTests.Profile());
         }
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(30000141);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         var leases = Enumerable.Range(0, observers).Select(i => presence.Select(90000001 + i, occupied ? 30000141 : 30000144)).ToArray();

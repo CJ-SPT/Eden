@@ -11,6 +11,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Skills;
 using Eden.Server;
 using Eden.Server.Maintenance;
+using Eden.World.Capsuleers;
 using Eden.World.Docking;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -49,6 +50,8 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         var population = host.GetRequiredService<ICapsuleerPopulation>();
         Assert.Equal(0, population.Summary().RegisteredSystems);
         using var selected = host.GetRequiredService<IHumanPresence>().Select(Human, 30000142);
+        Assert.Equal(0, population.Summary().RegisteredSystems);
+        host.GetRequiredService<ICapsuleerBackgroundPreparation>().PrepareNext();
         Assert.Equal(1, population.Summary().RegisteredSystems);
         Assert.Equal(1, population.Summary().EligibleSystems);
         Assert.Equal(0, population.Summary().Agents);
@@ -130,6 +133,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     public async Task SmallWorldRunsTheSameDockedFrameWorkload()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var live = host.GetRequiredService<LiveWorld>();
         live.MeasureCheckpoints = true;
@@ -200,6 +204,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     public async Task EntrySharesMiningAndTrafficWhileOnlyTravelAdvancesOffscreen()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
@@ -254,6 +259,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     public void ScheduledHaulerCanBeMetOnItsRealRouteWithTheSameShipAndCargo()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
@@ -287,6 +293,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     public void LateUnobservedGateTransferContinuesItsJourneyAndEmptyWorldPausesClock()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         using var human = presence.Select(Human, Source);
@@ -320,6 +327,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     public async Task WitnessedHaulerCrossesTwoGatesWithOneIdentityAndUnchangedCargoAcrossRestart()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
         long pilot;
         long ship;
         using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
@@ -367,6 +375,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     public void UnchangedEmptySystemFramesHaveNoSqlFittingOrNativeScenesWhileTravelContinues()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var presence = host.GetRequiredService<IHumanPresence>();
         using (var human = presence.Select(Human, Source))

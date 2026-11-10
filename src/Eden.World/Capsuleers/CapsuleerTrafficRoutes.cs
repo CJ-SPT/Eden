@@ -38,6 +38,9 @@ internal static partial class CapsuleerTrafficRoutes
 
     internal static CapsuleerTrafficPlan Read(CatalogDbContext catalog, int systemId) => catalog.Definition(s_plans, systemId);
 
+    internal static IReadOnlyList<int> Neighbours(CatalogDbContext catalog, int systemId) =>
+        catalog.Definitions.GlobalDefinition(s_graph).Links.GetValueOrDefault(systemId) ?? [];
+
     internal static CapsuleerTrafficGeography Geography(CatalogDbContext catalog, int systemId)
     {
         var graph = catalog.Definitions.GlobalDefinition(s_graph);

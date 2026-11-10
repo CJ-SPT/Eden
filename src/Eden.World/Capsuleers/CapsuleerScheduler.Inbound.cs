@@ -10,6 +10,44 @@ internal sealed partial class CapsuleerScheduler
     private readonly HashSet<(long Gate, bool BothSystemsObserved)> _deferredInbound = [];
     private readonly HashSet<long> _travelers = [];
 
+    internal sealed record InboundPreparation(WatchedTrafficGate Gate, bool BothObserved, int Visitor = 0);
+
+    private readonly Dictionary<long, InboundPreparation> _inboundPreparation = [];
+
+    internal InboundPreparation? NextInboundPreparation()
+    {
+        using var owner = synchronization.Enter("inbound preparation request");
+        return _inboundPreparation.Values.FirstOrDefault();
+    }
+
+    internal void InboundPrepared(InboundPreparation request, long? pilot)
+    {
+        using var owner = synchronization.Enter("inbound preparation publication");
+        long key = Math.Min(request.Gate.ArrivalGateId, request.Gate.DepartureGateId);
+        if (pilot is long committed)
+        {
+            Load(preparedPilot: committed);
+            _travelers.Add(committed);
+        }
+        if (pilot is not null && request.Visitor + 1 < _populationSettings.Settings.Capsuleers.GateVisitors)
+        {
+            _inboundPreparation[key] = request with { Visitor = request.Visitor + 1 };
+        }
+        else
+        {
+            _inboundPreparation.Remove(key);
+            if (pilot is long last)
+            {
+                _inboundLanes[key] = last;
+            }
+            else
+            {
+                _deferredInbound.Add((key, request.BothObserved));
+            }
+        }
+        presence.Wake();
+    }
+
     private HashSet<long> ReconcileInbound(HumanActivitySnapshot activity)
     {
         var policy = _populationSettings.Settings.Capsuleers;
@@ -20,6 +58,14 @@ internal sealed partial class CapsuleerScheduler
             bool bothObserved = activity.ActiveSystems.Contains(gate.SourceSystemId);
             if (_inboundLanes.ContainsKey(key) || _deferredInbound.Contains((key, bothObserved)))
             {
+                continue;
+            }
+            if (Live is not null)
+            {
+                if (_inboundPreparation.TryAdd(key, new(gate, bothObserved)))
+                {
+                    presence.RequestPreparation();
+                }
                 continue;
             }
             long? lastPilot = null;

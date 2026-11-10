@@ -44,7 +44,7 @@ public sealed class CapsuleerDeadlineTests
         {
             new HaulerCheckpoint(founder.PilotId, work).Apply(world);
         }
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var job = scheduler.Jobs().Single(j => j.PilotId == founder.PilotId);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);

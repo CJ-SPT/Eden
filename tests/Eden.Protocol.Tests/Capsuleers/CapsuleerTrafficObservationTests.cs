@@ -1,6 +1,7 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Server;
 using Eden.Server.Maintenance;
+using Eden.World.Capsuleers;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -15,6 +16,7 @@ public sealed class CapsuleerTrafficObservationTests(ITestOutputHelper output)
     public void OneHourResidentialAndQuietObservationsRetainLocalVisitsAndQuietSpace(bool quiet)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: !quiet);
+        new CapsuleerProvisioner(fixture.Database, fixture.Clock).EnsureSystem(quiet ? 30000144 : 30000141);
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         const int homeSystem = 30000141;
         const int quietSystem = 30000144;

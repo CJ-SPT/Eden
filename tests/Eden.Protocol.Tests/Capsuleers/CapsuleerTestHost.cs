@@ -9,6 +9,22 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 internal static class CapsuleerTestHost
 {
+    internal static void PrepareActivatedPopulations(this ServiceProvider host)
+    {
+        var preparation = host.GetRequiredService<Eden.Gameplay.Capsuleers.ICapsuleerBackgroundPreparation>();
+        const int MaximumSteps = 100000;
+        for (int step = 0; step < MaximumSteps; step++)
+        {
+            var turn = preparation.PrepareNext();
+            Assert.Null(turn.Failure);
+            if (turn.Complete)
+            {
+                return;
+            }
+        }
+        Assert.Fail("Population preparation did not finish its bounded test workload.");
+    }
+
     internal static ServiceProvider WithPreparedCommunities(this ServiceProvider host, WorldDatabase database)
     {
         if (LiveWorld.Find(database.Path) is null)

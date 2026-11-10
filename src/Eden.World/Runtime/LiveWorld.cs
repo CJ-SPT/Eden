@@ -79,6 +79,10 @@ internal sealed class LiveWorld : IDisposable
     internal void SqlClosed(IReadOnlyCollection<CombatRowChange> changes)
     {
         SqlConnections--;
+        if (changes.Any(change => change.Table is "WorldPilot" or "WorldTrafficIdentity" or "schema"))
+        {
+            PopulationIdentityRevision++;
+        }
         foreach (var change in changes)
         {
             if (change.Table == "WorldPilot" && CapsuleerJobs.ContainsKey(change.Id))
@@ -107,6 +111,7 @@ internal sealed class LiveWorld : IDisposable
     }
 
     internal long CapsuleerRevision { get; private set; }
+    internal long PopulationIdentityRevision { get; private set; }
     internal Dictionary<long, long> CapsuleerHullRevisions { get; } = [];
     internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];
 

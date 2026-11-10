@@ -153,12 +153,12 @@ internal sealed partial class CapsuleerScheduler(
         Load();
     }
 
-    internal void PopulationPrepared(int system)
+    internal void PopulationPrepared(int system, long? pilot = null)
     {
         using var owner = synchronization.Enter("population scheduler registration");
         using (synchronization.Enter("CapsuleerScheduler"))
         {
-            Load(system);
+            Load(system, pilot);
         }
     }
 
@@ -433,7 +433,10 @@ internal sealed partial class CapsuleerScheduler(
         {
             if (!_visited.Contains(system))
             {
-                new CapsuleerProvisioner(database, clock).EnsureSystem(system);
+                if (Live is null)
+                {
+                    new CapsuleerProvisioner(database, clock).EnsureSystem(system);
+                }
                 _visited.Add(system);
                 Load(system);
             }
