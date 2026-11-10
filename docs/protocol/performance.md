@@ -1654,6 +1654,10 @@ not an installed-save p95/p99 capacity claim. No full .NET suite was requested o
 The retained filter and reports are under `artifacts/milestone3-validation/`. The source/input manifest records
 parent revision `0083bdf0`, all source/test/fixture SHA-256 hashes and the workload settings. Published manifest SHA-256:
 `3b18d6283c15e53df490be07933c72eea0a1aee4efc748b8bf48058f1c3766a7`.
+Concurrent structure work through `86487bfa` was then merged at `c7c1ec3b`; the combined build and formatting check
+passed, followed by **133/133 overlapping flight, structure, mission, checkpoint and ownership tests in 1m05s**
+(`milestone3-integration.trx`). The integration source/input manifest SHA-256 is
+`2c97380f25b3c2bf6c24c8f1f566cd600c95480b8d9db4c3c64fed2d04a09cee`.
 
 **Live acceptance.** Not performed; agent client testing is disabled. The user's supplied exception is evidence of
 a running development revision, not acceptance of the completed milestone.
