@@ -11,7 +11,8 @@ internal sealed class MarketMaintenance(
     IPersonalMarket market,
     TimeProvider clock,
     IResourceRenewal? resources = null,
-    WorldDatabase? database = null
+    WorldDatabase? database = null,
+    IMarketDemandMaintenance? demand = null
 ) : IDisposable, IAsyncDisposable
 {
     internal static readonly TimeSpan Interval = TimeSpan.FromSeconds(1);
@@ -61,6 +62,7 @@ internal sealed class MarketMaintenance(
                         {
                             market.Expire();
                         }
+                        demand?.AdvanceDemand();
                         if (resources is not null && clock.GetUtcNow() >= _nextResourceCheck)
                         {
                             if (resources.Renew() == 0)

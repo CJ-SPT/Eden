@@ -875,3 +875,44 @@ user clarified that advanced-product demand must require a production claim; it 
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Compare material and unclaimed-product bids at a hub and a specialist station.
+
+## NPC purchases from resting sell orders — November 9, 2026
+
+Progression-market buyers now consume personal station sell listings priced at or below their advertised bid. NPC fills
+pay that bid, including when the listing asks less. Existing sales tax and listing/relisting broker fees apply. Eligible
+listings sort by lowest asking price, then modification time and order ID. Placement and modification match immediately;
+older eligible listings settle before a new immediate sale can consume their demand. Personal buyers retain their existing
+matching and escrow rules. NPC purchases consume escrowed goods rather than delivering them into NPC inventory.
+
+`IMarketDemandMaintenance.AdvanceDemand` is a typed Gameplay boundary implemented by the existing market store and
+scheduled by Server market maintenance. Each batch scans at most 100 open sell listings and commits at most 100 fills.
+An indexed ID cursor moves past unfillable pages. Cached active-time deadlines avoid SQL, connections and fitting
+calculations between due work. Other selected human pilots can keep demand recovering while the seller is offline;
+no selected humans means no autonomous NPC purchases. Reopen uses saved demand and real listing expiry, without
+replaying missed hypothetical trades. Late maintenance can consume only currently recovered capacity.
+
+Wallet, tax, NPC quantity/quote, listing quantity/status, real execution, task tracking and durable own-order updates
+commit together. Failed transactions leave the deadline/cursor unchanged and can retry without duplicate credit.
+Cancellation and expiry return only unfilled escrow; already sold units never return. The new open-sell index is
+idempotently reconciled during ordinary world opening. Native market and notification wire forms are unchanged.
+
+**Automated validation:** The required tool/solution restores and build passed with zero warnings/errors (0.71 seconds).
+The affected market, industry-operation, migration and hosting filter passed 207 cases in 37 seconds with four workers.
+Filter: `FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`.
+Both Python suites passed (8 catalog / 9 formatting cases), and formatting/width verification passed. That sequence
+took 64.91 seconds. The exact initial filter
+`FullyQualifiedName=Eden.Protocol.Tests.Market.NpcRestingOrderTests.PlacementCrossesAtAdvertisedNpcBidAndPaysTaxExactlyOnce`
+passed one case. All five initial
+resting-order scenarios passed after correcting the test helper to inspect exhausted bids in persistence rather than
+the public book, which intentionally hides zero-volume bids. A real researched-ammunition job also passed the profit
+check after valuing consumed materials at snapshot asks, paying actual enabled industry fees and trained sales tax.
+The concurrency regression uses awaited tasks; an initial build caught and corrected a blocking test-result access.
+A broader run was interrupted when the starter-chain fixture listed a product below its NPC bid: the new buyer
+correctly consumed it before the second player could buy it. That player-to-player scenario now quotes between
+the real bid and ask. The exact
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.StarterProductionTests.MinedInputsBuildTradeFitLoseAndReplaceEachStarterRoleWithoutDevelopmentPurchases`
+filter then passed all three hull variants in 206.88 seconds (build 13.50 seconds). No full .NET regression was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect native partial-listing updates and wallet credits while the selling pilot is offline.

@@ -57,7 +57,7 @@ public sealed class RegionalMarketTests
     }
 
     [Fact]
-    public async Task FiniteTradesRecoverOnSharedPlaytimeAndNeverFillRestingPlayerOrders()
+    public async Task FiniteTradesRecoverOnSharedPlaytimeAndRespectNonCrossingPlayerListings()
     {
         using CapsuleerHaulerTests.Fixture f = UnlockedFixture();
         int remaining;
@@ -89,7 +89,7 @@ public sealed class RegionalMarketTests
             {
                 var item = world.Set<OwnedItem>().Single(i => i.OwnerId == pilot.PilotId && i.TypeId == Ammunition);
                 host.GetRequiredService<IPersonalMarket>()
-                    .PlaceSell(pilot.PilotId, [new(item.Id, pilot.StationId, Ammunition, quote.PriceCents / 2, 100)], 30);
+                    .PlaceSell(pilot.PilotId, [new(item.Id, pilot.StationId, Ammunition, quote.PriceCents * 2, 100)], 30);
                 restingId = world.Set<SavedPersonalOrder>().Single(o => o.PilotId == pilot.PilotId && !o.Bid).Id;
             }
             using var friend = host.GetRequiredService<IHumanPresence>().Select(pilot.PilotId + 1, Source);

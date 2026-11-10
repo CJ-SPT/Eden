@@ -418,9 +418,11 @@ public sealed class StarterProductionTests
                 item.Key == hull ? 200_000_000
                 : item.Key == Charge ? 1000
                 : 1_000_000;
-            // Claimed production now enables NPC competition. Keep this personal
-            // inventory/ownership scenario's listing ahead of the snapshot ask.
-            price = Math.Min(price, MarketSnapshotCatalog.Quotes[item.Key].SellCents!.Value - 1);
+            // Keep this personal ownership scenario between the NPC bid and ask:
+            // it must remain for the consumer instead of being sold to an NPC.
+            var quote = MarketSnapshotCatalog.Quotes[item.Key];
+            price = Math.Max((quote.BuyCents ?? 0) + 1, Math.Min(price, quote.SellCents!.Value - 1));
+            Assert.True(price < quote.SellCents);
             f.Personal.PlaceSell(Producer, [new(stack.Id, Home, item.Key, price, item.Value)], 90);
             // The producer never creates a selected client connection.
             f.Market.Buy(Consumer, Home, [new(item.Key, price, item.Value)]);

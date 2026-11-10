@@ -22,15 +22,30 @@ internal sealed class MarketChangeSignal
 {
     private long _revision;
     private long _deadline;
+    private long _demandDeadline;
+    private long _demandCursor;
+    internal long DemandDeadline => Interlocked.Read(ref _demandDeadline);
+    internal long DemandCursor => Interlocked.Read(ref _demandCursor);
+
+    internal void ScheduleDemand(long deadline, long cursor)
+    {
+        Interlocked.Exchange(ref _demandDeadline, deadline);
+        Interlocked.Exchange(ref _demandCursor, cursor);
+    }
+
     internal long Deadline => Interlocked.Read(ref _deadline);
 
     internal void Schedule(long deadline) => Interlocked.Exchange(ref _deadline, deadline);
 
     internal long Revision => Interlocked.Read(ref _revision);
 
-    internal void Changed()
+    internal void Changed(bool demand = true)
     {
         Interlocked.Exchange(ref _deadline, 0);
+        if (demand)
+        {
+            Interlocked.Exchange(ref _demandDeadline, 0);
+        }
         Interlocked.Increment(ref _revision);
     }
 }
@@ -237,7 +252,8 @@ internal sealed partial class PilotMarketStore
         WorldDbContext world,
         CatalogDbContext catalog,
         SavedPersonalOrder incoming,
-        List<InventoryChange> changes
+        List<InventoryChange> changes,
+        bool npcDemandOnly = false
     )
     {
         long now = Now;
@@ -250,6 +266,7 @@ internal sealed partial class PilotMarketStore
                 && o.Status == PersonalOrderStatus.Open
                 && o.Expires > now
                 && o.PilotId != incoming.PilotId
+                && !npcDemandOnly
             )
             .ToArray()
             .Where(o => o.Remaining > 0)
@@ -268,9 +285,11 @@ internal sealed partial class PilotMarketStore
                 && o.Issued > cutoff
                 && (
                     progressive
-                        ? o.Kind == NpcMarketKind.Institutional || o.Kind == NpcMarketKind.Regional && incoming.DurationDays == 0
+                        ? o.Kind == NpcMarketKind.Institutional
+                            || o.Kind == NpcMarketKind.Regional && (incoming.DurationDays == 0 || !incoming.Bid)
                         : o.Kind == kind
                 )
+                && (!npcDemandOnly || o.Kind == NpcMarketKind.Regional && o.Bid)
             )
             .ToArray();
         var candidates = personal
@@ -503,6 +522,15 @@ internal sealed partial class PilotMarketStore
         List<MarketExecution> trades = [];
         foreach (var request in items)
         {
+            SettleRestingSales(
+                world,
+                catalog,
+                station.Id,
+                request.TypeId,
+                PersonalMarketRules.MaintenanceBatch,
+                maximumAsk: days == 0 ? long.MaxValue : request.LimitPriceCents,
+                requireComplete: true
+            );
             var item = InventoryPersistence.OwnedStack(world, pilotId, request.ItemId);
             if (
                 item is null
@@ -581,6 +609,7 @@ internal sealed partial class PilotMarketStore
             throw new InvalidDataException("Wait five minutes before modifying this order.");
         }
         var station = Station(catalog, order.StationId);
+        Seed(world, catalog, station, order.TypeId);
         Payment(
             world,
             order,
@@ -605,6 +634,20 @@ internal sealed partial class PilotMarketStore
         // Reset price/time priority but preserve the original expiration deadline.
         // Issued remains the original client expiration anchor; Modified owns matching priority.
         List<InventoryChange> changes = [];
+        if (!order.Bid)
+        {
+            // Previously resting listings retain price/time priority over this modification.
+            SettleRestingSales(
+                world,
+                catalog,
+                order.StationId,
+                order.TypeId,
+                PersonalMarketRules.MaintenanceBatch,
+                order.Id,
+                request.PriceCents,
+                requireComplete: true
+            );
+        }
         MatchOrders(world, catalog, order, changes);
         Event(world, order, MarketOrderChangeKind.Modified, changes);
         world.SaveChanges();

@@ -1,4 +1,7 @@
+using Eden.Data.World.Economy;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -17,6 +20,55 @@ namespace Eden.Protocol.Tests.Market;
 
 public sealed class IndustrialDemandTests
 {
+    [Fact]
+    public void ResearchedProductionEarnsProfitAfterMaterialOpportunityCostIndustryFeesAndSalesTax()
+    {
+        using Eden.Protocol.Tests.Industry.IndustryTests.Fixture f = new();
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                "INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{\"securityStatus\":0.5}}')"
+            );
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<SavedWorldEconomy>().Single().TestingMarket = false;
+            world.Set<SavedWorldEconomy>().Single().TestingGrants = false;
+            world.Set<SavedEconomicPolicy>().Single().ChargeServiceCosts = true;
+            foreach (int type in new[] { 34, 35 })
+            {
+                world.Add(new SavedAdjustedPrice { TypeId = type, PriceIsk = MarketSnapshotCatalog.Quotes[type].SellCents!.Value / 100m });
+            }
+            world.Set<OwnedItem>().Find(Eden.Protocol.Tests.Industry.IndustryTests.Fixture.BlueprintId)!.MaterialEfficiency = 10;
+            world.Add(
+                new PilotSkill
+                {
+                    PilotId = f.Pilot.PilotId,
+                    TypeId = (int)MarketSkill.Accounting,
+                    Points = 768000,
+                }
+            );
+            var wallet = world.Set<PilotWallet>().Find(f.Pilot.PilotId) ?? world.Add(new PilotWallet { PilotId = f.Pilot.PilotId }).Entity;
+            wallet.Cents = 1_000_000;
+            world.SaveChanges();
+        }
+        var market = f.Db.Services.GetRequiredService<IPilotMarket>();
+        long before = market.Balance(f.Pilot.PilotId);
+        var request = f.Request() with
+        {
+            QuotedMaterials = new Dictionary<int, int> { [34] = 25, [35] = 19 },
+        };
+        long materialCost = request.QuotedMaterials.Sum(m => m.Value * MarketSnapshotCatalog.Quotes[m.Key].SellCents!.Value);
+        var installed = f.Store.Install(f.Pilot.PilotId, request);
+        Assert.True(installed.Job.CostCents > 0);
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(installed.Job.DurationSeconds));
+        var goods = Assert.Single(f.Store.Deliver(f.Pilot.PilotId, installed.Job.Id, f.Pilot.SystemId).Changes).Item;
+        var bid = market.Orders(f.Pilot.PilotId, 215).Single(o => o.Bid && o.StationId == f.Pilot.StationId);
+        var result = market.Sell(f.Pilot.PilotId, [new(goods.Id, f.Pilot.StationId, 215, bid.PriceCents, goods.Quantity)]);
+        Assert.True(Assert.Single(result.Trades).TaxCents > 0);
+        Assert.True(result.BalanceCents - before > materialCost);
+    }
+
     [Fact]
     public void TechTwoBidsAreRetiredUntilProductionIsClaimedThenReactivate()
     {

@@ -207,3 +207,5 @@ Eden's original source and documentation are available under the [MIT License](L
 Progression markets have [industrial NPC buyers](docs/protocol/industry.md#industrial-npc-demand--november-9-2026)
 for resources and non-faction Tech I goods before supply unlocks. Advanced products require a production claim for demand. Finite demand grows with active play;
 manufacturing a product remains necessary before generated NPC sell orders appear.
+NPC buyers also consume competitively priced personal sell listings as finite demand recovers during active play;
+see [resting-order purchases](docs/protocol/industry.md#npc-purchases-from-resting-sell-orders--november-9-2026).

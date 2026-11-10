@@ -115,3 +115,6 @@ The RPC inventory and hull JSON are generated audit artifacts; use their documen
 
 [Industrial NPC demand](protocol/industry.md#industrial-npc-demand--november-9-2026) adds resource and product buyers
 independent of production-unlocked NPC supply, with finite active-play recovery and value-based quantities.
+
+[NPC purchases from resting sell orders](protocol/industry.md#npc-purchases-from-resting-sell-orders--november-9-2026)
+consume competitively priced listings during active play and preserve finite demand, taxes, escrow and saved recovery.

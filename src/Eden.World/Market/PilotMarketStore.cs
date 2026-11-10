@@ -21,7 +21,7 @@ internal sealed partial class PilotMarketStore(
     TimeProvider clock,
     MarketChangeSignal signal,
     Eden.World.Capsuleers.CapsuleerActivitySource? activity = null
-) : IPilotMarket, IPersonalMarket
+) : IPilotMarket, IPersonalMarket, IMarketDemandMaintenance
 {
     private sealed record StarterOffer(int TypeId, string Name, long? BuyPriceCents, int Demand);
 

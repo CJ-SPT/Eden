@@ -33,6 +33,14 @@ internal static class PersonalMarketSchema
             .Entity<SavedPersonalOrder>()
             .HasIndex(o => new
             {
+                o.Status,
+                o.Bid,
+                o.Id,
+            });
+        model
+            .Entity<SavedPersonalOrder>()
+            .HasIndex(o => new
+            {
                 o.RegionId,
                 o.Status,
                 o.TypeId,
@@ -65,6 +73,7 @@ internal static class PersonalMarketSchema
                 CONSTRAINT CK_PersonalOrder_Price CHECK(PriceCents > 0 AND EscrowCents >= 0));
             CREATE INDEX IF NOT EXISTS IX_WorldPersonalOrder_PilotId_Status ON WorldPersonalOrder(PilotId,Status);
             CREATE INDEX IF NOT EXISTS IX_WorldPersonalOrder_Status_Expires ON WorldPersonalOrder(Status,Expires);
+            CREATE INDEX IF NOT EXISTS IX_WorldPersonalOrder_Status_Bid_Id ON WorldPersonalOrder(Status,Bid,Id);
             CREATE INDEX IF NOT EXISTS IX_WorldPersonalOrder_RegionId_Status_TypeId ON WorldPersonalOrder(RegionId,Status,TypeId);
             CREATE INDEX IF NOT EXISTS IX_WorldPersonalOrder_StationId_TypeId_Bid_Status_PriceCents
                 ON WorldPersonalOrder(StationId,TypeId,Bid,Status,PriceCents);
