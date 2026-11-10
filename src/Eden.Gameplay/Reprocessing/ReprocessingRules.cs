@@ -1,3 +1,5 @@
+using Eden.Gameplay.Configuration;
+
 namespace Eden.Gameplay.Reprocessing;
 
 public sealed record ReprocessingMaterial(int TypeId, long Quantity);
@@ -9,20 +11,26 @@ public sealed record ReprocessingInput(
     int PortionSize,
     double StationEfficiency,
     IReadOnlyList<double> SkillMultipliers,
-    IReadOnlyList<ReprocessingMaterial> Materials
+    IReadOnlyList<ReprocessingMaterial> Materials,
+    decimal EfficiencyMultiplier = 1
 );
 
 public static class ReprocessingRules
 {
     public static ReprocessingQuote Quote(ReprocessingInput input)
     {
+        WorldTuningRules.ValidateRate(input.EfficiencyMultiplier);
         if (input.PortionSize <= 0 || input.Materials.Count == 0)
         {
             return new(input.ItemId, input.TypeId, 0, input.Quantity, 0, input.StationEfficiency, []);
         }
         int portions = input.Quantity / input.PortionSize;
         int left = input.Quantity % input.PortionSize;
-        double efficiency = Math.Clamp(input.SkillMultipliers.Aggregate(input.StationEfficiency, (value, bonus) => value * bonus), 0, 1);
+        double efficiency = Math.Clamp(
+            input.SkillMultipliers.Aggregate(input.StationEfficiency, (value, bonus) => value * bonus) * (double)input.EfficiencyMultiplier,
+            0,
+            1
+        );
         List<RecoveredMaterial> recovered = [];
         if (portions > 0)
         {

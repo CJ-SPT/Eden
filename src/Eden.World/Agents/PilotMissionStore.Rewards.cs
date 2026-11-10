@@ -6,6 +6,7 @@ using Eden.Data.World.Market;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
 using Eden.World.Storage;
@@ -54,6 +55,7 @@ internal sealed partial class PilotMissionStore
             Skill(world, catalog, pilot, MissionSocialSkill.Social),
             storyline
         );
+        reward = WorldTuningRules.Mission(reward, world.Settings.Rewards);
         var station = catalog.FindStation(agent.StationId!.Value) ?? throw new InvalidDataException("The agent's station is unavailable.");
         var destination = station;
         if (profile.Kind == MissionKind.Courier)

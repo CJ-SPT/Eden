@@ -55,7 +55,7 @@ public sealed record OwnedBlueprint(
     int RunsRemaining = -1
 );
 
-public sealed record IndustryCharacterBonus(int SkillId, DogmaAttributeId Attribute, double Value, bool Additive);
+public sealed record IndustryCharacterBonus(int? SkillId, DogmaAttributeId Attribute, double Value, bool Additive);
 
 public sealed record IndustryRequest(
     long BlueprintId,
@@ -125,6 +125,7 @@ public interface IPilotIndustry : IPilotIndustrySkills
 
 public static class IndustryDefinitions
 {
+    public const int MinimumJobSeconds = 1;
     public const int BaseManufacturingSlots = 1;
     public const int BaseLaboratorySlots = 1;
     public const int MaximumScienceRuns = 500;

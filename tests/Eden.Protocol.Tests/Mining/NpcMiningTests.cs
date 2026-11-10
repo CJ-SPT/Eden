@@ -36,6 +36,35 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed partial class NpcMiningTests
 {
+    [Fact]
+    public void PlayerWorldRatesDoNotChangeNpcMiningCyclesOrCargo()
+    {
+        static (long Removed, long Cargo) Cycle(int factor)
+        {
+            var clock = Clock();
+            using TestWorld db = new(clock: clock, regionalNpcs: true);
+            Prepare(db);
+            Eden.Protocol.Tests.Persistence.WorldTuningTests.Activate(
+                db,
+                settings =>
+                    settings with
+                    {
+                        Resources = settings.Resources with { OreYieldMultiplier = factor },
+                        Industry = settings.Industry with { ManufacturingSpeed = factor },
+                    }
+            );
+            Read(db, clock.Now);
+            long before = Ore(db);
+            clock.AdvanceWallTime(TimeSpan.FromTicks(MiningDue(db) - clock.Now));
+            Read(db, clock.Now);
+            using WorldDbContext saved = new(db.Path);
+            return (before - Ore(db), saved.Set<WorldNpcMiningCargo>().Sum(c => c.Quantity));
+        }
+        var baseline = Cycle(1);
+        Assert.True(baseline.Removed > 0);
+        Assert.Equal(baseline, Cycle(100));
+    }
+
     private const int SystemId = 30000142;
     private const long PilotId = 90000001;
     private const long ShipId = 1000000000001;

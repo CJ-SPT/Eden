@@ -6,6 +6,7 @@ using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
@@ -118,14 +119,15 @@ internal static class NpcDamagePersistence
             {
                 throw new InvalidDataException("Invalid NPC bounty.");
             }
-            long cents = checked((long)Math.Round(bounty * MarketDefinitions.CentsPerIsk, MidpointRounding.ToEven));
+            long originalCents = checked((long)Math.Round(bounty * MarketDefinitions.CentsPerIsk, MidpointRounding.ToEven));
+            long cents = WorldTuningRules.Reward(originalCents, world.Settings.Rewards.BountyMultiplier);
+            long skillPoints = NpcSkillPointRewards.FromBounty(originalCents, world.Settings.Progression.KillSkillPointMultiplier);
+            if (skillPoints > 0)
+            {
+                PilotTrainingStore.CreditSilentFreePoints(world, pilot.Id, skillPoints);
+            }
             if (cents > 0)
             {
-                long skillPoints = NpcSkillPointRewards.FromBounty(cents);
-                if (skillPoints > 0)
-                {
-                    PilotTrainingStore.CreditSilentFreePoints(world, pilot.Id, skillPoints);
-                }
                 var wallet = world.Set<PilotWallet>().Find(pilot.Id) ?? world.Set<PilotWallet>().Add(new() { PilotId = pilot.Id }).Entity;
                 wallet.Cents = checked(wallet.Cents + cents);
                 long tax = CorporationWalletStore.TaxBounty(world, pilot, cents, now);

@@ -18,7 +18,28 @@ public sealed record DevelopmentSupplyPolicy(
     long GrantCents = TestingMarketRules.GrantCents
 );
 
-public sealed record ResourcePolicy(bool RenewBelts = true, int RenewalHourUtc = 11);
+public sealed record ResourcePolicy(
+    bool RenewBelts = true,
+    int RenewalHourUtc = 11,
+    decimal OreYieldMultiplier = 1,
+    decimal IceYieldMultiplier = 1,
+    decimal GasYieldMultiplier = 1
+);
+
+public sealed record RewardPolicy(
+    decimal BountyMultiplier = 1,
+    decimal MissionIskMultiplier = 1,
+    decimal MissionLpMultiplier = 1,
+    decimal MissionStandingMultiplier = 1
+);
+
+public sealed record IndustryPolicy(
+    decimal ManufacturingSpeed = 1,
+    decimal ResearchSpeed = 1,
+    decimal CopyingSpeed = 1,
+    decimal InventionSpeed = 1,
+    decimal ReprocessingEfficiency = 1
+);
 
 public sealed record NpcPopulationPolicy(
     bool Pirates = true,
@@ -28,7 +49,7 @@ public sealed record NpcPopulationPolicy(
     bool MajorThreatAnomalies = false
 );
 
-public sealed record ProgressionPolicy(bool GrantStartingSkills = true);
+public sealed record ProgressionPolicy(bool GrantStartingSkills = true, decimal KillSkillPointMultiplier = 1);
 
 public sealed record CapsuleerPopulationPolicy(bool GlobalProvisioning = true);
 
@@ -39,10 +60,18 @@ public sealed record WorldSettings
     public EconomicPolicy Economy { get; init; } = new();
     public DevelopmentSupplyPolicy DevelopmentSupply { get; init; } = new();
     public ResourcePolicy Resources { get; init; } = new();
+    public RewardPolicy Rewards { get; init; } = new();
+    public IndustryPolicy Industry { get; init; } = new();
     public NpcPopulationPolicy NpcPopulation { get; init; } = new();
     public ProgressionPolicy Progression { get; init; } = new();
     public CapsuleerPopulationPolicy Capsuleers { get; init; } = new();
     public SimulationPolicy Simulation { get; init; } = new();
+}
+
+// Read-only access to the active in-memory policy, never a pending administrator draft.
+public interface IWorldTuning
+{
+    WorldSettings Settings { get; }
 }
 
 // These are server-supplied economic projections, not edits to native client physics or recipes.

@@ -1,9 +1,46 @@
+using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 
 namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningRulesTests
 {
+    [Theory]
+    [InlineData(MiningFamily.Ore, 2)]
+    [InlineData(MiningFamily.Ice, 3)]
+    [InlineData(MiningFamily.Gas, 4)]
+    public void WorldYieldUsesTheResourceFamilyAndPreservesCapacityDepletionAndCycleRules(MiningFamily family, int factor)
+    {
+        Dictionary<DogmaAttributeId, double> basis = new()
+        {
+            [DogmaAttributeId.MiningAmount] = 1000,
+            [DogmaAttributeId.Duration] = 1000,
+            [DogmaAttributeId.RequiredSkill1] = (int)(family == MiningFamily.Ice ? MiningSkill.IceHarvesting : MiningSkill.Mining),
+        };
+        int group = family == MiningFamily.Gas ? InventoryDefinitions.GasScoopGroup : InventoryDefinitions.ModulatedMinerGroup;
+        var policy = new ResourcePolicy(OreYieldMultiplier: 2, IceYieldMultiplier: 3, GasYieldMultiplier: 4);
+        var values = MiningRules.ModuleAttributes(
+            new(
+                group,
+                601,
+                basis,
+                new Dictionary<DogmaAttributeId, double>(),
+                new Dictionary<MiningSkill, int>(),
+                YieldMultiplier: WorldTuningRules.Yield(policy, family)
+            )
+        );
+        Assert.Equal(1000 * factor, values[DogmaAttributeId.MiningAmount]);
+        Assert.Equal(1000, basis[DogmaAttributeId.MiningAmount]);
+        Assert.Equal(1000, values[DogmaAttributeId.Duration]);
+        var laser = Laser with { Volume = values[DogmaAttributeId.MiningAmount], Family = family };
+        Assert.Equal(1, MiningRules.Collect(1, 10000, 1000, laser, new(1, true, Rolls)).Extracted);
+        Assert.Equal(1, MiningRules.Collect(10000, 1000, 1000, laser, new(1, true, Rolls)).Extracted);
+        int partial = MiningRules.Collect(10000, 10000, 1000, laser, new(.5, false, Rolls)).Extracted;
+        Assert.Equal(family == MiningFamily.Ice ? 0 : factor / 2, partial);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(.5)]

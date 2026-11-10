@@ -19,6 +19,27 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class IceMiningTests
 {
+    [Fact]
+    public void WorldIceYieldScalesWholeCompletedCyclesIndependentlyOfOre()
+    {
+        using Fixture f = Create();
+        Eden.Protocol.Tests.Persistence.WorldTuningTests.Activate(
+            f.Db,
+            settings => settings with { Resources = settings.Resources with { OreYieldMultiplier = 100, IceYieldMultiplier = 3 } }
+        );
+        long module = f.Fit(16278);
+        RockAtShip(f);
+        var mining = f.Db.Services.GetRequiredService<IPilotMining>();
+        var start = mining.Begin(f.PilotId, module, Rock, f.Clock.Now);
+        Assert.Equal(3000, start.Laser.Volume);
+        Assert.Equal(0, mining.Collect(f.PilotId, module, Rock, new(.999, false, Rolls)).Extracted);
+        mining.Begin(f.PilotId, module, Rock, f.Clock.Now);
+        var result = mining.Collect(f.PilotId, module, Rock, new(1, true, Rolls));
+        Assert.Equal(3, result.Extracted);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(97, saved.Set<WorldAsteroid>().Find(Rock)!.Quantity);
+    }
+
     private const long Rock = MiningSiteRules.FirstDepositId;
     private const int Ice = 16265;
     private static readonly MiningRolls Rolls = new(.99, .99, .99, .99, .99);

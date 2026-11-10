@@ -1,0 +1,50 @@
+@using System.Linq.Expressions
+
+<div class="multiplier-control">
+    <label for="@Id">@Label <span class="muted">(×)</span></label>
+    <div class="multiplier-input">
+        <InputNumber @key="InputRevision" id="@Id" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression"
+                     min="@(Reward ? 0 : 0.1m)" max="100" step="any" aria-describedby="@(Id + "-help")" />
+        <button type="button" class="secondary" @onclick="Reset" aria-label="@($"Reset {Label} to 1×")">Reset to 1×</button>
+    </div>
+    <ValidationMessage For="ValueExpression" />
+    <p id="@(Id + "-help")" class="muted">
+        @Description Range: @(Reward ? "0" : "0.1")–100×. 1× keeps current Eden behavior.<br />
+        @if (Supported)
+        {
+            <span>Example: @ExampleAmount.ToString("0.##") @ExampleUnit becomes @ExampleResult.ToString("0.##") @ExampleUnit.</span>
+        }
+        else
+        {
+            <span>Enter a multiplier within the supported range to preview its effect.</span>
+        }
+    </p>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public string Description { get; set; } = "";
+    [Parameter] public decimal Value { get; set; } = 1;
+    [Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+    [Parameter, EditorRequired] public Expression<Func<decimal>> ValueExpression { get; set; } = default!;
+    [Parameter] public bool Reward { get; set; }
+    [Parameter] public bool Speed { get; set; }
+    [Parameter] public bool Efficiency { get; set; }
+    [Parameter] public decimal ExampleAmount { get; set; } = 100;
+    [Parameter] public string ExampleUnit { get; set; } = "units";
+    [CascadingParameter] private EditContext? Context { get; set; }
+
+    private readonly string Id = "multiplier-" + Guid.NewGuid().ToString("N");
+    private int InputRevision;
+    private bool Supported => Value >= (Reward ? 0 : WorldTuningRules.MinimumRate) && Value <= WorldTuningRules.MaximumRate;
+    private decimal ExampleResult => Efficiency ? Math.Min(100, ExampleAmount * Value)
+        : Speed ? Value > 0 ? ExampleAmount / Value : 0
+        : ExampleAmount * Value;
+
+    private async Task Reset()
+    {
+        await ValueChanged.InvokeAsync(1);
+        InputRevision++;
+        Context?.NotifyFieldChanged(FieldIdentifier.Create(ValueExpression));
+    }
+}

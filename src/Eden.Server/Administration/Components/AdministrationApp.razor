@@ -121,6 +121,13 @@
             .skill-preview table { table-layout: fixed; }
             .skill-preview th, .skill-preview td { padding: 8px 2px; font-size: 11px; letter-spacing: 0; }
         }
+        .settings-tabs { margin: 20px 0; gap: 8px; }
+        .settings-tabs button[aria-pressed=true] { background: var(--accent); color: #102c28; }
+        .settings-save-bar { position: sticky; bottom: 0; background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 8px; z-index: 1; }
+        .multiplier-control { padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .multiplier-input { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .multiplier-input input { width: 160px; margin: 0; }
+        [hidden] { display: none !important; }
         .performance-grid { margin-top: 20px; }
         .metric { font-size: 32px; font-weight: 600; margin: 12px 0; font-variant-numeric: tabular-nums; }
         .readings { display: flex; flex-wrap: wrap; gap: 20px 36px; margin: 0; }

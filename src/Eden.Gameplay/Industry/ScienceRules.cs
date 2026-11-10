@@ -146,7 +146,10 @@ public static class ScienceRules
                 throw new InvalidDataException("Invalid invention output runs.");
             }
         }
-        long duration = EconomicRules.ClientRound(inputs.BaseSeconds * units * multiplier, 0);
+        long duration = Math.Max(
+            IndustryDefinitions.MinimumJobSeconds,
+            EconomicRules.ClientRound(inputs.BaseSeconds * units * multiplier, 0)
+        );
         if (duration <= 0 || request.QuotedSeconds != duration)
         {
             throw new InvalidDataException("Science time changed; reopen the blueprint to refresh the quote.");

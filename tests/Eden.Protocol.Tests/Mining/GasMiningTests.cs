@@ -18,6 +18,26 @@ namespace Eden.Protocol.Tests.Mining;
 public sealed class GasMiningTests
 {
     [Fact]
+    public void WorldGasYieldUsesItsOwnMultiplierAndKeepsTheResourceFinite()
+    {
+        using Fixture f = Create();
+        Eden.Protocol.Tests.Persistence.WorldTuningTests.Activate(
+            f.Db,
+            settings => settings with { Resources = settings.Resources with { OreYieldMultiplier = 100, GasYieldMultiplier = 4 } }
+        );
+        long module = f.Fit(Scoop);
+        CloudAtShip(f);
+        var mining = f.Db.Services.GetRequiredService<IPilotMining>();
+        var start = mining.Begin(f.PilotId, module, Cloud, f.Clock.Now, DogmaEffect.MiningClouds);
+        Assert.Equal(40, start.Laser.Volume);
+        var result = mining.Collect(f.PilotId, module, Cloud, new(1, true, Rolls));
+        Assert.Equal(4, result.Extracted);
+        Assert.Equal(0, result.CriticalBonus);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(96, saved.Set<WorldAsteroid>().Find(Cloud)!.Quantity);
+    }
+
+    [Fact]
     public void MiningScannerIdentifiersRejectNegativeSequencesAndUseASeparateRange()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => Eden.Gameplay.Exploration.ScannerTargetIds.FromMiningSequence(-1));

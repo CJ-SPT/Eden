@@ -37,10 +37,13 @@ internal static class ConfigurationValidation
             || settings.Progression is null
             || settings.Simulation is null
             || settings.Capsuleers is null
+            || settings.Rewards is null
+            || settings.Industry is null
         )
         {
             throw new InvalidDataException("Every typed settings group is required.");
         }
+        WorldTuningRules.Validate(settings);
         var supply = settings.DevelopmentSupply;
         NpcSupplyRules.ValidateStock(supply.InstitutionalStock);
         if (

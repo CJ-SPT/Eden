@@ -17,16 +17,97 @@ else
 {
     <ConfigurationStatus State="State" />
     <div class="toolbar">
-        <button class="secondary" @onclick="Load">Reload saved values</button>
-        <button class="secondary" @onclick="Reset">Reset draft to original</button>
+        <button type="button" class="secondary" @onclick="Load" disabled="@Busy">Reload saved values</button>
+        <button type="button" class="secondary" @onclick="Reset" disabled="@Busy">Reset draft to original</button>
     </div>
     @if (Message is not null)
     {
         <p class="notice" role="status">@Message</p>
     }
-    <EditForm Model="Form" OnValidSubmit="Save" FormName="world-settings">
+    <nav class="settings-tabs" aria-label="World settings categories">
+        @foreach (var activity in Enum.GetValues<SettingsActivity>())
+        {
+            <button type="button" class="secondary" aria-pressed="@(Workspace.Activity == activity ? "true" : "false")"
+                    aria-controls="@($"settings-{activity}")" @onclick="() => Workspace.Activity = activity">@ActivityLabel(activity)</button>
+        }
+    </nav>
+    <EditForm @key="Context" EditContext="Context" OnValidSubmit="Save" OnInvalidSubmit="Invalid"
+              FormName="world-settings" id="world-settings" novalidate>
         <DataAnnotationsValidator /><ValidationSummary />
-        <div class="grid">
+        <fieldset disabled="@Busy">
+            <section id="settings-Gathering" class="card" hidden="@(Workspace.Activity != SettingsActivity.Gathering)">
+                <h2>Gathering</h2>
+                <MultiplierControl Label="Ore mining yield" @bind-Value="Form.OreYieldMultiplier"
+                    Description="Scales extraction after normal bonuses."
+                    ExampleAmount="100" ExampleUnit="m³ per cycle" Reward="false"
+                    Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Ice harvesting yield" @bind-Value="Form.IceYieldMultiplier"
+                    Description="Scales blocks per completed cycle; interrupted cycles produce nothing."
+                    ExampleAmount="1" ExampleUnit="blocks per cycle" Reward="false"
+                    Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Gas harvesting yield" @bind-Value="Form.GasYieldMultiplier"
+                    Description="Scales extraction after normal bonuses."
+                    ExampleAmount="100" ExampleUnit="m³ per cycle" Reward="false"
+                    Speed="false" Efficiency="false" />
+                <p class="muted">Player harvesting only. Cargo limits, finite deposits, critical yield and residue still apply.</p>
+                <label><InputCheckbox @bind-Value="Form.RenewBelts" />Renew asteroid belts</label>
+                <label>Renewal hour (UTC)<InputNumber @bind-Value="Form.RenewalHourUtc" min="0" max="23" /></label>
+                <p class="muted">Already saved renewal deadlines remain unchanged.</p>
+            </section>
+            <section id="settings-Rewards" class="card" hidden="@(Workspace.Activity != SettingsActivity.Rewards)">
+                <h2>Rewards</h2>
+                <MultiplierControl Label="NPC bounty ISK" @bind-Value="Form.BountyMultiplier"
+                    Description="Applies before corporation tax; kill SP is independent."
+                    ExampleAmount="100000" ExampleUnit="ISK" Reward="true"
+                    Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Mission ISK" @bind-Value="Form.MissionIskMultiplier"
+                    Description="New mission offers only; saved rewards retain their terms."
+                    ExampleAmount="100000" ExampleUnit="ISK" Reward="true"
+                    Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Mission loyalty points" @bind-Value="Form.MissionLpMultiplier"
+                    Description="New mission offers only; fractional points are rounded down."
+                    ExampleAmount="1000" ExampleUnit="LP" Reward="true"
+                    Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Positive mission standings" @bind-Value="Form.MissionStandingMultiplier"
+                    Description="Scales positive gain fractions, capped at 100%; penalties are unchanged."
+                    ExampleAmount="1" ExampleUnit="% gain fraction" Reward="true"
+                    Speed="false" Efficiency="true" />
+            </section>
+            <section id="settings-Progression" class="card" hidden="@(Workspace.Activity != SettingsActivity.Progression)">
+                <h2>Progression</h2>
+                <MultiplierControl Label="NPC kill skill points" @bind-Value="Form.KillSkillPointMultiplier"
+                    Description="Scales 0.25% of original bounty ISK independently of bounty tuning. Credits stay silent."
+                    ExampleAmount="250" ExampleUnit="SP" Reward="true"
+                    Speed="false" Efficiency="false" />
+                <label><InputCheckbox @bind-Value="Form.StartingSkills" />Grant catalog starting skills to new pilots</label>
+                <label><InputCheckbox @bind-Value="Form.TestingGrants" />Initial wallet grants for new pilots</label>
+                <label>Initial wallet grant (ISK)<InputNumber @bind-Value="Form.GrantIsk" min="0" step="0.01" /></label>
+                <p class="muted">Training speed and skill requirements are unchanged.</p>
+            </section>
+            <section id="settings-Industry" class="card" hidden="@(Workspace.Activity != SettingsActivity.Industry)">
+                <h2>Industry</h2>
+                <MultiplierControl Label="Manufacturing speed" @bind-Value="Form.ManufacturingSpeed"
+                    Description="2× speed halves duration; installed jobs keep their deadlines."
+                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
+                    Speed="true" Efficiency="false" />
+                <MultiplierControl Label="Research speed" @bind-Value="Form.ResearchSpeed"
+                    Description="Applies to material and time research; installed jobs keep their deadlines."
+                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
+                    Speed="true" Efficiency="false" />
+                <MultiplierControl Label="Copying speed" @bind-Value="Form.CopyingSpeed"
+                    Description="Scales new copy jobs; licensed runs are unchanged."
+                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
+                    Speed="true" Efficiency="false" />
+                <MultiplierControl Label="Invention speed" @bind-Value="Form.InventionSpeed"
+                    Description="Scales new invention jobs; success chance and outputs are unchanged."
+                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
+                    Speed="true" Efficiency="false" />
+                <MultiplierControl Label="Reprocessing efficiency" @bind-Value="Form.ReprocessingEfficiency"
+                    Description="Scales recovery after skills, capped at 100% of available materials."
+                    ExampleAmount="50" ExampleUnit="% recovery" Reward="false"
+                    Speed="false" Efficiency="true" />
+            </section>
+            <div id="settings-World" hidden="@(Workspace.Activity != SettingsActivity.World)">
             <section class="card"><h2>Economy</h2>
                 <label><InputCheckbox @bind-Value="Form.ProgressiveMarkets" />Progressive regional markets</label>
                 <label><InputCheckbox @bind-Value="Form.ServiceCosts" />Charge service costs</label>
@@ -35,16 +116,9 @@ else
             </section>
             <section class="card"><h2>Development supply</h2>
                 <label><InputCheckbox @bind-Value="Form.TestingMarket" />Testing market</label>
-                <label><InputCheckbox @bind-Value="Form.TestingGrants" />Initial wallet grants for new pilots</label>
                 <label>Institutional stock<InputNumber @bind-Value="Form.InstitutionalStock" min="1" max="1000000" /></label>
                 <label>Testing stock<InputNumber @bind-Value="Form.TestingStock" min="1" max="1000000000" /></label>
                 <label>Testing price (ISK)<InputNumber @bind-Value="Form.TestingPriceIsk" min="0.01" step="0.01" /></label>
-                <label>Initial wallet grant (ISK)<InputNumber @bind-Value="Form.GrantIsk" min="0" step="0.01" /></label>
-            </section>
-            <section class="card"><h2>Resources</h2>
-                <label><InputCheckbox @bind-Value="Form.RenewBelts" />Renew asteroid belts</label>
-                <label>Renewal hour (UTC)<InputNumber @bind-Value="Form.RenewalHourUtc" min="0" max="23" /></label>
-                <p class="muted">Already saved renewal deadlines remain unchanged.</p>
             </section>
             <section class="card"><h2>NPC population</h2>
                 <p class="muted">These switches control new spawns. Living residents remain in the world.</p>
@@ -54,31 +128,58 @@ else
                 <label><InputCheckbox @bind-Value="Form.Mining" />Mining fleets</label>
                 <label><InputCheckbox @bind-Value="Form.MajorThreatAnomalies" />Allow Major Threat anomaly tiers in nullsec</label>
             </section>
-            <section class="card"><h2>Autonomous capsuleers</h2>
-                <p>Capsuleer encounters are prepared when a system is visited.</p>
-                <p class="muted">Applies on restart. Existing pilots, possessions and jobs are retained when this is disabled.</p>
-            </section>
-            <section class="card"><h2>Progression</h2>
-                <label><InputCheckbox @bind-Value="Form.StartingSkills" />Grant catalog starting skills to new pilots</label>
-                <p class="muted">Native training rates and skill requirements are read only.</p>
-            </section>
+                <p class="muted">Capsuleer encounters are prepared when a system is visited. Player rates do not change NPC production.</p>
+            </div>
+            <div id="settings-Advanced" hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
             <section class="card"><h2>Simulation</h2>
                 <label>Checkpoint interval (seconds)<InputNumber @bind-Value="Form.CheckpointSeconds" min="1" max="300" /></label>
                 <label>Market polling interval (milliseconds)<InputNumber @bind-Value="Form.MarketPollMilliseconds" min="100" max="60000" /></label>
                 <label>Resource check interval (seconds)<InputNumber @bind-Value="Form.ResourceCheckSeconds" min="1" max="3600" /></label>
             </section>
-        </div>
-        <div class="toolbar"><button type="submit" disabled="@Busy">Save pending revision</button>
-            <button type="button" class="secondary" @onclick="Validate" disabled="@Busy">Validate draft</button></div>
+            </div>
+        </fieldset>
     </EditForm>
-    <OverrideEditor Draft="Draft" DraftChanged="ChangeOverrides" Active="State.Active.Draft" Original="Original" Pending="State.Pending?.Draft" />
-    <section class="card"><h2>Original, active and pending values</h2>
-        <p class="muted">Source: saved world · Editable server policies · Original values were captured when this world was upgraded.</p>
+    <div hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
+        <fieldset disabled="@Busy">
+            <OverrideEditor Draft="Workspace.Draft" DraftChanged="Workspace.ChangeOverrides" Active="State.Active.Draft"
+                            Original="Original" Pending="State.Pending?.Draft" />
+        </fieldset>
+    </div>
+    <section class="card" aria-label="Changed values">
+        <h2>Changed values</h2>
+        @if (Unsaved)
+        {
+            @if (DraftChanges is { } changes)
+            {
+                <ul>@foreach (var change in changes)
+                {
+                    <li>@change.Field: @change.Before → @change.After</li>
+                }</ul>
+            }
+            else
+            {
+                <p class="error">Correct invalid values to preview all changes.</p>
+            }
+        }
+        else
+        {
+            <p class="muted">No unsaved changes. Saved changes activate after restart.</p>
+        }
+    </section>
+    <details class="card">
+        <summary>Original, active and pending values</summary>
+        <p class="muted">Original values were captured when this saved world was upgraded.</p>
         <div class="scroll"><table><thead><tr><th>Policy</th><th>Original</th><th>Active</th><th>Pending restart</th></tr></thead>
             <tbody>@foreach (var row in ConfigurationDisplay.Settings(Original.Settings, State.Active.Draft.Settings, State.Pending?.Draft.Settings))
             {
                 <tr><td>@row.Label</td><td>@row.Original</td><td>@row.Active</td><td>@row.Pending</td></tr>
             }</tbody>
         </table></div>
-    </section>
+    </details>
+    <div class="toolbar settings-save-bar">
+        <span role="status">@(Unsaved ? "Unsaved changes" : State.Pending is not null ? "Saved · pending restart" : "Active settings")</span>
+        <button type="submit" form="world-settings" disabled="@(Busy || !Unsaved)">Save for restart</button>
+        <button type="button" class="secondary" @onclick="Discard" disabled="@(Busy || !Unsaved)">Discard unsaved changes</button>
+        <button type="button" class="secondary" @onclick="Validate" disabled="@Busy">Validate draft</button>
+    </div>
 }

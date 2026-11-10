@@ -10,12 +10,46 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | --- | --- |
 | Economy | Charge service costs, default manufacturing index and progressive regional markets. |
 | Development supply | Testing market and initial wallet grants; institutional stock; testing stock/price; grant amount for future pilots. |
-| Resources | Enable belt renewal and set its UTC hour. |
+| Gathering | Separate ore, ice and gas yield multipliers; enable belt renewal and set its UTC hour. |
+| Rewards | NPC bounty ISK, mission ISK, mission loyalty points and positive mission standing-gain multipliers. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
-| Progression | Grant catalog starting skills to future pilots. Native training formulas remain unchanged. |
+| Progression | NPC kill-SP multiplier; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
+| Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 
 Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling a population prevents new spawns without deleting residents or changing their mechanics.
+
+## World tuning
+
+The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Industry**, **World & economy** and **Advanced**.
+Switching categories retains the draft. Every multiplier shows its unit, range, explanation and an illustrative example.
+**Reset to 1×** resets that control; **Reset draft to original** restores the world's original revision into the draft.
+**Discard unsaved changes** returns to the last loaded or saved draft, including any already pending revision.
+The shared **Save for restart** bar shows unsaved, active or pending-restart status. Review the changed-values summary before saving;
+expand **Original, active and pending values** for the complete comparison. Economic overrides are under Advanced.
+
+All new multipliers default to **1× current Eden behavior**, including when loading historical documents that omit the new fields.
+Gathering, industry speed and reprocessing multipliers accept **0.1–100×**. Reward multipliers accept **0–100×**;
+zero disables that reward. Forms, command imports and the administrator API enforce the same bounds. These policies belong to the
+saved world; they do not modify shared catalog definitions or autonomous NPC gathering/production.
+
+- Ore, ice and gas controls scale extraction volume after ordinary equipment and skill bonuses. Cargo space and remaining deposits
+  still limit extraction, and existing critical/residue rules remain. Ice requires a completed cycle; its control changes blocks
+  per completed cycle rather than cycle duration. Ore and gas retain proportional partial-cycle collection.
+- Bounty ISK scales the gross amount before corporation tax. Kill SP uses the original bounty independently: the default remains
+  0.25% of original bounty ISK, multiplied by the kill-SP setting, then rounded down to whole points. For example, a 3,000 ISK NPC
+  with a 2× kill-SP multiplier awards 15 SP. Bounty ISK set to zero can still award SP. These credits remain silent.
+- Mission ISK, LP and positive standing gains are calculated when an offer is created and saved with it. Existing offers and
+  accepted missions keep their terms. Standing gain fractions cap at 100%; penalties remain unchanged.
+- Industry speed divides normal duration: 2× means half the time, retaining ordinary skill/blueprint bonuses and rounding.
+  Research covers both material and time efficiency. Invention speed does not change success chance or output runs.
+  Installed jobs retain their saved deadlines. The minimum duration is one second; very short native previews can round to zero,
+  which installation normalizes to that minimum before checking the authoritative duration.
+- Reprocessing scales effective efficiency after skills and caps recovery at 100% of available materials, before output rounding.
+  The quote and committed outputs use the same calculation.
+
+Training speed, combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
+update is required. Native visual presentation remains unverified; see the [implementation record](protocol/world-configuration.md).
 
 ## Progressive regional markets
 
@@ -59,7 +93,7 @@ dotnet run --project src/Eden.Server -- --world 'C:\Eden\world.sqlite' --set-adm
 
 Start the server normally, then open **http://127.0.0.1:26003**. The listener starts only after an administrator has been provisioned. Use `--admin-port <port>` for a different dedicated port or `--disable-admin` to disable it. It always binds IPv4 loopback, independently of game listeners and inherited web-host configuration. Nonlocal Host/Origin values are rejected. Game accounts receive no administration access.
 
-Settings contains typed forms for all six policy groups and supported economic overrides. It displays original, active and pending values, sources, compatibility and validation errors. Reset changes only the draft. **Save pending revision** validates and durably stages it; activation requires restart. Revisions provides comparison, restore, JSON export and validated file import. Restoring also creates a pending revision.
+Settings contains six activity categories and supported economic overrides. It displays original, active and pending values, sources, compatibility and validation errors. Reset changes only the draft. **Save for restart** validates and durably stages it; activation requires restart. Revisions provides comparison, restore, JSON export and validated file import. Restoring also creates a pending revision.
 
 Catalog provides searchable pages across all 442 generated datasets, typed fields, explicit missing/null distinctions, exact source numbers and relationship navigation. Nested collections have their own display pages. Native fields remain read-only in original, active and pending views. Generated types validate records before the browser displays their original payloads; dynamic JSON stays inside this administration/storage boundary.
 

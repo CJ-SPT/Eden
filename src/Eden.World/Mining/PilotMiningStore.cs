@@ -6,6 +6,7 @@ using Eden.Data.World.Mining;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -55,7 +56,11 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
                 PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, module),
                 PilotFittingStore.ReadAttributes(catalog, pilot.ActiveShip.TypeId),
                 levels,
-                HullCatalog.UsesCatalogBonuses(catalog, pilot.ActiveShip.TypeId)
+                HullCatalog.UsesCatalogBonuses(catalog, pilot.ActiveShip.TypeId),
+                WorldTuningRules.Yield(
+                    world.Settings.Resources,
+                    MiningDefinitions.Family(module.GroupId, catalog.FittingAttributes(module.TypeId))
+                )
             )
         );
     }

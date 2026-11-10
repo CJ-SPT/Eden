@@ -22,6 +22,22 @@ namespace Eden.Protocol.Tests.Reprocessing;
 
 public sealed class ReprocessingTests
 {
+    [Fact]
+    public void WorldEfficiencyMatchesQuoteAndCommittedOutputsAndPreservesRemainders()
+    {
+        using Fixture f = new(333);
+        WorldTuningTests.Activate(f.Db, settings => settings with { Industry = settings.Industry with { ReprocessingEfficiency = 100 } });
+        var quote = Assert.Single(f.Quote().Items);
+        Assert.Equal(1, quote.Efficiency);
+        Assert.Equal(33, quote.LeftOvers);
+        Assert.Equal(450, quote.Recoverables.Single(m => m.TypeId == TritaniumType).Quantity);
+        var result = f.Run();
+        Assert.Equal(450, result.Output[TritaniumType]);
+        Assert.Equal(330, result.Output[PyeriteType]);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(33, saved.Set<OwnedItem>().Find(OreId)!.Quantity);
+    }
+
     private const long OreId = InventoryDefinitions.FirstOwnedItemId + 100;
     private const int ScorditeType = 1228;
     private const int TritaniumType = 34;

@@ -5,6 +5,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
@@ -316,6 +317,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                 result.Add(new((int)skill, target, value, additive));
             }
         }
+        result.AddRange(WorldTuningRules.IndustryBonuses(world.Settings.Industry));
         return result.ToArray();
     }
 

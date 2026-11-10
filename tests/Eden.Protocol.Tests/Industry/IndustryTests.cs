@@ -596,10 +596,23 @@ public sealed class IndustryTests
         Assert.NotEmpty(BlueMarshal.Encode(brain));
     }
 
-    [Fact]
-    public void NativeJobRequestsValidateLocationsAndRefreshMonitoredMaterials()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeJobRequestsValidateLocationsAndRefreshMonitoredMaterials(bool veryShortJob)
     {
         using Fixture f = new();
+        if (veryShortJob)
+        {
+            Eden.Protocol.Tests.Persistence.WorldTuningTests.Activate(
+                f.Db,
+                settings => settings with { Industry = settings.Industry with { ManufacturingSpeed = 100 } }
+            );
+            using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true);
+            catalog.Database.ExecuteSqlRaw(
+                "UPDATE SourceRecord SET Data=json_set(Data,'$.activities.manufacturing.time',1) WHERE Dataset='client/blueprints'"
+            );
+        }
         var pilot = f.Pilot;
         using PilotCallContext context = new(
             1000001,
@@ -633,7 +646,7 @@ public sealed class IndustryTests
                         ["account"] = new object?[] { pilot.PilotId, 1000L },
                         ["cost"] = 0d,
                         ["tax"] = 0d,
-                        ["time"] = 288d,
+                        ["time"] = veryShortJob ? 0d : 288d,
                         ["runs"] = 1,
                         ["productTypeID"] = null,
                         ["inputLocation"] = location,
@@ -658,6 +671,7 @@ public sealed class IndustryTests
         Assert.Equal(81, f.Quantity(34));
         request["outputLocation"] = request["inputLocation"];
         long jobId = Assert.IsType<long>(handler.CallWire(context, "industryManager", "InstallJob", [request]));
+        Assert.Equal(veryShortJob ? 1 : 288, Assert.Single(f.Store.Jobs(pilot.PilotId, true)).DurationSeconds);
         Assert.Contains(context.Notifications, n => n.Name == "OnIndustryJob");
         handler.Advance(context);
         var materials = Assert.Single(context.Notifications, n => n.Name == "OnIndustryMaterials");

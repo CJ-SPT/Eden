@@ -128,6 +128,13 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             double n => n,
             _ => throw new InvalidDataException("Missing industry time quote."),
         };
+        // Build 3662168 Job._get_time rounds very short previews to zero.
+        // Normalize that wire quote to the server's one-second minimum;
+        // authoritative rules still verify the actual calculated duration.
+        if (seconds == 0)
+        {
+            seconds = IndustryDefinitions.MinimumJobSeconds;
+        }
         // Job.dump leaves productTypeID as None for a single-output recipe.
         // The server resolves that product from the owned blueprint's catalog.
         int? product = values.TryGetValue("productTypeID", out var selectedProduct)

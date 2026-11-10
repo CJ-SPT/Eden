@@ -11,6 +11,19 @@ internal static class ConfigurationDisplay
 {
     private static readonly IReadOnlyDictionary<string, string> s_labels = new Dictionary<string, string>
     {
+        ["resources.oreYieldMultiplier"] = "Ore mining yield",
+        ["resources.iceYieldMultiplier"] = "Ice harvesting yield",
+        ["resources.gasYieldMultiplier"] = "Gas harvesting yield",
+        ["rewards.bountyMultiplier"] = "NPC bounty ISK",
+        ["rewards.missionIskMultiplier"] = "Mission ISK",
+        ["rewards.missionLpMultiplier"] = "Mission loyalty points",
+        ["rewards.missionStandingMultiplier"] = "Positive mission standings",
+        ["progression.killSkillPointMultiplier"] = "NPC kill skill points",
+        ["industry.manufacturingSpeed"] = "Manufacturing speed",
+        ["industry.researchSpeed"] = "Research speed",
+        ["industry.copyingSpeed"] = "Copying speed",
+        ["industry.inventionSpeed"] = "Invention speed",
+        ["industry.reprocessingEfficiency"] = "Reprocessing efficiency",
         ["economy.chargeServiceCosts"] = "Service costs",
         ["economy.defaultManufacturingIndex"] = "Default manufacturing index",
         ["developmentSupply.testingMarket"] = "Testing market",
@@ -33,6 +46,23 @@ internal static class ConfigurationDisplay
         ["simulation.marketPollMilliseconds"] = "Market polling (milliseconds)",
         ["simulation.resourceCheckSeconds"] = "Resource checks (seconds)",
     };
+
+    private static readonly HashSet<string> s_multipliers =
+    [
+        "resources.oreYieldMultiplier",
+        "resources.iceYieldMultiplier",
+        "resources.gasYieldMultiplier",
+        "rewards.bountyMultiplier",
+        "rewards.missionIskMultiplier",
+        "rewards.missionLpMultiplier",
+        "rewards.missionStandingMultiplier",
+        "progression.killSkillPointMultiplier",
+        "industry.manufacturingSpeed",
+        "industry.researchSpeed",
+        "industry.copyingSpeed",
+        "industry.inventionSpeed",
+        "industry.reprocessingEfficiency",
+    ];
 
     internal static IReadOnlyList<SettingsComparisonRow> Settings(WorldSettings original, WorldSettings active, WorldSettings? pending)
     {
@@ -109,6 +139,7 @@ internal static class ConfigurationDisplay
                             {
                                 JsonValueKind.True => "On",
                                 JsonValueKind.False => "Off",
+                                _ when s_multipliers.Contains(group.Name + "." + field.Name) => field.Value.GetDecimal() + "×",
                                 _ => field.Value.GetRawText(),
                             }
                     ))

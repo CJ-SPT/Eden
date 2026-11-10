@@ -1,5 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
@@ -25,7 +26,8 @@ internal sealed class PilotBrain(
     IPilotIndustrySkills industry,
     IPilotJumpCloneSkills clones,
     IPilotNavigationSkills navigation,
-    IPilotFitting? fitting = null
+    IPilotFitting? fitting = null,
+    IWorldTuning? tuning = null
 )
 {
     private const double Percent = 100;
@@ -60,6 +62,7 @@ internal sealed class PilotBrain(
             ))
             .ToList();
         effects.AddRange(resourceEffects);
+        AddGatheringEffects(effects, shipId, tuning?.Settings.Resources ?? new());
         effects.AddRange(
             MiningDefinitions
                 .SkillModifiers.Where(modifier => levels.GetValueOrDefault((int)modifier.Skill) > 0)
@@ -121,7 +124,7 @@ internal sealed class PilotBrain(
                 bonus.Attribute,
                 bonus.Additive ? BrainOperation.Add : BrainOperation.PostPercent,
                 [],
-                [bonus.SkillId],
+                bonus.SkillId is int skill ? [skill] : [],
                 bonus.Value
             ))
             .Concat(ownerEffects)
@@ -171,4 +174,27 @@ internal sealed class PilotBrain(
     }
 
     public BrainUpdate Update(long pilotId, long shipId) => Read(pilotId, shipId).Update();
+
+    private static void AddGatheringEffects(List<BrainEffect> effects, long shipId, ResourcePolicy policy)
+    {
+        void Add(BrainModifier modifier, int selector, decimal multiplier, DogmaAttributeId attribute = DogmaAttributeId.MiningAmount)
+        {
+            if (multiplier != 1)
+            {
+                effects.Add(new(shipId, modifier, attribute, BrainOperation.PostMultiply, [selector], [], (double)multiplier));
+            }
+        }
+        // Every admitted ore/ice tool in build 3662168 directly requires exactly
+        // one of these skills. Separate selectors keep the resource factors independent.
+        Add(BrainModifier.LocationRequiredSkill, (int)MiningSkill.Mining, policy.OreYieldMultiplier);
+        Add(
+            BrainModifier.LocationRequiredSkill,
+            (int)MiningSkill.Mining,
+            policy.OreYieldMultiplier,
+            DogmaAttributeId.MiningSpecialtyAmount
+        );
+        Add(BrainModifier.LocationRequiredSkill, (int)MiningSkill.IceHarvesting, policy.IceYieldMultiplier);
+        Add(BrainModifier.LocationGroup, InventoryDefinitions.GasScoopGroup, policy.GasYieldMultiplier);
+        Add(BrainModifier.LocationGroup, InventoryDefinitions.GasHarvesterGroup, policy.GasYieldMultiplier);
+    }
 }

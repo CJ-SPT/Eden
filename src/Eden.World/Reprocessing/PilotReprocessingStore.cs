@@ -129,7 +129,8 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot.Id, skill)).ToArray(),
                 materials
                     .Materials.Value.Select(m => new ReprocessingMaterial(checked((int)(m.MaterialTypeID ?? 0)), m.Quantity ?? 0))
-                    .ToArray()
+                    .ToArray(),
+                world.Settings.Industry.ReprocessingEfficiency
             )
         );
         if (!EconomicStore.Enabled(world))

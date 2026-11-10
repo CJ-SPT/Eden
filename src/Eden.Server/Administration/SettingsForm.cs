@@ -42,9 +42,74 @@ internal sealed class SettingsForm
     [Range(1, 3600)]
     public int ResourceCheckSeconds { get; set; }
 
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Ore mining yield")]
+    public decimal OreYieldMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Ice harvesting yield")]
+    public decimal IceYieldMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Gas harvesting yield")]
+    public decimal GasYieldMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0", "100")]
+    [Display(Name = "NPC bounty ISK")]
+    public decimal BountyMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0", "100")]
+    [Display(Name = "Mission ISK")]
+    public decimal MissionIskMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0", "100")]
+    [Display(Name = "Mission loyalty points")]
+    public decimal MissionLpMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0", "100")]
+    [Display(Name = "Positive mission standings")]
+    public decimal MissionStandingMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0", "100")]
+    [Display(Name = "NPC kill skill points")]
+    public decimal KillSkillPointMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Manufacturing speed")]
+    public decimal ManufacturingSpeed { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Research speed")]
+    public decimal ResearchSpeed { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Copying speed")]
+    public decimal CopyingSpeed { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Invention speed")]
+    public decimal InventionSpeed { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Reprocessing efficiency")]
+    public decimal ReprocessingEfficiency { get; set; } = 1;
+
     internal static SettingsForm From(WorldSettings settings) =>
         new()
         {
+            OreYieldMultiplier = settings.Resources.OreYieldMultiplier,
+            IceYieldMultiplier = settings.Resources.IceYieldMultiplier,
+            GasYieldMultiplier = settings.Resources.GasYieldMultiplier,
+            BountyMultiplier = settings.Rewards.BountyMultiplier,
+            MissionIskMultiplier = settings.Rewards.MissionIskMultiplier,
+            MissionLpMultiplier = settings.Rewards.MissionLpMultiplier,
+            MissionStandingMultiplier = settings.Rewards.MissionStandingMultiplier,
+            KillSkillPointMultiplier = settings.Progression.KillSkillPointMultiplier,
+            ManufacturingSpeed = settings.Industry.ManufacturingSpeed,
+            ResearchSpeed = settings.Industry.ResearchSpeed,
+            CopyingSpeed = settings.Industry.CopyingSpeed,
+            InventionSpeed = settings.Industry.InventionSpeed,
+            ReprocessingEfficiency = settings.Industry.ReprocessingEfficiency,
             ServiceCosts = settings.Economy.ChargeServiceCosts,
             ProgressiveMarkets = settings.Economy.ProgressiveMarkets ?? !settings.DevelopmentSupply.TestingMarket,
             ManufacturingIndex = settings.Economy.DefaultManufacturingIndex,
@@ -80,9 +145,11 @@ internal sealed class SettingsForm
                 Cents(TestingPriceIsk),
                 Cents(GrantIsk)
             ),
-            Resources = new(RenewBelts, RenewalHourUtc),
+            Resources = new(RenewBelts, RenewalHourUtc, OreYieldMultiplier, IceYieldMultiplier, GasYieldMultiplier),
+            Rewards = new(BountyMultiplier, MissionIskMultiplier, MissionLpMultiplier, MissionStandingMultiplier),
+            Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
-            Progression = new(StartingSkills),
+            Progression = new(StartingSkills, KillSkillPointMultiplier),
             Capsuleers = new(GlobalProvisioning),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
         };

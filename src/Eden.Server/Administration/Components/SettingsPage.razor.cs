@@ -12,8 +12,24 @@ public partial class SettingsPage
 {
     private ConfigurationState? State;
     private WorldConfigurationDraft Original = new();
-    private WorldConfigurationDraft Draft = new();
-    private SettingsForm Form = new();
+    private readonly SettingsWorkspace Workspace = new();
+    private SettingsForm Form => Workspace.Form;
+    private EditContext? Context;
+    private bool Unsaved => Workspace.Unsaved || Context?.GetValidationMessages().Any() == true;
+    private IReadOnlyList<RevisionDifference>? DraftChanges
+    {
+        get
+        {
+            try
+            {
+                return Context?.GetValidationMessages().Any() == true ? null : Workspace.Changes;
+            }
+            catch (Exception error) when (error is InvalidDataException or OverflowException)
+            {
+                return null;
+            }
+        }
+    }
     private string? Error;
     private string? Message;
     private bool Busy;
@@ -29,8 +45,9 @@ public partial class SettingsPage
             var user = await User();
             State = await Operations.Read(user);
             Original = (await Operations.Revision(user, 1)).Draft;
-            Draft = State.Pending?.Draft ?? State.Active.Draft;
-            Form = SettingsForm.From(Draft.Settings);
+            Workspace.Load(State.Pending?.Draft ?? State.Active.Draft);
+            SetContext();
+            Message = null;
             Error = null;
         }
         catch (Exception error) when (error is InvalidDataException or UnauthorizedAccessException)
@@ -41,12 +58,36 @@ public partial class SettingsPage
 
     private void Reset()
     {
-        Draft = Original;
-        Form = SettingsForm.From(Original.Settings);
+        Workspace.RestoreOriginal(Original);
+        SetContext();
+        Error = null;
         Message = "Original values are in the draft. Save to stage them for restart.";
     }
 
-    private void ChangeOverrides(WorldConfigurationDraft draft) => Draft = draft;
+    private void Discard()
+    {
+        Workspace.Discard();
+        SetContext();
+        Error = null;
+        Message = "Unsaved changes discarded.";
+    }
+
+    private void SetContext()
+    {
+        if (Context is not null)
+        {
+            Context.OnValidationStateChanged -= ValidationChanged;
+        }
+        Context = new(Form);
+        Context.OnValidationStateChanged += ValidationChanged;
+    }
+
+    private void ValidationChanged(object? sender, ValidationStateChangedEventArgs args) => StateHasChanged();
+
+    private void Invalid() => Error = "Review the validation messages before saving. Changes in other tabs are retained.";
+
+    private static string ActivityLabel(SettingsActivity activity) =>
+        activity == SettingsActivity.World ? "World & economy" : activity.ToString();
 
     private async Task Validate() => await Act(save: false);
 
@@ -57,22 +98,35 @@ public partial class SettingsPage
         Busy = true;
         try
         {
-            Draft = Draft with { Settings = Form.Build() };
+            if (!Context!.Validate())
+            {
+                Invalid();
+                return;
+            }
+            var draft = Workspace.Current;
             var user = await User();
-            var validation = await Operations.Validate(user, Draft);
+            var validation = await Operations.Validate(user, draft);
             if (!validation.Valid)
             {
                 throw new InvalidDataException(string.Join(" ", validation.Messages));
             }
             if (save)
             {
-                State = await Operations.Save(user, new(State!.Generation, Draft));
+                State = await Operations.Save(user, new(State!.Generation, draft));
+                Workspace.Load(State.Pending!.Draft);
+                SetContext();
             }
             Message = save ? $"Revision {State!.Pending!.Id} saved · pending restart." : "Draft validation passed.";
             Error = null;
         }
         catch (Exception error)
-            when (error is InvalidDataException or InvalidOperationException or UnauthorizedAccessException or IOException)
+            when (error
+                    is InvalidDataException
+                        or InvalidOperationException
+                        or UnauthorizedAccessException
+                        or IOException
+                        or OverflowException
+            )
         {
             Error = error.Message;
             Message = null;

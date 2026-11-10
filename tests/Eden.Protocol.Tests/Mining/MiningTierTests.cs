@@ -21,6 +21,38 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningTierTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EveryAdmittedToolHasAnIndependentNativeWorldYieldSelector(bool fullMiningCatalog)
+    {
+        using Fixture f = new();
+        if (fullMiningCatalog)
+        {
+            PassiveCatalogFixture.LoadMining(f.CatalogPath);
+        }
+        else
+        {
+            PassiveCatalogFixture.LoadActiveTiers(f.CatalogPath);
+        }
+        using CatalogDbContext catalog = new(f.CatalogPath);
+        var supported = catalog
+            .Set<ItemType>()
+            .AsEnumerable()
+            .Where(t => InventoryDefinitions.IsMiningGroup(t.GroupId) && MiningLaserCatalog.Supported(catalog, t.Id, t.GroupId))
+            .ToArray();
+        Assert.NotEmpty(supported);
+        foreach (var type in supported)
+        {
+            var attributes = catalog.FittingAttributes(type.Id);
+            bool Requires(MiningSkill skill) =>
+                InventoryDefinitions.RequiredSkills.Any(p => attributes.GetValueOrDefault(p.Skill) == (int)skill);
+            var family = MiningDefinitions.Family(type.GroupId, attributes);
+            Assert.Equal(family == MiningFamily.Ore, Requires(MiningSkill.Mining));
+            Assert.Equal(family == MiningFamily.Ice, Requires(MiningSkill.IceHarvesting));
+        }
+    }
+
     private const int OreMiner = 28750;
     private const int GallenteMiner = 21841;
     private const int Veldspar = 1230;

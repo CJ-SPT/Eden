@@ -25,6 +25,7 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 | Topic | Coverage |
 | --- | --- |
+| [World configuration](protocol/world-configuration.md) | Saved-world gathering, reward and industry tuning; native modifiers, restart activation and administration. |
 | [Startup and authentication](protocol/startup.md) | Handshake, encryption, launcher accounts, character selection and initial sessions. |
 | [Catalog and provenance](protocol/catalog.md) | Pinned-build data, export inputs and catalog verification. |
 | [Navigation and travel](protocol/navigation.md) | Maps, bookmarks, undocking, warp, gates, orbiting and ship collisions. |

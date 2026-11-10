@@ -69,7 +69,10 @@ public static class ManufacturingRules
         {
             throw new InvalidDataException("The job exceeds the manufacturing run-length limit.");
         }
-        long duration = EconomicRules.ClientRound(seconds, IndustryDefinitions.ManufacturingTimePrecision);
+        long duration = Math.Max(
+            IndustryDefinitions.MinimumJobSeconds,
+            EconomicRules.ClientRound(seconds, IndustryDefinitions.ManufacturingTimePrecision)
+        );
         if (duration <= 0 || !double.IsFinite(request.QuotedSeconds) || request.QuotedSeconds != duration)
         {
             throw new InvalidDataException("Manufacturing time changed; reopen the blueprint to refresh the quote.");

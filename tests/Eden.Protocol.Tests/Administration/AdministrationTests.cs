@@ -17,6 +17,26 @@ namespace Eden.Protocol.Tests.Administration;
 
 public sealed class AdministrationTests
 {
+    [Fact]
+    public async Task WorldSettingsPageRendersAllActivityTabsAndTheSharedRestartSaveBar()
+    {
+        await using var fixture = await Fixture.Start();
+        await fixture.SignIn();
+        string html = WebUtility.HtmlDecode(await fixture.Client.GetStringAsync("/"));
+        foreach (string label in new[] { "Gathering", "Rewards", "Progression", "Industry", "World & economy", "Advanced" })
+        {
+            Assert.Contains(label, html);
+        }
+        Assert.Contains("Save for restart", html);
+        Assert.Contains("Discard unsaved changes", html);
+        Assert.Contains("Changed values", html);
+        Assert.Contains("Original, active and pending values", html);
+        Assert.Contains("Active settings", html);
+        Assert.Contains("aria-pressed=\"true\"", html);
+        Assert.Contains("Reset Ore mining yield to 1×", html);
+        Assert.Contains("Training speed and skill requirements are unchanged", html);
+    }
+
     private const string Password = "local administrator password";
 
     private sealed class Fixture : IAsyncDisposable

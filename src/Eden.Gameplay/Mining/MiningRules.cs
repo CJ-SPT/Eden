@@ -1,3 +1,4 @@
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -10,7 +11,8 @@ public sealed record MiningModuleInputs(
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
     IReadOnlyDictionary<DogmaAttributeId, double> HullAttributes,
     IReadOnlyDictionary<MiningSkill, int> Levels,
-    bool CatalogHullBonuses = false
+    bool CatalogHullBonuses = false,
+    decimal YieldMultiplier = 1
 );
 
 public static class MiningRules
@@ -98,7 +100,7 @@ public static class MiningRules
             || MiningDefinitions.Family(inputs.GroupId, attributes) == MiningFamily.Gas
         )
         {
-            return attributes;
+            return ApplyYield(attributes, inputs.YieldMultiplier);
         }
         var family = MiningDefinitions.Family(inputs.GroupId, attributes);
         foreach (var modifier in MiningDefinitions.SkillModifiers)
@@ -129,6 +131,27 @@ public static class MiningRules
         {
             // Effect 1212 mirrors the effective mining amount for native information panels.
             attributes[DogmaAttributeId.MiningSpecialtyAmount] = attributes[DogmaAttributeId.MiningAmount];
+        }
+        return ApplyYield(attributes, inputs.YieldMultiplier);
+    }
+
+    private static IReadOnlyDictionary<DogmaAttributeId, double> ApplyYield(
+        Dictionary<DogmaAttributeId, double> attributes,
+        decimal multiplier
+    )
+    {
+        WorldTuningRules.ValidateRate(multiplier);
+        foreach (var attribute in new[] { DogmaAttributeId.MiningAmount, DogmaAttributeId.MiningSpecialtyAmount })
+        {
+            if (attributes.TryGetValue(attribute, out double value))
+            {
+                double scaled = value * (double)multiplier;
+                if (!double.IsFinite(scaled))
+                {
+                    throw new InvalidDataException("Mining yield exceeds the supported range.");
+                }
+                attributes[attribute] = scaled;
+            }
         }
         return attributes;
     }

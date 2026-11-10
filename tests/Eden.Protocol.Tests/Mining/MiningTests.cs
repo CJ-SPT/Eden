@@ -35,6 +35,29 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningTests
 {
+    [Fact]
+    public void WorldYieldScalesPlayerExtractionAndNativeAttributesAfterRestart()
+    {
+        using Fixture f = new(liveWorld: false);
+        WorldTuningTests.Activate(f.Db, settings => settings with { Resources = settings.Resources with { OreYieldMultiplier = 2 } });
+        var (context, _, mining, moduleId) = f.Client();
+        var pilot = context.Pilot;
+        var module = f.Inventory.List(pilot.PilotId, pilot.ShipId).Single(i => i.Id == moduleId);
+        double amount = f.Store.ModuleAttributes(pilot.PilotId, module)[DogmaAttributeId.MiningAmount];
+        Assert.Equal(12.6, amount, 8);
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [moduleId, "miningLaser", Fixture.Asteroid, 0L]));
+        f.Clock.Milliseconds += 10_000;
+        mining.Advance(context);
+        var mined = Assert.Single(context.Notifications.OfType<OreMined>()).Yield;
+        Assert.Equal(126, mined.Extracted);
+        Assert.Equal(126, mined.Cargo!.Item.Quantity);
+        Assert.Equal(10_000 - 126, f.Remaining());
+        f.Disconnect(context);
+        f.Reopen();
+        Assert.Equal(10_000 - 126, f.Remaining());
+        Assert.Equal(2, new WorldDatabase(f.Db.Path).Settings.Resources.OreYieldMultiplier);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -267,7 +290,7 @@ public sealed class MiningTests
 
     private sealed class Fixture : IDisposable
     {
-        public TestWorld Db { get; } = new(liveWorld: true);
+        public TestWorld Db { get; }
         public Clock Clock { get; } = new(new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero));
         public SharedSpace Space { get; } = new();
         public SharedTargetLocks Locks { get; } = new();
@@ -276,8 +299,9 @@ public sealed class MiningTests
         public const long Asteroid = AsteroidDefinitions.FirstAsteroidId;
         private readonly List<(PilotCallContext Context, TargetingHandler Targeting)> _clients = [];
 
-        public Fixture()
+        public Fixture(bool liveWorld = true)
         {
+            Db = new(liveWorld: liveWorld);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
                 catalog.Database.ExecuteSqlRaw(

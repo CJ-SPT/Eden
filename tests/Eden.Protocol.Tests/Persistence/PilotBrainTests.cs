@@ -1,8 +1,10 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Serialization;
@@ -13,6 +15,34 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class PilotBrainTests
 {
+    private sealed record Tuning(WorldSettings Settings) : IWorldTuning;
+
+    [Fact]
+    public void WorldRatesUseNativeLiteralModifiersWithoutInventingTrainedSkills()
+    {
+        var policy = new IndustryPolicy(2, 4, 5, 10);
+        Skills skills = new() { Bonuses = WorldTuningRules.IndustryBonuses(policy) };
+        var tuning = new Tuning(new() { Resources = new(OreYieldMultiplier: 2, IceYieldMultiplier: 6, GasYieldMultiplier: 4) });
+        var source = new PilotBrain(skills, new Clock(), skills, skills, skills, tuning: tuning);
+        var state = source.Read(90000001, 1000000000001);
+        Assert.All(state.CharacterEffects, effect => Assert.Empty(effect.Skills));
+        var manufacturing = Assert.Single(state.CharacterEffects, e => e.Attribute == DogmaAttributeId.ManufactureTimeMultiplier);
+        Assert.Equal(-50, manufacturing.Value);
+        Assert.Equal(BrainOperation.PostPercent, manufacturing.Operation);
+        var ore = Assert.Single(
+            state.ShipEffects,
+            e => e.Attribute == DogmaAttributeId.MiningAmount && e.Extras.SequenceEqual([(int)MiningSkill.Mining])
+        );
+        var ice = Assert.Single(state.ShipEffects, e => e.Extras.SequenceEqual([(int)MiningSkill.IceHarvesting]));
+        Assert.Equal(2, ore.Value);
+        Assert.Equal(6, ice.Value);
+        Assert.Contains(state.ShipEffects, e => e.Extras.SequenceEqual([InventoryDefinitions.GasScoopGroup]) && e.Value == 4);
+        var wire = State(BlueMarshal.Decode(BlueMarshal.Encode(ice)));
+        Assert.Equal("LRS"u8.ToArray(), wire["modifierType"]);
+        Assert.Equal(4L, wire["operation"]);
+        Assert.Empty(Assert.IsType<List<object?>>(wire["skills"]));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
