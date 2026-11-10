@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Eden Server</title>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="#0D1622" />
+  <path d="M128 38 206 83v90l-78 45-78-45V83Z" fill="none" stroke="#67E8C5" stroke-width="10" stroke-linejoin="round" />
+  <path d="M86 91h84v18H86Zm0 28h65v18H86Zm0 28h84v18H86Z" fill="#67E8C5" />
+  <path d="M163 119h18v18h-18Z" fill="#E5FFF7" />
+</svg>

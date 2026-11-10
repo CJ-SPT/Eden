@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Eden Launcher</title>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="#0D1622" />
+  <path d="M128 38 206 83v90l-78 45-78-45V83Z" fill="none" stroke="#70C7FF" stroke-width="10" stroke-linejoin="round" />
+  <path d="m84 159 61-61h-41V80h72v72h-18v-41l-61 61Z" fill="#70C7FF" />
+</svg>

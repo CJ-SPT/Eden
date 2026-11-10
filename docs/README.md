@@ -16,6 +16,8 @@
 
 ## Development
 
+[Application icons](../assets/icons/README.md) contains the coordinated server, launcher and SDK artwork and export instructions.
+
 [Protocol buffer and library evaluation](protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)
 covers pooled encoding, selected in-memory LINQ queries, bounded console logging and repeatable library benchmarks.
 
