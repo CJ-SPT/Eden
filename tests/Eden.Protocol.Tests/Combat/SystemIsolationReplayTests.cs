@@ -33,7 +33,8 @@ public sealed partial class ServerPerformanceReplayTests
             return;
         }
         const int BusySystem = 30002659;
-        const long FlyingPilot = 90000001;
+        long FlyingPilot = Environment.GetEnvironmentVariable("EDEN_REPORTED_TRAFFIC") == "1" ? 90000006 : 90000001;
+        long flyingAccount = FlyingPilot == 90000006 ? 1000003 : 1000001;
         const long DockedPilot = 90000002;
         const int Warmup = 4;
         int samples = int.Parse(Environment.GetEnvironmentVariable("EDEN_SYSTEM_REPLAY_SAMPLES") ?? "40");
@@ -64,11 +65,18 @@ public sealed partial class ServerPerformanceReplayTests
             WorldInitialization.Initialize(database, clock);
             using var host = ServerServices.Build(database, clock, liveWorld: true);
             var movement = host.GetRequiredService<Eden.World.Docking.SqliteWorld>();
-            var flying = movement.FindPilot(1000001, FlyingPilot)!;
+            var flying = movement.FindPilot(flyingAccount, FlyingPilot)!;
             movement.SetPosition(flying.ShipId, new(flying.X + 2000000, flying.Y, flying.Z), flying.SystemId);
-            using var pilot = new ReplayPlayer(host, clock, FlyingPilot, 1000001, reports);
+            using var pilot = new ReplayPlayer(host, clock, FlyingPilot, flyingAccount, reports);
             using var docked = new ReplayPlayer(host, clock, DockedPilot, 1000002, reports);
-            Assert.Equal(pilot.Context.Pilot.SystemId, docked.Context.Pilot.SystemId);
+            if (FlyingPilot == 90000006)
+            {
+                Assert.Equal(30002187, pilot.Context.Pilot.SystemId);
+            }
+            else
+            {
+                Assert.Equal(pilot.Context.Pilot.SystemId, docked.Context.Pilot.SystemId);
+            }
             Assert.NotEqual(BusySystem, pilot.Context.Pilot.SystemId);
             using var presence = host.GetRequiredService<IHumanPresence>().Select(90000003, BusySystem);
             var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
@@ -86,6 +94,7 @@ public sealed partial class ServerPerformanceReplayTests
             for (int sample = 0; sample < Warmup + samples; sample++)
             {
                 clock.Seconds++;
+                long allocated = GC.GetTotalAllocatedBytes(precise: true);
                 using ManualResetEventSlim start = new();
                 var background = Task.Run(async () =>
                 {
@@ -122,7 +131,8 @@ public sealed partial class ServerPerformanceReplayTests
                 }
                 var traffic = diagnostics.Read();
                 reports.Enqueue(
-                    $"Progress sample={sample} completed={traffic.CompletedActions} due={traffic.DueJobs} "
+                    $"Progress sample={sample} allocatedBytes={GC.GetTotalAllocatedBytes(precise: true) - allocated} "
+                        + $"completed={traffic.CompletedActions} due={traffic.DueJobs} "
                         + $"oldestMs={TimeSpan.FromTicks(traffic.OldestDelayTicks).TotalMilliseconds:F2} failures={traffic.Failures}."
                 );
             }
@@ -239,7 +249,8 @@ public sealed partial class ServerPerformanceReplayTests
                 operations,
                 anomalies: provider.GetRequiredService<Eden.Protocol.Exploration.CombatAnomalyHandler>(),
                 handoff: handoff,
-                presentation: presentation
+                presentation: presentation,
+                structures: provider.GetRequiredService<Eden.Gameplay.Structures.IStructureContacts>()
             );
             updates.Enter(Context);
         }

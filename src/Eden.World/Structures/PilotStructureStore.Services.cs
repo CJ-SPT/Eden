@@ -247,10 +247,11 @@ internal sealed partial class PilotStructureStore
         return true;
     }
 
-    internal static void Advance(WorldDbContext world, CatalogDbContext catalog, long now)
+    internal static void Advance(WorldDbContext world, CatalogDbContext catalog, long now, int? systemId = null)
     {
         var due = world
             .Set<SavedStructure>()
+            .Where(s => systemId == null || s.SystemId == systemId)
             .Where(s => s.StateEndsAt != null && s.StateEndsAt <= now || s.UnanchorAt != null && s.UnanchorAt <= now)
             .ToArray();
         foreach (var structure in due)
@@ -279,6 +280,7 @@ internal sealed partial class PilotStructureStore
         var stopping = due.Where(s => s.UnanchorAt <= now).ToDictionary(s => s.Id);
         var services = world
             .Set<SavedStructureService>()
+            .Where(m => systemId == null || world.Set<SavedStructure>().Any(s => s.Id == m.StructureId && s.SystemId == systemId))
             .Where(m => m.Online && m.NextFuelAt != null && m.NextFuelAt <= now)
             .OrderBy(m => m.StructureId)
             .ThenBy(m => m.Slot)

@@ -191,6 +191,17 @@ internal sealed class CapsuleerMaintenance(
             // owner publishes the pending batch without delaying this player's frame.
             return;
         }
+        var participatingSystems = handoff
+            .PresentationSystems.Concat(_publishedPresentation?.Systems.Select(s => s.SystemId) ?? [])
+            .Concat(_retryPresentation?.Miners.Select(m => m.Pilot.SystemId) ?? [])
+            .Concat(_retryPresentation?.Haulers.Select(h => h.Pilot.SystemId) ?? [])
+            .Distinct()
+            .ToArray();
+        using var systems = synchronization.TryEnterSystems("traffic presentation systems", participatingSystems);
+        if (systems is null)
+        {
+            return;
+        }
         {
             var batch = handoff.Capture();
             if (_retryPresentation is null && batch.Revision == _publishedPresentation?.Revision)

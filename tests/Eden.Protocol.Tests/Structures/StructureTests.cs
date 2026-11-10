@@ -349,6 +349,32 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public async Task ColdStructureContactsDoNotAcquireAnUnrelatedSystem()
+    {
+        using Fixture f = new(liveWorld: true);
+        var live = f.Db.Services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var remote = Task.Run(() =>
+        {
+            using var owner = live.Enter("unrelated traffic", 30000142);
+            entered.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(10)));
+        });
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+            await Task.Run(() => Assert.Empty(f.Db.Services.GetRequiredService<IStructureContacts>().Contacts(Fixture.SystemId)))
+                .WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            await remote;
+        }
+    }
+
+    [Fact]
     public void WarmStructureAndEmptySystemContactsAvoidSqlAndReflectCommittedRenames()
     {
         using Fixture f = new(liveWorld: true);

@@ -28,7 +28,7 @@ internal sealed class PilotHealthStore(WorldDatabase database) : IPilotHealth
         {
             return resident;
         }
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();

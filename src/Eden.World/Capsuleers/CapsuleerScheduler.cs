@@ -703,6 +703,9 @@ internal sealed partial class CapsuleerScheduler(
         return ValueTask.CompletedTask;
     }
 
+    public IReadOnlyCollection<int> PresentationSystems =>
+        _systems.Observed().Select(s => s.SystemId).Concat(presence.Read().ActiveSystems).Distinct().ToArray();
+
     public CapsuleerBatch Capture()
     {
         using (synchronization.Enter("CapsuleerScheduler"))
@@ -710,18 +713,8 @@ internal sealed partial class CapsuleerScheduler(
             Load();
             Reconcile(presence.Read());
             var activity = presence.Read();
-            var observed = activity.ActiveSystems.ToHashSet();
-            if (
-                observed
-                    .SelectMany(s => _systemAgents.GetValueOrDefault(s) ?? [])
-                    .Any(p => _running.Contains(p) && observed.Contains(_locations[p]) && Current[p].DueTicks <= activity.ElapsedTicks)
-            )
-            {
-                // Entry performs a bounded relevant catch-up. Remaining due work keeps
-                // the scene activating until maintenance completes it.
-                const int PromotionActions = 8;
-                RunCore(_destinyStamp, PromotionActions, observed);
-            }
+            // Capture never executes scheduled actions. Due systems remain activating
+            // until bounded maintenance turns have settled their saved deadlines.
             SettleReadySystems(activity);
             var active = _systems.Observed().Where(s => s.Mode == SystemSimulationMode.Active).Select(s => s.SystemId).ToHashSet();
             foreach (
@@ -733,6 +726,7 @@ internal sealed partial class CapsuleerScheduler(
             )
             {
                 using var systemContext = Live?.UseSystem(location.Value);
+                using var systemOwnership = synchronization.Enter("traffic observation", location.Value);
                 if (_miners.TryGetValue(location.Key, out var miner))
                 {
                     var observation = miner.Read()!;

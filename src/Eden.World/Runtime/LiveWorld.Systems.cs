@@ -274,14 +274,20 @@ internal sealed partial class LiveWorld
         {
             return null;
         }
-        var systems = _systems.TryEnter(_systems.Snapshot().Select(entry => entry.Id), operation);
-        if (systems is null)
-        {
-            persistence.Dispose();
-            return null;
-        }
+        // Persistence serializes scheduler metadata and publication. Each actual
+        // observation/scene operation enters its participating system separately.
+        // Acquiring dormant runtimes here stalls unrelated resident frames.
         var context = UseShared();
-        return new CoordinatedLease(context, new CoordinatedLease(persistence, systems));
+        return new CoordinatedLease(context, persistence);
+    }
+
+    internal IDisposable? TryEnterSystems(string operation, IReadOnlyCollection<int> systems)
+    {
+        if (!_ownershipMonitor.IsEntered)
+        {
+            throw new InvalidOperationException("Presentation systems require persistence coordination first.");
+        }
+        return _systems.TryEnter(systems, operation);
     }
 
     private sealed class SystemContext(LiveWorld world, int? previous) : IDisposable

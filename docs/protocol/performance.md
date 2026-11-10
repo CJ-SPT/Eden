@@ -1771,3 +1771,80 @@ throughput or session latency percentiles.
 
 **Optional maintainer checks.** None; persistence boundaries and recovery are covered automatically. Native rendering,
 input and gameplay feel remain unverified by this milestone.
+
+
+## Traffic presentation and ownership accounting, November 10, 2026
+
+The supplied log at `b2a3c0ae8d8a3425503f334da52c153a17d59932` records repeated traffic presentation holds
+of approximately 260–810 ms and session ticks of 300–870 ms. Its `Ownership=145222.69 ms` inside an
+866.79 ms tick sums overlapping system leases; it is not 145 seconds of elapsed player latency.
+Ownership diagnostics now merge completed acquisition intervals, counting their union once. Individual
+boundary wait/hold records remain available, and the 250 ms warning threshold is unchanged.
+
+Traffic presentation admission now takes persistence coordination without acquiring every registered system.
+Presentation then tries the explicit observed/entering system set in ascending order and retains those owners
+through capture and publication. A busy participating system leaves the previous presentation available; unrelated
+systems are excluded. `ICapsuleerHandoff.PresentationSystems` and `IWorldSynchronization.TryEnterSystems` carry this
+internal contract. Capture also reads each active pilot under its actual system owner. It no longer invokes `RunCore` for up to eight
+promotion actions: due systems remain activating until bounded maintenance settles their deadlines.
+The existing ordered batch revision, publication retry and presence updates remain in use. Busy persistence
+still leaves the player's previous committed presentation available. Cold pilot health transactions explicitly
+participate in their pilot's system. Cold structure contact reads settle only the requested system's deadlines
+and classify that system for projection; ordinary structure mutation/maintenance keeps its existing broader scope.
+Unclassified persistence operations retain the conservative fallback.
+
+The automated replay can select the reported pilot with `EDEN_REPORTED_TRAFFIC=1`, which uses pilot `90000006`,
+account `1000003`, and verifies system `30002187`. It includes the production structure-contact hook, a second
+player, remote traffic, incremental population preparation and periodic checkpoints. Use
+`EDEN_SYSTEM_REPLAY_SOURCE` with a directory frozen by `tools/Freeze-SystemReplay.py`, and select
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ReplayTwoPlayersUnderRemoteTrafficAndPopulationLoad`.
+Each iteration records process allocation growth across its concurrent work; this is not a per-player allocation count.
+Checkpoint capture, copy, projection, write and their allocations remain separately reported.
+
+Baseline and updated replays use the same frozen databases, saved settings and clock, with four warmups and forty
+measured iterations. The frozen manifest records the baseline revision and SHA-256 hashes. Artifacts are retained
+under `artifacts/traffic-stalls/`, including `frozen/manifest.json`, replay logs, ownership records, samples and the
+published test filter and source hashes. The baseline did not reproduce the supplied log's worst spikes, so these results establish
+improvement for this workload rather than elimination of every source of live lag.
+
+| Matched copied-save measurement | Baseline p95 / p99 (ms) | Final p95 / p99 (ms) |
+| --- | ---: | ---: |
+| Movement reply | 134.90 / 235.13 | 18.76 / 20.07 |
+| Complete session frame | 27.27 / 36.62 | 23.20 / 25.80 |
+| Station Guests reply | 69.05 / 221.15 | 18.55 / 28.15 |
+
+The final isolated replay passed in 1m07s. Both versions completed **698 actions**, with zero due jobs and zero
+failures at the last sample. No measured request/frame reached one second; the final frame p95 met the 250 ms
+target. Movement SQL/connection/fitting counts were 329/71/2 before and 147/47/0 after; Guests counts were
+1256/130/18 before and 23/11/0 after. Frame counts were 98/90/0 before and 98/98/0 after. Complete session hooks
+can still perform persistence work; repeated warmed traffic observations are separately verified SQL-free.
+
+Final process allocation growth per concurrent iteration had a median of 22,559,776 bytes and maximum of
+136,451,176 bytes, including background population work and occasional checkpoint writing. The baseline did not
+record this process allocation probe, so this is an absolute final measurement, not an allocation improvement claim.
+The last checkpoint's capture/copy/projection/write times were 0.49/318.60/13.92/1502.23 ms, compared with
+0.21/201.56/12.22/1267.93 ms in the baseline. Copying still delays SQLite writers while warmed resident frames can
+continue. These samples do not establish a checkpoint speed improvement or a bound for all production actions.
+
+The gameplay reference remains [EVE University stargates](https://wiki.eveuniversity.org/Stargates) and
+[Carbon Destiny Ballpark.cpp revision 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp).
+Movement calculations, wire formats, travel timing and saved schema are unchanged.
+
+**Automated validation.** Exact development filters cover capture without executing due jobs, unrelated-system
+presentation admission, cold structure contact isolation, overlapping ownership, and advancing observations.
+The 1/2/4-observer matrix exercises 1/5/10 traffic multipliers and remote runtime counts, checking completed
+jobs and zero SQL commands, connection opens and fitting calculations for warmed observations. A preliminary
+168-test affected selection passed in 164.10 seconds. The final affected selection passed **185/185** in 2m38s using the exact filter in
+`artifacts/traffic-stalls/published-filter.txt`; it includes publication retry, gate arrival/departure, docking,
+same-tick health/subsecond recharge, structure deadline, rollback, isolation and checkpoint/reopen coverage.
+Tool/solution restore and the final solution build passed with zero warnings/errors. Both Python policy suites
+passed (8 catalog and 9 formatting tests), formatting verification checked 1,628 files, and line-width, local
+documentation link, UTF-8/final-newline and diff checks passed. A missing import in the expanded population test
+was corrected before the final successful build and test selection.
+An intermediate build collided with the running testhost's DLL lock; subsequent builds run after test completion.
+No full .NET suite was requested or run. The installed save and running server were not modified.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Rebuild/restart the server and compare pauses on the same busy route.
+Native rendering, input and gameplay feel remain unverified.

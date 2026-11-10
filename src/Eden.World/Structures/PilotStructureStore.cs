@@ -58,13 +58,13 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
             }
         );
 
-    private T Execute<T>(Func<WorldDbContext, CatalogDbContext, long, T> action)
+    private T Execute<T>(Func<WorldDbContext, CatalogDbContext, long, T> action, int? systemId = null)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { Participants = systemId is int system ? new(systems: [system]) : null };
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         long now = Now;
-        Advance(world, catalog, now);
+        Advance(world, catalog, now, systemId);
         var result = action(world, catalog, now);
         world.SaveChanges();
         transaction.Commit();
@@ -604,6 +604,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     deadline,
                     structures.Any(s => s.UnanchorAt <= Now)
                 );
-            }
+            },
+            systemId
         );
 }

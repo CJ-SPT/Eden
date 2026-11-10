@@ -27,6 +27,9 @@ internal sealed class WorldSynchronization(WorldDatabase database) : IWorldSynch
     public IDisposable? TryEnterShared(string operation) =>
         LiveWorld.Find(database.Path) is { } live ? live.TryEnterShared(operation) : Enter(operation);
 
+    public IDisposable? TryEnterSystems(string operation, IReadOnlyCollection<int> systems) =>
+        LiveWorld.Find(database.Path) is { } live ? live.TryEnterSystems(operation, systems) : Enter(operation);
+
     public IDisposable? UseSystem(int systemId) => LiveWorld.Find(database.Path)?.UseSystem(systemId);
 
     public T Run<T>(string operation, int systemId, Func<T> action)

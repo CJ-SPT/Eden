@@ -162,7 +162,7 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
                     held._occupied = false;
                     Monitor.PulseAll(held._admission);
                 }
-                SessionLatency.ObserveOwnership(hold);
+                SessionLatency.ObserveOwnership(started);
                 try
                 {
                     (Volatile.Read(ref held._observer) ?? s_observer.Value)?.Invoke(

@@ -52,11 +52,29 @@ public sealed class SessionLatency : IDisposable
 
     public static Measurement Measure(SessionLatencyPhase phase) => new(s_current.Value, phase);
 
-    internal static void ObserveOwnership(TimeSpan hold)
+    private readonly List<(long Start, long End)> _ownershipIntervals = [];
+
+    internal static void ObserveOwnership(long started)
     {
-        if (s_current.Value is { } current)
+        if (s_current.Value is not { } current)
         {
-            current._elapsed[(int)SessionLatencyPhase.Ownership] += (long)(hold.TotalSeconds * Stopwatch.Frequency);
+            return;
+        }
+        long end = Stopwatch.GetTimestamp();
+        long start = Math.Max(started, current._started);
+        // Leases finish in timestamp order, but an outer lease may start before
+        // several already completed inner leases. Merge their complete union.
+        lock (current._ownershipIntervals)
+        {
+            while (current._ownershipIntervals.Count > 0 && current._ownershipIntervals[^1].End >= start)
+            {
+                var previous = current._ownershipIntervals[^1];
+                start = Math.Min(start, previous.Start);
+                current._elapsed[(int)SessionLatencyPhase.Ownership] -= previous.End - previous.Start;
+                current._ownershipIntervals.RemoveAt(current._ownershipIntervals.Count - 1);
+            }
+            current._ownershipIntervals.Add((start, end));
+            current._elapsed[(int)SessionLatencyPhase.Ownership] += end - start;
         }
     }
 

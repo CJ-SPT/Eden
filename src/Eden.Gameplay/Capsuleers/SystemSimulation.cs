@@ -124,6 +124,9 @@ public interface ICapsuleerHandoff
     ValueTask SynchronizeAsync(Action action, CancellationToken cancellationToken = default);
     ValueTask SynchronizeAsync(int systemId, Action action, CancellationToken cancellationToken = default) =>
         SynchronizeAsync(action, cancellationToken);
+
+    // Read under shared scheduling coordination, before capture can reconcile entry.
+    IReadOnlyCollection<int> PresentationSystems => [];
     CapsuleerBatch Capture();
 }
 

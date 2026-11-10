@@ -7,6 +7,7 @@ public interface IWorldSynchronization
     int? CurrentSystem => null;
     IDisposable Enter(string operation, int? systemId = null);
     IDisposable? TryEnterShared(string operation) => Enter(operation);
+    IDisposable? TryEnterSystems(string operation, IReadOnlyCollection<int> systems) => Enter(operation);
 
     // A session scope selects a runtime without retaining ownership across hooks,
     // protocol encoding, logging or output. Each authoritative operation owns its work.

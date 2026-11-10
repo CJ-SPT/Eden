@@ -57,6 +57,9 @@ now fills station-traffic/miner rosters across the catalog before logins, with r
 reports committed system checks, cached preparation and deferred rosters in the startup console.
 
 
+[Traffic presentation and ownership accounting](protocol/performance.md#traffic-presentation-and-ownership-accounting-november-10-2026)
+records scoped presentation admission, observation-only capture, classified cold reads and matched saved-world replay evidence.
+
 [Gate-area traffic stalls](protocol/performance.md#gate-area-traffic-stalls-november-9-2026) records tenfold-population
 diagnostics, indexed resupply inputs, batched resident movement projection and automated rollback/restart coverage.
 
