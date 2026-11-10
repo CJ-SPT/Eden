@@ -68,6 +68,9 @@ public sealed class CatalogSchemaTests
         var properties = typeof(ClientTypes)
             .Assembly.GetTypes()
             .Where(type => type.Namespace == typeof(ClientTypes).Namespace)
+            // The handwritten catalog browser returns a raw validated payload so
+            // arbitrary datasets can be displayed. It is not a generated source model.
+            .Where(type => type != typeof(CatalogStoredRecord))
             .SelectMany(type => type.GetProperties());
         foreach (var property in properties)
         {

@@ -55,6 +55,9 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Celestial Show Info resource reads, November 9, 2026](protocol/information.md#celestial-show-info-resource-reads--november-9-2026)
+  records sun/planet public-gateway replies, catalog values and the continued window audit.
+
 - [Deadline-driven maintenance, November 9, 2026](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026)
 
 - [Corporation-to-agent Show Info header, November 9, 2026](protocol/agents.md#corporation-to-agent-show-info-header--november-9-2026)

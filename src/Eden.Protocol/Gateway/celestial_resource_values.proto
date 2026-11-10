@@ -1,0 +1,37 @@
+syntax = "proto3";
+package eden.gateway.celestial;
+option csharp_namespace = "Eden.Protocol.Gateway.CelestialResources";
+
+import "google/protobuf/duration.proto";
+
+// Wire-compatible value projections from build 3662168's public resource descriptors.
+// Only the enclosing API request/response types are addressed through Any.TypeUrl.
+message SequentialIdentifier {
+  uint64 sequential = 1;
+}
+
+message ReagentHarvestDefinition {
+  uint32 amount_per_cycle = 1;
+  google.protobuf.Duration cycle_period = 2;
+  uint32 secured_percentage = 3;
+  uint32 secured_capacity = 4;
+  uint32 unsecured_capacity = 5;
+}
+
+message PlanetReagentDefinition {
+  SequentialIdentifier type = 1;
+  ReagentHarvestDefinition definition = 2;
+  SequentialIdentifier reagent_type = 3;
+}
+
+message PlanetDefinition {
+  SequentialIdentifier planet = 1;
+  uint64 power = 2;
+  uint64 workforce = 3;
+  repeated PlanetReagentDefinition reagent_definitions = 4;
+}
+
+message StarConfiguration {
+  SequentialIdentifier star = 1;
+  uint64 power = 2;
+}

@@ -21,6 +21,9 @@ reward, progression and industry multipliers, including restart activation and n
 
 ## Development
 
+[Celestial Show Info](protocol/information.md#celestial-show-info-resource-reads--november-9-2026) covers sun/planet
+resource reads, native cache versions and the continued evejs window audit.
+
 [Deadline-driven background work](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026) covers sleeping
 maintenance, early threat/arrival wakes, persistent retry deadlines and matched observer-frame measurements.
 

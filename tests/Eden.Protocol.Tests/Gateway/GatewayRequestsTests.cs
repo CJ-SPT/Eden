@@ -1,3 +1,4 @@
+using Eden.Gameplay.Maps;
 using Eden.Protocol.Gateway;
 using Eden.Protocol.Gateway.Plans;
 using Google.Protobuf;
@@ -7,6 +8,13 @@ namespace Eden.Protocol.Tests.Gateway;
 
 public sealed class GatewayRequestsTests
 {
+    internal static GatewayRequests Create() => new(TimeProvider.System, new EmptyCelestialResources());
+
+    private sealed class EmptyCelestialResources : ICelestialResourceDirectory
+    {
+        public CelestialResourceSnapshot Read() => new("empty", []);
+    }
+
     [Fact]
     public void CorporationFreelanceTabReceivesAnEmptyNativeProjectCollection()
     {
@@ -16,7 +24,7 @@ public sealed class GatewayRequestsTests
             CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
             Payload = new Any { TypeUrl = "type.googleapis.com/eve_public.freelance.project.api.GetAllActiveForCorporationRequest" },
         };
-        var response = new GatewayRequests(TimeProvider.System).Handle(request);
+        var response = Create().Handle(request);
         Assert.Equal(200u, response.StatusCode);
         Assert.Equal(request.ApplicationInstanceUuid, response.ApplicationInstanceUuid);
         Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
@@ -33,7 +41,7 @@ public sealed class GatewayRequestsTests
             CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
             Payload = new Any { TypeUrl = "type.googleapis.com/eve_public.plex.vault.api.BalanceRequest" },
         };
-        var response = new GatewayRequests(TimeProvider.System).Handle(request);
+        var response = Create().Handle(request);
         Assert.Equal(200u, response.StatusCode);
         Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
         Assert.Equal("type.googleapis.com/eve_public.plex.vault.api.BalanceResponse", response.Payload.TypeUrl);
@@ -55,7 +63,7 @@ public sealed class GatewayRequestsTests
                 Value = ByteString.CopyFrom(0x0a, 0x05, 0x08, 0xf0, 0x91, 0xa7, 0x0e),
             },
         };
-        var response = new GatewayRequests(TimeProvider.System).Handle(request);
+        var response = Create().Handle(request);
         Assert.Equal(200u, response.StatusCode);
         var system = response.Payload.Unpack<Protocol.Gateway.Corruption.GetSystemInfoResponse>();
         Assert.Equal(0u, system.Stage);
@@ -72,7 +80,7 @@ public sealed class GatewayRequestsTests
     [Fact]
     public void SkillPlanResponsesCarryTheCorrectTypeAndRequestIdentity()
     {
-        var gateway = new GatewayRequests(TimeProvider.System);
+        var gateway = Create();
         var request = new Request
         {
             ApplicationInstanceUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),

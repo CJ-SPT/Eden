@@ -1,0 +1,11 @@
+syntax = "proto3";
+package eve_public.semanticversion;
+option csharp_namespace = "Eden.Protocol.Gateway.CelestialResources";
+
+message Specification {
+  uint32 major = 1;
+  uint32 minor = 2;
+  uint32 patch = 3;
+  repeated string prerelease_tags = 4;
+  repeated string build_tags = 5;
+}
