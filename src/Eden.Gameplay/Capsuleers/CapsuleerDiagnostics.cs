@@ -16,6 +16,7 @@ public sealed record CapsuleerRuntimeSummary(
     string? LastFailure
 )
 {
+    public int ScheduledAgents { get; init; }
     public TimeSpan LastUpdate { get; init; }
     public TimeSpan LastPresentation { get; init; }
 

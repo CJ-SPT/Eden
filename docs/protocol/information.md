@@ -2,6 +2,91 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Celestial Show Info resource reads — November 9, 2026
+
+The continued evejs comparison found a public-gateway dependency missing from Sun and Planet Show Info. In pinned
+build **3662168**, `Info.GetCelestialStatisticsForSun` asks `sovereigntyResourceSvc` for stellar power before finishing
+the Attributes tab. `ConfigurationDataSource._prime_data_from_external_source` sends
+`eve_public.sovereignty.resource.star.api.GetAllConfigurationsRequest` and turns the gateway's previous **501**
+reply into `DataUnavailableError`; this sun path does not catch that error. The corresponding planet path requests
+planetary resource definitions and catches unavailable data, so it omitted the resource attributes instead.
+
+The gateway now serves these three read-only native messages:
+
+| Request | Reply and limits |
+| --- | --- |
+| `star.api.GetAllConfigurationsRequest` | A successful empty `configurations` collection lets the sun window retain its physical attributes. No authoritative stellar-power configurations exist in Eden's pinned catalog, so the optional power attribute remains absent. No spectral-class estimate is invented. |
+| `planet.api.GetAllDefinitionsRequest` | Sorted definitions from the existing typed `sde/planetResources` catalog: planet ID, power, workforce and optional reagent type, amount per cycle, cycle duration and capacities. A content-derived semantic version identifies the immutable projection; an equal known version returns native **304**, otherwise **200** includes the current definitions/version. |
+| `planet.api.GetDefinitionsVersionRequest` | The current exact version returns **200** and its definitions. Absent/stale versions return native **404**; historical resource snapshots are not stored. |
+
+The full type prefix for the planet requests is `eve_public.sovereignty.resource.planet.api`; the star request uses
+`eve_public.sovereignty.resource.star.api`. Malformed payloads return **400** without affecting other gateway
+routes. Replies preserve request correlation/application IDs. Public catalog data requires no selected pilot and
+does not expose or change saved-world state. The World directory shares an immutable catalog definition; repeated
+warmed reads issue no SQL or connections. Its revision covers the projected values, so catalog changes invalidate
+the client's resource cache even within one pinned build.
+
+The installed pinned dataset contains **25,798** planetary resource definitions. Its reagent cycle periods are
+**3,600 seconds**, preserved as protobuf durations. The native Info window derives the displayed amount per minute
+from the full cycle amount/duration. The SDE does not publish a security-split percentage; the wire field retains
+its zero default, and this correction enables no skyhook, harvesting, sovereignty-hub or resource-transfer gameplay.
+Planets absent from the resource catalog retain their physical attributes without fabricated resource values.
+
+Other inspected paths and boundaries:
+
+| Path | Audit result |
+| --- | --- |
+| NPC corporation CEO → character header | Existing public NPC profiles and `corpmgr.GetCorporationIDForCharacter` already resolve the catalog corporation. No session-corporation fallback is needed. |
+| Militia rank → Hierarchy | The local `facwar.GetCharacterRankOverview(session.charid)` calls the existing zero-argument `GetMyCharacterRankOverview`; the apparent missing same-named remote method is not used. |
+| Stargate → destination | Existing slim-item `jumps` rows provide `toCelestialID` and `locationID`; the native info callback uses them directly. |
+| Station → Services/Location | Existing station replies supply geography, ownership and service masks. Standing restrictions and security-office eligibility are local static checks. |
+| Ship overview and item attributes | Existing native killmark-read shape and local/static or primed attribute paths are retained. This audit adds no per-hull killmark persistence or mutable-item gameplay. |
+| Player alliances, Upwell/customs structures and anchored secure-container expiry | These require authoritative gameplay/state Eden does not currently implement. The audit does not fabricate owners, memberships, structures or expiry dates. Inventory-only secure-container info returns before the anchored-container expiry read. |
+
+Evidence: inert inspection of preserved `E:/EdenDev/3662168/.eden-original-code.ccp`, SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Reviewed `infosvc`, the resource service,
+`sovereignty/resource/client/data_sources`, `messenger`, the resource cache and the generated public protobuf
+descriptors. Binary descriptors were extracted as raw marshal string data, preserving non-ASCII bytes; no client
+Python was imported or executed. A fixture independently encoded using those descriptors checks Eden's outgoing
+planet/reagent bytes. Only enclosing API types use `Any.TypeUrl`; the named value projections preserve the native
+field numbers, unsigned widths, duration representation and deprecated/current reagent-ID fields.
+
+Secondary reference: local **evejs 261108.1** `server/src/_secondary/express/gatewayServices/sovereigntyGatewayService.js`,
+SHA-256 **44B9E0C466CE42368EC8DBC489C7D35E4F92D9C4D9C15A91685C42E1DD953124**, and
+`server/src/services/sovereignty/sovStaticData.js`, SHA-256
+**37AF5EF18049E9AB12A986F6C68CC7E709D994AB814C3D6FE8AB2774A5170A47**. Eden uses its pinned typed SDE values;
+evejs's older imported authority, synthetic resource fallbacks and active sovereignty implementation are not imported.
+Gameplay context follows [EVE University's sovereignty resources](https://wiki.eveuniversity.org/Sovereignty) and
+[Orbital Skyhook resource overview](https://wiki.eveuniversity.org/Orbital_Skyhook). The existing Blue/Destiny transport
+is unchanged; the [previously checked Carbon reference](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+continues to own that encoding evidence.
+
+**Automated validation:** Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Gateway.CelestialInfoGatewayTests.SunInfoCanPrimeTheStarResourceConfigurationInsteadOfFailingTheWindow`.
+It reproduced **501 instead of 200** (build **8.97s**, tests **3.42s**). An initial implementation build caught a
+misplaced import; after correcting it, the exact regression passed (build **7.66s**, tests **2.75s**).
+The expanded gateway filter passed **16 tests** (build **7.23s**, tests **8.28s**) before adding the independent
+native-descriptor byte assertion. Cases cover real World/host composition, power/workforce/reagent values, empty
+catalogs, native cache statuses, changing catalog versions, old immutable snapshots, reopen, malformed requests,
+invalid unsigned inputs and warmed read counters. The first integrated validation built successfully and passed
+**76/77** cases, then stopped on the pre-existing `GeneratedCatalogModelsHaveNoUntypedJsonProperties` guard. It
+scanned the handwritten `CatalogStoredRecord.Payload`, whose raw JSON is the documented catalog browser boundary.
+The guard now exempts only that display record; generated payloads remain fully checked. Its exact correction
+filter passed (build **5.89s**, tests **2.63s**). Final validation on integrated main **c63535c6** passed tool/solution
+restores, solution build with zero warnings/errors, **77 focused .NET cases in 13s**, both Python policy suites
+(**8 catalog + 9 formatting**), formatting (**1,564 files**), width, documentation-link and diff checks.
+The ordered restore/build/test/policy/format sequence took **57.95s**. A separate read-only catalog audit validated
+the projected numeric ranges for all **25,798** installed records. The catalog-access inventory was regenerated.
+Native semantic-version inspection also confirmed that equality/hash identity preserves build tags used by the
+resource revision. No full .NET suite was requested or run. Final filter:
+`FullyQualifiedName~CelestialInfoGatewayTests|FullyQualifiedName~GatewayRequestsTests|FullyQualifiedName~MapStartupTests|FullyQualifiedName~MapNavigationTests|FullyQualifiedName~Sovereignty|FullyQualifiedName~CatalogProviderTests|FullyQualifiedName~CatalogSchemaTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Restart and open Sun Show Info; open Planet Show Info for a null-security planet
+with catalog resource data. Check that Attributes finish loading and known resource values appear. Native rendering
+and client-side construction remain unverified.
+
 ## Probe launcher undocking crash correction, November 9, 2026
 
 The maintainer reported `Nullable object must have a value` at `PilotProbeScanningStore.Launch` when activating a probe launcher. Ordinary undocking saves a flight position without an explicit system ID; navigation resolves that position through the ship's last station. Probe launch instead dereferenced the nullable ID, aborting the connection before its transaction committed. Existing tests always supplied an explicit system and missed this state.

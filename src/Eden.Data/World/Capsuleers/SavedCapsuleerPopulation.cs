@@ -21,6 +21,12 @@ public sealed class SavedCapsuleerAgent
     public long StartingCents { get; set; }
 }
 
+public sealed class SavedCapsuleerSuspension
+{
+    public long PilotId { get; set; }
+    public long StartedTicks { get; set; }
+}
+
 public sealed class SavedCapsuleerJob
 {
     public long PilotId { get; set; }

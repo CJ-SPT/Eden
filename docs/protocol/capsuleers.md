@@ -2,6 +2,92 @@
 
 [Protocol index](../protocol.md)
 
+## Deadline-driven maintenance, November 9, 2026
+
+The resident host now waits for the next queued job or an input-change signal instead of polling traffic every 50 ms.
+`ICapsuleerScheduler.NextWake` returns a relative wait and a captured change task under the same owner as the queue
+and human-active clock. No pending job, or a paused clock with future work, leaves the worker asleep without a timer.
+The default interface implementation retains polling for alternate schedulers. The existing two-argument hauler
+schedule method remains available; the new overload adds the background-mode input.
+
+Positive waits below 50 ms are batched at the existing maintenance resolution, preventing staggered populations
+from requiring one timer wake per pilot. Persisted deadlines and the authoritative clock retain their exact values.
+Already-due backlog still drains in bounded, yielding turns. Player selection, committed world changes and queue-head
+changes interrupt a later wait. Read-only synchronization leaves an unchanged schedule asleep. A signal arriving
+between bounded jobs receives another turn, and no owner is held across a wait. Failed actions retry after 50 ms.
+Shutdown cancels the wait and disposes its one-shot timer; repeated disposal is supported. Very long saved deadlines
+use bounded timers and are re-evaluated without executing future work early.
+
+Committed aggression and entry into a previously unobserved system can move an already-running pilot's pending job
+to the current human-active clock. This increments its revision without consuming its action sequence or paid work.
+Entry only requests sampling when the pilot's progress is behind that clock; restarting and entering at the same
+saved time does not consume another action.
+The revised job participates in ordinary detached checkpoints and transaction revision checks. Dormant local encounters
+retain their existing pause/resume behavior. Background haulers without active defense now sleep through an in-space
+retry until its saved deadline. Observed or defending pilots retain their existing polling and finer defense deadlines.
+Warp, gate, movement, danger and payment rules, population policy, schema and native replies are unchanged.
+
+Reference checks used [EVE University warp mechanics](https://wiki.eveuniversity.org/Warp_Mechanics),
+[NPC mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations), and
+[Carbon Destiny Ballpark.cpp at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp#L6216).
+Carbon's inactive-bubble optimization motivates avoiding idle work; this increment changes host scheduling and safe
+retry waits rather than skipping authoritative movement or threat simulation.
+
+### Matched scheduling replay
+
+The deterministic Debug replay compares fixed polling with deadline eligibility on the same retained role code.
+Each arm runs 200 fifty-millisecond slots over ten human-active seconds, plus normal one-Hz human session frames
+and the native encoding sink. Both arms perform the same deadline probes, isolating omitted maintenance turns.
+One arm calls complete maintenance/presentation each slot; the other calls it for due work or a changed input.
+The actual asynchronous host's timer, cancellation, batching and lost-wakeup behavior are tested separately with
+a controlled `TimeProvider`. Each populated fixture has two local simulated pilots and one or two human observers.
+The empty-system observer leaves the saved local encounters dormant.
+
+| Scenario | Polling / deadline turns | Polling / deadline processing, ms | Polling / deadline managed allocation, MiB |
+| --- | ---: | ---: | ---: |
+| Empty system, one observer | 200 / 0 | 13.12 / 4.05 | 4.78 / 1.35 |
+| Populated system, one observer | 200 / 11 | 24.17 / 13.56 | 7.61 / 3.55 |
+| Populated system, two observers | 200 / 11 | 44.05 / 17.05 | 10.56 / 4.99 |
+
+Final jobs, action sequences, due times, pilot positions, role progress, cargo and encoded byte counts match.
+Each populated arm issues 25 SQL commands, opens 13 connections and performs zero fitting calculations; mutations
+remain at their existing boundaries. Empty arms issue zero commands, opens and fitting calculations. Warm wake-plan
+reads also assert zero SQL, connection opens and fitting calculations. The quiet session frames emit no changed
+packets after warm-up; encryption, network backpressure and native rendering are outside this comparison.
+The samples establish less idle maintenance work, not a new simulated-pilot capacity or dense-battle guarantee.
+Existing bounded-queue tests cover 1,804 and 10,000 logical jobs, separately from these small real-world fixtures.
+
+In the two-observer replay, checkpoint capture/projection/write are 0.41 / 2.23 / 12.61 ms with polling and
+0.42 / 1.81 / 12.60 ms with deadline eligibility. Projection and writing remain outside the owner. No save-speed
+improvement is claimed. Raw matched reports are retained under ignored `artifacts/deadline-work`.
+Set `EDEN_DEADLINE_OUTPUT` to an absolute directory and run the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerDeadlinePerformanceTests.MatchedMaintenanceFramesPreserveJobsAndAssetsWithFewerIdleTurns`
+to reproduce all three cases.
+
+**Automated validation.** The first exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerMaintenanceTests.OneWakeDrainsMultipleBoundedTurnsWithoutWaitingForAnotherTimerTick`.
+New checks cover paused worlds, early timer callbacks, subsecond and long deadlines, signal cancellation, changes
+during execution, bounded failure retries, duplicate disposal, early aggression, saved retry waits and reopened
+checkpoints. Development shutdown regressions exposed repeated-disposal and timer-cleanup failures; the retained
+worker owns its timer explicitly and the corrected cases pass. The first wider run passed 454 cases and failed two
+entry/restart cases: the entry expectation now distinguishes a runnable traveler from a paused miner, and same-time
+restart entry no longer schedules a redundant sample. Both corrected cases passed individually. Final validation on
+main `6ab9f423` plus these changes passed all 456 affected .NET cases in 234.32 seconds including test host startup
+and shutdown. Tool/solution restore, solution build with zero warnings/errors, eight catalog policy cases, nine
+formatting policy cases and formatting verification passed. The sequence took 272.69 seconds, excluding the earlier
+dedicated scheduling replay. Documentation links, retained headings, UTF-8 and whitespace checks passed. The filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Persistence.LiveWorldTests|FullyQualifiedName~Persistence.DetachedCheckpointTests|FullyQualifiedName~Combat.LiveCombatObjectTests|FullyQualifiedName~Combat.NpcCombatTests|FullyQualifiedName~Combat.NpcEwarTests|FullyQualifiedName~Combat.PlayerFrameWorkTests|FullyQualifiedName~Combat.PlayerEwarLifecycleTests|FullyQualifiedName~Combat.ResidentPollingTests|FullyQualifiedName~Hosting
+```
+
+This includes the concurrently integrated ratting, paid resupply and activity-lifecycle checks. A final integration
+build also passed after main `4e88e757` added unrelated agent and courier fixes. The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None for this scheduling change.
+
 ## Persistent local miner — November 8, 2026
 
 Eden provisions one world-owned miner by default on new and upgraded saves. Its home is selected once from the earliest human pilot's saved home, searching by gate distance for a highsec system with a station and generated mineable ore. Systems and stations use catalog ID ordering, with preference for the pilot's home station. The founder is deferred when there is no human pilot or eligible catalog location. Normal character creation retries provisioning inside its transaction.
@@ -575,3 +661,89 @@ and remote ask prices. Focused checks were rerun after those corrections; the fi
 
 **Optional maintainer checks.** Observe a belt fight, wreck approach and subsequent resupply trip to assess native effects
 and gameplay feel.
+
+## Configurable simulated-pilot population — November 9, 2026
+
+The restart-only config editor now exposes an overall enable switch, a simulated-miner switch, station traffic density
+(0–10×, default 1×) and watched-gate visitors (0–16, default four). The hidden legacy `GlobalProvisioning` preference
+round-trips independently. Existing configuration documents receive unchanged defaults for missing fields. Normal immutable
+revisions, validation, changed-values comparisons and export/import apply to all four controls.
+
+Startup reconciles saved roster slots against the activated policy before accepting sessions. `WorldCapsuleerSuspension`
+records a durable pause anchor for excess agents. Pilots, ships, inventory, identities, wallet balances, losses and grant
+ledgers remain intact. Returning slots reactivate their saved jobs/progress in the same transaction that removes the pause;
+missing slots are provisioned only when their community or gate is next visited. Reciprocal watched gates retain one visitor
+identity per ordinal, including ordinals above the former four-visitor default. Home roster slots remain disjoint from gates.
+
+Suspended agents are excluded from scheduling and presentation. Saved positions are retained while directional scanning,
+cloak proximity, NPC target acquisition and deployed-drone contacts omit dormant ownership. Startup already cancels live
+projectiles and releases NPC/drone control; suspension introduces no unobserved attacks. Resume adjusts active-clock deadlines
+and ratting controller timing without replaying work or resetting any loss or paid visit budget. Membership is loaded on
+population changes rather than queried every frame. The config editor applies these changes at restart; it does not stop or
+restart the server itself.
+
+Gameplay reference: [EVE University NPC mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations), used to keep
+simulated capsuleers separate from NPC mining-fleet controls. Population policy introduces no new movement rules;
+the existing [Carbon Ball.cpp revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp)
+and pinned build-3662168 catalog remain the movement reference.
+
+**Automated validation.** Development began with the exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerPopulationSettingsTests.RestartSuspendsAndReusesSavedPilotsWithoutChangingTheirPossessionsOrReplayingJobs`.
+Coverage includes pending-versus-active configuration, repeated restart and reactivation, exact saved identities/possessions,
+partial limits, maximum reciprocal visitors, transaction rejection/rollback, ratting deadlines/loot/budget retention,
+legacy documents, deterministic fractional density, invalid ranges, authenticated editor save/export, and rendered labels.
+
+Tool/solution restore and the solution build passed with zero warnings/errors (build 7.45 seconds). The final affected run
+passed **476 tests**, with no skips, in **262.89 seconds** including runner startup (feature build 1.43 seconds).
+An added maximum-density provisioning/reuse case then passed independently in 5.92 seconds (build 3.69 seconds).
+Both Python policy suites passed: eight catalog checks in 0.741 seconds and nine formatting checks in 0.015 seconds.
+Formatting and the 140-character policy passed. An earlier wider development run passed 541 cases with four unrelated
+client-package-dependent cases skipped, in 250.75 seconds; development test API/exception expectations were corrected
+before these results. No full .NET regression suite was requested or run.
+
+Final affected filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~AdministrationTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~AdministrationComponentTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~InformationTests|FullyQualifiedName~SpatialModuleTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~PilotDroneTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~LiveSimulationTests`.
+
+One hundred warmed disabled-population maintenance frames took 1.47 ms total with zero SQL commands, connections or fitting
+calculations. Existing complete maintenance/two-observer frame and checkpoint assertions also passed. Those fixture timings
+were collected alongside other work and are diagnostic evidence rather than a server capacity claim.
+
+Integration onto main `1a036454` retained the deadline scheduler and the agent-header/courier fixes. The merged solution
+built with zero warnings/errors in 8.05 seconds; the exact suspension/reuse regression passed again. The combined affected
+filter passed **386 tests**, with no skips, in **204.24 seconds** including runner startup (feature build 1.22 seconds).
+Both Python policy suites passed again (eight catalog cases in 0.977 seconds and nine formatting cases in 0.022 seconds),
+followed by formatting and diff verification.
+
+Integration filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~AgentDirectoryTests|FullyQualifiedName~AgentDirectoryServiceTests|FullyQualifiedName~AgentInformationRulesTests|FullyQualifiedName~CourierServiceTests`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After saving and restarting, verify that lowering the controls removes pilots from Local,
+space and station guests; raise them and restart to observe the returning identities. Browser interaction and native rendering
+remain unverified.
+
+## Population diagnostics and Local membership — November 9, 2026
+
+The Population page's old one-miner/one-hauler/restart-provisioning description no longer matched encounter-driven spawning.
+Its retained system/pilot totals also failed to distinguish historical records from prepared systems and paused pilots.
+The page now shows the active population policy, systems prepared under that exact catalog/policy fingerprint, their eligibility,
+saved communities/pilots, enabled versus paused pilots, scheduled work and pilots represented in watched systems (including docked
+guests). Legacy system records remain visible with a refresh-on-visit label. Saved totals retain all pilots; they are not Local
+population counts. A top-level refresh updates the snapshot while pilots travel.
+
+Population metadata reuses the provisioning fingerprint and remains cached against its existing membership revision. Scheduled
+counts update when enrollment changes even if no job has executed. Diagnostic reads never advance jobs. Local publication is
+batched as documented in the [social record](social.md#simulated-pilot-local-roster-batches--november-9-2026).
+
+**Automated validation.** The combined chat/population filter passed 150 tests in 60.89 seconds, with tool/solution restore,
+solution build, both Python policy suites and formatting verification passing. See the [social validation record](social.md#simulated-pilot-local-roster-batches--november-9-2026)
+for exact filters and corrected development expectations. Regressions cover authenticated HTML/API fields, unchanged jobs,
+current-versus-old policy preparation records, retained paused totals, real high-density guest/Local agreement, and zero SQL,
+connections, fitting calculations or new chat deliveries across twenty warmed unchanged maintenance/diagnostic reads.
+Existing complete maintenance/two-observer and detached-checkpoint assertions also passed. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Refresh Population after visiting a new system or applying a lower limit and restarting; compare
+saved/paused counts with the pilots visible in the current system.

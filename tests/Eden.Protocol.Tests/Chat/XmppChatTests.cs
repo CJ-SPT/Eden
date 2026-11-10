@@ -18,6 +18,41 @@ namespace Eden.Protocol.Tests.Chat;
 public sealed class XmppChatTests
 {
     [Fact]
+    public async Task SimulatedPopulationBurstsReachAnAlreadyJoinedLocalAsOneCompleteNativeRoster()
+    {
+        using TestWorld world = new();
+        var runtime = world.Services.GetRequiredService<ChatRuntime>();
+        var certificate = world.Services.GetRequiredService<ChatCertificate>();
+        await using var server = world.Services.GetRequiredService<ChatServer>();
+        await server.StartAsync(new(IPAddress.Loopback, 0));
+        Guid session = Guid.NewGuid();
+        runtime.Update(session, new(90000001, "Observer", 1000044, 30000142, 0));
+        await using var client = await NativeClient.ConnectAsync(
+            server.Endpoint!,
+            certificate.Certificate,
+            90000001,
+            runtime.IssueToken(session)
+        );
+        await client.JoinAsync("local_30000142", "ready");
+        await client.UntilAsync(e => (string?)e.Attribute("id") == "ready");
+        Assert.Single(RosterIds((await client.UntilAsync(IsRoster))[^1]));
+        ChatPilot[] pilots = Enumerable.Range(0, 60).Select(i => new ChatPilot(91000000 + i, $"Bot {i}", 1000044, 30000142, 1)).ToArray();
+        runtime.PublishCapsuleers(pilots);
+        var burst = await client.UntilAsync(IsRoster);
+        var roster = Assert.Single(burst, IsRoster);
+        Assert.Equal(pilots.Select(p => p.Id).Prepend(90000001).Order(), RosterIds(roster));
+        Assert.DoesNotContain(burst, e => e.Name.LocalName == "message");
+        runtime.PublishCapsuleers([pilots[0] with { SystemId = 30000143 }]);
+        var departure = await client.UntilAsync(IsRoster);
+        Assert.Contains(departure, e => IsControl(e, "leave", pilots[0].Id));
+        Assert.DoesNotContain(pilots[0].Id, RosterIds(departure[^1]));
+        Assert.Equal(60, RosterIds(departure[^1]).Length);
+        await client.JoinAsync("local_30000142", "retry");
+        await client.UntilAsync(e => (string?)e.Attribute("id") == "retry");
+        Assert.Equal(60, RosterIds((await client.UntilAsync(IsRoster))[^1]).Length);
+    }
+
+    [Fact]
     public async Task InitialAvailabilityUsesTheAuthenticatedResourceAndDoesNotEchoClientSuppliedIdentity()
     {
         using TestWorld world = new();

@@ -44,6 +44,7 @@ internal static class ConfigurationValidation
             throw new InvalidDataException("Every typed settings group is required.");
         }
         WorldTuningRules.Validate(settings);
+        Eden.Gameplay.Capsuleers.CapsuleerPopulationRules.Validate(settings.Capsuleers);
         var supply = settings.DevelopmentSupply;
         NpcSupplyRules.ValidateStock(supply.InstitutionalStock);
         if (

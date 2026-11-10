@@ -1,0 +1,26 @@
+syntax = "proto3";
+package eve_public.sovereignty.resource.planet.api;
+option csharp_namespace = "Eden.Protocol.Gateway.CelestialResources.Planets";
+
+import "semanticversion.proto";
+import "celestial_resource_values.proto";
+
+message GetAllDefinitionsRequest {
+  oneof version {
+    eve_public.semanticversion.Specification known_version = 1;
+    bool no_known_version = 2;
+  }
+}
+
+message GetAllDefinitionsResponse {
+  repeated eden.gateway.celestial.PlanetDefinition definitions = 1;
+  eve_public.semanticversion.Specification version = 2;
+}
+
+message GetDefinitionsVersionRequest {
+  eve_public.semanticversion.Specification version = 1;
+}
+
+message GetDefinitionsVersionResponse {
+  repeated eden.gateway.celestial.PlanetDefinition definitions = 1;
+}

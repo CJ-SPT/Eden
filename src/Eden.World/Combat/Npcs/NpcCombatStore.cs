@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
@@ -70,7 +71,11 @@ internal sealed class NpcCombatStore(
         var pilots = world
             .Pilots.Include(p => p.ActiveShip)
                 .ThenInclude(s => s.Position)
-            .Where(p => pilotIds.Contains(p.Id) && p.ActiveShip.Position != null)
+            .Where(p =>
+                pilotIds.Contains(p.Id)
+                && p.ActiveShip.Position != null
+                && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == p.Id)
+            )
             .ToArray();
         var targets = pilots
             .Where(p => requested.Contains(new(p.Id, p.ActiveShipId)))

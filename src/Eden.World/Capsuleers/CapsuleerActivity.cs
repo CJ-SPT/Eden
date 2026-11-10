@@ -18,6 +18,16 @@ internal sealed record CapsuleerClockCheckpoint(long ElapsedTicks)
 internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clock)
 {
     private HumanActivity? _activity;
+    private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    internal Task Changed => _changed.Task;
+
+    internal void Wake()
+    {
+        var previous = _changed;
+        _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        previous.TrySetResult();
+    }
 
     private HumanActivity Activity
     {
@@ -46,6 +56,11 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
 {
     private readonly CapsuleerActivity _standalone = new(database, clock);
 
+    // Scheduling reads this under the same owner as the queue and activity clock.
+    internal Task Changed => (LiveWorld.Find(database.Path)?.CapsuleerActivity ?? _standalone).Changed;
+
+    internal void Wake() => (LiveWorld.Find(database.Path)?.CapsuleerActivity ?? _standalone).Wake();
+
     public HumanActivitySnapshot Read()
     {
         var live = LiveWorld.Find(database.Path);
@@ -65,6 +80,7 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
         {
             var activity = live?.CapsuleerActivity ?? _standalone;
             activity.Update(session, systemId, pilotId);
+            activity.Wake();
             if (live is not null)
             {
                 live.ObjectsChanged();

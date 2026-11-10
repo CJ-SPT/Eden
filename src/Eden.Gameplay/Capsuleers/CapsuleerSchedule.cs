@@ -5,6 +5,12 @@ namespace Eden.Gameplay.Capsuleers;
 
 public sealed record CapsuleerSchedule(long DueTicks, CapsuleerAction Action);
 
+public sealed record CapsuleerWakePlan(TimeSpan? Delay, Task Changed)
+{
+    public static CapsuleerWakePlan Polling { get; } =
+        new(CapsuleerJobQueue.WakeInterval, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task);
+}
+
 public sealed record CapsuleerBatch(CapsuleerTurn Turn, IReadOnlyList<MinerObservation> Miners, IReadOnlyList<HaulerObservation> Haulers)
 {
     public long Revision { get; init; }
@@ -17,12 +23,26 @@ public interface ICapsuleerScheduler
     IReadOnlyList<CapsuleerJob> Jobs();
     MinerObservation? Miner(long pilotId);
     HaulerObservation? Hauler(long pilotId);
+    CapsuleerWakePlan NextWake() => CapsuleerWakePlan.Polling;
 }
 
 public static class CapsuleerScheduleRules
 {
     // The native NavigationState warp sampler caps exit speed at 100 m/s.
     public const double MaximumWarpExitSpeed = 100;
+
+    public static TimeSpan? WakeDelay(long? dueTicks, long elapsedTicks, bool active)
+    {
+        if (dueTicks is not { } due)
+        {
+            return null;
+        }
+        if (due <= elapsedTicks)
+        {
+            return TimeSpan.Zero;
+        }
+        return active ? TimeSpan.FromTicks(due - elapsedTicks) : null;
+    }
 
     // Subwarp collision and threatened work retain the shared one-second rules.
     // Background warps use the same analytic course at their exact exit boundary.
@@ -39,7 +59,9 @@ public static class CapsuleerScheduleRules
         return Next(work.ActiveTicks, work.DueTicks, action, !inSpace && work.Activity == MinerActivity.Waiting);
     }
 
-    public static CapsuleerSchedule Next(HaulerProgress work, bool inSpace)
+    public static CapsuleerSchedule Next(HaulerProgress work, bool inSpace) => Next(work, inSpace, false);
+
+    public static CapsuleerSchedule Next(HaulerProgress work, bool inSpace, bool background)
     {
         var action = work.Activity switch
         {
@@ -52,7 +74,9 @@ public static class CapsuleerScheduleRules
             work.ActiveTicks,
             work.DueTicks,
             action,
-            work.Activity == HaulerActivity.Inbound || !inSpace && work.Activity is HaulerActivity.Waiting or HaulerActivity.Docked
+            work.Activity == HaulerActivity.Inbound
+                || !inSpace && work.Activity is HaulerActivity.Waiting or HaulerActivity.Docked
+                || background && work.Defense is null && work.Activity == HaulerActivity.Waiting
         );
     }
 

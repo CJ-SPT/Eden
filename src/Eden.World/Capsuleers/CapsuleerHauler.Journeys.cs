@@ -15,7 +15,7 @@ internal sealed partial class CapsuleerHauler
             .Select(threat => threat.SystemId)
             .ToHashSet();
         var agent = _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!;
-        bool homeRoster = agent.Slot < TrafficJourneyRules.HomeRosterSlots;
+        bool homeRoster = agent.Slot < CapsuleerPopulationRules.MaximumHomeRosterSlots;
         int home = homeRoster
             ? _operation
                 .Catalog.Definitions.StationsInSystem(agent.CommunitySystemId)

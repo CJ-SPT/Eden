@@ -40,6 +40,10 @@ internal static class ConfigurationDisplay
         ["npcPopulation.mining"] = "New mining populations",
         ["npcPopulation.majorThreatAnomalies"] = "Major Threat anomaly tiers",
         ["economy.progressiveMarkets"] = "Progressive regional markets",
+        ["capsuleers.enabled"] = "Simulated pilots",
+        ["capsuleers.miners"] = "Simulated miners",
+        ["capsuleers.trafficMultiplier"] = "Station traffic density",
+        ["capsuleers.gateVisitors"] = "Visitors per watched gate",
         ["capsuleers.globalProvisioning"] = "Legacy global provisioning preference",
         ["progression.grantStartingSkills"] = "Starting skills for new pilots",
         ["simulation.checkpointSeconds"] = "Checkpoint interval (seconds)",
@@ -49,6 +53,7 @@ internal static class ConfigurationDisplay
 
     private static readonly HashSet<string> s_multipliers =
     [
+        "capsuleers.trafficMultiplier",
         "resources.oreYieldMultiplier",
         "resources.iceYieldMultiplier",
         "resources.gasYieldMultiplier",

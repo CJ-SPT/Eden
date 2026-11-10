@@ -101,6 +101,11 @@ Calculated ship and turret fits stay in a bounded per-world memory cache, with t
 
 ### Resident world and background saves
 
+Capsuleer maintenance uses one-shot waits for the earliest job plus owner-coordinated input-change signals.
+Nearby deadlines retain the existing 50 ms batching resolution; idle and paused queues need no timer.
+See [deadline-driven maintenance](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026) for wake,
+revision, retry, shutdown and checkpoint guarantees.
+
 Normal server startup loads the saved world into an authoritative SQLite image in RAM. Existing gameplay transactions, constraints and revision triggers operate on that image. A background worker captures committed state every 15 seconds and writes a complete checkpoint after releasing the world owner. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning.
 
 Operations that need both the resident owner and `WorldDatabase.MotionLock` acquire the owner first, then the movement lock. NPC contacts, anomaly reads/arrival/directory, electronic warfare, movement and translocation follow this order. The bot scheduler owns the world while executing role jobs; a competing human update must not hold the movement lock while waiting for that owner. The November 8 login freeze exposed this inversion; contention tests exercise the read paths without leaving blocked threads behind.

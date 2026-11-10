@@ -16,6 +16,28 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class WorldSettingsPageTests
 {
     [Fact]
+    public void PopulationControlsRoundTripPreserveLegacyPreferencesAndValidateRanges()
+    {
+        CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9);
+        var form = SettingsForm.From(new() { Capsuleers = policy });
+        Assert.Equal(policy, form.Build().Capsuleers);
+        Assert.Equal(new CapsuleerPopulationPolicy(), SettingsForm.From(new()).Build().Capsuleers);
+        form.TrafficMultiplier = -0.1m;
+        form.GateVisitors = 17;
+        List<ValidationResult> errors = [];
+        Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.TrafficMultiplier)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.GateVisitors)));
+        form.TrafficMultiplier = 10;
+        form.GateVisitors = 16;
+        Assert.True(Validator.TryValidateObject(form, new(form), [], true));
+        var changes = ConfigurationDisplay.Compare(new(), new() { Settings = form.Build() });
+        Assert.Contains(changes, c => c.Field == "Simulated pilots" && c.After == "Off");
+        Assert.Contains(changes, c => c.Field == "Station traffic density" && c.After == "10×");
+        Assert.Contains(changes, c => c.Field == "Visitors per watched gate" && c.After == "16");
+    }
+
+    [Fact]
     public void ActivitySwitchesRetainEditsAndDiscardRestoresTheSavedPendingDraft()
     {
         WorldConfigurationDraft pending = new()

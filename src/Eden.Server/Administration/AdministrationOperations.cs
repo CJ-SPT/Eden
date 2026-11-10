@@ -22,7 +22,8 @@ internal sealed record AdminPopulationSnapshot(
     CapsuleerPopulationSummary Population,
     CapsuleerRuntimeSummary Runtime,
     int MaterializedPilots,
-    IReadOnlyList<CapsuleerSystemSummary> Systems
+    IReadOnlyList<CapsuleerSystemSummary> Systems,
+    CapsuleerPopulationPolicy Policy
 );
 
 internal sealed record AdminRecordView(CatalogStoredRecord Record, IReadOnlyList<CatalogRelatedRecord> Relationships);
@@ -64,7 +65,13 @@ internal sealed partial class AdministrationOperations(
     internal async Task<AdminPopulationSnapshot> Population(ClaimsPrincipal user)
     {
         await Authorize(user);
-        return new(population.Summary(), capsuleers.Read(), scene.MaterializedPilots, population.Systems());
+        return new(
+            population.Summary(),
+            capsuleers.Read(),
+            scene.MaterializedPilots,
+            population.Systems(),
+            configuration.Read().Active.Draft.Settings.Capsuleers
+        );
     }
 
     internal async Task<ConfigurationRevision> Revision(ClaimsPrincipal user, long id)

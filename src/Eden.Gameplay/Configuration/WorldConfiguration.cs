@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Market;
 
 namespace Eden.Gameplay.Configuration;
@@ -51,7 +52,13 @@ public sealed record NpcPopulationPolicy(
 
 public sealed record ProgressionPolicy(bool GrantStartingSkills = true, decimal KillSkillPointMultiplier = 1);
 
-public sealed record CapsuleerPopulationPolicy(bool GlobalProvisioning = true);
+public sealed record CapsuleerPopulationPolicy(
+    bool GlobalProvisioning = true,
+    bool Enabled = true,
+    bool Miners = true,
+    decimal TrafficMultiplier = 1,
+    int GateVisitors = TrafficJourneyRules.GateVisitorCount
+);
 
 public sealed record SimulationPolicy(int CheckpointSeconds = 15, int MarketPollMilliseconds = 1000, int ResourceCheckSeconds = 60);
 

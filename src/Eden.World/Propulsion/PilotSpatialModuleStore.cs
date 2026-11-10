@@ -1,3 +1,4 @@
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Drones;
@@ -249,6 +250,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             ).ToHashSet();
             blocked = world
                 .Ships.Include(s => s.Position)
+                .Where(s => !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == s.OwnerId))
                 .Where(s => s.Id != ship.Id && s.Position != null)
                 .AsEnumerable()
                 .Any(s =>

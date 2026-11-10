@@ -1,16 +1,20 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.World.Configuration;
 
 namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
+    private readonly WorldConfigurationSlot _populationSettings = WorldConfigurationSlot.For(database.Path);
     private readonly Dictionary<long, long> _inboundLanes = [];
     private readonly HashSet<(long Gate, bool BothSystemsObserved)> _deferredInbound = [];
     private readonly HashSet<long> _travelers = [];
 
     private HashSet<long> ReconcileInbound(HumanActivitySnapshot activity)
     {
-        foreach (var gate in gateWatch.Read(activity))
+        var policy = _populationSettings.Settings.Capsuleers;
+        IReadOnlyList<WatchedTrafficGate> gates = policy.Enabled && policy.GateVisitors > 0 ? gateWatch.Read(activity) : [];
+        foreach (var gate in gates)
         {
             long key = Math.Min(gate.ArrivalGateId, gate.DepartureGateId);
             bool bothObserved = activity.ActiveSystems.Contains(gate.SourceSystemId);
@@ -19,7 +23,7 @@ internal sealed partial class CapsuleerScheduler
                 continue;
             }
             long? lastPilot = null;
-            for (int visitor = 0; visitor < TrafficJourneyRules.GateVisitorCount; visitor++)
+            for (int visitor = 0; visitor < policy.GateVisitors; visitor++)
             {
                 var prepared = new CapsuleerProvisioner(database, clock).EnsureInbound(gate, bothObserved, visitor);
                 if (prepared is not long pilot)
@@ -41,6 +45,10 @@ internal sealed partial class CapsuleerScheduler
         }
         // Gate watches introduce bounded station journeys. Existing journeys keep their
         // direction and deadlines independently of which side is subsequently watched.
-        return _travelers.Where(pilot => !_haulers[pilot].IsRatting || activity.ActiveSystems.Contains(_locations[pilot])).ToHashSet();
+        return _travelers
+            .Where(pilot =>
+                !_suspended.Contains(pilot) && (!_haulers[pilot].IsRatting || activity.ActiveSystems.Contains(_locations[pilot]))
+            )
+            .ToHashSet();
     }
 }

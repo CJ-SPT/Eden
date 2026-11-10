@@ -32,6 +32,16 @@ internal sealed class SettingsForm
     public bool MajorThreatAnomalies { get; set; }
     public bool StartingSkills { get; set; }
     public bool GlobalProvisioning { get; set; }
+    public bool SimulatedPilots { get; set; }
+    public bool SimulatedMiners { get; set; }
+
+    [Range(typeof(decimal), "0", "10")]
+    [Display(Name = "Station traffic density")]
+    public decimal TrafficMultiplier { get; set; }
+
+    [Range(0, 16)]
+    [Display(Name = "Visitors per watched gate")]
+    public int GateVisitors { get; set; }
 
     [Range(1, 300)]
     public int CheckpointSeconds { get; set; }
@@ -128,6 +138,10 @@ internal sealed class SettingsForm
             MajorThreatAnomalies = settings.NpcPopulation.MajorThreatAnomalies,
             StartingSkills = settings.Progression.GrantStartingSkills,
             GlobalProvisioning = settings.Capsuleers.GlobalProvisioning,
+            SimulatedPilots = settings.Capsuleers.Enabled,
+            SimulatedMiners = settings.Capsuleers.Miners,
+            TrafficMultiplier = settings.Capsuleers.TrafficMultiplier,
+            GateVisitors = settings.Capsuleers.GateVisitors,
             CheckpointSeconds = settings.Simulation.CheckpointSeconds,
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
             ResourceCheckSeconds = settings.Simulation.ResourceCheckSeconds,
@@ -150,7 +164,7 @@ internal sealed class SettingsForm
             Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
             Progression = new(StartingSkills, KillSkillPointMultiplier),
-            Capsuleers = new(GlobalProvisioning),
+            Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
         };
 

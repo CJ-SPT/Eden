@@ -22,11 +22,13 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock, I
     private readonly Dictionary<string, PendingToken> _tokens = [];
     private readonly Dictionary<Guid, Channel<ChatDelivery>> _queues = [];
 
-    internal void PublishCapsuleer(ChatPilot pilot)
+    internal void PublishCapsuleer(ChatPilot pilot) => PublishCapsuleers([pilot]);
+
+    internal void PublishCapsuleers(IReadOnlyList<ChatPilot> pilots)
     {
         lock (_gate)
         {
-            Dispatch(_world.UpdateCapsuleer(pilot));
+            Dispatch(_world.UpdateCapsuleers(pilots));
         }
     }
 

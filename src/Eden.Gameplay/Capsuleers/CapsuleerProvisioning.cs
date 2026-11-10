@@ -30,11 +30,20 @@ public sealed record CapsuleerSystemSummary(
     int? HomeStationId,
     int? DestinationStationId,
     bool Provisioned
-);
+)
+{
+    public bool CurrentPolicy { get; init; }
+}
 
 public sealed record CapsuleerProvisioningTurn(int RegisteredSystems, int CreatedCommunities, int PendingCommunities);
 
-public sealed record CapsuleerPopulationSummary(int RegisteredSystems, int EligibleSystems, int Communities, int Agents, long WorldSeed);
+public sealed record CapsuleerPopulationSummary(int RegisteredSystems, int EligibleSystems, int Communities, int Agents, long WorldSeed)
+{
+    public int PausedAgents { get; init; }
+    public int EnabledAgents => Agents - PausedAgents;
+    public int PreparedSystems { get; init; }
+    public int PreparedEligibleSystems { get; init; }
+}
 
 public interface ICapsuleerProvisioning
 {
@@ -43,7 +52,7 @@ public interface ICapsuleerProvisioning
 
 public static class CapsuleerProvisioningRules
 {
-    public const int Version = 4;
+    public const int Version = 5;
     public const int StaggerMilliseconds = 30_000;
     public const double MinimumSecurity = 0.45;
     private static readonly string[] GivenNames =

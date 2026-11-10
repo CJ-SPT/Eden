@@ -34,6 +34,9 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                 a.Slot,
             })
             .IsUnique();
+        var suspended = model.Entity<SavedCapsuleerSuspension>();
+        suspended.ToTable("WorldCapsuleerSuspension").HasKey(s => s.PilotId);
+        suspended.HasOne<SavedCapsuleerAgent>().WithMany().HasForeignKey(s => s.PilotId);
         var jobs = model.Entity<SavedCapsuleerJob>();
         jobs.ToTable("WorldCapsuleerJob").HasKey(j => j.PilotId);
         jobs.HasOne<SavedCapsuleerAgent>().WithMany().HasForeignKey(j => j.PilotId);
@@ -59,6 +62,9 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                 Career INTEGER NOT NULL CHECK(Career IN (1,2)), FounderShipId INTEGER NOT NULL,
                 FounderModuleId INTEGER NOT NULL, StartingCents INTEGER NOT NULL CHECK(StartingCents>=0),
                 Slot INTEGER NOT NULL DEFAULT 0 CHECK(Slot>=0));
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerSuspension(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldCapsuleerAgent(PilotId),
+                StartedTicks INTEGER NOT NULL CHECK(StartedTicks>=0));
             CREATE TABLE IF NOT EXISTS WorldCapsuleerJob(
                 PilotId INTEGER PRIMARY KEY REFERENCES WorldCapsuleerAgent(PilotId),
                 Revision INTEGER NOT NULL CHECK(Revision>=0), Sequence INTEGER NOT NULL CHECK(Sequence>=0),
@@ -209,6 +215,9 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             }
             using WorldDbContext world = new(database.Path);
             var communities = world.Set<SavedCapsuleerPopulation>().Select(c => c.SystemId).ToHashSet();
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            long seed = world.Set<SavedCapsuleerProvisioning>().Select(p => p.WorldSeed).SingleOrDefault();
+            string fingerprint = CapsuleerProvisioner.Fingerprint(database, catalog, seed, world.Settings.Capsuleers);
             var systems = world
                 .Set<SavedCapsuleerSystem>()
                 .AsNoTracking()
@@ -220,15 +229,23 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                     s.HomeStationId,
                     s.DestinationStationId,
                     communities.Contains(s.SystemId)
-                ))
+                )
+                {
+                    CurrentPolicy = s.PolicyVersion == CapsuleerProvisioningRules.Version && s.CatalogFingerprint == fingerprint,
+                })
                 .ToArray();
             CapsuleerPopulationSummary summary = new(
                 systems.Length,
                 systems.Count(s => s.Eligibility == CapsuleerEligibility.Eligible),
                 communities.Count,
                 world.Set<SavedCapsuleerAgent>().Count(),
-                world.Set<SavedCapsuleerProvisioning>().Select(p => p.WorldSeed).SingleOrDefault()
-            );
+                seed
+            )
+            {
+                PausedAgents = world.Set<SavedCapsuleerSuspension>().Count(),
+                PreparedSystems = systems.Count(s => s.CurrentPolicy),
+                PreparedEligibleSystems = systems.Count(s => s.CurrentPolicy && s.Eligibility == CapsuleerEligibility.Eligible),
+            };
             var metadata = new Metadata(live?.CapsuleerRevision ?? 0, summary, Array.AsReadOnly(systems));
             if (live is not null)
             {

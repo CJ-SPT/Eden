@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Eden.Data.Catalog;
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
@@ -438,7 +439,12 @@ internal sealed partial class PilotDroneStore(
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return world.Set<WorldDrone>().Where(d => d.SystemId == systemId).AsEnumerable().Select(d => Contact(world, catalog, d)).ToArray();
+        return world
+            .Set<WorldDrone>()
+            .Where(d => d.SystemId == systemId && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == d.PilotId))
+            .AsEnumerable()
+            .Select(d => Contact(world, catalog, d))
+            .ToArray();
     }
 
     public bool WasDestroyed(long droneId)

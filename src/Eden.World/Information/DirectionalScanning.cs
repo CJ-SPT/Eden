@@ -1,3 +1,4 @@
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Drones;
@@ -83,6 +84,7 @@ internal sealed partial class PilotInformationStore
         foreach (
             var ship in world
                 .Ships.Include(s => s.Position)
+                .Where(s => !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == s.OwnerId))
                 .AsNoTracking()
                 .Where(s => s.Position != null && (s.Position.SystemId == null || s.Position.SystemId == system))
         )
@@ -115,7 +117,7 @@ internal sealed partial class PilotInformationStore
         var drones =
             from drone in world.Set<WorldDrone>().AsNoTracking()
             join item in world.Set<OwnedItem>() on drone.ItemId equals item.Id
-            where drone.SystemId == system
+            where drone.SystemId == system && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == drone.PilotId)
             select new
             {
                 drone.ItemId,

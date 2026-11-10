@@ -1,0 +1,11 @@
+syntax = "proto3";
+package eve_public.sovereignty.resource.star.api;
+option csharp_namespace = "Eden.Protocol.Gateway.CelestialResources.Stars";
+
+import "celestial_resource_values.proto";
+
+message GetAllConfigurationsRequest {}
+
+message GetAllConfigurationsResponse {
+  repeated eden.gateway.celestial.StarConfiguration configurations = 1;
+}

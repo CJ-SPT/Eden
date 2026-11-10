@@ -47,6 +47,14 @@ public static class CapsuleerEncounterRules
         };
     }
 
+    public static int Haulers(
+        long seed,
+        int systemId,
+        int gates,
+        int stations,
+        Eden.Gameplay.Configuration.CapsuleerPopulationPolicy policy
+    ) => CapsuleerPopulationRules.Traffic(Haulers(seed, systemId, gates, stations), seed, systemId, policy);
+
     public static HaulerEncounterOpening TrafficOpening(long seed, int systemId, int slot, int count)
     {
         // Every busy cast has a ship at the gate and another near the station on its first visit.
