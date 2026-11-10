@@ -65,8 +65,13 @@ public sealed class CapsuleerDefenseLifecycleTests
         var controller = f.Db.Services.GetRequiredService<CapsuleerDefense>();
         var pilot = f.Db.Store.FindPilot(1000001)!;
         NavigationState navigation = new();
-        f.Db.Services.GetRequiredService<IPilotTargetLocks>().Add(enemyShip, f.ShipId);
-        Assert.Null(controller.Advance(pilot, navigation, null, f.Clock.Now, 0, []).State);
+        var locks = f.Db.Services.GetRequiredService<IPilotTargetLocks>();
+        locks.Add(enemyShip, f.ShipId);
+        locks.Add(f.ShipId, enemyShip);
+        CapsuleerDefenseState previous = new() { ShipId = f.ShipId, Locks = [new(enemyShip, f.Clock.Now)] };
+        Assert.Null(controller.Advance(pilot, navigation, previous, f.Clock.Now, 0, []).State);
+        Assert.True(locks.Contains(enemyShip, f.ShipId));
+        Assert.False(locks.Contains(f.ShipId, enemyShip));
         var tackle = f.Db.Services.GetRequiredService<IPilotTackle>();
         tackle.Activate(
             enemy,

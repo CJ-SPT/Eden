@@ -2,6 +2,50 @@
 
 [Protocol index](../protocol.md)
 
+## Simulated-pilot target lock retention, November 9, 2026
+
+Peaceful simulated pilots no longer clear other pilots' completed target locks during defense maintenance.
+`CapsuleerDefense.Stop` previously called `RemoveShip`, which removes every incoming and outgoing lock edge.
+An unthreatened pilot runs this cleanup repeatedly, so a player's scan could complete and then immediately lose
+its shared lock before a weapon activation. Stopping defense now removes only the outgoing locks recorded in
+that defense state. Changing the simulated pilot's hull retains the existing full old-ship cleanup.
+
+An aligning pilot remains targetable while its ship is in range. Actual warp entry still invalidates the target,
+sends the normal `OnTarget("lost")` notification and stops weapon repetition. Docking, gates, cloak, range,
+targeting limits and weapon legality continue through their existing owners. There is no save migration.
+
+The automated regression publishes a simulated hauler through the real shared scene, completes the native
+`dogmaIM.AddTarget` request, runs three peaceful defense/publication cycles with a controlled clock, activates
+a real fitted weapon during alignment, and verifies lock loss and weapon cleanup on warp entry. Both resident
+and database-backed world variants reproduced the premature lock loss before the fix and passed afterward.
+A defense-lifecycle regression also asserts that outgoing cleanup preserves the player's incoming lock.
+
+Gameplay reference: [EVE University targeting](https://wiki.eveuniversity.org/Targeting). The unchanged Destiny
+movement boundary was checked against [Carbon Ball.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp).
+Build-3662168 targeting RPC and `OnTarget` forms reuse the existing named protocol models and pinned fixture
+catalog; this correction changes shared lock ownership, without new wire fields or movement rules.
+
+**Automated validation:** The initial exact-method filter
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerDefenseTests.NativeLockSurvivesPeacefulDefenseAndAlignmentUntilTheTargetEntersWarp`
+failed both variants at the retained-lock assertion before the correction (11.38 s build, 6.69 s tests).
+The first corrected run passed both variants (5.71 s build, 6.95 s tests).
+Final tool/solution restore and solution build passed with zero warnings/errors in 6.44 s. The affected test
+run passed 104/104 cases in 40.09 s with this filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerDefense|FullyQualifiedName~Eden.Protocol.Tests.Targeting.TargetingTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotCombatTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.PilotTurretTests
+```
+
+Both Python policy suites passed (8 catalog and 9 formatting-policy cases, 1.02 s). Changed documentation
+encoding, whitespace, links, the new section anchor and `git diff --check` passed. Formatting/style and the
+140-character source-width verification passed in 22.27 s. Full .NET regression was not requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The user's report that simulated pilots
+could be locked and then immediately unlocked, including while leaving a station, prompted this correction.
+
+**Optional maintainer checks:** Lock a nearby simulated pilot during station departure and activate a weapon
+before actual warp entry, subject to the ordinary safety and aggression rules; confirm the lock clears on warp.
+
 ## Deadline-driven maintenance, November 9, 2026
 
 The resident host now waits for the next queued job or an input-change signal instead of polling traffic every 50 ms.

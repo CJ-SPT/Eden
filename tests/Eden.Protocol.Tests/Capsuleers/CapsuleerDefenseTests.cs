@@ -11,7 +11,10 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Combat;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
@@ -28,6 +31,80 @@ public sealed class CapsuleerDefenseTests
     private const long Attacker = 90000002;
     private const long AttackerShip = 1000000000002;
     private const int SystemId = 30000144;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeLockSurvivesPeacefulDefenseAndAlignmentUntilTheTargetEntersWarp(bool resident)
+    {
+        using NpcCombatTests.Fixture f = new(liveWorld: resident, useTestClock: true);
+        ConcordTests.Catalog(f, 0);
+        var services = f.Db.Services;
+        var space = services.GetRequiredService<SharedSpace>();
+        var locks = services.GetRequiredService<SharedTargetLocks>();
+        var controller = services.GetRequiredService<CapsuleerDefense>();
+        var scene = services.GetRequiredService<ICapsuleerScene>();
+        var target = f.Db.Store.FindPilot(1000002)!;
+        NavigationState navigation = new();
+        var destination = target.Position! + new SpacePosition(1_000_000, 0, 0);
+        Assert.True(navigation.StartWarpPoint(target.ShipId, target.Flight, target.Position!, destination, 0, 0, 0));
+        void Publish() =>
+            scene.Publish(
+                new HaulerObservation(
+                    target,
+                    new(HaulerActivity.Flying, space.Stamp(f.Clock), 0, target.ShipId, target.StationId, 0, navigation.Capture()),
+                    f.Health.Read(target.PilotId, f.Clock.Now)
+                )
+            );
+        Publish();
+        using PilotCallContext context = new(
+            1000001,
+            f.Pilot.Account,
+            [f.Pilot],
+            pilot => new(f.Db.Store, pilot, f.Clock, space, [], health: f.Health),
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(f.Pilot);
+        context.Flight.Snapshot();
+        using TargetingHandler targeting = new(f.Clock, services.GetRequiredService<IPilotFitting>(), locks);
+        var request = Assert.IsType<PilotCallResult.Success>(targeting.Call(context, "dogmaIM", "AddTarget", [target.ShipId]));
+        var reply = Assert.IsType<TargetLockReply>(request.Reply);
+        f.Clock.Seconds += 10;
+        targeting.Advance(context);
+        Assert.True(targeting.IsLocked(target.ShipId));
+        Assert.True(reply.Completion!.IsCompletedSuccessfully);
+        context.Notifications.Clear();
+        for (int turn = 0; turn < 3; turn++)
+        {
+            f.Clock.Seconds++;
+            Assert.Null(controller.Advance(target, navigation, null, f.Clock.Now, turn, []).State);
+            Publish();
+            targeting.Advance(context);
+            Assert.True(targeting.IsLocked(target.ShipId));
+            Assert.True(locks.Contains(context.Pilot.ShipId, target.ShipId));
+            Assert.NotNull(navigation.WarpDestination);
+            Assert.Null(navigation.Warp);
+        }
+        Assert.Empty(context.Notifications);
+        CombatHandler weapons = new(f.Clock, f.Weapons, targeting);
+        Assert.Same(PilotCallResult.None, weapons.Call(context, "dogmaIM", "Activate", [f.Module, "targetAttack", target.ShipId, 100L]));
+        Assert.Equal(target.ShipId, weapons.ActiveEffect(context.Pilot, f.Module)!.TargetId);
+        navigation.SetVelocity((destination - target.Position!).Unit * target.Flight.MaxSpeed);
+        var departure = navigation.Advance(target.ShipId, 1, target.Flight, target.Position!, _ => null, []);
+        target = target with { Position = departure.Position };
+        Assert.NotNull(navigation.Warp);
+        Publish();
+        targeting.Advance(context);
+        weapons.Advance(context);
+        Assert.False(targeting.IsLocked(target.ShipId));
+        Assert.False(locks.Contains(context.Pilot.ShipId, target.ShipId));
+        Assert.Contains(
+            context.Notifications,
+            notification => notification.Name == "OnTarget" && Equals(notification.Arguments[0], "lost")
+        );
+        Assert.Null(weapons.ActiveEffect(context.Pilot, f.Module));
+    }
 
     [Theory]
     [InlineData(0)]

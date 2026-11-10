@@ -739,7 +739,12 @@ internal sealed class CapsuleerDefense(
 
     private void Stop(long pilot, CapsuleerDefenseState state)
     {
-        locks.RemoveShip(state.ShipId);
+        // Defense owns outgoing locks. Clearing incoming locks here makes peaceful pilots
+        // lose every player's lock on each maintenance update, including during alignment.
+        foreach (var scan in state.Locks)
+        {
+            locks.Remove(state.ShipId, scan.TargetId);
+        }
         foreach (var cycle in state.Cycles)
         {
             StopModule(pilot, state.ShipId, cycle);
