@@ -107,9 +107,10 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 clock.Seconds++;
                 using (var metrics = SessionPerformance.Begin("paid miner waiting", output.WriteLine, force: true)!)
                 {
-                    Assert.Null(worker.Tick());
-                    Assert.Equal(0, metrics.Commands);
-                    Assert.Equal(0, metrics.Connections);
+                    var remote = Assert.IsType<MinerObservation>(worker.Tick());
+                    Assert.Equal(work.Work.Cycles, remote.Work.Cycles);
+                    Assert.Equal(deposit, remote.Work.TargetId);
+                    stamp = remote.Work.Stamp;
                     Assert.Equal(0, metrics.FittingCalculations);
                 }
                 UpdateSelection(host, Second, null);
@@ -142,10 +143,8 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 UpdateSelection(host, First, new(90000001, "Eden Pilot", 1000044, Kisogo, 0));
                 clock.Seconds++;
                 var resumed = Assert.IsType<MinerObservation>(worker.Tick());
-                Assert.Equal(
-                    (actor, stamp + 1, paidUntil, deposit),
-                    (resumed.Pilot.PilotId, resumed.Work.Stamp, resumed.Work.DueStamp, resumed.Work.TargetId)
-                );
+                Assert.Equal((actor, paidUntil, deposit), (resumed.Pilot.PilotId, resumed.Work.DueStamp, resumed.Work.TargetId));
+                Assert.True(resumed.Work.Stamp > stamp);
                 using WorldDbContext saved = new(database.Path);
                 Assert.Equal(before, saved.Set<WorldAsteroid>().AsNoTracking().Single(a => a.Id == deposit).Quantity);
                 var docked = Until(MinerActivity.Docked, worker, clock);

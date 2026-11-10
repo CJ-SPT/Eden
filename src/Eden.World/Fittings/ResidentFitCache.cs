@@ -27,6 +27,80 @@ internal sealed class ResidentFitCache : IDisposable
     private readonly Queue<(long Pilot, long Ship)> _snapshotOrder = [];
     private readonly string _path;
     private readonly object _gate = new();
+    private HashSet<long> _pinned = [];
+
+    internal void Pin(IEnumerable<long> pilots)
+    {
+        lock (_gate)
+        {
+            _pinned = pilots.ToHashSet();
+        }
+    }
+
+    internal void ReleasePilot(long pilot)
+    {
+        lock (_gate)
+        {
+            if (_pinned.Contains(pilot))
+            {
+                return;
+            }
+            foreach (var key in _entries.Keys.Where(k => k.PilotId == pilot).ToArray())
+            {
+                _entries.Remove(key);
+            }
+            foreach (var key in _snapshots.Keys.Where(k => k.Pilot == pilot).ToArray())
+            {
+                _snapshots.Remove(key);
+            }
+            var order = _order.Where(_entries.ContainsKey).ToArray();
+            _order.Clear();
+            foreach (var key in order)
+            {
+                _order.Enqueue(key);
+            }
+            var snapshots = _snapshotOrder.Where(_snapshots.ContainsKey).ToArray();
+            _snapshotOrder.Clear();
+            foreach (var key in snapshots)
+            {
+                _snapshotOrder.Enqueue(key);
+            }
+        }
+    }
+
+    private void EvictEntry()
+    {
+        for (int remaining = _order.Count; remaining > 0; remaining--)
+        {
+            var key = _order.Dequeue();
+            if (_pinned.Contains(key.PilotId))
+            {
+                _order.Enqueue(key);
+            }
+            else
+            {
+                _entries.Remove(key);
+                return;
+            }
+        }
+    }
+
+    private void EvictSnapshot()
+    {
+        for (int remaining = _snapshotOrder.Count; remaining > 0; remaining--)
+        {
+            var key = _snapshotOrder.Dequeue();
+            if (_pinned.Contains(key.Pilot))
+            {
+                _snapshotOrder.Enqueue(key);
+            }
+            else
+            {
+                _snapshots.Remove(key);
+                return;
+            }
+        }
+    }
 
     internal ResidentFitCache(WorldDatabase database)
     {
@@ -55,7 +129,7 @@ internal sealed class ResidentFitCache : IDisposable
                 {
                     if (_entries.Count >= MaximumEntries)
                     {
-                        _entries.Remove(_order.Dequeue());
+                        EvictEntry();
                     }
                     _order.Enqueue(pair.Key);
                 }
@@ -82,7 +156,7 @@ internal sealed class ResidentFitCache : IDisposable
                 {
                     if (_snapshots.Count >= MaximumSnapshots)
                     {
-                        _snapshots.Remove(_snapshotOrder.Dequeue());
+                        EvictSnapshot();
                     }
                     _snapshotOrder.Enqueue(pair.Key);
                 }

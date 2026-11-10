@@ -46,7 +46,7 @@ public static class CapsuleerScheduleRules
 
     // Subwarp collision and threatened work retain the shared one-second rules.
     // Background warps use the same analytic course at their exact exit boundary.
-    public static CapsuleerSchedule Next(MinerProgress work, bool inSpace)
+    public static CapsuleerSchedule Next(MinerProgress work, bool inSpace, bool background = false)
     {
         var action = work.Activity switch
         {
@@ -56,6 +56,15 @@ public static class CapsuleerScheduleRules
             MinerActivity.Waiting => CapsuleerAction.Retry,
             _ => CapsuleerAction.Arrival,
         };
+        if (
+            background
+            && work.Defense is null
+            && work.DueTicks > work.ActiveTicks
+            && work.Activity is MinerActivity.Locking or MinerActivity.Mining or MinerActivity.Waiting
+        )
+        {
+            return new(work.DueTicks, action);
+        }
         return Next(work.ActiveTicks, work.DueTicks, action, !inSpace && work.Activity == MinerActivity.Waiting);
     }
 
@@ -86,9 +95,18 @@ public static class CapsuleerScheduleRules
         SpacePosition position,
         StaticSpaceObject target,
         double approachRange
+    ) => BackgroundFlightDeadline(work.Navigation, work.ActiveTicks, flight, position, target, approachRange);
+
+    public static long BackgroundFlightDeadline(
+        NavigationFrame navigation,
+        long activeTicks,
+        FlightProperties flight,
+        SpacePosition position,
+        StaticSpaceObject target,
+        double approachRange
     )
     {
-        double seconds = work.Navigation.WarpDestination is not null
+        double seconds = navigation.WarpDestination is not null
             ? Math.Max(1, Math.Ceiling(flight.InertiaTime * Math.Log(4)))
             : Math.Max(
                 1,
@@ -97,7 +115,7 @@ public static class CapsuleerScheduleRules
                         / Math.Max(1, flight.MaxSpeed)
                 )
             );
-        return checked(work.ActiveTicks + TimeSpan.FromSeconds(seconds).Ticks);
+        return checked(activeTicks + TimeSpan.FromSeconds(seconds).Ticks);
     }
 
     public static long? WarpDeadline(NavigationFrame navigation, FlightProperties flight, long offsetTicks, long activeTicks)

@@ -2,6 +2,12 @@ using Eden.Gameplay.Capsuleers;
 
 namespace Eden.Data.World.Capsuleers;
 
+public sealed class SavedCapsuleerSimulation
+{
+    public int SystemId { get; set; }
+    public long StartedTicks { get; set; }
+}
+
 public sealed class SavedCapsuleerProvisioning
 {
     public int Id { get; set; }

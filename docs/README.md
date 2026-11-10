@@ -8,6 +8,9 @@ structure timing settings, automated validation and the remaining specialized sy
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,
 saved signature counts, known/unknown ice fields and activities with empty directories.
 
+[Tiered simulation and detail retention](protocol/performance.md#tiered-simulation-and-detail-retention-november-10-2026)
+records milestone 4 remote deadlines, resumable activation and safe scene eviction.
+
 [Independent system ownership](protocol/performance.md#independent-system-ownership-november-10-2026)
 records milestone 3 runtime ownership, persistence handoffs, traffic-refresh recovery and concurrent session validation.
 

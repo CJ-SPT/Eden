@@ -201,7 +201,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public async Task EntrySharesMiningAndTrafficWhileOnlyTravelAdvancesOffscreen()
+    public async Task EntrySharesMiningAndTrafficWhileBothProgressOffscreen()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
@@ -232,7 +232,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
             f.Clock.Seconds++;
             worker.Tick();
         }
-        Assert.Equal(before.Single(job => job.PilotId == miner), scheduler.Jobs().Single(job => job.PilotId == miner));
+        Assert.True(scheduler.Jobs().Single(job => job.PilotId == miner).Revision > before.Single(job => job.PilotId == miner).Revision);
         Assert.True(scheduler.Jobs().Single(job => job.PilotId != miner).Revision > before.Single(job => job.PilotId != miner).Revision);
         int calls = 0;
         await host.GetRequiredService<ICapsuleerHandoff>().SynchronizeAsync(Source, () => calls++);
@@ -241,17 +241,19 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         using var returning = presence.Select(Human + 1, Source);
         Assert.Equal(before.Select(j => j.PilotId).Order(), scheduler.Jobs().Select(j => j.PilotId).Order());
         long elapsed = presence.Read().ElapsedTicks;
-        Assert.True(scheduler.Jobs().Single(j => j.PilotId == miner).DueTicks > elapsed);
+        var paidBeforeSampling = scheduler.Miner(miner)!.Work;
         var travelerAfterEntry = scheduler.Jobs().Single(j => j.PilotId != miner);
         // Entry wakes an already-running traveler for current-time sampling, without
-        // replaying its paid action or advancing the paused local miner.
-        Assert.Equal(elapsed, travelerAfterEntry.DueTicks);
+        // replaying its paid action. The miner keeps its remote payment deadline.
         Assert.Equal(travelerBeforeEntry.Sequence, travelerAfterEntry.Sequence);
-        Assert.Equal(travelerBeforeEntry.Revision + 1, travelerAfterEntry.Revision);
+        Assert.True(travelerAfterEntry.Revision >= travelerBeforeEntry.Revision);
         Assert.Equal(MinerActivity.Mining, scheduler.Miner(miner)!.Work.Activity);
-        worker.Tick();
+        host.GetRequiredService<ICapsuleerPresentation>().Refresh();
         Assert.All(scheduler.Jobs(), j => Assert.True(j.DueTicks > elapsed));
-        Assert.Equal(travelerBeforeEntry.Sequence + 1, scheduler.Jobs().Single(j => j.PilotId != miner).Sequence);
+        Assert.Equal(paidBeforeSampling.Cycles, scheduler.Miner(miner)!.Work.Cycles);
+        var settled = scheduler.Jobs().ToArray();
+        worker.Tick();
+        Assert.Equal(settled, scheduler.Jobs());
         await host.GetRequiredService<LiveWorld>().FlushAsync();
     }
 
@@ -393,7 +395,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
             .Agents(Source)
             .Single(agent => agent.Career == CapsuleerCareer.Mining)
             .PilotId;
-        Assert.Equal(before.Single(job => job.PilotId == miner), scheduler.Jobs().Single(job => job.PilotId == miner));
+        Assert.True(scheduler.Jobs().Single(job => job.PilotId == miner).Revision > before.Single(job => job.PilotId == miner).Revision);
         Assert.True(scheduler.Jobs().Single(job => job.PilotId != miner).Revision > before.Single(job => job.PilotId != miner).Revision);
         before = scheduler.Jobs().ToArray();
         using var metrics = SessionPerformance.Begin("unobserved encounters", output.WriteLine, force: true)!;

@@ -9,6 +9,7 @@ using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 
@@ -222,7 +223,19 @@ internal sealed class CapsuleerRatting(
         var result = RattingRules.Assess(health, capacitor, weapons, opponents, support);
         if (_assessments.Count >= MaximumCachedAssessments)
         {
-            _assessments.Clear();
+            var live = LiveWorld.Find(database.Path);
+            var cold = _assessments
+                .Where(p =>
+                    p.Key != pilot.PilotId
+                    && (live is null || live.KnownShipSystem(p.Value.Health.ShipId) is not int system || !live.IsDetailedSystem(system))
+                )
+                .Select(p => p.Key)
+                .Take(1)
+                .ToArray();
+            if (cold.Length != 0)
+            {
+                _assessments.Remove(cold[0]);
+            }
         }
         _assessments[pilot.PilotId] = new(health, capacitor, weapons, opponents, support, result);
         return result;

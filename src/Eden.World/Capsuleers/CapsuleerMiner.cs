@@ -85,6 +85,31 @@ internal sealed class CapsuleerMiner(
     private const double ApproachRange = 500;
     private bool _loaded;
     private bool _background;
+    private bool _detailed = true;
+
+    internal bool RequiresDetail =>
+        WorkOrNull?.Defense is not null || _incoming.Length != 0 || _warpBlocked || Volatile.Read(ref _threatenedShip) != 0;
+    private MinerProgress? WorkOrNull => _work ?? Live?.MinerCheckpoints.GetValueOrDefault(pilotId)?.Work;
+
+    internal void SetDetailed(bool detailed)
+    {
+        if (_detailed && detailed)
+        {
+            return;
+        }
+        _detailed = detailed;
+        if (!detailed)
+        {
+            _objects = [];
+            _obstacles = [];
+        }
+        else if (_loaded && _pilot is not null)
+        {
+            RefreshObjects();
+            _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? _target;
+        }
+    }
+
     private TackleEffect[] _incoming = [];
     private bool _warpBlocked;
     private CapsuleerOperation _operation = null!;
@@ -178,13 +203,19 @@ internal sealed class CapsuleerMiner(
                 Load();
             }
         }
-        _background = background;
-        ObserveDanger(destinyStamp);
+        _background = background && !RequiresDetail;
+        if (!_background)
+        {
+            ObserveDanger(destinyStamp);
+        }
         if (Pilot.Position is not null)
         {
             RefreshTackle();
+            _background = _background && !RequiresDetail;
         }
-        var defended = defense.Advance(Pilot, _navigation, Work.Defense, Now, destinyStamp, _obstacles, escapeFirst: true);
+        var defended = _background
+            ? new CapsuleerDefenseResult(Pilot, null, false, false, false)
+            : defense.Advance(Pilot, _navigation, Work.Defense, Now, destinyStamp, _obstacles, escapeFirst: true);
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
         _work = Work with { Defense = defended.State, LastMotionStamp = defended.HoldsNavigation ? destinyStamp : Work.LastMotionStamp };
@@ -308,7 +339,7 @@ internal sealed class CapsuleerMiner(
     private CapsuleerJob Commit(CapsuleerJob job)
     {
         _work = Work with { Navigation = _navigation.Capture() };
-        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
+        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null, _background);
         if (
             _background
             && Work.Defense is null
@@ -316,6 +347,25 @@ internal sealed class CapsuleerMiner(
         )
         {
             schedule = schedule with { DueTicks = exit };
+        }
+        else if (
+            _background
+            && Work.Defense is null
+            && _target is not null
+            && Work.Activity is MinerActivity.FlyingToBelt or MinerActivity.Returning or MinerActivity.ApproachingOre
+        )
+        {
+            schedule = schedule with
+            {
+                DueTicks = CapsuleerScheduleRules.BackgroundFlightDeadline(
+                    Work.Navigation,
+                    Work.ActiveTicks,
+                    Pilot.Flight,
+                    Pilot.Position!,
+                    _target,
+                    ApproachRange
+                ),
+            };
         }
         schedule = schedule with { DueTicks = CapsuleerDefenseRules.NextDeadline(Work.Defense, Now, Work.ActiveTicks, schedule.DueTicks) };
         var next = job.Next(schedule.DueTicks, schedule.Action);

@@ -130,11 +130,7 @@ internal sealed class CapsuleerShipBlueprints : IDisposable
                 throw new CapsuleerBlueprintNotPreparedException();
             }
             blueprint = Build(catalog, race, hull, profile, mining);
-            if (_blueprints.Count == MaximumBlueprints)
-            {
-                _blueprints.Clear();
-            }
-            _blueprints.Add((race, signature), blueprint);
+            Retain((race, signature), blueprint);
         }
         // The caller reserved the next shared inventory ID for this new ship under
         // the transaction owner. No inventory is inserted before its blueprint.
@@ -231,12 +227,22 @@ internal sealed class CapsuleerShipBlueprints : IDisposable
             return;
         }
         var blueprint = Build(catalog, race, hull, profile, mining);
-        if (_blueprints.Count == MaximumBlueprints)
-        {
-            _blueprints.Clear();
-        }
-        _blueprints.Add((race, signature), blueprint);
+        Retain((race, signature), blueprint);
         _prepared[(race, signature)] = blueprint;
+    }
+
+    private void Retain((int Race, string Fit) key, Blueprint blueprint)
+    {
+        while (_blueprints.Count >= MaximumBlueprints)
+        {
+            var cold = _blueprints.Keys.Where(k => !_prepared.ContainsKey(k)).Take(1).ToArray();
+            if (cold.Length == 0)
+            {
+                break;
+            }
+            _blueprints.Remove(cold[0]);
+        }
+        _blueprints.Add(key, blueprint);
     }
 
     private Blueprint Build(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile, bool mining)

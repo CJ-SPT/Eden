@@ -49,7 +49,7 @@ public sealed record HaulerProgress(
     public int LastMotionStamp { get; init; } = int.MinValue;
 }
 
-public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth Health);
+public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth? Health);
 
 public interface ICapsuleerHauling
 {

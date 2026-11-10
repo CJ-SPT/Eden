@@ -118,6 +118,13 @@ The November 8 movement-lock inversion remains historical evidence for the fixed
 
 [Autonomous role jobs](capsuleer-population.md#shared-role-execution) share the human-active clock and a bounded due queue. Their next action, version and phase progress stay in resident memory between mutation boundaries. Economic and travel transitions use the same feature operations as humans inside one explicit transaction, then publish committed state. Detached checkpoints project immutable job and role progress arrays from the captured generation. World-owned system modes settle jobs before commands and system entry. Native scenes exist only in selected-human systems; background warps and gate delays use their saved event boundaries, while subwarp navigation and danger retain conservative one-second samples. Native flight and role jobs select the same system runtime; economic boundaries retain persistence coordination. See [handoff and recovery](capsuleer-population.md#active-and-background-handoff).
 
+Activated communities retain remote deadlines after departure and restart. Unvisited prepared populations remain
+dormant. Promotion settles relevant work with bounded continuations; demotion projects dirty state and evicts that
+system's detailed caches while preserving compact actor inputs. Combat and unfinished missiles retain detail.
+Shared immutable fitting profiles evict selectively and pin observed pilots; preparation blueprints pin the current
+batch. These tiers preserve the existing human-active clock and offline rules. See
+[tiered simulation and detail retention](protocol/performance.md#tiered-simulation-and-detail-retention-november-10-2026).
+
 Active turret payments, ammunition, capacitor, cooldowns, health, incoming NPC gunfire and damage contributions use typed in-memory combat objects. Warm gunfire and health reads avoid SQL entirely. Classified persistence operations synchronize affected dirty objects into the resident relational image; checkpoint
 capture retains immutable projections for the detached image; destruction and missile operations retain existing transactions. See [combat object behavior and the ten-Brutix comparison](protocol/performance.md#live-combat-objects-and-ten-brutix-replay-november-5-2026).
 

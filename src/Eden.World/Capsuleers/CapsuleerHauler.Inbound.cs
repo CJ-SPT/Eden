@@ -158,7 +158,7 @@ internal sealed partial class CapsuleerHauler
         }
         Eden.World.Combat.CrimewatchPersistence.CheckTravel(_operation.World, _operation.Catalog, saved, CrimewatchTravel.Warp, Now);
         var departure =
-            _objects.SingleOrDefault(o =>
+            Objects.SingleOrDefault(o =>
                 o.Id == lane.DepartureGateId && o.DestinationGateId == lane.ArrivalGateId && o.DestinationSystemId == lane.ObserverSystemId
             ) ?? throw new InvalidDataException("The inbound hauling route has no reciprocal stargate.");
         var position =

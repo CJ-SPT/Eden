@@ -72,7 +72,7 @@ public sealed class CapsuleerRuntimeTests
         WorldInitialization.Initialize(f.Database, f.Clock);
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var restored = reopened.GetRequiredService<ICapsuleerScheduler>();
-        Assert.Empty(restored.Jobs());
+        Assert.Equal(committed, restored.Jobs().OrderBy(job => job.PilotId));
         using (WorldDbContext saved = new(f.Database.Path))
         {
             Assert.Equal(committed, CapsuleerPopulationStore.Jobs(saved).OrderBy(job => job.PilotId));

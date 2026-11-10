@@ -44,6 +44,7 @@ internal sealed partial class CapsuleerScheduler(
     private bool _blockingChanged;
     private bool _membershipDirty = true;
     private int[] _reconciledSystems = [];
+    private IReadOnlyList<SelectedHumanPilot> _reconciledPilots = [];
     private long _reconciledResumes = -1;
     private IReadOnlyList<WatchedTrafficGate> _reconciledGates = [];
     internal long Reconciliations { get; private set; }
@@ -192,6 +193,11 @@ internal sealed partial class CapsuleerScheduler(
         _membershipDirty = true;
         using WorldDbContext world = new(database.Path);
         bool regional = Live is not null;
+        if (!_loaded && regional)
+        {
+            _remoteSystems.UnionWith(world.Set<SavedCapsuleerSimulation>().Select(s => s.SystemId));
+            _loadedSystems.UnionWith(_remoteSystems);
+        }
         bool incremental = _loaded && (preparedSystem is not null || preparedPilot is not null);
         if (preparedSystem is int selectedSystem)
         {
@@ -219,6 +225,10 @@ internal sealed partial class CapsuleerScheduler(
             _suspended = world.Set<SavedCapsuleerSuspension>().Select(s => s.PilotId).ToHashSet();
         }
         var agents = agentQuery.OrderBy(a => a.PilotId).ToArray();
+        foreach (var agent in agents)
+        {
+            _communities[agent.PilotId] = agent.CommunitySystemId;
+        }
         var pilotIds = agents.Select(a => a.PilotId).ToArray();
         var jobs =
             incremental || regional
@@ -235,7 +245,7 @@ internal sealed partial class CapsuleerScheduler(
                 .Select(s => s.SystemId)
         )
         {
-            _systems.Register(system);
+            _systems.Register(system, _remoteSystems.Contains(system));
         }
         var locations = (
             from agent in agentQuery
@@ -268,6 +278,7 @@ internal sealed partial class CapsuleerScheduler(
             }
             if (
                 regional
+                && (!_remoteSystems.Contains(_communities[route.PilotId]) || _freshRemote.Contains(_communities[route.PilotId]))
                 && !_haulers.ContainsKey(route.PilotId)
                 && !_suspended.Contains(route.PilotId)
                 && progress is { InboundPaused: false }
@@ -320,7 +331,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             int system = location.SystemId ?? systems[location.StationId];
             IndexLocation(location.PilotId, system);
-            _systems.Register(system);
+            _systems.Register(system, _remoteSystems.Contains(system));
         }
         foreach (var job in jobs)
         {
@@ -354,7 +365,10 @@ internal sealed partial class CapsuleerScheduler(
         _loaded = true;
     }
 
-    public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
+    public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn) =>
+        RunCore(destinyStamp, maximumActions);
+
+    private CapsuleerBatch RunCore(int destinyStamp, int maximumActions, IReadOnlySet<int>? settling = null)
     {
         long started = clock.GetTimestamp();
         using var owner = Live?.EnterShared();
@@ -363,15 +377,18 @@ internal sealed partial class CapsuleerScheduler(
             _destinyStamp = destinyStamp;
             var activity = presence.Read();
             long throughTicks = activity.ElapsedTicks;
-            var pilots = _turnPilots;
+            var pilots = Live is not null && settling is null ? _running : _turnPilots;
             Dictionary<long, MinerObservation> mining = [];
             Dictionary<long, HaulerObservation> hauling = [];
             try
             {
                 Load();
                 Reconcile(activity);
-                pilots.Clear();
-                pilots.UnionWith(_running);
+                if (!ReferenceEquals(pilots, _running))
+                {
+                    pilots.Clear();
+                    pilots.UnionWith(_running.Where(p => settling is null || settling.Contains(_locations[p])));
+                }
                 var turn = _queue.Run(
                     throughTicks,
                     job =>
@@ -381,12 +398,14 @@ internal sealed partial class CapsuleerScheduler(
                             throw new InvalidOperationException("A stale capsuleer job cannot execute.");
                         }
                         CapsuleerJob next;
+                        _detailedSystems.Add(_locations[job.PilotId]);
+                        _detailCandidates.Add(job.PilotId);
                         Live?.ObserveTrafficJob(job, _locations[job.PilotId]);
                         using var systemContext = Live?.UseSystem(_locations[job.PilotId]);
                         if (_miners.TryGetValue(job.PilotId, out var miner))
                         {
                             using var phase = SessionPerformance.Phase("traffic.minerAction");
-                            bool background = !activity.ActiveSystems.Contains(_locations[job.PilotId]);
+                            bool background = !Detailed(job.PilotId, activity);
                             next = miner.Execute(job, destinyStamp, activity.ElapsedTicks, activity.Resumes, background);
                             Current[job.PilotId] = next;
                             _completed++;
@@ -401,7 +420,7 @@ internal sealed partial class CapsuleerScheduler(
                         else if (_haulers.TryGetValue(job.PilotId, out var hauler))
                         {
                             using var phase = SessionPerformance.Phase("traffic.haulerAction");
-                            bool background = !activity.ActiveSystems.Contains(_locations[job.PilotId]);
+                            bool background = !Detailed(job.PilotId, activity);
                             next = hauler.Execute(job, destinyStamp, background);
                             Current[job.PilotId] = next;
                             _completed++;
@@ -409,7 +428,7 @@ internal sealed partial class CapsuleerScheduler(
                             IndexLocation(job.PilotId, hauler.SystemId);
                             _systems.Register(hauler.SystemId);
                             using var observationContext = Live?.UseSystem(hauler.SystemId);
-                            var observation = hauler.Read()!;
+                            var observation = hauler.Read(includeHealth: !background)!;
                             hauling[job.PilotId] = observation;
                             Blocking(job.PilotId, observation.Work.WaitingReason);
                             _pendingHaulers[job.PilotId] = observation;
@@ -420,8 +439,10 @@ internal sealed partial class CapsuleerScheduler(
                             throw new InvalidDataException("The capsuleer job has no supported role.");
                         }
                         Current[job.PilotId] = next;
+                        _detailedSystems.Add(_locations[job.PilotId]);
                         if (
                             !_travelers.Contains(job.PilotId)
+                            && !_remoteSystems.Contains(_communities.GetValueOrDefault(job.PilotId))
                             && !activity.ActiveSystems.Contains(_locations[job.PilotId])
                             && next.Action != CapsuleerAction.GateTransfer
                         )
@@ -432,11 +453,12 @@ internal sealed partial class CapsuleerScheduler(
                     },
                     clock,
                     pilots,
-                    useCanonicalQueue: true,
+                    useCanonicalQueue: settling is null,
                     maximumActions: maximumActions
                 );
                 Reconcile(activity);
-                if (turn.OldestDueTicks is null)
+                ReleaseRemoteDetails(activity);
+                if (settling is null && turn.OldestDueTicks is null)
                 {
                     Settle(Math.Max(_settledTicks, throughTicks));
                 }
@@ -466,6 +488,7 @@ internal sealed partial class CapsuleerScheduler(
             !_membershipDirty
             && _reconciledResumes == activity.Resumes
             && _reconciledSystems.SequenceEqual(activity.ActiveSystems)
+            && _reconciledPilots.SequenceEqual(activity.Pilots)
             && _reconciledGates.SequenceEqual(gates)
         )
         {
@@ -475,6 +498,7 @@ internal sealed partial class CapsuleerScheduler(
         Reconciliations++;
         foreach (int system in activity.ActiveSystems)
         {
+            StartRemote(system, activity.ElapsedTicks);
             if (!_visited.Contains(system))
             {
                 if (Live is null)
@@ -491,7 +515,7 @@ internal sealed partial class CapsuleerScheduler(
             {
                 _activated.Remove(state.SystemId);
                 _visited.Remove(state.SystemId);
-                Live?.Combat?.ReleaseObserverContacts(state.SystemId);
+                Live?.CombatForSystem(state.SystemId)?.ReleaseObserverContacts(state.SystemId);
             }
             if (state.Mode == SystemSimulationMode.Activating)
             {
@@ -561,8 +585,16 @@ internal sealed partial class CapsuleerScheduler(
             }
         }
         running.UnionWith(inbound);
+        running.UnionWith(_communities.Where(p => _remoteSystems.Contains(p.Value) && !_suspended.Contains(p.Key)).Select(p => p.Key));
         foreach (long pilot in running.Except(_running))
         {
+            if (
+                _remoteSystems.Contains(_communities.GetValueOrDefault(pilot))
+                && !_freshRemote.Contains(_communities.GetValueOrDefault(pilot))
+            )
+            {
+                continue;
+            }
             if (_travelers.Contains(pilot) && !_haulers[pilot].IsRatting)
             {
                 continue;
@@ -595,8 +627,11 @@ internal sealed partial class CapsuleerScheduler(
         }
         _nextRunning = _running;
         _running = running;
+        _freshRemote.Clear();
+        ReleaseRemoteDetails(activity, membershipChanged: true);
         _membershipDirty = false;
         _reconciledSystems = activity.ActiveSystems.ToArray();
+        _reconciledPilots = activity.Pilots;
         _reconciledResumes = activity.Resumes;
         _reconciledGates = gates.ToArray();
         _activated.Clear();
@@ -638,7 +673,7 @@ internal sealed partial class CapsuleerScheduler(
             Reconcile(activity);
             // Publish newly prepared metadata before observer frames begin.
             Load();
-            Settle(activity.ElapsedTicks);
+            SettleReadySystems(activity);
             if (_queue.NextDueTicks != previousDue)
             {
                 presence.Wake();
@@ -674,7 +709,20 @@ internal sealed partial class CapsuleerScheduler(
         {
             Load();
             Reconcile(presence.Read());
-            Settle(presence.Read().ElapsedTicks);
+            var activity = presence.Read();
+            var observed = activity.ActiveSystems.ToHashSet();
+            if (
+                observed
+                    .SelectMany(s => _systemAgents.GetValueOrDefault(s) ?? [])
+                    .Any(p => _running.Contains(p) && observed.Contains(_locations[p]) && Current[p].DueTicks <= activity.ElapsedTicks)
+            )
+            {
+                // Entry performs a bounded relevant catch-up. Remaining due work keeps
+                // the scene activating until maintenance completes it.
+                const int PromotionActions = 8;
+                RunCore(_destinyStamp, PromotionActions, observed);
+            }
+            SettleReadySystems(activity);
             var active = _systems.Observed().Where(s => s.Mode == SystemSimulationMode.Active).Select(s => s.SystemId).ToHashSet();
             foreach (
                 var location in active
@@ -806,10 +854,22 @@ internal sealed partial class CapsuleerScheduler(
         }
         if (requireElapsedTime)
         {
-            long sampled = _miners.TryGetValue(pilot, out var miner)
-                ? miner.Read(includeHealth: false)!.Work.ActiveTicks
-                : _haulers[pilot].Read()!.Work.ActiveTicks;
-            if (sampled >= elapsedTicks)
+            long sampled;
+            long offset;
+            int stamp;
+            if (_miners.TryGetValue(pilot, out var miner))
+            {
+                var work = miner.Read(includeHealth: false)!.Work;
+                (sampled, offset, stamp) = (work.ActiveTicks, work.ClockOffsetTicks, work.Stamp);
+            }
+            else
+            {
+                var work = _haulers[pilot].Read(includeHealth: false)!.Work;
+                (sampled, offset, stamp) = (work.ActiveTicks, work.ClockOffsetTicks, work.Stamp);
+            }
+            // Promotion samples native movement once per stamp. Exact paid event
+            // deadlines remain in the queue and are never rounded or rescheduled here.
+            if (sampled >= elapsedTicks || CapsuleerScheduleRules.Stamp(elapsedTicks, offset) <= stamp)
             {
                 return;
             }

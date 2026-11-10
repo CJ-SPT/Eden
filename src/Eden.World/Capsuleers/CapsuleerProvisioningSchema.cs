@@ -10,6 +10,7 @@ internal static class CapsuleerProvisioningSchema
     {
         model.Entity<SavedCapsuleerProvisioning>().ToTable("WorldCapsuleerProvisioning").HasKey(p => p.Id);
         model.Entity<SavedCapsuleerSystem>().ToTable("WorldCapsuleerSystem").HasKey(s => s.SystemId);
+        model.Entity<SavedCapsuleerSimulation>().ToTable("WorldCapsuleerSimulation").HasKey(s => s.SystemId);
         model.Entity<SavedCapsuleerCommunity>().HasIndex(c => c.PilotId).IsUnique();
         model.Entity<SavedCapsuleerHauler>().HasIndex(h => h.PilotId).IsUnique();
         model.Entity<SavedCapsuleerHauler>().PrimitiveCollection(h => h.RouteSystems);
@@ -58,6 +59,8 @@ internal static class CapsuleerProvisioningSchema
             CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldCapsuleerHauler_PilotId ON WorldCapsuleerHauler(PilotId);
             CREATE TABLE IF NOT EXISTS WorldCapsuleerProvisioning(
                 Id INTEGER PRIMARY KEY CHECK(Id=1), WorldSeed INTEGER NOT NULL CHECK(WorldSeed>=0));
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerSimulation(
+                SystemId INTEGER PRIMARY KEY, StartedTicks INTEGER NOT NULL CHECK(StartedTicks>=0));
             CREATE TABLE IF NOT EXISTS WorldCapsuleerSystem(
                 SystemId INTEGER PRIMARY KEY, Eligibility INTEGER NOT NULL CHECK(Eligibility BETWEEN 0 AND 8),
                 HomeStationId INTEGER, DestinationStationId INTEGER, CatalogFingerprint TEXT NOT NULL,

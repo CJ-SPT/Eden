@@ -346,7 +346,7 @@ public sealed class PilotSpaceActivitiesTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task TravelerVisitsABeltPausesWhenUnobservedAndReturnsToTheActualStation(bool loot)
+    public async Task TravelerVisitsABeltProgressesWhenUnobservedAndReturnsToTheActualStation(bool loot)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         long pilot = FitTraveler(f);
@@ -466,12 +466,18 @@ public sealed class PilotSpaceActivitiesTests
         presence.Update(observer, 30000142);
         maintenance.Tick();
         long remaining = scheduler.Hauler(pilot)!.Work.Ratting!.RemainingTicks;
-        f.Clock.Seconds += 300;
+        long due = scheduler.Jobs().Single(j => j.PilotId == pilot).DueTicks;
+        f.Clock.Milliseconds += Math.Max(
+            1,
+            (long)Math.Ceiling((due - presence.Read().ElapsedTicks) / (double)TimeSpan.TicksPerMillisecond)
+        );
         maintenance.Tick();
-        Assert.Equal(remaining, scheduler.Hauler(pilot)!.Work.Ratting!.RemainingTicks);
+        var remote = scheduler.Hauler(pilot)!;
+        Assert.True(remote.Work.Ratting is null || remote.Work.Ratting.RemainingTicks < remaining);
         presence.Update(observer, SystemId);
-        bool completed = false;
-        for (int i = 0; i < 1000; i++)
+        state = remote;
+        bool completed = state.Work.Ratting is null && state.Pilot.Position is null;
+        for (int i = 0; i < 1000 && !completed; i++)
         {
             f.Clock.Seconds++;
             maintenance.Tick();

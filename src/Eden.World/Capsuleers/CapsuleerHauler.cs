@@ -83,6 +83,17 @@ internal sealed partial class CapsuleerHauler(
     private HaulerProgress? _work;
     private NavigationState _navigation = new();
     private IReadOnlyList<StaticSpaceObject> _objects = [];
+    private IReadOnlyList<StaticSpaceObject> Objects
+    {
+        get
+        {
+            if (_objects.Count == 0)
+            {
+                RefreshObjects();
+            }
+            return _objects;
+        }
+    }
     private StaticSpaceObject? _target;
     private IReadOnlyList<StaticSpaceObject> _obstacles = [];
     private TackleEffect[] _incoming = [];
@@ -91,6 +102,35 @@ internal sealed partial class CapsuleerHauler(
     private long _threatenedShip;
     private bool _loaded;
     private bool _background;
+    private bool _detailed = true;
+
+    internal bool RequiresDetail =>
+        (_work ?? Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work)
+            is { Defense: not null }
+                or { Ratting.Phase: RattingPhase.Fighting }
+        || _incoming.Length != 0
+        || _warpBlocked
+        || Volatile.Read(ref _threatenedShip) != 0;
+
+    internal void SetDetailed(bool detailed)
+    {
+        if (_detailed && detailed)
+        {
+            return;
+        }
+        _detailed = detailed;
+        if (!detailed)
+        {
+            _objects = [];
+            _obstacles = [];
+        }
+        else if (_loaded && _pilot is not null)
+        {
+            RefreshObjects();
+            _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? _target;
+        }
+    }
+
     private bool _trafficRefreshChecked;
     private CapsuleerOperation _operation = null!;
     private long _hullRevision;
@@ -124,10 +164,10 @@ internal sealed partial class CapsuleerHauler(
         }
     }
 
-    internal HaulerObservation? Read()
+    internal HaulerObservation? Read(bool includeHealth = true)
     {
         EnsureCurrentHull();
-        return _pilot is null ? null : Observation();
+        return _pilot is null ? null : Observation(includeHealth);
     }
 
     internal CapsuleerJob Resume(CapsuleerJob job, long elapsed)
@@ -203,7 +243,7 @@ internal sealed partial class CapsuleerHauler(
         using CapsuleerOperation operation = new(database, resumed, marketSignal);
         try
         {
-            var departure = _objects.Where(o => o.DestinationSystemId == systemId).OrderBy(o => o.Id).FirstOrDefault();
+            var departure = Objects.Where(o => o.DestinationSystemId == systemId).OrderBy(o => o.Id).FirstOrDefault();
             if (departure?.DestinationGateId is not { } exit)
             {
                 return resumed;
@@ -219,7 +259,7 @@ internal sealed partial class CapsuleerHauler(
             if (completeEndpointVisit)
             {
                 int station = leg.Direction > 0 ? _route.SourceStationId : _route.DestinationStationId;
-                var endpoint = _objects.Single(o => o.Id == station);
+                var endpoint = Objects.Single(o => o.Id == station);
                 var approach =
                     endpoint.Position
                     + new SpacePosition(endpoint.Radius + Pilot.Flight.ShipRadius + CapsuleerTrafficFlight.ApproachRange, 0, 0);
@@ -305,29 +345,32 @@ internal sealed partial class CapsuleerHauler(
                 Load();
             }
         }
-        _background = background;
-        if ((!background || Work.Defense is not null) && Work.Activity != HaulerActivity.Inbound)
+        _background = background && !RequiresDetail;
+        if (!_background && Work.Activity != HaulerActivity.Inbound)
         {
             ObserveDanger(destinyStamp);
         }
         if (Pilot.Position is not null)
         {
             RefreshTackle();
+            _background = _background && !RequiresDetail;
         }
         AdvanceRattingClock(job.DueTicks);
         var proactive = ProactiveTarget();
         var previousDefense = Work.Defense;
-        var defended = defense.Advance(
-            Pilot,
-            _navigation,
-            previousDefense,
-            Now,
-            destinyStamp,
-            _obstacles,
-            Work.Retreating,
-            Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
-            proactive: proactive
-        );
+        var defended = _background
+            ? new CapsuleerDefenseResult(Pilot, null, false, false, false)
+            : defense.Advance(
+                Pilot,
+                _navigation,
+                previousDefense,
+                Now,
+                destinyStamp,
+                _obstacles,
+                Work.Retreating,
+                Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
+                proactive: proactive
+            );
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
         _work = Work with { Defense = defended.State, LastMotionStamp = defended.HoldsNavigation ? destinyStamp : Work.LastMotionStamp };
@@ -542,7 +585,7 @@ internal sealed partial class CapsuleerHauler(
         return true;
     }
 
-    private HaulerObservation Observation() => new(Pilot, Work, health.Read(pilotId, Now));
+    private HaulerObservation Observation(bool includeHealth = true) => new(Pilot, Work, includeHealth ? health.Read(pilotId, Now) : null);
 
     private void Load()
     {
@@ -762,7 +805,7 @@ internal sealed partial class CapsuleerHauler(
             RouteDirection = leg.Direction,
             DestinationStationId = leg.Direction < 0 ? _route.SourceStationId : _route.DestinationStationId,
         };
-        _target = CapsuleerTrafficFlight.Target(_route, Work, Pilot.SystemId, _objects);
+        _target = CapsuleerTrafficFlight.Target(_route, Work, Pilot.SystemId, Objects);
         var saved = _operation.World.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == Pilot.PilotId);
         Eden.World.Combat.CrimewatchPersistence.CheckTravel(_operation.World, _operation.Catalog, saved, CrimewatchTravel.Warp, Now);
         if (_warpBlocked)

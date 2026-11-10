@@ -215,14 +215,15 @@ internal sealed partial class LiveCombatRuntime(
 
     private void Trim()
     {
-        // Evict only at operation boundaries, after projecting every outstanding payment.
-        // Revisited pilots and systems hydrate again; historical activity cannot grow forever.
-        // Registered autonomous pilots are persistent residents, not an unbounded
-        // observer history. Reserve their working set before evicting cold visitors.
-        int ships = checked(RetainedShips + owner.CapsuleerJobs.Count);
-        int systems = checked(RetainedSystems + owner.CapsuleerJobs.Count);
-        const int NpcsPerAgent = 32;
-        int npcs = checked(RetainedNpcs + owner.CapsuleerJobs.Count * NpcsPerAgent);
+        // System working sets are evicted at demotion, never halfway through an
+        // active scene. The compatibility owner evicts cold systems selectively.
+        if (systemId is not null)
+        {
+            return;
+        }
+        int ships = RetainedShips;
+        int systems = RetainedSystems;
+        int npcs = RetainedNpcs;
         int items = checked(ships * RetainedItemsPerShip);
         if (
             _shipPilots.Count >= ships
@@ -243,7 +244,7 @@ internal sealed partial class LiveCombatRuntime(
             || _itemPilots.Count >= items
         )
         {
-            Clear();
+            TrimColdDetails();
         }
     }
 

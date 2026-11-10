@@ -10,6 +10,9 @@ native docking/storage, supported services, configuration speeds and explicit re
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) records native provider contracts,
 saved signature and ice discovery, source fingerprints and automated validation.
 
+[Tiered simulation and detail retention](protocol/performance.md#tiered-simulation-and-detail-retention-november-10-2026)
+records milestone 4 remote deadlines, resumable activation and safe scene eviction.
+
 [Independent system ownership](protocol/performance.md#independent-system-ownership-november-10-2026)
 records milestone 3 runtime ownership, persistence handoffs, traffic-refresh recovery and concurrent session validation.
 

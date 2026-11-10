@@ -143,7 +143,7 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        var belts = _objects
+        var belts = Objects
             .Where(o => o.GroupId == AsteroidDefinitions.BeltGroup)
             .OrderBy(o => TravelerRoutineRules.Mix(unchecked((ulong)o.Id ^ (ulong)pilotId ^ (ulong)sequence)))
             .Take(RattingRules.MaximumBelts)
@@ -177,7 +177,7 @@ internal sealed partial class CapsuleerHauler
     private void FlyToBelt()
     {
         var activity = Work.Ratting!;
-        _target = _objects.Single(o => o.Id == activity.Belts[activity.BeltIndex]);
+        _target = Objects.Single(o => o.Id == activity.Belts[activity.BeltIndex]);
         _work = Work with
         {
             Activity = HaulerActivity.Flying,
@@ -227,7 +227,7 @@ internal sealed partial class CapsuleerHauler
             case RattingPhase.Returning:
                 if (Work.TargetId != activity.StationId || _target?.Id != activity.StationId || Work.WaitingReason is not null)
                 {
-                    _target = _objects.Single(o => o.Id == activity.StationId);
+                    _target = Objects.Single(o => o.Id == activity.StationId);
                     _work = Work with
                     {
                         TargetId = _target.Id,

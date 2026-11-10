@@ -173,7 +173,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var scheduler = reopened.GetRequiredService<ICapsuleerScheduler>();
         Assert.All(reopened.GetRequiredService<ICapsuleerHandoff>().Systems(), s => Assert.Equal(SystemSimulationMode.Background, s.Mode));
-        Assert.Empty(scheduler.Jobs());
+        Assert.Equal(jobs.OrderBy(j => j.PilotId), scheduler.Jobs().OrderBy(j => j.PilotId));
         using (WorldDbContext saved = new(f.Database.Path))
         {
             Assert.Equal(jobs.OrderBy(job => job.PilotId), CapsuleerPopulationStore.Jobs(saved).OrderBy(job => job.PilotId));
@@ -215,6 +215,13 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
             Assert.Empty(Peers(host, before.Pilot));
         }
         var after = scheduler.Miner(before.Pilot.PilotId)!;
+        output.WriteLine(
+            $"Handoff {phase}: {before.Work.Stamp}/{before.Work.ActiveTicks}/{before.Work.DueTicks} -> "
+                + $"{after.Work.Stamp}/{after.Work.ActiveTicks}/{after.Work.DueTicks}; "
+                + $"X {before.Pilot.Position?.X:R} -> {after.Pilot.Position?.X:R}; "
+                + $"Y {before.Pilot.Position?.Y:R} -> {after.Pilot.Position?.Y:R}; "
+                + $"Z {before.Pilot.Position?.Z:R} -> {after.Pilot.Position?.Z:R}"
+        );
         Assert.Equal(before.Pilot.ShipId, after.Pilot.ShipId);
         Assert.Equal(before.Pilot.Position, after.Pilot.Position);
         var json = new JsonSerializerOptions { IgnoreReadOnlyProperties = true };

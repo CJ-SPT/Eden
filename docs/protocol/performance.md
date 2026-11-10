@@ -1664,3 +1664,58 @@ a running development revision, not acceptance of the completed milestone.
 
 **Optional maintainer checks.** Rebuild/restart the server and revisit the affected route. Native rendering, input
 and gameplay feel remain unverified.
+
+## Tiered simulation and detail retention, November 10, 2026
+
+Simulation scaling milestone 4 distinguishes uncreated simulation, remote scheduled work and observed detailed
+systems. World schema 137 records the first activation in `WorldCapsuleerSimulation`. Prepared populations in
+unvisited systems remain dormant; previously activated communities and existing saved journeys retain their
+canonical jobs after departure and restart. All advancement still uses the human-active clock. An empty server
+and elapsed wall time while stopped do not create additional production.
+
+Remote miners sleep until lock, paid collection and retry deadlines; remote travel uses the existing analytic
+warp boundary and scheduled approach events. The role retains compact identity, flight, navigation and paid-work
+inputs rather than repeatedly loading a fit or evolving an observer scene each second. Mining, cargo, trade,
+gate transfer and resupply retain their ordinary atomic operations and canonical job revisions. Remote observation
+does not request health/fitting hydration. Detailed defense and active ratting combat keep their existing
+simulation rather than assigning simplified combat outcomes.
+
+Promotion settles relevant due work in a bounded eight-action continuation before publishing detailed contacts;
+an unfinished continuation keeps the scene activating for maintenance. Movement sampling never wakes the same
+native stamp twice, while exact subsecond event deadlines remain unchanged. Demotion retains identities,
+destinations, resource payments and deadlines, projects dirty motion/combat at its SQL boundary, then discards only
+that system's scene and fitting working set. Projection failure retains dirty state for retry. Active combat,
+targeting drones and unfinished missiles pin detail until safe to release. Stable system ownership shells and
+lightweight saved work remain resident.
+
+Shared immutable fitting profiles retain bounded selective FIFO eviction, with observed human pilots and detailed
+bot pilots pinned. Blueprint eviction removes individual unpinned profiles while preserving the current preparation
+batch. Compatibility-owner history also evicts cold systems selectively, after projection, rather than clearing
+every scene when one limit is reached. Active or combat-pinned working sets may exceed a cache's soft limit;
+activated-region history alone no longer expands the detailed allowance. Membership scans occur on membership
+changes; ordinary turns update only touched actors and reuse the canonical due queue.
+
+Gameplay references were checked against [EVE University mining](https://wiki.eveuniversity.org/Mining) and
+[warp mechanics](https://wiki.eveuniversity.org/Warp_Mechanics). Eden's existing build-3662168 calculations and the
+[pinned Carbon Ballpark.cpp](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp)
+remain the local movement reference; this change adds no client wire contracts or alternate combat rules.
+
+**Automated validation.** Tool/solution restore, a warning-free build, **360/360 affected tests in 2m18s**,
+both Python policy suites (8 and 9 tests) and formatting verification passed. A final selective NPC-assessment
+cache edit passed a fresh build and **16/16 immediate ratting, defense and retention tests in 11s**. The exact development filter began with
+`CapsuleerTierTests.PaidMiningContinuesRemotelyAndReopensWithoutOfflineProduction`. Added checks cover one paid
+collection remotely, persisted activation/job identity, no offline replay, detailed combat retention, zero detailed
+entries after demotion, projection failure/retry, unrelated warm contacts and selective fitting retention.
+The existing handoff variants retain all five miner travel/payment phases. This is deterministic automated
+evidence, not a new installed-save p95/p99 capacity measurement. No full .NET suite was requested or run.
+
+Retained reports and `final-filter.txt` are in `artifacts/milestone4-validation/`. The 360-test source/input manifest
+SHA-256 is `fe4c0463cffc1cf6c9c24e0418f4af26d3b50ad4496c87c7bdca8bb769856593`; the final source/input manifest
+is `568991474b796f853fb66a5e8bdae45ebc7b58ad4ffad8aa83a3d16a09bd4458`. Both record parent `4edbf994`, fixture
+hashes and workload settings. `milestone4-retention-final.trx` covers the last cache edit; the earlier retention
+run used the preceding compiled binaries after a missing-import build failure and is not counted as its validation.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Revisit a mining system after playing elsewhere and check the visible arrival and
+mining presentation. Native rendering and gameplay feel remain unverified.
