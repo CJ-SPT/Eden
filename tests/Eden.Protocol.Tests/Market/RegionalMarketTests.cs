@@ -79,7 +79,7 @@ public sealed class RegionalMarketTests
                 funded.SaveChanges();
             }
             Assert.Equal(1000, quote.Remaining);
-            Assert.DoesNotContain(market.Orders(pilot.PilotId), o => o.TypeId == HaulingRules.BadgerType);
+            Assert.DoesNotContain(market.Orders(pilot.PilotId), o => o.TypeId == HaulingRules.BadgerType && !o.Bid);
             market.Buy(pilot.PilotId, pilot.StationId, [new(Ammunition, quote.PriceCents, 100)]);
             var depleted = market.Orders(pilot.PilotId, Ammunition).Single(o => o.StationId == pilot.StationId && !o.Bid);
             Assert.Equal(quote.Remaining - 100, depleted.Remaining);
@@ -140,9 +140,9 @@ public sealed class RegionalMarketTests
         var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
         using var selected = host.GetRequiredService<IHumanPresence>().Select(pilot.PilotId, Source);
         var market = host.GetRequiredService<IPilotMarket>();
-        Assert.DoesNotContain(market.Orders(pilot.PilotId), o => o.TypeId == HaulingRules.BadgerType);
+        Assert.DoesNotContain(market.Orders(pilot.PilotId), o => o.TypeId == HaulingRules.BadgerType && !o.Bid);
         f.Clock.Seconds += 21 * 86400;
-        Assert.DoesNotContain(market.Orders(pilot.PilotId), o => o.TypeId == HaulingRules.BadgerType);
+        Assert.DoesNotContain(market.Orders(pilot.PilotId), o => o.TypeId == HaulingRules.BadgerType && !o.Bid);
         using (WorldDbContext world = new(f.Database.Path))
         {
             world.Add(
@@ -159,7 +159,7 @@ public sealed class RegionalMarketTests
         }
         var orders = market.Orders(pilot.PilotId);
         Assert.Contains(orders, o => o.TypeId == HaulingRules.BadgerType && !o.Bid && o.StationId == HubStation && o.Remaining > 0);
-        Assert.DoesNotContain(orders, o => o.TypeId == Merlin);
+        Assert.DoesNotContain(orders, o => o.TypeId == Merlin && !o.Bid);
         Assert.Empty(market.Transactions(pilot.PilotId));
         Assert.Empty(market.History(pilot.PilotId, [HaulingRules.BadgerType]));
     }

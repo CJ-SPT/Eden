@@ -827,3 +827,51 @@ References: [EVE University blueprints](https://wiki.eveuniversity.org/Blueprint
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** On a copied progression save, compare the native market before and after claiming a production job; inspect the hub and a secondary station to confirm presentation and travel choices. No agent gameplay acceptance was performed.
+
+## Industrial NPC demand — November 9, 2026
+
+Progression markets now separate NPC buying from production-unlocked selling. Published physical market resources
+(ore, ice, gas, minerals, salvage and industrial materials) and all Tech I items
+have buyers before any production claim. Supported Tech II/III products require a claimed production unlock for demand.
+Faction items, blueprints, skills, nonphysical types, titans and supercarriers receive no generated demand. Eligible loot can sell without manufacturing provenance. Missing snapshot bids stay absent.
+
+High-security regional hubs buy every eligible type. Mining stations buy raw resources; factories buy materials and
+the existing odd-type-ID half of non-ship manufactured goods. Other institutional orders retain their catalog policy.
+Hub quantities represent approximately 150 million ISK per type, growing at eight-hour active-play boundaries to
+600 million after 24 hours. Specialists receive one fifth of the budget and a 5% lower anchor. Quantities round down,
+with one unit minimum and an Int32 cap. Expensive single items can exceed the nominal budget. Demand recovers in
+six ten-minute active-play steps and quotes fall by at most 15% as demand depletes. Offline wall time adds no demand.
+NPC selling quantities, snapshot quotes and manufacturing-triggered global supply unlocks retain their existing rules.
+
+Schema 133 adds a per-order demand-policy marker. Premature advanced-product bids retire until their production unlock;
+faction meta-groups 4 and 52 remain excluded. Racial faction affiliation does not exclude ordinary Tech I ships such as
+the Merlin. Existing bids preserve IDs, depleted proportions and partial recovery
+boundaries when lazily upgraded once. Newly eligible bids start full. Repeated access/reopen does not reset depletion.
+Market preparation caches immutable eligibility, filters requested types and inserts new station orders in a batch.
+Best-ask calls never load or create buy demand. Station security, institution offers and blueprint attributes load in
+batches rather than issuing thousands of catalog queries under the world owner; warmed catalog profiles use no SQL.
+Existing saves retain their selected market mode; enable Progressive regional markets and restart to adopt progression.
+
+Gameplay reference: [EVE University trading](https://wiki.eveuniversity.org/Market) and
+[manufacturing](https://wiki.eveuniversity.org/Manufacturing). The demand budgets, recovery and NPC product buyers are
+explicit Eden solo-economy policy. The pinned build-3662168 market wire forms are unchanged. Carbon Blue reference
+reviewed: `fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae`, `src/Marshal.cpp` (inert source inspection).
+
+**Automated validation:** Tool/solution restore and the solution build passed with zero warnings/errors (1.37 seconds).
+The final affected run passed 221 cases in 5 minutes 5 seconds with two workers. Filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~StarterProductionTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`.
+Both Python policy suites passed (8 catalog and 9 formatting cases), as did formatting and line-width verification.
+The final validation sequence took 337.45 seconds. A separate read-only full-catalog check passed:
+cold station profiles used 8 SQL commands / 3.26 seconds, cold demand used 5 / 2.33 seconds, and warm profiles used
+zero SQL commands, connections or fitting calculations / 1.18 ms. This measures catalog preparation, not a live
+GetRegionBest frame or native acceptance. The focused best-ask test separately bounds SQL/connections and proves
+that sell-price reads do not load or create demand. Full .NET regression was not requested or run. Exact initial filter:
+`FullyQualifiedName=Eden.Protocol.Tests.Market.IndustrialDemandTests.FreshWorldHasMaterialAndProductBuyersWithoutUnlockingSupply`.
+It passed one case. The initial 65-case dependency run passed 62 and failed three new fixture cases because they
+attempted cached reads through a writable catalog context. Those cases now close the editor before opening a reader.
+A later broad dependency run was interrupted after the
+user clarified that advanced-product demand must require a production claim; it is not counted as completed validation.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Compare material and unclaimed-product bids at a hub and a specialist station.

@@ -60,12 +60,18 @@ internal sealed partial class PilotMarketStore(
         return station;
     }
 
-    private void Seed(WorldDbContext world, CatalogDbContext catalog, CatalogStationDefinition station)
+    private void Seed(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        CatalogStationDefinition station,
+        int? typeId = null,
+        bool includeDemand = true
+    )
     {
         if (RegionalMarketStore.Enabled(world))
         {
             SeedInstitutional(world, catalog, station);
-            new RegionalMarketStore(activity).Advance(world, catalog, station.RegionId, station.Id, Now);
+            new RegionalMarketStore(activity).Advance(world, catalog, station.RegionId, station.Id, Now, typeId, includeDemand);
             return;
         }
         if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false })
@@ -220,7 +226,7 @@ internal sealed partial class PilotMarketStore(
         var station = Station(catalog, pilot.ActiveShip.StationId);
         if (pilot.ActiveShip.Position is null && HasMarket(catalog, station))
         {
-            Seed(world, catalog, station);
+            Seed(world, catalog, station, typeId, includeDemand: scope is null);
         }
         int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
         int region = catalog.RequireSystem(system).RegionId;
@@ -234,7 +240,12 @@ internal sealed partial class PilotMarketStore(
             var regional = new RegionalMarketStore(activity);
             var knownStations = world
                 .Set<NpcMarketOrder>()
-                .Where(o => o.RegionId == region && o.Kind == NpcMarketKind.Regional)
+                .Where(o =>
+                    o.RegionId == region
+                    && o.Kind == NpcMarketKind.Regional
+                    && (scope == null || !o.Bid)
+                    && (!typeId.HasValue || o.TypeId == typeId.Value)
+                )
                 .Select(o => o.StationId)
                 .Distinct()
                 .ToArray();
@@ -244,7 +255,7 @@ internal sealed partial class PilotMarketStore(
             foreach (int known in knownStations.Append(hub?.Station.Id ?? station.Id).Distinct().Where(id => id != station.Id))
             {
                 SeedInstitutional(world, catalog, catalog.RequireStation(known));
-                regional.Advance(world, catalog, region, known, Now);
+                regional.Advance(world, catalog, region, known, Now, typeId, includeDemand: scope is null);
             }
         }
         query = query.Where(o => progressive ? o.Kind == NpcMarketKind.Regional || o.Kind == NpcMarketKind.Institutional : o.Kind == kind);

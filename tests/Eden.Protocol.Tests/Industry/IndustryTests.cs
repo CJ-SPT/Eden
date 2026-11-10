@@ -264,7 +264,7 @@ public sealed class IndustryTests
         var market = f.Db.Services.GetRequiredService<IPilotMarket>();
         var job = f.Store.Install(f.Pilot.PilotId, f.Request());
         f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(288));
-        Assert.Empty(market.Orders(f.Pilot.PilotId, 215));
+        Assert.DoesNotContain(market.Orders(f.Pilot.PilotId, 215), o => !o.Bid);
         f.Store.Deliver(f.Pilot.PilotId, job.Job.Id, f.Pilot.SystemId);
         var orders = market.Orders(f.Db.Store.FindPilot(1000002)!.PilotId, 215);
         Assert.Contains(orders, o => !o.Bid && o.PriceCents == MarketSnapshotCatalog.Quotes[215].SellCents);

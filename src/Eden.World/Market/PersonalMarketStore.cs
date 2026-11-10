@@ -443,7 +443,10 @@ internal sealed partial class PilotMarketStore
         {
             throw new InvalidDataException("Select distinct market types.");
         }
-        Seed(world, catalog, station);
+        foreach (int type in items.Select(i => i.TypeId))
+        {
+            Seed(world, catalog, station, type);
+        }
         List<InventoryChange> changes = [];
         List<MarketExecution> trades = [];
         foreach (var request in items)
@@ -492,7 +495,10 @@ internal sealed partial class PilotMarketStore
         {
             throw new InvalidDataException("Select distinct owned stacks.");
         }
-        Seed(world, catalog, station);
+        foreach (int type in items.Select(i => i.TypeId).Distinct())
+        {
+            Seed(world, catalog, station, type);
+        }
         List<InventoryChange> changes = [];
         List<MarketExecution> trades = [];
         foreach (var request in items)

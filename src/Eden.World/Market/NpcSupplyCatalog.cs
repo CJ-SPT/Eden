@@ -32,7 +32,22 @@ internal sealed partial class PilotMarketStore
             )
             .ToArray();
         var types = offered.Select(catalog.FittingType).OfType<CatalogItemDefinition>().OrderBy(type => type.Id).ToArray();
-        var definitions = types.ToDictionary(type => type.Id, type => catalog.Read(CatalogData.Client.Types, (long)type.Id));
+        var definitions = catalog.ReadMany(CatalogData.Client.Types, types.Select(type => (long)type.Id));
+        var blueprints = types.Where(type => type.CategoryId == (int)InventoryCategory.Blueprint).ToArray();
+        var recipes = catalog.ReadMany(
+            CatalogData.Client.Blueprints,
+            blueprints.Select(type => type.Id.ToString(CultureInfo.InvariantCulture))
+        );
+        _ = catalog.Definitions.AttributeSets(
+            blueprints
+                .Select(type => type.Id)
+                .Concat(
+                    recipes
+                        .Values.SelectMany(recipe => recipe.Activities?.Manufacturing?.Products ?? [])
+                        .Where(product => product.TypeID is > 0 and <= int.MaxValue)
+                        .Select(product => (int)product.TypeID!.Value)
+                )
+        );
         HashSet<(int TypeId, bool Bid)> eligible = [];
         foreach (var type in types)
         {

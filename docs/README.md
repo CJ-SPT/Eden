@@ -110,3 +110,6 @@ Keep the root README focused on the project overview, current status, build/run 
 Add native protocol findings and milestone evidence to the relevant page under `docs/protocol/`, then add a link to the [protocol index](protocol.md). Preserve existing section anchors when moving records, and update repository links to their new destination. Keep dates, source revisions, automated results and live observations with their record. Older observations are historical evidence, not acceptance of later changes.
 
 The RPC inventory and hull JSON are generated audit artifacts; use their documented tools rather than reorganizing their rows by hand. Agents perform automated checks only unless live testing is explicitly requested.
+
+[Industrial NPC demand](protocol/industry.md#industrial-npc-demand--november-9-2026) adds resource and product buyers
+independent of production-unlocked NPC supply, with finite active-play recovery and value-based quantities.

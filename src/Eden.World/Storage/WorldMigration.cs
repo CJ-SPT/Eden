@@ -16,7 +16,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 132;
+    internal const int CurrentVersion = 133;
 
     public static void Open(
         WorldDbContext world,
@@ -136,7 +136,7 @@ internal static class WorldMigration
         }
         Eden.World.Exploration.HackingSchema.Upgrade(world);
         Eden.World.Mining.MiningSiteSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=132");
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=133");
         history.Commit();
     }
 }
