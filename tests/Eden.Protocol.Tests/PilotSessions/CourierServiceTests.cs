@@ -4,12 +4,55 @@ using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class CourierServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PackageShowInfoReadsItsSavedVolumeWithoutOpeningTheManifest(bool inCargo)
+    {
+        using Fixture f = new();
+        f.Select();
+        long id = Created(f.Owner.Call("CreateContract", [Request(f.Item)]));
+        long package = Assert.IsType<long>(Fields(Reply(f.Hauler.Call("AcceptContract", [id, false])))["crateID"]);
+        if (inCargo)
+        {
+            CourierTestData.Load(f.Db, package);
+            f.Hauler.Refresh();
+        }
+        var binding = Assert.IsType<BlueObjectReference>(
+            WireAssertions.Materialize(f.Hauler.Call("GetInventoryFromId", [package], "invbroker"))
+        );
+        string service = Assert.IsType<string>(f.Hauler.Context.ResolveReference(binding.Id));
+        f.Hauler.Context.Notifications.Clear();
+        var before = f.Db.Services.GetRequiredService<IPilotContracts>().Details(CourierTestData.Hauler, id).Contract;
+        for (int read = 0; read < 2; read++)
+        {
+            var capacity = Fields(Reply(f.Hauler.Call("GetCapacity", [], service, new() { ["machoVersion"] = 1L })));
+            Assert.Equal(35d, capacity["used"]);
+            Assert.Equal(35d, capacity["capacity"]);
+        }
+        foreach (object?[] args in new object?[][] { [null], [true], [0L], [CourierTestData.Hauler] })
+        {
+            Assert.IsType<PilotCallResult.Failure>(f.Hauler.Call("GetCapacity", args, service));
+        }
+        Assert.IsType<PilotCallResult.Failure>(f.Hauler.Call("GetCapacity", [], service, new() { ["ownerID"] = CourierTestData.Hauler }));
+        Assert.IsType<PilotCallResult.Failure>(f.Owner.Call("GetCapacity", [], service));
+        Assert.Empty(Assert.IsType<List<object?>>(Fields(Reply(f.Hauler.Call("GetContract", [id])))["items"]));
+        Assert.Equal(before, f.Db.Services.GetRequiredService<IPilotContracts>().Details(CourierTestData.Hauler, id).Contract);
+        Assert.Empty(f.Hauler.Context.Notifications);
+        using var reopened = ServerServices.Build(new(f.Db.Path), f.Clock);
+        var handler = new CourierPackageHandler(reopened.GetRequiredService<IPilotContracts>());
+        Assert.Equal(35d, Fields(Reply(handler.Call(f.Hauler.Context, service, "GetCapacity", [])))["used"]);
+        Assert.Null(Reply(f.Hauler.Call("BreakPlasticWrap", [], service)));
+        Assert.IsType<PilotCallResult.Failure>(f.Hauler.Call("GetCapacity", [], service));
+    }
+
     private static BlueNewObject Request(long item, bool isPrivate = true)
     {
         var request = ContractServiceTests.Request(item);

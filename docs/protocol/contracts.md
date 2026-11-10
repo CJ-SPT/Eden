@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Courier package Show Info volume](#courier-package-show-info-volume--november-9-2026)
 - [Contract search endpoint access](#contract-search-endpoint-access)
 - [Contract search endpoint metadata](#contract-search-endpoint-metadata)
 - [Contract submission optional identifiers](#contract-submission-optional-identifiers)
@@ -19,6 +20,43 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Personal courier contracts](#personal-courier-contracts)
 - [Personal auction contracts](#personal-auction-contracts)
 - [Bulk fitted-ship contract creation](#bulk-fitted-ship-contract-creation)
+
+## Courier package Show Info volume — November 9, 2026
+
+Comparison with local **evejs 261108.1** exposed another missing Show Info request. In pinned build **3662168**,
+`Info.GetDataForAttribute` handles a Plastic Wrap's volume through `inventorycommon.util.GetVolumeForPlasticItem`.
+That helper calls `invCache.GetInventoryFromId(packageID).GetCapacity().used`. Eden could bind an owned courier
+package but handled only `GetSelfInvItem` and `BreakPlasticWrap`, so the volume read returned Unsupported.
+
+The existing bound package handler now accepts zero-argument `GetCapacity` and returns a named `utillib.KeyVal`
+with floating `used` and `capacity`, both equal to the sealed package's persisted volume. The manifest lives in
+contract escrow and is not opened or revealed. Reads preserve ownership validation, selection/binding lifetime,
+contract status and notifications, reject extra arguments/options, and refuse unavailable or broken packages.
+The existing package volume override remains authoritative after server reopen; no schema or gameplay changes
+are required. The enclosing package's quantity encoding is unchanged.
+
+Reference source: `server/src/services/inventory/invBrokerService.js`, SHA-256
+**8CEC4112DE1B312B547E39B789391B0D8E18DFCA95AA61170F82AEFADC1E9651**, particularly `Handle_GetCapacity`'s sealed-wrap
+volume handling. Eden does not copy evejs's generic container-capacity default. Preserved pinned client archive
+`E:/EdenDev/3662168/.eden-original-code.ccp` SHA-256:
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**; inspected modules are byte-identical in the
+staged archive. This reuses the unchanged KeyVal/numeric
+encoding checked against [Carbon Blue Marshal.cpp revision fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+[EVE University's Show Info guide](https://wiki.eveuniversity.org/Show_Info_and_Compare) describes inventory entry
+points and the Attributes tab; the pinned helper supplies the build-specific package behavior.
+
+**Automated validation:** The exact regression
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CourierServiceTests.PackageShowInfoReadsItsSavedVolumeWithoutOpeningTheManifest`
+first reproduced Unsupported for both hangar and cargo packages (build **6.56s**, tests **6.57s**).
+After the correction, both cases and the agent-header regression passed **3/3** (build **5.82s**, tests **8.35s**).
+Coverage includes native binding/serialization, repeated reads, forged owner/options, malformed arguments,
+unchanged contracts/notifications, hidden manifests, service reopen and refusal after breaking the package.
+Final combined validation is recorded with the [agent-header correction](agents.md#corporation-to-agent-show-info-header--november-9-2026).
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect an intact courier package's Attributes tab in a hangar and ship cargo;
+confirm its volume displays without a packet error. Native layout remains unverified.
 
 ## Contract search endpoint access
 

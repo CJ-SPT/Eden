@@ -39,7 +39,8 @@ public sealed record CatalogAgent(
     int? FactionId,
     int DivisionId,
     int Level,
-    bool Locator
+    bool Locator,
+    int? BloodlineId
 );
 
 public sealed record NpcCharacter(

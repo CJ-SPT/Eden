@@ -111,7 +111,8 @@ internal sealed class NpcDirectory(WorldDatabase database) : INpcDirectory
                     corporations.GetValueOrDefault(corporation),
                     checked((int)(agent.AgentDivisionID ?? 0)),
                     checked((int)(agent.AgentLevel ?? 0)),
-                    agent.AgentLocateCharacter == 1
+                    agent.AgentLocateCharacter == 1,
+                    checked((int?)data.BloodlineID)
                 )
             );
         }

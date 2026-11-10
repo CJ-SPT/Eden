@@ -91,6 +91,7 @@ internal sealed record AgentDirectoryReply(IReadOnlyList<CatalogAgent> Agents) :
                 "level",
                 "quality",
                 "isLocator",
+                "bloodlineID",
             ],
             Agents.Select(agent => new AgentDirectoryRow(agent)).ToArray()
         ).ToBlue();
@@ -115,5 +116,8 @@ internal sealed record AgentDirectoryRow(CatalogAgent Agent) : BlueModel
             Agent.Level,
             RetiredAgentQuality,
             Agent.Locator,
+            // The local agents service caches this row unchanged. CharacterInfoWindow
+            // reads bloodlineID before constructing the agent header or service tabs.
+            Agent.BloodlineId,
         };
 }

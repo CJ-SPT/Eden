@@ -21,6 +21,9 @@ reward, progression and industry multipliers, including restart activation and n
 
 ## Development
 
+[Agent header data](protocol/agents.md#corporation-to-agent-show-info-header--november-9-2026) and
+[courier package volume](protocol/contracts.md#courier-package-show-info-volume--november-9-2026) correct two remaining native Show Info paths found through evejs and the pinned client.
+
 [Spatial NPC scenes](protocol/performance.md#spatial-npc-scenes-november-9-2026) cover shared geometry, local contact
 preparation, preserved visibility and warp tracking, and dispersed-system replay measurements.
 

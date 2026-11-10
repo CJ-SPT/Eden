@@ -13,7 +13,8 @@ public sealed class AgentInformationRulesTests
         500001,
         MissionRules.DistributionDivision,
         1,
-        true
+        true,
+        1
     );
     private static readonly AgentAccess Allowed = new(true, "", 0, 0, 0, -10);
 

@@ -51,7 +51,8 @@ internal static class AgentTestData
         string name,
         bool deleted = false,
         bool localization = true,
-        int? station = StationId
+        int? station = StationId,
+        int? bloodline = 1
     )
     {
         long nameId = id + 1_000_000;
@@ -77,7 +78,7 @@ internal static class AgentTestData
                         startDate = "2003-05-04 00:32:00",
                         gender = 0,
                         raceID = 1,
-                        bloodlineID = 1,
+                        bloodlineID = bloodline,
                         schoolID = 19,
                         ancestryID = 11,
                         description = "Pinned NPC biography",
@@ -109,6 +110,25 @@ internal static class AgentTestData
 
 public sealed class AgentDirectoryTests
 {
+    [Theory]
+    [InlineData(1)]
+    [InlineData(12)]
+    [InlineData(null)]
+    public void AgentHeaderBloodlineComesFromTheCatalogAndSurvivesReopen(int? bloodline)
+    {
+        using TestWorld db = new();
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            AgentTestData.Add(catalog, AgentTestData.AgentId, AgentType.Basic, "Header Agent", bloodline: bloodline);
+            catalog.SaveChanges();
+        }
+        var directory = db.Services.GetRequiredService<INpcDirectory>();
+        Assert.Equal(bloodline, directory.Agent(AgentTestData.AgentId)!.BloodlineId);
+        Assert.Equal(directory.Character(AgentTestData.AgentId)!.BloodlineId, directory.Agent(AgentTestData.AgentId)!.BloodlineId);
+        using var reopened = ServerServices.Build(new(db.Path));
+        Assert.Equal(bloodline, reopened.GetRequiredService<INpcDirectory>().Agent(AgentTestData.AgentId)!.BloodlineId);
+    }
+
     [Fact]
     public void LiveHostBuildWarmsDirectoryBeforePilotRequests()
     {
@@ -249,7 +269,7 @@ public sealed class AgentDirectoryTests
         }
         var directory = db.Services.GetRequiredService<INpcDirectory>();
         Assert.Equal(
-            new(3020000, AgentTestData.StationId, 30000142, AgentTestData.Corporation, type, 500001, 22, 3, true),
+            new(3020000, AgentTestData.StationId, 30000142, AgentTestData.Corporation, type, 500001, 22, 3, true, 1),
             directory.Agent(3020000)
         );
         Assert.Equal(3, directory.Agents().Count);

@@ -8,6 +8,39 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class AgentDirectoryServiceTests
 {
+    [Fact]
+    public void CorporationAgentSelectionSuppliesTheCachedBloodlineUsedByTheInfoWindowHeader()
+    {
+        using Fixture fixture = new();
+        fixture.Select();
+        var table = Fields(Reply(fixture.Call("agentMgr", "GetAgents", [])));
+        var header = Assert.IsType<List<object?>>(table["header"]).Select(BlueMarshal.Text).ToList();
+        Assert.Contains("bloodlineID", header);
+        var corporationAgents = Assert
+            .IsType<List<object?>>(table["lines"])
+            .Cast<object?[]>()
+            .Where(row => Equals(row[header.IndexOf("corporationID")], (long)AgentTestData.Corporation))
+            .GroupBy(row => row[header.IndexOf("level")]);
+        var agents = Assert.Single(corporationAgents).ToArray();
+        Assert.Equal(2, agents.Length);
+        foreach (var row in agents)
+        {
+            long id = Assert.IsType<long>(row[header.IndexOf("agentID")]);
+            // PanelAgents filters/clones GetAgents; local Agents.GetAgentByID returns
+            // that same row. CharacterInfoWindow reads bloodlineID before any tabs.
+            Assert.Equal(1L, row[header.IndexOf("bloodlineID")]);
+            Assert.Equal(3L, row[header.IndexOf("level")]);
+            var publicInfo = Fields(Reply(fixture.Call("charMgr", "GetPublicInfo", [id])));
+            Assert.Equal(publicInfo["bloodlineID"], row[header.IndexOf("bloodlineID")]);
+            foreach (string method in new[] { "GetAgentStaticInfo", "GetAgentByID" })
+            {
+                var direct = Fields(Reply(fixture.Call("agentMgr", method, [id])));
+                Assert.Equal(row[header.IndexOf("bloodlineID")], direct["bloodlineID"]);
+            }
+        }
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
     [Theory]
     [InlineData("GetAgentStaticInfo")]
     [InlineData("GetAgentByID")]
@@ -112,13 +145,14 @@ public sealed class AgentDirectoryServiceTests
                 "level",
                 "quality",
                 "isLocator",
+                "bloodlineID",
             },
             Assert.IsType<List<object?>>(rows["header"]).Select(BlueMarshal.Text)
         );
         var lines = Assert.IsType<List<object?>>(rows["lines"]);
         Assert.Equal(2, lines.Count);
         Assert.Equal(
-            new object?[] { AgentTestData.AgentId, 60003760L, 1000044L, 30000142L, 2L, 500001L, 22L, 3L, 20L, true },
+            new object?[] { AgentTestData.AgentId, 60003760L, 1000044L, 30000142L, 2L, 500001L, 22L, 3L, 20L, true, 1L },
             Assert.IsType<object?[]>(lines[0])
         );
         Assert.Equal(AgentTestData.OtherAgent, Assert.IsType<object?[]>(lines[1])[0]);

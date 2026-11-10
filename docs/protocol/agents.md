@@ -2,6 +2,50 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Corporation-to-agent Show Info header — November 9, 2026
+
+The maintainer recalled a remaining failure when opening an agent from a corporation's Agents tab. This path
+still failed before the earlier `GetInfoServiceDetails` correction could help: the pinned build **3662168**
+`CharacterInfoWindow.update_description_caption_and_sub_caption` reads `agent.level` and **`agent.bloodlineID`**
+from the local `agents.GetAgentByID` result before constructing the header. `Agents.__GetAllAgents` clones and indexes
+the server's `agentMgr.GetAgents` rows without enriching them. `PanelAgents.GetAgentsOfLevel` clones and filters
+the same directory by corporation and level. Eden supplied the level but omitted `bloodlineID` from those rows.
+The direct `GetAgentByID` RPC added previously does not replace that local cache.
+
+The typed catalog agent projection now retains the NPC's actual nullable bloodline. The native directory row and
+both supplementary single-agent replies supply it. The value comes from `client/npccharacters.bloodlineID`,
+matching the existing public character profile; no race-specific default is invented for missing data. The
+directory remains shared and immutable, with no per-agent database lookup added to serialization. The previous
+agent-service/mission availability behavior and character-selection gating remain in effect.
+
+Secondary reference: local **evejs 261108.1**, `server/src/services/agent/agentMgrService.js`, SHA-256
+**34544351A7AD85567BA55A4626AA5DB4304CBC10546466B547DBD271B3772C66**. Its `_buildAgentsTable` includes `bloodlineID`.
+Primary evidence is inert bytecode inspection of preserved build **3662168** `E:/EdenDev/3662168/.eden-original-code.ccp`, SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, particularly `characterInfoWindow`,
+`station/agents/agents` and `info/panels/panelAgents`. The inspected modules are byte-identical in the staged archive.
+Gameplay context follows
+[EVE University's corporation → agent Show Info instructions](https://wiki.eveuniversity.org/Datacore_farming).
+Existing Rowset/KeyVal/None encoding was checked against
+[Carbon Blue Marshal.cpp revision fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp);
+no codec or saved-world schema change is needed.
+
+**Automated validation:** The exact regression
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.AgentDirectoryServiceTests.CorporationAgentSelectionSuppliesTheCachedBloodlineUsedByTheInfoWindowHeader`
+first failed on the absent `bloodlineID` column (build **15.10s**, tests **5.63s**). After the correction, it and
+the two courier Show Info regressions passed **3/3** (build **5.82s**, tests **8.35s**). The regression reproduces
+corporation/level selection and checks the cached row used by the header against public and supplementary reads.
+Catalog cases retain multiple bloodlines and None across service reopen; existing cases cover all 12 agent categories.
+Final root validation passed tool/solution restores, solution build with zero warnings/errors, **102 focused .NET
+tests in 31s**, both Python policy suites (**8 catalog + 9 formatting**), formatting (**1,554 files**), the 140-column
+check and diff/documentation checks. The restore/build/test/policy/format sequence took **101.87s**. No full .NET
+suite was requested or run. Focused filter:
+`FullyQualifiedName~AgentDirectoryServiceTests|FullyQualifiedName~AgentDirectoryTests|FullyQualifiedName~AgentDirectoryPerformanceTests|FullyQualifiedName~AgentShowInfoTests|FullyQualifiedName~AgentInformationRulesTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CourierServiceTests|FullyQualifiedName~CourierContractTests|FullyQualifiedName~CourierRulesTests|FullyQualifiedName~TypedInventoryTests`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Restart the server, open an NPC corporation's Agents tab, and use Show Info on
+an agent; check the caption, biography and Agent Info tab. Native rendering and tab construction remain unverified.
+
 ## Agent Show Info and related UI reads — November 9, 2026
 
 The maintainer reported that agent Show Info does not work. Inert inspection of pinned build **3662168** confirms

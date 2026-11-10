@@ -52,6 +52,9 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Corporation-to-agent Show Info header, November 9, 2026](protocol/agents.md#corporation-to-agent-show-info-header--november-9-2026)
+  and [courier package Show Info volume](protocol/contracts.md#courier-package-show-info-volume--november-9-2026).
+
 - [Spatial NPC scenes, November 9, 2026](protocol/performance.md#spatial-npc-scenes-november-9-2026)
 
 - [Agent Show Info and related UI reads, November 9, 2026](protocol/agents.md#agent-show-info-and-related-ui-reads--november-9-2026)
