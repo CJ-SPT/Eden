@@ -8,6 +8,90 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class AgentDirectoryServiceTests
 {
+    [Theory]
+    [InlineData("GetAgentStaticInfo")]
+    [InlineData("GetAgentByID")]
+    [InlineData("GetSolarSystemOfAgent")]
+    public void SupplementaryAgentReadsRequireSelectionAndRejectInvalidTargetsAndKeywords(string method)
+    {
+        using Fixture fixture = new();
+        Assert.Same(PilotCallResult.Unsupported, fixture.Call("agentMgr", method, [AgentTestData.AgentId]));
+        fixture.Select();
+        foreach (
+            object?[] args in new object?[][]
+            {
+                [],
+                [null],
+                [true],
+                ["3008416"],
+                [0L],
+                [long.MaxValue],
+                [AgentTestData.NonAgent],
+                [AgentTestData.DeletedAgent],
+                [AgentTestData.AgentId, 90000002L],
+            }
+        )
+        {
+            Assert.IsType<PilotCallResult.Failure>(fixture.Call("agentMgr", method, args));
+        }
+        Assert.IsType<PilotCallResult.Failure>(
+            fixture.Call("agentMgr", method, [AgentTestData.AgentId], new() { ["characterID"] = 90000002L })
+        );
+        Assert.IsType<PilotCallResult.Success>(fixture.Call("agentMgr", method, [AgentTestData.AgentId], new() { ["machoVersion"] = 1L }));
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
+    [Theory]
+    [InlineData("GetMyEpicArcStatus")]
+    [InlineData("GetMessagesForEpicArcMissions")]
+    public void EpicArcReadsReturnNativeEmptyMapsWithoutAcceptingAnotherPilotsIdentity(string method)
+    {
+        using Fixture fixture = new();
+        Assert.Same(PilotCallResult.Unsupported, fixture.Call("agentMgr", method, []));
+        fixture.Select();
+        Assert.Empty(Assert.IsType<Dictionary<string, object?>>(Reply(fixture.Call("agentMgr", method, []))));
+        Assert.IsType<PilotCallResult.Failure>(fixture.Call("agentMgr", method, [90000002L]));
+        Assert.IsType<PilotCallResult.Failure>(fixture.Call("agentMgr", method, [], new() { ["characterID"] = 90000002L }));
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
+    [Fact]
+    public void CareerCompletionPrimesEveryDistinctRequestedAgentWithFalseAndRejectsUnboundedOrForgedInput()
+    {
+        using Fixture fixture = new();
+        fixture.Select();
+        var completed = Assert.IsType<Dictionary<long, object?>>(
+            Reply(
+                fixture.Call(
+                    "agentMgr",
+                    "GetCompletedCareerAgentIDs",
+                    [new List<object?> { AgentTestData.OtherAgent, AgentTestData.OtherAgent }]
+                )
+            )
+        );
+        Assert.Single(completed);
+        Assert.False(Assert.IsType<bool>(completed[AgentTestData.OtherAgent]));
+        Assert.Empty(
+            Assert.IsType<Dictionary<string, object?>>(Reply(fixture.Call("agentMgr", "GetCompletedCareerAgentIDs", [new List<object?>()])))
+        );
+        foreach (
+            object?[] args in new object?[][]
+            {
+                [],
+                [null],
+                [new object?[] { AgentTestData.OtherAgent }],
+                [new List<object?> { 90000002L }],
+                [new List<object?> { AgentTestData.DeletedAgent }],
+                [new List<object?> { "3019370" }],
+                [Enumerable.Repeat<object?>(AgentTestData.OtherAgent, 1001).ToList()],
+            }
+        )
+        {
+            Assert.IsType<PilotCallResult.Failure>(fixture.Call("agentMgr", "GetCompletedCareerAgentIDs", args));
+        }
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
     [Fact]
     public void DirectoryUsesNativeRowsetFieldsAndRequiresSelectedPilotWithoutAcceptingForgedFilters()
     {

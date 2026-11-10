@@ -27,20 +27,11 @@ internal sealed partial class PilotMissionStore
         long now
     )
     {
-        var kind = agent.DivisionId == MissionRules.SecurityDivision ? MissionKind.Combat : MissionKind.Courier;
         if (!storyline && agent.DivisionId is not (MissionRules.SecurityDivision or MissionRules.DistributionDivision))
         {
             throw new InvalidDataException("This agent's mission division is not implemented.");
         }
-        var profiles = MissionCatalog
-            .Read(catalog)
-            .Where(p =>
-                p.Definition.Level == level
-                && p.Definition.Storyline == storyline
-                && (storyline || p.Kind == kind)
-                && !p.AttacksFaction(agent.FactionId)
-                && p.AvailableTo(agent)
-            )
+        var profiles = ProfilesForAgent(catalog, agent, level, storyline)
             .OrderBy(p => p.Definition.OfferOrder)
             .ThenBy(p => p.Definition.Gates.IsEmpty ? 0 : 1)
             .ThenBy(p => p.Definition.MissionId)
@@ -105,6 +96,20 @@ internal sealed partial class PilotMissionStore
         };
         world.Add(row);
         return row;
+    }
+
+    private static IEnumerable<MissionProfile> ProfilesForAgent(CatalogDbContext catalog, CatalogAgent agent, int level, bool storyline)
+    {
+        var kind = agent.DivisionId == MissionRules.SecurityDivision ? MissionKind.Combat : MissionKind.Courier;
+        return MissionCatalog
+            .Read(catalog)
+            .Where(profile =>
+                profile.Definition.Level == level
+                && profile.Definition.Storyline == storyline
+                && (storyline || profile.Kind == kind)
+                && !profile.AttacksFaction(agent.FactionId)
+                && profile.AvailableTo(agent)
+            );
     }
 
     private static MissionPayment Pay(

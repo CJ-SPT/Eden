@@ -48,6 +48,8 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Agent Show Info and related UI reads, November 9, 2026](protocol/agents.md#agent-show-info-and-related-ui-reads--november-9-2026)
+
 - [Corporation Show Info window audit, November 9, 2026](protocol/corporations.md#corporation-show-info-window-audit-november-9-2026)
 
 - [Public corporation Show Info, November 9, 2026](protocol/corporations.md#public-corporation-show-info-november-9-2026)

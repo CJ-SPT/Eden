@@ -2,6 +2,79 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Agent Show Info and related UI reads — November 9, 2026
+
+The maintainer reported that agent Show Info does not work. Inert inspection of pinned build **3662168** confirms
+`Info.UpdateDataCharacter` calls `UpdateDataAgent`, whose first operation is the agent moniker's zero-argument
+`GetInfoServiceDetails()`. This route was missing. `Info.UpdateDataAgent` reads `stationID`, `level`, `services` and
+`incompatible`; `Agents.ProcessAgentInfoKeyVal` dispatches on the string `agentServiceType`, and the mission service
+consumer reads the boolean `available`. NPC headers skip the player security-status/public-profile parallel calls;
+no security-status change is needed for this failure.
+
+The bound handler now returns a named `utillib.KeyVal` with `agentID`, native station/level metadata, a typed mission
+service list and a nullable compatibility message. A read-only World projection uses the selected pilot, saved
+standings and clone grade, supported mission content, and unexpired offered/accepted missions. Pure Gameplay rules
+derive the display state. Availability is false while a mission is active. An earned, unexpired storyline clears
+its compatibility warning without advertising repeat offers. Unsupported research, locator, career, epic-arc and
+other special services are not fabricated; their agents remain inspectable with an explicit limitation. No station
+ID is invented for a space agent. Mission content filtering is shared with offer generation, preserving its existing
+ordering and faction/corporation restrictions.
+
+Show Info never calls the mutating journal/current-offer paths: reaching a deadline does not expire, close or replace
+an offer, change standings, write contacts or issue notifications. Actual mission operations retain their existing
+deadline settlement. Positional or unexpected keyword arguments reject before any offer processing, and the router
+still requires character selection. The normal `machoVersion` metadata is accepted.
+
+At the maintainer's request, the local **evejs** implementation was also used as a secondary reference to audit nearby
+UI reads. It is an unpacked source tree without Git metadata; `server/package.json` identifies version **261108.1**.
+Reviewed `server/src/services/agent/agentMgrService.js` (SHA-256
+`34544351A7AD85567BA55A4626AA5DB4304CBC10546466B547DBD271B3772C66`) and
+`server/src/services/agent/agentMissionRuntime.js` (SHA-256
+`F9039040331E109B166E9E73D916E11B58C16F13B652D40BA1FA0C4838DAF7FA`), particularly the public agent records,
+`getInfoServiceDetails`, mission service shape, career-completion cache and epic-arc status projection. Eden uses its
+own typed rules and saved state; evejs's locator/research gameplay and client-notification behavior are not copied.
+
+| Route | Implemented response and limits |
+| --- | --- |
+| Bound `GetInfoServiceDetails()` | New agent info reply, scoped to the selected pilot and bound active NPC agent. Works as an embedded first call during binding or as a later bound call. |
+| `agentMgr.GetAgentStaticInfo(agentID)` and `GetAgentByID(agentID)` | New public KeyVal projections from the existing active NPC directory, including corporation, faction, division, level, location, locator metadata and the existing retired-quality baseline. The pinned local `GetAgentByID` still primarily uses `GetAgents`; these aliases also support evejs-compatible clients/tools. No contact/cache notifications are introduced. |
+| `agentMgr.GetSolarSystemOfAgent(agentID)` | Ownership moved to the directory handler. Returns the actual catalog system, or None for a known agent without a known system; the previous implementation rejected that valid unknown-location case. |
+| `agentMgr.GetCompletedCareerAgentIDs(agentIDs)` | Corrected the prior list to an integer-keyed dictionary with an explicit false entry for each distinct requested active agent. The native client calls dictionary `update` to prime its cache. Career chains are not implemented. Lists are limited to 1,000 IDs; invalid types, inactive/unknown agents, extra arguments and keywords reject. |
+| `agentMgr.GetMyEpicArcStatus()` | New empty dictionary for Eden's absent epic-arc progression. The caller cannot supply another pilot ID. |
+| `agentMgr.GetMessagesForEpicArcMissions()` | New empty dictionary matching the native controller's nested `get` fallback; Eden has no supported epic-arc message set. Extra arguments and keywords reject. |
+
+Primary client evidence is the preserved original archive `E:/EdenDev/3662168/.eden-original-code.ccp`, SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**: `infosvc.UpdateDataAgent`,
+`characterInfoWindow`, the local agents service, `epicArcSvc.ReconstructController` and
+`EpicArcController._GetMissionMessageID`. [EVE University's Agent Info instructions](https://wiki.eveuniversity.org/Datacore_farming)
+describe level/location/compatibility inspection. Existing tuple/list/KeyVal/dictionary/None adapters reuse
+[Carbon Blue Marshal.cpp revision fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+No codec, save schema or mission reward changes are made.
+
+**Automated validation:** development began with
+`.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.Agents.AgentShowInfoTests.NativeAgentInfoBindsAndLoadsServiceDetailsWithAdjacentDirectoryReads'`.
+The initial test build used a nonexistent clock helper; after switching to the existing `AdvanceWallTime` helper,
+both session/bind cases passed (build **6.79s**, tests **15.38s**). Focused regressions cover native fields and binding,
+direct typed display rules, current access, active offers, exact deadlines, read-only expiry, storyline privacy,
+space/special agents, malformed requests, directory aliases, bounded career caches, empty epic-arc maps and reopening
+saved worlds, including a resident world. The first expanded run passed 24 cases and failed one because its new space
+agent fixture had not been saved; after saving the fixture, that exact case passed (build **4.55s**, tests **6.34s**).
+Final tool/solution restore and solution build passed with zero warnings/errors. The filter below passed **434 tests
+in 3m 40s**, including **23 new cases** and the authored combat/delivery catalog, access restrictions, persistence and
+protocol dependencies. Both Python policy suites passed (**8 catalog**, **9 formatting**); formatting verified
+**1,529 files**, and width, documentation links, pinned-archive hash and diff/whitespace checks passed. The required
+sequence took **247.74s**, against main baseline **cea55433** plus this change. Unrelated uncommitted market work in
+the main checkout was excluded. No full .NET suite was run.
+
+Focused filter:
+`FullyQualifiedName~AgentShowInfoTests|FullyQualifiedName~AgentInformationRulesTests|FullyQualifiedName~AgentDirectoryServiceTests|FullyQualifiedName~AgentDirectoryTests|FullyQualifiedName~MissionProtocolTests|FullyQualifiedName~MissionPersistenceTests|FullyQualifiedName~MissionRulesTests|FullyQualifiedName~MissionContentTests|FullyQualifiedName~PilotServicesTests`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Restart the server and open Show Info for an ordinary agent, an unavailable higher-level
+agent and a special agent. Confirm the Agent Info and Standings tabs, location link and conversation button render.
+Native rendering and interaction remain unverified; this read-only compatibility work does not enable deferred agent services.
+
 ## Opportunities mission details and three-dot menu — November 9, 2026
 
 The Opportunities mission details page reported **Unexpected mission keyword arguments** because its objective read uses a named argument that the legacy conversation does not send. Inert inspection of the staged build-3662168 `code.ccp` (current staged archive SHA-256 **051a2f027309aa9e806273200c9f5e969cad8675f49ef97313ff57a6b4549bb9**) confirmed `jobboard/client/features/agent_missions/job.pyj`, `AgentMissionJob._get_objective_info`, calls the bound agent's `GetMissionObjectiveInfo(ignoreLocateCheck=True)`. `FleetMembersAgentMissionJob._get_objective_info` also supplies `charID`. Earlier records retain their historical archive hashes.

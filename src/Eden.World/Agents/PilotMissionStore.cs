@@ -58,6 +58,34 @@ internal sealed partial class PilotMissionStore(
         }
     }
 
+    public AgentServiceInformation Information(long pilotId, long agentId)
+    {
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        lock (database.MotionLock)
+        {
+            using WorldDbContext world = new(database.Path);
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            using var transaction = world.Database.BeginTransaction();
+            var pilot = Pilot(world, pilotId);
+            var agent = Agent(agentId);
+            var access = Access(world, catalog, pilot, agent);
+            long now = Now;
+            // Show Info observes saved deadlines without expiring or creating offers.
+            var active = world
+                .Set<SavedMission>()
+                .AsNoTracking()
+                .SingleOrDefault(m =>
+                    m.PilotId == pilotId
+                    && m.AgentId == agentId
+                    && m.ClosedAt == null
+                    && m.ExpiresAt > now
+                    && (m.State == MissionState.Offered || m.State == MissionState.Accepted)
+                );
+            bool content = agent.Type == AgentType.Basic && access.Allowed && ProfilesForAgent(catalog, agent, agent.Level, false).Any();
+            return AgentInformationRules.Describe(agent, access, content, active is not null, active?.Storyline == true);
+        }
+    }
+
     private static AgentAccess Access(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent)
     {
         if (agent.Type != AgentType.Basic || agent.Level is < 1 or > 5)

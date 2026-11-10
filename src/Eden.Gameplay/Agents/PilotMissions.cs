@@ -148,6 +148,7 @@ public sealed record MissionGate(long Id, SpacePosition Position, float Radius, 
 public interface IPilotMissions
 {
     AgentAccess Access(long pilotId, long agentId);
+    AgentServiceInformation Information(long pilotId, long agentId);
     IReadOnlyList<MissionOffer> Journal(long pilotId, long? agentId = null);
     MissionOffer? Current(long pilotId, long agentId);
     MissionUpdate Act(long pilotId, long agentId, MissionAction action, long? offerId = null);

@@ -38,11 +38,7 @@ internal sealed class MissionHandler(
         {
             return PilotCallResult.Unsupported;
         }
-        if (
-            !bound
-            && service == "agentMgr"
-            && method is not ("GetMyJournalDetails" or "GetDisabledMissions" or "GetSolarSystemOfAgent" or "GetCompletedCareerAgentIDs")
-        )
+        if (!bound && service == "agentMgr" && method is not ("GetMyJournalDetails" or "GetDisabledMissions"))
         {
             return PilotCallResult.Unsupported;
         }
@@ -75,8 +71,6 @@ internal sealed class MissionHandler(
                 {
                     "GetMyJournalDetails" when args.Length == 0 => new MissionJournal(missions.Journal(pilotId)),
                     "GetDisabledMissions" when args.Length == 0 => BlueEmpty.List,
-                    "GetCompletedCareerAgentIDs" when args is [List<object?>] => BlueEmpty.List,
-                    "GetSolarSystemOfAgent" when args is [long id] && directory.Agent(id)?.SystemId is int system => system,
                     _ => new PilotCallResult.Failure("Invalid agent mission directory request."),
                 };
             }
@@ -90,6 +84,12 @@ internal sealed class MissionHandler(
             if (method == "GetMyJournalDetails" && args.Length == 0)
             {
                 return new MissionJournal(missions.Journal(pilotId, agentId));
+            }
+            if (method == "GetInfoServiceDetails")
+            {
+                return args.Length == 0
+                    ? new AgentServiceDetailsReply(missions.Information(pilotId, agentId))
+                    : new PilotCallResult.Failure("Read agent information without additional arguments.");
             }
             if (method is "IsCheatingWithAgent" or "ShouldAlwaysAllowReplay" && args.Length == 0)
             {
