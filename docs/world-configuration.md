@@ -15,6 +15,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
 | Progression | NPC kill-SP multiplier; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
+| Structures | Anchoring, core onlining and decommissioning speeds for new timers; saved deadlines retain their original terms. |
 | Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 
@@ -22,7 +23,7 @@ Changes affect future operations. Balances, installed jobs and paid costs, quote
 
 ## World tuning
 
-The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Industry**, **World & economy** and **Advanced**.
+The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **World & economy** and **Advanced**.
 Switching categories retains the draft. Activity reward/yield multipliers show their unit, range, explanation and an illustrative example.
 **Reset to 1×** resets that control; **Reset draft to original** restores the world's original revision into the draft.
 **Discard unsaved changes** returns to the last loaded or saved draft, including any already pending revision.
@@ -30,7 +31,7 @@ The shared **Save for restart** bar shows unsaved, active or pending-restart sta
 expand **Original, active and pending values** for the complete comparison. Economic overrides are under Advanced.
 
 All new multipliers default to **1× current Eden behavior**, including when loading historical documents that omit the new fields.
-Gathering, industry speed and reprocessing multipliers accept **0.1–100×**. Reward multipliers accept **0–100×**;
+Gathering, structure/industry speed and reprocessing multipliers accept **0.1–100×**. Reward multipliers accept **0–100×**;
 zero disables that reward. Forms, command imports and the administrator API enforce the same bounds. These policies belong to the
 saved world; they do not modify shared catalog definitions or autonomous NPC gathering/production.
 
@@ -94,7 +95,7 @@ dotnet run --project src/Eden.Server -- --world 'C:\Eden\world.sqlite' --set-adm
 
 Start the server normally, then open **http://127.0.0.1:26003**. The listener starts only after an administrator has been provisioned. Use `--admin-port <port>` for a different dedicated port or `--disable-admin` to disable it. It always binds IPv4 loopback, independently of game listeners and inherited web-host configuration. Nonlocal Host/Origin values are rejected. Game accounts receive no administration access.
 
-Settings contains six activity categories and supported economic overrides. It displays original, active and pending values, sources, compatibility and validation errors. Reset changes only the draft. **Save for restart** validates and durably stages it; activation requires restart. Revisions provides comparison, restore, JSON export and validated file import. Restoring also creates a pending revision.
+Settings contains seven activity categories and supported economic overrides. It displays original, active and pending values, sources, compatibility and validation errors. Reset changes only the draft. **Save for restart** validates and durably stages it; activation requires restart. Revisions provides comparison, restore, JSON export and validated file import. Restoring also creates a pending revision.
 
 Catalog provides searchable pages across all 442 generated datasets, typed fields, explicit missing/null distinctions, exact source numbers and relationship navigation. Nested collections have their own display pages. Native fields remain read-only in original, active and pending views. Generated types validate records before the browser displays their original payloads; dynamic JSON stays inside this administration/storage boundary.
 

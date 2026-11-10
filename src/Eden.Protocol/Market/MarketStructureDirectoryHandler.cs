@@ -1,11 +1,13 @@
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Structures;
 
 namespace Eden.Protocol.Market;
 
 [Injectable]
-internal sealed class MarketStructureDirectoryHandler : ISelectedPilotCallHandler
+internal sealed class MarketStructureDirectoryHandler(IPilotStructures structures) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -23,9 +25,12 @@ internal sealed class MarketStructureDirectoryHandler : ISelectedPilotCallHandle
         {
             return new PilotCallResult.Failure("The character structure directory does not accept arguments.");
         }
-        // Build 3662168 StructureDirectory.GetMarketDockableLocationsInRegion
-        // calls iteritems() and filters each structure's services. Eden has no
-        // player structures; NPC stations remain in the client's static data.
-        return BlueEmpty.Dictionary;
+        return new StructureDirectoryReply(
+            structures
+                .List(context.Pilot.PilotId)
+                .Where(s => structures.HasService(context.Pilot.PilotId, s.Id, StructureService.Docking))
+                .Select(s => new StructureInfoReply(s, true, NativeInstance: false))
+                .ToArray()
+        );
     }
 }

@@ -43,13 +43,13 @@ public sealed record InsuranceLedgerEntry(long Id, long PilotId, long ShipId, in
 
 public interface IPilotInsurance
 {
-    void CheckStation(long pilotId, int stationId);
+    void CheckStation(long pilotId, long stationId);
     long Price(int typeId);
     IReadOnlyDictionary<int, long> Prices(IReadOnlyList<int> typeIds);
     IReadOnlyList<InsurancePolicy> Contracts(long pilotId);
     InsurancePolicy? Contract(long pilotId, long shipId);
-    InsurancePurchase Insure(long pilotId, int stationId, long shipId, long premiumCents, bool replace);
-    void Cancel(long pilotId, int stationId, long shipId);
+    InsurancePurchase Insure(long pilotId, long stationId, long shipId, long premiumCents, bool replace);
+    void Cancel(long pilotId, long stationId, long shipId);
 }
 
 public sealed class InsuranceContractExists(long ownerId) : Exception("This ship already has active insurance.")

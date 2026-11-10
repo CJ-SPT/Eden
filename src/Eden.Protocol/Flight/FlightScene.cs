@@ -36,6 +36,7 @@ internal sealed class FlightScene(
     private long? _observingSince;
     private StaticSpaceObject[] _visibleAsteroids = [];
     private IReadOnlyList<StaticSpaceObject> _anomalies = [];
+    private IReadOnlyList<StaticSpaceObject> _structures = [];
     private WreckContact[] _wrecks = [];
     private MissileContact[] _missiles = [];
 
@@ -301,6 +302,34 @@ internal sealed class FlightScene(
     {
         Objects = Objects.Where(o => !MiningDefinitions.IsResource(o.CategoryId, o.GroupId)).Concat(asteroids).ToArray();
         RefreshVisibleAsteroids(context);
+    }
+
+    internal void RefreshStructures(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> structures)
+    {
+        if (ReferenceEquals(_structures, structures) || _structures.SequenceEqual(structures))
+        {
+            return;
+        }
+        var previous = Objects.Where(o => o.CategoryId == Eden.Gameplay.Structures.StructureRules.CategoryId).ToArray();
+        Objects = Objects.Where(o => o.CategoryId != Eden.Gameplay.Structures.StructureRules.CategoryId).Concat(structures).ToArray();
+        _structures = structures;
+        if (!context.InBallpark)
+        {
+            return;
+        }
+        foreach (var removed in previous.ExceptBy(structures.Select(o => o.Id), o => o.Id))
+        {
+            update(new DestinyCommand.RemoveBall(removed.Id, false));
+        }
+        foreach (var changed in structures.Where(o => previous.FirstOrDefault(p => p.Id == o.Id) is { } old && old != o))
+        {
+            update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+        }
+        var added = structures.ExceptBy(previous.Select(o => o.Id), o => o.Id).ToArray();
+        if (added.Length > 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, space.Stamp(clock))));
+        }
     }
 
     internal void RefreshVisibleAsteroids(FlightSceneContext context)

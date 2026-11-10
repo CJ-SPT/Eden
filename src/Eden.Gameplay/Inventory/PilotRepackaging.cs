@@ -14,7 +14,7 @@ public sealed record RepackagingState(
 
 public interface IPilotRepackaging
 {
-    IReadOnlyList<InventoryChange> Repackage(long pilotId, int stationId, IReadOnlyList<RepackageItem> items);
+    IReadOnlyList<InventoryChange> Repackage(long pilotId, long stationId, IReadOnlyList<RepackageItem> items);
 }
 
 public static class RepackagingRules

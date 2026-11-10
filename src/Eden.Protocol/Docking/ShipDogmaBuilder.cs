@@ -60,7 +60,7 @@ internal sealed class ShipDogmaBuilder(
             // Build 3662168: character inventory type 1373, pilot flag 57, group/category 1.
             "pilot" => new(pilot.PilotId, 1373, pilot.PilotId, pilot.ShipId, 57, InventoryWireDefinitions.AssembledQuantity, 1, 1),
             _ => new(
-                pilot.StationId,
+                pilot.DockedLocationId,
                 pilot.StationTypeId,
                 pilot.StationOwnerId,
                 pilot.SystemId,

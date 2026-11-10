@@ -36,9 +36,7 @@ internal sealed class GlobalInventoryHandler(IPilotAssets assets) : ISelectedPil
                 ("ListStations", []) => new GlobalInventoryStations(assets.Locations(pilot)),
                 ("List", []) => Rows(assets.Items(pilot, new())),
                 ("ListIncludingContainers", []) => Rows(assets.Items(pilot, new(IncludeContainers: true))),
-                ("ListStationItems", [long station]) when station is > 0 and <= int.MaxValue => Rows(
-                    assets.Items(pilot, new((int)station))
-                ),
+                ("ListStationItems", [long station]) when station > 0 => Rows(assets.Items(pilot, new(station))),
                 _ => new PilotCallResult.Failure("Invalid personal asset request."),
             };
         }

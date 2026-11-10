@@ -17,7 +17,7 @@ public static class FleetDefinitions
 
 public interface IPilotFleet
 {
-    IReadOnlyList<InventoryItem> Ships(long pilotId, int stationId);
+    IReadOnlyList<InventoryItem> Ships(long pilotId, long stationId);
     InventoryItem? Find(long pilotId, long shipId);
     string Name(long pilotId, long shipId);
     ShipAssembly Assemble(long pilotId, IReadOnlyList<long> itemIds, string? name);

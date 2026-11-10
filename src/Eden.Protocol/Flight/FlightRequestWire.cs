@@ -21,6 +21,14 @@ internal static class FlightRequestWire
         {
             return new FlightCommand.Undock(shipId);
         }
+        if (service == "structureDocking" && method == "Dock" && arguments is [long structureId, long activeShipId])
+        {
+            return new FlightCommand.Dock(structureId, activeShipId);
+        }
+        if (service == "structureDocking" && method == "Undock" && arguments is [long _, long undockingShipId, ..])
+        {
+            return new FlightCommand.Undock(undockingShipId);
+        }
         if (service != "beyonce")
         {
             return null;

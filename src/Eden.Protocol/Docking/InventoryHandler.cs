@@ -41,10 +41,10 @@ internal sealed class InventoryHandler(
         {
             return new(result);
         }
-        long location = service == "@hangar" ? pilot.StationId : ShipContainer(service, pilot);
+        long location = service == "@hangar" ? pilot.DockedLocationId : ShipContainer(service, pilot);
         if (service == "@hangar" && (flag is null or (long)InventoryFlag.Hangar))
         {
-            result.AddRange(fleet.Ships(pilot.PilotId, pilot.StationId).Select(Item));
+            result.AddRange(fleet.Ships(pilot.PilotId, pilot.DockedLocationId).Select(Item));
         }
         result.AddRange(inventory.List(pilot.PilotId, location).Where(i => flag is null || i.FlagId == flag).Select(Item));
         return new(result);
@@ -63,7 +63,7 @@ internal sealed class InventoryHandler(
         var parent = ShipHoldRules.Definition(ship.FlagId)?.AllowsAssembledShip == true ? fleet.Find(pilot.PilotId, ship.LocationId) : null;
         var wreck = context.Flight.CanTarget ? context.Flight.VisibleWrecks.FirstOrDefault(w => w.Id == ship.LocationId) : null;
         return ShipStorageRules.CanRead(
-            new(pilot.PilotId, pilot.ShipId, pilot.StationId, pilot.Position is null),
+            new(pilot.PilotId, pilot.ShipId, pilot.DockedLocationId, pilot.Position is null),
             ship,
             parent,
             wreck is not null && pilot.Position is { } position ? new(wreck, position, pilot.Flight.ShipRadius) : null
@@ -128,7 +128,7 @@ internal sealed class InventoryHandler(
         var item = inventory.List(pilot.PilotId, pilot.ShipId).FirstOrDefault(i => i.Id == id);
         if (item is null && pilot.Position is null)
         {
-            item = inventory.List(pilot.PilotId, pilot.StationId).FirstOrDefault(i => i.Id == id);
+            item = inventory.List(pilot.PilotId, pilot.DockedLocationId).FirstOrDefault(i => i.Id == id);
         }
         if (item is null && pilot.Position is not null && context.Flight.VisibleDrones.Any(d => d.Id == id && d.PilotId == pilot.PilotId))
         {
@@ -161,7 +161,7 @@ internal sealed class InventoryHandler(
         if (
             args is not [long station, long itemId, long quantity, long owner]
             || pilot.Position is not null
-            || station != pilot.StationId
+            || station != pilot.DockedLocationId
             || owner != pilot.PilotId && owner != pilot.CorpId
             || quantity is <= 0 or > int.MaxValue
             || keywords is { Count: > 0 }
@@ -261,7 +261,7 @@ internal sealed class InventoryHandler(
         long container = ShipContainer(service, pilot);
         if (method == "MultiMerge" && (service == "@hangar" || container != 0))
         {
-            return MergeFromWire(context, service == "@hangar" ? pilot.StationId : container, args, keywords);
+            return MergeFromWire(context, service == "@hangar" ? pilot.DockedLocationId : container, args, keywords);
         }
         if (method == "StackAll" && (service == "@hangar" || container != 0))
         {
@@ -281,7 +281,7 @@ internal sealed class InventoryHandler(
                     flagValue is null ? (int)(service == "@hangar" ? InventoryFlag.Hangar : InventoryFlag.Cargo)
                     : flagValue is long value && value is >= 0 and <= int.MaxValue ? (int)value
                     : throw new InvalidDataException("Invalid inventory flag.");
-                foreach (var change in stacks.StackAll(pilot.PilotId, service == "@hangar" ? pilot.StationId : container, flag))
+                foreach (var change in stacks.StackAll(pilot.PilotId, service == "@hangar" ? pilot.DockedLocationId : container, flag))
                 {
                     InventoryChangesWire.NotifyItemChange(context, change);
                 }
@@ -390,7 +390,7 @@ internal sealed class InventoryHandler(
                     && (
                         (
                             pilot.Position is null
-                            && package.Item.LocationId == pilot.StationId
+                            && package.Item.LocationId == pilot.DockedLocationId
                             && package.Item.FlagId == (int)InventoryFlag.Hangar
                         ) || (package.Item.LocationId == pilot.ShipId && package.Item.FlagId == (int)InventoryFlag.Cargo)
                     ) => context.Reference(

@@ -24,6 +24,9 @@ internal static class ConfigurationDisplay
         ["industry.copyingSpeed"] = "Copying speed",
         ["industry.inventionSpeed"] = "Invention speed",
         ["industry.reprocessingEfficiency"] = "Reprocessing efficiency",
+        ["structures.anchoringSpeed"] = "Structure anchoring speed",
+        ["structures.onliningSpeed"] = "Structure core onlining speed",
+        ["structures.unanchoringSpeed"] = "Structure decommissioning speed",
         ["economy.chargeServiceCosts"] = "Service costs",
         ["economy.defaultManufacturingIndex"] = "Default manufacturing index",
         ["developmentSupply.testingMarket"] = "Testing market",
@@ -67,6 +70,9 @@ internal static class ConfigurationDisplay
         "industry.copyingSpeed",
         "industry.inventionSpeed",
         "industry.reprocessingEfficiency",
+        "structures.anchoringSpeed",
+        "structures.onliningSpeed",
+        "structures.unanchoringSpeed",
     ];
 
     internal static IReadOnlyList<SettingsComparisonRow> Settings(WorldSettings original, WorldSettings active, WorldSettings? pending)

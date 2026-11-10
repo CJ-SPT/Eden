@@ -7,7 +7,7 @@ namespace Eden.Protocol.Docking;
 [Injectable(InjectionType.Singleton)]
 internal sealed class SharedStationGuests
 {
-    private sealed record Presence(int? StationId, PilotContact Pilot);
+    private sealed record Presence(long? StationId, PilotContact Pilot);
 
     private readonly object _sync = new();
     private readonly Dictionary<object, Presence> _connections = new();
@@ -18,7 +18,7 @@ internal sealed class SharedStationGuests
         {
             if (pilot is not null)
             {
-                _connections[connection] = new(pilot.Position is null ? pilot.StationId : null, PilotContact.From(pilot));
+                _connections[connection] = new(pilot.Position is null ? pilot.DockedLocationId : null, PilotContact.From(pilot));
             }
             else
             {
@@ -42,7 +42,7 @@ internal sealed class SharedStationGuests
             return pilot.Position is not null
                 ? []
                 : _connections
-                    .Values.Where(entry => entry.StationId == pilot.StationId)
+                    .Values.Where(entry => entry.StationId == pilot.DockedLocationId)
                     .Select(entry => entry.Pilot)
                     .DistinctBy(guest => guest.PilotId)
                     .OrderBy(guest => guest.PilotId)

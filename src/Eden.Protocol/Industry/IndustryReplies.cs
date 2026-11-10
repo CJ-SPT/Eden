@@ -36,7 +36,7 @@ internal sealed record BlueprintOwnerReply(IReadOnlyList<OwnedBlueprint> Bluepri
         new object?[]
         {
             new BlueList<BlueprintReply>(Blueprints.Take(Limit).Select(blueprint => new BlueprintReply(blueprint)).ToArray()),
-            new BlueMap<int, long>(
+            new BlueMap<long, long>(
                 Blueprints
                     .GroupBy(blueprint => blueprint.Facility.Id)
                     .ToDictionary(group => group.Key, group => group.Sum(blueprint => (long)blueprint.Item.Quantity))

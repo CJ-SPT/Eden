@@ -15,7 +15,7 @@ public sealed record RepairResult(long BalanceCents, IReadOnlyList<ShipRepair> S
 public sealed record RepairPayment(
     long Id,
     long PilotId,
-    int StationId,
+    long StationId,
     long StationOwnerId,
     long AmountCents,
     long BalanceCents,
@@ -24,9 +24,9 @@ public sealed record RepairPayment(
 
 public interface IPilotRepair
 {
-    void CheckStation(long pilotId, int stationId);
-    IReadOnlyDictionary<long, IReadOnlyList<RepairQuote>> Quotes(long pilotId, int stationId, IReadOnlyList<long> itemIds);
-    RepairResult Repair(long pilotId, int stationId, IReadOnlyList<long> itemIds, long paymentCents, long now);
+    void CheckStation(long pilotId, long stationId);
+    IReadOnlyDictionary<long, IReadOnlyList<RepairQuote>> Quotes(long pilotId, long stationId, IReadOnlyList<long> itemIds);
+    RepairResult Repair(long pilotId, long stationId, IReadOnlyList<long> itemIds, long paymentCents, long now);
     IReadOnlyList<RepairPayment> Payments(long pilotId);
 }
 

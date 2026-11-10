@@ -90,6 +90,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        Eden.World.Structures.StructureSchema.Configure(model);
         Eden.World.Agents.MissionSchema.Configure(model);
         Eden.World.Capsuleers.TrafficSchema.Configure(model);
         Eden.World.Information.InformationSchema.Configure(model);

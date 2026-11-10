@@ -183,7 +183,7 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
         var item =
             InventoryPersistence.OwnedStack(world, pilotId, itemId)
             ?? throw new InvalidSkillExtraction("You do not own that skill extractor.");
-        if (item.LocationId != pilot.ActiveShip.StationId || item.FlagId != (int)InventoryFlag.Hangar)
+        if (item.LocationId != pilot.ActiveShip.DockedLocationId || item.FlagId != (int)InventoryFlag.Hangar)
         {
             throw new InvalidSkillExtraction("Select a skill extractor in your current station hangar.");
         }
@@ -215,7 +215,7 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
             world,
             catalog,
             pilotId,
-            pilot.ActiveShip.StationId,
+            pilot.ActiveShip.DockedLocationId,
             (int)InventoryFlag.Hangar,
             (int)SkillInjectorType.Large,
             1

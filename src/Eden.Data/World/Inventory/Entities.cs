@@ -32,6 +32,8 @@ public sealed class Ship
     public long OwnerId { get; set; }
     public int TypeId { get; set; }
     public int StationId { get; set; }
+    public long? StructureId { get; set; }
+    public long DockedLocationId => StructureId ?? StationId;
     public string Name { get; set; } = "";
 
     // An assembled hull may belong to a ship bay or wreck. StationId retains

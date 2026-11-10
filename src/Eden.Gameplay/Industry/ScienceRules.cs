@@ -20,7 +20,8 @@ public sealed record ScienceInputs(
     double BaseProbability = 1,
     double SkillProbabilityBonus = 0,
     int InventionOutputRuns = 1,
-    InventionModifiers? Decryptor = null
+    InventionModifiers? Decryptor = null,
+    double FacilityTimeMultiplier = 1
 );
 
 public sealed record SciencePlan(
@@ -80,7 +81,7 @@ public static class ScienceRules
         {
             throw new InvalidDataException("Deliver or cancel an existing science job to free a laboratory slot.");
         }
-        double multiplier = 1;
+        double multiplier = inputs.FacilityTimeMultiplier;
         foreach (var bonus in inputs.Bonuses.Where(b => b.Attribute == timeAttribute && !b.Additive))
         {
             multiplier *= 1 + bonus.Value / 100;
@@ -187,9 +188,19 @@ public static class ScienceRules
 
 public static class IndustryMaterials
 {
-    public static IReadOnlyDictionary<int, int> Calculate(IReadOnlyList<ManufacturingMaterial> recipe, int runs, int efficiency = 0)
+    public static IReadOnlyDictionary<int, int> Calculate(
+        IReadOnlyList<ManufacturingMaterial> recipe,
+        int runs,
+        int efficiency = 0,
+        double facilityMultiplier = 1
+    )
     {
-        if (runs <= 0 || efficiency is < 0 or > IndustryDefinitions.MaximumMaterialEfficiency)
+        if (
+            runs <= 0
+            || efficiency is < 0 or > IndustryDefinitions.MaximumMaterialEfficiency
+            || !double.IsFinite(facilityMultiplier)
+            || facilityMultiplier <= 0
+        )
         {
             throw new InvalidDataException("Invalid blueprint material inputs.");
         }
@@ -200,7 +211,7 @@ public static class IndustryMaterials
             {
                 throw new InvalidDataException("Invalid industry material recipe.");
             }
-            double quantity = material.Quantity.Value * (1 - efficiency / 100d) * runs;
+            double quantity = material.Quantity.Value * (1 - efficiency / 100d) * runs * facilityMultiplier;
             int rounded = checked((int)Math.Ceiling(EconomicRules.ClientRound(quantity, 2) / 100d));
             materials.Add((int)material.TypeId, Math.Max(runs, rounded));
         }

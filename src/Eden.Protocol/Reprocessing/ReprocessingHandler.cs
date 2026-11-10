@@ -42,12 +42,12 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
             }
             if (check)
             {
-                reprocessing.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
+                reprocessing.CheckStation(context.Pilot.PilotId, context.Pilot.DockedLocationId);
                 return PilotCallResult.None;
             }
             if (method == "GetQuotes" && args is [var rows, long ship] && ItemIds(rows) is { } ids)
             {
-                var quote = reprocessing.Quote(context.Pilot.PilotId, context.Pilot.StationId, ship, ids);
+                var quote = reprocessing.Quote(context.Pilot.PilotId, context.Pilot.DockedLocationId, ship, ids);
                 return new ReprocessingQuoteReply(quote);
             }
             if (
@@ -59,7 +59,7 @@ internal sealed class ReprocessingHandler(IPilotReprocessing reprocessing) : ISe
             {
                 var result = reprocessing.Reprocess(
                     context.Pilot.PilotId,
-                    context.Pilot.StationId,
+                    context.Pilot.DockedLocationId,
                     items.Cast<long>().ToArray(),
                     source,
                     args[2] as long?,

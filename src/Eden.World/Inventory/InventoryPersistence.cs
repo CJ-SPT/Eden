@@ -92,7 +92,7 @@ internal static class InventoryPersistence
         long last = world
             .Database.SqlQueryRaw<long>(
                 "SELECT COALESCE(MAX(seq),0) AS Value FROM sqlite_sequence "
-                    + "WHERE name IN ('WorldItem','WorldShip','WorldPilotImplant','WorldBooster')"
+                    + "WHERE name IN ('WorldItem','WorldShip','WorldPilotImplant','WorldBooster','WorldStructure')"
             )
             .AsEnumerable()
             .Single();
@@ -102,6 +102,7 @@ internal static class InventoryPersistence
             .Concat(world.ChangeTracker.Entries<Ship>().Select(e => e.Entity.Id))
             .Concat(world.ChangeTracker.Entries<SavedPilotImplant>().Select(e => e.Entity.ItemId))
             .Concat(world.ChangeTracker.Entries<SavedBooster>().Select(e => e.Entity.ItemId))
+            .Concat(world.ChangeTracker.Entries<Eden.Data.World.Structures.SavedStructure>().Select(e => e.Entity.Id))
             .DefaultIfEmpty(0)
             .Max();
         return checked(Math.Max(Math.Max(last, tracked), InventoryDefinitions.FirstOwnedItemId) + 1);

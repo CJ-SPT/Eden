@@ -22,6 +22,7 @@ public sealed record StaticSpaceObject(
     public string? Name { get; init; }
     public NpcStandingThresholds? StandingThresholds { get; init; }
     public SpaceContainerState? Container { get; init; }
+    public Structures.StructureContact? Structure { get; init; }
 }
 
 public interface ISystemObjects

@@ -42,6 +42,8 @@ public sealed record IndustryPolicy(
     decimal ReprocessingEfficiency = 1
 );
 
+public sealed record StructurePolicy(decimal AnchoringSpeed = 1, decimal OnliningSpeed = 1, decimal UnanchoringSpeed = 1);
+
 public sealed record NpcPopulationPolicy(
     bool Pirates = true,
     bool Guards = true,
@@ -69,6 +71,7 @@ public sealed record WorldSettings
     public ResourcePolicy Resources { get; init; } = new();
     public RewardPolicy Rewards { get; init; } = new();
     public IndustryPolicy Industry { get; init; } = new();
+    public StructurePolicy Structures { get; init; } = new();
     public NpcPopulationPolicy NpcPopulation { get; init; } = new();
     public ProgressionPolicy Progression { get; init; } = new();
     public CapsuleerPopulationPolicy Capsuleers { get; init; } = new();

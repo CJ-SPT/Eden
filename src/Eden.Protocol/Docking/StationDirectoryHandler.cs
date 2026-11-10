@@ -5,7 +5,8 @@ using Eden.Protocol.PilotSessions;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class StationDirectoryHandler(IStationDirectory stations) : ISelectedPilotCallHandler
+internal sealed class StationDirectoryHandler(IStationDirectory stations, Eden.Gameplay.Structures.IPilotStructures structures)
+    : ISelectedPilotCallHandler
 {
     // Pinned build 3662168 structures/services.pyj SERVICE_DOCKING, distinct from station service IDs.
     private const long StructureDockingService = 1;
@@ -24,8 +25,12 @@ internal sealed class StationDirectoryHandler(IStationDirectory stations) : ISel
             {
                 return new PilotCallResult.Failure("Choose a valid location and structure service.");
             }
-            // NPC docking is available. Player structures and their ACL/service state are not implemented.
-            // A stale zero endpoint also returns a boolean denial, rather than an unsupported RPC error.
+            if (locationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
+            {
+                return serviceId <= int.MaxValue
+                    && Enum.IsDefined(typeof(Eden.Gameplay.Structures.StructureService), (int)serviceId)
+                    && structures.HasService(context.Pilot.PilotId, locationId, (Eden.Gameplay.Structures.StructureService)serviceId);
+            }
             return serviceId == StructureDockingService
                 && locationId is > 0 and <= int.MaxValue
                 && stations.Read().Stations.Any(station => station.Id == locationId);

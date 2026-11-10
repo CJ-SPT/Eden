@@ -32,19 +32,20 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
     private static Pilot Pilot(WorldDbContext world, long id) =>
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == id);
 
-    private static IndustryFacility ReadFacility(CatalogDbContext catalog, CatalogStationDefinition station) =>
+    private static IndustryFacility ReadFacility(CatalogDbContext catalog, IndustryStation station) =>
         new(
             station.Id,
             station.TypeId,
             station.OwnerId,
             station.SolarSystemId,
             Manufacturing: HasService(catalog, station),
-            Laboratory: HasService(catalog, station, StationService.Laboratory)
+            Laboratory: HasService(catalog, station, StationService.Laboratory),
+            TimeMultiplier: FacilityMultiplier(catalog, station, 2602),
+            MaterialMultiplier: FacilityMultiplier(catalog, station, 2600)
         );
 
-    private IndustryFacility PricedFacility(CatalogDbContext catalog, CatalogStationDefinition station)
+    private static IndustryFacility PricedFacility(WorldDbContext world, CatalogDbContext catalog, IndustryStation station)
     {
-        using WorldDbContext world = new(database.Path);
         bool enabled = EconomicStore.Enabled(world);
         return new(
             station.Id,
@@ -54,23 +55,48 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             enabled ? (double)EconomicStore.Index(world, station.SolarSystemId) : 1,
             enabled ? (double)EconomicRules.NpcFacilityTax : 0,
             HasService(catalog, station),
-            HasService(catalog, station, StationService.Laboratory)
+            HasService(catalog, station, StationService.Laboratory),
+            FacilityMultiplier(catalog, station, 2602),
+            FacilityMultiplier(catalog, station, 2600)
         );
     }
 
+    // Pinned strEngTimeBonus/strEngMatBonus are factors, rather than percentage points.
+    private static double FacilityMultiplier(CatalogDbContext catalog, IndustryStation station, int attribute) =>
+        station.StructureServices is null ? 1 : catalog.FittingAttributes(station.TypeId).GetValueOrDefault((DogmaAttributeId)attribute, 1);
+
     private static bool HasService(
         CatalogDbContext catalog,
-        CatalogStationDefinition station,
+        IndustryStation station,
         StationService service = StationService.Manufacturing
-    ) => StationCapabilities.Has(catalog, station.OperationId, service);
+    ) =>
+        station.StructureServices is { } services
+            ? services.Contains(
+                service == StationService.Manufacturing
+                    ? Eden.Gameplay.Structures.StructureService.Manufacturing
+                    : Eden.Gameplay.Structures.StructureService.Laboratory
+            )
+            : StationCapabilities.Has(catalog, station.OperationId, service);
 
-    private static CatalogStationDefinition Station(
+    private static IndustryStation Station(
+        WorldDbContext world,
         CatalogDbContext catalog,
-        int id,
+        long id,
         StationService? service = StationService.Manufacturing
     )
     {
-        var station = catalog.Definitions.FindStation(id);
+        if (id >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
+        {
+            var structure = Eden.World.Structures.PilotStructureStore.Require(world, id);
+            var snapshot = Eden.World.Structures.PilotStructureStore.Snapshot(world, catalog, structure);
+            var location = IndustryStation.From(snapshot);
+            if (service.HasValue && !HasService(catalog, location, service.Value))
+            {
+                throw new InvalidDataException("This structure's required industry service is offline.");
+            }
+            return location;
+        }
+        var station = catalog.Definitions.FindStation(id) is { } npc ? IndustryStation.From(npc) : null;
         if (
             station is null
             || (
@@ -85,30 +111,41 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         return station;
     }
 
-    private static CatalogStationDefinition CurrentStation(
+    private static IndustryStation CurrentStation(
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
-        int stationId,
+        long stationId,
         StationService? service = StationService.Manufacturing
     )
     {
         var pilot = Pilot(world, pilotId);
-        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != stationId)
+        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
         {
             throw new InvalidDataException("Use industry from your current station while docked.");
         }
-        return Station(catalog, stationId, service);
+        if (
+            stationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId
+            && !Eden.World.Structures.PilotStructureStore.Access(
+                world,
+                Eden.World.Structures.PilotStructureStore.Require(world, stationId),
+                pilotId
+            )
+        )
+        {
+            throw new InvalidDataException("Industry access to this structure is denied.");
+        }
+        return Station(world, catalog, stationId, service);
     }
 
-    public void CheckStation(long pilotId, int stationId)
+    public void CheckStation(long pilotId, long stationId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         _ = CurrentStation(world, catalog, pilotId, stationId, null);
     }
 
-    public void CheckAccess(long pilotId, int stationId)
+    public void CheckAccess(long pilotId, long stationId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -118,12 +155,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         _ = CurrentStation(world, catalog, pilotId, stationId, null);
     }
 
-    public IndustryFacility Facility(long pilotId, int stationId)
+    public IndustryFacility Facility(long pilotId, long stationId)
     {
         using WorldDbContext world = new(database.Path);
         _ = Pilot(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return PricedFacility(catalog, Station(catalog, stationId, null));
+        return PricedFacility(world, catalog, Station(world, catalog, stationId, null));
     }
 
     public IReadOnlyList<IndustryFacility> Facilities(long pilotId)
@@ -131,14 +168,27 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
-        int systemId = pilot.ActiveShip.Position?.SystemId ?? catalog.Definitions.Stations[pilot.ActiveShip.StationId].SolarSystemId;
+        int systemId =
+            pilot.ActiveShip.Position?.SystemId ?? Station(world, catalog, pilot.ActiveShip.DockedLocationId, null).SolarSystemId;
         int regionId = catalog.Definitions.Systems[systemId].RegionId;
         return catalog
             .Definitions.Stations.Values.Where(s => catalog.Definitions.Systems[s.SolarSystemId].RegionId == regionId)
             .OrderBy(s => s.Id)
             .AsEnumerable()
+            .Select(IndustryStation.From)
+            .Concat(
+                world
+                    .Set<Eden.Data.World.Structures.SavedStructure>()
+                    .Where(s => s.State != Eden.Gameplay.Structures.StructureState.Destroyed)
+                    .AsEnumerable()
+                    .Where(s =>
+                        catalog.Definitions.Systems[s.SystemId].RegionId == regionId
+                        && Eden.World.Structures.PilotStructureStore.Access(world, s, pilotId)
+                    )
+                    .Select(s => IndustryStation.From(Eden.World.Structures.PilotStructureStore.Snapshot(world, catalog, s)))
+            )
             .Where(s => HasService(catalog, s) || HasService(catalog, s, StationService.Laboratory))
-            .Select(s => PricedFacility(catalog, s))
+            .Select(s => PricedFacility(world, catalog, s))
             .ToArray();
     }
 
@@ -151,14 +201,15 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         return catalog.Definitions.Items.Values.Select(t => t.CategoryId).Distinct().Order().ToArray();
     }
 
-    public IReadOnlyList<int> ProductTypes(int? stationId = null)
+    public IReadOnlyList<int> ProductTypes(long? stationId = null)
     {
+        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (stationId is not int id)
+        if (stationId is not long id)
         {
             return ProductTypes(catalog);
         }
-        var station = Station(catalog, id, null);
+        var station = Station(world, catalog, id, null);
         if (!HasService(catalog, station))
         {
             return [];
@@ -181,13 +232,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         if (
             inventory.CategoryId is not ((int)InventoryCategory.Blueprint or (int)InventoryCategory.Relic)
             || item.FlagId != (int)InventoryFlag.Hangar
-            || item.LocationId > int.MaxValue
+            || item.LocationId <= 0
         )
         {
             throw new InvalidDataException("Use an owned blueprint or ancient relic in a station Item Hangar.");
         }
-        var station =
-            catalog.Definitions.FindStation(item.LocationId) ?? throw new InvalidDataException("The blueprint is not in a station hangar.");
+        var station = Station(world, catalog, item.LocationId, null);
         var facility = ReadFacility(catalog, station);
         long? job = world
             .Set<IndustryJob>()
@@ -199,7 +249,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             : new(inventory, facility, job, item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns);
     }
 
-    public IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, int? stationId = null)
+    public IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, long? stationId = null)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -218,7 +268,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             )
             .OrderBy(i => i.Id)
             .AsEnumerable()
-            .Where(i => i.LocationId <= int.MaxValue && catalog.Definitions.FindStation(i.LocationId) is not null)
+            .Where(i =>
+                catalog.Definitions.FindStation(i.LocationId) is not null
+                || world
+                    .Set<Eden.Data.World.Structures.SavedStructure>()
+                    .Any(s => s.Id == i.LocationId && s.State != Eden.Gameplay.Structures.StructureState.Destroyed)
+            )
             .Select(i => ReadBlueprint(world, catalog, i))
             .ToArray();
     }
@@ -233,7 +288,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         return ReadBlueprint(world, catalog, item);
     }
 
-    public IReadOnlyDictionary<int, long> Materials(long pilotId, int stationId)
+    public IReadOnlyDictionary<int, long> Materials(long pilotId, long stationId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -328,20 +383,22 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         return Bonuses(world, catalog, pilotId);
     }
 
-    private IndustryJobDetails ReadJob(CatalogDbContext catalog, IndustryJob job) =>
+    private IndustryJobDetails ReadJob(WorldDbContext world, CatalogDbContext catalog, IndustryJob job) =>
         new(
             job.Id,
             job.PilotId,
             job.BlueprintId,
             job.BlueprintTypeId,
-            ReadFacility(catalog, Station(catalog, job.StationId, null)),
+            ReadFacility(catalog, Station(world, catalog, job.StationId, null)),
             job.ProductTypeId,
             job.Runs,
             job.OutputQuantity,
             job.StartTime,
             job.EndTime,
             job.DurationSeconds,
-            Active(job) && Now >= job.EndTime ? IndustryJobStatus.Ready : job.Status,
+            job.SuspendedAt.HasValue ? IndustryJobStatus.Paused
+                : Active(job) && Now >= job.EndTime ? IndustryJobStatus.Ready
+                : job.Status,
             job.CompletedAt,
             job.CostCents,
             job.Activity,
@@ -349,28 +406,37 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             job.BlueprintCopy,
             job.Probability,
             job.Status == IndustryJobStatus.Delivered ? job.SuccessfulRuns ?? job.Runs : null,
-            job.OptionalTypeId
+            job.OptionalTypeId,
+            job.SuspendedAt
         );
 
     public IReadOnlyList<IndustryJobDetails> Jobs(long pilotId, bool includeCompleted)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return world
+        Eden.World.Structures.PilotStructureStore.Advance(world, catalog, Now);
+        var result = world
             .Set<IndustryJob>()
             .AsNoTracking()
             .Where(j => j.PilotId == pilotId && (includeCompleted || j.Status == IndustryJobStatus.Installed))
             .OrderByDescending(j => j.Id)
             .AsEnumerable()
-            .Select(j => ReadJob(catalog, j))
+            .Select(j => ReadJob(world, catalog, j))
             .ToArray();
+        transaction.Commit();
+        return result;
     }
 
     public IndustryJobDetails Job(long pilotId, long jobId)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return ReadJob(catalog, OwnedJob(world, pilotId, jobId));
+        Eden.World.Structures.PilotStructureStore.Advance(world, catalog, Now);
+        var result = ReadJob(world, catalog, OwnedJob(world, pilotId, jobId));
+        transaction.Commit();
+        return result;
     }
 
     private static IndustryJob OwnedJob(WorldDbContext world, long pilotId, long jobId) =>
@@ -390,6 +456,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        Eden.World.Structures.PilotStructureStore.Advance(world, catalog, Now);
         var station = CurrentStation(world, catalog, pilotId, request.FacilityId);
         var item =
             world.Set<OwnedItem>().SingleOrDefault(i => i.Id == request.BlueprintId && i.OwnerId == pilotId)
@@ -407,6 +474,14 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         var recipe =
             ManufacturingCatalog.Recipes(catalog).GetValueOrDefault(item.TypeId)
             ?? throw new InvalidDataException("This blueprint has no valid published manufacturing recipe.");
+        Eden.World.Structures.StructureIndustry.RequireService(
+            world,
+            catalog,
+            pilotId,
+            request.FacilityId,
+            request.Activity,
+            recipe.ProductTypeId
+        );
         if (
             request.ProductTypeId.HasValue && request.ProductTypeId != recipe.ProductTypeId
             || !ManufacturingCatalog.Allowed(catalog, recipe.ProductTypeId, ManufacturingCatalog.Security(catalog, station.SolarSystemId))
@@ -438,7 +513,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     ))
                     .ToArray(),
                 recipe.Materials,
-                new(item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns)
+                new(item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns),
+                FacilityMultiplier(catalog, station, 2602),
+                FacilityMultiplier(catalog, station, 2600)
             )
         );
         long duration = calculation.DurationSeconds;
@@ -488,7 +565,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.IndustryStarted);
         world.SaveChanges();
         transaction.Commit();
-        return new(ReadJob(catalog, job), changes, balance);
+        return new(ReadJob(world, catalog, job), changes, balance);
     }
 
     public IndustryResult Deliver(long pilotId, long jobId, int systemId) => Finish(pilotId, jobId, systemId, cancel: false);
@@ -501,6 +578,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var job = OwnedJob(world, pilotId, jobId);
+        Eden.World.Structures.PilotStructureStore.Advance(world, catalog, Now);
         var station = CurrentStation(world, catalog, pilotId, job.StationId, null);
         if (station.SolarSystemId != systemId)
         {
@@ -509,9 +587,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         var status = cancel ? IndustryJobStatus.Cancelled : IndustryJobStatus.Delivered;
         if (job.Status == status)
         {
-            return new(ReadJob(catalog, job), []);
+            return new(ReadJob(world, catalog, job), []);
         }
-        if (!Active(job) || !cancel && Now < job.EndTime)
+        if (!Active(job) || !cancel && (Now < job.EndTime || job.SuspendedAt.HasValue))
         {
             throw new InvalidDataException("This industry job cannot be completed yet.");
         }
@@ -575,6 +653,6 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         }
         world.SaveChanges();
         transaction.Commit();
-        return new(ReadJob(catalog, job), changes);
+        return new(ReadJob(world, catalog, job), changes);
     }
 }

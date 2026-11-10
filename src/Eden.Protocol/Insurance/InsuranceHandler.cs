@@ -50,7 +50,7 @@ internal sealed class InsuranceHandler(IPilotInsurance insurance) : ISelectedPil
             var pilot = context.Pilot;
             if (standing)
             {
-                insurance.CheckStation(pilot.PilotId, pilot.StationId);
+                insurance.CheckStation(pilot.PilotId, pilot.DockedLocationId);
                 return PilotCallResult.None;
             }
             switch (method, args)
@@ -84,7 +84,7 @@ internal sealed class InsuranceHandler(IPilotInsurance insurance) : ISelectedPil
                     };
                     var result = insurance.Insure(
                         pilot.PilotId,
-                        pilot.StationId,
+                        pilot.DockedLocationId,
                         ship,
                         InsuranceRules.PaymentCents(amount),
                         keywords?.TryGetValue("voidOld", out var replace) == true && Flag(replace)
@@ -94,7 +94,7 @@ internal sealed class InsuranceHandler(IPilotInsurance insurance) : ISelectedPil
                     );
                     return PilotCallResult.None;
                 case ("UnInsureShip", [long ship]):
-                    insurance.Cancel(pilot.PilotId, pilot.StationId, ship);
+                    insurance.Cancel(pilot.PilotId, pilot.DockedLocationId, ship);
                     return PilotCallResult.None;
                 default:
                     return new PilotCallResult.Failure("Invalid insurance request.");

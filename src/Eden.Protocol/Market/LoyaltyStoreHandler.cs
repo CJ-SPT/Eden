@@ -35,7 +35,7 @@ internal sealed class LoyaltyStoreHandler(IPilotLoyaltyStore store, LoyaltyWalle
             }
             if (check)
             {
-                store.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
+                store.CheckStation(context.Pilot.PilotId, context.Pilot.NpcStationId);
                 return PilotCallResult.None;
             }
             if (exchange)

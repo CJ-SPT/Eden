@@ -16,7 +16,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
     private const int BlueprintResultLimit = 10_000;
     private long _nextMonitor;
     private long _monitor;
-    private int? _station;
+    private long? _station;
     private IReadOnlyDictionary<int, long> _available = new Dictionary<int, long>();
     public bool IsMonitoring => _station.HasValue;
 
@@ -38,11 +38,11 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
 
     public void Advance(PilotCallContext context)
     {
-        if (_station is not int station || !context.Selected)
+        if (_station is not long station || !context.Selected)
         {
             return;
         }
-        if (context.Pilot.Position is not null || context.Pilot.StationId != station)
+        if (context.Pilot.Position is not null || context.Pilot.DockedLocationId != station)
         {
             _station = null;
             return;
@@ -71,14 +71,14 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
 
     private static bool IsTrue(object? value) => value is true or 1L;
 
-    private int CheckLocation(PilotCallContext context, Dictionary<string, object?> request, string key)
+    private long CheckLocation(PilotCallContext context, Dictionary<string, object?> request, string key)
     {
         var location = Values(request.GetValueOrDefault(key));
-        int station = Integer(location, "itemID");
+        long station = Number(location, "itemID");
         if (
             Number(location, "ownerID") != context.Pilot.PilotId
             || Number(location, "flagID") != (int)InventoryFlag.Hangar
-            || station != Integer(request, "facilityID")
+            || station != Number(request, "facilityID")
         )
         {
             throw new InvalidDataException("Choose your current station's personal Item Hangar for industry.");
@@ -90,7 +90,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
     private IndustryMonitorReply Connect(PilotCallContext context, object? request)
     {
         var values = Values(request);
-        int station = CheckLocation(context, values, "inputLocation");
+        long station = CheckLocation(context, values, "inputLocation");
         _monitor = checked(++_nextMonitor);
         _station = station;
         _available = industry.Materials(context.Pilot.PilotId, station);
@@ -100,7 +100,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
     private long Install(PilotCallContext context, object? request)
     {
         var values = Values(request);
-        int station = CheckLocation(context, values, "inputLocation");
+        long station = CheckLocation(context, values, "inputLocation");
         _ = CheckLocation(context, values, "outputLocation");
         if (
             Number(values, "characterID") != context.Pilot.PilotId
@@ -217,7 +217,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             long pilotId = context.Pilot.PilotId;
             if (standing)
             {
-                industry.CheckAccess(pilotId, context.Pilot.StationId);
+                industry.CheckAccess(pilotId, context.Pilot.DockedLocationId);
                 return PilotCallResult.None;
             }
             switch (service, method)
@@ -227,7 +227,7 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                 case ("blueprintManager", "GetBlueprintData") when args is [long item]:
                     return Blueprint(industry.Blueprint(pilotId, item));
                 case ("blueprintManager", "GetBlueprintDataByOwner") when args is [long owner, null or long] && owner == pilotId:
-                    var blueprints = industry.Blueprints(pilotId, args[1] is long facility ? checked((int)facility) : null);
+                    var blueprints = industry.Blueprints(pilotId, args[1] is long facility ? facility : null);
                     return new BlueprintOwnerReply(blueprints, BlueprintResultLimit);
                 case ("facilityManager", "GetFacilities") when args.Length == 0:
                     var categories = industry.ScienceProductCategories();
@@ -238,10 +238,10 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                             .ToArray()
                     );
                 case ("facilityManager", "GetFacility") when args is [long station]:
-                    return Facility(industry.Facility(pilotId, checked((int)station)));
+                    return Facility(industry.Facility(pilotId, station));
                 case ("facilityManager", "GetFacilityLocations") when args is [long station, long owner] && owner == pilotId:
-                    industry.CheckStation(pilotId, checked((int)station));
-                    return new BlueList<IndustryLocationReply>([Location(industry.Facility(pilotId, (int)station), pilotId)]);
+                    industry.CheckStation(pilotId, station);
+                    return new BlueList<IndustryLocationReply>([Location(industry.Facility(pilotId, station), pilotId)]);
                 case ("facilityManager", "GetMaxActivityModifiers") when args.Length == 0:
                     return new BlueMap<IndustryActivity, double>(IndustryDefinitions.Activities.ToDictionary(a => a, _ => 1d));
                 case ("industryManager", "GetJobsByOwner") when args is [long owner, var completed] && owner == pilotId:

@@ -20,17 +20,47 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Reprocessing;
 
+internal sealed record ReprocessingFacility(long OwnerId, double Efficiency, double Tax);
+
 [Injectable]
 internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvider? clock = null) : IPilotReprocessing
 {
     private static Pilot ReadPilot(WorldDbContext world, long pilotId) =>
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
 
-    private static SdeNpcStations Station(CatalogDbContext catalog, Pilot pilot, int stationId)
+    private ReprocessingFacility Station(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long stationId)
     {
-        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != stationId)
+        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
         {
             throw new InvalidDataException("Reprocessing is available only at your current station.");
+        }
+        if (pilot.ActiveShip.StructureId is long structureId)
+        {
+            Eden.World.Structures.PilotStructureStore.Advance(
+                world,
+                catalog,
+                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc()
+            );
+            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
+            var snapshot = Eden.World.Structures.PilotStructureStore.Snapshot(world, catalog, structure);
+            if (
+                !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilot.Id)
+                || !snapshot.Services.Contains(Eden.Gameplay.Structures.StructureService.Reprocessing)
+            )
+            {
+                throw new InvalidDataException("The structure reprocessing service is offline or access is denied.");
+            }
+            const int OreRefiningYield = 2444;
+            const int RefineryYieldBonus = 2722;
+            var module = snapshot.Modules.Single(m =>
+                m.Online
+                && Eden.World.Structures.StructureCatalog.Service(catalog, m.TypeId)
+                    .Services.Contains(Eden.Gameplay.Structures.StructureService.Reprocessing)
+            );
+            double efficiency =
+                catalog.FittingAttributes(module.TypeId).GetValueOrDefault((DogmaAttributeId)OreRefiningYield)
+                * (1 + catalog.FittingAttributes(snapshot.Profile.TypeId).GetValueOrDefault((DogmaAttributeId)RefineryYieldBonus) / 100);
+            return new(structure.CorporationId, efficiency, 0);
         }
         var station = catalog.Definitions.Find(CatalogData.Sde.NpcStations, (long)stationId);
         if (
@@ -42,14 +72,18 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         {
             throw new InvalidDataException("This station does not provide reprocessing.");
         }
-        return station;
+        return new(
+            catalog.RequireStation(checked((int)stationId)).OwnerId,
+            station.ReprocessingEfficiency.Value,
+            station.ReprocessingStationsTake.Value
+        );
     }
 
-    public void CheckStation(long pilotId, int stationId)
+    public void CheckStation(long pilotId, long stationId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = Station(catalog, ReadPilot(world, pilotId), stationId);
+        _ = Station(world, catalog, ReadPilot(world, pilotId), stationId);
     }
 
     private static OwnedItem[] Items(WorldDbContext world, Pilot pilot, IReadOnlyList<long> ids, long? sourceId = null)
@@ -65,7 +99,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 ids.Contains(i.Id)
                 && i.OwnerId == pilot.Id
                 && (
-                    (i.LocationId == ship.StationId && i.FlagId == (int)InventoryFlag.Hangar)
+                    (i.LocationId == ship.DockedLocationId && i.FlagId == (int)InventoryFlag.Hangar)
                     || (
                         i.LocationId == ship.Id
                         && (i.FlagId == (int)InventoryFlag.Cargo || i.FlagId == (int)InventoryFlag.GeneralMiningHold)
@@ -157,20 +191,20 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         };
     }
 
-    private static decimal Tax(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int stationId, SdeNpcStations station)
+    private static decimal Tax(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long stationId, ReprocessingFacility station)
     {
-        long owner = catalog.Definitions.Stations[stationId].OwnerId;
+        long owner = station.OwnerId;
         double standing = world.Set<SavedNpcStanding>().Find(pilot.Id, owner)?.Value ?? 0;
-        return EconomicRules.ReprocessingTax((decimal)station.ReprocessingStationsTake!.Value, standing);
+        return EconomicRules.ReprocessingTax((decimal)station.Tax, standing);
     }
 
-    public ReprocessingQuotes Quote(long pilotId, int stationId, long activeShipId, IReadOnlyList<long> itemIds)
+    public ReprocessingQuotes Quote(long pilotId, long stationId, long activeShipId, IReadOnlyList<long> itemIds)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = ReadPilot(world, pilotId);
-        var station = Station(catalog, pilot, stationId);
+        var station = Station(world, catalog, pilot, stationId);
         decimal tax = Tax(world, catalog, pilot, stationId, station);
         if (pilot.ActiveShipId != activeShipId)
         {
@@ -179,15 +213,13 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         var quotes =
             itemIds.Count == 0
                 ? []
-                : Items(world, pilot, itemIds)
-                    .Select(i => Quote(world, catalog, pilot, i, station.ReprocessingEfficiency!.Value, tax))
-                    .ToArray();
-        return new((double)tax, station.ReprocessingEfficiency!.Value, quotes);
+                : Items(world, pilot, itemIds).Select(i => Quote(world, catalog, pilot, i, station.Efficiency, tax)).ToArray();
+        return new((double)tax, station.Efficiency, quotes);
     }
 
     public ReprocessingResult Reprocess(
         long pilotId,
-        int stationId,
+        long stationId,
         IReadOnlyList<long> itemIds,
         long sourceId,
         long? ownerId,
@@ -199,7 +231,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = ReadPilot(world, pilotId);
-        var station = Station(catalog, pilot, stationId);
+        var station = Station(world, catalog, pilot, stationId);
         var ship = pilot.ActiveShip;
         if (
             (ownerId.HasValue && ownerId != pilotId)
@@ -213,7 +245,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         }
         var items = Items(world, pilot, itemIds, sourceId);
         decimal tax = Tax(world, catalog, pilot, stationId, station);
-        var quotes = items.Select(i => Quote(world, catalog, pilot, i, station.ReprocessingEfficiency!.Value, tax)).ToArray();
+        var quotes = items.Select(i => Quote(world, catalog, pilot, i, station.Efficiency, tax)).ToArray();
         if (quotes.Any(q => q.Portions == 0 || q.Recoverables.Count == 0))
         {
             throw new InvalidDataException("Each ore stack must contain at least one complete reprocessing batch.");
@@ -244,17 +276,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         long cost = quotes.Sum(q => q.CostCents);
         long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
         long? balance =
-            cost > 0
-                ? EconomicStore.Pay(
-                    world,
-                    pilotId,
-                    catalog.Definitions.Stations[stationId].OwnerId,
-                    stationId,
-                    WalletEntryType.ReprocessingTax,
-                    cost,
-                    now
-                )
-                : null;
+            cost > 0 ? EconomicStore.Pay(world, pilotId, station.OwnerId, stationId, WalletEntryType.ReprocessingTax, cost, now) : null;
         List<InventoryChange> changes = [];
         foreach (var (item, quote) in items.Zip(quotes))
         {

@@ -103,6 +103,10 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         }
         else
         {
+            if (saved is null)
+            {
+                world.Ships.Find(shipId)!.StructureId = null;
+            }
             saved ??= world.Positions.Add(new FlightPosition { ShipId = shipId }).Entity;
             saved.SystemId = systemId ?? saved.SystemId;
             (saved.X, saved.Y, saved.Z) = (position.X, position.Y, position.Z);
@@ -126,12 +130,15 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             .Single();
     }
 
-    public DockedPilot Dock(long pilotId, long shipId, int stationId)
+    public DockedPilot Dock(long pilotId, long shipId, long stationId)
     {
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
-        var result = Dock(world, catalog, pilotId, shipId, stationId);
+        var result =
+            stationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId
+                ? DockStructure(world, catalog, pilotId, shipId, stationId)
+                : Dock(world, catalog, pilotId, shipId, checked((int)stationId));
         transaction.Commit();
         LiveWorld.Find(_database.Path)?.Heat.ClearSelection(pilotId, shipId);
         return result;
@@ -164,6 +171,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), TaskEvents.Docked);
         pilot.ActiveShip.StationId = stationId;
+        pilot.ActiveShip.StructureId = null;
         world.Positions.Remove(position);
         ShipHeatPersistence.CancelForTravel(world, shipId);
         world.SaveChanges();
@@ -254,7 +262,11 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
                 new(pilot.Account.UserName, pilot.Account.CreatedAt, pilot.Account.CloneGrade),
                 new(pilot.RaceId, pilot.BloodlineId, pilot.GenderId, pilot.AncestryId, pilot.SchoolId, pilot.CreatedAt),
                 CorporationRoles: corporationAccess.Roles.At(
-                    ship.Position is null ? ship.StationId : null,
+                    ship.Position is null
+                        ? ship.StructureId.HasValue
+                            ? 0
+                            : ship.StationId
+                        : null,
                     corporation?.StationId ?? 0,
                     corporationAccess.BaseId
                 ),
@@ -292,6 +304,6 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
             CorporationTicker =
                 corporation?.Ticker ?? catalog.Read(CatalogData.Client.Npccorporations, (long)pilot.CorporationId)?.TickerName ?? "",
         };
-        return result;
+        return ship.StructureId is long structureId ? StructurePilot(world, catalog, result, structureId) : result;
     }
 }

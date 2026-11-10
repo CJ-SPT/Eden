@@ -32,7 +32,12 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
 
     private static CatalogStationDefinition CurrentStation(CatalogDbContext catalog, Pilot pilot, bool facility)
     {
-        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.OwnerId != pilot.Id || pilot.ActiveShip.StoredInId is not null)
+        if (
+            pilot.ActiveShip.Position is not null
+            || pilot.ActiveShip.StructureId.HasValue
+            || pilot.ActiveShip.OwnerId != pilot.Id
+            || pilot.ActiveShip.StoredInId is not null
+        )
         {
             throw new InvalidDataException("Use jump clones while docked in an NPC station.");
         }

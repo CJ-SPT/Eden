@@ -19,7 +19,7 @@ namespace Eden.World.Inventory;
 [Injectable]
 internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepackaging
 {
-    public IReadOnlyList<InventoryChange> Repackage(long pilotId, int stationId, IReadOnlyList<RepackageItem> items)
+    public IReadOnlyList<InventoryChange> Repackage(long pilotId, long stationId, IReadOnlyList<RepackageItem> items)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -27,7 +27,7 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         if (
             pilot.ActiveShip.Position is not null
-            || pilot.ActiveShip.StationId != stationId
+            || pilot.ActiveShip.DockedLocationId != stationId
             || items.Count == 0
             || items.Select(i => i.ItemId).Distinct().Count() != items.Count
             || items.Any(i => i.LocationId != stationId)
@@ -41,7 +41,12 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
             var ship = world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == request.ItemId);
             if (ship is not null)
             {
-                if (ship.OwnerId != pilotId || ship.Position is not null || ship.StationId != stationId || ship.StoredInId is not null)
+                if (
+                    ship.OwnerId != pilotId
+                    || ship.Position is not null
+                    || ship.DockedLocationId != stationId
+                    || ship.StoredInId is not null
+                )
                 {
                     throw new InvalidDataException("This ship is unavailable in your station hangar.");
                 }

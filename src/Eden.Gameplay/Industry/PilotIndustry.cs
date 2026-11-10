@@ -17,6 +17,7 @@ public enum IndustryActivity
 public enum IndustryJobStatus
 {
     Installed = 1,
+    Paused = 2,
     Ready = 3,
     Delivered = 101,
     Cancelled = 102,
@@ -36,14 +37,16 @@ public enum IndustrySkill
 }
 
 public sealed record IndustryFacility(
-    int Id,
+    long Id,
     int TypeId,
     int OwnerId,
     int SystemId,
     double CostIndex = 1,
     double Tax = 0,
     bool Manufacturing = true,
-    bool Laboratory = false
+    bool Laboratory = false,
+    double TimeMultiplier = 1,
+    double MaterialMultiplier = 1
 );
 
 public sealed record OwnedBlueprint(
@@ -60,7 +63,7 @@ public sealed record IndustryCharacterBonus(int? SkillId, DogmaAttributeId Attri
 public sealed record IndustryRequest(
     long BlueprintId,
     int BlueprintTypeId,
-    int FacilityId,
+    long FacilityId,
     int Runs,
     int? ProductTypeId,
     double QuotedSeconds,
@@ -90,7 +93,8 @@ public sealed record IndustryJobDetails(
     bool BlueprintCopy = false,
     double Probability = 1,
     int? SuccessfulRuns = null,
-    int? OptionalTypeId = null
+    int? OptionalTypeId = null,
+    long? SuspendedAt = null
 );
 
 public sealed record IndustryResult(IndustryJobDetails Job, IReadOnlyList<InventoryChange> Changes, long? BalanceCents = null);
@@ -107,15 +111,15 @@ public interface IPilotIndustrySkills
 
 public interface IPilotIndustry : IPilotIndustrySkills
 {
-    void CheckAccess(long pilotId, int stationId);
-    void CheckStation(long pilotId, int stationId);
+    void CheckAccess(long pilotId, long stationId);
+    void CheckStation(long pilotId, long stationId);
     IReadOnlyList<IndustryFacility> Facilities(long pilotId);
-    IndustryFacility Facility(long pilotId, int stationId);
-    IReadOnlyList<int> ProductTypes(int? stationId = null);
+    IndustryFacility Facility(long pilotId, long stationId);
+    IReadOnlyList<int> ProductTypes(long? stationId = null);
     IReadOnlyList<int> ScienceProductCategories();
-    IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, int? stationId = null);
+    IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, long? stationId = null);
     OwnedBlueprint Blueprint(long pilotId, long itemId);
-    IReadOnlyDictionary<int, long> Materials(long pilotId, int stationId);
+    IReadOnlyDictionary<int, long> Materials(long pilotId, long stationId);
     IReadOnlyList<IndustryJobDetails> Jobs(long pilotId, bool includeCompleted);
     IndustryJobDetails Job(long pilotId, long jobId);
     IndustryResult Install(long pilotId, IndustryRequest request);

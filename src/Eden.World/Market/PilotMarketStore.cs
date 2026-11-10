@@ -48,7 +48,7 @@ internal sealed partial class PilotMarketStore(
 
     private static CatalogStationDefinition TradeStation(CatalogDbContext catalog, Pilot pilot, int stationId)
     {
-        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != stationId)
+        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
         {
             throw new InvalidDataException("Trade from your current station while docked.");
         }

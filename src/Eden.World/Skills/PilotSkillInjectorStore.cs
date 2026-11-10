@@ -61,7 +61,7 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
             InventoryPersistence.OwnedStack(world, pilot.Id, id) ?? throw new InvalidSkillInjection("YouDoNotOwnCharacterServiceItem");
         Station(pilot);
         // The pinned injector error text specifically requires the station hangar.
-        if (item.LocationId != pilot.ActiveShip.StationId || item.FlagId != (int)InventoryFlag.Hangar)
+        if (item.LocationId != pilot.ActiveShip.DockedLocationId || item.FlagId != (int)InventoryFlag.Hangar)
         {
             throw new InvalidSkillInjection("CharacterServiceItemNotInStation");
         }

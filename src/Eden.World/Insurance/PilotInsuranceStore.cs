@@ -110,7 +110,7 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
 
     public InsurancePolicy? Contract(long pilotId, long shipId) => Contracts(pilotId).SingleOrDefault(policy => policy.ShipId == shipId);
 
-    public InsurancePurchase Insure(long pilotId, int stationId, long shipId, long premiumCents, bool replace)
+    public InsurancePurchase Insure(long pilotId, long stationId, long shipId, long premiumCents, bool replace)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -166,7 +166,7 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
         return new(policy.Snapshot(), balance);
     }
 
-    public void Cancel(long pilotId, int stationId, long shipId)
+    public void Cancel(long pilotId, long stationId, long shipId)
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -184,21 +184,35 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
         transaction.Commit();
     }
 
-    public void CheckStation(long pilotId, int stationId)
+    public void CheckStation(long pilotId, long stationId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         CheckStation(world, catalog, pilotId, stationId);
     }
 
-    private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId)
+    private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, long stationId)
     {
         var pilot =
             world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
             ?? throw new InvalidDataException("Unknown pilot.");
-        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != stationId)
+        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
         {
             throw new InvalidDataException("Insurance changes are available only at your current station.");
+        }
+        if (pilot.ActiveShip.StructureId is long structureId)
+        {
+            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
+            if (
+                !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId)
+                || !Eden
+                    .World.Structures.PilotStructureStore.Snapshot(world, catalog, structure)
+                    .Services.Contains(Eden.Gameplay.Structures.StructureService.Insurance)
+            )
+            {
+                throw new InvalidDataException("Insurance access to this structure is denied.");
+            }
+            return;
         }
         var station = catalog.Definitions.FindStation(stationId) ?? throw new InvalidDataException("Unknown station.");
         if (!StationCapabilities.Has(catalog, station.OperationId, StationService.Insurance))
@@ -207,13 +221,17 @@ internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider c
         }
     }
 
-    private static Ship ShipAtStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId, long shipId)
+    private static Ship ShipAtStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, long stationId, long shipId)
     {
         CheckStation(world, catalog, pilotId, stationId);
         return world
                 .Ships.Include(s => s.Position)
                 .SingleOrDefault(s =>
-                    s.Id == shipId && s.OwnerId == pilotId && s.StationId == stationId && s.Position == null && s.StoredInId == null
+                    s.Id == shipId
+                    && s.OwnerId == pilotId
+                    && (s.StructureId ?? (long)s.StationId) == stationId
+                    && s.Position == null
+                    && s.StoredInId == null
                 )
             ?? throw new InvalidDataException("Choose an owned assembled ship in your current station hangar.");
     }

@@ -17,7 +17,8 @@ internal sealed class FittingOperations(
     IPilotShipResources resources,
     ShipDogmaBuilder dogma,
     IPilotWeaponBanks banks,
-    DroneAttributeUpdates droneUpdates
+    DroneAttributeUpdates droneUpdates,
+    Eden.Gameplay.Structures.IPilotStructures structures
 )
 {
     internal IReadOnlyList<WeaponBank> ReadBanks(PilotCallContext context) => banks.Read(context.Pilot.PilotId, context.Pilot.ShipId);
@@ -80,6 +81,18 @@ internal sealed class FittingOperations(
     {
         try
         {
+            if (
+                ship != context.Pilot.ShipId
+                && ship >= Eden.Gameplay.Structures.StructureRules.FirstStructureId
+                && structures.Read(context.Pilot.PilotId, ship) is not null
+            )
+            {
+                Eden.Protocol.Structures.StructureHandler.Notify(
+                    context,
+                    structures.SetServiceOnline(context.Pilot.PilotId, ship, module, online)
+                );
+                return PilotCallResult.None;
+            }
             var previousBanks = ReadBanks(context);
             var changes = fitting.SetOnline(context.Pilot.PilotId, ship, module, online);
             NotifyOnlineChanges(context, changes);

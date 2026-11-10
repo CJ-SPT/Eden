@@ -248,6 +248,8 @@ internal sealed partial class FlightSession(
 
     public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids) => Scene.RefreshAsteroids(SceneContext, asteroids);
 
+    internal void RefreshStructures(IReadOnlyList<StaticSpaceObject> structures) => Scene.RefreshStructures(SceneContext, structures);
+
     private void RefreshVisibleAsteroids() => Scene.RefreshVisibleAsteroids(SceneContext);
 
     private ShipMotion Motion() =>
@@ -1121,8 +1123,11 @@ internal sealed partial class FlightSession(
                 return PilotCallResult.None;
             case FlightCommand.Dock(var station, var ship)
                 when ship == Pilot.ShipId
-                    && station is > 0 and <= int.MaxValue
-                    && Scene.Objects.FirstOrDefault(o => o.Id == station && o.CategoryId == (int)InventoryCategory.Station)
+                    && station > 0
+                    && Scene.Objects.FirstOrDefault(o =>
+                        o.Id == station
+                        && o.CategoryId is (int)InventoryCategory.Station or Eden.Gameplay.Structures.StructureRules.CategoryId
+                    )
                         is { } destination:
                 if (TravelFailure(CrimewatchTravel.Dock) is { } denied)
                 {
@@ -1139,7 +1144,7 @@ internal sealed partial class FlightSession(
                 }
                 if (docking is not null)
                 {
-                    Pilot = docking.Dock(Pilot.PilotId, ship, (int)station);
+                    Pilot = docking.Dock(Pilot.PilotId, ship, station);
                 }
                 else
                 {

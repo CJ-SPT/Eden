@@ -1,8 +1,8 @@
 namespace Eden.Gameplay.Inventory;
 
-public sealed record PersonalAssetLocation(int StationId, int SolarSystemId, int TypeId, int ItemCount);
+public sealed record PersonalAssetLocation(long StationId, int SolarSystemId, int TypeId, int ItemCount);
 
-public sealed record PersonalAssetQuery(int? StationId = null, bool IncludeContainers = false);
+public sealed record PersonalAssetQuery(long? StationId = null, bool IncludeContainers = false);
 
 public interface IPilotAssets
 {

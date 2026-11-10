@@ -12,7 +12,7 @@ internal sealed class ModSessionObserver(PilotCallContext context, IModSessionEv
             context.AccountId,
             context.Pilot.PilotId,
             context.Roles,
-            context.Pilot.Position is null ? context.Pilot.StationId : null,
+            context.Pilot.Position is null && !context.Pilot.InStructure ? context.Pilot.NpcStationId : null,
             context.Pilot.SystemId
         );
 
@@ -26,7 +26,7 @@ internal sealed class ModSessionObserver(PilotCallContext context, IModSessionEv
             _previous is { } unchanged
             && context.Selected
             && unchanged.PilotId == context.Pilot.PilotId
-            && unchanged.StationId == (context.Pilot.Position is null ? context.Pilot.StationId : null)
+            && unchanged.StationId == (context.Pilot.Position is null && !context.Pilot.InStructure ? context.Pilot.NpcStationId : null)
             && unchanged.SolarSystemId == context.Pilot.SystemId
             && unchanged.Roles == context.Roles
         )

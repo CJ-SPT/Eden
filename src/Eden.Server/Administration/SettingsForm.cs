@@ -104,6 +104,15 @@ internal sealed class SettingsForm
     [Display(Name = "Reprocessing efficiency")]
     public decimal ReprocessingEfficiency { get; set; } = 1;
 
+    [Range(typeof(decimal), "0.1", "100")]
+    public decimal StructureAnchoringSpeed { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    public decimal StructureOnliningSpeed { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    public decimal StructureUnanchoringSpeed { get; set; } = 1;
+
     internal static SettingsForm From(WorldSettings settings) =>
         new()
         {
@@ -120,6 +129,9 @@ internal sealed class SettingsForm
             CopyingSpeed = settings.Industry.CopyingSpeed,
             InventionSpeed = settings.Industry.InventionSpeed,
             ReprocessingEfficiency = settings.Industry.ReprocessingEfficiency,
+            StructureAnchoringSpeed = settings.Structures.AnchoringSpeed,
+            StructureOnliningSpeed = settings.Structures.OnliningSpeed,
+            StructureUnanchoringSpeed = settings.Structures.UnanchoringSpeed,
             ServiceCosts = settings.Economy.ChargeServiceCosts,
             ProgressiveMarkets = settings.Economy.ProgressiveMarkets ?? !settings.DevelopmentSupply.TestingMarket,
             ManufacturingIndex = settings.Economy.DefaultManufacturingIndex,
@@ -162,6 +174,7 @@ internal sealed class SettingsForm
             Resources = new(RenewBelts, RenewalHourUtc, OreYieldMultiplier, IceYieldMultiplier, GasYieldMultiplier),
             Rewards = new(BountyMultiplier, MissionIskMultiplier, MissionLpMultiplier, MissionStandingMultiplier),
             Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
+            Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
             Progression = new(StartingSkills, KillSkillPointMultiplier),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),

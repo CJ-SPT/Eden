@@ -8,6 +8,7 @@ internal enum SettingsActivity
     Rewards,
     Progression,
     Industry,
+    Structures,
     World,
     Advanced,
 }

@@ -22,7 +22,7 @@ public sealed class StationRepairPayment
 {
     public long Id { get; set; }
     public long PilotId { get; set; }
-    public int StationId { get; set; }
+    public long StationId { get; set; }
     public long StationOwnerId { get; set; }
     public long AmountCents { get; set; }
     public long BalanceCents { get; set; }

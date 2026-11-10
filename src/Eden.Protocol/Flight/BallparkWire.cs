@@ -81,6 +81,15 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.Structure is { } structure)
+        {
+            fields["corpID"] = Body.OwnerId;
+            fields["structureState"] = (int)structure.State;
+            fields["state"] = (int)structure.State;
+            fields["stateTimer"] = structure.StateEndsAt is long end ? new object?[] { structure.StateStartedAt, end, null } : null;
+            fields["unanchoring"] = structure.UnanchorAt;
+            fields["hasCore"] = structure.HasCore;
+        }
         if (Body.HackingState is { } hackingState)
         {
             fields["hackingSecurityState"] = hackingState;

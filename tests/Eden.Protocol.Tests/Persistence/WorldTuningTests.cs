@@ -41,6 +41,9 @@ public sealed class WorldTuningTests
     [InlineData("industry", "copyingSpeed", false)]
     [InlineData("industry", "inventionSpeed", false)]
     [InlineData("industry", "reprocessingEfficiency", false)]
+    [InlineData("structures", "anchoringSpeed", false)]
+    [InlineData("structures", "onliningSpeed", false)]
+    [InlineData("structures", "unanchoringSpeed", false)]
     public void ImportAndCommandsShareBoundsForEveryRate(string group, string field, bool reward)
     {
         using TestWorld db = new();

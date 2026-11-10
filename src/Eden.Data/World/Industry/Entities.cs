@@ -16,6 +16,7 @@ namespace Eden.Data.World.Industry;
 
 public sealed class IndustryJob
 {
+    public long? SuspendedAt { get; set; }
     public IndustryActivity Activity { get; set; } = IndustryActivity.Manufacturing;
     public int LicensedRuns { get; set; }
     public bool BlueprintCopy { get; set; }
@@ -29,7 +30,7 @@ public sealed class IndustryJob
     public long PilotId { get; set; }
     public long BlueprintId { get; set; }
     public int BlueprintTypeId { get; set; }
-    public int StationId { get; set; }
+    public long StationId { get; set; }
     public int ProductTypeId { get; set; }
     public int Runs { get; set; }
     public int OutputQuantity { get; set; }

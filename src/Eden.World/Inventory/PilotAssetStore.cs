@@ -28,15 +28,15 @@ internal sealed class PilotAssetStore(WorldDatabase database) : IPilotAssets
         // Include the active docked ship: the contract wizard subtracts it locally.
         var ships = world
             .Ships.Where(s => s.OwnerId == pilotId && s.StoredInId == null && s.Position == null)
-            .GroupBy(s => s.StationId)
+            .GroupBy(s => s.StructureId ?? (long)s.StationId)
             .Select(g => new AssetCount(g.Key, g.Count()))
             .ToArray();
         return items
             .Concat(ships)
             .GroupBy(s => s.LocationId)
-            .Select(g => new { Station = catalog.FindStation(g.Key), Count = g.Sum(s => s.Count) })
+            .Select(g => new { Station = Location(world, catalog, g.Key), Count = g.Sum(s => s.Count) })
             .Where(s => s.Station is not null)
-            .Select(s => new PersonalAssetLocation(s.Station!.Id, s.Station.SolarSystemId, s.Station.TypeId, s.Count))
+            .Select(s => s.Station! with { ItemCount = s.Count })
             .OrderBy(s => s.StationId)
             .ToArray();
     }
@@ -47,7 +47,7 @@ internal sealed class PilotAssetStore(WorldDatabase database) : IPilotAssets
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         CheckPilot(world, pilotId);
-        if (query.StationId is int station && catalog.FindStation(station) is null)
+        if (query.StationId is long station && Location(world, catalog, station) is null)
         {
             throw new InvalidDataException("Choose a valid personal asset station.");
         }
@@ -58,10 +58,10 @@ internal sealed class PilotAssetStore(WorldDatabase database) : IPilotAssets
             stacks = stacks.Where(i => i.FlagId == (int)InventoryFlag.Hangar);
             hulls = hulls.Where(s => s.StoredInId == null);
         }
-        if (query.StationId is int location && !query.IncludeContainers)
+        if (query.StationId is long location && !query.IncludeContainers)
         {
             stacks = stacks.Where(i => i.LocationId == location);
-            hulls = hulls.Where(s => s.StationId == location);
+            hulls = hulls.Where(s => (s.StructureId ?? (long)s.StationId) == location);
         }
         var items = stacks
             .AsEnumerable()
@@ -71,7 +71,7 @@ internal sealed class PilotAssetStore(WorldDatabase database) : IPilotAssets
         var stations = items
             .Select(i => i.LocationId)
             .Distinct()
-            .Where(id => (!query.StationId.HasValue || id == query.StationId) && catalog.FindStation(id) is not null)
+            .Where(id => (!query.StationId.HasValue || id == query.StationId) && Location(world, catalog, id) is not null)
             .ToHashSet();
         return PersonalAssetRules.Select(items, stations, query.IncludeContainers);
     }
@@ -92,4 +92,16 @@ internal sealed class PilotAssetStore(WorldDatabase database) : IPilotAssets
     }
 
     private sealed record AssetCount(long LocationId, int Count);
+
+    private static PersonalAssetLocation? Location(WorldDbContext world, CatalogDbContext catalog, long id)
+    {
+        if (catalog.FindStation(id) is { } station)
+        {
+            return new(station.Id, station.SolarSystemId, station.TypeId, 0);
+        }
+        var structure = world.Set<Eden.Data.World.Structures.SavedStructure>().Find(id);
+        return structure is { State: not Eden.Gameplay.Structures.StructureState.Destroyed }
+            ? new(structure.Id, structure.SystemId, structure.TypeId, 0)
+            : null;
+    }
 }

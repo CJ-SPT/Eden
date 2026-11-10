@@ -302,6 +302,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         ObserveDefenseProfiles(changes);
         _asteroids.Observe(changes);
         _miningSites.Observe(changes);
+        ObserveStructures(changes);
         _droneControllers.Observe(changes);
         _corporationChangeHeads.Observe(changes);
         _corporationLoyalty.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
@@ -338,6 +339,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _defenseProfiles.Clear();
         _asteroids.Clear();
         _miningSites.Clear();
+        _structures.Clear();
+        _structureNames.Clear();
         _wrecks.Clear();
         _drones.Clear();
         _droneControllers.Clear();

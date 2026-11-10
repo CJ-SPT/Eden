@@ -36,7 +36,7 @@ internal sealed class CorporationAssetsHandler(ICorporationStorage storage) : IS
             long actor = context.Pilot.PilotId;
             if (method == "GetAssetInventory" && args is [_, var selector] && BlueMarshal.Text(selector) == "offices")
             {
-                storage.Assets(actor, (int)corporation, context.Pilot.StationId);
+                storage.Assets(actor, (int)corporation, context.Pilot.NpcStationId);
                 var offices = storage.Offices(actor);
                 return new CorporationOfficeAssetsReply(
                     offices

@@ -19,7 +19,7 @@ public interface IDockedWorld : IPilotLookup, IShipPositionStore;
 
 public interface IStationDocking
 {
-    DockedPilot Dock(long pilotId, long shipId, int stationId);
+    DockedPilot Dock(long pilotId, long shipId, long stationId);
 }
 
 public static class DockingDefinitions
@@ -53,7 +53,7 @@ public sealed record PilotShip(
 );
 
 public sealed record PilotStation(
-    int Id,
+    long Id,
     int TypeId,
     int OwnerId,
     FlightSystem System,
@@ -87,7 +87,10 @@ public sealed record DockedPilot(PilotIdentity Identity, PilotShip Ship, PilotSt
         init => Ship = Ship with { GroupId = value };
     }
     public int ShipCategoryId => Ship.CategoryId;
-    public int StationId => Home.Id;
+    public long DockedLocationId => Home.Id;
+    public int StationId => Home.Id is > 0 and <= int.MaxValue ? (int)Home.Id : 0;
+    public int NpcStationId => StationId > 0 ? StationId : throw new InvalidDataException("This service requires an NPC station.");
+    public bool InStructure => Position is null && Home.Id >= Structures.StructureRules.FirstStructureId;
     public int StationTypeId => Home.TypeId;
     public int StationOwnerId => Home.OwnerId;
     public int HomeSystemId => Home.System.Id;
@@ -128,7 +131,7 @@ public sealed record DockedPilot(PilotIdentity Identity, PilotShip Ship, PilotSt
     public int SystemId => CurrentSystem?.Id ?? HomeSystemId;
     public int ConstellationId => CurrentSystem?.ConstellationId ?? HomeConstellationId;
     public int RegionId => CurrentSystem?.RegionId ?? HomeRegionId;
-    public int LocationId => Position is null ? StationId : SystemId;
+    public long LocationId => Position is null ? DockedLocationId : SystemId;
 }
 
 // Pinned clonegrade.const CLONE_STATE_ALPHA/OMEGA values.
