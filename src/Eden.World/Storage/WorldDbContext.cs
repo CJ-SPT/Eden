@@ -62,6 +62,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     internal bool ReadsResidentNpcTimer { get; init; }
     internal TransactionParticipants? Participants { get; init; }
+    internal IReadOnlySet<int>? CommittedSystems { get; init; }
     internal bool IsResidentProjection { get; init; }
 
     private readonly SqliteConnection? _snapshot;
@@ -84,7 +85,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         options
             .AddInterceptors(new FitTransactions(this), new CombatPersistenceBridge(path), new CombatTransactionBridge(path))
             .TracePerformance()
-            .UseSqlite(WorldConnections.Create(path), contextOwnsConnection: true);
+            .UseSqlite(WorldConnections.Create(path, Participants, IsResidentProjection, CommittedSystems), contextOwnsConnection: true);
     }
 
     protected override void OnModelCreating(ModelBuilder model)

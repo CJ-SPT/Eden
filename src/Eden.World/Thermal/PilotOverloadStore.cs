@@ -17,7 +17,7 @@ internal sealed class PilotOverloadStore(WorldDatabase database) : IPilotOverloa
 {
     internal static bool Selected(WorldDbContext world, string path, long pilot, long module)
     {
-        var heat = LiveWorld.Find(path)?.Heat;
+        var heat = LiveWorld.Find(path)?.HeatForKnownPilot(pilot);
         if (heat?.Selected(pilot, module) != true)
         {
             return false;
@@ -27,9 +27,26 @@ internal sealed class PilotOverloadStore(WorldDatabase database) : IPilotOverloa
     }
 
     public IReadOnlySet<long> Requested(long pilot, long ship) =>
-        LiveWorld.Find(database.Path)?.Heat.Requested(pilot, ship) ?? FrozenSet<long>.Empty;
+        LiveWorld.ExecuteForShip(
+            database.Path,
+            ship,
+            () => LiveWorld.Find(database.Path)?.Heat.Requested(pilot, ship) ?? FrozenSet<long>.Empty,
+            nameof(Requested)
+        );
 
-    public void Clear(long pilot, long ship) => LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilot, ship);
+    public void Clear(long pilot, long ship)
+    {
+        LiveWorld.ExecuteForShip(
+            database.Path,
+            ship,
+            () =>
+            {
+                LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilot, ship);
+                return true;
+            },
+            nameof(Clear)
+        );
+    }
 
     public IReadOnlyList<ModuleOverloadState> Set(ModuleOverloadCommand command)
     {
@@ -105,8 +122,10 @@ internal sealed class PilotOverloadStore(WorldDatabase database) : IPilotOverloa
         {
             throw new InvalidDataException("Overload requires working online modules, Thermodynamics and no active paste repairs.");
         }
-        var heat =
-            LiveWorld.Find(database.Path)?.Heat ?? throw new InvalidDataException("Overload requires the authoritative world owner.");
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Overload requires the authoritative world owner.");
+        int system = actor.ActiveShip.Position!.SystemId ?? catalog.RequireStation(actor.ActiveShip.StationId).SolarSystemId;
+        live.TrackShip(ship, system, pilot);
+        var heat = live.HeatForKnownShip(ship);
         var saved = world.Set<SavedShipHeat>().Find(ship);
         var cycles = saved is null ? Array.Empty<PaidHeatCycle>() : ShipHeatPersistence.Decode(saved.StateJson).Cycles;
         var result = items

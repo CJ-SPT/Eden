@@ -15,7 +15,7 @@ internal sealed partial class LiveCombatRuntime
         NpcContact Contact
     );
 
-    private readonly Dictionary<long, SharedNpcContact> _sharedNpcContacts = [];
+    private readonly ResidentMap<long, SharedNpcContact> _sharedNpcContacts = [];
 
     // Recharging, timed patrols, warps and mining stay fresh on every read.
     // Stable contacts expire at the exact weapon deadline, without rounding time.

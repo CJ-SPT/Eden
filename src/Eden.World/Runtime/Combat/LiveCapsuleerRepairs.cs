@@ -14,6 +14,11 @@ internal sealed partial class LiveCombatRuntime
 {
     internal CapsuleerModuleCycle? RenewDefense(long pilot, CapsuleerDefenseEquipment module, CapsuleerModuleCycle? previous, long now)
     {
+        return Execute(() => RenewDefenseOwned(pilot, module, previous, now), nameof(RenewDefense));
+    }
+
+    private CapsuleerModuleCycle? RenewDefenseOwned(long pilot, CapsuleerDefenseEquipment module, CapsuleerModuleCycle? previous, long now)
+    {
         using var ownership = owner.Enter();
         if (
             !CanRun
@@ -69,6 +74,11 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal CapsuleerModuleCycle? DefenseRepair(long pilot, CapsuleerDefenseEquipment module, long now)
+    {
+        return Execute(() => DefenseRepairOwned(pilot, module, now), nameof(DefenseRepair));
+    }
+
+    private CapsuleerModuleCycle? DefenseRepairOwned(long pilot, CapsuleerDefenseEquipment module, long now)
     {
         using var ownership = owner.Enter();
         if (!CanRun || module.Effect is not (DogmaEffect.ShieldBoosting or DogmaEffect.ArmorRepair or DogmaEffect.StructureRepair))

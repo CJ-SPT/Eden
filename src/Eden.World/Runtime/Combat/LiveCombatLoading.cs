@@ -35,7 +35,7 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
-    private sealed record BankHeatProfile(Dictionary<long, CombatWeapon> Weapons, Dictionary<long, double> Absorption);
+    private sealed record BankHeatProfile(ResidentMap<long, CombatWeapon> Weapons, ResidentMap<long, double> Absorption);
 
     // Bank membership and fitted definitions are replaced on a fit reload.
     // Keep this cache tied to that generation rather than a module ID alone.
@@ -99,7 +99,7 @@ internal sealed partial class LiveCombatRuntime
         var savedHealth = world.Set<ShipHealthState>().Find(pilot.ActiveShipId);
         var position = pilot.ActiveShip.Position;
         var fitted = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == pilot.ActiveShipId).ToArray();
-        var turrets = new Dictionary<long, LiveTurret>();
+        var turrets = new ResidentMap<long, LiveTurret>();
         foreach (var module in fitted)
         {
             _itemPilots[module.Id] = pilotId;

@@ -14,40 +14,92 @@ namespace Eden.World.Runtime.Combat;
 
 internal readonly record struct CombatRowChange(string Table, long Id);
 
-internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase database, bool simulationObjects = true)
+internal sealed partial class LiveCombatRuntime(
+    LiveWorld owner,
+    WorldDatabase database,
+    bool simulationObjects = true,
+    int? systemId = null
+)
 {
     private const int ProbabilityResolution = 1_000_000;
     private const int RetainedShips = 512;
     private const int RetainedNpcs = 8192;
     private const int RetainedSystems = 256;
     private const int RetainedItemsPerShip = 128;
-    private readonly Dictionary<long, LiveCombatShip> _ships = [];
-    private readonly Dictionary<long, LiveCombatShip> _savedShips = [];
-    private readonly Dictionary<long, LiveCombatNpc> _npcs = [];
-    private readonly Dictionary<long, LiveCombatNpc> _savedNpcs = [];
-    private readonly HashSet<long> _dirtyShips = [];
-    private readonly HashSet<long> _dirtyNpcs = [];
-    private readonly HashSet<long> _staleShips = [];
-    private readonly HashSet<long> _staleNpcs = [];
-    private readonly Dictionary<long, long> _itemPilots = [];
-    private readonly Dictionary<long, long> _shipPilots = [];
+    private readonly ResidentMap<long, LiveCombatShip> _ships = [];
+    private readonly ResidentMap<long, LiveCombatShip> _savedShips = [];
+    private readonly ResidentMap<long, LiveCombatNpc> _npcs = [];
+    private readonly ResidentMap<long, LiveCombatNpc> _savedNpcs = [];
+    private readonly ResidentSet<long> _dirtyShips = [];
+    private readonly ResidentSet<long> _dirtyNpcs = [];
+    private readonly ResidentSet<long> _staleShips = [];
+    private readonly ResidentSet<long> _staleNpcs = [];
+    private readonly ResidentMap<long, long> _itemPilots = [];
+    private readonly ResidentMap<long, long> _shipPilots = [];
     private int _internal;
-    private Dictionary<long, LiveAggression>? _aggressions;
-    private readonly HashSet<long> _dirtyAggressions = [];
-    private readonly Dictionary<(int System, long Encounter), long[]> _guardGroups = [];
+    private ResidentMap<long, LiveAggression>? _aggressions;
+    private readonly ResidentSet<long> _dirtyAggressions = [];
+    private readonly ResidentMap<(int System, long Encounter), long[]> _guardGroups = [];
     internal bool CanRun => _internal == 0 && owner.SqlConnections == 0;
 
     internal static LiveCombatRuntime? Find(string path) => LiveWorld.Find(path)?.Combat;
 
+    internal static LiveCombatRuntime? Find(string path, long pilot) => LiveWorld.Find(path)?.CombatForPilot(pilot);
+
+    private T Execute<T>(Func<T> action, string operation)
+    {
+        if (systemId is not int system)
+        {
+            return owner.Run(action, operation);
+        }
+        using var context = owner.UseSystem(system);
+        return owner.Run(action, operation);
+    }
+
+    private void Execute(Action action, string operation) =>
+        Execute(
+            () =>
+            {
+                action();
+                return true;
+            },
+            operation
+        );
+
     internal LiveCombatShip CurrentShip(long pilotId) => _ships[pilotId];
 
     internal CombatTimer? NpcTimer(long pilotId)
+    {
+        return Execute(() => NpcTimerOwned(pilotId), nameof(NpcTimer));
+    }
+
+    private CombatTimer? NpcTimerOwned(long pilotId)
     {
         using var ownership = owner.Enter();
         return _ships.GetValueOrDefault(pilotId)?.NpcAggression;
     }
 
     internal CombatVolley? Fire(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation,
+        double? crystalRoll,
+        bool banked,
+        bool overloaded,
+        Func<LiveVolley, ShipHeatSnapshot?, CombatVolley> settleFatal
+    )
+    {
+        return Execute(
+            () => FireOwned(pilotId, moduleId, targetId, velocity, now, roll, activation, crystalRoll, banked, overloaded, settleFatal),
+            nameof(Fire)
+        );
+    }
+
+    private CombatVolley? FireOwned(
         long pilotId,
         long moduleId,
         long targetId,
@@ -195,7 +247,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         }
     }
 
-    private Dictionary<long, LiveAggression> Aggression()
+    private ResidentMap<long, LiveAggression> Aggression()
     {
         if (_aggressions is null)
         {
@@ -205,6 +257,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 return world
                     .Set<NpcAggression>()
                     .AsNoTracking()
+                    .Where(a => systemId == null || world.Set<WorldNpc>().Any(n => n.Id == a.NpcId && n.SystemId == systemId))
                     .ToArray()
                     .ToDictionary(
                         a => a.NpcId,
@@ -274,6 +327,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     internal IReadOnlyList<long>? Aggressors(long shipId)
     {
+        return Execute(() => AggressorsOwned(shipId), nameof(Aggressors));
+    }
+
+    private IReadOnlyList<long>? AggressorsOwned(long shipId)
+    {
         using var ownership = owner.Enter();
         if (CanRun)
         {
@@ -283,6 +341,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
     }
 
     internal ShipHealth? Health(long pilotId, long now)
+    {
+        return Execute(() => HealthOwned(pilotId, now), nameof(Health));
+    }
+
+    private ShipHealth? HealthOwned(long pilotId, long now)
     {
         using var ownership = owner.Enter();
         if (!CanRun)
@@ -318,6 +381,11 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             _staleShips.Remove(pilotId);
         }
         ship = Positioned(ship);
+        if (systemId is int system && ship.SystemId != system)
+        {
+            throw new InvalidDataException("The ship's system membership changed.");
+        }
+        owner.TrackShip(ship.ShipId, ship.SystemId, pilotId);
         _ships[pilotId] = ship;
         return ship;
     }
@@ -327,6 +395,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         if (!_npcs.TryGetValue(id, out var npc) || _staleNpcs.Contains(id))
         {
             npc = Loading(() => LoadNpc(id, now));
+            if (npc is not null && systemId is int system && npc.SystemId != system)
+            {
+                return null;
+            }
             if (npc is not null)
             {
                 SetNpc(npc);
@@ -424,6 +496,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     internal void Flush(TransactionParticipants? participants = null)
     {
+        if (systemId is null && owner.CurrentSystem is null && _internal == 0)
+        {
+            owner.ProjectSystems(participants);
+        }
         if (
             _internal != 0
             || _dirtyShips.Count
@@ -443,7 +519,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         _internal++;
         try
         {
-            var checkpoint = CaptureCheckpoint(participants);
+            var checkpoint = CaptureOwnCheckpoint(participants);
             if (
                 checkpoint.Ships.Count
                     + checkpoint.Npcs.Count
@@ -636,6 +712,10 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
 
     internal void Clear()
     {
+        if (systemId is null && owner.CurrentSystem is null)
+        {
+            owner.ClearSystems();
+        }
         Flush();
         ClearDrones();
         ClearDronePlayers();

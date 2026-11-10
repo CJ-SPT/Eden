@@ -18,19 +18,29 @@ internal sealed partial class LiveCombatRuntime
 {
     private sealed record DronePilot(int Count, double Bandwidth, double Range, DroneSettings Settings, IReadOnlySet<int> Qualified);
 
-    private readonly Dictionary<long, LiveDrone> _liveDrones = [];
-    private readonly Dictionary<int, long[]> _droneSystems = [];
-    private readonly Dictionary<long, DronePilot> _dronePilots = [];
-    private readonly Dictionary<long, int[]> _dronePilotSystems = [];
-    private readonly HashSet<long> _dirtyDrones = [];
+    private readonly ResidentMap<long, LiveDrone> _liveDrones = [];
+    private readonly ResidentMap<int, long[]> _droneSystems = [];
+    private readonly ResidentMap<long, DronePilot> _dronePilots = [];
+    private readonly ResidentMap<long, int[]> _dronePilotSystems = [];
+    private readonly ResidentSet<long> _dirtyDrones = [];
 
     internal bool? HasControlledDrones(long pilot, long ship)
+    {
+        return Execute(() => HasControlledDronesOwned(pilot, ship), nameof(HasControlledDrones));
+    }
+
+    private bool? HasControlledDronesOwned(long pilot, long ship)
     {
         using var ownership = owner.Enter();
         return CanRun ? DroneControllers().TryGetValue(ship, out long controller) && controller == pilot : null;
     }
 
     internal IReadOnlyList<DroneContact>? Drones(int system, long now)
+    {
+        return Execute(() => DronesOwned(system, now), nameof(Drones));
+    }
+
+    private IReadOnlyList<DroneContact>? DronesOwned(int system, long now)
     {
         using var ownership = owner.Enter();
         if (!CanRun)
@@ -87,7 +97,7 @@ internal sealed partial class LiveCombatRuntime
                 var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
                 var fit = FittingCalculation.Read(world, catalog, pilot);
                 var saved = world.Set<WorldDroneSettings>().Find(pilotId);
-                HashSet<int> qualified = [];
+                ResidentSet<int> qualified = [];
                 foreach (int type in drones.Select(d => d.Contact.Profile.TypeId).Distinct())
                 {
                     try
@@ -114,6 +124,19 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal DroneUpdate? AdvanceDrones(
+        long pilotId,
+        long now,
+        int stamp,
+        IPilotCombatPresence presence,
+        IPilotDamageEvents damageEvents,
+        Eden.Gameplay.Fleets.ICooperativeFleets fleets,
+        Func<IReadOnlyDictionary<long, double>, DroneUpdate> settle
+    )
+    {
+        return Execute(() => AdvanceDronesOwned(pilotId, now, stamp, presence, damageEvents, fleets, settle), nameof(AdvanceDrones));
+    }
+
+    private DroneUpdate? AdvanceDronesOwned(
         long pilotId,
         long now,
         int stamp,
@@ -151,11 +174,11 @@ internal sealed partial class LiveCombatRuntime
             .ToArray();
         var inputs = DroneInputs(pilotId, drones);
         List<LiveDrone> staged = [];
-        Dictionary<long, LiveCombatNpc> targets = [];
-        Dictionary<long, LiveCombatShip> pilotTargets = [];
+        ResidentMap<long, LiveCombatNpc> targets = [];
+        ResidentMap<long, LiveCombatShip> pilotTargets = [];
         List<DronePlayerShot> pilotShots = [];
         List<DroneHit> hits = [];
-        Dictionary<long, double> rolls = [];
+        ResidentMap<long, double> rolls = [];
         DroneUpdate Settle()
         {
             Flush();
@@ -486,7 +509,7 @@ internal sealed partial class LiveCombatRuntime
         return true;
     }
 
-    private readonly Dictionary<int, double> _droneSignatures = [];
+    private readonly ResidentMap<int, double> _droneSignatures = [];
 
     private double DroneSignature(int type)
     {

@@ -30,8 +30,8 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
     );
 
     private static readonly ConcurrentDictionary<(string Path, int System), long> s_versions = new();
-    private readonly Dictionary<(int System, bool Signature), View> _views = [];
-    private CatalogProvider? _catalog;
+    private readonly ConcurrentDictionary<(int System, bool Signature), View> _views = [];
+    private volatile CatalogProvider? _catalog;
     private bool _directoryMajorThreat;
     private bool _directoryPirates;
     private long _directoryVersion = -1;
@@ -46,12 +46,17 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
     private long Version(int systemId) =>
         s_versions.GetValueOrDefault((database.Path, 0)) + s_versions.GetValueOrDefault((database.Path, systemId));
 
-    private readonly Dictionary<
+    private readonly ConcurrentDictionary<
         int,
         (IReadOnlyList<CombatAnomaly> Combat, IReadOnlyList<CombatAnomaly> Mining, IReadOnlyList<CombatAnomaly> Combined)
     > _anomalies = [];
 
     public IReadOnlyList<CombatAnomaly> List(int systemId, long now)
+    {
+        return LiveWorld.Execute(database.Path, systemId, () => ListOwned(systemId, now), nameof(List));
+    }
+
+    private IReadOnlyList<CombatAnomaly> ListOwned(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
@@ -76,7 +81,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
         }
     }
 
-    private readonly Dictionary<
+    private readonly ConcurrentDictionary<
         int,
         (
             IReadOnlyList<CombatAnomaly> Combat,
@@ -87,6 +92,11 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
     > _signatures = [];
 
     public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now)
+    {
+        return LiveWorld.Execute(database.Path, systemId, () => SignaturesOwned(systemId, now), nameof(Signatures));
+    }
+
+    private IReadOnlyList<CombatAnomaly> SignaturesOwned(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
@@ -114,6 +124,11 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
     }
 
     private IReadOnlyList<CombatAnomaly> ListCore(int systemId, long now, bool signature)
+    {
+        return LiveWorld.Execute(database.Path, systemId, () => ListCoreOwned(systemId, now, signature), nameof(ListCore));
+    }
+
+    private IReadOnlyList<CombatAnomaly> ListCoreOwned(int systemId, long now, bool signature)
     {
         var key = (systemId, signature);
         // Take the resident owner before the shared movement gate. Bot execution
@@ -289,6 +304,11 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
 
     public void Arrive(int systemId, SpacePosition position, long now)
     {
+        LiveWorld.Execute(database.Path, systemId, () => ArriveOwned(systemId, position, now), nameof(Arrive));
+    }
+
+    private void ArriveOwned(int systemId, SpacePosition position, long now)
+    {
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
@@ -378,6 +398,11 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
     }
 
     public IReadOnlyList<AnomalySystemSites> Directory(long now)
+    {
+        return LiveWorld.Execute(database.Path, () => DirectoryOwned(now), nameof(Directory));
+    }
+
+    private IReadOnlyList<AnomalySystemSites> DirectoryOwned(long now)
     {
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.

@@ -30,7 +30,26 @@ internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob ex
                     live?.MinerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
                     ?? live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
                     ?? 0;
-                _world = new(database.Path) { Participants = new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []) };
+                TransactionParticipants? participants = new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
+                if (expected.Action == CapsuleerAction.GateTransfer)
+                {
+                    var work = live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
+                    if (work?.TargetId is > 0 and <= int.MaxValue && database.Catalog.Gates.TryGetValue((int)work.TargetId, out var gate))
+                    {
+                        participants = new(
+                            systems: [gate.SolarSystemId, gate.DestinationSystemId],
+                            pilots: [expected.PilotId],
+                            ships: ship > 0 ? [ship] : []
+                        );
+                    }
+                    else
+                    {
+                        // A cold restored job has not published its route checkpoint yet.
+                        // Preserve the measured conservative boundary until it does.
+                        participants = null;
+                    }
+                }
+                _world = new(database.Path) { Participants = participants };
                 _transaction = _world.Database.BeginTransaction();
                 // Resident scheduling is canonical between checkpoints. Bring its
                 // expected revision into the same transaction before the mutation.

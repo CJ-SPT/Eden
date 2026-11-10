@@ -22,6 +22,7 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
         }
         if (data.Context is WorldDbContext { Participants: { } participants })
         {
+            WorldConnections.HoldSimulation((WorldDbContext)data.Context);
             if (data.Context.Database.CurrentTransaction is null)
             {
                 CombatTransactionBridge.Project(path, participants);
@@ -37,14 +38,35 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
         {
             return;
         }
+        bool read = command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase);
+        string[] residentTables =
+        [
+            "WorldItem",
+            "WorldPosition",
+            "WorldShip",
+            "WorldNpc",
+            "WorldCombatDamage",
+            "WorldDrone",
+            "WorldArmorRepair",
+            "WorldWreck",
+        ];
+        bool timer =
+            data.Context is not WorldDbContext { ReadsResidentNpcTimer: true }
+            && new[] { "WorldCrimewatch", "WorldPilotHostility", "WorldEngagement", "WorldLogoff" }.Any(table =>
+                command.CommandText.Contains(table, StringComparison.Ordinal)
+            );
+        if (read && !timer && !residentTables.Any(table => command.CommandText.Contains(table, StringComparison.Ordinal)))
+        {
+            return;
+        }
         if (data.Context?.Database.CurrentTransaction is null)
         {
-            LiveCombatRuntime.Find(path)?.BeforeSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
-            LiveWorld.Find(path)?.Heat.BeforeSql(command.CommandText);
-            if (command.CommandText.Contains("WorldWreck", StringComparison.Ordinal))
+            if (data.Context is WorldDbContext context)
             {
-                LiveWorld.Find(path)?.Tractors.Flush();
+                WorldConnections.HoldSimulation(context);
             }
+            LiveWorld.Find(path)?.BeforeSystemsSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
+            LiveWorld.Find(path)?.BeforeSharedSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
         }
     }
 
@@ -114,9 +136,8 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
     {
         using var phase = SessionPerformance.Phase(participants is null ? "projection.fallback" : "projection.participants");
         var live = LiveWorld.Find(path);
-        live?.Combat?.Flush(participants);
-        live?.Heat.Flush(participants);
-        live?.Tractors.Flush(participants);
+        live?.ProjectSystems(participants);
+        live?.ProjectShared(participants);
     }
 
     public override InterceptionResult<DbTransaction> TransactionStarting(
@@ -128,6 +149,10 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
         WorldConnections.FinalizeCommitted(connection);
         if (eventData.Context is not WorldDbContext { IsResidentProjection: true })
         {
+            if (eventData.Context is WorldDbContext context)
+            {
+                WorldConnections.HoldSimulation(context);
+            }
             Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return result;
@@ -143,6 +168,10 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
         WorldConnections.FinalizeCommitted(connection);
         if (eventData.Context is not WorldDbContext { IsResidentProjection: true })
         {
+            if (eventData.Context is WorldDbContext context)
+            {
+                WorldConnections.HoldSimulation(context);
+            }
             Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return ValueTask.FromResult(result);

@@ -168,7 +168,7 @@ internal sealed class PilotCombatStore(
         if (
             playerTarget is null
             && LiveCombatRuntime
-                .Find(database.Path)
+                .Find(database.Path, pilotId)
                 ?.Fire(
                     pilotId,
                     moduleId,
@@ -190,7 +190,7 @@ internal sealed class PilotCombatStore(
         if (
             playerTarget is not null
             && LiveCombatRuntime
-                .Find(database.Path)
+                .Find(database.Path, pilotId)
                 ?.FirePilot(pilotId, moduleId, playerTarget, velocity, now, roll, activation, crystalRoll, banked, overloaded, damageEvents)
                 is { } residentPilot
         )
@@ -582,7 +582,7 @@ internal sealed class PilotCombatStore(
         var npc = world.Set<WorldNpc>().Find(plan.Target.Id)!;
         // Previous object volleys have been projected. This transaction pays every member
         // and settles destruction, loot, history and rewards together.
-        var before = LiveCombatRuntime.Find(database.Path)!.CurrentShip(plan.Ship.PilotId);
+        var before = LiveCombatRuntime.Find(database.Path, plan.Ship.PilotId)!.CurrentShip(plan.Ship.PilotId);
         LiveCombatRuntime.ProjectShip(world, before, plan.Ship);
         var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
         var settled = NpcDamagePersistence.Apply(

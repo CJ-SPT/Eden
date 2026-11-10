@@ -16,6 +16,11 @@ internal sealed class PilotModuleConditionStore(WorldDatabase database) : IPilot
 {
     public IReadOnlyList<FittedModuleCondition> Read(long pilot, long ship)
     {
+        return LiveWorld.ExecuteForShip(database.Path, ship, () => ReadOwned(pilot, ship), nameof(Read));
+    }
+
+    private IReadOnlyList<FittedModuleCondition> ReadOwned(long pilot, long ship)
+    {
         var live = LiveWorld.Find(database.Path);
         using var ownership = live?.Enter();
         var view = live?.Reads is { } resident ? resident.ModuleConditions(pilot, ship, () => ReadSql(pilot, ship)) : ReadSql(pilot, ship);

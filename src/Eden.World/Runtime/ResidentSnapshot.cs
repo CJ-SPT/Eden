@@ -11,7 +11,7 @@ internal sealed class ResidentSnapshot<TKey, TValue>(string name, params string[
 
     private sealed record Entry(TValue Value, long At, long Until);
 
-    private readonly Dictionary<TKey, Entry> _entries = [];
+    private readonly ResidentMap<TKey, Entry> _entries = [];
     internal string Name => name;
     internal bool HasEntries => _entries.Count != 0;
 

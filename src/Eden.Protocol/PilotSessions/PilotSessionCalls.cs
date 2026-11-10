@@ -60,6 +60,7 @@ internal sealed class PilotSessionCalls(
         PilotCallResult? modResult =
             service == "edenMods" ? router.Call(context, service, method, call.Arguments, report, call.Keywords) : null;
         using var operation = operations?.Begin();
+        using var systemContext = context.Selected ? context.Flight.UseSystem() : null;
         string description = DescribeCall(service, method, call.Arguments);
         report($"Call {description}.");
         using var performance = SessionPerformance.Begin($"call {description}", diagnostics?.Trace ?? report);
@@ -93,6 +94,7 @@ internal sealed class PilotSessionCalls(
                 using var entering = SessionPerformance.Begin("enter", diagnostics?.Trace ?? report);
                 updates.Enter(context);
             }
+            using var currentLocation = context.Selected ? context.Flight.UseSystem() : null;
             using (SessionLatency.Measure(SessionLatencyPhase.Updates))
             using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
             {

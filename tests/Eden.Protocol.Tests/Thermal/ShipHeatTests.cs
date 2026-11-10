@@ -86,6 +86,31 @@ public sealed class ShipHeatTests
     }
 
     [Fact]
+    public async Task RestoredPaidHeatHasOneOwnerAfterSystemAdmissionAndUnrelatedSharedWork()
+    {
+        using Fixture fixture = new();
+        fixture.Pay();
+        await fixture.Live!.FlushAsync();
+        string copy = Path.Combine(Path.GetDirectoryName(fixture.Fit.Db.Path)!, "heat-system-admission.sqlite");
+        File.Copy(fixture.Fit.Db.Path, copy);
+        WorldInitialization.Initialize(new(copy), fixture.Fit.Clock);
+        using LiveWorld reopened = new(new(copy), fixture.Fit.Clock, _ => { });
+        int system = fixture.Fit.Db.Store.FindPilot(1000001)!.SystemId;
+        using var context = reopened.UseSystem(system);
+        var heat = new PilotShipHeatStore(new(copy));
+        Assert.Single(heat.Read(fixture.Pilot, fixture.Ship, fixture.Now).Cycles);
+        fixture.Advance(500);
+        var expected = heat.Read(fixture.Pilot, fixture.Ship, fixture.Now);
+        using (reopened.EnterShared("unrelated shared work")) { }
+        Assert.True(HeatCycleRules.SameState(expected, heat.Read(fixture.Pilot, fixture.Ship, fixture.Now)));
+        using var snapshot = Assert.IsType<WorldSnapshot>(reopened.CaptureSnapshot());
+        snapshot.Project();
+        using WorldDbContext saved = new(snapshot.Database);
+        var actual = ShipHeatPersistence.Decode(saved.Set<SavedShipHeat>().Find(fixture.Ship)!.StateJson);
+        Assert.True(HeatCycleRules.SameState(expected, actual));
+    }
+
+    [Fact]
     public void InternalOverloadedBoostPaysAndRegistersItsExactSkilledDeadlineTogether()
     {
         using Fixture f = new();

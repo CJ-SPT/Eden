@@ -34,6 +34,11 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
 
     private T Write<T>(Func<WorldDbContext, CatalogDbContext, T> action)
     {
+        return LiveWorld.Execute(database.Path, () => WriteOwned<T>(action), nameof(Write));
+    }
+
+    private T WriteOwned<T>(Func<WorldDbContext, CatalogDbContext, T> action)
+    {
         using var owner = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -271,6 +276,11 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         );
 
     public ProbeScan Begin(long pilotId, IReadOnlyList<ProbePlacement> placements, long now)
+    {
+        return LiveWorld.Execute(database.Path, () => BeginOwned(pilotId, placements, now), nameof(Begin));
+    }
+
+    private ProbeScan BeginOwned(long pilotId, IReadOnlyList<ProbePlacement> placements, long now)
     {
         using var owner = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())

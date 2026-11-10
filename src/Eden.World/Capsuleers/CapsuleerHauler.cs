@@ -474,7 +474,7 @@ internal sealed partial class CapsuleerHauler(
     {
         if (pilot.Position is { } position)
         {
-            Live?.Combat?.PublishPilotPosition(pilot.ShipId, pilot.SystemId, position);
+            Live?.CombatForSystem(pilot.SystemId)?.PublishPilotPosition(pilot.ShipId, pilot.SystemId, position);
         }
     }
 
@@ -536,7 +536,7 @@ internal sealed partial class CapsuleerHauler(
             ActiveTicks = checked(Work.ClockOffsetTicks + stamp * TimeSpan.TicksPerSecond),
             Navigation = _navigation.Capture(),
         };
-        live.Combat?.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
+        live.CombatForSystem(Pilot.SystemId)?.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
         live.HaulerCheckpoints[pilotId] = new(pilotId, Work);
         live.ObjectsChanged();
         return true;
@@ -926,6 +926,7 @@ internal sealed partial class CapsuleerHauler(
             arrivalAt
         );
         _pilot = ships.FindPilot(_operation.World, account, Pilot.PilotId)!;
+        using var destinationContext = Live?.UseSystem(_pilot.SystemId);
         _operation.TravelChanged = true;
         _background = _background && Live?.CapsuleerActivity.Read().ActiveSystems.Contains(_pilot.SystemId) != true;
         _navigation.AdoptHull();

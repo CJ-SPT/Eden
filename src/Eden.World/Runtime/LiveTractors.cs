@@ -28,10 +28,10 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
 {
     private sealed record Tractor(InformationCycle Cycle, SpacePosition Source, double Radii, long AdvancedAt, ICooperativeFleets? Fleets);
 
-    private readonly Dictionary<long, Tractor> _cycles = [];
-    private readonly Dictionary<long, SpacePosition> _positions = [];
-    private readonly HashSet<long> _dirty = [];
-    private readonly Dictionary<long, (long Pilot, long Ship, int System)> _owners = [];
+    private readonly ResidentMap<long, Tractor> _cycles = [];
+    private readonly ResidentMap<long, SpacePosition> _positions = [];
+    private readonly ResidentSet<long> _dirty = [];
+    private readonly ResidentMap<long, (long Pilot, long Ship, int System)> _owners = [];
     private bool _writing;
     private long _revision;
 
@@ -50,6 +50,18 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
         int system
     )
     {
+        owner.Run(() => StartOwned(cycle, source, wreck, radii, fleets, system), nameof(Start));
+    }
+
+    private void StartOwned(
+        InformationCycle cycle,
+        SpacePosition source,
+        SpacePosition wreck,
+        double radii,
+        ICooperativeFleets? fleets,
+        int system
+    )
+    {
         using var ownership = owner.Enter();
         _cycles[cycle.Module.ItemId] = new(cycle, source, radii, cycle.StartedAt, fleets);
         _positions[cycle.TargetId] = wreck;
@@ -59,11 +71,21 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
 
     internal bool Has(InformationCycle cycle)
     {
+        return owner.Run(() => HasOwned(cycle), nameof(Has));
+    }
+
+    private bool HasOwned(InformationCycle cycle)
+    {
         using var ownership = owner.Enter();
         return _cycles.TryGetValue(cycle.Module.ItemId, out var current) && current.Cycle.ReadyAt == cycle.ReadyAt;
     }
 
     internal void Advance(long now)
+    {
+        owner.Run(() => AdvanceOwned(now), nameof(Advance));
+    }
+
+    private void AdvanceOwned(long now)
     {
         using var ownership = owner.Enter();
         foreach (var (module, tractor) in _cycles.ToArray())
@@ -109,6 +131,11 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
 
     internal IReadOnlyList<WreckContact> Contacts(IReadOnlyList<WreckContact> contacts, long now)
     {
+        return owner.Run(() => ContactsOwned(contacts, now), nameof(Contacts));
+    }
+
+    private IReadOnlyList<WreckContact> ContactsOwned(IReadOnlyList<WreckContact> contacts, long now)
+    {
         using var ownership = owner.Enter();
         Advance(now);
         if (_positions.Count == 0)
@@ -130,6 +157,11 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
     internal TractorCheckpoint Capture() => new(_dirty.Select(id => new TractorPosition(id, _positions[id])).ToArray());
 
     internal void Stop(long module)
+    {
+        owner.Run(() => StopOwned(module), nameof(Stop));
+    }
+
+    private void StopOwned(long module)
     {
         using var ownership = owner.Enter();
         if (_cycles.Remove(module, out var tractor) && !_dirty.Contains(tractor.Cycle.TargetId))

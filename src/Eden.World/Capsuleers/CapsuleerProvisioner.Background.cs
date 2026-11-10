@@ -141,7 +141,11 @@ internal sealed partial class CapsuleerProvisioner
                 CapsuleerProvisioningTurn result;
                 using (database.EnterMovement())
                 {
-                    using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+                    using WorldDbContext world = new(database.Path)
+                    {
+                        Participants = TransactionParticipants.None,
+                        CommittedSystems = System.Collections.Immutable.ImmutableHashSet.Create(system),
+                    };
                     result = Provision(system, catalog, world, globalStartup: true, maximumFounders: 1);
                 }
                 // Connection close has published the committed identity revision. The

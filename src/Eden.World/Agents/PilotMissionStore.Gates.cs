@@ -16,6 +16,11 @@ internal sealed partial class PilotMissionStore
 {
     public MissionGateActivation ActivateGate(long pilotId, long gateId, SpacePosition destination)
     {
+        return LiveWorld.Execute(database.Path, () => ActivateGateOwned(pilotId, gateId, destination), nameof(ActivateGate));
+    }
+
+    private MissionGateActivation ActivateGateOwned(long pilotId, long gateId, SpacePosition destination)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -40,6 +45,11 @@ internal sealed partial class PilotMissionStore
     }
 
     public MissionGate Gate(long pilotId, long gateId)
+    {
+        return LiveWorld.Execute(database.Path, () => GateOwned(pilotId, gateId), nameof(Gate));
+    }
+
+    private MissionGate GateOwned(long pilotId, long gateId)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())

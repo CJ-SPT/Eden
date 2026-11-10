@@ -19,6 +19,11 @@ internal sealed class AgencyDirectory(WorldDatabase database) : IAgencyDirectory
 
     public AgencyIceDirectory Ice(long now)
     {
+        return LiveWorld.Execute(database.Path, () => IceOwned(now), nameof(Ice));
+    }
+
+    private AgencyIceDirectory IceOwned(long now)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
@@ -89,6 +94,11 @@ internal sealed class AgencyDirectory(WorldDatabase database) : IAgencyDirectory
     }
 
     public IReadOnlyList<AgencySystemCount> Signatures(long now)
+    {
+        return LiveWorld.Execute(database.Path, () => SignaturesOwned(now), nameof(Signatures));
+    }
+
+    private IReadOnlyList<AgencySystemCount> SignaturesOwned(long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)

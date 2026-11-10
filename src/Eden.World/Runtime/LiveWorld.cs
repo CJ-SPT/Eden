@@ -28,13 +28,13 @@ internal sealed record WorldCheckpoint(
 // The resident relational image preserves the existing transaction, constraint and trigger rules.
 // Checkpoints copy the SQL image and capture immutable combat state under the owner.
 // Projection and filesystem work use only the detached image outside that owner.
-internal sealed class LiveWorld : IDisposable
+internal sealed partial class LiveWorld : IDisposable
 {
     internal static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(15);
     private static readonly ConcurrentDictionary<string, LiveWorld> s_worlds = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
     private readonly OwnershipMonitor _ownershipMonitor;
-    internal bool IsEntered => _ownershipMonitor.IsEntered;
+    internal bool IsEntered => _ownershipMonitor.IsEntered || _heldSystems.Value!.Count != 0;
     internal int WaitingOwners => _ownershipMonitor.WaitingCount;
 
     internal IDisposable ObserveOwnership(Action<OwnershipTiming> observer) => _ownershipMonitor.Subscribe(observer);
@@ -43,6 +43,7 @@ internal sealed class LiveWorld : IDisposable
     private readonly Queue<WorldCheckpoint> _checkpoints = new();
     private const int RetainedCheckpointReports = 32;
     private readonly string _path;
+    private readonly WorldDatabase _database;
     private readonly SqliteConnection _memory;
     private readonly FileStream _ownership;
     private readonly TimeProvider _clock;
@@ -62,23 +63,46 @@ internal sealed class LiveWorld : IDisposable
     private long _activityCheckpointTicks;
 
     internal string ConnectionString { get; }
-    internal LiveCombatRuntime? Combat { get; }
-    internal LiveReadModels? Reads { get; }
-    internal LiveShipHeat Heat { get; }
-    internal LiveNaniteRepairs Nanites { get; }
-    internal LiveTractors Tractors { get; }
+    internal LiveCombatRuntime? Combat => Current.Combat;
+    internal LiveReadModels? Reads => Current.Reads;
+    internal LiveShipHeat Heat => Current.Heat;
+    internal LiveNaniteRepairs Nanites => Current.Nanites;
+    internal LiveTractors Tractors => Current.Tractors;
     internal Eden.World.Capsuleers.CapsuleerActivity CapsuleerActivity { get; }
     internal bool MeasureCheckpoints { get; set; }
-    internal int SqlConnections { get; private set; }
-    private readonly LiveTimedModules? _timedModules;
-    internal bool TracksTimedModules => _timedModules is not null;
-    private bool _expiringTimedModules;
+    private readonly ThreadLocal<int> _sqlConnections = new();
+    internal int SqlConnections => _sqlConnections.Value;
+    private LiveTimedModules _timedModules => Current.TimedModules;
+    internal bool TracksTimedModules => true;
 
-    internal void SqlOpened() => SqlConnections++;
+    internal void SqlOpened() => _sqlConnections.Value++;
 
-    internal void SqlClosed(IReadOnlyCollection<CombatRowChange> changes)
+    internal void SqlClosed(
+        IReadOnlyCollection<CombatRowChange> changes,
+        TransactionParticipants? participants = null,
+        int? projectionSystem = null,
+        IReadOnlySet<int>? committedSystems = null
+    )
     {
-        SqlConnections--;
+        _sqlConnections.Value--;
+        if (changes.Count == 0)
+        {
+            return;
+        }
+        IReadOnlyCollection<int>? affectedSystems = committedSystems;
+        if (affectedSystems is null && projectionSystem is int source)
+        {
+            affectedSystems = [source];
+        }
+        else if (
+            affectedSystems is null
+            && participants is not null
+            && participants.Systems.Count + participants.Pilots.Count + participants.Ships.Count + participants.Resources.Count != 0
+        )
+        {
+            affectedSystems = ParticipantSystems(participants);
+        }
+        ReconcileHeatMembership(changes);
         if (changes.Any(change => change.Table is "WorldPilot" or "WorldTrafficIdentity" or "schema"))
         {
             PopulationIdentityRevision++;
@@ -112,16 +136,63 @@ internal sealed class LiveWorld : IDisposable
                 CapsuleerMetadataReset = CapsuleerRevision;
             }
         }
-        _timedModules?.Observe(changes);
-        Heat.Observe(changes);
-        Nanites.Observe(changes);
-        Tractors.Observe(changes);
-        Reads?.Observe(changes);
-        Combat?.Observe(changes);
+        foreach (var change in changes)
+        {
+            if (change.Table == "schema")
+            {
+                _pilotSystems.Clear();
+                _shipSystems.Clear();
+                _npcSystems.Clear();
+                _shipOwners.Clear();
+            }
+            else if (change.Table == "WorldPilot")
+            {
+                _pilotSystems.TryRemove(change.Id, out _);
+            }
+            else if (change.Table is "WorldPositionMembership" or "WorldShip")
+            {
+                _shipSystems.TryRemove(change.Id, out _);
+                if (_shipOwners.TryGetValue(change.Id, out long pilot))
+                {
+                    _pilotSystems.TryRemove(pilot, out _);
+                }
+            }
+        }
+        using (UseShared())
+        {
+            ObserveState(_shared, changes);
+        }
+        var committed = changes.ToArray();
+        foreach (var entry in _systems.Snapshot())
+        {
+            if (affectedSystems is not null && !affectedSystems.Contains(entry.Id))
+            {
+                continue;
+            }
+            if (entry.Ownership.IsEntered)
+            {
+                using var context = UseSystem(entry.Id);
+                ObserveState(entry.State, committed);
+            }
+            else
+            {
+                entry.State.PendingChanges.Enqueue(committed);
+            }
+        }
         if (changes.Count != 0)
         {
             CapsuleerActivity.Wake();
         }
+    }
+
+    private static void ObserveState(LiveSystemState state, IReadOnlyCollection<CombatRowChange> changes)
+    {
+        state.TimedModules.Observe(changes);
+        state.Heat.Observe(changes);
+        state.Nanites.Observe(changes);
+        state.Tractors.Observe(changes);
+        state.Reads?.Observe(changes);
+        state.Combat?.Observe(changes);
     }
 
     internal long CapsuleerRevision { get; private set; }
@@ -141,7 +212,7 @@ internal sealed class LiveWorld : IDisposable
     internal MinerCheckpoint? MinerCheckpoint => MinerCheckpoints.Values.FirstOrDefault();
     internal HaulerCheckpoint? HaulerCheckpoint => HaulerCheckpoints.Values.FirstOrDefault();
 
-    internal void ObjectsChanged() => _generation++;
+    internal void ObjectsChanged() => Interlocked.Increment(ref _generation);
 
     internal static void CatalogChanged(string path)
     {
@@ -155,7 +226,7 @@ internal sealed class LiveWorld : IDisposable
             )
         )
         {
-            using var ownership = world.Enter();
+            using var ownership = world.EnterCoordinated("catalog change");
             world.Combat?.Clear();
             world.Reads?.Clear();
             world.Heat.InvalidateProfiles();
@@ -195,11 +266,11 @@ internal sealed class LiveWorld : IDisposable
         bool simulationObjects = true
     )
     {
+        _database = database;
         _ownershipMonitor = new("world", _gate);
         _path = Path.GetFullPath(database.Path);
-        Heat = new(this, database, clock);
-        Tractors = new(this, database);
-        Nanites = new(database, clock);
+        _shared = new(this, database, clock, combatObjects, residentReads, simulationObjects);
+        _systems = new(system => new(this, database, clock, combatObjects, residentReads, simulationObjects, system));
         CapsuleerActivity = new(database, clock);
         _clock = clock;
         _report = report ?? ServerLog.Console.Debug;
@@ -243,9 +314,6 @@ internal sealed class LiveWorld : IDisposable
             {
                 throw new InvalidOperationException("This world already has a resident owner.");
             }
-            Combat = combatObjects ? new(this, database, simulationObjects) : null;
-            Reads = residentReads ? new(this, database) : null;
-            _timedModules = new(database);
             Combat?.WarmDrones();
             Heat.Warm();
             using (Enter())
@@ -272,31 +340,36 @@ internal sealed class LiveWorld : IDisposable
 
     internal IDisposable Enter([CallerMemberName] string operation = "", int? systemId = null)
     {
-        bool nested = Monitor.IsEntered(_gate);
-        var lease = Acquire(operation, systemId);
+        if (systemId is int specified && CurrentSystem != specified)
+        {
+            var context = UseSystem(specified);
+            try
+            {
+                return new CoordinatedLease(context, EnterSimulation(operation, specified));
+            }
+            catch
+            {
+                context.Dispose();
+                throw;
+            }
+        }
+        if (CurrentSystem is int system)
+        {
+            return EnterSimulation(operation, system);
+        }
+        bool nested = _ownershipMonitor.IsEntered;
+        var lease = EnterPersistence(operation);
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            // A final checkpoint already owns the gate and must project dirty objects.
-            // New external work is refused while admitted operations can finish nesting.
-            if (Volatile.Read(ref _stopping) && !nested)
+            if (_stopping && !nested)
             {
                 throw new InvalidOperationException("The resident world is shutting down.");
             }
-            if (SqlConnections == 0 && !_expiringTimedModules)
+            AdvanceEffects(_shared);
+            if (!nested)
             {
-                _expiringTimedModules = true;
-                try
-                {
-                    using var timing = SessionLatency.Measure(SessionLatencyPhase.TimedEffects);
-                    _timedModules?.Expire(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-                    Heat.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-                    Nanites.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-                }
-                finally
-                {
-                    _expiringTimedModules = false;
-                }
+                AdvanceSystemHeat();
             }
             return lease;
         }
@@ -396,7 +469,7 @@ internal sealed class LiveWorld : IDisposable
 
     internal async Task FlushAsync()
     {
-        if (Monitor.IsEntered(_gate))
+        if (IsEntered)
         {
             throw new InvalidOperationException("Complete world connections before awaiting a durable checkpoint.");
         }
@@ -424,8 +497,9 @@ internal sealed class LiveWorld : IDisposable
 
     internal WorldSnapshot? CaptureSnapshot()
     {
+        using var context = UseShared();
         long started = Stopwatch.GetTimestamp();
-        using (Acquire("checkpoint capture"))
+        using (EnterCoordinated("checkpoint capture"))
         {
             var wait = Stopwatch.GetElapsedTime(started);
             started = Stopwatch.GetTimestamp();
@@ -439,6 +513,11 @@ internal sealed class LiveWorld : IDisposable
             }
             Heat.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             Nanites.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            foreach (var entry in _systems.Snapshot())
+            {
+                using var systemContext = UseSystem(entry.Id);
+                using var ownership = EnterSimulation("checkpoint deadlines", entry.Id);
+            }
             var activity = CapsuleerActivity.Capture();
             if (activity is not null && activity.ElapsedTicks != _activityCheckpointTicks)
             {
@@ -450,7 +529,9 @@ internal sealed class LiveWorld : IDisposable
             {
                 return null;
             }
-            var combat = Combat?.CaptureCheckpoint();
+            var combat = _shared.Combat?.CaptureCheckpoint();
+            var heat = new ShipHeatCheckpoint(AllStates.SelectMany(state => state.Heat.CaptureOwn()?.Ships ?? []).ToArray());
+            var tractors = new TractorCheckpoint(AllStates.SelectMany(state => state.Tractors.Capture()?.Positions ?? []).ToArray());
             SqliteConnection database = new("Data Source=:memory:;Pooling=False;Foreign Keys=True");
             try
             {
@@ -464,8 +545,8 @@ internal sealed class LiveWorld : IDisposable
                     generation,
                     wait,
                     Stopwatch.GetElapsedTime(started),
-                    Heat.Capture(),
-                    Tractors.Capture(),
+                    heat,
+                    tractors,
                     MinerCheckpoints.Values.Where(m => ProjectedMiners.GetValueOrDefault(m.PilotId) != m).ToArray(),
                     HaulerCheckpoints.Values.Where(h => ProjectedHaulers.GetValueOrDefault(h.PilotId) != h).ToArray(),
                     activity,
@@ -586,7 +667,7 @@ internal sealed class LiveWorld : IDisposable
 
     public void Dispose()
     {
-        if (Monitor.IsEntered(_gate))
+        if (IsEntered)
         {
             throw new InvalidOperationException("Complete world connections before shutting down the resident world.");
         }

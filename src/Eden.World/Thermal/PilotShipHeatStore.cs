@@ -12,6 +12,11 @@ internal sealed class PilotShipHeatStore(WorldDatabase database) : IPilotShipHea
 {
     public ShipHeatSnapshot Read(long pilotId, long shipId, long now)
     {
+        return LiveWorld.ExecuteForShip(database.Path, shipId, () => ReadOwned(pilotId, shipId, now), nameof(Read));
+    }
+
+    private ShipHeatSnapshot ReadOwned(long pilotId, long shipId, long now)
+    {
         if (now < 0)
         {
             throw new InvalidDataException("Invalid ship heat clock.");

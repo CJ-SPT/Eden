@@ -141,6 +141,8 @@ internal sealed partial class CapsuleerScheduler(
             return;
         }
         _membershipDirty = true;
+        int? previousRuntime = _locations.TryGetValue(pilot, out int savedSystem) ? savedSystem : null;
+        Live?.AssignCapsuleer(pilot, previousRuntime, system, _miners.GetValueOrDefault(pilot), _haulers.GetValueOrDefault(pilot));
         if (_locations.TryGetValue(pilot, out int previous) && (!_routes.TryGetValue(pilot, out var route) || !route.Contains(previous)))
         {
             _systemAgents.GetValueOrDefault(previous)?.Remove(pilot);
@@ -335,6 +337,13 @@ internal sealed partial class CapsuleerScheduler(
             {
                 _haulers.Add(agent.PilotId, haulers.Create(agent.PilotId));
             }
+            Live?.AssignCapsuleer(
+                agent.PilotId,
+                null,
+                _locations[agent.PilotId],
+                _miners.GetValueOrDefault(agent.PilotId),
+                _haulers.GetValueOrDefault(agent.PilotId)
+            );
         }
         if (!incremental)
         {
@@ -348,7 +357,7 @@ internal sealed partial class CapsuleerScheduler(
     public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
     {
         long started = clock.GetTimestamp();
-        using var owner = Live?.Enter();
+        using var owner = Live?.EnterShared();
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             _destinyStamp = destinyStamp;
@@ -373,6 +382,7 @@ internal sealed partial class CapsuleerScheduler(
                         }
                         CapsuleerJob next;
                         Live?.ObserveTrafficJob(job, _locations[job.PilotId]);
+                        using var systemContext = Live?.UseSystem(_locations[job.PilotId]);
                         if (_miners.TryGetValue(job.PilotId, out var miner))
                         {
                             using var phase = SessionPerformance.Phase("traffic.minerAction");
@@ -398,6 +408,7 @@ internal sealed partial class CapsuleerScheduler(
                             IndexJourney(job.PilotId, hauler);
                             IndexLocation(job.PilotId, hauler.SystemId);
                             _systems.Register(hauler.SystemId);
+                            using var observationContext = Live?.UseSystem(hauler.SystemId);
                             var observation = hauler.Read()!;
                             hauling[job.PilotId] = observation;
                             Blocking(job.PilotId, observation.Work.WaitingReason);
@@ -616,8 +627,8 @@ internal sealed partial class CapsuleerScheduler(
 
     private void SynchronizeCore(Action action, int? systemId = null)
     {
-        using var owner = Live?.Enter(systemId: systemId);
-        using (synchronization.Enter("CapsuleerScheduler", systemId))
+        using var owner = Live?.EnterShared("traffic handoff");
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             long? previousDue = _queue.NextDueTicks;
             action();
@@ -645,7 +656,15 @@ internal sealed partial class CapsuleerScheduler(
     public ValueTask SynchronizeAsync(int systemId, Action action, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        SynchronizeCore(action, systemId);
+        if (Live is { } live)
+        {
+            using var context = live.UseSystem(systemId);
+            action();
+        }
+        else
+        {
+            SynchronizeCore(action, systemId);
+        }
         return ValueTask.CompletedTask;
     }
 
@@ -665,6 +684,7 @@ internal sealed partial class CapsuleerScheduler(
                     .Select(pilot => new KeyValuePair<long, int>(pilot, _locations[pilot]))
             )
             {
+                using var systemContext = Live?.UseSystem(location.Value);
                 if (_miners.TryGetValue(location.Key, out var miner))
                 {
                     var observation = miner.Read()!;
@@ -715,7 +735,7 @@ internal sealed partial class CapsuleerScheduler(
 
     public IReadOnlyList<CapsuleerJob> Jobs()
     {
-        using var owner = Live?.Enter();
+        using var owner = Live?.EnterShared();
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
@@ -725,7 +745,7 @@ internal sealed partial class CapsuleerScheduler(
 
     public CapsuleerWakePlan NextWake()
     {
-        using var owner = Live?.Enter();
+        using var owner = Live?.EnterShared();
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             var activity = presence.Read();
@@ -735,7 +755,7 @@ internal sealed partial class CapsuleerScheduler(
 
     public MinerObservation? Miner(long pilotId)
     {
-        using var owner = Live?.Enter();
+        using var owner = Live?.EnterShared();
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
@@ -745,7 +765,7 @@ internal sealed partial class CapsuleerScheduler(
 
     public HaulerObservation? Hauler(long pilotId)
     {
-        using var owner = Live?.Enter();
+        using var owner = Live?.EnterShared();
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
@@ -765,7 +785,7 @@ internal sealed partial class CapsuleerScheduler(
 
     public void ObserveAggression(long shipId)
     {
-        using var owner = Live?.Enter();
+        using var owner = Live?.EnterShared();
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             if (_ships.TryGetValue(shipId, out long pilot))

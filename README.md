@@ -76,9 +76,9 @@ Bounty SP gains are silent; refresh the skill window to read the updated total.
 
 [CONCORD criminal response](docs/protocol/combat.md#concord-criminal-response--november-9-2026) now enforces supported high-security criminal offenses with persistent response deadlines, catalog Captains/Commanders, capsule escape and no insurance payout. Baseline response times approximate a fresh live response; existing-squad timing and pulling remain unsupported. CONCORD overview icons remain blue during attacks through the signed login adapter; restart the server and fully reopen the client after updating.
 
-[Simulation scaling milestone 2](docs/protocol/performance.md#classified-transactions-and-scheduler-reuse-november-10-2026)
-limits classified transaction projection to affected residents, reuses unchanged scheduler membership and shared
-observations, and keeps idle resource checks in memory. Independent system execution remains a later milestone.
+[Simulation scaling milestone 3](docs/protocol/performance.md#independent-system-ownership-november-10-2026)
+separates resident system ownership from SQLite coordination, preserves classified projection and lets warmed
+player frames progress while another system is busy. Tiered detail eviction and checkpoint-copy isolation follow.
 
 ## Local game data
 

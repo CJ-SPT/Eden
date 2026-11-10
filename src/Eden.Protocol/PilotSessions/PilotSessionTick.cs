@@ -29,6 +29,7 @@ internal sealed class PilotSessionTick(
     )
     {
         using var operation = operations?.Begin();
+        using var systemContext = context.Selected ? context.Flight.UseSystem() : null;
         using var performance = SessionPerformance.Begin("tick", diagnostics?.Trace ?? report);
         using var latency = new SessionLatency("tick", diagnostics?.Warning ?? report, diagnostics?.Trace ?? report);
         if (handoff is not null && context.Selected)
@@ -86,6 +87,7 @@ internal sealed class PilotSessionTick(
             report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
         DockedPilot? beforeAttack = null;
+        using var destinationContext = context.Flight.UseSystem();
         void PrepareUpdates()
         {
             anomalies?.Advance(context);

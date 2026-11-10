@@ -18,6 +18,11 @@ internal sealed class CapsuleerGateWatch(WorldDatabase database) : ICapsuleerGat
 
     public IReadOnlyList<WatchedTrafficGate> Read(HumanActivitySnapshot activity)
     {
+        return LiveWorld.Execute(database.Path, () => ReadOwned(activity), nameof(Read));
+    }
+
+    private IReadOnlyList<WatchedTrafficGate> ReadOwned(HumanActivitySnapshot activity)
+    {
         if (activity.Pilots.Count == 0)
         {
             return [];

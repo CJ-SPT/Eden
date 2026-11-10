@@ -12,7 +12,7 @@ namespace Eden.World.Runtime;
 
 // Paid repair deadlines are SQL transitions, not per-tick module writes. The
 // immutable active set also gives resident volleys a cheap busy guard.
-internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clock)
+internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clock, int? system = null)
 {
     private sealed record PilotLocation(long PilotId, long ShipId);
 
@@ -178,8 +178,14 @@ internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clo
 
     private void Load()
     {
-        using WorldDbContext world = new(database.Path);
-        var schedules = world.Set<SavedNaniteRepair>().AsNoTracking().ToArray().Select(NaniteRepairPersistence.Schedule).ToArray();
+        using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+        var rows = world.Set<SavedNaniteRepair>().AsNoTracking();
+        if (system is int id)
+        {
+            var members = ResidentSystemMembership.Ships(world, database, id);
+            rows = rows.Where(r => members.Contains(r.ShipId));
+        }
+        var schedules = rows.ToArray().Select(NaniteRepairPersistence.Schedule).ToArray();
         _current = schedules.ToFrozenDictionary(s => s.Key.ModuleId);
         _ships = schedules.Select(s => s.ShipId).ToFrozenSet();
         _pilots = schedules.Select(s => s.PilotId).ToFrozenSet();

@@ -182,7 +182,15 @@ internal sealed class CapsuleerMaintenance(
     public void Refresh()
     {
         using var operation = operations?.Begin();
-        using (synchronization.Enter("traffic presentation"))
+        using var ownership = synchronization.CurrentSystem is null
+            ? synchronization.Enter("traffic presentation")
+            : synchronization.TryEnterShared("traffic presentation");
+        if (ownership is null)
+        {
+            // The last immutable presentation remains available. The maintenance
+            // owner publishes the pending batch without delaying this player's frame.
+            return;
+        }
         {
             var batch = handoff.Capture();
             if (_retryPresentation is null && batch.Revision == _publishedPresentation?.Revision)

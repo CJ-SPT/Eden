@@ -49,6 +49,11 @@ internal sealed partial class PilotMissionStore(
 
     public AgentAccess Access(long pilotId, long agentId)
     {
+        return LiveWorld.Execute(database.Path, () => AccessOwned(pilotId, agentId), nameof(Access));
+    }
+
+    private AgentAccess AccessOwned(long pilotId, long agentId)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -59,6 +64,11 @@ internal sealed partial class PilotMissionStore(
     }
 
     public AgentServiceInformation Information(long pilotId, long agentId)
+    {
+        return LiveWorld.Execute(database.Path, () => InformationOwned(pilotId, agentId), nameof(Information));
+    }
+
+    private AgentServiceInformation InformationOwned(long pilotId, long agentId)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
@@ -133,6 +143,11 @@ internal sealed partial class PilotMissionStore(
 
     public IReadOnlyList<MissionOffer> Journal(long pilotId, long? agentId = null)
     {
+        return LiveWorld.Execute(database.Path, () => JournalOwned(pilotId, agentId), nameof(Journal));
+    }
+
+    private IReadOnlyList<MissionOffer> JournalOwned(long pilotId, long? agentId = null)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -157,6 +172,11 @@ internal sealed partial class PilotMissionStore(
 
     public MissionOffer? Current(long pilotId, long agentId)
     {
+        return LiveWorld.Execute(database.Path, () => CurrentOwned(pilotId, agentId), nameof(Current));
+    }
+
+    private MissionOffer? CurrentOwned(long pilotId, long agentId)
+    {
         _ = Agent(agentId);
         _ = Journal(pilotId, agentId);
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
@@ -175,6 +195,11 @@ internal sealed partial class PilotMissionStore(
     }
 
     public MissionUpdate Act(long pilotId, long agentId, MissionAction action, long? offerId = null)
+    {
+        return LiveWorld.Execute(database.Path, () => ActOwned(pilotId, agentId, action, offerId), nameof(Act));
+    }
+
+    private MissionUpdate ActOwned(long pilotId, long agentId, MissionAction action, long? offerId = null)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())

@@ -205,6 +205,11 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
 
     private Metadata ReadMetadata()
     {
+        return LiveWorld.Execute(database.Path, () => ReadMetadataOwned(), nameof(ReadMetadata));
+    }
+
+    private Metadata ReadMetadataOwned()
+    {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
         lock (_gate)

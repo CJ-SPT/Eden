@@ -21,7 +21,7 @@ internal sealed partial class CapsuleerProvisioner
         using CatalogDbContext catalog = new(database.CatalogPath);
         _startupBlueprints?.BeginPreparation();
         var gate = request.Gate;
-        using (synchronization.Enter("inbound observer snapshot", gate.ObserverSystemId))
+        using (synchronization.Enter("inbound observer snapshot"))
         {
             request = request with
             {
@@ -41,7 +41,7 @@ internal sealed partial class CapsuleerProvisioner
         long seed;
         int[] roster;
         TrafficProvisioning.Reservations reservations;
-        using (synchronization.Enter("inbound preparation snapshot", community))
+        using (synchronization.Enter("inbound preparation snapshot"))
         using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
         {
             var existing = world
@@ -91,7 +91,7 @@ internal sealed partial class CapsuleerProvisioner
             (_startupBlueprints ??= new(catalog)).Prepare(catalog, race, hull, profile);
         }
         cancellationToken.ThrowIfCancellationRequested();
-        using var owner = synchronization.Enter("inbound prepared founder", community);
+        using var owner = synchronization.Enter("inbound prepared founder");
         try
         {
             using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
@@ -135,7 +135,11 @@ internal sealed partial class CapsuleerProvisioner
             int gateSlot = checked((int)Math.Min(gate.ArrivalGateId, gate.DepartureGateId));
             int slot = visitor == 0 ? gateSlot : checked(gateSlot + visitor * TrafficJourneyRules.VisitorSlotStride);
             int community = gate.ArrivalGateId == gateSlot ? gate.ObserverSystemId : gate.SourceSystemId;
-            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+            using WorldDbContext world = new(database.Path)
+            {
+                Participants = TransactionParticipants.None,
+                CommittedSystems = System.Collections.Immutable.ImmutableHashSet.Create(gate.SourceSystemId),
+            };
             using var transaction = world.Database.BeginTransaction();
             long? existing = world
                 .Set<SavedCapsuleerAgent>()

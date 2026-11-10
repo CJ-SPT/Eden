@@ -24,6 +24,11 @@ internal sealed class ConcordStore(WorldDatabase database, SqliteWorld lookup, I
 {
     public NpcShot? Advance(long pilotId, long now)
     {
+        return LiveWorld.Execute(database.Path, () => AdvanceOwned(pilotId, now), nameof(Advance));
+    }
+
+    private NpcShot? AdvanceOwned(long pilotId, long now)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         long next = LiveReadModels.Find(database.Path)?.ConcordDeadline(pilotId, () => Deadline(pilotId, now)) ?? Deadline(pilotId, now);
         if (next > now)
@@ -127,6 +132,11 @@ internal sealed class ConcordStore(WorldDatabase database, SqliteWorld lookup, I
     }
 
     public void Sweep(long now)
+    {
+        LiveWorld.Execute(database.Path, () => SweepOwned(now), nameof(Sweep));
+    }
+
+    private void SweepOwned(long now)
     {
         // Only disconnected pilots are destroyed here. Connected sessions own
         // their notifications and ship replacement through Advance().

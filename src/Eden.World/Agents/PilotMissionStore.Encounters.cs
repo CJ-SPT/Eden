@@ -28,6 +28,11 @@ internal sealed partial class PilotMissionStore
 
     private MissionSitesView ReadSites(int systemId)
     {
+        return LiveWorld.Execute(database.Path, () => ReadSitesOwned(systemId), nameof(ReadSites));
+    }
+
+    private MissionSitesView ReadSitesOwned(int systemId)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -114,6 +119,11 @@ internal sealed partial class PilotMissionStore
     }
 
     public void Arrive(int systemId, SpacePosition position)
+    {
+        LiveWorld.Execute(database.Path, systemId, () => ArriveOwned(systemId, position), nameof(Arrive));
+    }
+
+    private void ArriveOwned(int systemId, SpacePosition position)
     {
         var pending = Sites(systemId).Where(s => !s.Started && s.Position.DistanceTo(position) <= MissionRules.ArrivalRange).ToArray();
         if (pending.Length == 0)

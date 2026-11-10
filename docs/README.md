@@ -5,6 +5,9 @@
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,
 saved signature counts, known/unknown ice fields and activities with empty directories.
 
+[Independent system ownership](protocol/performance.md#independent-system-ownership-november-10-2026)
+records milestone 3 runtime ownership, persistence handoffs, traffic-refresh recovery and concurrent session validation.
+
 [Classified transactions and scheduler reuse](protocol/performance.md#classified-transactions-and-scheduler-reuse-november-10-2026)
 records milestone 2 projection isolation, committed invalidation, shared views and deadline checks.
 

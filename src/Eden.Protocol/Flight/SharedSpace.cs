@@ -153,14 +153,42 @@ internal sealed class SharedSpace(
     private readonly OwnershipMonitor _motionOwnership = new("flight");
 
     internal IDisposable EnterMotion([CallerMemberName] string operation = "", int? systemId = null) =>
-        synchronization?.Enter($"flight.{operation}", systemId) ?? _motionOwnership.Enter(operation, systemId);
+        synchronization?.Enter($"flight.{operation}", systemId ?? synchronization.CurrentSystem)
+        ?? _motionOwnership.Enter(operation, systemId);
+
+    internal IDisposable? UseSystem(int system) => synchronization?.UseSystem(system);
+
+    private T RunMotion<T>(int? system, Func<T> action, string operation)
+    {
+        if (synchronization is not null && (system ?? synchronization.CurrentSystem) is int id)
+        {
+            return synchronization.Run(operation, id, action);
+        }
+        return action();
+    }
+
+    private void RunMotion(int? system, Action action, string operation) =>
+        RunMotion(
+            system,
+            () =>
+            {
+                action();
+                return true;
+            },
+            operation
+        );
+
+    private int? SystemFor(long ship) =>
+        _ships.TryGetValue(ship, out var contact) ? contact.Pilot.SystemId
+        : _motion.TryGetValue(ship, out var motion) ? motion.SystemId
+        : null;
 
     internal const int MovementHistoryTicks = 32;
 
     internal SpatialStatus SpatialStatus(long ship) => spatial?.Status(ship) ?? new();
 
-    private readonly Dictionary<long, List<MotionOrder>> _orders = new();
-    private readonly Dictionary<long, long> _orderSequences = new();
+    private readonly ConcurrentDictionary<long, IReadOnlyList<MotionOrder>> _orders = new();
+    private readonly ConcurrentDictionary<long, long> _orderSequences = new();
 
     public long OrderSequence(long shipId) => _orderSequences.GetValueOrDefault(shipId);
 
@@ -171,6 +199,11 @@ internal sealed class SharedSpace(
         _orders.TryGetValue(shipId, out var orders) && orders.Count > 0 && after < orders[0].Sequence - 1;
 
     public void RecordOrder(long shipId, StampedDestinyUpdate update)
+    {
+        RunMotion(SystemFor(shipId), () => RecordOrderOwned(shipId, update), nameof(RecordOrder));
+    }
+
+    private void RecordOrderOwned(long shipId, StampedDestinyUpdate update)
     {
         long? target = update.Command switch
         {
@@ -195,20 +228,22 @@ internal sealed class SharedSpace(
         {
             long sequence = _orderSequences.GetValueOrDefault(shipId) + 1;
             _orderSequences[shipId] = sequence;
-            if (!_orders.TryGetValue(shipId, out var orders))
-            {
-                orders = [];
-                _orders.Add(shipId, orders);
-            }
-            orders.Add(new(sequence, update));
-            orders.RemoveAll(o => o.Update.Stamp < update.Stamp - MovementHistoryTicks);
+            _orders[shipId] = (_orders.GetValueOrDefault(shipId) ?? [])
+                .Append(new MotionOrder(sequence, update))
+                .Where(order => order.Update.Stamp >= update.Stamp - MovementHistoryTicks)
+                .ToArray();
         }
     }
 
-    private readonly Dictionary<long, ShipMotion> _motion = new();
-    private readonly Dictionary<long, List<ShipMotionResult>> _history = new();
+    private readonly ConcurrentDictionary<long, ShipMotion> _motion = new();
+    private readonly ConcurrentDictionary<long, IReadOnlyList<ShipMotionResult>> _history = new();
 
     public void PublishMotion(ShipMotion ship)
+    {
+        RunMotion(ship.SystemId, () => PublishMotionOwned(ship), nameof(PublishMotion));
+    }
+
+    private void PublishMotionOwned(ShipMotion ship)
     {
         using (EnterMotion(systemId: ship.SystemId))
         {
@@ -220,6 +255,17 @@ internal sealed class SharedSpace(
     }
 
     public IReadOnlyList<ShipMotionResult> Advance(
+        ShipMotion own,
+        int now,
+        long wallTime,
+        ISystemMotionStore store,
+        IReadOnlyList<StaticSpaceObject> objects
+    )
+    {
+        return RunMotion(own.SystemId, () => AdvanceOwned(own, now, wallTime, store, objects), nameof(Advance));
+    }
+
+    private IReadOnlyList<ShipMotionResult> AdvanceOwned(
         ShipMotion own,
         int now,
         long wallTime,
@@ -267,13 +313,10 @@ internal sealed class SharedSpace(
                         }
                     }
                     _motion[ship.Id] = ship;
-                    if (!_history.TryGetValue(ship.Id, out var history))
-                    {
-                        history = [];
-                        _history.Add(ship.Id, history);
-                    }
-                    history.Add(result);
-                    history.RemoveAll(t => t.Ship.Stamp < stamp - MovementHistoryTicks);
+                    _history[ship.Id] = (_history.GetValueOrDefault(ship.Id) ?? [])
+                        .Append(result)
+                        .Where(tick => tick.Ship.Stamp >= stamp - MovementHistoryTicks)
+                        .ToArray();
                     if (_ships.TryGetValue(ship.Id, out var contact))
                     {
                         _ships[ship.Id] = contact with
@@ -309,6 +352,11 @@ internal sealed class SharedSpace(
 
     public void Publish(ShipContact ship)
     {
+        RunMotion(ship.Pilot.SystemId, () => PublishOwned(ship), nameof(Publish));
+    }
+
+    private void PublishOwned(ShipContact ship)
+    {
         using (EnterMotion(systemId: ship.Pilot.SystemId))
         {
             if (_ships.TryGetValue(ship.Pilot.ShipId, out var current))
@@ -328,16 +376,26 @@ internal sealed class SharedSpace(
 
     public void Leave(long shipId)
     {
+        RunMotion(SystemFor(shipId), () => LeaveOwned(shipId), nameof(Leave));
+    }
+
+    private void LeaveOwned(long shipId)
+    {
         using (EnterMotion())
         {
             _ships.TryRemove(shipId, out _);
-            _motion.Remove(shipId);
-            _history.Remove(shipId);
-            _orders.Remove(shipId);
+            _motion.TryRemove(shipId, out _);
+            _history.TryRemove(shipId, out _);
+            _orders.TryRemove(shipId, out _);
         }
     }
 
     internal void ApplyDamage(ShipHealth health)
+    {
+        RunMotion(SystemFor(health.ShipId), () => ApplyDamageOwned(health), nameof(ApplyDamage));
+    }
+
+    private void ApplyDamageOwned(ShipHealth health)
     {
         using (EnterMotion())
         {
@@ -369,6 +427,11 @@ internal sealed class SharedSpace(
             .ToArray();
 
     public ShipContact[] Peers(DockedPilot pilot)
+    {
+        return RunMotion(pilot.SystemId, () => PeersOwned(pilot), nameof(Peers));
+    }
+
+    private ShipContact[] PeersOwned(DockedPilot pilot)
     {
         using (EnterMotion(systemId: pilot.SystemId))
         {
@@ -423,6 +486,11 @@ internal sealed class SharedSpace(
 
     public PilotCombatPresence? FindOnline(int systemId, long shipId)
     {
+        return RunMotion(systemId, () => FindOnlineOwned(systemId, shipId), nameof(FindOnline));
+    }
+
+    private PilotCombatPresence? FindOnlineOwned(int systemId, long shipId)
+    {
         using (EnterMotion(systemId: systemId))
         {
             if (!_ships.TryGetValue(shipId, out var ship))
@@ -443,6 +511,11 @@ internal sealed class SharedSpace(
     }
 
     public PilotCombatPresence? Find(int systemId, long shipId)
+    {
+        return RunMotion(systemId, () => FindOwned(systemId, shipId), nameof(Find));
+    }
+
+    private PilotCombatPresence? FindOwned(int systemId, long shipId)
     {
         using (EnterMotion(systemId: systemId))
         {

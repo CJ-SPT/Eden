@@ -5,9 +5,14 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
-    private readonly Dictionary<int, NpcSceneIndex> _npcSceneIndices = [];
+    private readonly ResidentMap<int, NpcSceneIndex> _npcSceneIndices = [];
 
     internal NpcSceneContacts? ReadScene(int system, SpacePosition position, long now, Action refresh, Func<long> nextPopulation)
+    {
+        return Execute(() => ReadSceneOwned(system, position, now, refresh, nextPopulation), nameof(ReadScene));
+    }
+
+    private NpcSceneContacts? ReadSceneOwned(int system, SpacePosition position, long now, Action refresh, Func<long> nextPopulation)
     {
         using var ownership = owner.Enter();
         if (!simulationObjects || !CanRun)
@@ -32,6 +37,7 @@ internal sealed partial class LiveCombatRuntime
 
     private void SetNpc(LiveCombatNpc npc)
     {
+        owner.TrackNpc(npc.Id, npc.SystemId);
         if (
             !_npcs.TryGetValue(npc.Id, out var previous)
             || previous.SystemId != npc.SystemId

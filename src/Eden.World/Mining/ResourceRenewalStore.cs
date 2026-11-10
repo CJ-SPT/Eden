@@ -14,6 +14,11 @@ internal sealed class ResourceRenewalStore(WorldDatabase database, TimeProvider 
 {
     public int Renew(int limit = ResourceRenewalRules.BatchSize)
     {
+        return LiveWorld.Execute(database.Path, () => RenewOwned(limit), nameof(Renew));
+    }
+
+    private int RenewOwned(int limit = ResourceRenewalRules.BatchSize)
+    {
         if (limit is < 1 or > ResourceRenewalRules.BatchSize)
         {
             throw new InvalidDataException("Invalid resource renewal batch size.");

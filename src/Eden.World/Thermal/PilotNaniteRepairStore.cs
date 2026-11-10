@@ -21,6 +21,11 @@ internal sealed class PilotNaniteRepairStore(WorldDatabase database) : IPilotNan
 
     public IReadOnlyList<NaniteRepairSchedule> Read(long pilotId, long shipId, long now)
     {
+        return LiveWorld.Execute(database.Path, () => ReadOwned(pilotId, shipId, now), nameof(Read));
+    }
+
+    private IReadOnlyList<NaniteRepairSchedule> ReadOwned(long pilotId, long shipId, long now)
+    {
         CheckClock(now);
         if (LiveWorld.Find(database.Path) is { } live)
         {

@@ -115,8 +115,14 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     private T Read<TKey, T>(ResidentSnapshot<TKey, T> cache, TKey key, Func<T> load, long now = 0, Func<T, long>? expires = null)
         where TKey : notnull
     {
+        return owner.Run(() => ReadOwned<TKey, T>(cache, key, load, now, expires), nameof(Read));
+    }
+
+    private T ReadOwned<TKey, T>(ResidentSnapshot<TKey, T> cache, TKey key, Func<T> load, long now = 0, Func<T, long>? expires = null)
+        where TKey : notnull
+    {
         using var phase = SessionPerformance.Phase(cache.Name);
-        using var ownership = owner.Enter();
+        using var ownership = owner.CurrentSystem is null ? owner.EnterShared() : owner.Enter();
         // Never publish data read from a caller's transaction, including rolled-back
         // or partially tracked changes. Ordinary stores remain the mutation owners.
         if (owner.SqlConnections != 0)

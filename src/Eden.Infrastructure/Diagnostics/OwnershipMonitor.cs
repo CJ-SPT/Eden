@@ -106,6 +106,26 @@ public sealed class OwnershipMonitor(string boundary, object? gate = null)
         return new Lease(this, operation, Stopwatch.GetTimestamp(), wait, systemId, blocker);
     }
 
+    public IDisposable? TryEnter(string operation, int? systemId = null)
+    {
+        if (IsEntered)
+        {
+            return Enter(operation, systemId);
+        }
+        lock (_admission)
+        {
+            if (_occupied || _waiting.Count != 0)
+            {
+                return null;
+            }
+            Monitor.Enter(_gate);
+            _occupied = true;
+        }
+        Volatile.Write(ref _operation, systemId is { } system ? $"{operation} system={system}" : operation);
+        _system = systemId;
+        return new Lease(this, operation, Stopwatch.GetTimestamp(), TimeSpan.Zero, systemId, null);
+    }
+
     private sealed class Observation(Action<OwnershipTiming>? previous) : IDisposable
     {
         public void Dispose() => s_observer.Value = previous;

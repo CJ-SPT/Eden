@@ -102,6 +102,11 @@ internal sealed partial class PilotMissionStore
 
     public MissionContainerInventory Read(long pilotId, long containerId)
     {
+        return LiveWorld.Execute(database.Path, () => ReadOwned(pilotId, containerId), nameof(Read));
+    }
+
+    private MissionContainerInventory ReadOwned(long pilotId, long containerId)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -128,6 +133,11 @@ internal sealed partial class PilotMissionStore
     }
 
     public IReadOnlyList<InventoryChange> Take(long pilotId, long shipId, InventoryMoveRequest request)
+    {
+        return LiveWorld.Execute(database.Path, () => TakeOwned(pilotId, shipId, request), nameof(Take));
+    }
+
+    private IReadOnlyList<InventoryChange> TakeOwned(long pilotId, long shipId, InventoryMoveRequest request)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())

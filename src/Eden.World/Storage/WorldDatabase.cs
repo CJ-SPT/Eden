@@ -40,7 +40,8 @@ public sealed record WorldDatabase(string Path)
     private OwnershipMonitor? _movementOwnership;
 
     internal IDisposable EnterMovement([CallerMemberName] string operation = "", int? systemId = null) =>
-        LazyInitializer.EnsureInitialized(ref _movementOwnership, () => new("database movement", MotionLock)).Enter(operation, systemId);
+        Eden.World.Runtime.LiveWorld.Find(Path)?.Enter(operation, systemId)
+        ?? LazyInitializer.EnsureInitialized(ref _movementOwnership, () => new("database movement", MotionLock)).Enter(operation, systemId);
 
     internal ConcurrentDictionary<int, int> MotionStamps { get; } = new();
     internal ConcurrentDictionary<long, int> CollisionStamps { get; } = new();

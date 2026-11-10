@@ -33,6 +33,17 @@ public sealed partial class SqliteWorld
         IReadOnlyList<StaticSpaceObject> objects
     )
     {
+        return LiveWorld.Execute(_database.Path, systemId, () => AdvanceOwned(systemId, stamp, now, ships, objects), nameof(Advance));
+    }
+
+    private IReadOnlyList<ShipMotionResult> AdvanceOwned(
+        int systemId,
+        int stamp,
+        long now,
+        IReadOnlyList<ShipMotion> ships,
+        IReadOnlyList<StaticSpaceObject> objects
+    )
+    {
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(_database.Path)?.Enter();

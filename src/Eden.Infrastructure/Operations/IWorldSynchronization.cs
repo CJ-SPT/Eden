@@ -4,5 +4,17 @@ namespace Eden.Infrastructure.Operations;
 public interface IWorldSynchronization
 {
     bool IsEntered { get; }
+    int? CurrentSystem => null;
     IDisposable Enter(string operation, int? systemId = null);
+    IDisposable? TryEnterShared(string operation) => Enter(operation);
+
+    // A session scope selects a runtime without retaining ownership across hooks,
+    // protocol encoding, logging or output. Each authoritative operation owns its work.
+    IDisposable? UseSystem(int systemId) => null;
+
+    T Run<T>(string operation, int systemId, Func<T> action)
+    {
+        using var ownership = Enter(operation, systemId);
+        return action();
+    }
 }

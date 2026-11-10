@@ -28,6 +28,11 @@ internal sealed partial class LiveCombatRuntime
 
     internal IReadOnlyList<NpcEwarSource>? EwarSources(long shipId, long now)
     {
+        return Execute(() => EwarSourcesOwned(shipId, now), nameof(EwarSources));
+    }
+
+    private IReadOnlyList<NpcEwarSource>? EwarSourcesOwned(long shipId, long now)
+    {
         using var ownership = owner.Enter();
         if (!CanRun)
         {

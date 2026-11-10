@@ -76,6 +76,26 @@ internal sealed class CapsuleerDefense(
         CapsuleerAttacker? proactive = null
     )
     {
+        return LiveWorld.Execute(
+            database.Path,
+            () => AdvanceOwned(pilot, navigation, saved, now, stamp, obstacles, forceRetreat, canFight, escapeFirst, proactive),
+            nameof(Advance)
+        );
+    }
+
+    private CapsuleerDefenseResult AdvanceOwned(
+        DockedPilot pilot,
+        NavigationState navigation,
+        CapsuleerDefenseState? saved,
+        long now,
+        int stamp,
+        IReadOnlyList<StaticSpaceObject> obstacles,
+        bool forceRetreat = false,
+        bool canFight = true,
+        bool escapeFirst = false,
+        CapsuleerAttacker? proactive = null
+    )
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         var runtime = LiveCombatRuntime.Find(database.Path);
         var state = saved?.ShipId == pilot.ShipId ? saved : new CapsuleerDefenseState { ShipId = pilot.ShipId };

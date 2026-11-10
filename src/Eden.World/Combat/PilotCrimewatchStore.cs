@@ -82,7 +82,7 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
         var state = LiveReadModels.Find(database.Path) is { } resident
             ? resident.Crimewatch(pilotId, systemId, () => ReadSql(pilotId, systemId))
             : ReadSql(pilotId, systemId);
-        if (LiveCombatRuntime.Find(database.Path)?.NpcTimer(pilotId) is { } npc)
+        if (LiveCombatRuntime.Find(database.Path, pilotId)?.NpcTimer(pilotId) is { } npc)
         {
             state = state with
             {
@@ -95,10 +95,15 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
                 },
             };
         }
-        return LiveCombatRuntime.Find(database.Path)?.DroneCrimewatch(pilotId, systemId, state) ?? state;
+        return LiveCombatRuntime.Find(database.Path, pilotId)?.DroneCrimewatch(pilotId, systemId, state) ?? state;
     }
 
     private CrimewatchSnapshot ReadSql(long pilotId, int systemId)
+    {
+        return LiveWorld.Execute(database.Path, () => ReadSqlOwned(pilotId, systemId), nameof(ReadSql));
+    }
+
+    private CrimewatchSnapshot ReadSqlOwned(long pilotId, int systemId)
     {
         // This typed snapshot merges the current resident NPC timer in Read().
         // Direct SQL crimewatch callers still require normal projection.

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Eden.Data.Catalog.Exploration;
 using Eden.Data.World.Exploration;
@@ -20,9 +21,14 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
 {
     private sealed record View(long Catalog, long Deadline, bool Enabled, IReadOnlyList<CombatAnomaly> Sites);
 
-    private readonly Dictionary<int, View> _views = [];
+    private readonly ConcurrentDictionary<int, View> _views = [];
 
     public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now)
+    {
+        return LiveWorld.Execute(database.Path, systemId, () => SignaturesOwned(systemId, now), nameof(Signatures));
+    }
+
+    private IReadOnlyList<CombatAnomaly> SignaturesOwned(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
@@ -198,7 +204,7 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
             world.Remove(attempt);
         }
         world.Set<OwnedItem>().Where(i => ids.Contains(i.LocationId)).ExecuteDelete();
-        _views.Remove(site.SystemId);
+        _views.TryRemove(site.SystemId, out _);
     }
 
     private void CompleteIfEmpty(WorldDbContext world, SavedExplorationSite site, long now)
@@ -208,7 +214,7 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
         {
             Retire(world, site, now);
         }
-        _views.Remove(site.SystemId);
+        _views.TryRemove(site.SystemId, out _);
     }
 
     private static void GrantLoot(

@@ -76,6 +76,11 @@ internal sealed partial class PirateExplorationStore
 
     public HackingContact Begin(long pilotId, long moduleId, long targetId, IReadOnlySet<long> locks, long now)
     {
+        return LiveWorld.Execute(database.Path, () => BeginOwned(pilotId, moduleId, targetId, locks, now), nameof(Begin));
+    }
+
+    private HackingContact BeginOwned(long pilotId, long moduleId, long targetId, IReadOnlySet<long> locks, long now)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -175,12 +180,17 @@ internal sealed partial class PirateExplorationStore
             cooldown.Kind = ModuleCooldownKind.Cycle;
             world.SaveChanges();
             transaction.Commit();
-            _views.Remove(access.Site.SystemId);
+            _views.TryRemove(access.Site.SystemId, out _);
             return contact;
         }
     }
 
     public HackingTurn Act(long pilotId, HackingAction action, long now)
+    {
+        return LiveWorld.Execute(database.Path, () => ActOwned(pilotId, action, now), nameof(Act));
+    }
+
+    private HackingTurn ActOwned(long pilotId, HackingAction action, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
@@ -234,6 +244,11 @@ internal sealed partial class PirateExplorationStore
 
     public void Cancel(long pilotId, long now)
     {
+        LiveWorld.Execute(database.Path, () => CancelOwned(pilotId, now), nameof(Cancel));
+    }
+
+    private void CancelOwned(long pilotId, long now)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -258,6 +273,11 @@ internal sealed partial class PirateExplorationStore
     }
 
     public ExplorationContainerInventory Read(long pilotId, long containerId, long now)
+    {
+        return LiveWorld.Execute(database.Path, () => ReadOwned(pilotId, containerId, now), nameof(Read));
+    }
+
+    private ExplorationContainerInventory ReadOwned(long pilotId, long containerId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
@@ -289,6 +309,11 @@ internal sealed partial class PirateExplorationStore
     }
 
     public IReadOnlyList<InventoryChange> Take(long pilotId, long shipId, InventoryMoveRequest request, long now)
+    {
+        return LiveWorld.Execute(database.Path, () => TakeOwned(pilotId, shipId, request, now), nameof(Take));
+    }
+
+    private IReadOnlyList<InventoryChange> TakeOwned(long pilotId, long shipId, InventoryMoveRequest request, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())

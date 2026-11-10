@@ -24,7 +24,7 @@ internal sealed class PilotHealthStore(WorldDatabase database) : IPilotHealth
     public ShipHealth Read(long pilotId, long now)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("health.read");
-        if (LiveCombatRuntime.Find(database.Path)?.Health(pilotId, now) is { } resident)
+        if (LiveCombatRuntime.Find(database.Path, pilotId)?.Health(pilotId, now) is { } resident)
         {
             return resident;
         }

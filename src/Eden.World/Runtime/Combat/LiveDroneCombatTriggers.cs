@@ -7,10 +7,24 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
-    private readonly Dictionary<long, DroneCombatTriggers> _droneCombatTriggers = [];
-    private readonly HashSet<long> _dirtyDroneCombatTriggers = [];
+    private readonly ResidentMap<long, DroneCombatTriggers> _droneCombatTriggers = [];
+    private readonly ResidentSet<long> _dirtyDroneCombatTriggers = [];
 
     internal DroneCombatTriggers DroneTriggers(long shipId)
+    {
+        if (
+            systemId is null
+            && owner.CurrentSystem is null
+            && owner.CombatForShip(shipId) is { } resident
+            && !ReferenceEquals(resident, this)
+        )
+        {
+            return resident.DroneTriggers(shipId);
+        }
+        return Execute(() => DroneTriggersOwned(shipId), nameof(DroneTriggers));
+    }
+
+    private DroneCombatTriggers DroneTriggersOwned(long shipId)
     {
         using var ownership = owner.Enter();
         if (!_droneCombatTriggers.TryGetValue(shipId, out var value))

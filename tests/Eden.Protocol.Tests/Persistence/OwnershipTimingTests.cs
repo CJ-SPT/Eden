@@ -13,15 +13,23 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class OwnershipTimingTests
 {
     [Fact]
-    public async Task SessionHandoffAttributesItsOuterAcquisitionToTheRequestedSystem()
+    public async Task SessionHandoffSelectsTheRuntimeWithoutOwningTheCompleteFrame()
     {
         using TestWorld fixture = new();
         using var host = ServerServices.Build(new(fixture.Path), new TestClock(), liveWorld: true);
         List<OwnershipTiming> timings = [];
         using var observation = OwnershipMonitor.Observe(timings.Add);
         const int RequestedSystem = 30000144;
-        await host.GetRequiredService<ICapsuleerHandoff>().SynchronizeAsync(RequestedSystem, () => { });
-        Assert.Equal(RequestedSystem, Assert.Single(timings).SystemId);
+        await host.GetRequiredService<ICapsuleerHandoff>()
+            .SynchronizeAsync(
+                RequestedSystem,
+                () =>
+                {
+                    Assert.Equal(RequestedSystem, host.GetRequiredService<LiveWorld>().CurrentSystem);
+                    Assert.False(host.GetRequiredService<LiveWorld>().IsEntered);
+                }
+            );
+        Assert.Empty(timings);
     }
 
     [Fact]

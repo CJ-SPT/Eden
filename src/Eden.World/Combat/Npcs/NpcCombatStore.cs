@@ -49,8 +49,16 @@ internal sealed class NpcCombatStore(
 
     public void Acquire(IReadOnlyList<NpcTargetCandidate> candidates, long now)
     {
+        if (candidates.Count == 0)
+        {
+            return;
+        }
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("npc.acquire");
-        if (LiveCombatRuntime.Find(database.Path)?.Acquire(candidates, now, () => AcquireSql(candidates, now)) == true)
+        if (
+            LiveCombatRuntime
+                .Find(database.Path, candidates.FirstOrDefault()?.PilotId ?? 0)
+                ?.Acquire(candidates, now, () => AcquireSql(candidates, now)) == true
+        )
         {
             return;
         }
@@ -157,7 +165,7 @@ internal sealed class NpcCombatStore(
 
     public IReadOnlyList<long> Aggressors(long shipId)
     {
-        if (LiveCombatRuntime.Find(database.Path)?.Aggressors(shipId) is { } resident)
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path)?.CombatForShip(shipId)?.Aggressors(shipId) is { } resident)
         {
             return resident;
         }
@@ -210,7 +218,7 @@ internal sealed class NpcCombatStore(
             throw new InvalidDataException("Invalid NPC weapon accuracy input.");
         }
         if (
-            LiveCombatRuntime.Find(database.Path) is { } runtime
+            LiveCombatRuntime.Find(database.Path, pilotId) is { } runtime
             && runtime.FireNpc(pilotId, shipId, npcId, velocity, now, roll, destinyStamp, out var resident)
         )
         {

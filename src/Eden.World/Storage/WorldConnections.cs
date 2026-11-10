@@ -18,8 +18,12 @@ internal static class WorldConnections
             }.ToString()
         );
 
-    internal static SqliteConnection Create(string path) =>
-        LiveWorld.Find(path) is { } live ? new LiveConnection(live) : FileConnection(path);
+    internal static SqliteConnection Create(
+        string path,
+        TransactionParticipants? participants = null,
+        bool projection = false,
+        IReadOnlySet<int>? committedSystems = null
+    ) => LiveWorld.Find(path) is { } live ? new LiveConnection(live, participants, projection, committedSystems) : FileConnection(path);
 
     internal static void RequireDurableClose(System.Data.Common.DbConnection connection)
     {
@@ -42,6 +46,14 @@ internal static class WorldConnections
         if (context.Database.GetDbConnection() is LiveConnection connection)
         {
             connection.Synchronize(context);
+        }
+    }
+
+    internal static void HoldSimulation(WorldDbContext context)
+    {
+        if (context.Database.GetDbConnection() is LiveConnection connection)
+        {
+            connection.HoldSimulation(context.Participants);
         }
     }
 
@@ -70,9 +82,19 @@ internal static class WorldConnections
 
     // Existing persistence operations use synchronous SQLite scopes. The lease serializes
     // complete connection/transaction lifetimes, avoiding shared-cache lock retries.
-    private sealed class LiveConnection(LiveWorld world) : SqliteConnection(world.ConnectionString)
+    private sealed class LiveConnection(
+        LiveWorld world,
+        TransactionParticipants? participants,
+        bool projection,
+        IReadOnlySet<int>? committedSystems
+    ) : SqliteConnection(world.ConnectionString)
     {
+        private readonly int? _projectionSystem = projection ? world.CurrentSystem : null;
         private IDisposable? _lease;
+        private IDisposable? _simulation;
+
+        internal void HoldSimulation(TransactionParticipants? participants) => _simulation ??= world.EnterTransactionSystems(participants);
+
         private readonly HashSet<CombatRowChange> _changes = [];
         private readonly HashSet<CombatRowChange> _pendingChanges = [];
         private readonly HashSet<CombatRowChange> _committingChanges = [];
@@ -95,14 +117,14 @@ internal static class WorldConnections
                 || _committingChanges.Contains(new("WorldModuleCondition", module))
             )
                 ? null
-                : world.Heat.Condition(pilot, ship, module);
+                : world.HeatForKnownShip(ship).Condition(pilot, ship, module);
 
         internal bool TryNaniteRepairing(long module, long now, out bool repairing) =>
             world.Nanites.TryRepairing(module, now, out repairing);
 
         internal void PublishHeat(long pilot, long ship, ShipHeatSnapshot state)
         {
-            world.Heat.PublishCommitted(pilot, ship, state);
+            world.PublishHeat(pilot, ship, state);
             _changes.Remove(new("WorldShipHeat", ship));
             _committingChanges.Remove(new("WorldShipHeat", ship));
         }
@@ -130,7 +152,7 @@ internal static class WorldConnections
                 base.Open();
                 return;
             }
-            var lease = world.Enter();
+            var lease = world.EnterPersistence("SQLite connection", participants);
             try
             {
                 base.Open();
@@ -271,7 +293,7 @@ internal static class WorldConnections
                     try
                     {
                         FinalizeCommit();
-                        world.SqlClosed(_changes);
+                        world.SqlClosed(_changes, participants, _projectionSystem, committedSystems);
                         _pendingChanges.Clear();
                         _changes.Clear();
                         _itemMembershipWrite = false;
@@ -280,6 +302,7 @@ internal static class WorldConnections
                     }
                     finally
                     {
+                        Interlocked.Exchange(ref _simulation, null)?.Dispose();
                         lease.Dispose();
                     }
                 }

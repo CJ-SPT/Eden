@@ -1594,3 +1594,69 @@ after the initial manifest capture; both hashes are retained. Published manifest
 
 **Optional maintainer checks.** Rebuild/restart the server and compare the same busy travel route. Native rendering,
 input and gameplay feel remain unverified.
+
+## Independent system ownership, November 10, 2026
+
+Simulation scaling milestone 3 introduces an on-demand runtime registry with stable system ownership identities.
+Each runtime contains movement/combat state, exact deadlines, shared contacts, read snapshots, heat, tractors and
+nanite schedules. Detailed miner and hauler instances are assigned to their current runtime; the scheduler retains
+identity indexes and the shared due queue. Bot actions and observations select their actual system, including after
+gate transfers. SQLite and shared economic transitions retain one persistence coordinator.
+
+Resident operations enter their system directly. Opening a live SQLite connection acquires only persistence;
+classified SQL boundaries resolve participating systems/pilots/ships/shared resources and retain those system
+owners until connection close. Acquisition is persistence first, then ascending system ID. Unclassified mutation
+and resident-query boundaries retain the measured conservative projection path. Ordinary unrelated read queries
+need no system owners. Committed changes publish immediately to already-owned runtimes or enqueue immutable
+row-identity batches for the destination owner's next read. Classified commits and prepared admissions limit these
+batches to their affected systems; unrelated warmed contacts remain SQL-free. Rollbacks never publish those changes.
+
+A cold dependency cannot upgrade a retained system lease. The operation unwinds before entering persistence,
+then reruns typed membership, revision and deadline validation. Changed-key journals restore staged combat,
+resource and position mutations before releasing ownership. They retain only changed keys rather than copying
+the scene. The staged-shot regression forces SQL after a resident payment and verifies exactly one ammunition
+charge, the returned damage result and its persisted state. Cross-system resident acquisition without persistence
+is rejected. Personal visibility, continuously evaluated recharge and existing client timing remain unchanged.
+
+Restored paid heat moves from startup state into one system owner on admission. Committed docking, destruction
+and inter-system membership changes migrate or discard that ownership and cancel the appropriate preheat requests.
+Shared coordination does not implicitly own unrelated systems. Durability and shutdown reject retained resident
+leases rather than upgrading them.
+
+Player call and tick scopes select a runtime without owning the whole frame. Mission, anomaly, probe, repair,
+information and timed-effect hooks use operation boundaries; movement history and orders publish immutable arrays.
+Traffic presentation uses the last published snapshot when shared capture is busy, and maintenance retries the
+pending batch. Human membership changes still reconcile immediately through persistence. Protocol encoding and
+socket output occur after simulation ownership is released. The reported traffic-refresh disconnect was reproduced
+with the actual handoff/presentation services and fixed by entering shared scheduling through persistence first.
+
+Checkpoint capture locks the current runtimes with persistence and captures immutable projections from the same
+generation. It preserves the detached projection/atomic replacement and failed-save retry rules; dirty system state
+is not flushed into live SQLite merely to take a checkpoint. Copying still retains system owners in milestone 3.
+Tiered detail eviction and copying outside simulation ownership are the following milestones.
+
+The reference is [Carbon Destiny Ballpark.cpp revision
+114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp),
+with [EVE University server ticks](https://wiki.eveuniversity.org/Server_tick) as gameplay context. Movement and collision
+calculations and the pinned build-3662168 wire contracts are unchanged. SQL/resident parity tests remain authoritative
+automated evidence; no new client observations were made.
+
+**Automated validation.** Tool/solution restore and the warning-free build passed; the final affected-behavior
+filter passed **619/619 tests in 4m20s** (`milestone3-published.trx`). Both Python policy suites passed (8 and 9 tests),
+and formatting verification passed. Development exact filters began with
+`SystemRuntimeIsolationTests.PausedSystemCannotBlockAnotherSystemsWarmedMovement`. The concurrency matrix covers
+1, 2 and 4 independently scheduled warmed requests in the same or separate systems while a remote owner is paused.
+A complete native session frame includes real traffic refresh and anomaly hooks and asserts zero SQL, opens and fits.
+Classified transactions also complete while an unrelated owner remains paused. The retained participant matrix
+covers 128/640/1,280 remote positions (1×/5×/10×) and 1/2/4 observers. These are deterministic counter/isolation tests,
+not an installed-save p95/p99 capacity claim. No full .NET suite was requested or run.
+
+The retained filter and reports are under `artifacts/milestone3-validation/`. The source/input manifest records
+parent revision `0083bdf0`, all source/test/fixture SHA-256 hashes and the workload settings. Published manifest SHA-256:
+`3b18d6283c15e53df490be07933c72eea0a1aee4efc748b8bf48058f1c3766a7`.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The user's supplied exception is evidence of
+a running development revision, not acceptance of the completed milestone.
+
+**Optional maintainer checks.** Rebuild/restart the server and revisit the affected route. Native rendering, input
+and gameplay feel remain unverified.

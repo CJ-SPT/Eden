@@ -33,12 +33,12 @@ internal sealed partial class LiveCombatRuntime
         CrimewatchTimers Timers
     );
 
-    private readonly Dictionary<long, DronePlayer?> _dronePlayers = [];
-    private readonly Dictionary<long, DronePilotTimers> _droneTimers = [];
-    private readonly Dictionary<(long Lower, long Higher), DronePilotEngagement> _droneEngagements = [];
-    private readonly Dictionary<(long Source, long Target), DronePilotHostility> _droneHostilities = [];
-    private readonly Dictionary<long, DronePilotHostility[]> _droneAttackers = [];
-    private readonly Dictionary<int, double> _droneSecurity = [];
+    private readonly ResidentMap<long, DronePlayer?> _dronePlayers = [];
+    private readonly ResidentMap<long, DronePilotTimers> _droneTimers = [];
+    private readonly ResidentMap<(long Lower, long Higher), DronePilotEngagement> _droneEngagements = [];
+    private readonly ResidentMap<(long Source, long Target), DronePilotHostility> _droneHostilities = [];
+    private readonly ResidentMap<long, DronePilotHostility[]> _droneAttackers = [];
+    private readonly ResidentMap<int, double> _droneSecurity = [];
 
     private DronePlayer? DronePlayerFor(long shipId)
     {
@@ -164,7 +164,7 @@ internal sealed partial class LiveCombatRuntime
         }
     }
 
-    private readonly Dictionary<long, Dictionary<long, DronePilotHostility>> _residentAttackers = [];
+    private readonly ResidentMap<long, ResidentMap<long, DronePilotHostility>> _residentAttackers = [];
 
     private IEnumerable<DronePilotHostility> PlayerAttacks(long shipId, long now)
     {
@@ -230,6 +230,11 @@ internal sealed partial class LiveCombatRuntime
 
     internal CrimewatchSnapshot DroneCrimewatch(long pilot, int system, CrimewatchSnapshot snapshot)
     {
+        return Execute(() => DroneCrimewatchOwned(pilot, system, snapshot), nameof(DroneCrimewatch));
+    }
+
+    private CrimewatchSnapshot DroneCrimewatchOwned(long pilot, int system, CrimewatchSnapshot snapshot)
+    {
         using var ownership = owner.Enter();
         if (_droneTimers.Count == 0)
         {
@@ -260,6 +265,11 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal long DroneLogoffDeadline(long pilot, long deadline)
+    {
+        return Execute(() => DroneLogoffDeadlineOwned(pilot, deadline), nameof(DroneLogoffDeadline));
+    }
+
+    private long DroneLogoffDeadlineOwned(long pilot, long deadline)
     {
         using var ownership = owner.Enter();
         return Math.Max(deadline, _droneTimers.GetValueOrDefault(pilot)?.Timers.Pvp.ExpiresAt ?? 0);

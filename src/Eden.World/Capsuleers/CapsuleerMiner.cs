@@ -301,7 +301,7 @@ internal sealed class CapsuleerMiner(
     {
         if (pilot.Position is { } position)
         {
-            Live?.Combat?.PublishPilotPosition(pilot.ShipId, pilot.SystemId, position);
+            Live?.CombatForSystem(pilot.SystemId)?.PublishPilotPosition(pilot.ShipId, pilot.SystemId, position);
         }
     }
 
@@ -345,7 +345,7 @@ internal sealed class CapsuleerMiner(
             ActiveTicks = checked(Work.ClockOffsetTicks + stamp * TimeSpan.TicksPerSecond),
             Navigation = _navigation.Capture(),
         };
-        live.Combat?.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
+        live.CombatForSystem(Pilot.SystemId)?.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
         live.MinerCheckpoints[pilotId] = new(pilotId, Work);
         live.ObjectsChanged();
         return true;

@@ -19,8 +19,8 @@ namespace Eden.World.Runtime.Combat;
 internal sealed partial class LiveCombatRuntime
 {
     private readonly NpcProfileCatalog _simulationProfiles = new();
-    private readonly Dictionary<int, long[]> _systemNpcs = [];
-    private readonly Dictionary<int, long> _populationDue = [];
+    private readonly ResidentMap<int, long[]> _systemNpcs = [];
+    private readonly ResidentMap<int, long> _populationDue = [];
     private int? _populationRefreshSystem;
 
     private void ObserveAsteroidPopulation(IReadOnlyCollection<CombatRowChange> changes)
@@ -106,13 +106,13 @@ internal sealed partial class LiveCombatRuntime
         }
     }
 
-    private readonly Dictionary<long, IReadOnlyDictionary<DogmaAttributeId, double>> _effectiveNpcs = [];
+    private readonly ResidentMap<long, IReadOnlyDictionary<DogmaAttributeId, double>> _effectiveNpcs = [];
 
     private sealed record LivePosition(int? System, SpacePosition Position);
 
-    private readonly Dictionary<long, LivePosition> _positions = [];
-    private readonly Dictionary<long, LivePosition?> _savedPositions = [];
-    private readonly HashSet<long> _dirtyPositions = [];
+    private readonly ResidentMap<long, LivePosition> _positions = [];
+    private readonly ResidentMap<long, LivePosition?> _savedPositions = [];
+    private readonly ResidentSet<long> _dirtyPositions = [];
 
     internal SpacePosition? InformationPosition(long shipId) => _positions.GetValueOrDefault(shipId)?.Position;
 
@@ -125,6 +125,7 @@ internal sealed partial class LiveCombatRuntime
     {
         if (!_systemNpcs.TryGetValue(system, out var ids))
         {
+            _ = DroneControllers();
             ids = Loading(() =>
             {
                 using WorldDbContext world = new(database.Path);
@@ -166,6 +167,17 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal IReadOnlyList<ShipMotionResult>? Advance(
+        int system,
+        int stamp,
+        long now,
+        IReadOnlyList<ShipMotion> ships,
+        IReadOnlyList<StaticSpaceObject> objects
+    )
+    {
+        return Execute(() => AdvanceOwned(system, stamp, now, ships, objects), nameof(Advance));
+    }
+
+    private IReadOnlyList<ShipMotionResult>? AdvanceOwned(
         int system,
         int stamp,
         long now,
@@ -244,6 +256,13 @@ internal sealed partial class LiveCombatRuntime
     // Both connected and autonomous pilots publish motion under the resident owner after undocking.
     internal void PublishPilotPosition(long id, int system, SpacePosition position)
     {
+        Execute(() => PublishPilotPositionOwned(id, system, position), nameof(PublishPilotPosition));
+    }
+
+    private void PublishPilotPositionOwned(long id, int system, SpacePosition position)
+    {
+        using var ownership = owner.Enter();
+        owner.TrackShip(id, system);
         if (_positions.TryGetValue(id, out var previous) && previous.Position != position)
         {
             _acquisitions.Clear();
@@ -339,6 +358,11 @@ internal sealed partial class LiveCombatRuntime
 
     internal IReadOnlyList<NpcSimulationContact>? Simulate(int system, long now, Action refresh, Func<long> nextPopulation)
     {
+        return Execute(() => SimulateOwned(system, now, refresh, nextPopulation), nameof(Simulate));
+    }
+
+    private IReadOnlyList<NpcSimulationContact>? SimulateOwned(int system, long now, Action refresh, Func<long> nextPopulation)
+    {
         using var ownership = owner.Enter();
         if (!simulationObjects || !CanRun)
         {
@@ -351,6 +375,11 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal void ReleaseObserverContacts(int system)
+    {
+        Execute(() => ReleaseObserverContactsOwned(system), nameof(ReleaseObserverContacts));
+    }
+
+    private void ReleaseObserverContactsOwned(int system)
     {
         using var ownership = owner.Enter();
         _contacts.Remove(system);
@@ -477,7 +506,7 @@ internal sealed partial class LiveCombatRuntime
 
     private sealed record AcquisitionShip(long PilotId, long ShipId, int SystemId, SpacePosition Position, double Radius, int GroupId);
 
-    private readonly Dictionary<long, AcquisitionShip?> _acquisitionShips = [];
+    private readonly ResidentMap<long, AcquisitionShip?> _acquisitionShips = [];
 
     private IEnumerable<AcquisitionShip> AcquisitionShips(IReadOnlyList<NpcTargetCandidate> candidates)
     {

@@ -46,24 +46,35 @@ internal sealed record ShipHeatCheckpoint(IReadOnlyList<ShipHeatProjection> Ship
 internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, TimeProvider clock)
 {
     private const int RetainedIdleShips = 512;
-    private readonly Dictionary<long, LoadedShipHeat> _ships = [];
-    private readonly HashSet<long> _dirty = [];
-    private readonly HashSet<long> _stale = [];
-    private readonly HashSet<long> _reloadSaved = [];
-    private readonly HashSet<long> _active = [];
+    private readonly ResidentMap<long, LoadedShipHeat> _ships = [];
+    private readonly ResidentSet<long> _dirty = [];
+    private readonly ResidentSet<long> _stale = [];
+    private readonly ResidentSet<long> _reloadSaved = [];
+    private readonly ResidentSet<long> _active = [];
+    internal bool HasActive => _active.Count != 0;
     private int _internal;
 
-    private readonly Dictionary<long, (long Pilot, long Ship)> _requested = [];
+    private readonly ResidentMap<long, (long Pilot, long Ship)> _requested = [];
 
     internal bool Selected(long pilot, long module, long? ship = null)
+    {
+        return owner.Run(() => SelectedOwned(pilot, module, ship), nameof(Selected));
+    }
+
+    private bool SelectedOwned(long pilot, long module, long? ship = null)
     {
         using var ownership = owner.Enter();
         return _requested.TryGetValue(module, out var request) && request.Pilot == pilot && (ship is null || request.Ship == ship);
     }
 
-    private readonly Dictionary<(long Pilot, long Ship), IReadOnlySet<long>> _requestViews = [];
+    private readonly ResidentMap<(long Pilot, long Ship), IReadOnlySet<long>> _requestViews = [];
 
     internal IReadOnlySet<long> Requested(long pilot, long ship)
+    {
+        return owner.Run(() => RequestedOwned(pilot, ship), nameof(Requested));
+    }
+
+    private IReadOnlySet<long> RequestedOwned(long pilot, long ship)
     {
         using var ownership = owner.Enter();
         if (!_requestViews.TryGetValue((pilot, ship), out var view))
@@ -80,7 +91,27 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
 
     internal void Select(long pilot, long ship, IReadOnlyList<long> modules, bool enabled)
     {
+        owner.Run(
+            () =>
+            {
+                var actual = owner.HeatForKnownShip(ship);
+                if (!ReferenceEquals(actual, this))
+                {
+                    actual.Select(pilot, ship, modules, enabled);
+                }
+                else
+                {
+                    SelectOwned(pilot, ship, modules, enabled);
+                }
+            },
+            nameof(Select)
+        );
+    }
+
+    private void SelectOwned(long pilot, long ship, IReadOnlyList<long> modules, bool enabled)
+    {
         using var ownership = owner.Enter();
+        owner.OwnHeat(this, ship, owner.CurrentSystem ?? owner.KnownShipSystem(ship));
         _requestViews.Remove((pilot, ship));
         foreach (long module in modules)
         {
@@ -97,6 +128,31 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
 
     internal void ClearSelection(long pilot, long ship)
     {
+        if (owner.HeatForKnownShip(ship) is { } actual && !ReferenceEquals(actual, this))
+        {
+            actual.ClearSelection(pilot, ship);
+            return;
+        }
+        using var context = owner.UseHeatSystem(ship);
+        owner.Run(
+            () =>
+            {
+                var actual = owner.HeatForKnownShip(ship);
+                if (!ReferenceEquals(actual, this))
+                {
+                    actual.ClearSelection(pilot, ship);
+                }
+                else
+                {
+                    ClearSelectionOwned(pilot, ship);
+                }
+            },
+            nameof(ClearSelection)
+        );
+    }
+
+    private void ClearSelectionOwned(long pilot, long ship)
+    {
         using var ownership = owner.Enter();
         _requestViews.Remove((pilot, ship));
         foreach (long module in _requested.Where(p => p.Value == (pilot, ship)).Select(p => p.Key).ToArray())
@@ -106,6 +162,11 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
     }
 
     internal void Warm()
+    {
+        owner.Run(() => WarmOwned(), nameof(Warm));
+    }
+
+    private void WarmOwned()
     {
         using var ownership = owner.Enter();
         _internal++;
@@ -131,6 +192,11 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                     continue;
                 }
                 _ships[ship] = loaded;
+                owner.OwnHeat(this, ship, loaded.SystemId);
+                if (loaded.SystemId is int system && owner.IsSharedHeat(this))
+                {
+                    owner.SharedHeatLoaded(system);
+                }
                 if (!loaded.State.Idle)
                 {
                     _active.Add(ship);
@@ -150,7 +216,21 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
 
     internal void PublishCommitted(long pilot, long ship, ShipHeatSnapshot state)
     {
-        _ships[ship] = new(pilot, ship, state, HasSavedState: true, Changed: false) { SystemId = _ships.GetValueOrDefault(ship)?.SystemId };
+        if (owner.HeatForKnownShip(ship) is { } actual && !ReferenceEquals(actual, this))
+        {
+            actual.PublishCommitted(pilot, ship, state);
+            return;
+        }
+        using var context = owner.UseHeatSystem(ship);
+        _ships[ship] = new(pilot, ship, state, HasSavedState: true, Changed: false)
+        {
+            SystemId = _ships.GetValueOrDefault(ship)?.SystemId ?? owner.CurrentSystem,
+        };
+        owner.OwnHeat(this, ship, _ships[ship].SystemId);
+        if (_ships[ship].SystemId is int system && owner.IsSharedHeat(this))
+        {
+            owner.SharedHeatLoaded(system);
+        }
         _dirty.Remove(ship);
         _stale.Remove(ship);
         _reloadSaved.Remove(ship);
@@ -167,6 +247,12 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
 
     internal void PublishResident(long ship, ShipHeatSnapshot state)
     {
+        if (owner.HeatForKnownShip(ship) is { } actual && !ReferenceEquals(actual, this))
+        {
+            actual.PublishResident(ship, state);
+            return;
+        }
+        using var context = owner.UseHeatSystem(ship);
         _ships[ship] = _ships[ship] with { State = state };
         _active.Add(ship);
         _dirty.Add(ship);
@@ -175,11 +261,25 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
 
     internal ShipHeatSnapshot Read(long pilot, long ship, long now)
     {
+        return owner.Run(() => ReadOwned(pilot, ship, now), nameof(Read));
+    }
+
+    private ShipHeatSnapshot ReadOwned(long pilot, long ship, long now)
+    {
         using var ownership = owner.Enter();
         if (!_ships.TryGetValue(ship, out var loaded))
         {
             loaded = Load(ship, now, false, expectedPilot: pilot) ?? throw new InvalidDataException("Read heat only on an owned ship.");
+            if (owner.CurrentSystem is int current && loaded.SystemId is int loadedSystem && current != loadedSystem)
+            {
+                throw new InvalidDataException("The ship's system membership changed.");
+            }
             _ships[ship] = loaded;
+            owner.OwnHeat(this, ship, loaded.SystemId);
+            if (loaded.SystemId is int system && owner.IsSharedHeat(this))
+            {
+                owner.SharedHeatLoaded(system);
+            }
             if (!loaded.State.Idle)
             {
                 _active.Add(ship);
@@ -214,7 +314,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         IReadOnlyList<FittedModuleCondition> Result
     );
 
-    private readonly Dictionary<long, ConditionView> _conditionViews = [];
+    private readonly ResidentMap<long, ConditionView> _conditionViews = [];
 
     internal IReadOnlyList<FittedModuleCondition> Conditions(long ship, IReadOnlyList<FittedModuleCondition> baseline)
     {
@@ -402,9 +502,72 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
     }
 
     internal ShipHeatCheckpoint? Capture() =>
+        owner.IsSharedHeat(this) && owner.CurrentSystem is null ? owner.CaptureSystemHeat() : CaptureOwn();
+
+    internal ShipHeatCheckpoint? CaptureOwn() =>
         _dirty.Count == 0
             ? null
             : new(_dirty.Where(_ships.ContainsKey).Select(id => new ShipHeatProjection(id, _ships[id].State)).ToArray());
+
+    internal void TransferSystemTo(LiveShipHeat destination, int system)
+    {
+        Flush(new(systems: [system]));
+        foreach (long ship in _ships.Where(pair => pair.Value.SystemId == system).Select(pair => pair.Key).ToArray())
+        {
+            TransferShipTo(destination, ship, system);
+        }
+    }
+
+    internal void TransferShipTo(LiveShipHeat destination, long ship, int system)
+    {
+        if (_ships.Remove(ship, out var loaded))
+        {
+            destination._ships[ship] = loaded with { SystemId = system };
+        }
+        if (_active.Remove(ship))
+        {
+            destination._active.Add(ship);
+        }
+        if (_dirty.Remove(ship))
+        {
+            destination._dirty.Add(ship);
+        }
+        if (_stale.Remove(ship))
+        {
+            destination._stale.Add(ship);
+        }
+        if (_reloadSaved.Remove(ship))
+        {
+            destination._reloadSaved.Add(ship);
+        }
+        foreach (var request in _requested.Where(pair => pair.Value.Ship == ship).ToArray())
+        {
+            destination._requested[request.Key] = request.Value;
+            _requested.Remove(request.Key);
+            _requestViews.Remove(request.Value);
+            destination._requestViews.Remove(request.Value);
+        }
+        owner.OwnHeat(destination, ship, system);
+    }
+
+    internal void ForgetRequests(long ship)
+    {
+        foreach (var request in _requested.Where(pair => pair.Value.Ship == ship).ToArray())
+        {
+            _requested.Remove(request.Key);
+            _requestViews.Remove(request.Value);
+        }
+    }
+
+    internal void Forget(long ship)
+    {
+        ForgetRequests(ship);
+        _ships.Remove(ship);
+        _active.Remove(ship);
+        _dirty.Remove(ship);
+        _stale.Remove(ship);
+        _reloadSaved.Remove(ship);
+    }
 
     internal void BeforeSql(string sql)
     {

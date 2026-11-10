@@ -6,10 +6,15 @@ internal sealed partial class LiveCombatRuntime
 {
     private sealed record ContactSnapshot(long Second, int Motion, long Epoch, long At, IReadOnlyList<NpcContact> Values);
 
-    private readonly Dictionary<int, ContactSnapshot> _contacts = [];
+    private readonly ResidentMap<int, ContactSnapshot> _contacts = [];
     private long _contactEpoch;
 
     internal int ObserverContactCount(int system)
+    {
+        return Execute(() => ObserverContactCountOwned(system), nameof(ObserverContactCount));
+    }
+
+    private int ObserverContactCountOwned(int system)
     {
         using var ownership = owner.Enter();
         return (_contacts.GetValueOrDefault(system)?.Values.Count ?? 0) + _sharedNpcContacts.Values.Count(c => c.Source.SystemId == system);
@@ -21,6 +26,16 @@ internal sealed partial class LiveCombatRuntime
     private readonly List<AcquisitionSnapshot> _acquisitions = [];
 
     internal IReadOnlyList<NpcContact>? Contacts(
+        int system,
+        long now,
+        Func<IReadOnlyList<NpcContact>> read,
+        Func<long>? nextPopulation = null
+    )
+    {
+        return Execute(() => ContactsOwned(system, now, read, nextPopulation), nameof(Contacts));
+    }
+
+    private IReadOnlyList<NpcContact>? ContactsOwned(
         int system,
         long now,
         Func<IReadOnlyList<NpcContact>> read,
@@ -105,6 +120,11 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal bool Acquire(IReadOnlyList<NpcTargetCandidate> candidates, long now, Action acquire)
+    {
+        return Execute(() => AcquireOwned(candidates, now, acquire), nameof(Acquire));
+    }
+
+    private bool AcquireOwned(IReadOnlyList<NpcTargetCandidate> candidates, long now, Action acquire)
     {
         using var ownership = owner.Enter();
         if (!CanRun)

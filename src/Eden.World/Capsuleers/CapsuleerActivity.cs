@@ -73,7 +73,7 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
     public HumanActivitySnapshot Read()
     {
         var live = LiveWorld.Find(database.Path);
-        using var owner = live?.Enter();
+        using var owner = live?.EnterShared();
         using (synchronization.Enter("CapsuleerActivity"))
         {
             var activity = live?.CapsuleerActivity ?? _standalone;
@@ -84,7 +84,7 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
     public void Update(Guid session, int? systemId, long pilotId = 0)
     {
         var live = LiveWorld.Find(database.Path);
-        using var owner = live?.Enter();
+        using var owner = live?.EnterShared();
         using (synchronization.Enter("CapsuleerActivity"))
         {
             var activity = live?.CapsuleerActivity ?? _standalone;
@@ -143,6 +143,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         }
         void Apply()
         {
+            using var ownership = synchronization.Enter("human membership");
             if (validate())
             {
                 activity.Update(session, systemId, pilotId);

@@ -11,22 +11,27 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
-    private Dictionary<long, long>? _droneControllers;
+    private ResidentMap<long, long>? _droneControllers;
 
-    private Dictionary<long, long> DroneControllers() =>
+    private ResidentMap<long, long> DroneControllers() =>
         _droneControllers ??= Loading(() =>
         {
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
             return world
                 .Set<WorldDrone>()
                 .AsNoTracking()
-                .Where(d => d.ControllerShipId != 0 && d.SystemId != null)
+                .Where(d => d.ControllerShipId != 0 && d.SystemId != null && (systemId == null || d.SystemId == systemId))
                 .Select(d => new { d.ControllerShipId, d.PilotId })
                 .Distinct()
                 .ToDictionary(d => d.ControllerShipId, d => d.PilotId);
         });
 
     internal void WarmDrones()
+    {
+        Execute(() => WarmDronesOwned(), nameof(WarmDrones));
+    }
+
+    private void WarmDronesOwned()
     {
         using var ownership = owner.Enter();
         bool available = Loading(() =>
@@ -45,6 +50,29 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal bool FireNpc(
+        long pilotId,
+        long shipId,
+        long npcId,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        int stamp,
+        out NpcShot? shot
+    )
+    {
+        var result = Execute(
+            () =>
+            {
+                bool handled = FireNpcOwned(pilotId, shipId, npcId, velocity, now, roll, stamp, out var paid);
+                return (Handled: handled, Shot: paid);
+            },
+            nameof(FireNpc)
+        );
+        shot = result.Shot;
+        return result.Handled;
+    }
+
+    private bool FireNpcOwned(
         long pilotId,
         long shipId,
         long npcId,

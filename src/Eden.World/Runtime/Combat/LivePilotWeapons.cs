@@ -11,6 +11,11 @@ internal sealed partial class LiveCombatRuntime
 {
     internal CapsuleerAttacker[] DefenseNpcAttackers(long pilot, long now, IReadOnlyList<NpcEwarContact> incoming)
     {
+        return Execute(() => DefenseNpcAttackersOwned(pilot, now, incoming), nameof(DefenseNpcAttackers));
+    }
+
+    private CapsuleerAttacker[] DefenseNpcAttackersOwned(long pilot, long now, IReadOnlyList<NpcEwarContact> incoming)
+    {
         using var ownership = owner.Enter();
         var ship = Ship(pilot, now);
         if (ship.Position is null)
@@ -78,11 +83,21 @@ internal sealed partial class LiveCombatRuntime
 
     internal LiveCombatShip? DefenseShip(long pilot, long now)
     {
+        return Execute(() => DefenseShipOwned(pilot, now), nameof(DefenseShip));
+    }
+
+    private LiveCombatShip? DefenseShipOwned(long pilot, long now)
+    {
         using var ownership = owner.Enter();
         return CanRun ? Ship(pilot, now).SettleRepairs(now) : null;
     }
 
     internal CapsuleerAttacker[] DefenseAttackers(long pilot, IPilotCombatPresence presence, long now)
+    {
+        return Execute(() => DefenseAttackersOwned(pilot, presence, now), nameof(DefenseAttackers));
+    }
+
+    private CapsuleerAttacker[] DefenseAttackersOwned(long pilot, IPilotCombatPresence presence, long now)
     {
         using var ownership = owner.Enter();
         var ship = Ship(pilot, now);
@@ -126,6 +141,26 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal CombatVolley? FirePilot(
+        long pilot,
+        long module,
+        PilotWeaponTarget target,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        WeaponActivation? activation,
+        double? crystalRoll,
+        bool banked,
+        bool overloaded,
+        IPilotDamageEvents events
+    )
+    {
+        return Execute(
+            () => FirePilotOwned(pilot, module, target, velocity, now, roll, activation, crystalRoll, banked, overloaded, events),
+            nameof(FirePilot)
+        );
+    }
+
+    private CombatVolley? FirePilotOwned(
         long pilot,
         long module,
         PilotWeaponTarget target,
@@ -198,7 +233,7 @@ internal sealed partial class LiveCombatRuntime
             other.CorporationId,
             0,
             other.Position,
-            new Dictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double>()
+            new ResidentMap<Eden.Gameplay.Dogma.DogmaAttributeId, double>()
         );
         var plan = LiveCombatRules.Fire(ship, adapter, module, banked, velocity, now, draws, activation);
         if (plan.Volley.Shot.Destroyed)

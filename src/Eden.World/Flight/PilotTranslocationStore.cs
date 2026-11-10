@@ -27,6 +27,11 @@ internal sealed partial class PilotTranslocationStore(
 
     public TranslocationTarget Resolve(long targetId)
     {
+        return LiveWorld.Execute(database.Path, () => ResolveOwned(targetId), nameof(Resolve));
+    }
+
+    private TranslocationTarget ResolveOwned(long targetId)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -78,6 +83,11 @@ internal sealed partial class PilotTranslocationStore(
     public PilotTranslocation Move(long pilotId, long expectedShipId, long targetId) => Move(pilotId, expectedShipId, Resolve(targetId));
 
     public PilotTranslocation Move(long pilotId, long expectedShipId, TranslocationTarget target)
+    {
+        return LiveWorld.Execute(database.Path, () => MoveOwned(pilotId, expectedShipId, target), nameof(Move));
+    }
+
+    private PilotTranslocation MoveOwned(long pilotId, long expectedShipId, TranslocationTarget target)
     {
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.

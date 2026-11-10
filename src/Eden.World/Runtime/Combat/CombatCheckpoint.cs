@@ -89,7 +89,13 @@ internal sealed partial class LiveCombatRuntime
             )
         || _ships.TryGetValue(pilot, out var state) && participants.Includes(pilot, state.ShipId, state.SystemId);
 
-    internal CombatCheckpoint CaptureCheckpoint(TransactionParticipants? participants = null) =>
+    internal CombatCheckpoint CaptureCheckpoint(TransactionParticipants? participants = null)
+    {
+        var own = CaptureOwnCheckpoint(participants);
+        return systemId is null && owner.CurrentSystem is null ? owner.CaptureSystemCombat(own, participants) : own;
+    }
+
+    private CombatCheckpoint CaptureOwnCheckpoint(TransactionParticipants? participants) =>
         new(
             _dirtyShips
                 .Where(id => participants is null || Participates(participants, id, _ships[id].ShipId, _ships[id].SystemId))

@@ -29,6 +29,17 @@ internal sealed partial class PilotInformationStore
 {
     public IReadOnlyList<DirectionalScanContact> Directional(long pilotId, double angle, double range, SpacePosition direction, long now)
     {
+        return LiveWorld.Execute(database.Path, () => DirectionalOwned(pilotId, angle, range, direction, now), nameof(Directional));
+    }
+
+    private IReadOnlyList<DirectionalScanContact> DirectionalOwned(
+        long pilotId,
+        double angle,
+        double range,
+        SpacePosition direction,
+        long now
+    )
+    {
         range = InformationRules.DirectionalRange(range, InformationRules.MaximumDirectionalRange);
         _ = InformationRules.InCone(SpacePosition.Zero, SpacePosition.Zero, direction, angle, range);
         var live = LiveWorld.Find(database.Path);

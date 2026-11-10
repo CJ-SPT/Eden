@@ -27,6 +27,11 @@ internal sealed class NpcEncounterStore(
 {
     public NpcSceneContacts ReadScene(int systemId, SpacePosition position, long now)
     {
+        return LiveWorld.Execute(database.Path, systemId, () => ReadSceneOwned(systemId, position, now), nameof(ReadScene));
+    }
+
+    private NpcSceneContacts ReadSceneOwned(int systemId, SpacePosition position, long now)
+    {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
@@ -38,6 +43,11 @@ internal sealed class NpcEncounterStore(
     }
 
     public IReadOnlyList<NpcContact> List(int systemId, long now)
+    {
+        return LiveWorld.Execute(database.Path, systemId, () => ListOwned(systemId, now), nameof(List));
+    }
+
+    private IReadOnlyList<NpcContact> ListOwned(int systemId, long now)
     {
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
@@ -58,6 +68,11 @@ internal sealed class NpcEncounterStore(
     }
 
     public IReadOnlyList<NpcSimulationContact> Advance(int systemId, long now)
+    {
+        return LiveWorld.Execute(database.Path, systemId, () => AdvanceOwned(systemId, now), nameof(Advance));
+    }
+
+    private IReadOnlyList<NpcSimulationContact> AdvanceOwned(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())

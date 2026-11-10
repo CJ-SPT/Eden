@@ -164,6 +164,8 @@ internal static class ShipHeatPersistence
         state = HeatCycleRules.Configure(state, profiles, state.UpdatedAt).State;
         state = HeatCycleRules.Configure(state, profiles, now).State;
         state = ConfigureModules(world, catalog, calculation, state);
+        int system = ship.Position?.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
+        Eden.World.Runtime.LiveWorld.Find(world.WorldPath)?.TrackShip(shipId, system, pilot.Id);
         return new(
             pilot.Id,
             shipId,
@@ -172,7 +174,7 @@ internal static class ShipHeatPersistence
             original is not null && !(original.Idle && state.Idle) && !HeatCycleRules.SameState(original, state)
         )
         {
-            SystemId = ship.Position?.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId,
+            SystemId = system,
         };
     }
 
