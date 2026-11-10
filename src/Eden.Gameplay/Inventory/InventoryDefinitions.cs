@@ -100,6 +100,12 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    Cloaking = 607,
+    PrototypeCloaking = 5945,
+    CovertCloaking = 980,
+    CloakingScanResolution = 854,
+    CovertCloakCpu = 5261,
+    MicroJumpDrive = 4921,
     Hacking = 1738,
     ShipScan = 46,
     CargoScan = 47,

@@ -329,6 +329,30 @@ internal sealed record FittingCalculation(
         }
         foreach (var module in modules)
         {
+            if (SpatialModuleCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
+            {
+                foreach (var modifier in SpatialModuleCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    if (
+                        modifier.Phase == PassiveEffectPhase.Fitted
+                        || module.Item.Online && (modifier.Phase == PassiveEffectPhase.Online || activeModules.ContainsKey(module.Item.Id))
+                    )
+                    {
+                        Add(module.Item.Id, modifier, false);
+                    }
+                }
+                if (module.Item.Online && module.GroupId == SpatialModuleRules.MicroJumpGroup && activeModules.ContainsKey(module.Item.Id))
+                {
+                    modifiers.Add(
+                        new(
+                            ship.Id,
+                            DogmaAttributeId.SignatureRadius,
+                            DogmaOperation.PostPercent,
+                            new DogmaValue.Attribute(module.Item.Id, DogmaAttributeId.SignatureRadiusBonusPercent)
+                        )
+                    );
+                }
+            }
             if (
                 module.Item.Online
                 && module.GroupId == AssaultDamageControlRules.Group
@@ -460,7 +484,7 @@ internal sealed record FittingCalculation(
             .Concat(Enum.GetValues<Eden.Gameplay.Information.InformationSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<CapacitorEmissionSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
-            .Concat([OverloadRules.ThermodynamicsSkill])
+            .Concat([OverloadRules.ThermodynamicsSkill, SpatialModuleRules.MicroJumpSkill])
             .Concat(Enum.GetValues<NaniteRepairSkill>().Select(s => (int)s))
             // Drone work/damage skills remain owned by DroneRules.ApplySkills.
             .Concat([(int)DroneSkill.Drones, (int)DroneSkill.DroneAvionics, (int)DroneSkill.AdvancedDroneAvionics])

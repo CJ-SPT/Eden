@@ -7,4 +7,5 @@ public interface IPilotTargetLocks
     void Remove(long ship, long target);
     void RemoveShip(long ship);
     long[] Targeters(long target);
+    bool IsTargeted(long target) => Targeters(target).Length != 0;
 }

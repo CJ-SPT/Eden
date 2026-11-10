@@ -68,6 +68,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         var (itemIds, sourceId, flagId, quantity) = request;
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
+        Eden.World.Propulsion.PilotSpatialModuleStore.RequireUncloaked(world, ship.Id);
         bool sameShipQuantityMove = sourceId == ship.Id && destinationId == ship.Id && quantity.HasValue;
         if (
             (ship.Position is not null && !sameShipQuantityMove)

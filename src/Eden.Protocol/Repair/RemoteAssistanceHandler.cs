@@ -116,7 +116,7 @@ internal sealed class RemoteAssistanceHandler(
             {
                 continue;
             }
-            if (!cycle.Stopping && cycle.Repeats > 0)
+            if (!context.Flight.Cloaked && !cycle.Stopping && cycle.Repeats > 0)
             {
                 try
                 {

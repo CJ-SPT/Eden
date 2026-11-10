@@ -77,7 +77,8 @@ internal sealed class PilotUpdateCoordinator(
     ModuleBurnoutMonitor burnout,
     OverloadHandler overload,
     InformationHandler information,
-    Eden.Protocol.Exploration.HackingHandler? hacking = null
+    Eden.Protocol.Exploration.HackingHandler? hacking = null,
+    SpatialModuleHandler? spatial = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -147,6 +148,7 @@ internal sealed class PilotUpdateCoordinator(
     // Chat presence updates Local access after arrival without closing its transport.
     public void PrepareTranslocation(PilotCallContext context)
     {
+        spatial?.Cancel(context);
         overload.Clear();
         naniteRepairs.Cancel(context);
         playerDamage.Dispose();
@@ -200,6 +202,7 @@ internal sealed class PilotUpdateCoordinator(
     {
         DockedPilot? beforeAttack = context.ActiveFlight?.Pilot;
         ApplyPlayerDamage(context);
+        spatial?.Advance(context);
         overload.Advance(context);
         burnout.Advance(context);
         naniteRepairs.Advance(context);
@@ -242,6 +245,7 @@ internal sealed class PilotUpdateCoordinator(
             repairs.Advance(context);
         }
         propulsion.Advance(context);
+        spatial?.Advance(context);
         overload.Advance(context);
         burnout.Advance(context);
         industry.Advance(context);

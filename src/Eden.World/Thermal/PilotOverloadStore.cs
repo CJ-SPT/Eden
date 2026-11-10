@@ -54,6 +54,7 @@ internal sealed class PilotOverloadStore(WorldDatabase database) : IPilotOverloa
         long now = command.Time;
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
+        Eden.World.Propulsion.PilotSpatialModuleStore.RequireUncloaked(world, ship);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var actor =
             world

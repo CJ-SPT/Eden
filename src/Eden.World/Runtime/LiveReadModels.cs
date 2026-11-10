@@ -229,6 +229,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
             Clear();
             return;
         }
+        _spatialNavigation.Observe(changes);
+        _spatialMembership.Observe(changes);
         _moduleConditions.Observe(changes);
         _missionSites.Observe(changes);
         _learning.Observe(changes);
@@ -264,6 +266,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _gateWatcherPositions.Clear();
         _directionalObservers.Clear();
         _directionalContacts.Clear();
+        _spatialNavigation.Clear();
+        _spatialMembership.Clear();
         _moduleConditions.Clear();
         _missionSites.Clear();
         _learning.Clear();

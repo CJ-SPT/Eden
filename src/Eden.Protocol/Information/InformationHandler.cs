@@ -186,7 +186,7 @@ internal sealed class InformationHandler(
                         }
                     }
                 }
-                if (!completed && !cycle.Stopping && cycle.Repeats > 0)
+                if (!completed && !context.Flight.Cloaked && !cycle.Stopping && cycle.Repeats > 0)
                 {
                     Start(context, contact.Module.ItemId, contact.Module.Effect, contact.TargetId, cycle.Repeats - 1, cycle);
                     continue;

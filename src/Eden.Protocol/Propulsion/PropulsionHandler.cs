@@ -86,7 +86,7 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
         {
             return;
         }
-        if (!cycle.Stopping && cycle.Repeats > 0 && context.Flight.CanTarget)
+        if (!context.Flight.Cloaked && !cycle.Stopping && cycle.Repeats > 0 && context.Flight.CanTarget)
         {
             try
             {
@@ -195,7 +195,7 @@ internal sealed class PropulsionHandler(TimeProvider clock, IPilotPropulsion pro
             }
             if (method == "Activate" && args is [long module, _, var target, long repeats] && repeats is >= 0 and <= int.MaxValue)
             {
-                if (!context.Flight.CanTarget || target is not null && !Equals(target, context.Pilot.ShipId))
+                if (!context.Flight.CanActivatePropulsion || target is not null && !Equals(target, context.Pilot.ShipId))
                 {
                     return new PilotCallResult.Failure("Activate the propulsion module on your own ship outside warp.");
                 }

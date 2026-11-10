@@ -130,7 +130,9 @@ internal sealed record ShipContact(
     SignatureSuppressionContact[]? SignatureSuppressions = null,
     AssaultDamageControlContact[]? AssaultDamageControls = null,
     GateArrivalContact? GateArrival = null,
-    long? DepartureAt = null
+    long? DepartureAt = null,
+    bool Cloaked = false,
+    SpatialActivation? MicroJump = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
@@ -139,7 +141,8 @@ internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
 internal sealed class SharedSpace(
     IPilotCrimewatch? crimewatch = null,
     TimeProvider? clock = null,
-    IWorldSynchronization? synchronization = null
+    IWorldSynchronization? synchronization = null,
+    IPilotSpatialModules? spatial = null
 ) : IPilotCombatPresence
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
@@ -148,6 +151,9 @@ internal sealed class SharedSpace(
     private readonly object _standaloneMotion = new();
     internal object MotionLock => synchronization?.Gate ?? _standaloneMotion;
     internal const int MovementHistoryTicks = 32;
+
+    internal SpatialStatus SpatialStatus(long ship) => spatial?.Status(ship) ?? new();
+
     private readonly Dictionary<long, List<MotionOrder>> _orders = new();
     private readonly Dictionary<long, long> _orderSequences = new();
 
@@ -173,6 +179,7 @@ internal sealed class SharedSpace(
             DestinyCommand.SetBallVelocity command => command.Id,
             DestinyCommand.SetBallMass command => command.Id,
             DestinyCommand.SetMaxSpeed command => command.Id,
+            DestinyCommand.MicroJumpVisual command => command.Id,
             _ => null,
         };
         if (target != shipId)
@@ -350,6 +357,7 @@ internal sealed class SharedSpace(
                 && ship.AlignTo is null
                 && ship.DepartureGate is null
                 && !ship.Arriving
+                && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
                 && ship.Health?.Remaining.Destroyed != true
             )
             .Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId))
@@ -371,6 +379,7 @@ internal sealed class SharedSpace(
                 .Where(ship =>
                     ship.Pilot.SystemId == pilot.SystemId
                     && ship.Pilot.ShipId != pilot.ShipId
+                    && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
                     && pilot.Position is { } viewer
                     && ship.Pilot.Position is { } other
                     && viewer.DistanceTo(other) <= NavigationDefinitions.MaximumTargetDistance
@@ -421,6 +430,7 @@ internal sealed class SharedSpace(
                 && ship.Warp is null
                 && ship.DepartureGate is null
                 && !ship.Arriving
+                && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
                 && ship.Health?.Remaining.Destroyed != true
                 ? new(shipId, position, ship.Velocity)
                 : null;

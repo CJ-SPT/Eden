@@ -17,6 +17,21 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
 
     internal void Replay(ShipContact ship, ShipContact? previous)
     {
+        if (ship.MicroJump != previous?.MicroJump)
+        {
+            if (previous?.MicroJump is { } ended)
+            {
+                emit(FlightSession.MicroJumpEffect(ship.Pilot.ShipId, ended, false));
+            }
+            if (ship.MicroJump is { } started)
+            {
+                emit(FlightSession.MicroJumpEffect(ship.Pilot.ShipId, started, true));
+            }
+        }
+        if (ship.Cloaked && previous is null)
+        {
+            emit(new DestinyCommand.CloakBall(ship.Pilot.ShipId));
+        }
         RefreshMining(ship, previous);
         RefreshWeapons(ship, previous);
         RefreshShieldBoosts(ship, previous);

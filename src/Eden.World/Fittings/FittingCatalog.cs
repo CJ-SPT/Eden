@@ -166,6 +166,13 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (
+            type.GroupId is SpatialModuleRules.CloakGroup or SpatialModuleRules.MicroJumpGroup
+            && !SpatialModuleCatalog.Supported(catalog, typeId, type.GroupId)
+        )
+        {
+            return null;
+        }
         var attributes = catalog.FittingAttributes(typeId);
         return ModuleFittingRules.Define(
             typeId,

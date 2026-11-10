@@ -17,7 +17,12 @@ namespace Eden.World.Information;
 
 internal sealed record DirectionalObserver(long ShipId, int SystemId, SpacePosition Position, double MaximumRange);
 
-internal sealed record DirectionalEntry(DirectionalScanContact Contact, long ExpiresAt = long.MaxValue, long? LoggedOffPilot = null);
+internal sealed record DirectionalEntry(
+    DirectionalScanContact Contact,
+    long ExpiresAt = long.MaxValue,
+    long? LoggedOffPilot = null,
+    bool Ship = false
+);
 
 internal sealed partial class PilotInformationStore
 {
@@ -37,6 +42,7 @@ internal sealed partial class PilotInformationStore
         return contacts
             .Where(entry =>
                 entry.Contact.Id != observer.ShipId
+                && (!entry.Ship || new Eden.World.Propulsion.PilotSpatialModuleStore(database).Status(entry.Contact.Id).CloakModuleId == 0)
                 && (
                     entry.LoggedOffPilot is { } pilot
                         ? live?.Combat?.DroneLogoffDeadline(pilot, entry.ExpiresAt) ?? entry.ExpiresAt
@@ -92,7 +98,8 @@ internal sealed partial class PilotInformationStore
                 new(
                     new(ship.Id, type.Id, type.GroupId, ship.Name, new(ship.Position.X, ship.Position.Y, ship.Position.Z)),
                     logoff?.ExpiresAt ?? long.MaxValue,
-                    logoff?.PilotId
+                    logoff?.PilotId,
+                    Ship: true
                 )
             );
         }

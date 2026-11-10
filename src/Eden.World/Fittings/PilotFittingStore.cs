@@ -589,7 +589,11 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         }
         // Deadlines are live state and must not be captured with the fitted graph.
         if (
-            module.GroupId is TackleDefinitions.WarpCoreStabilizerGroup or SignatureSuppressionRules.Group
+            module.GroupId
+                is TackleDefinitions.WarpCoreStabilizerGroup
+                    or SignatureSuppressionRules.Group
+                    or SpatialModuleRules.CloakGroup
+                    or SpatialModuleRules.MicroJumpGroup
             || FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.AssaultDamageControl)
         )
         {

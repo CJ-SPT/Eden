@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Cloaking and standard micro-jump drives, November 9, 2026](#cloaking-and-standard-micro-jump-drives-november-9-2026)
+
 - [Native map navigation support, November 9, 2026](#native-map-navigation-support-november-9-2026)
 
 - [Insider tools and reward destinations, November 9, 2026](#insider-tools-and-reward-destinations-november-9-2026)
@@ -486,3 +488,80 @@ Reference comparison: local evejs release **261108.1**, `server/src/services/map
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Open the map while docked or in space; search/select a station and inspect its system; set that station as destination and inspect the route. Native rendering, camera/input behavior and destination/waypoint interaction remain unverified.
+
+## Cloaking and standard micro-jump drives, November 9, 2026
+
+### Implemented scope
+
+All **14 published static cloaking devices** in group 330 and **four standard micro-jump drives** in group 1189 have catalog-validated fitting and activation support. Prototype, improved, faction, officer, storyline and covert variants retain their own attributes. The two Xarasier drives retain their smaller signature penalty, capacitor cost and cooldown. Hull restrictions and earned prerequisites remain enforced; this does not admit unrelated Tech II/capital hulls or add market/material supply.
+
+Module cloaks hide a ship from other pilots' ballparks, targeting, ordinary NPC acquisition/combat presence and directional scanning. The owner keeps its own native cloaked ball and render effect. Local membership remains unchanged. Ordinary cloaks prohibit warp; covert cloaks permit warp and activation in warp. Fitted scan-resolution penalties and active speed modifiers use the fitting graph. Established player locks, including passive locks, and established NPC aggression prevent activation; pending player/NPC acquisitions cannot complete through a cloak. Multiple fitted cloaks prevent activation. Nearby ships, physical scenery, resource objects, drones, NPCs and wrecks enforce the 2 km surface-distance restriction. Proximity monitoring can force decloak; unobserved off-grid objects outside the currently supported scene are not an added universe-wide proximity service.
+
+Cloaking blocks new offensive activations immediately, then other new module activations after the native five-second grace. Existing repeating controllers cannot renew their paid cycle while cloaked. The cloak/MWD first pulse is supported. Inventory moves, magazine load/unload and overload changes are rejected while cloaked. Decloaking restores visibility immediately, while the Cloaking skill reduces the saved recalibration deadline. Module reactivation and ship targeting deadlines survive offlining, restart and checkpoint reopen. Live cloak state ends with the connection; an interrupted host reconciles its saved cloak into those delays at startup. Observatory decloak pulses and their stabilization buff, gate-cloak lifecycle changes, covert cynos and specialist hull admissions remain separate work.
+
+Standard MJDs pay capacitor once and spool for their skill-adjusted catalog duration. Their temporary signature-radius modifier participates in the shared fitting graph. The voluntary heading is fixed during spool; throttle/stop remain available. Completion moves the authoritative ship 100 km along its captured heading, preserving activation velocity. The committed position, pending-jump consumption and retained cooldown settle together. Owner and observers receive stamped movement and native engage/jump effects. Early deactivation cannot cancel a paid spool. A warp scrambler prevents activation and interrupts completion; a warp disruptor does neither. A cloak at completion also interrupts the jump. Offlining, changing ships, docking, disconnecting and restart cancel pending displacement without refunding payment or resetting the paid cooldown. Late/repeated completion cannot replay the jump. Capital drives, micro-jump field generators and mobile jump units remain outside this milestone.
+
+### Sources and compatibility
+
+Inert inspection used the installed build **3662168** client package at `E:/Eve/tq/code.ccp`, SHA-256 `76E969D2CDE0AC25359F0F9194725F741C5DB5D6C24F552B72B2184457DA6DC4`. This is a repackaged archive, rather than the original archive identified by earlier records. The six inspected constant/effect/service modules have identical marshalled code bodies in the staged package (`051A2F027309AA9E806273200C9F5E969CAD8675F49EF97313FF57A6B4549BB9`); their eight-byte Python headers differ. No original-archive hash verification is claimed for this inspection. `dogma/const` confirms cloak effects 607/5945/980 and standard MJD effect 4921; `appConst.microJumpDriveDistance` is 100000. The catalog supplies group membership, prerequisites, hull selectors, modifiers, costs, delays and native GUIDs. `dogma/pythonEffects/microJumpDrive` supplies the active signature modifier, while `environment/effects/cloaking`, `environment/effects/MicroJumpDrive` and `parklife/cloakingSvc` supply native presentation consumers. Cloak HUD effects use an indefinite None duration, matching ordinary native online effects. `tools/Export-SpatialModuleCatalog.py` reproduces the inert fixture from the read-only pinned catalog.
+
+The local eveJS package **261108.1**, targeting build **3396210**, was consulted for `space/runtime/shipCloak.js`, `space/runtime/scene/cloaking.js`, `space/modules/microJumpDriveRuntime.js` and Destiny presentation payloads. It is a source archive without Git metadata; no commit identity or runtime acceptance is claimed. Eden implements typed rules, persistence and native adapters in its existing owners.
+
+Consulted Carbon Destiny revision [27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/tree/27ee40b38a563d29054b32f64c3ebc87fabaec1f): `Ballpark::SetBallPosition` updates both interpolation positions and spatial partition membership, and `Ball::CheckProximity` compares radius-expanded distances. Ordinary motion and collision coordination remain in Eden's world owner. Gameplay references: [UniWiki cloaking](https://wiki.eveuniversity.org/Cloak) and [propulsion equipment](https://wiki.eveuniversity.org/Propulsion_equipment). Server-only distributions and unsupported special systems are not inferred from current wiki descriptions.
+
+World version **134** adds ship-bound targeting deadlines, captured jump heading/velocity and a pending-jump identity. Ordinary module cooldowns remain in their existing table. Resident concealment and membership snapshots invalidate on committed module/ship/membership changes; warmed reads require no SQL, connections or fitting calculations. Directional scans apply concealment after their cached contact baseline so same-tick activation does not leak a stale contact.
+
+### Validation
+
+**Automated validation:** development started with exact filter `FullyQualifiedName=Eden.Protocol.Tests.Propulsion.SpatialModuleTests.JumpUsesNormalizedHeadingAndRejectsInvalidCoordinates` (one pass). The 18-, 32-, 37-, 39- and 42-case development cohorts passed as coverage expanded. Two initial protocol-test failures were fixture issues: the scanner test supplied degrees instead of radians, and its SQL measurement repeatedly queried `Fixture.ShipId`; both were corrected. The cloak/MWD fixture also needed to update its existing energy row rather than insert another. No failures were ignored.
+
+On the isolated `7a2e164e` base, the broad affected filter below passed **2,009 tests**, with no skips, in **831.08 seconds** including runner startup (xUnit duration 13 m 43 s). Tool restore, solution restore, build with zero warnings/errors, eight Python catalog-policy cases, nine formatting-policy cases, formatting/width verification and `git diff --check` passed; that sequence took **864.63 seconds**. This result precedes the final targeting-readiness split and main integration.
+
+After integrating main `15ad8f3a` (including public corporation information and NPC market demand), world schema 134 retains the market's schema-133 changes and adds the spatial table. The final correction separates target acquisition recalibration from ordinary flight/NPC readiness. The final filter below passed **160 tests**, including all **43 spatial-module cases**, with no skips, in **57.42 seconds** including runner startup (xUnit duration 54 s). The complete required restore/build, focused tests, both Python policy suites, formatting verification (1,518 files and 140-character width) and diff-check sequence passed in **86.80 seconds**. Documentation checks passed for five edited Markdown files and **748** local links/anchors. The full .NET suite was not requested or run. No game, Computer Use or interactive server acceptance was performed.
+
+Broad affected filter:
+
+```powershell
+$filter = @(
+    'FullyQualifiedName~Eden.Protocol.Tests.Propulsion'
+    'FullyQualifiedName~Eden.Protocol.Tests.Flight'
+    'FullyQualifiedName~Eden.Protocol.Tests.Targeting'
+    'FullyQualifiedName~Eden.Protocol.Tests.Information'
+    'FullyQualifiedName~Eden.Protocol.Tests.Ammunition'
+    'FullyQualifiedName~Eden.Protocol.Tests.Repair'
+    'FullyQualifiedName~Eden.Protocol.Tests.Defenses'
+    'FullyQualifiedName~Eden.Protocol.Tests.Thermal'
+    'FullyQualifiedName~Eden.Protocol.Tests.Inventory'
+    'FullyQualifiedName~Eden.Protocol.Tests.Combat.Capacitor'
+    'FullyQualifiedName~Eden.Protocol.Tests.Combat.PlayerEwar'
+    'FullyQualifiedName~Eden.Protocol.Tests.Combat.Npc'
+    'FullyQualifiedName~Eden.Protocol.Tests.Combat.ResidentPollingTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Combat.LiveSimulationTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Persistence.LiveWorldTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentReadTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Persistence.DetachedCheckpointTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Hosting'
+    'FullyQualifiedName~Eden.Protocol.Tests.Serialization'
+) -join '|'
+```
+
+Final integration/correction filter:
+
+```powershell
+$filter = @(
+    'FullyQualifiedName~SpatialModule'
+    'FullyQualifiedName~Eden.Protocol.Tests.Targeting'
+    'FullyQualifiedName~Eden.Protocol.Tests.Flight.FlightSessionTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Propulsion.TackleTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Market.RegionalMarketTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Market.IndustrialDemandTests'
+) -join '|'
+```
+
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native render effects, HUD presentation and flight feel remain unverified.
+
+**Optional maintainer checks:** inspect a cloak/decloak from a second pilot and compare d-scan; try the cloak/MWD pulse and covert warp; complete an MJD and interrupt one with a scrambler.

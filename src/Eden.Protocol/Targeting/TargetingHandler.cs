@@ -54,7 +54,7 @@ internal sealed class TargetingHandler(
             _targeters = [];
         }
         _shipId = context.Pilot.ShipId;
-        if (!context.Flight.CanTarget)
+        if (!context.Flight.CanAcquireTargets)
         {
             foreach (long target in _pending.Keys.Concat(_locked).ToArray())
             {
@@ -128,6 +128,10 @@ internal sealed class TargetingHandler(
 
     private PilotCallResult Add(PilotCallContext context, long id, bool silent = false)
     {
+        if (context.Flight.CanTarget && !context.Flight.CanAcquireTargets)
+        {
+            return new PilotCallResult.Failure("Wait for targeting systems to finish cloak recalibration.");
+        }
         if (id == _shipId)
         {
             return new PilotCallResult.NamedFailure("DeniedTargetSelf", BlueEmpty.Dictionary);

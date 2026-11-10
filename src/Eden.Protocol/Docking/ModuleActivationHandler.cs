@@ -37,7 +37,8 @@ internal sealed class ModuleActivationHandler(
     InformationHandler? information = null,
     SharedTargetLocks? targetLocks = null,
     Eden.Protocol.Exploration.ProbeScanningHandler? probes = null,
-    Eden.Protocol.Exploration.HackingHandler? hacking = null
+    Eden.Protocol.Exploration.HackingHandler? hacking = null,
+    SpatialModuleHandler? spatial = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -53,12 +54,22 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        bool offensive =
+            effectName is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect or MissileHandler.EffectName
+            || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
+            || PlayerEwarWire.Effect(effectName) is not null
+            || CapacitorWire.Effect(effectName) is DogmaEffect.EnergyNeutralizer or DogmaEffect.EnergyNosferatu;
+        if (method == "Activate" && !SpatialModuleHandler.Handles(effectName) && spatial?.BlocksModule(context, offensive) == true)
+        {
+            return new PilotCallResult.Failure("The cloak prevents activating this module.");
+        }
         if (effectName == MissileHandler.EffectName && probes?.CallModule(context, method, args) is { } probeResult)
         {
             return probeResult;
         }
         var result = effectName switch
         {
+            var name when SpatialModuleHandler.Handles(name) => spatial?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             Eden.Protocol.Exploration.HackingHandler.EffectName => hacking?.CallModule(context, method, args)
                 ?? PilotCallResult.Unsupported,
             var name when InformationWire.Effect(name) is not null => information?.CallModule(context, method, args)
@@ -114,11 +125,6 @@ internal sealed class ModuleActivationHandler(
             InventoryWireDefinitions.OnlineEffectName => Online(context, method, args),
             _ => PilotCallResult.Unsupported,
         };
-        bool offensive =
-            effectName is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect or MissileHandler.EffectName
-            || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
-            || PlayerEwarWire.Effect(effectName) is not null
-            || CapacitorWire.Effect(effectName) is DogmaEffect.EnergyNeutralizer or DogmaEffect.EnergyNosferatu;
         if (method == "Activate" && result is PilotCallResult.Success && offensive && args is [_, _, long target, _])
         {
             targetLocks?.Reveal(context.Pilot.ShipId, target);

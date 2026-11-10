@@ -10,6 +10,8 @@ Use the topic pages for native request/reply shapes, implementation findings, so
 
 Historical native observations apply only to the recorded revision and actions. Agents perform automated testing only unless live testing is explicitly requested; see the [testing policy](../AGENTS.md#testing).
 
+[Cloaking and standard micro-jump drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026) cover module visibility, saved delays, covert warp and paid standard-drive spools.
+
 ## Topics
 
 [Ice harvesting and public ice fields, November 9, 2026](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)

@@ -18,7 +18,7 @@ using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Flight;
 
-internal sealed class FlightSession(
+internal sealed partial class FlightSession(
     IShipPositionStore world,
     DockedPilot pilot,
     TimeProvider clock,
@@ -97,8 +97,20 @@ internal sealed class FlightSession(
     }
     public List<StampedDestinyUpdate> Updates { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
+    internal SpatialStatus SpatialStatus => space.SpatialStatus(Pilot.ShipId);
+    public bool Cloaked => SpatialStatus.CloakModuleId != 0;
+    public SpacePosition Heading => _navigation.Direction ?? _navigation.LastHeading;
+    private SpatialActivation? _microJump;
+    public bool MicroJumpSpooling => _microJump is not null;
     public bool CanTarget =>
-        InBallpark && !_destroying && Pilot.Position is not null && _travel.Gate is null && !Translocating && _navigation.Warp is null;
+        !Cloaked
+        && InBallpark
+        && !_destroying
+        && Pilot.Position is not null
+        && _travel.Gate is null
+        && !Translocating
+        && _navigation.Warp is null;
+    internal bool CanAcquireTargets => CanTarget && SpatialStatus.TargetingReadyAt <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     public bool InWarp => _navigation.Warp is not null;
     internal bool PreparingWarp => _navigation.WarpDestination is not null;
@@ -246,7 +258,7 @@ internal sealed class FlightSession(
             Pilot.Position!,
             Pilot.Flight,
             _navigation,
-            _travel.Gate is null && !_destroying,
+            _travel.Gate is null && !_destroying && !Cloaked,
             _navigation.FollowTarget is { } target ? NavigationTarget(target.Id) : null
         );
 
@@ -419,7 +431,9 @@ internal sealed class FlightSession(
             SignatureSuppressions: ModuleEffects.SignatureSuppressions,
             AssaultDamageControls: ModuleEffects.AssaultDamageControls,
             GateArrival: _travel.Arrival,
-            DepartureAt: _travel.DepartureAt
+            DepartureAt: _travel.DepartureAt,
+            Cloaked: Cloaked,
+            MicroJump: _microJump
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -892,6 +906,10 @@ internal sealed class FlightSession(
             return blocked;
         }
         RefreshTackle(true);
+        if (MicroJumpSpooling || Cloaked && !SpatialStatus.WarpSafe)
+        {
+            return new PilotCallResult.Failure("The active cloak or micro-jump spool prevents warp.");
+        }
         if (ModuleEffects.WarpBlocked || accelerationGate && ModuleEffects.IncomingTackle.Any(t => t.Module.Strength > 0))
         {
             return new PilotCallResult.Failure("Warp disruption is stronger than your ship's warp core strength.");
@@ -978,6 +996,14 @@ internal sealed class FlightSession(
 
     private PilotCallResult ExecuteCommand(FlightCommand command)
     {
+        if (MicroJumpSpooling && command is not (FlightCommand.RefreshState or FlightCommand.Speed or FlightCommand.Stop))
+        {
+            return new PilotCallResult.Failure("Wait for the micro-jump spool to finish before navigating.");
+        }
+        if (Cloaked && command is FlightCommand.Dock or FlightCommand.Jump or FlightCommand.ActivateAccelerationGate)
+        {
+            return new PilotCallResult.Failure("Decloak before docking or using a gate.");
+        }
         if (Translocating && command is not FlightCommand.RefreshState)
         {
             return new PilotCallResult.Failure("Wait for translocation to finish before navigating.");

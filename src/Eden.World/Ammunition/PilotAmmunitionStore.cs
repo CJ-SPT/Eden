@@ -237,6 +237,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
     )
     {
         var pilot = Pilot(world, pilotId, shipId);
+        Eden.World.Propulsion.PilotSpatialModuleStore.RequireUncloaked(world, shipId);
         int sourceFlag = sourceId == shipId ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar;
         if (
             (sourceId != shipId && (pilot.ActiveShip.Position is not null || sourceId != pilot.ActiveShip.StationId))
@@ -444,6 +445,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId, shipId);
+        Eden.World.Propulsion.PilotSpatialModuleStore.RequireUncloaked(world, shipId);
         if (
             !(
                 (destinationId == shipId && flagId == (int)InventoryFlag.Cargo)

@@ -66,6 +66,40 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         protected override object?[] Arguments => [Id, Damage];
     }
 
+    internal sealed record CloakBall(long Id) : DestinyCommand("CloakBall")
+    {
+        // Pinned mass-sector cloak mode 1 is an ordinary module cloak.
+        private const int NormalCloakMode = 1;
+        protected override object?[] Arguments => [Id, NormalCloakMode, Eden.Gameplay.Propulsion.SpatialModuleRules.DecloakDistance];
+    }
+
+    internal sealed record UncloakBall(long Id) : DestinyCommand("UncloakBall")
+    {
+        protected override object?[] Arguments => [Id];
+    }
+
+    internal sealed record MicroJumpVisual(long Id, SpacePosition Position) : DestinyCommand("OnSpecialFX")
+    {
+        private const double FlashMilliseconds = 1000;
+        protected override object?[] Arguments =>
+            [
+                Id,
+                null,
+                null,
+                null,
+                null,
+                "effects.MicroJumpDriveJump",
+                false,
+                true,
+                false,
+                FlashMilliseconds,
+                0,
+                null,
+                0,
+                new object[] { Position.X, Position.Y, Position.Z },
+            ];
+    }
+
     internal sealed record SetBallPosition(long Id, double X, double Y, double Z) : DestinyCommand("SetBallPosition")
     {
         protected override object?[] Arguments => [Id, X, Y, Z];

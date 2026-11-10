@@ -83,7 +83,7 @@ internal sealed class LocalRepairHandler(TimeProvider clock, IPilotLocalRepairin
             }
             var health = repairing.Complete(context.Pilot.PilotId, cycle.ShipId, Now());
             NotifyHealth(context, health, cycle.Schedule.Layer);
-            if (!cycle.Stopping && !cycle.FuelDepleted && cycle.Repeats > 0)
+            if (!context.Flight.Cloaked && !cycle.Stopping && !cycle.FuelDepleted && cycle.Repeats > 0)
             {
                 try
                 {

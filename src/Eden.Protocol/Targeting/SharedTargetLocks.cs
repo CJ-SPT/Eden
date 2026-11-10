@@ -56,6 +56,14 @@ internal sealed class SharedTargetLocks : IPilotTargetLocks
         }
     }
 
+    public bool IsTargeted(long target)
+    {
+        lock (_gate)
+        {
+            return _locks.Any(edge => edge.Target == target);
+        }
+    }
+
     public long[] Targeters(long target)
     {
         lock (_gate)

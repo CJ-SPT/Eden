@@ -154,7 +154,7 @@ internal sealed class TackleHandler(
             {
                 continue;
             }
-            if (!cycle.Stopping && cycle.Repeats > 0 && targeted)
+            if (!context.Flight.Cloaked && !cycle.Stopping && cycle.Repeats > 0 && targeted)
             {
                 try
                 {

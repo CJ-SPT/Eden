@@ -53,6 +53,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadSignatureSuppression(string path) => Load(path, "SignatureSuppressionCatalog.json", null);
 
+    internal static void LoadSpatialModules(string path) => Load(path, "SpatialModuleCatalog.json", null);
+
     internal static void LoadAssaultDamageControls(string path) => Load(path, "AssaultDamageControlCatalog.json", null);
 
     internal static void LoadOverload(string path) => Load(path, "OverloadCatalog.json", null);

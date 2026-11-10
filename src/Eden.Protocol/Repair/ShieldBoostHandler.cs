@@ -73,7 +73,7 @@ internal sealed class ShieldBoostHandler(TimeProvider clock, IPilotShieldBoostin
             {
                 continue;
             }
-            if (!cycle.Stopping && !cycle.FuelDepleted && cycle.Repeats > 0)
+            if (!context.Flight.Cloaked && !cycle.Stopping && !cycle.FuelDepleted && cycle.Repeats > 0)
             {
                 try
                 {

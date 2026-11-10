@@ -288,10 +288,12 @@ internal static partial class Ballpark
             : NavigationMode.Goto;
         // Proper warp temporarily clears the massive flag. Aligning ships still collide.
         var flags =
-            DestinyBallFlags.Free | DestinyBallFlags.Interactive | (ship.Warp is null ? DestinyBallFlags.Massive : DestinyBallFlags.None);
+            DestinyBallFlags.Free
+            | DestinyBallFlags.Interactive
+            | (ship.Warp is null && !ship.Cloaked ? DestinyBallFlags.Massive : DestinyBallFlags.None);
         WriteBallHeader(writer, pilot.ShipId, (byte)mode, pilot.Flight.ShipRadius, pilot.Position!, (byte)flags);
         writer.Write(pilot.Flight.Mass);
-        writer.Write((byte)0); // Uncloaked
+        writer.Write((byte)(ship.Cloaked ? 1 : 0)); // Pinned Destiny mass-sector cloak mode.
         writer.Write(-1L); // Force-field harmonic
         writer.Write(pilot.CorpId);
         writer.Write(-1);

@@ -29,6 +29,7 @@ internal sealed class FlightScene(
     private FlightNpcScene? _npcScene;
     private FlightDroneScene? _droneScene;
     private ShipContact[] _peers = [];
+    private readonly HashSet<long> _cloakedPeers = [];
     private readonly Dictionary<long, long> _peerOrderSequences = new();
     private readonly Dictionary<long, long> _gateArrivals = new();
     private readonly Dictionary<long, long> _gateDepartures = new();
@@ -69,6 +70,7 @@ internal sealed class FlightScene(
         _anomalies = [];
         _peers = [];
         _peerOrderSequences.Clear();
+        _cloakedPeers.Clear();
         _gateArrivals.Clear();
         _gateDepartures.Clear();
         _observingSince = null;
@@ -420,6 +422,14 @@ internal sealed class FlightScene(
         }
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {
+            if (space.SpatialStatus(departed.Pilot.ShipId).CloakModuleId != 0)
+            {
+                _cloakedPeers.Add(departed.Pilot.ShipId);
+                update(new DestinyCommand.CloakBall(departed.Pilot.ShipId));
+                update(
+                    new DestinyCommand.SpecialEffect(departed.Pilot.ShipId, null, null, null, null, "effects.Cloak", false, true, false)
+                );
+            }
             update(new DestinyCommand.RemoveBall(departed.Pilot.ShipId, health?.WasDestroyed(departed.Pilot.ShipId) == true));
             _peerOrderSequences.Remove(departed.Pilot.ShipId);
         }
@@ -432,6 +442,13 @@ internal sealed class FlightScene(
             {
                 // AddBalls takes a single chunk. Replacing the entire park resets the observer's origin.
                 update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, space.Stamp(clock))));
+                if (_cloakedPeers.Remove(ship.Pilot.ShipId))
+                {
+                    update(new DestinyCommand.UncloakBall(ship.Pilot.ShipId));
+                    update(
+                        new DestinyCommand.SpecialEffect(ship.Pilot.ShipId, null, null, null, null, "effects.Uncloak", false, true, false)
+                    );
+                }
                 _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
                 effects.Replay(ship, null);
                 ObserveGateArrival(ship);

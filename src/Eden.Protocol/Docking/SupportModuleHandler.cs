@@ -60,7 +60,7 @@ internal sealed class SupportModuleHandler(TimeProvider clock, IPilotSupportModu
             {
                 continue;
             }
-            if (!cycle.Stopping && cycle.Repeats > 0)
+            if (!context.Flight.Cloaked && !cycle.Stopping && cycle.Repeats > 0)
             {
                 try
                 {

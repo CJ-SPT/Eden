@@ -4,6 +4,8 @@
 
 [Science jobs](protocol/industry.md#science-jobs-november-8-2026) records research, copying, invention, blueprint persistence and current production limits.
 
+[Cloaking and standard micro-jump drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026) cover module visibility, saved delays, covert warp and paid standard-drive spools.
+
 ## Setup and hosting
 
 | Guide | Use it for |
