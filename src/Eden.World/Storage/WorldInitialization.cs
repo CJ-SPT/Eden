@@ -160,10 +160,12 @@ public static class WorldInitialization
     public static Eden.Gameplay.Capsuleers.CapsuleerProvisioningTurn PrepareCapsuleers(
         WorldDatabase database,
         TimeProvider? clock = null,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default,
+        Action<Eden.Gameplay.Capsuleers.CapsuleerPreparationProgress>? progress = null
     ) =>
         new Eden.World.Capsuleers.CapsuleerProvisioner(database, clock ?? TimeProvider.System).Reconcile(
-            cancellationToken: cancellationToken
+            cancellationToken: cancellationToken,
+            progress: progress
         );
 
     // Explicit development/test open: validate and migrate before creating a reader.

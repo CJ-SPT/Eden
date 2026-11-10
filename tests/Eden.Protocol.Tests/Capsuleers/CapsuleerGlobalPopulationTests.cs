@@ -27,6 +27,44 @@ public sealed class CapsuleerGlobalPopulationTests
     private const int Third = 31000001;
 
     [Fact]
+    public void StartupProgressCountsCommittedSystemsAndResumesFromCachedSystems()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerProvisioningTests.AddSystem(f.Database, Third);
+        SetPolicy(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0));
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        List<CapsuleerPreparationProgress> updates = [];
+        var partial = new CapsuleerProvisioner(f.Database, f.Clock).Reconcile(maximumCommunities: 1, progress: Record);
+        Assert.Equal(0, updates[0].CompletedSystems);
+        Assert.Equal(1, updates[^1].CompletedSystems);
+        Assert.True(partial.PendingCommunities > 0);
+
+        updates.Clear();
+        var finished = WorldInitialization.PrepareCapsuleers(new(f.Database.Path), f.Clock, progress: Record);
+        Assert.Equal(1, updates[0].CompletedSystems);
+        Assert.Equal(finished.RegisteredSystems, updates[^1].CompletedSystems);
+        Assert.Equal(finished.PendingCommunities, updates[^1].DeferredSystems);
+        Assert.Equal(0, finished.PendingCommunities);
+
+        updates.Clear();
+        WorldInitialization.PrepareCapsuleers(new(f.Database.Path), f.Clock, progress: Record);
+        Assert.Equal(new(finished.RegisteredSystems, finished.RegisteredSystems, 0), Assert.Single(updates));
+
+        void Record(CapsuleerPreparationProgress update)
+        {
+            using WorldDbContext world = new(f.Database.Path);
+            // A separate reader must see every system counted as completed.
+            Assert.Equal(world.Set<SavedCapsuleerSystem>().Count(), update.CompletedSystems);
+            Assert.InRange(update.CompletedSystems, 0, update.TotalSystems);
+            if (updates.Count > 0)
+            {
+                Assert.Equal(updates[^1].CompletedSystems + 1, update.CompletedSystems);
+            }
+            updates.Add(update);
+        }
+    }
+
+    [Fact]
     public void GlobalRestartFillsUnvisitedSystemRostersWithoutObservers()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
@@ -138,8 +176,11 @@ public sealed class CapsuleerGlobalPopulationTests
                 """
             );
         }
-        var error = Assert.ThrowsAny<Exception>(() => WorldInitialization.PrepareCapsuleers(f.Database, f.Clock));
+        List<CapsuleerPreparationProgress> updates = [];
+        var error = Assert.ThrowsAny<Exception>(() => WorldInitialization.PrepareCapsuleers(f.Database, f.Clock, progress: updates.Add));
         Assert.True(error is Microsoft.Data.Sqlite.SqliteException or DbUpdateException);
+        Assert.NotEmpty(updates);
+        Assert.True(updates[^1].CompletedSystems < updates[^1].TotalSystems);
         long[] completed;
         using (WorldDbContext world = new(f.Database.Path))
         {
@@ -172,7 +213,11 @@ public sealed class CapsuleerGlobalPopulationTests
         Assert.Equal(0, remaining);
         using CancellationTokenSource cancellation = new();
         cancellation.Cancel();
-        Assert.Throws<OperationCanceledException>(() => WorldInitialization.PrepareCapsuleers(f.Database, f.Clock, cancellation.Token));
+        List<CapsuleerPreparationProgress> updates = [];
+        Assert.Throws<OperationCanceledException>(() =>
+            WorldInitialization.PrepareCapsuleers(f.Database, f.Clock, cancellation.Token, updates.Add)
+        );
+        Assert.Empty(updates);
         using var metrics = SessionPerformance.Begin("cached global preparation", _ => { }, force: true)!;
         var unchanged = WorldInitialization.PrepareCapsuleers(f.Database, f.Clock);
         Assert.Equal(0, unchanged.CreatedCommunities);
@@ -235,7 +280,11 @@ public sealed class CapsuleerGlobalPopulationTests
         TrafficSnapshotTests.Install(f.Database, first);
         SetPolicy(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0));
         WorldInitialization.Initialize(f.Database, f.Clock);
-        Assert.True(WorldInitialization.PrepareCapsuleers(f.Database, f.Clock).PendingCommunities > 0);
+        List<CapsuleerPreparationProgress> updates = [];
+        var preparation = WorldInitialization.PrepareCapsuleers(f.Database, f.Clock, progress: updates.Add);
+        Assert.True(preparation.PendingCommunities > 0);
+        Assert.Equal(preparation.RegisteredSystems, updates[^1].CompletedSystems);
+        Assert.Equal(preparation.PendingCommunities, updates[^1].DeferredSystems);
         long pilot;
         using (WorldDbContext world = new(f.Database.Path))
         {

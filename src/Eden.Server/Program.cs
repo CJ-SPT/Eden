@@ -158,11 +158,18 @@ internal static class Program
             Eden.Gameplay.Market.WorldEconomySettings? startingEconomy = File.Exists(worldPath)
                 ? null
                 : new(testingMarket, !economyWorld, npcStock);
+            bool preparePopulation = Value("--grant-redeem") is null && Value("--set-account-password") is null;
+            if (preparePopulation)
+            {
+                ServerLog.Console.Information("Loading saved world and NPC population settings...");
+            }
             WorldInitialization.Initialize(database, economy: startingEconomy, economics: economicConfiguration);
-            if (Value("--grant-redeem") is null && Value("--set-account-password") is null)
+            if (preparePopulation)
             {
                 using var populationPhase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.capsuleerPopulation");
-                var population = WorldInitialization.PrepareCapsuleers(database);
+                ServerLog.Console.Information("NPC population: checking saved pilots before preparing system rosters...");
+                var progress = new Eden.Server.Capsuleers.PopulationStartupProgress(ServerLog.Console.Information);
+                var population = WorldInitialization.PrepareCapsuleers(database, progress: progress.Report);
                 ServerLog.Console.Information(
                     $"Global pilot preparation: {population.RegisteredSystems} systems, "
                         + $"{population.CreatedCommunities} rosters expanded, {population.PendingCommunities} deferred."

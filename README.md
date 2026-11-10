@@ -135,6 +135,11 @@ dotnet run --no-build --project src/Eden.Server
 
 Normal server startup prints a bordered ASCII EDEN banner with a four-space left margin, the compiled version and full Git revision before world reconciliation. The border expands to fit the build identity. Build identity comes from the assembly's informational version, so published servers do not need Git installed. Builds without source revision metadata show `Revision: unknown`. Maintenance commands keep their existing output.
 
+NPC population preparation prints a loading bar with the percentage, systems checked and deferred count before logins open.
+Saved systems already prepared under the current settings count immediately. During slower preparation, counts refresh at
+most once per second within each 5% bar segment. The bar uses ordinary log lines so redirected output remains readable.
+100% means every system was checked; deferred rosters remain listed separately for later retry.
+
 The console shows startup reconciliation and host timings, timestamped startup/shutdown and account/character session summaries, warnings and failures by default. Routine service calls, notifications, gateway requests, handshakes, movement and successful world checkpoints are quiet. Warnings and errors go to standard error. Set `$env:EDEN_VERBOSE_LOGGING = '1'` before starting the server to include routine diagnostics; remove it with `Remove-Item Env:EDEN_VERBOSE_LOGGING` to return to quiet output. The existing `EDEN_TRACE_PERFORMANCE=1` and `EDEN_TRACE_MOTION=1` switches still enable their targeted traces independently of verbose logging. Checkpoint failures always remain visible and pending changes retain the existing save/retry behavior.
 
 The [Windows client setup](docs/development-client.md) contains optional maintainer procedures. The [protocol notes](docs/protocol.md) retain historical exchange, flight, and two-pilot observations; they do not establish acceptance of later changes.

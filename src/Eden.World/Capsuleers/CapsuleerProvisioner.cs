@@ -28,7 +28,11 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
 {
     private TrafficProvisioning.Reservations? _startupReservations;
 
-    public CapsuleerProvisioningTurn Reconcile(int maximumCommunities = int.MaxValue, CancellationToken cancellationToken = default)
+    public CapsuleerProvisioningTurn Reconcile(
+        int maximumCommunities = int.MaxValue,
+        CancellationToken cancellationToken = default,
+        Action<CapsuleerPreparationProgress>? progress = null
+    )
     {
         ArgumentOutOfRangeException.ThrowIfNegative(maximumCommunities);
         cancellationToken.ThrowIfCancellationRequested();
@@ -59,6 +63,9 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 .Select(row => row.SystemId)
                 .ToHashSet();
             var systems = catalog.Definitions.Systems.Keys.Order().Where(system => !completed.Contains(system)).ToArray();
+            int total = catalog.Definitions.Systems.Count;
+            int cached = total - systems.Length;
+            progress?.Invoke(new(cached, total, 0));
             if (systems.Length == 0 || maximumCommunities == 0)
             {
                 return new(catalog.Definitions.Systems.Count, 0, systems.Length);
@@ -78,6 +85,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                         created += turn.CreatedCommunities;
                         deferred += turn.PendingCommunities;
                         processed++;
+                        // Provision returns only after the community transaction commits.
+                        progress?.Invoke(new(cached + processed, total, deferred));
                     }
                     finally
                     {

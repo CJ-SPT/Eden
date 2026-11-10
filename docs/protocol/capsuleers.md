@@ -2,6 +2,38 @@
 
 [Protocol index](../protocol.md)
 
+## Population startup progress — November 10, 2026
+
+Normal server startup now reports NPC population preparation with a 20-cell ASCII loading bar,
+percentage, checked-system count and deferred-system count. Startup first identifies saved-world/settings
+loading and saved-pilot reuse. Preparation progress is reported synchronously after each community transaction
+commits, through a typed optional callback from World to Server. Cached systems count immediately; a fully
+cached or empty catalog reports 100% immediately. Bounded preparation stops below 100% when work remains.
+An exception or cancellation does not report an unprocessed system as completed.
+
+The host emits an ordinary buffered information log line at each 5% bar boundary and at most once per second
+within a segment when counts change. This preserves readable redirected logs without terminal escape codes
+or extra database queries. 100% means every catalog system was checked, including deferred rosters;
+the existing final summary retains expanded/deferred counts. Offline maintenance commands do not show the bar.
+Population policy, provisioning transactions, saved grants and retry behavior are unchanged.
+
+**Automated validation:** The initial exact-method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerGlobalPopulationTests.StartupProgressCountsCommittedSystemsAndResumesFromCachedSystems`
+passed 1/1 in 16.12 s including its build. The first combined global-population/progress-reporter run passed
+14/14 in 22.13 s including its build. Coverage includes separately readable committed counts, bounded preparation,
+cached restart, cancellation, interrupted provisioning, deferred rosters, empty catalogs and throttled log output.
+Final tool/solution restore, solution build (zero warnings/errors), 45/45 focused .NET cases, both Python policy
+suites (8 and 9 cases) and formatting verification passed in 44.10 s total. The full .NET suite was not run.
+The final filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerGlobalPopulationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerProvisioningTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerPopulationSettingsTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.PopulationStartupProgressTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.BufferedServerLogTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerLogTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** On the next normal server start, inspect the startup bar in the preferred console.
+
 ## Simulated-pilot target lock retention, November 9, 2026
 
 Peaceful simulated pilots no longer clear other pilots' completed target locks during defense maintenance.

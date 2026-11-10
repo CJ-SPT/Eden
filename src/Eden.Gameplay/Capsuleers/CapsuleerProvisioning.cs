@@ -37,6 +37,9 @@ public sealed record CapsuleerSystemSummary(
 
 public sealed record CapsuleerProvisioningTurn(int RegisteredSystems, int CreatedCommunities, int PendingCommunities);
 
+// Completed counts include cached systems and systems examined but deferred this run.
+public sealed record CapsuleerPreparationProgress(int CompletedSystems, int TotalSystems, int DeferredSystems);
+
 public sealed record CapsuleerPopulationSummary(int RegisteredSystems, int EligibleSystems, int Communities, int Agents, long WorldSeed)
 {
     public int PausedAgents { get; init; }
@@ -47,7 +50,11 @@ public sealed record CapsuleerPopulationSummary(int RegisteredSystems, int Eligi
 
 public interface ICapsuleerProvisioning
 {
-    CapsuleerProvisioningTurn Reconcile(int maximumCommunities = int.MaxValue, CancellationToken cancellationToken = default);
+    CapsuleerProvisioningTurn Reconcile(
+        int maximumCommunities = int.MaxValue,
+        CancellationToken cancellationToken = default,
+        Action<CapsuleerPreparationProgress>? progress = null
+    );
 }
 
 public static class CapsuleerProvisioningRules

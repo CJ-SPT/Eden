@@ -24,6 +24,8 @@ records fit-aware pirate encounters, owned loot, paid shopping and starter corre
 records editor controls, saved suspension, retained possessions and reuse when limits increase.
 [Global restart preparation](protocol/capsuleers.md#global-population-preparation-on-restart--november-9-2026)
 now fills station-traffic/miner rosters across the catalog before logins, with retained-pilot reuse and per-community recovery.
+[Population startup progress](protocol/capsuleers.md#population-startup-progress--november-10-2026)
+reports committed system checks, cached preparation and deferred rosters in the startup console.
 
 
 [Gate-area traffic stalls](protocol/performance.md#gate-area-traffic-stalls-november-9-2026) records tenfold-population
