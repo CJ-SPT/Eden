@@ -2,6 +2,9 @@
 
 [Project overview and build instructions](../README.md)
 
+[The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,
+saved signature counts, known/unknown ice fields and activities with empty directories.
+
 [World tuning](protocol/world-configuration.md) records the activity-based administrator page and saved-world gathering,
 reward, progression and industry multipliers, including restart activation and native compatibility.
 

@@ -14,6 +14,7 @@ internal sealed record AnomalySiteInfo(CombatAnomaly Site) : BlueModel
             new Dictionary<string, object?>
             {
                 ["instanceID"] = Site.Id,
+                ["siteID"] = Site.Id,
                 ["position"] = new object[] { Site.Position.X, Site.Position.Y, Site.Position.Z },
                 ["targetID"] = Site.TargetId,
                 ["difficulty"] = Site.Difficulty,

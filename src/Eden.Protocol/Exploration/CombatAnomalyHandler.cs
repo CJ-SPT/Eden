@@ -25,8 +25,12 @@ internal sealed class CombatAnomalyHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service == "dungeonInstanceCacheMgr" && args.Length == 0)
+        if (service == "dungeonInstanceCacheMgr" && method is "GetCombatAnomalyInstances" or "GetCombatAnomaliesCount")
         {
+            if (args.Length != 0 || keywords is { Count: > 0 })
+            {
+                return new PilotCallResult.Failure("Combat anomaly directory requests do not accept arguments.");
+            }
             _ = sites.List(context.Pilot.SystemId, Now);
             if (method == "GetCombatAnomalyInstances")
             {

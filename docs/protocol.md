@@ -4,6 +4,9 @@
 
 [Documentation index](README.md)
 
+[The Agency](protocol/agency.md#native-agency-directories--november-10-2026) records native provider contracts,
+saved signature and ice discovery, source fingerprints and automated validation.
+
 [World-loading and ammunition lookup hotspots](protocol/performance.md#world-loading-and-ammunition-lookup-hotspots-november-10-2026)
 records the missing container index and repeated world/fitting lookup corrections.
 

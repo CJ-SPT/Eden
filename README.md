@@ -22,6 +22,10 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 ## Current status
 
+[The Agency](docs/protocol/agency.md#native-agency-directories--november-10-2026) now lists saved signature counts
+and known/undiscovered ice fields with depletion-aware availability. Activities without an Eden simulation return
+native empty directories. Client rendering and interactions remain unverified.
+
 [Cloaking and standard micro-jump drives](docs/protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026) support 14 static cloaks and four standard drives, with hidden contacts, covert warp, persisted delays and scrambler-interrupted spools. Native presentation remains unverified.
 
 [Map navigation support](docs/protocol/navigation.md#native-map-navigation-support-november-9-2026) now supplies the route planner’s cached history baseline and roaming-weather reads. Activity history remains empty; native map interaction is unverified.
