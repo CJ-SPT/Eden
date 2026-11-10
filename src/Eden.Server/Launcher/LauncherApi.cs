@@ -18,7 +18,8 @@ internal static class LauncherApi
         DevelopmentIdentity identity,
         TimeProvider clock,
         string? chatCertificatePem = null,
-        SkillClientPublisher? skillPublisher = null
+        SkillClientPublisher? skillPublisher = null,
+        Eden.World.Modding.ModStore? mods = null
     )
     {
         settings.Validate();
@@ -87,12 +88,13 @@ internal static class LauncherApi
                 new ServerReply(
                     settings.ServerId,
                     settings.Name,
-                    1,
+                    mods is null ? 1 : 2,
                     CompatibilityHandshake.Build,
                     settings.GameAddress,
                     settings.GatewayAddress,
                     chatCertificatePem,
-                    skillPublisher?.Status().Active
+                    mods?.ActiveSet is null ? skillPublisher?.Status().Active : null,
+                    mods?.ActiveSet
                 )
         );
         app.MapPost("/api/v1/accounts", (AccountRequest request) => accounts.Register(request)).RequireRateLimiting("register");
@@ -115,12 +117,19 @@ internal static class LauncherApi
                     {
                         throw new LauncherException("unsupported_build", "This server requires client build 3662168.");
                     }
-                    var package = skillPublisher?.Status().Active;
-                    if (package?.Id != request.SkillPackageId)
+                    var set = mods?.ActiveSet;
+                    var package = set is null
+                        ? skillPublisher?.Status().Active
+                        : new Eden.World.Skills.SkillClientPackage(set.Id, set.Generation, set.CodeSha256, set.CodeLength);
+                    if (
+                        set?.Id != request.ModSetId
+                        || (set is null && package?.Id != request.SkillPackageId)
+                        || (set is not null && request.SkillPackageId is not null)
+                    )
                     {
                         throw new LauncherException(
                             "client_update_required",
-                            "Refresh the server and install its current skill package before playing.",
+                            "Refresh the server and install its required mod set before playing.",
                             409
                         );
                     }
@@ -149,6 +158,22 @@ internal static class LauncherApi
                     );
                 }
                 return Results.File(skillPublisher.ActiveCodePath(id), "application/octet-stream", enableRangeProcessing: false);
+            }
+        );
+        app.MapGet(
+            "/api/v2/mod-sets/{id}/code",
+            (string id, HttpContext context) =>
+            {
+                accounts.AuthorizeAccess(Access(context));
+                if (mods?.ActiveSet?.Id != id)
+                {
+                    throw new LauncherException("client_update_required", "This mod set is no longer active. Refresh the server.", 409);
+                }
+                return Results.File(
+                    Path.Combine(mods.SetDirectory(id), "code.ccp"),
+                    "application/octet-stream",
+                    enableRangeProcessing: false
+                );
             }
         );
         return app;

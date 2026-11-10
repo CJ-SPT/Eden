@@ -1,0 +1,87 @@
+@page "/mods"
+@attribute [Authorize(Policy = AdministratorAccounts.Policy)]
+@inject AdministrationOperations Operations
+@inject AuthenticationStateProvider Authentication
+<PageTitle>Mods · Eden</PageTitle>
+<h1>Mods</h1>
+<p>Author skills and code in Eden Modding SDK. Install packages here, select the required set, then build and restart.</p>
+@if (Error is not null)
+{
+    <p class="error" role="alert">@Error</p>
+}
+@if (Message is not null)
+{
+    <p role="status">@Message</p>
+}
+<fieldset disabled="@Busy">
+    <label>Package path on this host <input @bind="Archive" placeholder="C:\Mods\example.edenmod" /></label>
+    <button @onclick="Install">Install package</button>
+    <label>Installed package hash <input @bind="Hash" /></label>
+    <button @onclick="() => Select(true)">Enable package</button>
+    <button class="secondary" @onclick="() => Select(false)">Disable package</button>
+    <label>Pinned source client folder <input @bind="ClientRoot" placeholder="E:\EdenDev\3662168" /></label>
+    <button @onclick="Build">Build selected mod set</button>
+    <button class="secondary" @onclick="Load">Refresh status</button>
+</fieldset>
+@if (Status is not null)
+{
+    <h2>Active set</h2>
+    <p>@(Status.Active?.Id ?? "Original or legacy skill package")</p>
+    <h2>Pending set</h2>
+    <p>@(Status.Pending?.Id ?? "No pending build")</p>
+    @if (Status.Pending is not null)
+    {
+        <p>Restart required. Clients continue using the active set until activation succeeds.</p>
+    }
+    <h2>Selected packages</h2>
+    <ul>@foreach (var mod in Status.Enabled) { <li>@mod.Id · @mod.Version</li> }</ul>
+}
+
+@code {
+    private Eden.Modding.ModSetStatus? Status;
+    private string Archive = "";
+    private string Hash = "";
+    private string ClientRoot = "";
+    private string? Message;
+    private string? Error;
+    private bool Busy;
+
+    protected override Task OnInitializedAsync() => Load();
+    private async Task<ClaimsPrincipal> User() => (await Authentication.GetAuthenticationStateAsync()).User;
+    private async Task Act(Func<Task> action)
+    {
+        Busy = true;
+        try
+        {
+            await action();
+            Error = null;
+        }
+        catch (Exception error) when (error is IOException or InvalidDataException or InvalidOperationException
+            or UnauthorizedAccessException or ArgumentException)
+        {
+            Error = error.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+    private Task Load() => Act(async () => Status = await Operations.Mods(await User()));
+    private Task Install() => Act(async () =>
+    {
+        Hash = await Operations.InstallMod(await User(), new(Archive));
+        Status = await Operations.Mods(await User());
+        Message = "Installed package. Enable its hash to add it to the selected set.";
+    });
+    private Task Select(bool enabled) => Act(async () =>
+    {
+        Status = await Operations.SelectMod(await User(), new(Hash, enabled));
+        Message = "Selection saved. Build the complete set before restarting.";
+    });
+    private Task Build() => Act(async () =>
+    {
+        var result = await Operations.BuildMods(await User(), new(ClientRoot));
+        Status = await Operations.Mods(await User());
+        Message = "Built " + result.Id + ". Restart required.";
+    });
+}

@@ -167,6 +167,19 @@ public sealed class ModStore(WorldDatabase database)
         }
     }
 
+    public ModSetPackage? ActiveSet
+    {
+        get
+        {
+            if (!File.Exists(ModDbContext.FilePath(database.Path)))
+            {
+                return null;
+            }
+            using var db = Open();
+            return db.Set<SavedModConfiguration>().Single().Active is { } id ? ReadSet(id) : null;
+        }
+    }
+
     public ModSetStatus Status()
     {
         lock (_gate)
@@ -176,7 +189,11 @@ public sealed class ModStore(WorldDatabase database)
             return new(
                 state.Active is { } active ? ReadSet(active) : null,
                 state.Pending is { } pending ? ReadSet(pending) : null,
-                Enabled().Select(value => new ModDependency(value.Manifest.Id, value.Manifest.Version)).ToArray()
+                JsonSerializer
+                    .Deserialize<string[]>(state.Enabled, ModFormat.Json)!
+                    .Select(hash => ModPackages.Read(Path.Combine(Root, "packages", hash + ".edenmod")))
+                    .Select(value => new ModDependency(value.Manifest.Id, value.Manifest.Version))
+                    .ToArray()
             );
         }
     }
@@ -471,6 +488,7 @@ public sealed class ModStore(WorldDatabase database)
             File.Move(marker + ".tmp", marker, overwrite: true);
         }
         database.ResetSkillCatalog();
+        Eden.World.Fittings.ResidentFitCache.CatalogChanged(database.OriginalCatalogPath);
     }
 
     public void VerifySet(string id)

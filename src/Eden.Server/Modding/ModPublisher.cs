@@ -15,7 +15,7 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
 {
     private readonly SemaphoreSlim _gate = new(1);
 
-    public async Task<ModSetPackage> Build(string clientRoot, CancellationToken cancellation = default)
+    public async Task<ModSetPackage> Build(string clientRoot, CancellationToken cancellation = default, Func<Task>? authorize = null)
     {
         await _gate.WaitAsync(cancellation);
         string? temporary = null;
@@ -118,6 +118,10 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
             }
             store.VerifySet(id);
             var result = store.ReadSet(id);
+            if (authorize is not null)
+            {
+                await authorize();
+            }
             store.Stage(result, snapshot.Generation);
             return result;
         }

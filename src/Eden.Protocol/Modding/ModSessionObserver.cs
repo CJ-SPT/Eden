@@ -22,6 +22,17 @@ internal sealed class ModSessionObserver(PilotCallContext context, IModSessionEv
         {
             return;
         }
+        if (
+            _previous is { } unchanged
+            && context.Selected
+            && unchanged.PilotId == context.Pilot.PilotId
+            && unchanged.StationId == (context.Pilot.Position is null ? context.Pilot.StationId : null)
+            && unchanged.SolarSystemId == context.Pilot.SystemId
+            && unchanged.Roles == context.Roles
+        )
+        {
+            return;
+        }
         var current = context.Selected ? Pilot(context) : null;
         if (_previous is { } previous && current?.PilotId != previous.PilotId)
         {

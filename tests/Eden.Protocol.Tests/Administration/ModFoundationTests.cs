@@ -107,6 +107,14 @@ public sealed class ModFoundationTests
         Assert.Throws<InvalidDataException>(() => store.Prepare());
     }
 
+    [Fact]
+    public void ExplicitNullManifestCollectionsAreRejectedBeforeLoadingFiles()
+    {
+        Assert.Throws<InvalidDataException>(() => ModPackages.Validate(Manifest("test.invalid") with { Files = null! }));
+        Assert.Throws<InvalidDataException>(() => ModPackages.Validate(Manifest("test.invalid") with { Dependencies = null! }));
+        Assert.Throws<InvalidDataException>(() => ModPackages.Validate(Manifest("test.invalid") with { CatalogFingerprint = null! }));
+    }
+
     [Theory]
     [InlineData("../escape")]
     [InlineData("/absolute")]

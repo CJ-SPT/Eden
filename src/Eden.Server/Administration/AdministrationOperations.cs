@@ -37,8 +37,8 @@ internal sealed partial class AdministrationOperations(
     ICapsuleerPopulation population,
     ICapsuleerDiagnostics capsuleers,
     ICapsuleerScene scene,
-    ISkillEditor skillEditor,
-    SkillClientPublisher skillPublisher
+    Eden.World.Modding.ModStore mods,
+    Eden.Server.Modding.ModPublisher modPublisher
 )
 {
     private async Task Authorize(ClaimsPrincipal user)

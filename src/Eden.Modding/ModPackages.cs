@@ -9,6 +9,7 @@ public static partial class ModPackages
 {
     public const long MaximumBytes = 128L * 1024 * 1024;
     public const int MaximumFiles = 4096;
+    private const int CopyBufferBytes = 64 * 1024;
     private const string ManifestPath = "manifest.json";
 
     [GeneratedRegex("^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$")]
@@ -41,6 +42,10 @@ public static partial class ModPackages
 
     public static void Validate(ModManifest manifest)
     {
+        if (manifest is null || manifest.Dependencies is null || manifest.Overrides is null || manifest.Files is null)
+        {
+            throw new InvalidDataException("The mod manifest is missing required collections.");
+        }
         Identity(manifest.Id);
         if (
             manifest.FormatVersion != ModFormat.Version
@@ -50,6 +55,7 @@ public static partial class ModPackages
             || version.Build < 0
             || string.IsNullOrWhiteSpace(manifest.Name)
             || manifest.Name.Length > 200
+            || string.IsNullOrWhiteSpace(manifest.CatalogFingerprint)
             || manifest.CatalogFingerprint.Length != 64
             || !manifest.CatalogFingerprint.All(char.IsAsciiHexDigit)
             || manifest.Dependencies.Count > MaximumFiles
@@ -61,6 +67,10 @@ public static partial class ModPackages
         HashSet<string> dependencies = new(StringComparer.Ordinal);
         foreach (var dependency in manifest.Dependencies)
         {
+            if (dependency is null)
+            {
+                throw new InvalidDataException("A mod dependency cannot be empty.");
+            }
             Identity(dependency.Id);
             if (dependency.Id == manifest.Id || !dependencies.Add(dependency.Id) || !Version.TryParse(dependency.Version, out _))
             {
@@ -101,6 +111,7 @@ public static partial class ModPackages
         }
         Dictionary<string, byte[]> contents = new(StringComparer.OrdinalIgnoreCase);
         long expanded = 0;
+        byte[] buffer = new byte[CopyBufferBytes];
         foreach (var entry in archive.Entries)
         {
             RelativePath(entry.FullName);
@@ -111,7 +122,15 @@ public static partial class ModPackages
             }
             using var input = entry.Open();
             using MemoryStream output = new();
-            input.CopyTo(output);
+            int count;
+            while ((count = input.Read(buffer)) > 0)
+            {
+                if (output.Length + count > entry.Length)
+                {
+                    throw new InvalidDataException("A mod archive entry exceeds its declared size.");
+                }
+                output.Write(buffer, 0, count);
+            }
             if (output.Length != entry.Length || !contents.TryAdd(entry.FullName, output.ToArray()))
             {
                 throw new InvalidDataException("Duplicate or invalid mod archive entry.");
@@ -127,6 +146,10 @@ public static partial class ModPackages
         HashSet<string> declared = new(StringComparer.OrdinalIgnoreCase);
         foreach (var file in manifest.Files)
         {
+            if (file is null)
+            {
+                throw new InvalidDataException("A declared mod file cannot be empty.");
+            }
             RelativePath(file.Path);
             if (
                 !declared.Add(file.Path)

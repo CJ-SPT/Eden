@@ -126,6 +126,12 @@ public sealed class ModRuntimeTests
         context.Select(pilot);
         observer.Observe();
         observer.Observe();
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        for (int index = 0; index < 1000; index++)
+        {
+            observer.Observe();
+        }
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - allocated);
         Assert.Equal(ModEventKind.PilotSelected, Assert.Single(events.Events).Kind);
         context.LogOff();
         observer.Observe();

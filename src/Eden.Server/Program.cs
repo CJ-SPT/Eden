@@ -240,7 +240,8 @@ internal static class Program
             services.GetRequiredService<DevelopmentIdentity>(),
             TimeProvider.System,
             services.GetRequiredService<ChatCertificate>().PublicPem,
-            services.GetRequiredService<Eden.Server.Administration.SkillClientPublisher>()
+            services.GetRequiredService<Eden.Server.Administration.SkillClientPublisher>(),
+            services.GetRequiredService<Eden.World.Modding.ModStore>()
         );
         await using var chat = services.GetRequiredService<ChatServer>();
         await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));

@@ -112,78 +112,36 @@ public sealed class AdministrationTests
     }
 
     [Fact]
-    public async Task SkillEditingRequiresCurrentAdministratorAndAntiforgeryAndProtectsOriginalSkills()
+    public async Task ModManagementRequiresCurrentAdministratorAndAntiforgeryAndRemovesWebSkillAuthoring()
     {
         await using var fixture = await Fixture.Start();
-        using var denied = await fixture.Client.GetAsync("/api/admin/skills");
+        using var denied = await fixture.Client.GetAsync("/api/admin/mods");
         Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
-        using var pageDenied = await fixture.Client.GetAsync("/skills");
-        Assert.Equal(HttpStatusCode.Redirect, pageDenied.StatusCode);
         await fixture.SignIn();
-        string html = await fixture.Client.GetStringAsync("/skills");
-        Assert.Contains("Skill editor", html);
-        Assert.Contains("Build and stage package", html);
-        Assert.Contains("User-created skills", html);
-        Assert.Contains("href=\"/skills\"", html);
-        var snapshot = (await fixture.Client.GetFromJsonAsync<SkillEditorSnapshot>("/api/admin/skills"))!;
-        var original = snapshot.Skills.First();
-        using var protectedSkill = await fixture.Client.PostAsJsonAsync(
-            $"/api/admin/skills/{original.Definition.TypeId}/delete",
-            new AdminSkillDelete(snapshot.Generation)
-        );
-        Assert.Equal(HttpStatusCode.BadRequest, protectedSkill.StatusCode);
-        var definition = original.Definition with
-        {
-            TypeId = 0,
-            Name = "HTTP skill",
-            IconId = null,
-            MarketGroupId = null,
-            Effects = [],
-            Attributes = [],
-        };
+        string html = await fixture.Client.GetStringAsync("/mods");
+        Assert.Contains("Eden Modding SDK", html);
+        Assert.Contains("Build selected mod set", html);
+        Assert.DoesNotContain("href=\"/skills\"", html);
+        using var oldApi = await fixture.Client.GetAsync("/api/admin/skills");
+        Assert.Equal(HttpStatusCode.NotFound, oldApi.StatusCode);
         fixture.Client.DefaultRequestHeaders.Remove(AdministrationHost.CsrfHeader);
         using var noToken = await fixture.Client.PostAsJsonAsync(
-            "/api/admin/skills/create",
-            new AdminSkillSave(snapshot.Generation, definition)
+            "/api/admin/mods/select",
+            new AdminModSelection(new string('A', 64), false)
         );
         Assert.Equal(HttpStatusCode.BadRequest, noToken.StatusCode);
         await fixture.SignIn();
-        using var create = await fixture.Client.PostAsJsonAsync(
-            "/api/admin/skills/create",
-            new AdminSkillSave(snapshot.Generation, definition)
+        using var selected = await fixture.Client.PostAsJsonAsync(
+            "/api/admin/mods/select",
+            new AdminModSelection(new string('A', 64), false)
         );
-        Assert.Equal(HttpStatusCode.OK, create.StatusCode);
-        var custom = (await create.Content.ReadFromJsonAsync<SkillEditorEntry>())!;
-        Assert.True(custom.UserCreated);
-        Assert.Null(custom.Original);
-        using var stale = await fixture.Client.PostAsJsonAsync(
-            "/api/admin/skills/save",
-            new AdminSkillSave(snapshot.Generation, original.Definition)
-        );
-        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
-        snapshot = (await fixture.Client.GetFromJsonAsync<SkillEditorSnapshot>("/api/admin/skills"))!;
-        using var delete = await fixture.Client.PostAsJsonAsync(
-            $"/api/admin/skills/{custom.Definition.TypeId}/delete",
-            new AdminSkillDelete(snapshot.Generation)
-        );
-        Assert.True((await delete.Content.ReadFromJsonAsync<SkillEditorEntry>())!.Deleted);
-        snapshot = (await fixture.Client.GetFromJsonAsync<SkillEditorSnapshot>("/api/admin/skills"))!;
-        using var restore = await fixture.Client.PostAsJsonAsync(
-            $"/api/admin/skills/{custom.Definition.TypeId}/restore",
-            new AdminSkillRestore(snapshot.Generation, custom.Revision)
-        );
-        Assert.False((await restore.Content.ReadFromJsonAsync<SkillEditorEntry>())!.Deleted);
+        Assert.Equal(HttpStatusCode.OK, selected.StatusCode);
         var principal = fixture.Accounts.Authenticate("Corey", Password)!;
         using var scope = fixture.App.Services.CreateScope();
         var operations = scope.ServiceProvider.GetRequiredService<AdministrationOperations>();
-        fixture.Accounts.SetPassword("Corey", "replacement administrator password");
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => operations.Skills(principal));
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            operations.DeleteSkill(principal, custom.Definition.TypeId, snapshot.Generation)
-        );
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-            operations.PublishSkills(principal, new(snapshot.Generation, "unused"))
-        );
+        fixture.Accounts.SetPassword("Corey", "rotated administrator password");
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => operations.Mods(principal));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => operations.BuildMods(principal, new("unused")));
     }
 
     [Fact]

@@ -53,6 +53,13 @@ The editor uses a dark theme throughout settings, catalog browsing, revision his
 
 ## Skill editor
 
+**Current workflow — November 9, 2026:** Skill authoring has moved to the offline Avalonia
+[Eden Modding SDK](modding.md). Use local administration's **Mods** page to install/select/build packages;
+the web skill-authoring page and its API endpoints have been removed. Export existing drafts/history with
+`--export-skill-project ABSOLUTE_FOLDER` and open that folder in the SDK. The records below preserve the
+historical web-editor implementation and its evidence; its old navigation instructions are historical.
+
+
 Open **Skills** in local administration. Search original and custom skills by name, description or ID; several words can appear in any order. The form edits names, descriptions, existing skill groups, skillbook base prices, publication, icons, market groups, training multipliers, primary/secondary attributes, up to six prerequisites and each race's Alpha limit. Zero Alpha levels require Omega; the normal five-level progression remains unchanged. New skills receive server-assigned IDs from a reserved range, checked against installed types and retained custom identities.
 
 The editor has three sections: **Identity & training**, **Bonuses**, and **Requirements & access**. Switching sections retains draft values. The save/discard controls and draft/publication status stay visible while scrolling the form. The status distinguishes unsaved edits, a saved draft ready to publish, a published package awaiting restart, and changes active on the server. **Skillbook appearance and market** holds the optional icon and market-group fields. **Publish saved changes to game clients** expands the packaging controls above the editor.
