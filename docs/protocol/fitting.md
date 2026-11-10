@@ -2,6 +2,74 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## T2 subcapital hull admission, November 9, 2026
+
+All **130 published Tech II subcapital hulls** in build **3662168** now support station assembly, boarding, fitting,
+flight and saved ownership, including special editions. The original 235-hull set remains, for 365 admitted hulls.
+Capital hulls, including jump freighters/lancers/command carriers, and T3 remain excluded. Acquisition and production
+remain independent of flight admission.
+
+The typed fitting graph applies supported earned ship/specialization bonuses, native base defenses, fitting reductions,
+weapons, propulsion, tackle, remote support, probes, mining and combat-drone traits. T2 drone-bay hulls use the existing
+combat-drone controller. Existing assault damage controls gain their eligible hulls. Hull-wide heat selectors and cloak
+delay/velocity assignment effects 2252/2253/6385 have explicit adapters; cloak assignments accept only known source/target
+attribute pairs. Unknown hull modifiers still reject admission.
+
+No module family or previously rejected module profile is enabled. Missing bombs, bursts, bastion, interdiction equipment,
+micro-jump fields, cynos/portals/jump drives, mining/utility drones, Mercoxit, survey probes and special booster/security
+traits retain their separate gaps. Affected hulls remain partial in the coverage inventory. Fleet/maintenance bay access
+and refitting remain unavailable. Hull admission permits ordinary travel and supported fits without completing these roles.
+The coverage refresh also records the previously implemented 14 cloaks and four standard micro-jump drives; their module
+admission predates this milestone. The updated inventory marks 47 T2 hulls complete and 83 partial, with 231 admitted
+drone-bay hulls across both tech cohorts.
+
+References: [UniWiki ships](https://wiki.eveuniversity.org/Ships) and
+[T2 natural resistances](https://wiki.eveuniversity.org/Natural_resistances). Exact defenses, prerequisites and bonuses come
+from the pinned catalog, rather than a generic racial resistance formula. Existing Blue/Destiny formats are unchanged.
+`tools/Export-TechTwoHullCatalog.py` reproduces the 130-hull fixture and recursive skill/effect/attribute definitions from
+the read-only installed catalog. No client was launched.
+
+Automated validation: **801 distinct focused cases passed**, with no failures/skips in the three completed selections:
+131 initial T2 admission/lifecycle cases (200.78 s including runner startup), 99 existing small-hull bonus cases (225.31 s),
+and 572 affected cases (330.20 s). The admission audit appears in two selections and is counted once. The lifecycle selection
+preceded later diagnostic classification/evidence and test-helper corrections; the final affected selection covers those
+corrections. All 130 lifecycle cases use real fitting budgets. The full .NET suite was neither requested nor run.
+Tool/solution restore, the final zero-warning/error solution build (7.04 s), both Python policy suites (8 catalog cases in
+0.765 s and 9 formatting cases in 0.017 s), formatting/width verification for 1,555 files and diff checks passed. The final
+restore/format/build/policy/format-check sequence took 68.59 s. The catalog fixture reproduced byte-for-byte, and new
+documentation links/anchors and UTF-8 were checked. The last formatter change was layout only in the bonus test helper.
+
+The broader run exposed one **pre-existing performance failure** in
+`DroneEquipmentTests.NativeOmniCyclesKeepOnePaidRingRefreshBayAndSpaceAndLeaveWarmObserversWithoutSql(resident: True)`:
+the second warmed observer loop issues five SQL commands against an expectation of zero. An exact two-case replay on
+unchanged base `4e88e757` and this branch each produced one pass and the identical resident failure. The final 572-case
+selection explicitly excludes this method (both parameter cases); its assertion is unchanged. Baseline comparison evidence
+was retained locally, and the temporary baseline worktree was removed. This is a known validation limitation, not a T2 fix.
+
+Development corrected outdated T2-rejection expectations and added an existing cloak profile to the general hull-bonus
+test helper. Earlier broad runs were stopped on those concrete failures and are not reported as passes. One development
+build collided with a running test host; the later build completed after the host exited. Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.TechTwoHullTests.EveryPublishedTechTwoSubcapitalHasAnExplicitOperationalOrDeferredOwner`.
+Lifecycle cases use real budgets and existing world/session operations, including skill rejection, inventory, ammunition,
+saved damage, reopening, undocking and docking. No artificial fitting resources are added.
+
+Completed filters: `FullyQualifiedName~TechTwoHullTests` (initial lifecycle selection),
+`FullyQualifiedName~Eden.Protocol.Tests.Persistence.SmallHullBonusTests`, and:
+
+```text
+(FullyQualifiedName~TechTwoHullTests|FullyQualifiedName~FittingCapabilityRulesTests|FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~CatalogFittingReadTests|FullyQualifiedName~DogmaGraphTests|FullyQualifiedName~FittingConstraintTests|FullyQualifiedName~AssaultDamageControlTests|FullyQualifiedName~DroneRulesTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~DroneHullTests|FullyQualifiedName~DroneEquipmentTests|FullyQualifiedName~SpatialModule|FullyQualifiedName~OverloadFitting|FullyQualifiedName~ModuleFittingTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~Hosting)&FullyQualifiedName!~HullLifecycleRetainsSkillsResourcesFittingAndFlightAcrossRestart&FullyQualifiedName!~NativeOmniCyclesKeepOnePaidRingRefreshBayAndSpaceAndLeaveWarmObserversWithoutSql
+```
+
+Live acceptance: **Not performed; agent client testing is disabled.**
+
+Optional maintainer checks: inspect a T2 combat fit and a covert/transport fit; board/undock/redock with ordinary trained
+skills; verify a missing specialist module still rejects on its newly available hull.
+
+For simulated travelers, refresh the traffic snapshot with the updated build and restart the server to admit newly legal
+T2 observations. Every recorded module must already be supported; incomplete/unsupported fits still reject as a whole.
+Saved imported pilots retain their existing hulls/fits. Untouched generated Badgers may convert once while docked and
+undamaged under the existing traffic provisioning rules.
+
 Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.

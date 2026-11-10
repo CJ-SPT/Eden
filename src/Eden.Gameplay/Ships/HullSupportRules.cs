@@ -7,6 +7,7 @@ namespace Eden.Gameplay.Ships;
 public enum HullCohort
 {
     Special,
+    TechTwoSubcapital,
     Small,
     Combat,
     Utility,
@@ -24,6 +25,9 @@ public static class HullSupportRules
         && cohorts.Any(cohort =>
             cohort.TechLevel == hull.TechLevel && (cohort.Types.Contains(hull.TypeId) || cohort.Classes.Contains((int)hull.Class))
         );
+
+    public static bool IsTechTwoSubcapital(int typeId) =>
+        BuildContentPolicy.Current.Hulls.Cohorts.Any(c => c.Cohort == HullCohort.TechTwoSubcapital && c.Types.Contains(typeId));
 
     public static bool IsClass(HullClass hullClass, HullCohort cohort, int techLevel) =>
         BuildContentPolicy.Current.Hulls.Cohorts.Any(entry =>

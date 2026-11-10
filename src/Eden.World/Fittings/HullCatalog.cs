@@ -144,6 +144,7 @@ internal static class HullCatalog
         var selector = source.Func switch
         {
             "LocationGroupModifier" => ModifierSelector.Group,
+            "LocationModifier" => ModifierSelector.Location,
             "LocationRequiredSkillModifier" => ModifierSelector.RequiredSkill,
             "OwnerRequiredSkillModifier" => ModifierSelector.OwnerRequiredSkill,
             "ItemModifier" => ModifierSelector.Item,

@@ -140,6 +140,16 @@ public sealed class SmallHullBonusTests
         {
             PassiveCatalogFixture.LoadMining(f.CatalogPath);
         }
+        if (
+            modifiers.Any(m =>
+                m.SelectionId == (int)HullBonusSkill.Cloaking && m.Selector == ModifierSelector.RequiredSkill
+                || m.Selector == ModifierSelector.Group
+                    && m.SelectionId is (int)HullBonusEquipmentGroup.CloakingDevice or (int)HullBonusEquipmentGroup.MicroJumpDrive
+            )
+        )
+        {
+            PassiveCatalogFixture.LoadSpatialModules(f.CatalogPath);
+        }
         foreach (var probe in modifiers.Select(modifier => ProbeFor(modifier, stripMiner)).Distinct())
         {
             InventoryItem? module = null;
@@ -285,6 +295,8 @@ public sealed class SmallHullBonusTests
             ModifierSelector.Group => (HullBonusEquipmentGroup?)modifier.SelectionId switch
             {
                 HullBonusEquipmentGroup.ScanProbeLauncher => new(17938),
+                HullBonusEquipmentGroup.CloakingDevice => new(11370),
+                HullBonusEquipmentGroup.MicroJumpDrive => new(4383),
                 HullBonusEquipmentGroup.DataMiner => new(22175),
                 HullBonusEquipmentGroup.ProjectileWeapon => new(484),
                 HullBonusEquipmentGroup.TractorBeam => new(24348),
@@ -315,6 +327,7 @@ public sealed class SmallHullBonusTests
             ModifierSelector.RequiredSkill => (HullBonusSkill?)modifier.SelectionId switch
             {
                 HullBonusSkill.Astrometrics => new(17938),
+                HullBonusSkill.Cloaking => new(11370),
                 HullBonusSkill.Hacking => new(22175),
                 HullBonusSkill.Archaeology => new(22177),
                 HullBonusSkill.SmallHybridTurret => new(561),

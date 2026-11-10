@@ -31,7 +31,8 @@ public static class DroneRules
     // Initial Eden policy; Tranquility's private NPC target-selection AI is not available.
     public const double NpcRetaliationChance = .25;
 
-    public static bool SupportsHull(int typeId) => BuildContentPolicy.Current.DroneHullTypes.Contains(typeId);
+    public static bool SupportsHull(int typeId) =>
+        BuildContentPolicy.Current.DroneHullTypes.Contains(typeId) || Eden.Gameplay.Ships.HullSupportRules.IsTechTwoSubcapital(typeId);
 
     public static bool SupportsOwnerSkill(int skill) =>
         (DroneSkill)skill

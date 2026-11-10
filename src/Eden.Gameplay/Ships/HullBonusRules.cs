@@ -49,6 +49,13 @@ public enum HullCapability
     MiningCrystals,
     DeepCoreMining,
     RemoteElectronicAssistance,
+    Overheating,
+    Bombs,
+    SurveyProbes,
+    SecurityStatus,
+    BoosterTraits,
+    ShipModes,
+    MicroJumpFields,
 }
 
 // Catalog selectors are IDs, independent of a pilot's trained level.
@@ -66,6 +73,14 @@ public enum HullBonusSkill
     MissileLauncherOperation = 3319,
     Leadership = 3348,
     ShieldCommand = 3350,
+    SkirmishCommand = 3349,
+    InformationCommandSpecialist = 20495,
+    BombDeployment = 28073,
+    Survey = 3551,
+    MicroJumpDriveOperation = 4385,
+    DefenderMissiles = 3323,
+    HullUpgrades = 3394,
+    ShieldUpgrades = 3420,
     MiningForeman = 22536,
     InformationCommand = 20494,
     ExpeditionCommand = 89611,
@@ -119,6 +134,13 @@ public enum HullBonusEquipmentGroup
     RemoteShieldBooster = 41,
     WarpScrambler = 52,
     ProjectileWeapon = 55,
+    RocketLauncher = 507,
+    LightMissileLauncher = 509,
+    PropulsionModule = 46,
+    Microwarpdrive = 475,
+    MicroJumpDrive = 1189,
+    StasisGrappler = 1672,
+    Booster = 303,
     StasisWeb = 65,
     RemoteCapacitorTransmitter = 67,
     EnergyNosferatu = 68,
@@ -154,6 +176,9 @@ public sealed record HullEffectCapability(int EffectId, HullCapability Capabilit
 
 public static class HullBonusRules
 {
+    // Build 3662168 CONCORD hull effect 6868 selects this character standing-gain attribute.
+    private const int FastTalkPercentageAttribute = 359;
+
     // These role fittings have no modifierInfo entries in the pinned hull effects.
     public static IReadOnlyList<HullCapability> DeferredRoles(int typeId, HullClass hullClass = HullClass.Unclassified)
     {
@@ -164,7 +189,16 @@ public static class HullBonusRules
             TechOneHullType.Cenotaph or TechOneHullType.Tholos => [HullCapability.BreacherPods],
             _ => [],
         };
-        if (hullClass == HullClass.MiningBarge)
+        roles = hullClass switch
+        {
+            HullClass.Interdictor or HullClass.HeavyInterdictionCruiser => [.. roles, HullCapability.Interdiction],
+            HullClass.CommandShip => [.. roles, HullCapability.CommandBursts],
+            HullClass.CommandDestroyer => [.. roles, HullCapability.CommandBursts, HullCapability.MicroJumpFields],
+            HullClass.Marauder => [.. roles, HullCapability.ShipModes],
+            HullClass.BlackOps => [.. roles, HullCapability.CynosuralFields],
+            _ => roles,
+        };
+        if (hullClass is HullClass.MiningBarge or HullClass.Exhumer)
         {
             roles = [.. roles, HullCapability.MiningCrystals, HullCapability.DeepCoreMining];
         }
@@ -184,9 +218,12 @@ public static class HullBonusRules
     public static HullCapability Capability(HullBonusTarget target) =>
         target.Selector switch
         {
+            ModifierSelector.Location when target.Domain == ModifierDomain.Ship && target.Attribute == DogmaAttributeId.HeatDamage =>
+                HullCapability.Overheating,
             ModifierSelector.Item => target.Domain switch
             {
-                ModifierDomain.Ship => HullCapability.HullAttributes,
+                ModifierDomain.Ship or ModifierDomain.Item => HullCapability.HullAttributes,
+                ModifierDomain.Character when (int)target.Attribute == FastTalkPercentageAttribute => HullCapability.SecurityStatus,
                 ModifierDomain.Character
                     when target.Attribute is DogmaAttributeId.DroneControlDistance or DogmaAttributeId.MaxActiveDrones =>
                     HullCapability.CombatDrones,
@@ -195,6 +232,8 @@ public static class HullBonusRules
             },
             ModifierSelector.OwnerRequiredSkill => target.Selection switch
             {
+                (int)HullBonusSkill.BombDeployment => HullCapability.Bombs,
+                (int)HullBonusSkill.Survey => HullCapability.SurveyProbes,
                 int skill when MissileDefinitions.SupportsOwnerSkill(skill) => HullCapability.Missiles,
                 (int)HullBonusSkill.Science or (int)HullBonusSkill.Astrometrics => HullCapability.Probes,
                 (int)HullBonusSkill.PropulsionJamming
@@ -217,12 +256,18 @@ public static class HullBonusRules
                 HullBonusEquipmentGroup.TractorBeam => HullCapability.TractorBeams,
                 HullBonusEquipmentGroup.CloakingDevice => HullCapability.Cloaking,
                 HullBonusEquipmentGroup.CapitalFlexShieldHardener => HullCapability.CapitalFlexShieldHardening,
+                HullBonusEquipmentGroup.PropulsionModule or HullBonusEquipmentGroup.Microwarpdrive => HullCapability.Propulsion,
+                HullBonusEquipmentGroup.MicroJumpDrive => HullCapability.MicroJumpDrives,
+                HullBonusEquipmentGroup.StasisGrappler => HullCapability.Interdiction,
+                HullBonusEquipmentGroup.Booster => HullCapability.BoosterTraits,
                 HullBonusEquipmentGroup.ProjectileWeapon => HullCapability.Turrets,
                 HullBonusEquipmentGroup.WarpScrambler or HullBonusEquipmentGroup.StasisWeb => HullCapability.Tackle,
                 HullBonusEquipmentGroup.ArmorPlate => HullCapability.ArmorPlates,
                 HullBonusEquipmentGroup.ShieldExtender => HullCapability.ShieldExtenders,
                 HullBonusEquipmentGroup.ReinforcedBulkhead => HullCapability.ReinforcedBulkheads,
-                HullBonusEquipmentGroup.CruiseMissileLauncher
+                HullBonusEquipmentGroup.RocketLauncher
+                or HullBonusEquipmentGroup.LightMissileLauncher
+                or HullBonusEquipmentGroup.CruiseMissileLauncher
                 or HullBonusEquipmentGroup.TorpedoLauncher
                 or HullBonusEquipmentGroup.HeavyMissileLauncher
                 or HullBonusEquipmentGroup.RapidLightMissileLauncher
@@ -273,7 +318,13 @@ public static class HullBonusRules
                 HullBonusSkill.CapacitorEmissionSystems => HullCapability.EnergyWarfare,
                 HullBonusSkill.WeaponDisruption or HullBonusSkill.TargetPainting or HullBonusSkill.ElectronicWarfare =>
                     HullCapability.ElectronicWarfare,
+                HullBonusSkill.BombDeployment => HullCapability.Bombs,
+                HullBonusSkill.DefenderMissiles => HullCapability.Interdiction,
+                HullBonusSkill.HullUpgrades or HullBonusSkill.ShieldUpgrades => HullCapability.Overheating,
+                HullBonusSkill.MicroJumpDriveOperation => HullCapability.MicroJumpDrives,
                 HullBonusSkill.Leadership
+                or HullBonusSkill.SkirmishCommand
+                or HullBonusSkill.InformationCommandSpecialist
                 or HullBonusSkill.ShieldCommand
                 or HullBonusSkill.MiningForeman
                 or HullBonusSkill.InformationCommand
@@ -333,7 +384,10 @@ public static class HullBonusRules
         )
         || equipmentGroup != (int)HullBonusEquipmentGroup.BurstJammer
             && capability
-                is HullCapability.HullAttributes
+                is HullCapability.Overheating
+                    or HullCapability.Cloaking
+                    or HullCapability.MicroJumpDrives
+                    or HullCapability.HullAttributes
                     or HullCapability.Turrets
                     or HullCapability.Missiles
                     or HullCapability.OreMining

@@ -23,6 +23,10 @@ internal sealed record ShipContentRoadmap(
     internal static ShipContentMilestone ForRole(HullCapability role) =>
         role switch
         {
+            HullCapability.MicroJumpFields => ShipContentMilestone.FleetServices,
+            HullCapability.ShipModes => ShipContentMilestone.CapitalModes,
+            HullCapability.Overheating => ShipContentMilestone.Overheating,
+            HullCapability.Bombs => ShipContentMilestone.AreaWeaponsAndInterdiction,
             HullCapability.CombatDrones => ShipContentMilestone.CombatDrones,
             HullCapability.MiningDrones => ShipContentMilestone.Mining,
             HullCapability.UtilityDrones => ShipContentMilestone.UtilityDrones,
