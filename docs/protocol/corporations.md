@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Public corporation Show Info, November 9, 2026](#public-corporation-show-info-november-9-2026)
+
 - [Corporation offices and shared storage, November 6, 2026](#corporation-offices-and-shared-storage-november-6-2026)
 
 - [Corporation share holdings and native wallet panels](#corporation-share-holdings-and-native-wallet-panels)
@@ -24,6 +26,51 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Public corporation Show Info, November 9, 2026
+
+The maintainer's screenshot reports `Invalid Packet Destination: Unsupported local call corpmgr.GetPublicInfo`.
+In pinned build **3662168**, `CorporationInfoWindow.reconstruct_info_window` requests this reply before constructing
+the window. Its header and caption read `corporationID`, `ceoID`, `allianceID`, `stationID`, `description` and `deleted`.
+The fallback caption path also assigns `shares` on the reply. `WarPermit.GetWarPermitStatusForCorp` reads `allowWar`;
+the bounty window and kill-right display also read `allianceID`.
+
+`CorporationPublicInfoHandler` now serves that call as a named public `utillib.KeyVal`, using existing saved player
+corporation and NPC catalog readers. Any selected pilot may read another corporation without membership or roles.
+The response includes identity, ticker, CEO, headquarters, description, URL, tax, shares and member count; NPC
+descriptions remain localized by the client. `deleted` and `allowWar` are false, and `allianceID` is None, matching
+Eden's current corporation capabilities. NPC member count retains the existing directory baseline of zero and player
+shares retain the existing corporation reply's initial-share baseline. This does not add alliances, dissolution or
+war declarations. Private roles, division names and wallet contents are excluded. Unknown corporations, invalid IDs,
+extra arguments and unexpected keywords fail without mutation or notifications. The router preserves selection
+gating and accepts its usual `machoVersion` metadata.
+
+Sources: inert inspection of the original pinned archive
+`E:/EdenDev/3662168/.eden-original-code.ccp`, SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, at the call sites above.
+The installed client archives contain overlays; inspection was verified against the preserved original.
+[EVE University's corporation window overview](https://wiki.eveuniversity.org/Neocom#Corporation) describes public
+corporation information. Existing KeyVal/Unicode/None/boolean adapters reuse
+[Carbon Blue Marshal.cpp revision fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+No codec, gameplay rule or saved schema changes are required.
+
+**Automated validation:** development started with
+`.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationPublicInfoTests.ShowInfoReturnsPublicFieldsThroughTheSessionForNpcAndOtherPlayerCorporations'`.
+The initial run passed the player case and failed the NPC case because the test catalog lacked NPC metadata; after
+adding that fixture metadata, both cases passed (build **20.27s**, tests **17.87s**). Final tool/solution restore and
+solution build passed with zero warnings/errors. Filter
+`FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~HomeStationServiceTests`
+passed **41 tests in 22s**, including five new cases covering real session replies, repeated NPC/other-player reads,
+exact header fields, Unicode descriptions, saved-description refresh, selection gating, malformed/unknown IDs,
+keyword rejection and unchanged membership. Both Python suites passed (**8 catalog**, **9 formatting**); formatting
+verified **1,505 files**, line-width checks passed, and documentation links/whitespace and diff checks passed. The
+final required sequence took **90.60s**. No full .NET suite was run; native rendering remains unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Open Corporation Show Info for an NPC corporation and a player corporation; confirm
+the header, headquarters and description render without the reported dialog. Other information tabs may have
+independent service requirements.
 
 ## Corporation offices and shared storage, November 6, 2026
 

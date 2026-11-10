@@ -46,6 +46,8 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Public corporation Show Info, November 9, 2026](protocol/corporations.md#public-corporation-show-info-november-9-2026)
+
 - [Pooled protocol buffers and selective libraries, November 9, 2026](protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)
 
 - [Probe launcher undocking crash correction, November 9, 2026](protocol/information.md#probe-launcher-undocking-crash-correction-november-9-2026)
