@@ -791,3 +791,59 @@ Existing complete maintenance/two-observer and detached-checkpoint assertions al
 
 **Optional maintainer checks.** Refresh Population after visiting a new system or applying a lower limit and restarting; compare
 saved/paused counts with the pilots visible in the current system.
+
+## Global population preparation on restart — November 9, 2026
+
+The station-traffic multiplier now prepares all catalog systems on normal server restart, rather than waiting for human visits.
+`Program` invokes `WorldInitialization.PrepareCapsuleers` after schema/configuration/renewal reconciliation and before opening the
+resident world or listeners. Offline migration, configuration authoring, password changes and redemption administration retain
+their existing storage-only initialization. Tests exercise the same preparation phase used by normal host startup.
+
+The stopped-world operation creates/preserves the world seed, reactivates eligible saved pilots before new grants, and walks
+systems in stable identity order. Existing agent slots, identities, ships, wallets, cargo, funded work and permanent losses
+remain authoritative. Lower limits retain excess agents in `WorldCapsuleerSuspension`; restored limits reuse those agents.
+Only missing eligible slots receive a founder grant. New global traffic starts with a saved initial journey, allowing ordinary
+background travel while humans are in unrelated systems; it does not require a first visit to enroll. Existing journeys and
+funded progress are preserved. Miners retain their separate switch and one-per-system limit. Saved gate
+visitor ordinals obey the restart policy; new watched-gate encounters retain their existing preparation path.
+
+Each community expansion commits independently and atomically with its saved metadata. An interruption preserves completed
+communities and rolls back the failed community's assets, payments and identities. Retry fills the missing slots. Cancellation
+and bounded preparation also retain committed work. The runtime rejects global reconciliation while a resident world owns the
+save. There is no new absence reward, background ratting, ship replacement or native movement rule.
+
+Provisioning policy version 6 and the shared fingerprint include catalog revision, seed, population policy and traffic snapshot
+identity. Unchanged complete rosters are skipped on subsequent restarts. Missing supported fits or depleted mining resources
+retain a deferred fingerprint and can retry on restart or system preparation. Startup shares catalog/world contexts across
+communities, clears tracked assets after each commit and loads name/imported-character reservations once. Failed attempts discard
+that reservation view; retries rebuild it from committed rows. This avoids repeatedly loading the entire saved roster for every
+new imported pilot and preserves unique imported identities. The editor now states the global restart scope explicitly.
+
+Gameplay reference: [EVE University hauling](https://wiki.eveuniversity.org/Hauling). Existing travel, hull restrictions and
+retaliation remain unchanged; movement retains the pinned [Carbon Ball.cpp revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp).
+
+**Automated validation.** Development began with
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerGlobalPopulationTests.GlobalRestartFillsUnvisitedSystemRostersWithoutObservers`,
+which failed against the old no-op global reconciler. Tests cover unvisited systems at 10×, all-catalog metadata, lowered/raised
+limits, exact possessions/identity reuse, an actual permanent ship loss, partial rollback/reopen, cancellation, bounded retries,
+imported identity uniqueness, snapshot changes, and cached restarts without fitting work. Development corrected a fixture that
+selected a legitimately zero-traffic system and duplicate imported kill IDs. A broader run passed 358 cases and exposed three
+older chat-test assertions that still expected per-pilot join events. Those now consume the established complete roster format;
+the exact gate-arrival/miner-restart follow-up and new unobserved-travel case passed together.
+
+After integration onto main `9735f197`, tool/solution restore and solution build passed with zero warnings/errors (5.52 seconds).
+The final affected run passed **375 tests**, with no skips, in **223.56 seconds** including runner startup (feature build 1.10 seconds).
+Both Python policy suites passed: eight catalog cases in 0.599 seconds and nine formatting cases in 0.014 seconds. Formatting
+checked 1,568 files; the 140-character and diff checks passed. No full .NET suite was requested or run.
+
+Final filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~ServerServicesTests|FullyQualifiedName~MotionProjectionTests`.
+
+Cached global preparation asserts zero fitting calculations, at most 16 SQL commands and at most four connections, independently
+of catalog-size loops. Existing complete maintenance/observer-frame and detached-checkpoint assertions also passed. These are
+automated synthetic-fixture results, not a full-galaxy capacity measurement; the running world was not changed by the agent.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Restart with a changed traffic multiplier and inspect the global preparation log and Population
+page before visiting another system; lower and restore the multiplier across restarts to observe retained pilots returning.

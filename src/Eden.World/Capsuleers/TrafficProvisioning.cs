@@ -16,6 +16,17 @@ namespace Eden.World.Capsuleers;
 
 internal static class TrafficProvisioning
 {
+    // Startup owns the stopped world. A failed community discards this reservation view;
+    // the next attempt reloads only committed identities and never reserves a lost grant.
+    internal sealed record Reservations(HashSet<long> Characters, HashSet<string> Names)
+    {
+        internal static Reservations Load(WorldDbContext world) =>
+            new(
+                world.Set<SavedTrafficIdentity>().Select(value => value.CharacterId).ToHashSet(),
+                world.Pilots.Select(value => value.Name).ToHashSet(StringComparer.OrdinalIgnoreCase)
+            );
+    }
+
     internal static bool HasFallback(CatalogDbContext catalog) =>
         catalog.FittingType(HaulingRules.BadgerType) is not null && CapsuleerProvisioningCatalog.FreightOre(catalog) != 0;
 
@@ -27,7 +38,8 @@ internal static class TrafficProvisioning
         int system,
         int slot,
         CapsuleerTrafficRoute route,
-        double cargoVolume = 0
+        double cargoVolume = 0,
+        Reservations? reservations = null
     )
     {
         if (database.Traffic.Profiles.Count == 0)
@@ -40,8 +52,8 @@ internal static class TrafficProvisioning
         bool visitsHighSecurity = route.Systems.Any(id =>
             TrafficRules.SecurityBand(security.GetValueOrDefault(id)) == TrafficSecurityBand.High
         );
-        var reserved = world.Set<SavedTrafficIdentity>().Select(value => value.CharacterId).ToHashSet();
-        var names = world.Pilots.Select(value => value.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var reserved = reservations?.Characters ?? world.Set<SavedTrafficIdentity>().Select(value => value.CharacterId).ToHashSet();
+        var names = reservations?.Names ?? world.Pilots.Select(value => value.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var roster = (
             from agent in world.Set<SavedCapsuleerAgent>()
             join pilot in world.Pilots on agent.PilotId equals pilot.Id

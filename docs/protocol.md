@@ -22,6 +22,9 @@ records fit-aware pirate encounters, owned loot, paid shopping and starter corre
 
 [Configurable simulated-pilot population](protocol/capsuleers.md#configurable-simulated-pilot-population--november-9-2026)
 records editor controls, saved suspension, retained possessions and reuse when limits increase.
+[Global restart preparation](protocol/capsuleers.md#global-population-preparation-on-restart--november-9-2026)
+now fills station-traffic/miner rosters across the catalog before logins, with retained-pilot reuse and per-community recovery.
+
 
 [Gate-area traffic stalls](protocol/performance.md#gate-area-traffic-stalls-november-9-2026) records tenfold-population
 diagnostics, indexed resupply inputs, batched resident movement projection and automated rollback/restart coverage.

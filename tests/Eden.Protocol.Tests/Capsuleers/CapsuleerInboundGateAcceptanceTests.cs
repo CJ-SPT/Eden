@@ -199,12 +199,20 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
                 {
                     firstLocalArrivals.Add(joined.Pilot.Id);
                 }
+                else if (delivery.Event is ChatEvent.Roster roster)
+                {
+                    firstLocalArrivals.UnionWith(roster.Pilots.Select(pilot => pilot.Id));
+                }
             }
             while (secondChat.Events.TryRead(out var delivery))
             {
                 if (delivery.Event is ChatEvent.Presence { Available: true } joined)
                 {
                     secondLocalArrivals.Add(joined.Pilot.Id);
+                }
+                else if (delivery.Event is ChatEvent.Roster roster)
+                {
+                    secondLocalArrivals.UnionWith(roster.Pilots.Select(pilot => pilot.Id));
                 }
             }
             foreach (long id in candidates)

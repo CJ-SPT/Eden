@@ -159,6 +159,15 @@ internal static class Program
                 ? null
                 : new(testingMarket, !economyWorld, npcStock);
             WorldInitialization.Initialize(database, economy: startingEconomy, economics: economicConfiguration);
+            if (Value("--grant-redeem") is null && Value("--set-account-password") is null)
+            {
+                using var populationPhase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.capsuleerPopulation");
+                var population = WorldInitialization.PrepareCapsuleers(database);
+                ServerLog.Console.Information(
+                    $"Global pilot preparation: {population.RegisteredSystems} systems, "
+                        + $"{population.CreatedCommunities} rosters expanded, {population.PendingCommunities} deferred."
+                );
+            }
             ServerLog.Console.Information(
                 $"World reconciliation completed in {Stopwatch.GetElapsedTime(reconciliationStarted).TotalSeconds:F2}s."
             );

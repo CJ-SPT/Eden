@@ -52,7 +52,7 @@ public interface ICapsuleerProvisioning
 
 public static class CapsuleerProvisioningRules
 {
-    public const int Version = 5;
+    public const int Version = 6;
     public const int StaggerMilliseconds = 30_000;
     public const double MinimumSecurity = 0.45;
     private static readonly string[] GivenNames =

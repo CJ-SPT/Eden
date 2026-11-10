@@ -154,6 +154,18 @@ public static class WorldInitialization
         LiveCombatRuntime.Find(database.Path)?.WarmDrones();
     }
 
+    // The host calls this after migration/configuration/renewal and before opening
+    // resident simulation or listeners. Offline migration/authoring opens can initialize
+    // storage without provisioning pilots.
+    public static Eden.Gameplay.Capsuleers.CapsuleerProvisioningTurn PrepareCapsuleers(
+        WorldDatabase database,
+        TimeProvider? clock = null,
+        CancellationToken cancellationToken = default
+    ) =>
+        new Eden.World.Capsuleers.CapsuleerProvisioner(database, clock ?? TimeProvider.System).Reconcile(
+            cancellationToken: cancellationToken
+        );
+
     // Explicit development/test open: validate and migrate before creating a reader.
     public static SqliteWorld Open(string path) => Open(new WorldDatabase(path));
 

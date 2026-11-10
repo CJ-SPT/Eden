@@ -92,7 +92,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 {
                     delivered.Add(delivery.Event);
                 }
-                Assert.Contains(delivered, e => e is ChatEvent.Presence { Available: true } presence && presence.Pilot.Id == actor);
+                Assert.Contains(delivered, e => e is ChatEvent.Roster roster && roster.Pilots.Any(pilot => pilot.Id == actor));
                 var space = host.GetRequiredService<SharedSpace>();
                 foreach (var observer in new[] { a, b })
                 {

@@ -48,6 +48,7 @@ public sealed class AdministrationTests
         Assert.Contains("Station traffic density (×)", html);
         Assert.Contains("Visitors per watched gate", html);
         Assert.Contains("without deleting them", html);
+        Assert.Contains("prepared globally on restart", html);
         var state = (await fixture.Client.GetFromJsonAsync<ConfigurationState>("/api/admin/configuration"))!;
         var policy = new CapsuleerPopulationPolicy(false, false, false, 0.5m, 2);
         var draft = state.Active.Draft with { Settings = state.Active.Draft.Settings with { Capsuleers = policy } };

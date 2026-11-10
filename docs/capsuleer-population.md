@@ -10,16 +10,23 @@ allow simulated miners, choose station traffic density (**0–10×**, default **
 These are simulated capsuleer controls; the adjacent NPC switches manage pirates, empire forces and mining fleets.
 
 Reducing a limit despawns and pauses excess saved pilots without deleting their identities, ships, possessions, losses or
-activity. Increasing it reuses the same eligible saved pilots before creating missing roster slots as systems are visited.
+activity. Increasing it reuses the same eligible saved pilots before creating missing roster slots throughout the galaxy at restart.
 Station traffic and gate visitors have independent limits. A zero station density can still admit configured gate visitors;
 the main population switch pauses both, including miners. Reciprocal gate observers share visitor identities.
 Suspended jobs retain their remaining timing and cannot produce offline rewards or duplicate starter grants.
 See [configuration details](world-configuration.md#autonomous-population).
 
+The station-traffic multiplier applies globally on normal server restart, including systems nobody has visited. It scales
+each system's geography-based traffic roster; miners use their separate enable switch and remain limited to one per eligible
+system. New gate visitors are prepared when a gate is watched. Startup reuses saved slots first, fills only missing slots and
+skips unchanged completed rosters. A failed community expansion rolls back that community; completed communities survive and
+are reused on the next attempt. Initial expansion can take longer than an unchanged restart.
+
+
 The **Population** page shows the active settings and separates saved, enabled, paused, scheduled and watched-system pilots.
-Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Current prepared-system counts
-exclude older catalog/settings records, which are retained and marked to refresh on a visit. Use **Refresh population** while
-pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
+Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Startup prepares all catalog systems
+against the active settings and traffic snapshot before admitting logins. Deferred systems retain a pending-preparation label
+and retry on a visit or another restart. Use **Refresh population** while pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
 

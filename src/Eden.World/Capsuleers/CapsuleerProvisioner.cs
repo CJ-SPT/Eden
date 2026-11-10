@@ -26,12 +26,72 @@ namespace Eden.World.Capsuleers;
 [Injectable]
 internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeProvider clock) : ICapsuleerProvisioning
 {
+    private TrafficProvisioning.Reservations? _startupReservations;
+
     public CapsuleerProvisioningTurn Reconcile(int maximumCommunities = int.MaxValue, CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(maximumCommunities);
         cancellationToken.ThrowIfCancellationRequested();
-        // Encounter populations are created only when a human visits a system.
-        return new(0, 0, 0);
+        if (LiveWorld.Find(database.Path) is not null)
+        {
+            throw new InvalidOperationException("Global pilot preparation requires a stopped world.");
+        }
+        lock (database.MotionLock)
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            using WorldDbContext world = new(database.Path);
+            world.Database.OpenConnection();
+            var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
+            if (state is null)
+            {
+                state = new() { Id = 1, WorldSeed = BitConverter.ToInt64(RandomNumberGenerator.GetBytes(sizeof(long))) & long.MaxValue };
+                world.Add(state);
+                world.SaveChanges();
+            }
+            // Reuse eligible saved pilots before creating any new roster slots.
+            CapsuleerPopulationActivation.Apply(database, clock);
+            world.ChangeTracker.Clear();
+            string fingerprint = Fingerprint(database, catalog, state.WorldSeed, world.Settings.Capsuleers);
+            var completed = world
+                .Set<SavedCapsuleerSystem>()
+                .AsNoTracking()
+                .Where(row => row.PolicyVersion == CapsuleerProvisioningRules.Version && row.CatalogFingerprint == fingerprint)
+                .Select(row => row.SystemId)
+                .ToHashSet();
+            var systems = catalog.Definitions.Systems.Keys.Order().Where(system => !completed.Contains(system)).ToArray();
+            if (systems.Length == 0 || maximumCommunities == 0)
+            {
+                return new(catalog.Definitions.Systems.Count, 0, systems.Length);
+            }
+            int processed = 0;
+            int created = 0;
+            int deferred = 0;
+            _startupReservations = TrafficProvisioning.Reservations.Load(world);
+            try
+            {
+                foreach (int system in systems.Take(maximumCommunities))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    try
+                    {
+                        var turn = Provision(system, catalog, world, globalStartup: true);
+                        created += turn.CreatedCommunities;
+                        deferred += turn.PendingCommunities;
+                        processed++;
+                    }
+                    finally
+                    {
+                        // Keep startup memory bounded to one community's tracked assets.
+                        world.ChangeTracker.Clear();
+                    }
+                }
+            }
+            finally
+            {
+                _startupReservations = null;
+            }
+            return new(catalog.Definitions.Systems.Count, created, systems.Length - processed + deferred);
+        }
     }
 
     internal CapsuleerProvisioningTurn EnsureSystem(int systemId)
@@ -46,6 +106,11 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         using WorldDbContext world = new(database.Path);
+        return Provision(systemId, catalog, world);
+    }
+
+    private CapsuleerProvisioningTurn Provision(int systemId, CatalogDbContext catalog, WorldDbContext world, bool globalStartup = false)
+    {
         using var transaction = world.Database.BeginTransaction();
         var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
         if (state is null)
@@ -122,7 +187,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         {
             world.SaveChanges();
             transaction.Commit();
-            return new(1, 0, 0);
+            return new(1, 0, awaitingOre ? 1 : 0);
         }
         var population = world.Set<SavedCapsuleerPopulation>().Find(systemId);
         if (population is null)
@@ -139,23 +204,47 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         }
         EnsureAccount(world);
         world.SaveChanges();
+        bool created = false;
+        bool pending = awaitingOre;
         if (addMiner)
         {
-            CreateFounder(world, catalog, mining, origins, CapsuleerCareer.Mining, seed, 0, null, HaulerEncounterOpening.Docked);
+            bool added =
+                CreateFounder(world, catalog, mining, origins, CapsuleerCareer.Mining, seed, 0, null, HaulerEncounterOpening.Docked)
+                is not null;
+            created |= added;
+            pending |= !added;
         }
         int offset = (int)(
             CapsuleerProvisioningRules.Seed(seed, systemId, CapsuleerCareer.Hauling) % (ulong)Math.Max(1, traffic.Routes.Length)
         );
-        bool created = addMiner;
         foreach (int slot in newSlots)
         {
             var opening = CapsuleerEncounterRules.TrafficOpening(seed, systemId, slot, count);
             var route = SelectRoute(catalog, traffic, systemId, slot, opening, offset);
             var site = mining with { HomeStationId = route.SourceStationId, DestinationStationId = route.DestinationStationId };
-            created |= CreateFounder(world, catalog, site, origins, CapsuleerCareer.Hauling, seed, slot, route, opening) is not null;
+            TrafficJourney? journey = globalStartup
+                ? new(
+                    TrafficJourneyRules.HomeKind(slot, traffic.GateCount, traffic.StationCount),
+                    route.SourceStationId,
+                    route.SourceStationId,
+                    route.DestinationStationId,
+                    route.Systems,
+                    0
+                )
+                : null;
+            bool added =
+                CreateFounder(world, catalog, site, origins, CapsuleerCareer.Hauling, seed, slot, route, opening, initialJourney: journey)
+                is not null;
+            created |= added;
+            pending |= !added;
         }
+        if (pending)
+        {
+            summary.CatalogFingerprint = "";
+        }
+        world.SaveChanges();
         transaction.Commit();
-        return new(1, created ? 1 : 0, 0);
+        return new(1, created ? 1 : 0, pending ? 1 : 0);
     }
 
     internal static string Fingerprint(
@@ -169,7 +258,9 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         string settingsIdentity = FormattableString.Invariant(
             $"{policy.Enabled}|{policy.Miners}|{policy.TrafficMultiplier}|{policy.GateVisitors}"
         );
-        return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|{settingsIdentity}";
+        string trafficIdentity = database.Traffic.Manifest?.Identity ?? "fallback";
+        return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|"
+            + $"{settingsIdentity}|{trafficIdentity}";
     }
 
     private static CapsuleerTrafficRoute SelectRoute(
@@ -243,14 +334,24 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         HaulerEncounterOpening opening,
         WatchedTrafficGate? watchedGate = null,
         bool sourceObserved = false,
-        int visitor = 0
+        int visitor = 0,
+        TrafficJourney? initialJourney = null
     )
     {
         long pilot = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
         long ship = InventoryPersistence.NextId(world);
         var trafficProfile =
             career == CapsuleerCareer.Hauling
-                ? TrafficProvisioning.Select(database, world, catalog, seed, site.SystemId, slot, route!)
+                ? TrafficProvisioning.Select(
+                    database,
+                    world,
+                    catalog,
+                    seed,
+                    site.SystemId,
+                    slot,
+                    route!,
+                    reservations: _startupReservations
+                )
                 : null;
         if (career == CapsuleerCareer.Hauling && trafficProfile is null && !TrafficProvisioning.HasFallback(catalog))
         {
@@ -273,7 +374,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             do
             {
                 name = CapsuleerProvisioningRules.Name(seed, site.SystemId, career, slot, attempt++);
-            } while (world.Pilots.Any(p => EF.Functions.Collate(p.Name, "NOCASE") == name));
+            } while (_startupReservations?.Names.Contains(name) ?? world.Pilots.Any(p => EF.Functions.Collate(p.Name, "NOCASE") == name));
         }
         int gender = (int)(roleSeed % 2);
         CharacterRules.ValidateOrigin(
@@ -434,6 +535,10 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             var work = watchedGate is null
                 ? CapsuleerTrafficFlight.Opening(world, catalog, docked, route!, site.SystemId, opening, elapsed, now)
                 : CapsuleerTrafficFlight.OpeningInbound(world, catalog, docked, route!, watchedGate, elapsed, now, sourceObserved, visitor);
+            if (initialJourney is not null)
+            {
+                work = work with { Journey = initialJourney };
+            }
             action = work.Activity == HaulerActivity.Docked ? CapsuleerAction.Trade : CapsuleerAction.Arrival;
             if (watchedGate is not null)
             {
@@ -465,6 +570,11 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 action
             )
         );
+        _startupReservations?.Names.Add(name);
+        if (trafficProfile is not null)
+        {
+            _startupReservations?.Characters.Add(trafficProfile.CharacterId);
+        }
         return pilot;
     }
 }

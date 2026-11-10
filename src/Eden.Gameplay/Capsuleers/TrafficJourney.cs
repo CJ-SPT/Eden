@@ -26,6 +26,8 @@ public static class TrafficJourneyRules
     public const int VisitorSlotStride = 100_000_000;
     public const int RegionalMinimumJumps = 3;
     public const int LongDistanceMinimumJumps = 8;
+    private const int BusyGateCount = 4;
+    private const int BusyStationCount = 4;
     private const int LocalLayoverSeconds = 120;
     private const int VisitorLayoverSeconds = 600;
 
@@ -36,6 +38,12 @@ public static class TrafficJourneyRules
             1 => busy ? TrafficJourneyKind.Regional : TrafficJourneyKind.Local,
             _ => busy ? TrafficJourneyKind.LongDistance : TrafficJourneyKind.Regional,
         };
+
+    public static TrafficJourneyKind HomeKind(int slot, int gates, int stations)
+    {
+        var kind = Kind(slot, gates >= BusyGateCount || stations >= BusyStationCount);
+        return kind == TrafficJourneyKind.Local && stations == 0 ? TrafficJourneyKind.Regional : kind;
+    }
 
     public static int MaximumDistance(TrafficJourneyKind kind) =>
         kind switch

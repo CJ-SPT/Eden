@@ -8,7 +8,7 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed class CapsuleerProvisioningScaleTests
 {
     [Fact]
-    public void CatalogSizeDoesNotProvisionUnvisitedCommunities()
+    public void GlobalRestartPreparesCatalogCommunitiesWithoutHumanVisits()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
         CapsuleerProvisioningTests.AddDestinationOre(f.Database);
@@ -22,9 +22,10 @@ public sealed class CapsuleerProvisioningScaleTests
         Assert.Empty(world.Set<SavedCapsuleerAgent>());
         Assert.Empty(world.Set<SavedCapsuleerJob>());
         var provisioner = new CapsuleerProvisioner(f.Database, f.Clock);
-        Assert.Equal(0, provisioner.Reconcile().CreatedCommunities);
-        Assert.Equal(1, provisioner.EnsureSystem(30000141).CreatedCommunities);
-        Assert.InRange(world.Set<SavedCapsuleerAgent>().Count(), 6, 7);
-        Assert.Single(world.Set<SavedCapsuleerSystem>());
+        Assert.True(provisioner.Reconcile().CreatedCommunities > 0);
+        Assert.Equal(0, provisioner.EnsureSystem(30000141).CreatedCommunities);
+        Assert.True(world.Set<SavedCapsuleerAgent>().Count() > 7);
+        Assert.True(world.Set<SavedCapsuleerSystem>().Count() >= unvisitedSystems);
+        Assert.Equal(0, new CapsuleerProvisioner(f.Database, f.Clock).Reconcile().CreatedCommunities);
     }
 }

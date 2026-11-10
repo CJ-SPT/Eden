@@ -381,7 +381,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             long miner = agents.Single(a => a.Career == CapsuleerCareer.Mining).PilotId;
             Assert.Equal(source, scheduler.Miner(miner)!.Pilot.SystemId);
         }
-        Assert.Equal(0, host.GetRequiredService<ICapsuleerProvisioning>().Reconcile().CreatedCommunities);
+        Assert.Throws<InvalidOperationException>(() => host.GetRequiredService<ICapsuleerProvisioning>().Reconcile());
     }
 
     [Theory]

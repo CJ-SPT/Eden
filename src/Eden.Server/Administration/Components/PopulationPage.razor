@@ -7,7 +7,7 @@
 <PageTitle>Population · Eden</PageTitle>
 <h1>Autonomous population</h1>
 <button class="secondary" @onclick="Load">Refresh population</button>
-<p class="muted">Pilots are prepared when systems are visited and gates are watched. Population limits apply after restart.
+<p class="muted">Station traffic and miners are prepared globally on restart, before logins. Gate visitors are prepared when gates are watched.
     Excess pilots are paused and retained for reuse, including their ships, possessions and progress.</p>
 @if (Error is not null)
 {
@@ -36,7 +36,7 @@
         <p class="muted">Enabled pilots may travel outside watched systems. Scheduled pilots currently have simulation work enrolled.
             Pilots in watched systems include docked guests. Saved totals include paused pilots.</p>
         <p class="muted">@snapshot.Population.RegisteredSystems saved system records are retained, including earlier settings.
-            Preparation and eligibility refresh when a system is visited.</p>
+            Preparation and eligibility refresh globally on restart. Deferred systems retry on a visit or the next restart.</p>
     </section>
     <section class="card">
         <h2>Waiting pilots</h2>
@@ -67,7 +67,7 @@
             @foreach (var system in Filtered.Skip(Page * PageSize).Take(PageSize))
             {
                 <tr><td>@Name(system.SystemId) (@system.SystemId)</td><td>@CapsuleerProvisioningRules.Description(system.Eligibility)</td>
-                    <td>@(system.CurrentPolicy ? "Current" : "Refresh on visit")</td>
+                    <td>@(system.CurrentPolicy ? "Current" : "Pending preparation")</td>
                     <td>@(system.Provisioned ? "Established" : "Not provisioned")</td><td>@system.HomeStationId / @system.DestinationStationId</td></tr>
             }
         </tbody></table></div>

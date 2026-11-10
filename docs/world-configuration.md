@@ -271,7 +271,7 @@ Catalog facts stay in generated models/shared definitions. Native service IDs, e
 In **World & economy → Simulated pilots**, configure the saved world's population:
 
 - **Enable simulated pilots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
-- **Simulated miners** allows up to one miner per eligible visited system.
+- **Simulated miners** allows up to one miner per eligible system, prepared globally on restart.
 - **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,
   up to 60 travelers per community. Fractional densities use a saved-seed draw to distribute smaller rosters consistently.
   Zero pauses station traffic; gate visitors remain independently configurable.
@@ -280,9 +280,15 @@ In **World & economy → Simulated pilots**, configure the saved world's populat
 All edits use the ordinary pending revision, comparison, history, export/import and restart workflow. Lower limits hide excess
 pilots from space, Local, station guests and directional scans and exclude them from scheduled work. No pilot, ship, cargo,
 equipment, wallet, loss, grant record or saved activity is deleted. Raising a limit reactivates the eligible saved roster slots
-before any missing slots are provisioned on subsequent system visits or gate watches. A lost ship remains lost.
+before any missing station-traffic/miner slots are provisioned globally at restart. New gate visitors are prepared on gate watches. A lost ship remains lost.
 Activity deadlines shift by the paused interval; suspended pilots earn no catch-up actions, items or rewards.
 Repeated restarts preserve the original pause and never replay a supply or wallet grant.
+The normal server startup completes galaxy-wide station-traffic/miner preparation before accepting logins. Visiting a system
+is not required to apply the multiplier. Completed catalog/settings/snapshot fingerprints are reused; interrupted startup
+retries missing communities without replacing completed pilots. Unsupported or temporarily depleted communities are recorded
+as deferred rather than receiving invented fits or replacement supplies. Offline configuration export/import and account
+administration commands do not populate the galaxy.
+
 
 Defaults preserve the existing population policy. Older revision documents receive the new defaults automatically;
 `Capsuleers.GlobalProvisioning` remains a preserved legacy preference and is not the population switch.
