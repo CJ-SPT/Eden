@@ -50,7 +50,7 @@ internal sealed partial class CapsuleerScheduler(
 
     public void RecordUpdate(CapsuleerUpdateTiming timing)
     {
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             Volatile.Write(ref _diagnostics, _diagnostics with { LastUpdate = timing.Total, LastPresentation = timing.Presentation });
         }
@@ -156,7 +156,7 @@ internal sealed partial class CapsuleerScheduler(
     internal void PopulationPrepared(int system)
     {
         using var owner = synchronization.Enter("population scheduler registration");
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load(system);
         }
@@ -329,7 +329,7 @@ internal sealed partial class CapsuleerScheduler(
     {
         long started = clock.GetTimestamp();
         using var owner = Live?.Enter();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             _destinyStamp = destinyStamp;
             var activity = presence.Read();
@@ -562,7 +562,7 @@ internal sealed partial class CapsuleerScheduler(
 
     public IReadOnlyList<SystemSimulationState> Systems()
     {
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
             return _systems.Read();
@@ -571,12 +571,12 @@ internal sealed partial class CapsuleerScheduler(
 
     public void Synchronize(Action action) => SynchronizeCore(action);
 
-    public void Synchronize(int systemId, Action action) => SynchronizeCore(action);
+    public void Synchronize(int systemId, Action action) => SynchronizeCore(action, systemId);
 
-    private void SynchronizeCore(Action action)
+    private void SynchronizeCore(Action action, int? systemId = null)
     {
-        using var owner = Live?.Enter();
-        lock (synchronization.Gate)
+        using var owner = Live?.Enter(systemId: systemId);
+        using (synchronization.Enter("CapsuleerScheduler", systemId))
         {
             long? previousDue = _queue.NextDueTicks;
             action();
@@ -601,12 +601,16 @@ internal sealed partial class CapsuleerScheduler(
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask SynchronizeAsync(int systemId, Action action, CancellationToken cancellationToken = default) =>
-        SynchronizeAsync(action, cancellationToken);
+    public ValueTask SynchronizeAsync(int systemId, Action action, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        SynchronizeCore(action, systemId);
+        return ValueTask.CompletedTask;
+    }
 
     public CapsuleerBatch Capture()
     {
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
             Reconcile(presence.Read());
@@ -671,7 +675,7 @@ internal sealed partial class CapsuleerScheduler(
     public IReadOnlyList<CapsuleerJob> Jobs()
     {
         using var owner = Live?.Enter();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
             return Current.Values.OrderBy(j => j.DueTicks).ThenBy(j => j.PilotId).ToArray();
@@ -681,7 +685,7 @@ internal sealed partial class CapsuleerScheduler(
     public CapsuleerWakePlan NextWake()
     {
         using var owner = Live?.Enter();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             var activity = presence.Read();
             return new(CapsuleerScheduleRules.WakeDelay(_queue.NextDueTicks, activity.ElapsedTicks, activity.Active), presence.Changed);
@@ -691,7 +695,7 @@ internal sealed partial class CapsuleerScheduler(
     public MinerObservation? Miner(long pilotId)
     {
         using var owner = Live?.Enter();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
             return _miners.GetValueOrDefault(pilotId)?.Read();
@@ -701,7 +705,7 @@ internal sealed partial class CapsuleerScheduler(
     public HaulerObservation? Hauler(long pilotId)
     {
         using var owner = Live?.Enter();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
             return _haulers.GetValueOrDefault(pilotId)?.Read();
@@ -721,7 +725,7 @@ internal sealed partial class CapsuleerScheduler(
     public void ObserveAggression(long shipId)
     {
         using var owner = Live?.Enter();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerScheduler"))
         {
             if (_ships.TryGetValue(shipId, out long pilot))
             {

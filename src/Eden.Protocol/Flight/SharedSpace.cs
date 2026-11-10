@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Docking;
@@ -6,6 +7,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Combat;
@@ -148,8 +150,11 @@ internal sealed class SharedSpace(
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
 
-    private readonly object _standaloneMotion = new();
-    internal object MotionLock => synchronization?.Gate ?? _standaloneMotion;
+    private readonly OwnershipMonitor _motionOwnership = new("flight");
+
+    internal IDisposable EnterMotion([CallerMemberName] string operation = "", int? systemId = null) =>
+        synchronization?.Enter($"flight.{operation}", systemId) ?? _motionOwnership.Enter(operation, systemId);
+
     internal const int MovementHistoryTicks = 32;
 
     internal SpatialStatus SpatialStatus(long ship) => spatial?.Status(ship) ?? new();
@@ -186,7 +191,7 @@ internal sealed class SharedSpace(
         {
             return;
         }
-        lock (MotionLock)
+        using (EnterMotion())
         {
             long sequence = _orderSequences.GetValueOrDefault(shipId) + 1;
             _orderSequences[shipId] = sequence;
@@ -205,7 +210,7 @@ internal sealed class SharedSpace(
 
     public void PublishMotion(ShipMotion ship)
     {
-        lock (MotionLock)
+        using (EnterMotion(systemId: ship.SystemId))
         {
             if (!_motion.TryGetValue(ship.Id, out var current) || current.Stamp <= ship.Stamp)
             {
@@ -222,7 +227,7 @@ internal sealed class SharedSpace(
         IReadOnlyList<StaticSpaceObject> objects
     )
     {
-        lock (MotionLock)
+        using (EnterMotion(systemId: own.SystemId))
         {
             PublishMotion(own);
             int first = _motion.Values.Where(s => s.SystemId == own.SystemId).Min(s => s.Stamp);
@@ -304,7 +309,7 @@ internal sealed class SharedSpace(
 
     public void Publish(ShipContact ship)
     {
-        lock (MotionLock)
+        using (EnterMotion(systemId: ship.Pilot.SystemId))
         {
             if (_ships.TryGetValue(ship.Pilot.ShipId, out var current))
             {
@@ -323,7 +328,7 @@ internal sealed class SharedSpace(
 
     public void Leave(long shipId)
     {
-        lock (MotionLock)
+        using (EnterMotion())
         {
             _ships.TryRemove(shipId, out _);
             _motion.Remove(shipId);
@@ -334,7 +339,7 @@ internal sealed class SharedSpace(
 
     internal void ApplyDamage(ShipHealth health)
     {
-        lock (MotionLock)
+        using (EnterMotion())
         {
             if (health.Remaining.Destroyed)
             {
@@ -365,7 +370,7 @@ internal sealed class SharedSpace(
 
     public ShipContact[] Peers(DockedPilot pilot)
     {
-        lock (MotionLock)
+        using (EnterMotion(systemId: pilot.SystemId))
         {
             var offline =
                 crimewatch
@@ -418,7 +423,7 @@ internal sealed class SharedSpace(
 
     public PilotCombatPresence? FindOnline(int systemId, long shipId)
     {
-        lock (MotionLock)
+        using (EnterMotion(systemId: systemId))
         {
             if (!_ships.TryGetValue(shipId, out var ship))
             {
@@ -439,7 +444,7 @@ internal sealed class SharedSpace(
 
     public PilotCombatPresence? Find(int systemId, long shipId)
     {
-        lock (MotionLock)
+        using (EnterMotion(systemId: systemId))
         {
             if (_ships.ContainsKey(shipId))
             {

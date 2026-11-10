@@ -161,7 +161,17 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         var updates = services.GetRequiredService<PilotUpdateCoordinator>();
         updates.Enter(context);
         output.WriteLine($"Docked entry {Stopwatch.GetElapsedTime(started).TotalMilliseconds:F2} ms.");
-        PilotSessionOutput sink = new(context, account, account, _ => Task.CompletedTask, _ => { });
+        PilotSessionOutput sink = new(
+            context,
+            account,
+            account,
+            _ =>
+            {
+                Assert.False(services.GetRequiredService<IWorldSynchronization>().IsEntered);
+                return Task.CompletedTask;
+            },
+            _ => { }
+        );
         PilotSessionTick tick = new(
             clock,
             updates,

@@ -36,7 +36,7 @@ public sealed partial class SqliteWorld
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(_database.Path)?.Enter();
-        lock (_database.MotionLock)
+        using (_database.EnterMovement(systemId: systemId))
         {
             if (LiveCombatRuntime.Find(_database.Path)?.Advance(systemId, stamp, now, ships, objects) is { } resident)
             {

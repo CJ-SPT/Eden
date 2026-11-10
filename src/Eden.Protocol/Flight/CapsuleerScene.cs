@@ -22,7 +22,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
 
     public void Apply(CapsuleerBatch batch)
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion())
         {
             if (batch.Revision <= _revision)
             {
@@ -114,7 +114,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
 
     private void Publish(Visual observation)
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion())
         {
             if (!_pilots.TryGetValue(observation.Pilot.PilotId, out var pilot))
             {
@@ -166,7 +166,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
             var pilot = observation.Pilot;
             var laser = observation.Laser;
             SystemId = pilot.SystemId;
-            lock (space.MotionLock)
+            using (space.EnterMotion())
             {
                 if (
                     _previous is { } old

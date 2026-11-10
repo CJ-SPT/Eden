@@ -205,6 +205,9 @@ Compare NPC and connected-player populations with `.\tools\Measure-NpcCapacity.p
 
 Use `EDEN_TRACE_PERFORMANCE=1` for targeted timings and database counters. See [diagnostic settings](docs/architecture.md#session-performance-diagnostics) and [performance records](docs/protocol/performance.md) for replay evidence.
 
+[Shared-owner stall relief](docs/protocol/performance.md#shared-owner-stall-relief-november-10-2026) adds ordered
+admission, grouped frame updates and a frozen two-player traffic replay. Independent solar-system owners remain pending.
+
 The live host loads the immutable NPC/agent directory before admitting clients. Its name lookup uses one collection parameter so catalog initialization does not bind thousands of individual SQLite parameters; see the [agent directory latency record](docs/protocol/performance.md#agent-directory-first-request-latency-november-6-2026).
 
 ### Resident world and background saves

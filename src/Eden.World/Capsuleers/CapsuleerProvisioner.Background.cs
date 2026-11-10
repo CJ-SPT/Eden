@@ -111,7 +111,7 @@ internal sealed partial class CapsuleerProvisioner
                     _startupReservations = TrafficProvisioning.Reservations.Load(world);
                 }
                 _requirePreparedBlueprints = true;
-                lock (database.MotionLock)
+                using (database.EnterMovement())
                 {
                     using WorldDbContext world = new(database.Path);
                     return Provision(system, catalog, world, globalStartup: true);

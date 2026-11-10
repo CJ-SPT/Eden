@@ -29,7 +29,7 @@ internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
     private IReadOnlyList<CombatAnomaly> Get(int systemId, long now, MiningFamily family)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             return (
                 LiveReadModels

@@ -24,6 +24,8 @@ namespace Eden.World.Capsuleers;
 [Injectable]
 internal sealed class CapsuleerResupply(PilotMarketStore market)
 {
+    private sealed record DroneCandidate(DroneProfile Profile, int Count);
+
     internal static long Limit(int type) =>
         MarketSnapshotCatalog.Quotes.GetValueOrDefault(type)?.SellCents is { } price
             ? checked(price * RattingRules.ReferencePriceMultiplier)
@@ -112,39 +114,40 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
             double bay = fit.Graph.Read(ship.Id, DogmaAttributeId.DroneCapacity);
             double bandwidth = fit.Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
             int controls = DroneCatalog.ControlLimit(fit);
+            long owned = inventory.Where(i => i.FlagId == (int)InventoryFlag.DroneBay).Sum(i => i.Quantity);
+            if (owned >= controls)
+            {
+                // Every candidate is bounded by the control limit. The existing flight
+                // already covers its possible count, so no replacement purchase is needed.
+                return result.ToArray();
+            }
             int preferred =
                 inventory.FirstOrDefault(i => i.FlagId == (int)InventoryFlag.DroneBay)?.TypeId
                 ?? previous.FirstOrDefault(r => r.Drone)?.TypeId
                 ?? 0;
-            bool Usable(int type)
-            {
-                try
-                {
-                    PilotSkillReader.CheckRequirements(world, catalog, pilotId, type);
-                    return true;
-                }
-                catch (InvalidDataException)
-                {
-                    return false;
-                }
-            }
             var candidates = CapsuleerSupplyStore
                 .AvailableDrones(catalog)
-                .Where(d => Usable(d.TypeId))
-                .Select(d => new
-                {
-                    Profile = d,
-                    Count = (int)Math.Min(controls, Math.Min(Math.Floor(bay / d.Volume), Math.Floor(bandwidth / d.Bandwidth))),
-                })
+                .Select(d => new DroneCandidate(
+                    d,
+                    (int)Math.Min(controls, Math.Min(Math.Floor(bay / d.Volume), Math.Floor(bandwidth / d.Bandwidth)))
+                ))
                 .Where(d => d.Count > 0)
+                .ToArray();
+            var usable = PilotSkillReader.UsableTypes(
+                world,
+                catalog,
+                pilotId,
+                candidates.Select(candidate => candidate.Profile.TypeId).ToArray()
+            );
+            var desired = candidates
+                .Where(candidate => usable.Contains(candidate.Profile.TypeId))
                 .OrderByDescending(d => d.Profile.TypeId == preferred)
                 .ThenByDescending(d => d.Count)
                 .ThenByDescending(d => d.Profile.Bandwidth)
                 .ThenBy(d => d.Profile.TypeId)
-                .ToArray();
-            if (candidates.FirstOrDefault() is { } desired)
+                .FirstOrDefault();
+            if (desired is not null)
             {
-                long owned = inventory.Where(i => i.FlagId == (int)InventoryFlag.DroneBay).Sum(i => i.Quantity);
                 if (owned < desired.Count)
                 {
                     result.Add(new(desired.Profile.TypeId, checked(desired.Count - (int)owned), true, desired.Profile.Volume));
@@ -195,6 +198,10 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
                 .ToArray();
             foreach (var stack in stock)
             {
+                if (remaining <= 0)
+                {
+                    break;
+                }
                 int quantity = Capacity(world, catalog, pilotId, ship.Id, need, Math.Min(remaining, checked((int)stack.Quantity)));
                 if (quantity > 0)
                 {
@@ -214,7 +221,15 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
                 .ToArray();
             foreach (var order in orders)
             {
+                if (remaining <= 0)
+                {
+                    break;
+                }
                 long funds = Math.Min(progress.BudgetCents - progress.SpentCents, world.Set<PilotWallet>().Find(pilotId)!.Cents);
+                if (funds <= 0)
+                {
+                    break;
+                }
                 int quantity = Capacity(
                     world,
                     catalog,
@@ -269,7 +284,9 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
         };
     }
 
-    private static bool Reload(WorldDatabase database, WorldDbContext world, CatalogDbContext catalog, long pilotId, long now)
+    private sealed record ReloadCandidate(long ModuleId, int TypeId, int Missing);
+
+    internal static bool Reload(WorldDatabase database, WorldDbContext world, CatalogDbContext catalog, long pilotId, long now)
     {
         bool changed = false;
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
@@ -280,6 +297,7 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
             ?? 0;
         var profile = database.Traffic.Profiles.FirstOrDefault(p => p.KillId == kill);
         var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship).ToArray();
+        List<ReloadCandidate> candidates = [];
         foreach (var module in inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)))
         {
             var loaded = world.Set<OwnedItem>().SingleOrDefault(i => i.LocationId == module.Id);
@@ -314,15 +332,50 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
             {
                 continue;
             }
+            candidates.Add(new(module.Id, type, checked(maximum - (loaded?.Quantity ?? 0))));
+        }
+        foreach (var group in candidates.GroupBy(candidate => candidate.TypeId))
+        {
+            int type = group.Key;
             var sources = world
                 .Set<OwnedItem>()
                 .Where(i => i.OwnerId == pilotId && i.LocationId == ship && i.FlagId == (int)InventoryFlag.Cargo && i.TypeId == type)
-                .Select(i => i.Id)
                 .ToArray();
             if (sources.Length > 0)
             {
-                PilotAmmunitionStore.Load(world, catalog, pilotId, ship, [module.Id], sources, ship, now);
-                changed = true;
+                if (sources.Sum(source => (long)source.Quantity) >= group.Sum(candidate => (long)candidate.Missing))
+                {
+                    // Full supply preserves the existing magazine quantities and ordering while
+                    // calculating the reload fit once for all magazines of this charge type.
+                    PilotAmmunitionStore.Load(
+                        world,
+                        catalog,
+                        pilotId,
+                        ship,
+                        group.Select(candidate => candidate.ModuleId).ToArray(),
+                        sources.Select(source => source.Id).ToArray(),
+                        ship,
+                        now
+                    );
+                    changed = true;
+                }
+                else
+                {
+                    // Preserve sequential allocation when reserves cannot fill every magazine.
+                    foreach (var candidate in group)
+                    {
+                        var available = sources
+                            .Where(source => source.Quantity > 0 && source.LocationId == ship)
+                            .Select(source => source.Id)
+                            .ToArray();
+                        if (available.Length == 0)
+                        {
+                            break;
+                        }
+                        PilotAmmunitionStore.Load(world, catalog, pilotId, ship, [candidate.ModuleId], available, ship, now);
+                        changed = true;
+                    }
+                }
             }
         }
         return changed;
@@ -397,6 +450,10 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
 
     private static int Capacity(WorldDbContext world, CatalogDbContext catalog, long pilot, long ship, SupplyRequirement need, int desired)
     {
+        if (desired <= 0)
+        {
+            return 0;
+        }
         var flag = need.Drone ? InventoryFlag.DroneBay : InventoryFlag.Cargo;
         var attribute = need.Drone ? DogmaAttributeId.DroneCapacity : DogmaAttributeId.CargoCapacity;
         double free =

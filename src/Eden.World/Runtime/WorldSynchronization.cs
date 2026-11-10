@@ -1,3 +1,4 @@
+using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;
@@ -9,20 +10,11 @@ internal sealed class WorldSynchronization(WorldDatabase database) : IWorldSynch
 {
     private readonly object _standalone = new();
 
-    public IDisposable Enter(string operation) => LiveWorld.Find(database.Path)?.Enter(operation) ?? new Lease(_standalone);
+    private OwnershipMonitor? _ownership;
 
-    private sealed class Lease : IDisposable
-    {
-        private readonly object _gate;
+    public IDisposable Enter(string operation, int? systemId = null) =>
+        LiveWorld.Find(database.Path)?.Enter(operation, systemId)
+        ?? LazyInitializer.EnsureInitialized(ref _ownership, () => new("standalone world", _standalone)).Enter(operation, systemId);
 
-        public Lease(object gate)
-        {
-            _gate = gate;
-            Monitor.Enter(_gate);
-        }
-
-        public void Dispose() => Monitor.Exit(_gate);
-    }
-
-    public object Gate => LiveWorld.Find(database.Path)?.SynchronizationGate ?? _standalone;
+    public bool IsEntered => LiveWorld.Find(database.Path)?.IsEntered ?? Monitor.IsEntered(_standalone);
 }

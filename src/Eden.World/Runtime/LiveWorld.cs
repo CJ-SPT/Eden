@@ -21,7 +21,8 @@ internal sealed record WorldCheckpoint(
     long Bytes,
     int? Commands = null,
     int? Connections = null,
-    TimeSpan Projection = default
+    TimeSpan Projection = default,
+    TimeSpan Copy = default
 );
 
 // The resident relational image preserves the existing transaction, constraint and trigger rules.
@@ -32,7 +33,12 @@ internal sealed class LiveWorld : IDisposable
     internal static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(15);
     private static readonly ConcurrentDictionary<string, LiveWorld> s_worlds = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
-    internal object SynchronizationGate => _gate;
+    private readonly OwnershipMonitor _ownershipMonitor;
+    internal bool IsEntered => _ownershipMonitor.IsEntered;
+    internal int WaitingOwners => _ownershipMonitor.WaitingCount;
+
+    internal IDisposable ObserveOwnership(Action<OwnershipTiming> observer) => _ownershipMonitor.Subscribe(observer);
+
     private readonly object _scheduleGate = new();
     private readonly Queue<WorldCheckpoint> _checkpoints = new();
     private const int RetainedCheckpointReports = 32;
@@ -141,7 +147,7 @@ internal sealed class LiveWorld : IDisposable
     {
         get
         {
-            lock (_gate)
+            using (Acquire())
             {
                 return _checkpoints.ToArray();
             }
@@ -168,6 +174,7 @@ internal sealed class LiveWorld : IDisposable
         bool simulationObjects = true
     )
     {
+        _ownershipMonitor = new("world", _gate);
         _path = Path.GetFullPath(database.Path);
         Heat = new(this, database, clock);
         Tractors = new(this, database);
@@ -242,10 +249,10 @@ internal sealed class LiveWorld : IDisposable
     internal static LiveWorld? Find(string path) =>
         s_worlds.TryGetValue(path, out var world) ? world : s_worlds.GetValueOrDefault(Path.GetFullPath(path));
 
-    internal IDisposable Enter([CallerMemberName] string operation = "")
+    internal IDisposable Enter([CallerMemberName] string operation = "", int? systemId = null)
     {
         bool nested = Monitor.IsEntered(_gate);
-        var lease = Acquire(operation);
+        var lease = Acquire(operation, systemId);
         try
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -260,6 +267,7 @@ internal sealed class LiveWorld : IDisposable
                 _expiringTimedModules = true;
                 try
                 {
+                    using var timing = SessionLatency.Measure(SessionLatencyPhase.TimedEffects);
                     _timedModules?.Expire(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
                     Heat.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
                     Nanites.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
@@ -285,30 +293,23 @@ internal sealed class LiveWorld : IDisposable
 
     internal void ObserveTrafficJob(CapsuleerJob job, int system)
     {
+        _ownershipMonitor.AttributeSystem(system);
         _trafficJob = job;
         _trafficSystem = system;
     }
 
-    private IDisposable Acquire(string operation)
+    private IDisposable Acquire([CallerMemberName] string operation = "", int? systemId = null)
     {
         bool nested = Monitor.IsEntered(_gate);
-        if (nested)
+        var ownership = _ownershipMonitor.Enter(operation, systemId);
+        if (!nested)
         {
-            Monitor.Enter(_gate);
-            return new Lease(this, true, 0);
+            Volatile.Write(ref _ownerDescription, SessionLatency.CurrentDescription ?? operation);
         }
-        string? blocker = Volatile.Read(ref _ownerDescription);
-        long started = Stopwatch.GetTimestamp();
-        using (SessionLatency.Measure(SessionLatencyPhase.WorldWait))
-        {
-            Monitor.Enter(_gate);
-        }
-        SessionLatency.ObserveWorldWait(blocker, started);
-        Volatile.Write(ref _ownerDescription, SessionLatency.CurrentDescription ?? operation);
-        return new Lease(this, false, Stopwatch.GetTimestamp());
+        return new Lease(this, ownership, nested, Stopwatch.GetTimestamp());
     }
 
-    private sealed class Lease(LiveWorld world, bool nested, long started) : IDisposable
+    private sealed class Lease(LiveWorld world, IDisposable ownership, bool nested, long started) : IDisposable
     {
         private LiveWorld? _world = world;
 
@@ -326,8 +327,8 @@ internal sealed class LiveWorld : IDisposable
                     held._trafficJob = null;
                     Volatile.Write(ref held._ownerDescription, null);
                 }
-                Monitor.Exit(held._gate);
                 var elapsed = nested ? TimeSpan.Zero : Stopwatch.GetElapsedTime(started);
+                ownership.Dispose();
                 if (!nested && elapsed.TotalMilliseconds >= SlowOwnershipMilliseconds)
                 {
                     string detail = job is null ? "" : $" Included {job.Action} for pilot {job.PilotId} in system {system}.";
@@ -379,7 +380,7 @@ internal sealed class LiveWorld : IDisposable
             throw new InvalidOperationException("Complete world connections before awaiting a durable checkpoint.");
         }
         long target;
-        lock (_gate)
+        using (Acquire())
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
             target = ObserveGeneration();
@@ -390,7 +391,7 @@ internal sealed class LiveWorld : IDisposable
             {
                 ExceptionDispatchInfo.Capture(failure).Throw();
             }
-            lock (_gate)
+            using (Acquire())
             {
                 if (_savedGeneration >= target)
                 {
@@ -433,7 +434,9 @@ internal sealed class LiveWorld : IDisposable
             try
             {
                 database.Open();
+                long copyStarted = Stopwatch.GetTimestamp();
                 _memory.BackupDatabase(database);
+                TimeSpan copy = Stopwatch.GetElapsedTime(copyStarted);
                 return new(
                     database,
                     combat,
@@ -447,7 +450,8 @@ internal sealed class LiveWorld : IDisposable
                     activity,
                     new CapsuleerJobCheckpoint(
                         CapsuleerJobs.Values.Where(j => ProjectedCapsuleerJobs.GetValueOrDefault(j.PilotId) != j).ToArray()
-                    )
+                    ),
+                    copy
                 );
             }
             catch
@@ -481,9 +485,10 @@ internal sealed class LiveWorld : IDisposable
                 new FileInfo(_path).Length,
                 metrics?.Commands,
                 metrics?.Connections,
-                projection
+                projection,
+                snapshot.Copy
             );
-            lock (_gate)
+            using (Acquire())
             {
                 _savedGeneration = snapshot.Generation;
                 Volatile.Write(ref _lastCheckpoint, completed);
@@ -498,7 +503,8 @@ internal sealed class LiveWorld : IDisposable
                 string.Create(
                     CultureInfo.InvariantCulture,
                     $"World checkpoint {completed.Generation}: wait={completed.Wait.TotalMilliseconds:F2} ms, "
-                        + $"capture={completed.Capture.TotalMilliseconds:F2} ms, project={projection.TotalMilliseconds:F2} ms, "
+                        + $"capture={completed.Capture.TotalMilliseconds:F2} ms, copy={completed.Copy.TotalMilliseconds:F2} ms, "
+                        + $"project={projection.TotalMilliseconds:F2} ms, "
                         + $"write={write.TotalMilliseconds:F2} ms, bytes={completed.Bytes}."
                 )
             );
@@ -585,7 +591,7 @@ internal sealed class LiveWorld : IDisposable
             }
             throw;
         }
-        lock (_gate)
+        using (Acquire())
         {
             if (_disposed)
             {

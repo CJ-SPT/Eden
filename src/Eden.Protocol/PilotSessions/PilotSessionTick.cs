@@ -85,25 +85,38 @@ internal sealed class PilotSessionTick(
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
             report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
-        anomalies?.Advance(context);
-        using (SessionLatency.Measure(SessionLatencyPhase.Contacts))
-        using (SessionPerformance.Begin("contacts", diagnostics?.Trace ?? report))
+        DockedPilot? beforeAttack = null;
+        void PrepareUpdates()
         {
-            if (flight.InBallpark)
+            anomalies?.Advance(context);
+            using (SessionLatency.Measure(SessionLatencyPhase.Contacts))
+            using (SessionPerformance.Begin("contacts", diagnostics?.Trace ?? report))
             {
-                flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
-                flight.RefreshWrecks();
-                flight.RefreshMissiles();
-                flight.RefreshNpcs();
-                flight.RefreshPeers();
+                if (flight.InBallpark)
+                {
+                    flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
+                    flight.RefreshWrecks();
+                    flight.RefreshMissiles();
+                    flight.RefreshNpcs();
+                    flight.RefreshPeers();
+                }
+            }
+
+            using (SessionLatency.Measure(SessionLatencyPhase.Updates))
+            using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
+            {
+                beforeAttack = updates.Advance(context);
             }
         }
-
-        DockedPilot? beforeAttack;
-        using (SessionLatency.Measure(SessionLatencyPhase.Updates))
-        using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
+        if (handoff is not null)
         {
-            beforeAttack = updates.Advance(context);
+            // A frame's synchronous observer work takes one place in the ownership queue.
+            // Network output remains after release so a slow socket cannot retain ownership.
+            await handoff.SynchronizeAsync(context.Pilot.SystemId, PrepareUpdates);
+        }
+        else
+        {
+            PrepareUpdates();
         }
         if (
             beforeAttack is not null

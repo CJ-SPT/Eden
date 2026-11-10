@@ -272,7 +272,7 @@ internal sealed partial class FlightSession(
 
     public void Checkpoint()
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion(systemId: Pilot.SystemId))
         {
             RefreshTackle();
             int now = Stamp;
@@ -567,7 +567,7 @@ internal sealed partial class FlightSession(
     public void RefreshPeers()
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("contact.peers");
-        lock (space.MotionLock)
+        using (space.EnterMotion(systemId: Pilot.SystemId))
         {
             RefreshPeersCore();
             RefreshDrones();
@@ -650,7 +650,7 @@ internal sealed partial class FlightSession(
 
     public void Relocate(DockedPilot destination, IReadOnlyList<StaticSpaceObject> destinationObjects)
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion(systemId: Pilot.SystemId))
         {
             bool enteringSpace = Pilot.Position is null && destination.Position is not null;
             bool keepBallpark = InBallpark && destination.Position is not null && Pilot.SystemId == destination.SystemId;
@@ -706,7 +706,7 @@ internal sealed partial class FlightSession(
         IReadOnlyList<StaticSpaceObject> destinationObjects
     )
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion(systemId: Pilot.SystemId))
         {
             bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
             _navigation = new();
@@ -735,7 +735,7 @@ internal sealed partial class FlightSession(
 
     public void StartPendingTranslocation()
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion(systemId: Pilot.SystemId))
         {
             if (_travel.DepartureReady(Stamp) is { } pending)
             {
@@ -746,7 +746,7 @@ internal sealed partial class FlightSession(
 
     public PilotTranslocation? CompleteTranslocation()
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion(systemId: Pilot.SystemId))
         {
             if (_travel.TranslocationDue(Stamp) is not { } transit)
             {
@@ -767,7 +767,7 @@ internal sealed partial class FlightSession(
 
     public void Snapshot()
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion(systemId: Pilot.SystemId))
         {
             SnapshotCore();
         }
@@ -977,7 +977,7 @@ internal sealed partial class FlightSession(
 
     public PilotCallResult Execute(FlightCommand command)
     {
-        lock (space.MotionLock)
+        using (space.EnterMotion(systemId: Pilot.SystemId))
         {
             try
             {

@@ -77,7 +77,7 @@ internal sealed partial class PirateExplorationStore
     public HackingContact Begin(long pilotId, long moduleId, long targetId, IReadOnlySet<long> locks, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();
@@ -183,7 +183,7 @@ internal sealed partial class PirateExplorationStore
     public HackingTurn Act(long pilotId, HackingAction action, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();
@@ -235,7 +235,7 @@ internal sealed partial class PirateExplorationStore
     public void Cancel(long pilotId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();
@@ -260,7 +260,7 @@ internal sealed partial class PirateExplorationStore
     public ExplorationContainerInventory Read(long pilotId, long containerId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -291,7 +291,7 @@ internal sealed partial class PirateExplorationStore
     public IReadOnlyList<InventoryChange> Take(long pilotId, long shipId, InventoryMoveRequest request, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();

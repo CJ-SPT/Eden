@@ -17,7 +17,7 @@ internal sealed partial class PilotMissionStore
     public MissionGateActivation ActivateGate(long pilotId, long gateId, SpacePosition destination)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             // Resolve/expire the shared scene before opening the mutation transaction.
             // Validation below re-reads authoritative membership, hull, fit and position in that transaction.
@@ -42,7 +42,7 @@ internal sealed partial class PilotMissionStore
     public MissionGate Gate(long pilotId, long gateId)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);

@@ -35,7 +35,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     private T Write<T>(Func<WorldDbContext, CatalogDbContext, T> action)
     {
         using var owner = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -273,7 +273,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     public ProbeScan Begin(long pilotId, IReadOnlyList<ProbePlacement> placements, long now)
     {
         using var owner = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             // Seed/read sites before opening the scan transaction on another connection.
             int system;

@@ -137,20 +137,20 @@ public sealed class CapsuleerMaintenanceTests
 
     private sealed class PauseAfterFirstJob(IWorldSynchronization actual) : IWorldSynchronization
     {
-        public object Gate => actual.Gate;
+        public bool IsEntered => actual.IsEntered;
         public TaskCompletionSource BetweenJobs { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private int _acquisitions;
 
-        public IDisposable Enter(string operation)
+        public IDisposable Enter(string operation, int? systemId = null)
         {
             if (++_acquisitions == 2)
             {
-                Assert.False(Monitor.IsEntered(Gate));
+                Assert.False(IsEntered);
                 BetweenJobs.SetResult();
                 Resume.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
             }
-            return actual.Enter(operation);
+            return actual.Enter(operation, systemId);
         }
     }
 

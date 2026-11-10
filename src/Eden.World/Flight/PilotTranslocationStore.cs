@@ -28,7 +28,7 @@ internal sealed partial class PilotTranslocationStore(
     public TranslocationTarget Resolve(long targetId)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             return ResolveTarget(targetId);
         }
@@ -82,7 +82,7 @@ internal sealed partial class PilotTranslocationStore(
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             // Loading a system can initialize its asteroid rows. Do that before
             // acquiring the move transaction's SQLite writer on this same world.

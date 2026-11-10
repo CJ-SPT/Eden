@@ -362,7 +362,7 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
         using CapsuleerHaulerTests.Fixture f = new(isolateRoute: true);
         AddDestinationOre(f.Database);
         new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Destination);
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var presence = host.GetRequiredService<IHumanPresence>();
         Assert.Equal(4, scheduler.Jobs().Count);

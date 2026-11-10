@@ -50,7 +50,7 @@ internal sealed partial class PilotMissionStore(
     public AgentAccess Access(long pilotId, long agentId)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -61,7 +61,7 @@ internal sealed partial class PilotMissionStore(
     public AgentServiceInformation Information(long pilotId, long agentId)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -134,7 +134,7 @@ internal sealed partial class PilotMissionStore(
     public IReadOnlyList<MissionOffer> Journal(long pilotId, long? agentId = null)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -160,7 +160,7 @@ internal sealed partial class PilotMissionStore(
         _ = Agent(agentId);
         _ = Journal(pilotId, agentId);
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -177,7 +177,7 @@ internal sealed partial class PilotMissionStore(
     public MissionUpdate Act(long pilotId, long agentId, MissionAction action, long? offerId = null)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             var agent = Agent(agentId);
             using WorldDbContext world = new(database.Path);

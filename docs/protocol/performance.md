@@ -1327,3 +1327,138 @@ and separate checkpoints. No full .NET suite was requested or run. Native render
 
 **Optional maintainer checks.** Rebuild/restart the server and revisit the same gate with the tenfold setting; compare
 world-owner warnings and frame waits. If another long atomic action remains, capture its enabled maintenance phases.
+
+
+## Shared-owner stall relief, November 10, 2026
+
+This is the first rollout stage of the solar-system ownership work. The resident SQLite connection still owns the
+shared world from open through close. Per-system simulation ownership, classified transaction participants and
+checkpoint copying without system ownership are pending; this stage does not establish system independence.
+
+The additional supplied `49cf2afc` log shows why the earlier resupply/index improvements were insufficient. After
+regional population preparation completed, frames still waited roughly 0.5 to 1.5 seconds behind traffic. A checkpoint
+capture held ownership for 800.28 ms. Calls also accumulated queue time before dispatch; a fast handler alone cannot
+establish player-visible latency.
+
+The shared owner now admits outer acquisitions in arrival order. A job that releases ownership cannot repeatedly
+reacquire ahead of an already waiting flight command. Nested calls remain reentrant, retain the same transaction and
+count as part of the outer hold. Flight, traffic/activity and the separate database movement boundary use measured
+leases; Protocol no longer receives a raw world synchronization object. Timings name the operation, request and known
+system, and separate waiting from holding. Traffic jobs attribute their source system to the outer lease. Checkpoint
+subscription survives detached execution context, and capture reports its SQLite copy duration separately from
+projection and file writing. Session diagnostics include arrival-to-reply, ownership, timed-effect and projection times.
+Phase totals remain inclusive and must not be added together.
+
+A frame's synchronous contacts and update work now occupies one position in that queue instead of joining again for
+each monitor. Socket output remains outside ownership, with automated assertions at the real output callback.
+Fully supplied magazines of the same ammunition type reload together, using the existing typed ammunition operation.
+The two-magazine fixture reduces fitting calculations from four to two: one reload calculation and the required cargo
+check. Limited reserves retain sequential allocation. Completed requirements and exhausted budgets stop scanning
+later stacks/orders; a zero-quantity capacity request performs no fitting or volume work. Drone resupply skips
+candidate selection when the existing count reaches the control limit, and otherwise reads all candidate skill levels
+in one batch, including absent skills. The typed Gameplay predicate preserves the original requirement comparisons.
+Quantities, cooldown validation, payment/inventory transactions and rollback remain authoritative.
+
+### Frozen two-player replay
+
+`tools/Freeze-SystemReplay.py` takes read-only SQLite backups of the source save, original catalog and traffic snapshot,
+and retains the active skill package and its editor state. It writes file sizes/hashes and the baseline revision to
+`manifest.json`. The installed save and game client are never modified. The measured frozen world was **339,345,408
+bytes**, SHA-256 `54e8bf59930854912ca61e70f4a861e5835dfbb779ccf696d53cb2fbf619ecde`; original catalog SHA-256
+`df5e5ac02a31c1f30d9b70cd8da6f094ff9f8c8d9317595296317b1b88212d0b`; traffic SHA-256
+`9c6fcec26ca8625a44be6dfa430ec8694d1b7ffa16c35149dacb843422297574`. The frozen settings use **5x traffic** and **12 gate
+visitors**, with a fixed November 10, 2026 12:00 UTC simulation clock. Baseline gameplay is `49cf2afc`, including the
+regional population and ammunition-container index improvements, with the measurement harness applied.
+
+Two independently scoped real player sessions occupy system B: one issues `beyonce.CmdGotoDirection` and completes
+normal observer frames, including the production anomaly, probe and mission hooks; the other calls
+`station.GetGuests`. System A (`30002659`) has a separate presence lease,
+real scheduled traffic and regional population preparation. The replay asserts actual station departures and gate
+transfers. Checkpoints run at the existing 15-second simulation interval. Each run uses a new copy, four warmups and
+40 measured samples after entry and a ten-second protection warmup. Both players and the background worker start
+together for each sample; the simulation clock
+advances after all finish. These are measured server tasks and encoded native packets, excluding a real socket,
+client rendering and inbound calls arriving during an already running player frame.
+
+Set `EDEN_SYSTEM_REPLAY_SOURCE` to the frozen directory and `EDEN_PERFORMANCE_OUTPUT` to a fresh report directory;
+select `FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ReplayTwoPlayersUnderRemoteTrafficAndPopulationLoad`.
+`EDEN_SYSTEM_REPLAY_SAMPLES` overrides 40 for investigation. An unconfigured opt-in test returns without measuring.
+Local inputs/reports are retained under ignored `artifacts/system-isolation/`. The final matched comparison uses
+`baseline-complete-*` and `optimized-complete-*`. Earlier `before-*`, `after-*`, `final-*` and `release-*` diagnostics
+preceded the complete-frame harness and final resupply corrections; they are not release acceptance. The isolated
+baseline source image retains the same measurement harness and restores the parent resupply and frame behavior,
+with unordered monitor admission. `baseline-code.json` records the relevant source hashes.
+
+| Operation | Baseline p95 / p99 / max (ms) | Optimized p95 / p99 / max (ms) | Baseline / optimized >=1s |
+| --- | ---: | ---: | ---: |
+| CmdGotoDirection | 72.82 / 138.56 / 157.41 | 9.31 / 9.98 / 10.66 | 0 / 0 |
+| frame | 334.52 / 529.48 / 891.24 | 95.33 / 321.54 / 341.80 | 0 / 0 |
+| GetGuests | 6.40 / 24.76 / 55.26 | 3.45 / 4.81 / 4.90 | 0 / 0 |
+
+The slowest measured owner remained a traffic action in system `30000138`: **748.29 ms before / 328.97 ms after**.
+The final checkpoint's SQLite copy took **150.77-152.59 ms** across optimized runs; capture was **150.81-152.62 ms**,
+detached projection **20.78-22.81 ms**, and file writing **990.64-992.23 ms**. Background task elapsed totals, including
+scheduled saves, were **12.05 / 6.87 / 6.79 seconds before** and **6.80 / 6.59 / 6.68 seconds after**. The same desktop
+also ran other applications; these Debug observations establish this replay, rather than a worst-case latency bound.
+Neither version reproduced the historical 2.59-second wait in the final matched workload.
+
+| Player operation (120 measured samples) | SQL before / after | Connections before / after | Fits before / after |
+| --- | ---: | ---: | ---: |
+| CmdGotoDirection | 803 / 1869 | 219 / 363 | 0 / 0 |
+| frame | 1927 / 1464 | 1365 / 1241 | 0 / 2 |
+| GetGuests | 701 / 633 | 293 / 327 | 0 / 0 |
+
+Grouping ownership changes where projection and shared invalidation costs are paid; lower latency does not mean every
+SQL/connection counter improves. The unchanged small-world warmed frame regression separately retains zero SQL,
+connections and fitting calculations. Two optimized loaded-frame fits reflect invalidation during remote work.
+
+Each run completed **663 traffic actions**, with no failures and zero due jobs/oldest delay at each sampled turn
+boundary. This demonstrates equal simulated work; the fixed-clock replay does not establish unlimited real-time
+throughput. The reports retain every background phase plus SQL, connection and fitting counts per player operation.
+Checkpoint copying remains a shared-owner stall and must be addressed by the later writer/system-owner split.
+
+### Remaining rollout
+
+- Give World an on-demand system registry and migrate movement, contacts, NPC acquisition, nonfatal combat, heat,
+  timed modules, repairs, traffic publication and complete warmed player paths. Deterministically pause A in each
+  migrated phase and require B's command, observer and complete frame to finish before releasing A.
+- Add explicit transaction participant sets with the conservative full-projection fallback; coordinate transfers by
+  entering persistence before ascending system IDs, revalidating membership/revisions and publishing only after commit.
+- Capture one immutable resident generation while briefly coordinating the writer/system owners, release system
+  owners before SQLite copying, and retain detached projection, atomic replacement and failed-save retry. Prove
+  opposing jumps, failed/retried trades/transfers, destruction during capture, save failure and shutdown/reopen.
+
+The behavior reference remains [EVE University server ticks](https://wiki.eveuniversity.org/Server_tick), reconciled
+with Eden's exact saved deadlines and existing same-tick behavior. [Carbon Destiny Ballpark.cpp revision
+114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp)
+was rechecked for system-local evolution/collision boundaries; no movement constants, timing rules or native messages
+change here. [SQLite's backup documentation](https://www.sqlite.org/backup.html) describes why copying remains a
+separate persistence cost. No new live-client observations were made.
+
+**Automated validation.** Tool/solution restores and the solution build passed (8.58 seconds, zero warnings/errors).
+The corrected focused selection passed **158/158 in 52.31 seconds**, using four workers. Both Python policies passed
+(**8 catalog** tests in 0.855 seconds and **9 formatting** tests in 0.022 seconds). The configured complete-frame
+comparison passed six runs: baseline processes took approximately **85, 53 and 47 seconds**, optimized processes
+approximately **49, 46 and 45 seconds**, including copy/startup/cleanup rather than just measured frames.
+The exact development filters covered `OwnershipTimingTests` admission, nesting, detached checkpoint timing,
+failed diagnostic sinks and system attribution; `CapsuleerGatePerformanceTests` covered bounded hangar work,
+batched reloads, limited reserves and batched drone eligibility; `SkillRequirementRulesTests` covered direct typed
+eligibility boundaries. The focused class selection additionally covered supplies, maintenance, lock order,
+background preparation, encounters, handoff, navigation, inbound recovery, provisioning, assault-defense rules,
+live/detached checkpoints, motion projection, session counters and timed-defense frames.
+
+An earlier expanded selection was deliberately interrupted after **1,189 passes, 17 failures and one existing skip**;
+it is not a passing completed run. Sixteen failures were stale expectations/setup after the already merged T2 and
+regional-startup changes; one was the new diagnostic-failure test assuming a wallet row existed. Test setup now
+explicitly registers prepared communities for direct-job scenarios, the audit expects admitted T2 consumers, and the
+wallet regression performs and verifies a real persisted upsert. The corrected cases passed in the 158-test selection.
+The final limited-reserve guard was followed by **55/55 resupply and energy-weapon tests in 30.92 seconds** with
+one worker. A preceding parallel run had 54 passes and one warmed SQL-counter failure while catalog fixtures were
+being modified; the serialized run passed without another code change. Final formatting verification checked
+1,591 files and the 140-column policy, and diff checks passed. No full .NET suite was requested or run.
+Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Rebuild/restart the server and compare the same route's frame waits, arrival-to-reply
+latency and oldest due-job age. Native rendering, input and gameplay feel remain unverified.

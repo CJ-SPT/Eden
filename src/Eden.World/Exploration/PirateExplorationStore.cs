@@ -25,7 +25,7 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
     public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             long generation = database.Catalog.Identity.Generation;
             bool enabled = database.Settings.NpcPopulation.Pirates;

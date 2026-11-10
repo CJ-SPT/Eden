@@ -5,6 +5,9 @@
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,
 saved signature counts, known/unknown ice fields and activities with empty directories.
 
+[Shared-owner stall relief](protocol/performance.md#shared-owner-stall-relief-november-10-2026) records the frozen
+concurrent-player replay, ordered admission, grouped frame updates and remaining per-system ownership work.
+
 [World tuning](protocol/world-configuration.md) records the activity-based administrator page and saved-world gathering,
 reward, progression and industry multipliers, including restart activation and native compatibility.
 

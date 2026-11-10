@@ -68,7 +68,7 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
     {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerActivity"))
         {
             var activity = live?.CapsuleerActivity ?? _standalone;
             return activity.Read();
@@ -79,7 +79,7 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
     {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerActivity"))
         {
             var activity = live?.CapsuleerActivity ?? _standalone;
             activity.Update(session, systemId, pilotId);
@@ -130,7 +130,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
     {
         int target;
         int? original;
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerActivity"))
         {
             original = _sessions.TryGetValue(session, out int saved) ? saved : null;
             target = systemId ?? previousSystem ?? _sessions.GetValueOrDefault(session);
@@ -153,7 +153,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
         }
         if (target == 0)
         {
-            lock (synchronization.Gate)
+            using (synchronization.Enter("CapsuleerActivity"))
             {
                 Apply();
             }
@@ -166,7 +166,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
             }
             catch
             {
-                lock (synchronization.Gate)
+                using (synchronization.Enter("CapsuleerActivity"))
                 {
                     activity.Update(session, original, pilotId);
                     if (original is { } previous)
@@ -185,7 +185,7 @@ internal sealed class HumanPresence(CapsuleerActivitySource activity, ICapsuleer
 
     private void Forget(Guid session, Action committed)
     {
-        lock (synchronization.Gate)
+        using (synchronization.Enter("CapsuleerActivity"))
         {
             activity.Update(session, null);
             _sessions.Remove(session);

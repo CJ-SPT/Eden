@@ -14,7 +14,7 @@ internal sealed partial class CapsuleerProvisioner
     {
         ArgumentOutOfRangeException.ThrowIfNegative(visitor);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(visitor, CapsuleerPopulationRules.MaximumGateVisitors);
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
             sourceObserved =

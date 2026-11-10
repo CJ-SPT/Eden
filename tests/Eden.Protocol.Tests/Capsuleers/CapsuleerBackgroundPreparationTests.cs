@@ -137,7 +137,7 @@ public sealed class CapsuleerBackgroundPreparationTests
                 {
                     if (line.StartsWith("Performance startup.shipBlueprint:", StringComparison.Ordinal))
                     {
-                        Assert.False(Monitor.IsEntered(synchronization.Gate));
+                        Assert.False(synchronization.IsEntered);
                         templates++;
                     }
                 },

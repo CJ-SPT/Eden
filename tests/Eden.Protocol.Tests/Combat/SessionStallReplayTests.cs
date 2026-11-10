@@ -301,14 +301,14 @@ public sealed partial class ServerPerformanceReplayTests
 
     private sealed class ReplayTrafficOwnership(IWorldSynchronization actual) : IWorldSynchronization
     {
-        public object Gate => actual.Gate;
+        public bool IsEntered => actual.IsEntered;
         public TaskCompletionSource FirstAcquisition { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public List<double> Holds { get; } = [];
 
-        public IDisposable Enter(string operation)
+        public IDisposable Enter(string operation, int? systemId = null)
         {
-            bool nested = Monitor.IsEntered(Gate);
-            var lease = actual.Enter(operation);
+            bool nested = IsEntered;
+            var lease = actual.Enter(operation, systemId);
             if (nested || SessionLatency.CurrentDescription is not null)
             {
                 return lease;

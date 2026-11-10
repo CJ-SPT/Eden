@@ -42,7 +42,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         {
             throw new InvalidOperationException("Global pilot preparation requires a stopped world.");
         }
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             // Pin one catalog generation and reuse its read connection throughout offline preparation.
             using var catalogScope = new CatalogReadScope().Begin();
@@ -111,7 +111,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
 
     internal CapsuleerProvisioningTurn EnsureSystem(int systemId)
     {
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             return Provision(systemId);
         }

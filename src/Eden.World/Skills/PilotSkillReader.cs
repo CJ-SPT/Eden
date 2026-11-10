@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Eden.Data.Catalog;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Dogma;
@@ -56,6 +57,20 @@ internal sealed class PilotSkillReader(WorldDatabase database) : IPilotSkillRead
                 throw new InvalidDataException("The pilot has not trained the required module skills.");
             }
         }
+    }
+
+    internal static IReadOnlySet<int> UsableTypes(WorldDbContext world, CatalogDbContext catalog, long pilotId, int[] types)
+    {
+        var attributes = types.Distinct().ToDictionary(type => type, catalog.FittingAttributes);
+        int[] skills = attributes
+            .Values.SelectMany(values =>
+                InventoryDefinitions.RequiredSkills.Select(pair => checked((int)values.GetValueOrDefault(pair.Skill)))
+            )
+            .Where(skill => skill != 0)
+            .Distinct()
+            .ToArray();
+        var levels = Levels(world, catalog, pilotId, skills);
+        return attributes.Where(pair => SkillRequirementRules.Meets(pair.Value, levels)).Select(pair => pair.Key).ToFrozenSet();
     }
 
     public IReadOnlyList<TrainedSkill> ReadSkills(long pilotId)

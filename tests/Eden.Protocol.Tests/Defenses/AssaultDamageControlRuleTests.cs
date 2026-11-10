@@ -95,7 +95,7 @@ public sealed class AssaultDamageControlRuleTests
     }
 
     [Fact]
-    public void CoverageKeepsTheSixProfilesPartialForT2ConsumersAndBothReactiveProfilesEvidenceBlocked()
+    public void CoverageCompletesSixProfilesForAdmittedT2ConsumersAndKeepsReactiveProfilesEvidenceBlocked()
     {
         using Fixture f = new();
         using CatalogDbContext catalog = new(f.Path);
@@ -105,9 +105,9 @@ public sealed class AssaultDamageControlRuleTests
         {
             var entry = Assert.Single(report.Entries, e => e.TypeId == type);
             Assert.True(entry.Admitted);
-            Assert.Equal(ContentSupportState.Partial, entry.State);
+            Assert.Equal(ContentSupportState.Complete, entry.State);
             Assert.Contains(entry.Checks, c => c.Implemented && c.Milestone == ShipContentMilestone.AdvancedDefenses);
-            Assert.Contains(entry.Checks, c => !c.Implemented && c.Milestone == ShipContentMilestone.TechTwoSubcapitals);
+            Assert.Contains(entry.Checks, c => c.Implemented && c.Milestone == ShipContentMilestone.TechTwoSubcapitals);
             Assert.DoesNotContain(entry.Checks, c => c.Operation == ContentOperation.Overheating);
         }
         Assert.Null(FittingCatalog.Definition(catalog, 52230));

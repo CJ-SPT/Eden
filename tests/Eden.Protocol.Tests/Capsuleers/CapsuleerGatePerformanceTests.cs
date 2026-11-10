@@ -21,6 +21,200 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
     private static readonly int[] ReportedSystems = [30003034, 30002056, 30004994];
 
     [Fact]
+    public void DroneEligibilityReadsTrainedAndAbsentSkillsInOneQuery()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        PassiveCatalogFixture.LoadCombatDrones(fixture.Database.CatalogPath);
+        var founder = fixture.Founder();
+        using WorldDbContext world = new(fixture.Database.Path);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        using var transaction = world.Database.BeginTransaction();
+        var drones = CapsuleerSupplyStore.AvailableDrones(catalog);
+        Assert.NotEmpty(drones);
+        CapsuleerCommunityStore.GrantRequirements(world, catalog, founder.PilotId, drones[0].TypeId, []);
+        world.SaveChanges();
+        var expected = drones
+            .Where(drone =>
+            {
+                try
+                {
+                    Eden.World.Skills.PilotSkillReader.CheckRequirements(world, catalog, founder.PilotId, drone.TypeId);
+                    return true;
+                }
+                catch (InvalidDataException)
+                {
+                    return false;
+                }
+            })
+            .Select(drone => drone.TypeId)
+            .Order()
+            .ToArray();
+        Assert.NotEmpty(expected);
+        int[] types = drones.Select(drone => drone.TypeId).ToArray();
+        Assert.Equal(expected, Eden.World.Skills.PilotSkillReader.UsableTypes(world, catalog, founder.PilotId, types).Order());
+        using var metrics = SessionPerformance.Begin("batched drone eligibility", output.WriteLine, force: true)!;
+        var usable = Eden.World.Skills.PilotSkillReader.UsableTypes(world, catalog, founder.PilotId, types);
+        Assert.Equal(expected, usable.Order());
+        Assert.Equal(1, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(64)]
+    public void ResupplyStopsInspectingHangarAfterStockFillsTheRequirement(int unusedStacks)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        var founder = fixture.Founder();
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock);
+        using WorldDbContext world = new(fixture.Database.Path);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        using var transaction = world.Database.BeginTransaction();
+        TrafficFitting.Apply(
+            world,
+            catalog,
+            founder.PilotId,
+            founder.FounderShipId,
+            TrafficSnapshotTests.Profile() with
+            {
+                HullTypeId = 603,
+                Equipment =
+                [
+                    new(561, (int)Eden.Gameplay.Inventory.InventoryFlag.HighSlot0, 1),
+                    new(215, (int)Eden.Gameplay.Inventory.InventoryFlag.HighSlot0, 1),
+                ],
+            },
+            fixture.Clock.Now
+        );
+        int station = world.Ships.Find(founder.FounderShipId)!.StationId;
+        long first = Eden.World.Inventory.InventoryPersistence.NextId(world);
+        for (int index = 0; index <= unusedStacks; index++)
+        {
+            world.Add(
+                new Eden.Data.World.Inventory.OwnedItem
+                {
+                    Id = first + index,
+                    OwnerId = founder.PilotId,
+                    LocationId = station,
+                    TypeId = 215,
+                    Quantity = index == 0 ? 2000 : 1,
+                    FlagId = (int)Eden.Gameplay.Inventory.InventoryFlag.Hangar,
+                }
+            );
+        }
+        world.SaveChanges();
+        fixture.Clock.Seconds += 60;
+        long wallet = world.Set<Eden.Data.World.Market.PilotWallet>().Find(founder.PilotId)!.Cents;
+        long rounds = world
+            .Set<Eden.Data.World.Inventory.OwnedItem>()
+            .Where(item => item.OwnerId == founder.PilotId && item.TypeId == 215)
+            .Sum(item => (long)item.Quantity);
+        using (var metrics = SessionPerformance.Begin("filled hangar resupply", output.WriteLine, force: true)!)
+        {
+            var supplied = host.GetRequiredService<CapsuleerResupply>()
+                .Dock(fixture.Database, world, catalog, founder.PilotId, null, fixture.Clock.Now);
+            Assert.True(supplied.Checked);
+            Assert.Empty(supplied.Requirements);
+            Assert.Equal(0, supplied.SpentCents);
+            Assert.Equal(60, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(1, metrics.FittingCalculations);
+        }
+        Assert.Equal(wallet, world.Set<Eden.Data.World.Market.PilotWallet>().Find(founder.PilotId)!.Cents);
+        Assert.Equal(
+            rounds,
+            world
+                .Set<Eden.Data.World.Inventory.OwnedItem>()
+                .Where(item => item.OwnerId == founder.PilotId && item.TypeId == 215)
+                .Sum(item => (long)item.Quantity)
+        );
+        Assert.All(
+            world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(item => item.Id > first && item.Id <= first + unusedStacks),
+            item => Assert.Equal(1, item.Quantity)
+        );
+        transaction.Rollback();
+    }
+
+    [Theory]
+    [InlineData(true, 2)]
+    [InlineData(false, 4)]
+    public void ResupplyReloadBatchesFullMagazinesAndPreservesLimitedReserveOrdering(bool fullReserves, int fits)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        var founder = fixture.Founder();
+        using WorldDbContext world = new(fixture.Database.Path);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        using var transaction = world.Database.BeginTransaction();
+        TrafficFitting.Apply(
+            world,
+            catalog,
+            founder.PilotId,
+            founder.FounderShipId,
+            TrafficSnapshotTests.Profile() with
+            {
+                HullTypeId = 603,
+                Equipment =
+                [
+                    new(561, (int)Eden.Gameplay.Inventory.InventoryFlag.HighSlot0, 1),
+                    new(215, (int)Eden.Gameplay.Inventory.InventoryFlag.HighSlot0, 1),
+                    new(561, (int)Eden.Gameplay.Inventory.InventoryFlag.HighSlot1, 1),
+                    new(215, (int)Eden.Gameplay.Inventory.InventoryFlag.HighSlot1, 1),
+                ],
+            },
+            fixture.Clock.Now
+        );
+        int maximum = (int)
+            Math.Floor(catalog.RequireItem(561).Capacity!.Value / Eden.World.Inventory.PilotInventoryStore.Volume(catalog, 215));
+        int reserve = fullReserves ? maximum * 3 : maximum + 10;
+        var modules = world
+            .Set<Eden.Data.World.Inventory.OwnedItem>()
+            .Where(item => item.LocationId == founder.FounderShipId && item.TypeId == 561)
+            .OrderBy(item => item.Id)
+            .ToArray();
+        var charges = modules
+            .Select(module => world.Set<Eden.Data.World.Inventory.OwnedItem>().Single(item => item.LocationId == module.Id))
+            .ToArray();
+        foreach (var charge in charges)
+        {
+            charge.Quantity = 1;
+        }
+        world.Add(
+            new Eden.Data.World.Inventory.OwnedItem
+            {
+                Id = Eden.World.Inventory.InventoryPersistence.NextId(world),
+                OwnerId = founder.PilotId,
+                LocationId = founder.FounderShipId,
+                TypeId = 215,
+                Quantity = reserve,
+                FlagId = (int)Eden.Gameplay.Inventory.InventoryFlag.Cargo,
+            }
+        );
+        world.SaveChanges();
+        fixture.Clock.Seconds += 60;
+        using (var metrics = SessionPerformance.Begin("resupply reload", output.WriteLine, force: true)!)
+        {
+            Assert.True(CapsuleerResupply.Reload(fixture.Database, world, catalog, founder.PilotId, fixture.Clock.Now));
+            Assert.Equal(fits, metrics.FittingCalculations);
+        }
+        Assert.Equal(Math.Min(maximum, reserve + 1), charges[0].Quantity);
+        Assert.Equal(Math.Min(maximum, Math.Max(0, reserve - maximum + 1) + 1), charges[1].Quantity);
+        Assert.Equal(
+            reserve + 2,
+            world
+                .Set<Eden.Data.World.Inventory.OwnedItem>()
+                .Where(item => item.OwnerId == founder.PilotId && item.TypeId == 215)
+                .Sum(item => item.Quantity)
+        );
+        transaction.Rollback();
+        world.ChangeTracker.Clear();
+        Assert.DoesNotContain(
+            world.Set<Eden.Data.World.Inventory.OwnedItem>(),
+            item => item.TypeId == 561 && item.OwnerId == founder.PilotId
+        );
+    }
+
+    [Fact]
     public void UnchangedDroneResupplyCalculatesItsFitOnce()
     {
         using CapsuleerHaulerTests.Fixture fixture = new();
@@ -53,6 +247,7 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
         Assert.Empty(result.Requirements);
         Assert.Equal(0, result.SpentCents);
         Assert.Equal(1, metrics.FittingCalculations);
+        Assert.InRange(metrics.Commands, 1, 35);
         Assert.Equal(stock, world.Set<Eden.Data.World.Inventory.OwnedItem>().Sum(item => item.Quantity));
         Assert.Equal(wallet, world.Set<Eden.Data.World.Market.PilotWallet>().Find(founder.PilotId)!.Cents);
     }

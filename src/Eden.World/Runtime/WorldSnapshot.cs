@@ -16,13 +16,15 @@ internal sealed class WorldSnapshot(
     IReadOnlyList<Eden.World.Capsuleers.MinerCheckpoint>? miners = null,
     IReadOnlyList<Eden.World.Capsuleers.HaulerCheckpoint>? haulers = null,
     Eden.World.Capsuleers.CapsuleerClockCheckpoint? activity = null,
-    Eden.World.Capsuleers.CapsuleerJobCheckpoint? jobs = null
+    Eden.World.Capsuleers.CapsuleerJobCheckpoint? jobs = null,
+    TimeSpan copy = default
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
     internal long Generation => generation;
     internal TimeSpan Wait => wait;
     internal TimeSpan Capture => capture;
+    internal TimeSpan Copy => copy;
 
     internal TimeSpan Project()
     {

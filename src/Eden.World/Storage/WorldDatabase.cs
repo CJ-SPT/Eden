@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
 
@@ -35,6 +37,11 @@ public sealed record WorldDatabase(string Path)
     public Eden.Gameplay.Configuration.WorldSettings Settings => Configuration.Settings;
     public CatalogProvider Catalog => CatalogProvider.Open(CatalogPath);
     internal object MotionLock { get; } = new();
+    private OwnershipMonitor? _movementOwnership;
+
+    internal IDisposable EnterMovement([CallerMemberName] string operation = "", int? systemId = null) =>
+        LazyInitializer.EnsureInitialized(ref _movementOwnership, () => new("database movement", MotionLock)).Enter(operation, systemId);
+
     internal ConcurrentDictionary<int, int> MotionStamps { get; } = new();
     internal ConcurrentDictionary<long, int> CollisionStamps { get; } = new();
     internal ConcurrentDictionary<int, long> PopulationStamps { get; } = new();

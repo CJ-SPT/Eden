@@ -6,6 +6,9 @@ namespace Eden.Infrastructure.Diagnostics;
 public enum SessionLatencyPhase
 {
     WorldWait,
+    Ownership,
+    TimedEffects,
+    Projection,
     TrafficRefresh,
     TrafficReconcile,
     PendingDamage,
@@ -35,6 +38,9 @@ public sealed class SessionLatency : IDisposable
     private readonly double _queueMilliseconds;
     private double? _replyMilliseconds;
 
+    public TimeSpan ArrivalToReply => TimeSpan.FromMilliseconds((_replyMilliseconds ?? 0) + _queueMilliseconds);
+    public TimeSpan Elapsed => Stopwatch.GetElapsedTime(_started) + TimeSpan.FromMilliseconds(_queueMilliseconds);
+
     public SessionLatency(string description, Action<string> warning, Action<string>? trace = null, long? received = null)
     {
         _description = description;
@@ -45,6 +51,14 @@ public sealed class SessionLatency : IDisposable
     }
 
     public static Measurement Measure(SessionLatencyPhase phase) => new(s_current.Value, phase);
+
+    internal static void ObserveOwnership(TimeSpan hold)
+    {
+        if (s_current.Value is { } current)
+        {
+            current._elapsed[(int)SessionLatencyPhase.Ownership] += (long)(hold.TotalSeconds * Stopwatch.Frequency);
+        }
+    }
 
     public static void ObserveWorldWait(string? owner, long started)
     {
@@ -70,7 +84,9 @@ public sealed class SessionLatency : IDisposable
             return;
         }
         string phases = string.Join(", ", s_phases.Select(phase => $"{phase}={_elapsed[(int)phase] * 1000.0 / Stopwatch.Frequency:F2} ms"));
-        string reply = _replyMilliseconds is { } elapsed ? $", reply={elapsed:F2} ms" : string.Empty;
+        string reply = _replyMilliseconds is { } elapsed
+            ? $", reply={elapsed:F2} ms, arrivalToReply={elapsed + _queueMilliseconds:F2} ms"
+            : string.Empty;
         string blocker = _blockingOwner is null ? string.Empty : $", observedOwner={_blockingOwner}";
         string message = string.Create(
             CultureInfo.InvariantCulture,

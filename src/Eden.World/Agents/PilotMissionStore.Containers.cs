@@ -103,7 +103,7 @@ internal sealed partial class PilotMissionStore
     public MissionContainerInventory Read(long pilotId, long containerId)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -130,7 +130,7 @@ internal sealed partial class PilotMissionStore
     public IReadOnlyList<InventoryChange> Take(long pilotId, long shipId, InventoryMoveRequest request)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             using WorldDbContext world = new(database.Path);
             using var transaction = world.Database.BeginTransaction();

@@ -54,7 +54,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
     public IReadOnlyList<CombatAnomaly> List(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             var combat = ListCore(systemId, now, false);
             if (mining is null)
@@ -89,7 +89,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
     public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             var combat = ListCore(systemId, now, true);
             if (exploration is null && mining is null)
@@ -119,7 +119,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             var provider = database.Catalog;
             long version = Version(systemId);
@@ -292,7 +292,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             var nearby = List(systemId, now)
                 .Concat(Signatures(systemId, now))
@@ -382,7 +382,7 @@ internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExplorat
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        lock (database.MotionLock)
+        using (database.EnterMovement())
         {
             long version = Version(-1);
             if (

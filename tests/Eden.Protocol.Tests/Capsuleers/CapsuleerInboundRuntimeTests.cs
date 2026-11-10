@@ -50,7 +50,7 @@ public sealed class CapsuleerInboundRuntimeTests
         }
         var gate = reverseGate ? new(Source, Observer, s_gate.DepartureGateId, s_gate.ArrivalGateId) : s_gate;
         long pilot = CreateLegacyInbound(f, gate);
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilot);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilot);
         long ship = hauler.Read()!.Pilot.ShipId;
@@ -284,7 +284,7 @@ public sealed class CapsuleerInboundRuntimeTests
             TrafficSnapshotTests.Install(f.Database, TrafficSnapshotTests.Profile());
         }
         long pilotId = CreateLegacyInbound(f, s_gate);
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilotId);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilotId);
         var before = hauler.Read()!;
@@ -358,7 +358,7 @@ public sealed class CapsuleerInboundRuntimeTests
             world.Set<SavedCapsuleerJob>().Single().DueTicks = TimeSpan.FromSeconds(90).Ticks;
             world.SaveChanges();
         }
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: liveWorld);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: liveWorld).WithPreparedCommunities(f.Database);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var job = scheduler.Jobs().Single();
         Assert.Equal(TimeSpan.FromSeconds(680).Ticks, job.DueTicks);

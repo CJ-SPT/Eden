@@ -440,6 +440,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         try
         {
             using WorldDbContext world = new(database.Path);
+            using var timing = SessionLatency.Measure(SessionLatencyPhase.Projection);
             CaptureCheckpoint().Apply(world);
             foreach (long id in _dirtyShips)
             {

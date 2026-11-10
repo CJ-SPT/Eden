@@ -155,7 +155,7 @@ public sealed class CapsuleerTrafficNavigationTests
     {
         CapsuleerHaulerTests.Fixture f = new();
         var founder = f.Founder();
-        var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         try
         {
             var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
@@ -230,7 +230,7 @@ public sealed class CapsuleerTrafficNavigationTests
             }
             world.SaveChanges();
         }
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
         host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(Source);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
@@ -288,7 +288,7 @@ public sealed class CapsuleerTrafficNavigationTests
             world.Set<SavedCapsuleerHauler>().Single().RouteSystems = [Source, Corridor, Remote];
             world.SaveChanges();
         }
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
         var before = hauler.Read()!;
@@ -305,7 +305,7 @@ public sealed class CapsuleerTrafficNavigationTests
     {
         using CapsuleerHaulerTests.Fixture f = new();
         var founder = f.Founder();
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
         hauler.Reappear(job, TimeSpan.FromHours(1).Ticks, Corridor);
@@ -366,7 +366,7 @@ public sealed class CapsuleerTrafficNavigationTests
             world.SaveChanges();
             new HaulerCheckpoint(founder.PilotId, work).Apply(world);
         }
-        var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         IHumanPresenceLease? human = null;
         try
         {
@@ -403,7 +403,7 @@ public sealed class CapsuleerTrafficNavigationTests
                     await host.GetRequiredService<LiveWorld>().FlushAsync();
                     human?.Dispose();
                     host.Dispose();
-                    host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+                    host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
                     hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
                     scheduler = host.GetRequiredService<ICapsuleerScheduler>();
                     if (scheduled)
@@ -444,7 +444,7 @@ public sealed class CapsuleerTrafficNavigationTests
         long pilot = new CapsuleerProvisioner(f.Database, f.Clock)
             .EnsureInbound(new(Source, Corridor, 50009991, 50009992), sourceObserved: true)!
             .Value;
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(pilot);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(row => row.PilotId == pilot);
         var original = hauler.Read()!;
