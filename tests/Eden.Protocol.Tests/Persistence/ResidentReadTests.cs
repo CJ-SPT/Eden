@@ -125,7 +125,7 @@ public sealed class ResidentReadTests
     }
 
     [Fact]
-    public void AmmoQuantityUpdatesRetainSceneViewsWhileMembershipChangesInvalidateThem()
+    public void UnrelatedAmmoQuantityAndMembershipChangesRetainSceneViews()
     {
         using AmmunitionTests.Fixture fixture = new(liveWorld: true);
         fixture.Load(quantity: 20);
@@ -147,9 +147,10 @@ public sealed class ResidentReadTests
             int hangar = (int)InventoryFlag.Hangar;
             world.Database.ExecuteSql($"UPDATE worlditem SET locationid={station},flagid={hangar} WHERE LocationId={fixture.Gun}");
         }
-        using var refresh = SessionPerformance.Begin("membership refreshes scene", _ => { }, force: true)!;
+        using var refresh = SessionPerformance.Begin("unrelated membership keeps scene", _ => { }, force: true)!;
         Assert.Empty(wrecks.List(SystemId, fixture.Clock.Now));
-        Assert.True(refresh.Commands > 0);
+        Assert.Equal(0, refresh.Commands);
+        Assert.Equal(0, refresh.Connections);
     }
 
     [Fact]

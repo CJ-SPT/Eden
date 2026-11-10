@@ -15,14 +15,14 @@ internal sealed partial class LiveReadModels
 
     private readonly ResidentSnapshot<int, IReadOnlyList<DirectionalEntry>> _directionalContacts = new(
         "resident.directionalContacts",
-        "WorldPilot",
         "WorldShip",
         "WorldPosition",
         "WorldDrone",
         "WorldItem",
         "WorldNpc",
         "WorldWreck",
-        "WorldLogoff"
+        "WorldLogoff",
+        "WorldCapsuleerSuspension"
     );
 
     internal DirectionalObserver DirectionalObserver(long pilot, Func<DirectionalObserver> load) =>

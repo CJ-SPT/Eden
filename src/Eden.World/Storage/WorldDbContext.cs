@@ -61,6 +61,8 @@ public sealed partial class WorldDbContext(string path) : DbContext
     public DbSet<FlightPosition> Positions => Set<FlightPosition>();
 
     internal bool ReadsResidentNpcTimer { get; init; }
+    internal TransactionParticipants? Participants { get; init; }
+    internal bool IsResidentProjection { get; init; }
 
     private readonly SqliteConnection? _snapshot;
 

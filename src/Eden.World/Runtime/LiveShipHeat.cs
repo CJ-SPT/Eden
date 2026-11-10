@@ -150,7 +150,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
 
     internal void PublishCommitted(long pilot, long ship, ShipHeatSnapshot state)
     {
-        _ships[ship] = new(pilot, ship, state, HasSavedState: true, Changed: false);
+        _ships[ship] = new(pilot, ship, state, HasSavedState: true, Changed: false) { SystemId = _ships.GetValueOrDefault(ship)?.SystemId };
         _dirty.Remove(ship);
         _stale.Remove(ship);
         _reloadSaved.Remove(ship);
@@ -303,7 +303,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         }
     }
 
-    internal void Advance(long now)
+    internal void Advance(long now, TransactionParticipants? participants = null)
     {
         if (_internal != 0)
         {
@@ -315,6 +315,10 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
             foreach (long ship in _active.ToArray())
             {
                 var previous = _ships[ship];
+                if (participants is not null && !Participates(participants, previous))
+                {
+                    continue;
+                }
                 var loaded = _stale.Contains(ship) ? Load(ship, now, true, _reloadSaved.Contains(ship) ? null : previous.State) : previous;
                 if (loaded is null)
                 {
@@ -337,7 +341,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                     .ToArray();
                 if (burned.Length > 0)
                 {
-                    using WorldDbContext world = new(database.Path);
+                    using WorldDbContext world = new(database.Path) { Participants = new(pilots: [loaded.PilotId], ships: [ship]) };
                     using var transaction = world.Database.BeginTransaction();
                     using CatalogDbContext catalog = new(database.CatalogPath);
                     new ShipHeatCheckpoint([new(ship, next)]).Apply(world);
@@ -385,11 +389,10 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         _internal++;
         try
         {
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldDbContext world = new(database.Path) { Participants = new(ships: [ship]) };
+            world.Database.OpenConnection();
             using CatalogDbContext catalog = new(database.CatalogPath);
             var loaded = ShipHeatPersistence.Load(world, catalog, ship, now, liveChange, current, expectedPilot);
-            transaction.Commit();
             return loaded;
         }
         finally
@@ -418,13 +421,39 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         }
     }
 
-    internal void Flush()
+    private bool Participates(TransactionParticipants participants, LoadedShipHeat ship) =>
+        participants.Includes(ship.PilotId, ship.ShipId, ship.SystemId)
+        || owner.Combat?.Participates(participants, ship.PilotId, ship.ShipId) == true;
+
+    internal void Flush(TransactionParticipants? participants = null)
     {
         if (_internal != 0)
         {
             return;
         }
-        Advance(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        if (participants?.Systems.Count > 0)
+        {
+            var missing = _ships.Values.Where(s => s.SystemId is null).Select(s => s.ShipId).ToArray();
+            if (missing.Length > 0)
+            {
+                using WorldDbContext locations = new(database.Path) { IsResidentProjection = true };
+                foreach (
+                    var row in locations
+                        .Ships.Where(s => missing.Contains(s.Id))
+                        .Select(s => new
+                        {
+                            s.Id,
+                            System = s.Position == null ? null : s.Position.SystemId,
+                            s.StationId,
+                        })
+                )
+                {
+                    int system = row.System ?? database.Catalog.FindStation(row.StationId)!.SolarSystemId;
+                    _ships[row.Id] = _ships[row.Id] with { SystemId = system };
+                }
+            }
+        }
+        Advance(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), participants);
         if (_dirty.Count == 0)
         {
             return;
@@ -432,9 +461,14 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         _internal++;
         try
         {
-            using WorldDbContext world = new(database.Path);
-            Capture()!.Apply(world);
-            _dirty.Clear();
+            var ships = _dirty.Where(id => participants is null || Participates(participants, _ships[id])).ToArray();
+            if (ships.Length == 0)
+            {
+                return;
+            }
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+            new ShipHeatCheckpoint(ships.Select(id => new ShipHeatProjection(id, _ships[id].State)).ToArray()).Apply(world);
+            _dirty.ExceptWith(ships);
         }
         finally
         {

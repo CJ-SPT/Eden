@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Mail;
 using Eden.Data.World.Skills;
@@ -26,10 +27,20 @@ namespace Eden.World.Runtime;
 
 internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase database)
 {
+    private readonly ResidentSnapshot<int, long> _resourceDeadline = new(
+        "resident.resourceDeadline",
+        "WorldBeltRenewal",
+        "WorldEconomicPolicy"
+    );
+
+    internal bool TryResourceDeadline(out long deadline) => _resourceDeadline.TryRead(0, 0, out deadline);
+
+    internal void ScheduleResources(long deadline) => _resourceDeadline.Publish(0, deadline, 0, long.MaxValue);
+
     private readonly ResidentSnapshot<(long Pilot, long Ship), IReadOnlyList<FittedModuleCondition>> _moduleConditions = new(
         "resident.moduleConditions",
         "WorldModuleCondition",
-        "WorldItemMembership",
+        "WorldFitRevision",
         "WorldPilot",
         "WorldShip"
     );
@@ -76,7 +87,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "WorldMiningSite"
     );
 
-    private sealed record WreckView(IReadOnlyList<WreckContact> Contacts, long NextExpiry);
+    private sealed record WreckView(IReadOnlyList<WreckContact> Contacts, long NextExpiry, FrozenSet<long> Items);
 
     private readonly ResidentSnapshot<int, WreckView> _wrecks = new("resident.wrecks", "WorldWreck", "WorldItemMembership", "WorldShip");
 
@@ -134,7 +145,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
             () =>
             {
                 using WorldDbContext world = new(database.Path);
-                using var transaction = world.Database.BeginTransaction();
+                world.Database.OpenConnection();
                 var implants = PilotImplantStore.Read(world, pilotId);
                 var boosters = world.Set<SavedBooster>().Where(b => b.PilotId == pilotId).OrderBy(b => b.Slot).AsNoTracking().ToArray();
                 var injector = world.Set<SavedSkillInjectorState>().Find(pilotId);
@@ -201,8 +212,12 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
             {
                 var contacts = Array.AsReadOnly(load().ToArray());
                 using WorldDbContext world = new(database.Path);
-                long next = world.Set<WorldWreck>().Where(w => w.ExpiresAt > now).Min(w => (long?)w.ExpiresAt) ?? long.MaxValue;
-                return new WreckView(contacts, next);
+                long next =
+                    world.Set<WorldWreck>().Where(w => w.SystemId == system && w.ExpiresAt > now).Min(w => (long?)w.ExpiresAt)
+                    ?? long.MaxValue;
+                var ids = contacts.Select(c => c.Id).ToArray();
+                var items = world.Set<OwnedItem>().Where(i => ids.Contains(i.LocationId)).Select(i => i.Id).ToArray().ToFrozenSet();
+                return new WreckView(contacts, next, items);
             },
             now,
             view => view.NextExpiry
@@ -210,7 +225,16 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
 
     internal void Observe(IReadOnlyCollection<CombatRowChange> changes)
     {
-        _information.Observe(changes);
+        _information.Observe(
+            changes,
+            (key, change) =>
+                change.Table switch
+                {
+                    "WorldPilot" => key.Pilot == change.Id,
+                    "WorldShip" => key.Ship == change.Id,
+                    _ => key.Module == change.Id,
+                }
+        );
         foreach (var change in changes)
         {
             if (change.Table == "WorldPilot")
@@ -222,35 +246,61 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                 _gateWatcherPositions.Remove(change.Id);
             }
         }
-        _directionalObservers.Observe(changes);
-        _directionalContacts.Observe(changes);
+        _directionalObservers.ObserveValues(
+            changes,
+            (pilot, view, change) =>
+                change.Table switch
+                {
+                    "WorldPilot" or "WorldFitRevision" => pilot == change.Id,
+                    "WorldShip" or "WorldPosition" => view.ShipId == change.Id,
+                    _ => true,
+                }
+        );
         if (changes.Any(c => c.Table == "schema"))
         {
             Clear();
             return;
         }
-        _spatialNavigation.Observe(changes);
-        _spatialMembership.Observe(changes);
-        _moduleConditions.Observe(changes);
+        ObserveSystemContacts(changes);
+        ObserveSpatialNavigation(changes);
+        _spatialMembership.Observe(
+            changes,
+            (key, change) =>
+                change.Table switch
+                {
+                    "WorldPilot" => key.Pilot == change.Id,
+                    "WorldShip" => key.Ship == change.Id,
+                    _ => key.Module == change.Id,
+                }
+        );
+        _resourceDeadline.Observe(changes);
+        _moduleConditions.ObserveValues(
+            changes,
+            (key, conditions, change) =>
+                change.Table switch
+                {
+                    "WorldPilot" or "WorldFitRevision" => key.Pilot == change.Id,
+                    "WorldShip" => key.Ship == change.Id,
+                    _ => conditions.Any(c => c.Condition.ItemId == change.Id),
+                }
+        );
         _missionSites.Observe(changes);
-        _learning.Observe(changes);
-        _points.Observe(changes);
-        _extraction.Observe(changes);
+        _learning.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
+        _points.Observe(changes, (pilot, change) => pilot == change.Id);
+        _extraction.Observe(changes, (pilot, change) => pilot == change.Id);
         _loyalty.Observe(changes);
-        _wallet.Observe(changes);
+        _wallet.Observe(changes, (pilot, change) => pilot == change.Id);
         _mailHead.Observe(changes);
         _listHead.Observe(changes);
-        _fits.Observe(changes);
+        _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
         ObserveDefenseProfiles(changes);
         _asteroids.Observe(changes);
         _miningSites.Observe(changes);
-        _wrecks.Observe(changes);
-        _drones.Observe(changes);
         _droneControllers.Observe(changes);
         _corporationChangeHeads.Observe(changes);
-        _corporationLoyalty.Observe(changes);
+        _corporationLoyalty.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
         _corporations.Observe(changes);
-        _corporationIdentities.Observe(changes);
+        _corporationIdentities.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
         _crimewatch.Observe(changes);
         _concord.Observe(changes);
         _concordOffline.Observe(changes);
@@ -268,6 +318,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _directionalContacts.Clear();
         _spatialNavigation.Clear();
         _spatialMembership.Clear();
+        _resourceDeadline.Clear();
         _moduleConditions.Clear();
         _missionSites.Clear();
         _learning.Clear();

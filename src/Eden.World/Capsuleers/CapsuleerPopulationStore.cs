@@ -214,12 +214,21 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                 return _metadata;
             }
             using WorldDbContext world = new(database.Path);
-            var communities = world.Set<SavedCapsuleerPopulation>().Select(c => c.SystemId).ToHashSet();
+            bool incremental = live is not null && _metadata is not null && _metadata.Revision >= live.CapsuleerMetadataReset;
+            int[] changedSystems = incremental
+                ? live!.CapsuleerSystemRevisions.Where(p => p.Value > _metadata!.Revision).Select(p => p.Key).ToArray()
+                : [];
+            var communities = world
+                .Set<SavedCapsuleerPopulation>()
+                .Where(c => !incremental || changedSystems.Contains(c.SystemId))
+                .Select(c => c.SystemId)
+                .ToHashSet();
             using CatalogDbContext catalog = new(database.CatalogPath);
             long seed = world.Set<SavedCapsuleerProvisioning>().Select(p => p.WorldSeed).SingleOrDefault();
             string fingerprint = CapsuleerProvisioner.Fingerprint(database, catalog, seed, world.Settings.Capsuleers);
             var systems = world
                 .Set<SavedCapsuleerSystem>()
+                .Where(s => !incremental || changedSystems.Contains(s.SystemId))
                 .AsNoTracking()
                 .OrderBy(s => s.SystemId)
                 .AsEnumerable()
@@ -234,10 +243,23 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                     CurrentPolicy = s.PolicyVersion == CapsuleerProvisioningRules.Version && s.CatalogFingerprint == fingerprint,
                 })
                 .ToArray();
+            if (incremental)
+            {
+                var current = _metadata!.Systems.ToDictionary(s => s.SystemId);
+                foreach (int system in changedSystems)
+                {
+                    current.Remove(system);
+                }
+                foreach (var system in systems)
+                {
+                    current[system.SystemId] = system;
+                }
+                systems = current.Values.OrderBy(s => s.SystemId).ToArray();
+            }
             CapsuleerPopulationSummary summary = new(
                 systems.Length,
                 systems.Count(s => s.Eligibility == CapsuleerEligibility.Eligible),
-                communities.Count,
+                incremental ? world.Set<SavedCapsuleerPopulation>().Count() : communities.Count,
                 world.Set<SavedCapsuleerAgent>().Count(),
                 seed
             )

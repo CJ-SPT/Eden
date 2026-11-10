@@ -41,7 +41,7 @@ internal sealed partial class CapsuleerProvisioner
         long seed;
         BackgroundSlot[] slots;
         using (synchronization.Enter("population preparation snapshot"))
-        using (WorldDbContext world = new(database.Path))
+        using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
         {
             seed = world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed;
             string fingerprint = Fingerprint(database, catalog, seed, world.Settings.Capsuleers);
@@ -83,14 +83,14 @@ internal sealed partial class CapsuleerProvisioner
         if (needsShips || needsMiner)
         {
             using var owner = synchronization.Enter("population identity snapshot");
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
             planning = BackgroundReservations(world);
         }
         var roster = slots.Where(slot => slot.Career == CapsuleerCareer.Hauling).Select(slot => slot.Hull).ToList();
         int offset = (int)(
             CapsuleerProvisioningRules.Seed(seed, system, CapsuleerCareer.Hauling) % (ulong)Math.Max(1, traffic.Routes.Length)
         );
-        using (WorldDbContext world = new(database.Path))
+        using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
         {
             for (int slot = 0; slot < count && origins.Length > 0; slot++)
             {
@@ -134,14 +134,14 @@ internal sealed partial class CapsuleerProvisioner
                 // Re-read reservations after validation: sessions and gate visitors may have committed meanwhile.
                 if (needsShips || needsMiner)
                 {
-                    using WorldDbContext world = new(database.Path);
+                    using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
                     _startupReservations = BackgroundReservations(world);
                 }
                 _requirePreparedBlueprints = true;
                 CapsuleerProvisioningTurn result;
                 using (database.EnterMovement())
                 {
-                    using WorldDbContext world = new(database.Path);
+                    using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
                     result = Provision(system, catalog, world, globalStartup: true, maximumFounders: 1);
                 }
                 // Connection close has published the committed identity revision. The

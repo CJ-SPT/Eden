@@ -1510,3 +1510,87 @@ subsequent validation is serialized. No full .NET suite was requested or run.
 
 **Optional maintainer checks.** Rebuild/restart and enter an unprepared region; compare responsiveness while new residents
 depart or arrive. Native rendering, input and gameplay feel remain unverified.
+
+
+## Classified transactions and scheduler reuse, November 10, 2026
+
+Milestone 2 of the simulation scaling plan introduces immutable transaction participants for systems, pilots,
+ships and shared NPC/wreck identities. Capsuleer actions declare their pilot and current ship; incremental founder
+admission and belt renewal declare that they do not consume existing resident combat state. Timed-module expiry
+selects its affected ships. Combat, motion, drone timers, heat and tractor projection remove only successfully
+projected records from their dirty sets. Internal projection cannot recursively trigger a world-wide projection.
+Unclassified operations retain the conservative path, reported separately as `projection.fallback`; classified
+work reports `projection.participants`, including SQL, connection, fitting and elapsed counters when tracing is active.
+A transfer's participant declaration must cover both owners/endpoints and every shared resource it mutates.
+
+SQLite update callbacks now stage row identities until commit, discard rolled-back transactions, and retain earlier
+commits when a later transaction rolls back on the same connection. Membership notifications include the actual
+item/ship identity. Frequently read wallets, free SP, fitted attributes, module condition, module activity and spatial
+membership invalidate affected keys. Shared directional, drone and wreck views account for old cached identities
+and current committed locations, including transfers into a previously empty system. Wreck inventory dependencies
+include both old item membership and new container membership. Remote inventory changes preserve unrelated dirty
+drone flight and warmed observations. Rare unclassified dependencies retain conservative invalidation.
+
+Scheduler reconciliation is keyed by committed membership, route changes, human activity/resumes and watched gates.
+Individual unchanged job turns and observer captures reuse that membership. Prepared founders register incrementally;
+population metadata refreshes changed systems instead of reloading every saved system. Presentation retains exact
+health/recharge and expiry reads, shares equal snapshots, and continues to apply personal visibility in protocol code.
+Coherent learning/heat reads no longer open an otherwise unnecessary mutation transaction.
+
+Existing maintenance continuations still release ownership between atomic jobs, with action limits and elapsed checks
+between actions. Scheduler diagnostics now retain overrun count and maximum overrun; the 10 ms budget is not a bound
+on a single action. Idle resource renewal caches its next deadline and wakes on committed renewal/policy changes.
+Market expiry and demand already use deadlines/cursors; enforcement and timed-module reads retain their existing
+change/expiry caches. These changes do not add offline production or alter paid deadlines.
+
+The deterministic projection matrix uses 1, 2 and 4 observers and 128, 640 and 1,280 remote moving ships (1×/5×/10×).
+It compares the same resident position workload with conservative and classified transactions: the classified path
+issues exactly one position command at every size, keeps all remote positions dirty for checkpoint capture, and adds
+no SQL, connection opens or fitting calculations for warmed observer reads. This is a focused counter regression,
+not an installed-save latency/capacity benchmark. Complete-frame p95/p99 targets, independently arriving request
+backlogs, per-system execution, tiered remote simulation and checkpoint copying outside simulation ownership are
+not established by this milestone. Earlier replay reports remain historical evidence.
+
+The reference behavior remains nonlinear, continuously evaluated recharge as described by
+[EVE University capacitor mechanics](https://wiki.eveuniversity.org/Capacitor), with the pinned client's existing
+wire fields and deadlines unchanged. [Carbon Destiny Ballpark.cpp revision
+114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp)
+was consulted for local simulation boundaries; no movement/collision rules or wire formats change here. No new
+live-client observations were made.
+
+**Automated validation.** Tool/solution restore and the warning-free solution build passed in 7.19 seconds
+(build itself 5.20 seconds). The final focused selection passed **397/397** in **164.38 seconds** wall time
+(runner duration 2 minutes 36 seconds). Both Python suites passed: eight catalog policy tests in 1.066 seconds
+and nine formatting policy tests in 0.014 seconds. Formatting verification checked 1,594 files and the
+140-column policy in 21.24 seconds. Documentation links, UTF-8/final-newline and diff checks passed.
+Exact development filters started with `TransactionParticipantTests.ClassifiedTransactionProjectsOnlyItsSystemAndCheckpointRetainsTheOther`.
+Additional regressions cover commit/rollback ordering, system transfers, independent personal caches, unchanged
+resource maintenance, unchanged scheduler membership and dirty drone checkpoint/reopen. Development checks exposed
+and corrected an extra cold renewal query, a wallet fixture with no saved balance row, and the historical expectation
+that unrelated inventory membership must invalidate empty wreck scenes. An initial final selection passed 352/353;
+the remaining catalog-scope comparison mixed cold hydration with warmed turns (21 versus 22 connections). Its
+measurement now warms both fixture worlds before comparing equivalent due turns, and the exact case passed.
+
+The final filter uses `FullyQualifiedName~` joined with `|` for these affected classes and immediate dependencies:
+`TransactionParticipantTests`, `ResidentReadTests`, `ResidentPollingTests`, `ResidentCombatMonitoringTests`,
+`LiveCombatObjectTests`, `LiveSimulationTests`, `ResidentDroneTests`, `DetachedCheckpointTests`, `ShipHeatTests`,
+`PaidNaniteRepairTests`, `ModuleConditionTests`, `OverloadControlTests`, `DirectionalScanningTests`,
+`DirectionalSessionTests`, `WreckTests`, `CapsuleerRuntimeTests`, `CapsuleerSchedulingTests`, `CapsuleerDeadlineTests`,
+`CapsuleerBackgroundPreparationTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerTrafficObservationTests`,
+`CapsuleerPopulationTests`, `CapsuleerGlobalPopulationTests`, `CapsuleerTrafficPerformanceTests`,
+`CapsuleerDeadlinePerformanceTests`, `ResourceRenewalTests`, `SpatialModuleTests`, `SpatialModuleOperationTests`,
+`SpatialModuleProtocolTests`, `DroneSynchronizationTests`, `DroneDelegationCombatTests`,
+`DroneDelegationSettlementTests`, `DroneCombatTriggerTests`, `ConcordTests`, `InformationTests`,
+`InformationBoundaryTests`, and `InformationProtocolTests`.
+
+Retained local artifacts are `artifacts/milestone2-validation/milestone2-final.trx`, `final-filter.txt` and
+`published-source-manifest.json`; the initial failed report is retained separately as `milestone2.trx`.
+The source manifest records base revision `9c5f597ba3d5b9a303cf73a752991746164122d5`, SHA-256 hashes of source,
+tests and fixture inputs, the workload matrix, and the final filter. One test file received formatting-only changes
+after the initial manifest capture; both hashes are retained. Published manifest SHA-256: `f2f9cdcb276cc203122b4d9cfe70b7a3b4e20d874e15e618fd5b35f8a66a1641`.
+ No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Rebuild/restart the server and compare the same busy travel route. Native rendering,
+input and gameplay feel remain unverified.

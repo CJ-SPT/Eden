@@ -29,6 +29,14 @@ internal static class WorldConnections
         }
     }
 
+    internal static void FinalizeCommitted(System.Data.Common.DbConnection connection)
+    {
+        if (connection is LiveConnection live)
+        {
+            live.FinalizeCommit();
+        }
+    }
+
     internal static void SynchronizeCommitted(WorldDbContext context)
     {
         if (context.Database.GetDbConnection() is LiveConnection connection)
@@ -66,13 +74,28 @@ internal static class WorldConnections
     {
         private IDisposable? _lease;
         private readonly HashSet<CombatRowChange> _changes = [];
+        private readonly HashSet<CombatRowChange> _pendingChanges = [];
+        private readonly HashSet<CombatRowChange> _committingChanges = [];
+
+        internal void FinalizeCommit()
+        {
+            _changes.UnionWith(_committingChanges);
+            _committingChanges.Clear();
+        }
+
         private bool _itemMembershipWrite;
         private bool _positionMembershipWrite;
         private bool _schemaWrite;
         internal bool DurableOnClose { get; set; }
 
         internal ModuleCondition? Condition(long pilot, long ship, long module) =>
-            _changes.Contains(new("WorldModuleCondition", module)) ? null : world.Heat.Condition(pilot, ship, module);
+            (
+                _changes.Contains(new("WorldModuleCondition", module))
+                || _pendingChanges.Contains(new("WorldModuleCondition", module))
+                || _committingChanges.Contains(new("WorldModuleCondition", module))
+            )
+                ? null
+                : world.Heat.Condition(pilot, ship, module);
 
         internal bool TryNaniteRepairing(long module, long now, out bool repairing) =>
             world.Nanites.TryRepairing(module, now, out repairing);
@@ -81,10 +104,12 @@ internal static class WorldConnections
         {
             world.Heat.PublishCommitted(pilot, ship, state);
             _changes.Remove(new("WorldShipHeat", ship));
+            _committingChanges.Remove(new("WorldShipHeat", ship));
         }
 
         internal void Synchronize(WorldDbContext context)
         {
+            FinalizeCommit();
             if (world.Combat is { } runtime)
             {
                 foreach (var change in runtime.Synchronize(context, _changes))
@@ -114,12 +139,36 @@ internal static class WorldConnections
                 command.ExecuteNonQuery();
                 if (world.Combat is not null || world.Reads is not null || world.TracksTimedModules)
                 {
+                    // The commit callback runs before SQLite completes COMMIT. Stage its
+                    // rows until the next successful statement/close; a failed commit's
+                    // rollback callback discards them. Never publish rolled-back writes.
+                    SQLitePCL.raw.sqlite3_commit_hook(
+                        Handle!,
+                        _ =>
+                        {
+                            FinalizeCommit();
+                            _committingChanges.UnionWith(_pendingChanges);
+                            _pendingChanges.Clear();
+                            return 0;
+                        },
+                        null
+                    );
+                    SQLitePCL.raw.sqlite3_rollback_hook(
+                        Handle!,
+                        _ =>
+                        {
+                            _pendingChanges.Clear();
+                            _committingChanges.Clear();
+                        },
+                        null
+                    );
                     SQLitePCL.raw.sqlite3_update_hook(
                         Handle!,
                         (SQLitePCL.strdelegate_update)(
                             (_, operation, _, table, id) =>
                             {
-                                _changes.Add(new(table, id));
+                                FinalizeCommit();
+                                _pendingChanges.Add(new(table, id));
                                 if (
                                     string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
                                     && (operation != SQLitePCL.raw.SQLITE_UPDATE || _positionMembershipWrite)
@@ -127,14 +176,14 @@ internal static class WorldConnections
                                 {
                                     // Corporation location roles depend on docking membership,
                                     // while ordinary coordinates stay in resident motion state.
-                                    _changes.Add(new("WorldPositionMembership", 0));
+                                    _pendingChanges.Add(new("WorldPositionMembership", id));
                                 }
                                 if (
                                     string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
                                     && (operation != SQLitePCL.raw.SQLITE_UPDATE || _itemMembershipWrite)
                                 )
                                 {
-                                    _changes.Add(new("WorldItemMembership", 0));
+                                    _pendingChanges.Add(new("WorldItemMembership", id));
                                 }
                             }
                         ),
@@ -156,7 +205,7 @@ internal static class WorldConnections
                                 )
                                 {
                                     _schemaWrite = true;
-                                    _changes.Add(new("schema", 0));
+                                    _pendingChanges.Add(new("schema", 0));
                                 }
                                 if (
                                     action == SQLitePCL.raw.SQLITE_UPDATE
@@ -221,7 +270,9 @@ internal static class WorldConnections
                 {
                     try
                     {
+                        FinalizeCommit();
                         world.SqlClosed(_changes);
+                        _pendingChanges.Clear();
                         _changes.Clear();
                         _itemMembershipWrite = false;
                         _positionMembershipWrite = false;

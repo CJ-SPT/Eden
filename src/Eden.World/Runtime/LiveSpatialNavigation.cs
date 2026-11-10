@@ -1,4 +1,8 @@
+using Eden.Data.World.Fittings;
 using Eden.Gameplay.Propulsion;
+using Eden.World.Runtime.Combat;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime;
 
@@ -9,9 +13,30 @@ internal sealed partial class LiveReadModels
         "WorldSpatialNavigation",
         "WorldActiveModule",
         "WorldItemMembership",
-        "WorldShip",
-        "WorldPilot"
+        "WorldShip"
     );
+
+    private void ObserveSpatialNavigation(IReadOnlyCollection<CombatRowChange> changes)
+    {
+        if (!_spatialNavigation.HasEntries)
+        {
+            return;
+        }
+        var modules = changes.Where(c => c.Table is "WorldActiveModule" or "WorldItemMembership").Select(c => c.Id).ToArray();
+        HashSet<long> currentShips = [];
+        if (modules.Length > 0)
+        {
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+            currentShips = world.Set<ActiveFittedModule>().Where(m => modules.Contains(m.ModuleId)).Select(m => m.ShipId).ToHashSet();
+        }
+        _spatialNavigation.ObserveValues(
+            changes,
+            (ship, status, change) =>
+                change.Table is "WorldShip" or "WorldSpatialNavigation"
+                    ? ship == change.Id
+                    : status.CloakModuleId == change.Id || currentShips.Contains(ship)
+        );
+    }
 
     internal SpatialStatus SpatialNavigation(long ship, Func<SpatialStatus> load) => Read(_spatialNavigation, ship, load);
 

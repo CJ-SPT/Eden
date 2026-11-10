@@ -5,6 +5,9 @@
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,
 saved signature counts, known/unknown ice fields and activities with empty directories.
 
+[Classified transactions and scheduler reuse](protocol/performance.md#classified-transactions-and-scheduler-reuse-november-10-2026)
+records milestone 2 projection isolation, committed invalidation, shared views and deadline checks.
+
 [Incremental population admission](protocol/performance.md#incremental-population-admission-november-10-2026) moves home and gate-visitor creation off live entry and commits one founder per background step.
 
 [Shared-owner stall relief](protocol/performance.md#shared-owner-stall-relief-november-10-2026) records the frozen

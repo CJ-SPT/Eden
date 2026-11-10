@@ -92,11 +92,25 @@ internal sealed class LiveWorld : IDisposable
         }
         if (
             changes.Any(c =>
-                c.Table is "WorldCapsuleerAgent" or "WorldCapsuleerSystem" or "WorldCapsuleerPopulation" or "WorldCapsuleerProvisioning"
+                c.Table
+                    is "WorldCapsuleerAgent"
+                        or "WorldCapsuleerSystem"
+                        or "WorldCapsuleerPopulation"
+                        or "WorldCapsuleerProvisioning"
+                        or "WorldCapsuleerSuspension"
+                        or "schema"
             )
         )
         {
             CapsuleerRevision++;
+            foreach (var change in changes.Where(c => c.Table is "WorldCapsuleerSystem" or "WorldCapsuleerPopulation"))
+            {
+                CapsuleerSystemRevisions[checked((int)change.Id)] = CapsuleerRevision;
+            }
+            if (changes.Any(c => c.Table is "WorldCapsuleerProvisioning" or "schema"))
+            {
+                CapsuleerMetadataReset = CapsuleerRevision;
+            }
         }
         _timedModules?.Observe(changes);
         Heat.Observe(changes);
@@ -111,6 +125,8 @@ internal sealed class LiveWorld : IDisposable
     }
 
     internal long CapsuleerRevision { get; private set; }
+    internal long CapsuleerMetadataReset { get; private set; }
+    internal Dictionary<int, long> CapsuleerSystemRevisions { get; } = [];
     internal long PopulationIdentityRevision { get; private set; }
     internal Dictionary<long, long> CapsuleerHullRevisions { get; } = [];
     internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];

@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -11,6 +12,22 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
 {
     private void Before(DbCommand command, CommandEventData data)
     {
+        if (command.Connection is { } connection)
+        {
+            WorldConnections.FinalizeCommitted(connection);
+        }
+        if (data.Context is WorldDbContext { IsResidentProjection: true })
+        {
+            return;
+        }
+        if (data.Context is WorldDbContext { Participants: { } participants })
+        {
+            if (data.Context.Database.CurrentTransaction is null)
+            {
+                CombatTransactionBridge.Project(path, participants);
+            }
+            return;
+        }
         // Directional reads overlay resident positions under the owner. They never read
         // mutable combat resources, and must not force projection for a name/membership query.
         if (
@@ -93,15 +110,26 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
 
 internal sealed class CombatTransactionBridge(string path) : DbTransactionInterceptor
 {
+    internal static void Project(string path, TransactionParticipants? participants)
+    {
+        using var phase = SessionPerformance.Phase(participants is null ? "projection.fallback" : "projection.participants");
+        var live = LiveWorld.Find(path);
+        live?.Combat?.Flush(participants);
+        live?.Heat.Flush(participants);
+        live?.Tractors.Flush(participants);
+    }
+
     public override InterceptionResult<DbTransaction> TransactionStarting(
         DbConnection connection,
         TransactionStartingEventData eventData,
         InterceptionResult<DbTransaction> result
     )
     {
-        LiveCombatRuntime.Find(path)?.Flush();
-        LiveWorld.Find(path)?.Heat.Flush();
-        LiveWorld.Find(path)?.Tractors.Flush();
+        WorldConnections.FinalizeCommitted(connection);
+        if (eventData.Context is not WorldDbContext { IsResidentProjection: true })
+        {
+            Project(path, (eventData.Context as WorldDbContext)?.Participants);
+        }
         return result;
     }
 
@@ -112,9 +140,11 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
         CancellationToken cancellationToken = default
     )
     {
-        LiveCombatRuntime.Find(path)?.Flush();
-        LiveWorld.Find(path)?.Heat.Flush();
-        LiveWorld.Find(path)?.Tractors.Flush();
+        WorldConnections.FinalizeCommitted(connection);
+        if (eventData.Context is not WorldDbContext { IsResidentProjection: true })
+        {
+            Project(path, (eventData.Context as WorldDbContext)?.Participants);
+        }
         return ValueTask.FromResult(result);
     }
 }

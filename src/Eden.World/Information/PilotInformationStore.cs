@@ -132,7 +132,8 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
                 Position(pilot),
                 new(wreck.X, wreck.Y, wreck.Z),
                 (catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0) + (catalog.FittingType(wreck.TypeId)!.Radius ?? 0),
-                fleets
+                fleets,
+                wreck.SystemId
             );
         }
         return new(cycle, capacitor);

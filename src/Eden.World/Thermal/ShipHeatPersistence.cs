@@ -15,7 +15,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Thermal;
 
-internal sealed record LoadedShipHeat(long PilotId, long ShipId, ShipHeatSnapshot State, bool HasSavedState, bool Changed);
+internal sealed record LoadedShipHeat(long PilotId, long ShipId, ShipHeatSnapshot State, bool HasSavedState, bool Changed)
+{
+    internal int? SystemId { get; init; }
+}
 
 internal static class ShipHeatPersistence
 {
@@ -167,7 +170,10 @@ internal static class ShipHeatPersistence
             state,
             saved is not null,
             original is not null && !(original.Idle && state.Idle) && !HeatCycleRules.SameState(original, state)
-        );
+        )
+        {
+            SystemId = ship.Position?.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId,
+        };
     }
 
     internal static ShipHeatSnapshot ConfigureModules(

@@ -23,6 +23,49 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed class ResidentDroneTests
 {
     [Fact]
+    public async Task UnrelatedClassifiedInventoryCommitPreservesDirtyDroneFlightAndWarmObservers()
+    {
+        using Fixture f = new();
+        using LiveWorld live = new(f.Base.Db.Services.GetRequiredService<WorldDatabase>(), f.Base.Clock, _ => { });
+        f.Launch();
+        f.Tick();
+        var expected = f.Drones.List(30000144, f.Now).ToArray();
+        using (WorldDbContext world = new(f.Base.Db.Path) { Participants = TransactionParticipants.None })
+        using (var transaction = world.Database.BeginTransaction())
+        {
+            world.Add(
+                new OwnedItem
+                {
+                    Id = 8000000000001,
+                    OwnerId = f.Pilot,
+                    TypeId = 34,
+                    LocationId = world.Ships.Single(s => s.Id == f.Ship).StationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 1,
+                }
+            );
+            world.SaveChanges();
+            transaction.Commit();
+        }
+        using (var metrics = SessionPerformance.Begin("remote inventory retains drone flight", _ => { }, force: true)!)
+        {
+            Assert.Equal(expected, f.Drones.List(30000144, f.Now));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        Assert.Equal(expected.Length, live.Combat!.CaptureCheckpoint().Drones.Count);
+        await live.FlushAsync();
+        string checkpoint = Path.Combine(Path.GetDirectoryName(f.Base.Db.Path)!, "drone-participants.sqlite");
+        File.Copy(f.Base.Db.Path, checkpoint);
+        using WorldDbContext saved = new(checkpoint);
+        Assert.Equal(
+            expected.Select(d => d.Position),
+            saved.Set<WorldDrone>().OrderBy(d => d.ItemId).Select(d => new SpacePosition(d.X, d.Y, d.Z)).ToArray()
+        );
+    }
+
+    [Fact]
     public void WarmObserversAndControllerChecksShareContactsAndSeeCommittedOrders()
     {
         using Fixture f = new();
