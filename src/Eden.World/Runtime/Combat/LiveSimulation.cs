@@ -260,18 +260,21 @@ internal sealed partial class LiveCombatRuntime
         }
     }
 
-    private void PublishNpc(LiveCombatNpc npc)
+    private LiveCombatNpc PublishNpc(LiveCombatNpc npc)
     {
-        if (_npcs[npc.Id] != npc)
+        var previous = _npcs[npc.Id];
+        if (previous == npc)
         {
-            if (_npcs[npc.Id].Position != npc.Position || _npcs[npc.Id].Navigation != npc.Navigation)
-            {
-                _acquisitions.Clear();
-            }
-            _npcs[npc.Id] = npc;
-            _dirtyNpcs.Add(npc.Id);
-            owner.ObjectsChanged();
+            return previous;
         }
+        if (previous.Position != npc.Position || previous.Navigation != npc.Navigation)
+        {
+            _acquisitions.Clear();
+        }
+        _npcs[npc.Id] = npc;
+        _dirtyNpcs.Add(npc.Id);
+        owner.ObjectsChanged();
+        return npc;
     }
 
     private LiveCombatShip Positioned(LiveCombatShip ship) =>
@@ -302,13 +305,13 @@ internal sealed partial class LiveCombatRuntime
             _populationDue[system] = nextPopulation();
         }
         var npcs = SystemNpcs(system, now);
-        var effective = Effective(npcs);
+        var effective = database.MotionStamps.ContainsKey(system) ? null : Effective(npcs);
         var aggression = Aggression();
-        foreach (var source in npcs)
+        for (int index = 0; index < npcs.Length; index++)
         {
-            var active = aggression.GetValueOrDefault(source.Id);
-            var npc = source;
-            if (!database.MotionStamps.ContainsKey(system))
+            var npc = npcs[index];
+            var active = aggression.GetValueOrDefault(npc.Id);
+            if (effective is not null)
             {
                 npc = LiveSystemMotionRules.Move(
                     npc,
@@ -324,9 +327,13 @@ internal sealed partial class LiveCombatRuntime
             {
                 npc = npc with { Navigation = NpcNavigationState.Returning };
             }
-            PublishNpc(npc);
+            else
+            {
+                continue;
+            }
+            npcs[index] = PublishNpc(npc);
         }
-        return SystemNpcs(system, now);
+        return npcs;
     }
 
     internal IReadOnlyList<NpcSimulationContact>? Simulate(int system, long now, Action refresh, Func<long> nextPopulation)
@@ -358,7 +365,7 @@ internal sealed partial class LiveCombatRuntime
         var npcs = AdvanceSimulationNpcs(system, now, refresh, nextPopulation);
         var effective = Effective(npcs);
         var aggression = Aggression();
-        List<NpcContact> contacts = [];
+        List<NpcContact> contacts = new(npcs.Length);
         bool motionStamped = database.MotionStamps.TryGetValue(system, out int stamp);
         foreach (var npc in npcs)
         {

@@ -41,6 +41,39 @@ public sealed class NpcSceneUpdateTests
     }
 
     [Fact]
+    public void EqualSizeReplacementRemovesAndAddsBeforeUpdatingRetainedContacts()
+    {
+        using NpcCombatTests.Fixture f = new();
+        var departed = f.Npc with { Weapon = null };
+        var retained = departed with { Id = departed.Id + 1 };
+        var arrival = departed with { Id = departed.Id + 2 };
+        Encounters encounters = new([departed, retained]);
+        List<DestinyCommand> updates = [];
+        FlightNpcScene scene = new(new(), f.Clock, encounters, new(updates.Add), updates.Add, _ => { });
+        FlightSceneContext context = new(f.Pilot, true, true, 1);
+        scene.Capture(context);
+        var original = scene.Contacts;
+        var changed = retained with { MaxSpeed = retained.MaxSpeed + 1 };
+        encounters.Current = [changed, arrival];
+        scene.RefreshNpcs(context);
+        Assert.Collection(
+            updates,
+            item => Assert.Equal(departed.Id, Assert.IsType<DestinyCommand.RemoveBall>(item).Id),
+            item =>
+            {
+                var addition = Assert.IsType<DestinyCommand.AddBalls>(item).Addition;
+                Assert.Same(arrival, Assert.IsType<NpcSlimItem>(Assert.Single(addition.Slims)).Npc);
+            },
+            item => Assert.Equal(new DestinyCommand.SetMaxSpeed(retained.Id, changed.MaxSpeed), item)
+        );
+        Assert.Equal(new[] { changed, arrival }, scene.Contacts);
+        Assert.Equal(new[] { departed, retained }, original);
+        updates.Clear();
+        scene.RefreshNpcs(context);
+        Assert.Empty(updates);
+    }
+
+    [Fact]
     public void UnchangedObserverScenesRetainTheirSnapshotWithBoundedAllocations()
     {
         using NpcCombatTests.Fixture f = new();

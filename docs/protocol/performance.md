@@ -6,6 +6,82 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## NPC contact refresh cost, November 9, 2026
+
+In the 10-pilot, 1,000-NPC combat replay, each client asks for contacts during flight and combat updates.
+The resident world already shares individual NPC records, but each request enumerated the system twice, advanced
+repair checks twice and built a filtered scene for the observer. The protocol then rebuilt three identity lookups
+when a ship's state changed. Baseline contact refreshes consumed a median 25–27 ms across the ten sessions per frame.
+
+World now returns the ordered NPCs it has just advanced under the owner. Publishing an equivalent record retains
+the resident instance. Repair evaluation skips health sampling for hulls without repair cycles, clears any saved
+deadlines when appropriate and preserves the revision. The protocol uses the observer's existing identity index to
+compare against the previous snapshot. It computes arrivals and departures only when membership changes, and compares
+electronic warfare effects only when their source lists differ. Each read still uses the requested time for shield
+recharge, weapon expiry and timed motion. The observer regression covers equal-size membership replacement,
+outbound command order and an immediate repeat read.
+
+The movement reference was [Carbon Destiny Ballpark.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp).
+The [NPC repair record](combat.md#catalog-driven-npc-self-repair-november-5-2026) documents the pinned catalog rules.
+
+### Frame and checkpoint measurements
+
+The Release capacity replay ran twice on baseline `b0ec6f9b` and twice on the retained changes, on the same machine
+with .NET 10.0.14 and tiered compilation disabled. Each process ran four warmups and thirty measured frames per case.
+The test clock drives motion and deadlines. Weapon rolls and desktop scheduling can vary. Output includes encoding
+to an in-process sink. Encryption, network backpressure and client rendering were outside the replay.
+
+| Combat workload | Baseline runs | Optimized runs |
+| --- | ---: | ---: |
+| Complete frame median, ms | 62.70 / 65.08 | 49.67 / 49.89 |
+| Complete frame p95, ms | 98.61 / 70.10 | 90.39 / 52.77 |
+| NPC contact refresh median, ms per frame | 25.35 / 26.54 | 12.08 / 12.11 |
+| Ten observers refreshing an already updated scene, median ms | 4.65 / 4.91 | 1.70 / 1.78 |
+| Managed allocations, mean MiB per frame | 75.09 / 75.09 | 50.17 / 50.17 |
+| Encoded output, mean MiB per frame | 2.70 / 2.70 | 2.70 / 2.70 |
+
+Each measured frame issued zero SQL commands, opened zero connections and performed zero fitting calculations.
+One pilot in an empty system measured 0.24 / 0.26 ms median before and 0.24 / 0.21 ms after.
+Idle timings and combat p95 varied enough that these runs establish a gain only in typical populated-frame latency.
+
+Checkpoint medians below use the last three populated checkpoints per run. The owner copies the relational image
+and captures resident state. Projection and the durable write run outside the owner.
+
+| Checkpoint phase, ms | Baseline runs | Optimized runs |
+| --- | ---: | ---: |
+| Capture under owner | 0.60 / 0.53 | 0.60 / 0.56 |
+| Detached projection | 49.38 / 49.13 | 47.27 / 45.22 |
+| Durable write | 14.12 / 14.38 | 15.47 / 14.28 |
+
+### Next performance priorities
+
+1. Profile combat notification construction and encoding. Session output consumed 22.75 ms median in both optimized
+   combat runs. The current packet builder encodes an inner object-call payload into an owned byte array before the
+   outer packet is encoded. Measure those two stages separately through the encrypted send path before changing either.
+2. Count contact requests by caller and reason. Flight, weapon and enforcement updates can ask for the same system
+   several times during a frame. Any shared result must account for same-tick commands, visibility, subsecond shield
+   recharge and exact effect expiry. The remaining 12 ms includes world reads and per-observer differences.
+3. Measure checkpoint capture against representative large saves before changing world locking. The small fixture
+   spent under 1 ms in capture in these samples. Detached projection can overlap simulation. Its full duration cannot
+   be counted as a frame stall.
+
+**Automated validation.** Tool and solution restore, the solution build (zero warnings and errors), 197 focused tests
+(68.60 s including test host startup and shutdown), eight catalog policy cases, nine formatting policy cases and formatting
+verification passed. The validation sequence took 121.02 s. The first exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcCapacityBenchmarkTests.MeasureNpcAndPlayerCapacityThroughNormalSessions`.
+The equal-size replacement regression also passed individually. The combined filter was
+
+```text
+FullyQualifiedName~Combat.NpcSceneUpdateTests|FullyQualifiedName~Combat.NpcRepairTests|FullyQualifiedName~Combat.NpcEwarTests|FullyQualifiedName~Combat.PlayerEwarNpcTests|FullyQualifiedName~Combat.NpcEncounterTests|FullyQualifiedName~Combat.NpcPursuitTests|FullyQualifiedName~Combat.NpcOrbitTests|FullyQualifiedName~Combat.NpcAggressionTests|FullyQualifiedName~Combat.NpcCombatTests|FullyQualifiedName~Combat.LiveSimulationTests|FullyQualifiedName~Combat.LiveCombatObjectTests|FullyQualifiedName~Combat.ResidentCombatMonitoringTests|FullyQualifiedName~Combat.ResidentDroneTests|FullyQualifiedName~Combat.NpcCapacityBenchmarkTests|FullyQualifiedName~Persistence.DetachedCheckpointTests|FullyQualifiedName~Capsuleers.CapsuleerDefensePerformanceTests
+```
+
+The full .NET suite was outside this focused run. Raw replay measurements are under the ignored
+`artifacts/scene-speed/{before,control,retained-1,retained-2}` directories.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None for this server timing comparison.
+
 ## Pooled protocol buffers and selective libraries, November 9, 2026
 
 The library evaluation uses .NET SDK 10.0.403 and retains Eden's native Blue/Destiny wire formats and SQLite save path.

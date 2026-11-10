@@ -91,9 +91,9 @@ public static class NpcRepairRules
         {
             return new(health, state);
         }
-        if (!available || health.Remaining.Destroyed)
+        if (!available || health.Remaining.Destroyed || profile is { Shield: null, Armor: null })
         {
-            return new(health, state with { ShieldReadyAt = 0, ArmorReadyAt = 0 });
+            return new(health, state is { ShieldReadyAt: 0, ArmorReadyAt: 0 } ? state : state with { ShieldReadyAt = 0, ArmorReadyAt = 0 });
         }
         var current = health.At(now);
         var shield = Attempt(profile.Shield, state.ShieldReadyAt, current.Shield, health.Defense.Shield, now, draw);
@@ -113,7 +113,7 @@ public static class NpcRepairRules
         );
     }
 
-    private sealed record AttemptResult(long ReadyAt, double Amount);
+    private readonly record struct AttemptResult(long ReadyAt, double Amount);
 
     private static AttemptResult Attempt(NpcRepairCycle? cycle, long ready, double remaining, double capacity, long now, Func<double> draw)
     {

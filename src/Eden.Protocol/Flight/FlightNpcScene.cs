@@ -79,35 +79,16 @@ internal sealed class FlightNpcScene(
         {
             return;
         }
-        var previousById = Contacts.ToDictionary(n => n.Id);
-        foreach (var departed in Contacts.ExceptBy(current.Select(n => n.Id), n => n.Id))
+        // The identity index addresses the previous ordering. Copy once so a busy refresh
+        // can compare every contact in linear time while individual shot updates retain immutable snapshots.
+        var previousContacts = _contacts.ToArray();
+        if (current.Length != previousContacts.Length || current.Any(n => !_contactIndices.ContainsKey(n.Id)))
         {
-            if (departed.Activity is { } activity)
-            {
-                update(NpcActivityWire.Effect(activity, false));
-            }
-            foreach (var effect in departed.ElectronicWarfare ?? [])
-            {
-                update(NpcEwarWire.Effect(effect, false));
-            }
-            if (departed.Weapon is { } weapon)
-            {
-                NpcWeaponEffect(departed.Id, weapon, false);
-            }
-            if (departed.Warp is not null)
-            {
-                effects.WarpEffect(departed.Id, false);
-            }
-            update(new DestinyCommand.RemoveBall(departed.Id, encounters?.WasDestroyed(departed.Id) == true));
-        }
-        var added = current.ExceptBy(Contacts.Select(n => n.Id), n => n.Id).ToArray();
-        if (added.Length > 0)
-        {
-            update(new DestinyCommand.AddBalls(Ballpark.AddNpcs(added, space.Stamp(clock))));
+            UpdateMembership(current);
         }
         foreach (var npc in current)
         {
-            var previous = previousById.GetValueOrDefault(npc.Id);
+            var previous = _contactIndices.TryGetValue(npc.Id, out int index) ? previousContacts[index] : null;
             if (ReferenceEquals(previous, npc))
             {
                 continue;
@@ -124,13 +105,16 @@ internal sealed class FlightNpcScene(
                     update(NpcActivityWire.Effect(startedActivity, true));
                 }
             }
-            foreach (var effect in (previous?.ElectronicWarfare ?? []).Except(npc.ElectronicWarfare ?? []))
+            if (!ReferenceEquals(previous?.ElectronicWarfare, npc.ElectronicWarfare))
             {
-                update(NpcEwarWire.Effect(effect, false));
-            }
-            foreach (var effect in (npc.ElectronicWarfare ?? []).Except(previous?.ElectronicWarfare ?? []))
-            {
-                update(NpcEwarWire.Effect(effect, true));
+                foreach (var effect in (previous?.ElectronicWarfare ?? []).Except(npc.ElectronicWarfare ?? []))
+                {
+                    update(NpcEwarWire.Effect(effect, false));
+                }
+                foreach (var effect in (npc.ElectronicWarfare ?? []).Except(previous?.ElectronicWarfare ?? []))
+                {
+                    update(NpcEwarWire.Effect(effect, true));
+                }
             }
             if (previous is not null && previous.MaxSpeed != npc.MaxSpeed)
             {
@@ -190,6 +174,35 @@ internal sealed class FlightNpcScene(
             }
         }
         ReplaceContacts(current);
+    }
+
+    private void UpdateMembership(NpcContact[] current)
+    {
+        foreach (var departed in Contacts.ExceptBy(current.Select(n => n.Id), n => n.Id))
+        {
+            if (departed.Activity is { } activity)
+            {
+                update(NpcActivityWire.Effect(activity, false));
+            }
+            foreach (var effect in departed.ElectronicWarfare ?? [])
+            {
+                update(NpcEwarWire.Effect(effect, false));
+            }
+            if (departed.Weapon is { } weapon)
+            {
+                NpcWeaponEffect(departed.Id, weapon, false);
+            }
+            if (departed.Warp is not null)
+            {
+                effects.WarpEffect(departed.Id, false);
+            }
+            update(new DestinyCommand.RemoveBall(departed.Id, encounters?.WasDestroyed(departed.Id) == true));
+        }
+        var added = current.Where(n => !_contactIndices.ContainsKey(n.Id)).ToArray();
+        if (added.Length > 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddNpcs(added, space.Stamp(clock))));
+        }
     }
 
     private void ApplyNpcCourse(FlightSceneContext context, NpcContact npc)

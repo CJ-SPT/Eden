@@ -88,6 +88,8 @@ Lifecycle methods expose the sequence directly: persist a transfer, leave the so
 
 ### Session performance diagnostics
 
+The [NPC contact refresh measurements](protocol/performance.md#npc-contact-refresh-cost-november-9-2026) break down complete frames for ten pilots and 1,000 NPCs, compare observer costs, and rank the remaining performance work.
+
 Set `EDEN_TRACE_PERFORMANCE=1` before startup for request/tick timings, database command/connection counts, and SQL execution, transaction-start and commit durations. Nested phases identify combat, weapon publication, health reads, NPC acquisition and background monitoring. See the isolated full-catalog replay in the [protocol notes](protocol/performance.md#shared-session-performance-diagnostics-november-5-2026) and the [ten-Brutix grouped-gun benchmark](protocol/performance.md#ten-brutix-grouped-gun-benchmark-november-5-2026).
 
 Calculated ship and turret fits stay in a bounded per-world memory cache, with transactionally versioned invalidation in world schema 69. See [resident fit behavior and validation](protocol/performance.md#resident-ship-and-turret-fits-november-5-2026).
