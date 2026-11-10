@@ -437,6 +437,67 @@ internal sealed partial class PilotMarketStore(
         return MarketRules.SalesTax(level);
     }
 
+    internal IReadOnlyList<MarketOrder> SupplyOrders(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        int stationId,
+        IReadOnlyList<int> types
+    )
+    {
+        var station = Station(catalog, stationId);
+        if (!HasMarket(catalog, station))
+        {
+            return [];
+        }
+        foreach (int type in types)
+        {
+            Seed(world, catalog, station, type, includeDemand: false);
+        }
+        world.SaveChanges();
+        bool progressive = RegionalMarketStore.Enabled(world);
+        var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
+            ? NpcMarketKind.Institutional
+            : NpcMarketKind.Development;
+        long cutoff = Now - TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks;
+        var npc = world
+            .Set<NpcMarketOrder>()
+            .Where(o =>
+                o.StationId == stationId
+                && !o.Bid
+                && o.Remaining > 0
+                && types.Contains(o.TypeId)
+                && o.Issued > cutoff
+                && (progressive ? o.Kind == NpcMarketKind.Institutional || o.Kind == NpcMarketKind.Regional : o.Kind == kind)
+            )
+            .AsEnumerable()
+            .Select(o => new MarketOrder(
+                o.Id,
+                o.StationId,
+                o.SystemId,
+                o.RegionId,
+                o.OwnerId,
+                o.TypeId,
+                false,
+                o.PriceCents,
+                o.Remaining,
+                o.Entered,
+                o.Issued
+            ));
+        var personal = world
+            .Set<SavedPersonalOrder>()
+            .Where(o =>
+                o.StationId == stationId
+                && !o.Bid
+                && o.Remaining > 0
+                && types.Contains(o.TypeId)
+                && o.Status == PersonalOrderStatus.Open
+                && o.Expires > Now
+            )
+            .AsEnumerable()
+            .Select(o => o.Snapshot());
+        return npc.Concat(personal).OrderBy(o => o.PriceCents).ThenBy(o => o.Issued).ThenBy(o => o.Id).ToArray();
+    }
+
     public MarketResult Sell(long pilotId, IReadOnlyList<MarketSale> items) => ExecuteSell(pilotId, items, 0);
 
     public MarketResult Buy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items) => ExecuteBuy(pilotId, stationId, items, 0);

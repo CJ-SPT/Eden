@@ -341,10 +341,26 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var changes = Take(world, catalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);
+        transaction.Commit();
+        return changes;
+    }
+
+    internal static IReadOnlyList<InventoryChange> Take(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long wreckId,
+        IReadOnlyList<long> itemIds,
+        int? quantity,
+        long now,
+        InventoryFlag destinationFlag = InventoryFlag.Cargo
+    )
+    {
         var (pilot, _) = Access(world, catalog, pilotId, wreckId, now);
         var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, wreckId, itemIds, quantity, destinationFlag);
         world.SaveChanges();
-        transaction.Commit();
         return changes;
     }
 }

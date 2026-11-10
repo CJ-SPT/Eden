@@ -29,6 +29,8 @@ public sealed record NpcContact(
     WarpCourse? Warp = null
 )
 {
+    public NpcAnchorKind AnchorKind { get; init; }
+    public long AnchorId { get; init; }
     public NpcStandingThresholds? StandingThresholds { get; init; }
 }
 

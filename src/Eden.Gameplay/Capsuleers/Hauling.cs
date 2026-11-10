@@ -40,6 +40,10 @@ public sealed record HaulerProgress(
     TrafficJourney? Journey = null
 )
 {
+    public long[] RattingLoot { get; init; } = [];
+    public RattingProgress? Ratting { get; init; }
+    public ResupplyProgress? Resupply { get; init; }
+    public long ActivitySequence { get; init; }
     public TravelerRoutine? Routine { get; init; }
     public CapsuleerDefenseState? Defense { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;

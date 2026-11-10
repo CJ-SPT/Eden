@@ -253,7 +253,9 @@ public sealed class CapsuleerInboundRuntimeTests
             host.GetRequiredService<IPilotHealth>(),
             f.Clock,
             host.GetRequiredService<MarketChangeSignal>(),
-            host.GetRequiredService<CapsuleerDefense>()
+            host.GetRequiredService<CapsuleerDefense>(),
+            host.GetRequiredService<CapsuleerResupply>(),
+            host.GetRequiredService<CapsuleerRatting>()
         );
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == pilot);
         _ = hauler.Read();

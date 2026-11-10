@@ -13,6 +13,9 @@ public enum TrafficSecurityBand
 public static class TrafficRules
 {
     public const int SnapshotVersion = 1;
+
+    public static bool LightHull(HullClass hull) => hull is HullClass.Corvette or HullClass.Shuttle;
+
     public const int MaximumSkillLevel = 5;
 
     public static TrafficSecurityBand SecurityBand(double security) =>

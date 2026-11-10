@@ -74,6 +74,8 @@ internal sealed partial class LiveCombatRuntime
         return result.ToArray();
     }
 
+    internal LiveCombatNpc? RattingNpc(long id, long now) => Npc(id, now);
+
     internal LiveCombatShip? DefenseShip(long pilot, long now)
     {
         using var ownership = owner.Enter();

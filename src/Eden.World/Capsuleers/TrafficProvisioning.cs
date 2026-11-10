@@ -42,15 +42,25 @@ internal static class TrafficProvisioning
         );
         var reserved = world.Set<SavedTrafficIdentity>().Select(value => value.CharacterId).ToHashSet();
         var names = world.Pilots.Select(value => value.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var roster = (
+            from agent in world.Set<SavedCapsuleerAgent>()
+            join pilot in world.Pilots on agent.PilotId equals pilot.Id
+            join ship in world.Ships on pilot.ActiveShipId equals ship.Id
+            where agent.CommunitySystemId == system && agent.Career == CapsuleerCareer.Hauling
+            select ship.TypeId
+        ).ToArray();
+        bool lightAllowed =
+            (roster.Count(type => TrafficRules.LightHull((HullClass)catalog.RequireItem(type).GroupId)) + 1) * 10 <= roster.Length + 1;
         bool Compatible(TrafficProfile profile)
         {
             var hull = catalog.FittingType(profile.HullTypeId);
             return hull is not null
                 && TrafficRules.RouteAllows((HullClass)hull.GroupId, visitsHighSecurity)
+                && (lightAllowed || !TrafficRules.LightHull((HullClass)hull.GroupId))
                 && (cargoVolume == 0 || (hull.Capacity ?? 0) >= cargoVolume);
         }
         return database
-            .Traffic.Candidates(seed, system, slot, region, band, Compatible)
+            .Traffic.Candidates(seed, system, slot, region, band, Compatible, profile => catalog.RequireItem(profile.HullTypeId).GroupId)
             .FirstOrDefault(profile => !reserved.Contains(profile.CharacterId) && !names.Contains(profile.Name));
     }
 

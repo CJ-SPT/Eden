@@ -439,6 +439,8 @@ internal sealed partial class LiveCombatRuntime
                 )
             )
             {
+                AnchorKind = npc.AnchorKind,
+                AnchorId = npc.AnchorId,
                 StandingThresholds = npc.StandingThresholds,
             };
             contacts.Add(contact);

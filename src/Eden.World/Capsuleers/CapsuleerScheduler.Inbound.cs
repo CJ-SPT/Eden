@@ -41,6 +41,6 @@ internal sealed partial class CapsuleerScheduler
         }
         // Gate watches introduce bounded station journeys. Existing journeys keep their
         // direction and deadlines independently of which side is subsequently watched.
-        return _travelers;
+        return _travelers.Where(pilot => !_haulers[pilot].IsRatting || activity.ActiveSystems.Contains(_locations[pilot])).ToHashSet();
     }
 }

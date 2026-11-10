@@ -19,7 +19,10 @@ namespace Eden.World.Capsuleers;
 
 internal static class CapsuleerSupplyStore
 {
-    private const int SpareMagazines = 5;
+    internal const int SpareMagazines = 5;
+
+    internal static DroneProfile[] AvailableDrones(CatalogDbContext catalog) => catalog.Definition(s_drones, 0);
+
     private static readonly CatalogDefinition<DroneProfile[]> s_drones = new("capsuleer-starter-drones", LoadDrones);
 
     internal static void Ensure(WorldDbContext world, CatalogDbContext catalog, long pilotId, long founderShip)

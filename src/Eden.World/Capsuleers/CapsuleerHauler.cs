@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -33,11 +34,29 @@ internal sealed class CapsuleerHaulerFactory(
     IPilotHealth health,
     TimeProvider clock,
     MarketChangeSignal marketSignal,
-    CapsuleerDefense defense
+    CapsuleerDefense defense,
+    CapsuleerResupply resupply,
+    CapsuleerRatting ratting
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
-        new(pilotId, database, ships, systems, tackle, combat, encounters, missiles, warfare, health, clock, marketSignal, defense);
+        new(
+            pilotId,
+            database,
+            ships,
+            systems,
+            tackle,
+            combat,
+            encounters,
+            missiles,
+            warfare,
+            health,
+            clock,
+            marketSignal,
+            defense,
+            resupply,
+            ratting
+        );
 }
 
 internal sealed partial class CapsuleerHauler(
@@ -53,7 +72,9 @@ internal sealed partial class CapsuleerHauler(
     IPilotHealth health,
     TimeProvider clock,
     MarketChangeSignal marketSignal,
-    CapsuleerDefense defense
+    CapsuleerDefense defense,
+    CapsuleerResupply resupply,
+    CapsuleerRatting ratting
 )
 {
     private SavedCapsuleerHauler? _founder;
@@ -88,6 +109,9 @@ internal sealed partial class CapsuleerHauler(
 
     internal IReadOnlyList<int> RouteSystems => _route.Systems;
 
+    internal bool IsRatting =>
+        Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work.Ratting is not null || _loaded && Work.Ratting is not null;
+
     internal bool HasJourney => _loaded && Work.Journey is not null;
 
     internal int SystemId
@@ -117,12 +141,33 @@ internal sealed partial class CapsuleerHauler(
             Load();
         }
         long delay = Math.Max(0, elapsed - Work.ActiveTicks);
-        if (delay == 0)
+        if (delay == 0 && Work.Ratting is null)
         {
             return job;
         }
+        long wallDelay = Work.Ratting is { LastObservedAt: > 0 } activity ? Math.Max(0, Now - activity.LastObservedAt) : 0;
+        var pausedDefense = Work.Defense;
+        if (wallDelay > 0 && pausedDefense is not null)
+        {
+            pausedDefense = pausedDefense with
+            {
+                Locks = pausedDefense.Locks.Select(scan => scan with { ReadyAt = checked(scan.ReadyAt + wallDelay) }).ToArray(),
+                Cycles = pausedDefense
+                    .Cycles.Select(cycle =>
+                        cycle with
+                        {
+                            StartedAt = checked(cycle.StartedAt + wallDelay),
+                            ReadyAt = checked(cycle.ReadyAt + wallDelay),
+                        }
+                    )
+                    .ToArray(),
+                RecallUntil = pausedDefense.RecallUntil == 0 ? 0 : checked(pausedDefense.RecallUntil + wallDelay),
+            };
+        }
         var resumed = Work with
         {
+            Defense = pausedDefense,
+            Ratting = Work.Ratting is { } rattingWork ? rattingWork with { LastObservedAt = Now } : null,
             ActiveTicks = Work.ActiveTicks + delay,
             ClockOffsetTicks = Work.ClockOffsetTicks + delay,
             DueTicks = Work.DueTicks == 0 ? 0 : Work.DueTicks + delay,
@@ -294,6 +339,8 @@ internal sealed partial class CapsuleerHauler(
         {
             RefreshTackle();
         }
+        AdvanceRattingClock(job.DueTicks);
+        var proactive = ProactiveTarget();
         var previousDefense = Work.Defense;
         var defended = defense.Advance(
             Pilot,
@@ -303,7 +350,8 @@ internal sealed partial class CapsuleerHauler(
             destinyStamp,
             _obstacles,
             Work.Retreating,
-            Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil
+            Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
+            proactive: proactive
         );
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
@@ -369,11 +417,18 @@ internal sealed partial class CapsuleerHauler(
                     Retreating = true,
                     LaneDeparting = false,
                 };
-                BeginTravel();
+                if (Work.Ratting is { } activity)
+                {
+                    _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning } };
+                }
+                else
+                {
+                    BeginTravel();
+                }
             }
             if (!defended.HoldsNavigation)
             {
-                if (resumeCourse && Pilot.Position is not null)
+                if (resumeCourse && Pilot.Position is not null && Work.Ratting is null)
                 {
                     BeginTravel();
                 }
@@ -609,6 +664,11 @@ internal sealed partial class CapsuleerHauler(
 
     private void Step()
     {
+        if (Work.Ratting is not null)
+        {
+            RattingStep();
+            return;
+        }
         switch (Work.Activity)
         {
             case HaulerActivity.Docked when Work.ActiveTicks >= Work.DueTicks:
@@ -663,7 +723,21 @@ internal sealed partial class CapsuleerHauler(
             }
             _trafficRefreshChecked = true;
         }
+        if (TrafficCorrection.Apply(database, _operation.World, _operation.Catalog, pilotId, Now))
+        {
+            long account = _operation.World.Pilots.Where(p => p.Id == pilotId).Select(p => p.AccountId).Single();
+            _pilot = ships.FindPilot(_operation.World, account, pilotId)!;
+            _navigation.AdoptHull();
+        }
         CapsuleerSupplyStore.Ensure(_operation.World, _operation.Catalog, pilotId, Founder.FounderShipId);
+        UnloadRattingLoot();
+        var supplies = resupply.Dock(database, _operation.World, _operation.Catalog, pilotId, Work.Resupply, Now);
+        _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
+        _work = Work with { Resupply = supplies };
+        if (TryLaunchActivity())
+        {
+            return;
+        }
         if (Work.Retreating || Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
         {
             AssignJourney();
@@ -774,6 +848,20 @@ internal sealed partial class CapsuleerHauler(
         {
             return;
         }
+        if (Work.Ratting is { Phase: RattingPhase.TravellingToBelt })
+        {
+            if (
+                Pilot.Position!.DistanceTo(_target!.Position) - Pilot.Flight.ShipRadius - _target.Radius
+                > NpcEncounterDefinitions.DetectionRange
+            )
+            {
+                Follow();
+                return;
+            }
+            _navigation.Stop();
+            _work = Work with { Ratting = Work.Ratting with { Phase = RattingPhase.Searching } };
+            return;
+        }
         if (_target!.DestinationGateId is not null)
         {
             if (GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target))
@@ -828,7 +916,17 @@ internal sealed partial class CapsuleerHauler(
                 DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(dwell).Ticks,
                 DwellSequence = checked(Work.DwellSequence + 1),
                 Routine = routine,
+                Resupply = new(
+                    Pilot.StationId,
+                    (_operation.World.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0) / RattingRules.BudgetDivisor,
+                    0
+                ),
             };
+            if (Work.Ratting is { } returning)
+            {
+                _work = Work with { RattingLoot = returning.LootIds };
+                UnloadRattingLoot();
+            }
         }
         else
         {

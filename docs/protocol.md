@@ -12,6 +12,9 @@ Historical native observations apply only to the recorded revision and actions. 
 
 [Cloaking and standard micro-jump drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026) cover module visibility, saved delays, covert warp and paid standard-drive spools.
 
+[Belt ratting, resupply and ship variety](protocol/capsuleers.md#belt-ratting-resupply-and-ship-variety--november-9-2026)
+records fit-aware pirate encounters, owned loot, paid shopping and starter corrections.
+
 ## Topics
 
 [Ice harvesting and public ice fields, November 9, 2026](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)

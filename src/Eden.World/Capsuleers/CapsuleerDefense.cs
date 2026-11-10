@@ -72,7 +72,8 @@ internal sealed class CapsuleerDefense(
         IReadOnlyList<StaticSpaceObject> obstacles,
         bool forceRetreat = false,
         bool canFight = true,
-        bool escapeFirst = false
+        bool escapeFirst = false,
+        CapsuleerAttacker? proactive = null
     )
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
@@ -121,7 +122,7 @@ internal sealed class CapsuleerDefense(
                 }
             )
             .ToArray();
-        var target = CapsuleerDefenseRules.Select(candidates);
+        var target = CapsuleerDefenseRules.Select(candidates) ?? proactive;
         if (target is null)
         {
             Stop(pilot.PilotId, state);
@@ -192,13 +193,9 @@ internal sealed class CapsuleerDefense(
         bool combatShip = profile.Combat && !escapeFirst;
         bool retreat = forceRetreat || state.Retreating || CapsuleerDefenseRules.Retreat(currentHealth, hasDamage) || !combatShip;
         bool offensive = CapsuleerDefenseRules.Offensive(combatShip, retreat, blocked);
-        bool newThreat = candidates.Max(attacker => attacker.AttackedAt) > state.LastAttackAt;
-        state = state with
-        {
-            TargetId = target.ShipId,
-            LastAttackAt = Math.Max(state.LastAttackAt, candidates.Max(attacker => attacker.AttackedAt)),
-            Retreating = retreat,
-        };
+        long attackedAt = candidates.Select(attacker => attacker.AttackedAt).DefaultIfEmpty(0).Max();
+        bool newThreat = attackedAt > state.LastAttackAt;
+        state = state with { TargetId = target.ShipId, LastAttackAt = Math.Max(state.LastAttackAt, attackedAt), Retreating = retreat };
         bool canLock =
             attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets) > 0
             && pilot.Position.DistanceTo(target.Position) - pilot.Flight.ShipRadius - target.Radius
@@ -376,7 +373,7 @@ internal sealed class CapsuleerDefense(
         );
     }
 
-    private CapsuleerDefenseProfile Profile(long pilot)
+    internal CapsuleerDefenseProfile Profile(long pilot)
     {
         CapsuleerDefenseProfile Load()
         {

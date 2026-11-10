@@ -38,14 +38,31 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         int slot,
         int region,
         TrafficSecurityBand band,
-        Func<TrafficProfile, bool>? compatible = null
+        Func<TrafficProfile, bool>? compatible = null,
+        Func<TrafficProfile, int>? hullGroup = null
     )
     {
         HashSet<long> seen = [];
         foreach (var values in new[] { _regions.GetValueOrDefault((region, band), []), _bands.GetValueOrDefault(band, []), _global })
         {
             var pool = Latest(compatible is null ? values : values.Where(compatible));
-            int start = TrafficRules.Start(seed, system, slot, pool.Length);
+            if (hullGroup is not null)
+            {
+                // Choose a hull group before a character; killmail volume must not weight ship classes.
+                var groups = pool.GroupBy(hullGroup).OrderBy(group => group.Key).ToArray();
+                int groupStart = TrafficRules.Start(seed, system, slot, groups.Length);
+                pool = Enumerable
+                    .Range(0, groups.Length)
+                    .SelectMany(index =>
+                    {
+                        var group = groups[(groupStart + index) % groups.Length];
+                        var members = group.ToArray();
+                        int memberStart = TrafficRules.Start(seed ^ group.Key, system, slot, members.Length);
+                        return Enumerable.Range(0, members.Length).Select(member => members[(memberStart + member) % members.Length]);
+                    })
+                    .ToArray();
+            }
+            int start = hullGroup is null ? TrafficRules.Start(seed, system, slot, pool.Length) : 0;
             for (int index = 0; index < pool.Length; index++)
             {
                 var profile = pool[(start + index) % pool.Length];

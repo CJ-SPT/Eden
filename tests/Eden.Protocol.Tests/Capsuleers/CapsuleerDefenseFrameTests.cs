@@ -43,9 +43,10 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task WarmCompleteMaintenanceAndTwoObserverFramesKeepCombatResident(bool combat)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task WarmCompleteMaintenanceAndTwoObserverFramesKeepCombatResident(bool combat, bool ratting)
     {
         using CapsuleerHaulerTests.Fixture f = new(isolateRoute: true);
         var founder = f.Founder();
@@ -91,6 +92,26 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
                         ExpiresAt = f.Clock.Now + TimeSpan.FromMinutes(15).Ticks,
                     }
                 );
+            }
+            if (ratting)
+            {
+                var work = new HaulerProgress(
+                    HaulerActivity.Flying,
+                    0,
+                    0,
+                    founder.FounderShipId,
+                    60015157,
+                    0,
+                    new NavigationState().Capture(),
+                    Journey: new(TrafficJourneyKind.Local, 60015157, 60015157, 60015157, [SourceSystem], 1)
+                )
+                {
+                    Ratting = new(60015157, [40009051], 0, TimeSpan.FromMinutes(RattingRules.MaximumMinutes).Ticks)
+                    {
+                        Phase = RattingPhase.Returning,
+                    },
+                };
+                new HaulerCheckpoint(founder.PilotId, work).Apply(world);
             }
             world.SaveChanges();
             transaction.Commit();
@@ -202,7 +223,7 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
             }
             samples.Sort();
             output.WriteLine(
-                $"Combat={combat}, complete frames with two observers: median={samples[samples.Count / 2]:F2} ms, "
+                $"Combat={combat}, Ratting={ratting}, complete frames with two observers: median={samples[samples.Count / 2]:F2} ms, "
                     + $"p95={samples[(int)Math.Ceiling(samples.Count * .95) - 1]:F2} ms; "
                     + $"commands={sql.Min()}–{sql.Max()}, connections={connections.Min()}–{connections.Max()}, fits=0."
             );
@@ -211,7 +232,7 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
             await live.FlushAsync();
             var checkpoint = live.LastCheckpoint!;
             output.WriteLine(
-                $"Combat={combat}, checkpoint capture/projection/write: {checkpoint.Capture.TotalMilliseconds:F2}/"
+                $"Combat={combat}, Ratting={ratting}, checkpoint capture/projection/write: {checkpoint.Capture.TotalMilliseconds:F2}/"
                     + $"{checkpoint.Projection.TotalMilliseconds:F2}/{checkpoint.Write.TotalMilliseconds:F2} ms."
             );
             if (combat)

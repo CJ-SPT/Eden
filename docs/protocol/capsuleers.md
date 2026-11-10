@@ -509,3 +509,69 @@ No full .NET suite was requested or run.
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** The retaliation/retreat observations above remain optional.
+
+## Belt ratting, resupply and ship variety — November 9, 2026
+
+Combat-fit travelers now select bounded observed belt-ratting sorties, proactively engage only suitable ordinary belt
+pirates, collect owned NPC loot and unload it at their actual return station. Pure typed Gameplay assessment evaluates
+the complete visible group using fitted damage/application, ammunition, capacitor, layered resistances, enemy repairs
+and conservative survival bounds. Unsupported NPC electronic-warfare estimates are rejected. The shared defense owner
+accepts an explicit proactive NPC target without manufacturing incoming aggression; real attackers retain priority.
+Normal module, targeting, damage, bounty/skill-point, drone, retreat and loss owners remain authoritative.
+
+Optional hauler checkpoint fields retain activity choice, belts, elapsed budget, targets, loot identity, supply preferences,
+shopping destination and visit spending. Ratting is removed from continuous unobserved traveler scheduling and resumes
+remaining activity/controller deadlines, including when the global human clock was stopped. Committed effects retain
+normal settlement; no unobserved farming loop or global NPC freeze is introduced.
+
+Resupply uses owned hangar stock, then actual market purchases in the same owning transaction as progress advancement.
+Arrival freezes a quarter-wallet budget. Unit prices are bounded by twice the bundled sell reference; missing prices
+are skipped. Candidate shopping paths are limited to three jumps in the current region and avoid remembered threats.
+Empty magazines reload through the ordinary paid ammunition operation. No new money, recurring supplies or lost ships
+are granted. The population guide records the selection and capacity policies.
+
+Traffic selection now draws hull groups before characters and bounds combined rookie/shuttle admission by the community
+roster, including visitors. Idempotent `WorldTrafficCorrection` reconciliation records one-time untouched rookie hull/fit
+corrections while retaining the original imported identity. Supply inventory changes invalidate the actual imported pilot's
+fitting/assessment dependencies. Warm movement, direct combat and shared observer reads retain resident ownership;
+market, loot, reload, missile and destruction operations retain their normal SQL boundaries.
+
+Gameplay reference: [EVE University belt ratting](https://wiki.eveuniversity.org/Ratting).
+Navigation continues to use the established
+[Carbon Ball.cpp revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp)
+and pinned build-3662168 catalog definitions. No new native-client observations were collected.
+
+**Automated validation.** Development used exact method filters through `tools/Test-Feature.ps1`, starting with
+`RattingRulesTests.ActualFitMustClearTheWholeGroupAndSurviveTwiceAsLong` and then real-world purchase, navigation,
+proactive combat and reload cases. An intermediate affected run passed 103 cases in 37.29 seconds including runner
+startup (build 5.35 seconds). Later additions cover real pirate destruction and exactly-once bounty settlement,
+owned versus foreign wrecks, hangar unloading/restart, paused human-clock deadlines, three-jump boundaries,
+price ceilings, threat memory, finite owned reloads, and correction rollback/idempotency.
+Final integration with main `e31693d1` passed **471 affected tests** in **108.15 seconds** including runner startup,
+using four workers. Tool/solution restore and the solution build passed with zero warnings/errors (build 5.59 seconds).
+Both Python policy suites passed: eight catalog cases in 0.613 seconds and nine formatting cases in 0.015 seconds.
+Formatting verification checked 1,554 files and passed the 140-character policy; diff verification passed.
+No full .NET regression suite was requested or run.
+
+Final affected filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~WreckTests|FullyQualifiedName~PersonalMarketTests|FullyQualifiedName~RegionalMarketTests|FullyQualifiedName~NpcScene|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~PilotTurretTests|FullyQualifiedName~PilotDroneTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~DetachedCheckpointTests`.
+
+Complete maintenance/session-frame measurements include two observers and packet encoding after twelve warmup frames.
+The ratting sample measures an observed returning sortie; the combat sample exercises the shared retaliation controller.
+These small deterministic fixtures establish their database/fitting budgets, not heterogeneous-fleet server capacity.
+Checkpoint capture, detached projection and file writing are measured separately.
+
+| Workload | Median / p95 frame | SQL / connections per frame | Fitting calculations | Capture / projection / write |
+| --- | --- | --- | --- | --- |
+| Peaceful traveler | 0.88 / 5.36 ms | 0-2 / 0-2 | 0 | 0.82 / 6.13 / 11.53 ms |
+| Shared combat controller | 2.12 / 2.75 ms | 0-8 / 0-8 | 0 | 0.53 / 3.88 / 12.56 ms |
+| Returning ratter | 0.57 / 2.46 ms | 0-2 / 0-2 | 0 | 0.50 / 2.16 / 12.75 ms |
+
+Development failures exposed a nested departure read transaction and a schema-order dependency in supply invalidation;
+both were corrected. Other early failures corrected fixture serialization, ownership queries, initial reload cooldowns
+and remote ask prices. Focused checks were rerun after those corrections; the final affected result above includes them.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a belt fight, wreck approach and subsequent resupply trip to assess native effects
+and gameplay feel.

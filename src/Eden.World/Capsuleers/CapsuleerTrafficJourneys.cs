@@ -96,7 +96,8 @@ internal static partial class CapsuleerTrafficRoutes
         int sourceStation,
         int destinationStation,
         HullClass hull,
-        IReadOnlySet<int>? avoided = null
+        IReadOnlySet<int>? avoided = null,
+        int maximumJumps = TrafficJourneyRules.MaximumJumps
     )
     {
         if (!TrafficRules.RouteAllows(hull, false))
@@ -124,7 +125,7 @@ internal static partial class CapsuleerTrafficRoutes
             {
                 return new(sourceStation, destinationStation, PathTo(current, parents));
             }
-            if (distances[current] >= TrafficJourneyRules.MaximumJumps)
+            if (distances[current] >= maximumJumps)
             {
                 continue;
             }

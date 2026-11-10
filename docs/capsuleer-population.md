@@ -28,6 +28,52 @@ See the [implementation and automated evidence](protocol/capsuleers.md#zkill-bac
 
 ## Galaxy-wide station and gate traffic
 
+### Belt ratting, ship variety and paid resupply
+
+Existing combat-fit travelers can choose a local belt-ratting sortie on one third of eligible observed dock departures.
+The saved pilot/sequence draw survives restarts. Rookie ships, shuttles, mining fits and transports do not initiate ratting.
+A sortie visits at most three distinct real belts or lasts ten observed minutes, then returns to its departure station.
+Ordinary destination journeys finish at a dock before adopting an activity.
+
+Pilots discover pirates on their current grid. Only ordinary belt pirates are candidates; mission/anomaly NPCs, civilians,
+empire forces and capsuleers are excluded. An assessment checks the entire visible belt-pirate group against the actual
+usable fitted weapons, available ammunition, legal combat drones, tracking/range or missile application, enemy resistances,
+maximum repairs and shield recharge. It requires a clear within two minutes and twice that time in conservative tank margin.
+It reserves capacitor for offensive safety and fitted support, gives no credit for future player repairs or capacitor
+recharge, and rejects unsupported estimates, including NPC electronic warfare. A combat hull alone is insufficient.
+Changes to enemies, health, fitting, drones or supplies trigger reassessment; ordinary locks, payment, retreat and losses apply.
+
+After a clear, pilots approach owned NPC wrecks, take only cargo that fits using normal loot rights and transfer rules,
+and unload the collected items into their own hangar when docking. They leave other pilots' wrecks alone. Loot sales,
+salvage modules, missions and anomaly running are not autonomous activities in this milestone.
+
+Ratting jobs pause when the last human leaves their system. Remaining activity, lock and controller-cycle timing survives
+absence, empty-world pauses and checkpoints. Already committed effects retain their normal exactly-once settlement;
+absence does not start additional attacks or award simulated farming income. Other encounters are not globally frozen.
+Ordinary destination and shopping travel keep the established background navigation policy.
+
+At a dock, travelers use owned station stock before buying fitted consumables toward five reserve magazines and supported
+missing drones toward one legal flight. Empty magazines reload through the normal ammunition owner, respecting paid cooldowns.
+A visit's budget is frozen at 25% of its arrival wallet; purchases and retries share it. Ammunition precedes drones, partial
+fills are allowed, and each unit's ceiling is twice the bundled sell-price reference. Missing references are skipped.
+There are no recurring supply or wallet grants. Insufficient supplies suppress ratting while ordinary travel remains possible.
+
+If local stock is insufficient, a pilot may choose actual affordable offers in its current region, at most three real jumps
+away, respecting hull restrictions and remembered threats. Selection orders by distance, supply coverage, price and station ID.
+Purchases occur only after docking; normal seller payment, stock depletion and market notifications apply.
+
+New imported traffic chooses compatible hull groups before individual characters rather than weighting classes by killmail
+volume. Rookie ships and shuttles together may occupy at most 10% of a community roster after a new selection, including its
+visitors. Tiny rosters and unsupported-only pools retain compatible generated traffic instead of filling with rookies.
+Existing customized ships and losses remain untouched.
+
+An untouched imported rookie can receive one docked starter correction using a complete validated non-rookie combat-fit template.
+Its pilot/ship IDs, names, wallet, cargo, drones and original identity provenance remain. The template and original hull are
+recorded separately. Customized, damaged or lost ships are excluded; insufficient cargo/drone capacity defers correction.
+The original snapshot observation must still be available to verify the starter fit. A correction never repeats starter supplies.
+
+See [the implementation and automated record](protocol/capsuleers.md#belt-ratting-resupply-and-ship-variety--november-9-2026).
+
 ### Self-defense and finite supplies
 
 Simulated pilots respond to committed attacks, including misses, offensive launches, tackle and electronic warfare.
@@ -47,8 +93,7 @@ individual owned items, with at most ten seconds of waiting before an available 
 
 At creation, or an existing original ship's next dock, one durable grant provides up to five magazines of loaded consumable
 combat charges and one legal homogeneous flight of supported T1 mobile combat drones. Available cargo, bay, bandwidth
-and control limits bound grants. Existing cargo and drones remain owned and are preserved. No subsequent restocking or
-replacement ships are granted. Losses, abandoned drones and charge consumption remain real. Ordinary restart behavior
+and control limits bound grants. Existing cargo and drones remain owned and are preserved. Further supplies require the paid resupply above; no recurring replacement ships are granted. Losses, abandoned drones and charge consumption remain real. Ordinary restart behavior
 clears sustained bonuses; saved paid deadlines prevent another charge before a new cycle is due.
 
 Peaceful reads, ordinary navigation, turret/drone combat, standard local repair cycles and sustained local-module renewal
@@ -113,7 +158,7 @@ Unobserved pilots retain compact progress and owned assets. Their jobs remain do
 
 Startup no longer provisions every eligible catalog system or a first-human founder. Eligibility and new actors are prepared on visits. Existing founder identities, personal orders, assets and paid progress become remembered encounters. Native scenes and loaded role navigation are released when their system becomes unobserved. All saves adopt this lifecycle. The old global-provisioning switch no longer grants a global population.
 
-The initial November 8 profile, superseded by the galaxy-wide traffic rules above, used the supported high-security Venture/Badger cohort and reciprocal station routes. Systems with three or more gate connections receive a hauler. Half of quieter systems receive a hauler, determined by the saved seed. A connected market system without belts can receive hauling independently of mining. Other systems can remain empty. Regional progressive markets now develop independently. Encounter mining and hauling never create or fill market orders.
+The initial November 8 profile, superseded by the galaxy-wide traffic rules above, used the supported high-security Venture/Badger cohort and reciprocal station routes. Systems with three or more gate connections receive a hauler. Half of quieter systems receive a hauler, determined by the saved seed. A connected market system without belts can receive hauling independently of mining. Other systems can remain empty. Regional progressive markets now develop independently. Encounter mining and ordinary freight travel do not place market orders; paid resupply above purchases existing offers.
 
 See the [implementation and validation record](protocol/capsuleers.md#observed-capsuleer-encounters--november-8-2026).
 

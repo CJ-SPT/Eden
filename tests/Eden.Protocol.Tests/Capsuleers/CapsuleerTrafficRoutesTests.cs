@@ -12,6 +12,33 @@ public sealed class CapsuleerTrafficRoutesTests
     private const int FirstSystem = 30001001;
     private const int FirstStation = 60001001;
 
+    [Theory]
+    [InlineData(3, true)]
+    [InlineData(4, false)]
+    public void ShoppingRoutesEnforceTheThreeJumpBoundary(int distance, bool allowed)
+    {
+        using Fixture fixture = new();
+        fixture.AddStation(FirstStation, FirstSystem);
+        fixture.AddStation(FirstStation + 1, FirstSystem + distance);
+        for (int offset = 0; offset < distance; offset++)
+        {
+            fixture.Connect(FirstSystem + offset, FirstSystem + offset + 1);
+        }
+        using CatalogDbContext catalog = new(fixture.Path);
+        var route = CapsuleerTrafficRoutes.ToStation(
+            catalog,
+            FirstStation,
+            FirstStation + 1,
+            HullClass.Frigate,
+            maximumJumps: RattingRules.MaximumShoppingJumps
+        );
+        Assert.Equal(allowed, route is not null);
+        if (route is not null)
+        {
+            Assert.Equal(distance + 1, route.Systems.Length);
+        }
+    }
+
     [Fact]
     public void StationlessTransitUsesReciprocalMultiJumpPathsAcrossAllSecurity()
     {

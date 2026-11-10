@@ -62,7 +62,7 @@ public sealed record CapsuleerDefenseState
 
 public static class CapsuleerDefenseRules
 {
-    private const double OffensiveCapacitorReserve = .2;
+    public const double OffensiveCapacitorReserve = .2;
     public const double RepairFraction = .8;
     public const double CapacitorBoosterFraction = .3;
     public const double EmergencyFraction = .4;

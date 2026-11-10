@@ -452,7 +452,7 @@ internal sealed partial class CapsuleerScheduler(
         running.UnionWith(inbound);
         foreach (long pilot in running.Except(_running))
         {
-            if (_travelers.Contains(pilot))
+            if (_travelers.Contains(pilot) && !_haulers[pilot].IsRatting)
             {
                 continue;
             }

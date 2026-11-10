@@ -204,6 +204,7 @@ Eden's original source and documentation are available under the [MIT License](L
 
 [Persistent traveler routines](docs/protocol/capsuleers.md#persistent-traveler-routines--november-9-2026) give simulated pilots saved travel habits, shelter and temporary attack memory.
 [Simulated-pilot retaliation](docs/protocol/capsuleers.md#simulated-pilot-retaliation--november-9-2026) adds actual fitted defenses, shared locks, retreat and finite starter supplies.
+[Belt ratting and paid resupply](docs/protocol/capsuleers.md#belt-ratting-resupply-and-ship-variety--november-9-2026) give suitable combat travelers pirate encounters, owned loot, shopping trips and more varied hull selection.
 
 Progression markets have [industrial NPC buyers](docs/protocol/industry.md#industrial-npc-demand--november-9-2026)
 for resources and non-faction Tech I goods before supply unlocks. Advanced products require a production claim for demand. Finite demand grows with active play;

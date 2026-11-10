@@ -227,6 +227,8 @@ internal sealed class NpcEncounterStore(
                             )
                     )
                     {
+                        AnchorKind = n.AnchorKind,
+                        AnchorId = n.BeltId,
                         StandingThresholds = profiles[n.TypeId].StandingThresholds,
                     };
                 })
