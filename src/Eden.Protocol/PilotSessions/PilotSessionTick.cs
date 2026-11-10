@@ -17,7 +17,8 @@ internal sealed class PilotSessionTick(
     SessionDiagnostics? diagnostics = null,
     Eden.Protocol.Exploration.CombatAnomalyHandler? anomalies = null,
     ICapsuleerHandoff? handoff = null,
-    ICapsuleerPresentation? presentation = null
+    ICapsuleerPresentation? presentation = null,
+    Eden.Gameplay.Structures.IStructureContacts? structures = null
 )
 {
     public async Task AdvanceAsync(
@@ -94,6 +95,10 @@ internal sealed class PilotSessionTick(
             {
                 if (flight.InBallpark)
                 {
+                    if (structures is not null)
+                    {
+                        flight.RefreshStructures(structures.Contacts(flight.Pilot.SystemId));
+                    }
                     flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
                     flight.RefreshWrecks();
                     flight.RefreshMissiles();

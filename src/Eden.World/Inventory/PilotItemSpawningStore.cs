@@ -35,7 +35,7 @@ internal sealed class PilotItemSpawningStore(WorldDatabase database, TimeProvide
             return new ItemSpawnResult.Redemption(token);
         }
         bool cargo = request.Destination == ItemSpawnDestination.ShipCargo;
-        long location = cargo ? pilot.ActiveShipId : pilot.ActiveShip.StationId;
+        long location = cargo ? pilot.ActiveShipId : pilot.ActiveShip.DockedLocationId;
         int flag = (int)(cargo ? InventoryFlag.Cargo : InventoryFlag.Hangar);
         if (cargo)
         {

@@ -463,7 +463,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
     private static int DockedStation(WorldDbContext world, long actorId)
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == actorId);
-        return pilot?.ActiveShip is { Position: null } ship
+        return pilot?.ActiveShip is { Position: null, StructureId: null } ship
             ? ship.StationId
             : throw new InvalidDataException("Dock at the office's station before using corporation storage.");
     }

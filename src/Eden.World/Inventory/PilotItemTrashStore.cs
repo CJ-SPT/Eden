@@ -19,13 +19,19 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
     // Build 3662168 evetypes.const.TYPE_LIST_NON_TRASHABLE_ITEMS.
     internal const long NonTrashableTypeList = 298;
 
-    public IReadOnlyList<InventoryChange> Trash(long pilotId, int stationId, IReadOnlyList<long> itemIds)
+    public IReadOnlyList<InventoryChange> Trash(long pilotId, long stationId, IReadOnlyList<long> itemIds)
     {
         ItemTrashRules.CheckSelection(itemIds);
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (!world.Pilots.Any(p => p.Id == pilotId) || catalog.FindStation(stationId) is null)
+        if (
+            !world.Pilots.Any(p => p.Id == pilotId)
+            || catalog.FindStation(stationId) is null
+                && !world
+                    .Set<Eden.Data.World.Structures.SavedStructure>()
+                    .Any(s => s.Id == stationId && s.State != Eden.Gameplay.Structures.StructureState.Destroyed)
+        )
         {
             throw new InvalidDataException("Choose personal assets at a known station.");
         }
@@ -116,7 +122,7 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
         throw new InvalidDataException("The requested item is unavailable.");
     }
 
-    private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId, TrashEntry entry)
+    private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, long stationId, TrashEntry entry)
     {
         HashSet<long> visited = [];
         while (true)

@@ -34,8 +34,8 @@ internal static class IndustryWire
                         (object?)
                             new object?[]
                             {
-                                new List<object?>(),
-                                new List<object?>(),
+                                Modifiers(facility.TimeMultiplier),
+                                Modifiers(a == IndustryActivity.Manufacturing ? facility.MaterialMultiplier : 1),
                                 new List<object?>(),
                                 a == IndustryActivity.Manufacturing ? new List<object?>() : scienceCategories.Cast<object?>().ToList(),
                                 new List<object?>(),
@@ -43,6 +43,10 @@ internal static class IndustryWire
                             }
                 ),
         };
+
+    // industryCommon.Facility consumes five-value modifier tuples; Reference.HULL is 12 in build 3662168.
+    private static List<object?> Modifiers(double multiplier) =>
+        multiplier == 1 ? [] : [new object?[] { multiplier, null, null, null, 12L }];
 
     internal static BlueInstance Blueprint(OwnedBlueprint blueprint)
     {
@@ -89,7 +93,7 @@ internal static class IndustryWire
                 ["completedCharacterID"] = job.CompletedAt.HasValue ? job.PilotId : null,
                 ["startDate"] = job.StartTime,
                 ["endDate"] = job.EndTime,
-                ["pauseDate"] = null,
+                ["pauseDate"] = job.SuspendedAt,
                 ["runs"] = job.Runs,
                 ["licensedRuns"] = job.LicensedRuns,
                 ["successfulRuns"] = job.SuccessfulRuns,

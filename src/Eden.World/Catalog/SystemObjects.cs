@@ -10,7 +10,11 @@ using Eden.World.Storage;
 namespace Eden.World.Catalog;
 
 [Injectable]
-internal sealed class SystemObjects(WorldDatabase database, IAsteroidField asteroids) : ISystemObjects
+internal sealed class SystemObjects(
+    WorldDatabase database,
+    IAsteroidField asteroids,
+    Eden.Gameplay.Structures.IStructureContacts structures
+) : ISystemObjects
 {
     private const long ObjectEstimatedBytes = 192;
     private static readonly CatalogDefinition<ImmutableArray<StaticSpaceObject>> s_objects = new(
@@ -34,7 +38,7 @@ internal sealed class SystemObjects(WorldDatabase database, IAsteroidField aster
     public IReadOnlyList<StaticSpaceObject> Load(int systemId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return [.. catalog.Definition(s_objects, systemId), .. asteroids.List(systemId)];
+        return [.. catalog.Definition(s_objects, systemId), .. asteroids.List(systemId), .. structures.Contacts(systemId)];
     }
 
     internal static IReadOnlyList<StaticSpaceObject> Load(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)

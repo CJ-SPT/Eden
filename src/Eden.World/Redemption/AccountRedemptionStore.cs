@@ -113,7 +113,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         using CatalogDbContext catalog = new(database.CatalogPath);
         int? destination =
             useHomeStation ? PilotHomeStationStore.Read(world, catalog, pilot).Id
-            : pilot.ActiveShip.Position is null ? pilot.ActiveShip.StationId
+            : pilot.ActiveShip.Position is null && pilot.ActiveShip.StructureId is null ? pilot.ActiveShip.StationId
             : null;
         long now = Now;
         List<RedeemedItem> items = [];
@@ -246,7 +246,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
             || item.Singleton
             || item.Online
             || pilot.ActiveShip.Position is not null
-            || item.LocationId != pilot.ActiveShip.StationId
+            || item.LocationId != pilot.ActiveShip.DockedLocationId
             || item.FlagId != (int)InventoryFlag.Hangar
         )
         {

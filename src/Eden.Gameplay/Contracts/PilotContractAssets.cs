@@ -6,7 +6,7 @@ public sealed record ContractContainerCount(long ItemId, int Count);
 
 public sealed record ContractStackSplit(int Remainder, int Quantity);
 
-public sealed record ContractAssetStation(int StationId, int ItemCount);
+public sealed record ContractAssetStation(long StationId, int ItemCount);
 
 public interface IPilotContractAssets
 {

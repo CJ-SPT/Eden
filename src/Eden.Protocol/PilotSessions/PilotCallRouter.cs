@@ -51,7 +51,9 @@ internal sealed class PilotCallContext(
     public void ChangeShip(DockedPilot pilot)
     {
         bool sameStation =
-            ActiveFlight?.Pilot is { Position: null } previous && pilot.Position is null && previous.StationId == pilot.StationId;
+            ActiveFlight?.Pilot is { Position: null } previous
+            && pilot.Position is null
+            && previous.DockedLocationId == pilot.DockedLocationId;
         DestroyedShip = null;
         ActiveFlight?.Dispose();
         // The client binds the incoming ship's inventory before Board. Keep
@@ -248,14 +250,14 @@ internal sealed class PilotCallRouter(
             }
             if (method == "MachoBindObject" && args.Length == 2)
             {
-                long locationGroup = context.Pilot.Position is null ? 15 : 5;
+                long locationGroup = context.Pilot.Position is null ? (context.Pilot.InStructure ? context.Pilot.Station.GroupId : 15) : 5;
                 if (
                     service == "insuranceSvc"
                     && (
                         context.Pilot.Position is not null
                         || args[0] is not object?[] insuranceBind
                         || insuranceBind is not [long insuranceStation, long insuranceLocation, (long)InsuranceRules.StationGroup]
-                        || insuranceStation != context.Pilot.StationId
+                        || insuranceStation != context.Pilot.DockedLocationId
                         || insuranceLocation != insuranceStation
                     )
                 )
@@ -268,7 +270,7 @@ internal sealed class PilotCallRouter(
                         context.Pilot.Position is not null
                         || args[0] is not object?[] repairBind
                         || repairBind is not [long repairStation, long repairLocation, (long)RepairDefinitions.StationGroup]
-                        || repairStation != context.Pilot.StationId
+                        || repairStation != context.Pilot.DockedLocationId
                         || repairLocation != repairStation
                     )
                 )
@@ -277,7 +279,7 @@ internal sealed class PilotCallRouter(
                 }
                 if (
                     service is "corpStationMgr" or "reprocessingSvc" or "officeManager"
-                    && (context.Pilot.Position is not null || !Equals(args[0], (long)context.Pilot.StationId))
+                    && (context.Pilot.Position is not null || !Equals(args[0], context.Pilot.DockedLocationId))
                 )
                 {
                     return PilotCallResult.Unsupported;

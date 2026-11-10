@@ -328,7 +328,7 @@ internal sealed partial class PilotMissionStore(
 
     private static void RequireStation(Pilot pilot, int? station)
     {
-        if (station is null || pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != station)
+        if (station is null || pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != station)
         {
             throw new InvalidDataException("Dock at the mission's required station to perform this action.");
         }

@@ -32,7 +32,7 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
         {
             if (standing)
             {
-                repair.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
+                repair.CheckStation(context.Pilot.PilotId, context.Pilot.DockedLocationId);
                 return PilotCallResult.None;
             }
             if (args.FirstOrDefault() is not List<object?> items || !items.All(i => i is long))
@@ -44,7 +44,7 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
             {
                 return new BlueMap<long, BlueList<RepairQuoteReply>>(
                     repair
-                        .Quotes(context.Pilot.PilotId, context.Pilot.StationId, ids)
+                        .Quotes(context.Pilot.PilotId, context.Pilot.DockedLocationId, ids)
                         .ToDictionary(
                             p => p.Key,
                             p => new BlueList<RepairQuoteReply>(p.Value.Select(q => new RepairQuoteReply(q)).ToArray())
@@ -57,7 +57,7 @@ internal sealed class RepairHandler(IPilotRepair repair, IPilotHealth health, Ti
             }
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             long payment = RepairDefinitions.PaymentCents(args[1] is double amount ? amount : (long)args[1]!);
-            var result = repair.Repair(context.Pilot.PilotId, context.Pilot.StationId, ids, payment, now);
+            var result = repair.Repair(context.Pilot.PilotId, context.Pilot.DockedLocationId, ids, payment, now);
             context.Notifications.Add(
                 new AccountBalanceChanged(context.Pilot.PilotId, (double)result.BalanceCents / MarketDefinitions.CentsPerIsk)
             );

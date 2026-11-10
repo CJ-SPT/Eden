@@ -13,7 +13,9 @@ public sealed record ManufacturingInputs(
     IReadOnlyList<IndustryCharacterBonus> Bonuses,
     IReadOnlyList<ManufacturingSkillTimeBonus> SkillTimeBonuses,
     IReadOnlyList<ManufacturingMaterial> Materials,
-    BlueprintResearch? Blueprint = null
+    BlueprintResearch? Blueprint = null,
+    double FacilityTimeMultiplier = 1,
+    double FacilityMaterialMultiplier = 1
 );
 
 public sealed record ManufacturingPlan(long DurationSeconds, IReadOnlyDictionary<int, int> Materials);
@@ -43,7 +45,7 @@ public static class ManufacturingRules
         {
             throw new InvalidDataException("Invalid blueprint efficiency or insufficient licensed copy runs.");
         }
-        double seconds = inputs.BaseSeconds * request.Runs * (1 - blueprint.TimeEfficiency / 100d);
+        double seconds = inputs.BaseSeconds * request.Runs * (1 - blueprint.TimeEfficiency / 100d) * inputs.FacilityTimeMultiplier;
         foreach (var bonus in bonuses.Where(b => !b.Additive && b.Attribute == DogmaAttributeId.ManufactureTimeMultiplier))
         {
             seconds *= 1 + bonus.Value / 100;
@@ -77,7 +79,12 @@ public static class ManufacturingRules
         {
             throw new InvalidDataException("Manufacturing time changed; reopen the blueprint to refresh the quote.");
         }
-        var materials = IndustryMaterials.Calculate(inputs.Materials, request.Runs, blueprint.MaterialEfficiency);
+        var materials = IndustryMaterials.Calculate(
+            inputs.Materials,
+            request.Runs,
+            blueprint.MaterialEfficiency,
+            inputs.FacilityMaterialMultiplier
+        );
         if (materials.Count == 0)
         {
             throw new InvalidDataException("Missing manufacturing materials.");

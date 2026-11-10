@@ -103,7 +103,7 @@ internal sealed class PilotInventoryStackStore(WorldDatabase database, TimeProvi
 
         bool Accessible(long location, int flag) =>
             location == pilot.ActiveShipId && ShipHoldRules.IsHold(flag)
-            || location == pilot.ActiveShip.StationId && flag == (int)InventoryFlag.Hangar && pilot.ActiveShip.Position is null;
+            || location == pilot.ActiveShip.DockedLocationId && flag == (int)InventoryFlag.Hangar && pilot.ActiveShip.Position is null;
     }
 
     public IReadOnlyList<InventoryChange> StackAll(long pilotId, long locationId, int flagId)
@@ -114,7 +114,7 @@ internal sealed class PilotInventoryStackStore(WorldDatabase database, TimeProvi
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
         if (
-            !(locationId == ship.StationId && flagId == (int)InventoryFlag.Hangar && ship.Position is null)
+            !(locationId == ship.DockedLocationId && flagId == (int)InventoryFlag.Hangar && ship.Position is null)
             && !(locationId == ship.Id && ShipHoldRules.IsHold(flagId))
         )
         {

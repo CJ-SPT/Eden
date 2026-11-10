@@ -110,7 +110,7 @@ internal sealed partial class PilotContractStore
             || !(
                 (
                     pilot.ActiveShip.Position is null
-                    && package.LocationId == pilot.ActiveShip.StationId
+                    && package.LocationId == pilot.ActiveShip.DockedLocationId
                     && package.FlagId == (int)InventoryFlag.Hangar
                 ) || (package.LocationId == pilot.ActiveShipId && package.FlagId == (int)InventoryFlag.Cargo)
             )
@@ -139,7 +139,7 @@ internal sealed partial class PilotContractStore
                     throw new InvalidDataException("This courier contract is not in progress.");
                 }
                 var pilot = CourierPilot(world, pilotId, docked: true);
-                if (pilot.ActiveShip.StationId != contract.EndStationId)
+                if (pilot.ActiveShip.DockedLocationId != contract.EndStationId)
                 {
                     throw new InvalidDataException("Deliver the package at the contract's destination station.");
                 }

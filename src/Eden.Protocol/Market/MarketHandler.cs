@@ -93,7 +93,7 @@ internal sealed class MarketHandler(
             monitor.Enter(context);
             if (check)
             {
-                market.CheckStation(context.Pilot.PilotId, context.Pilot.StationId);
+                market.CheckStation(context.Pilot.PilotId, context.Pilot.NpcStationId);
                 return PilotCallResult.None;
             }
             switch (method)

@@ -24,6 +24,7 @@ public static class WorldTuningRules
         ArgumentNullException.ThrowIfNull(settings.Resources);
         ArgumentNullException.ThrowIfNull(settings.Rewards);
         ArgumentNullException.ThrowIfNull(settings.Industry);
+        ArgumentNullException.ThrowIfNull(settings.Structures);
         ArgumentNullException.ThrowIfNull(settings.Progression);
         ValidateRate(settings.Resources.OreYieldMultiplier);
         ValidateRate(settings.Resources.IceYieldMultiplier);
@@ -38,6 +39,9 @@ public static class WorldTuningRules
         ValidateRate(settings.Industry.CopyingSpeed);
         ValidateRate(settings.Industry.InventionSpeed);
         ValidateRate(settings.Industry.ReprocessingEfficiency);
+        ValidateRate(settings.Structures.AnchoringSpeed);
+        ValidateRate(settings.Structures.OnliningSpeed);
+        ValidateRate(settings.Structures.UnanchoringSpeed);
     }
 
     public static decimal Yield(ResourcePolicy policy, MiningFamily family) =>

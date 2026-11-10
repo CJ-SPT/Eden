@@ -27,7 +27,7 @@ internal sealed class RepackagingHandler(IPilotRepackaging repackaging) : ISelec
                 keywords is { Count: > 0 }
                 || args is not [Dictionary<long, object?> stations]
                 || stations.Count != 1
-                || !stations.TryGetValue((long)context.Pilot.StationId, out var values)
+                || !stations.TryGetValue((long)context.Pilot.DockedLocationId, out var values)
                 || values is not List<object?> entries
             )
             {
@@ -40,7 +40,7 @@ internal sealed class RepackagingHandler(IPilotRepackaging repackaging) : ISelec
                         : throw new InvalidDataException("Invalid repackaging item.")
                 )
                 .ToArray();
-            foreach (var change in repackaging.Repackage(context.Pilot.PilotId, context.Pilot.StationId, items))
+            foreach (var change in repackaging.Repackage(context.Pilot.PilotId, context.Pilot.DockedLocationId, items))
             {
                 InventoryChangesWire.NotifyItemChange(context, change);
             }

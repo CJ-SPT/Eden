@@ -28,11 +28,11 @@ public sealed record ReprocessingResult(
 
 public interface IPilotReprocessing
 {
-    void CheckStation(long pilotId, int stationId);
-    ReprocessingQuotes Quote(long pilotId, int stationId, long activeShipId, IReadOnlyList<long> itemIds);
+    void CheckStation(long pilotId, long stationId);
+    ReprocessingQuotes Quote(long pilotId, long stationId, long activeShipId, IReadOnlyList<long> itemIds);
     ReprocessingResult Reprocess(
         long pilotId,
-        int stationId,
+        long stationId,
         IReadOnlyList<long> itemIds,
         long sourceId,
         long? ownerId,

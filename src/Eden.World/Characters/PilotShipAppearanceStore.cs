@@ -31,7 +31,7 @@ internal sealed class PilotShipAppearanceStore(WorldDatabase database, TimeProvi
             : null;
         if (
             !ShipStorageRules.CanRead(
-                new(pilotId, pilot.ActiveShipId, pilot.ActiveShip.StationId, pilot.ActiveShip.Position is null),
+                new(pilotId, pilot.ActiveShipId, pilot.ActiveShip.DockedLocationId, pilot.ActiveShip.Position is null),
                 item,
                 parent is null ? null : ShipStoragePersistence.Location(parent)
             )

@@ -240,7 +240,7 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         Eden.World.Propulsion.PilotSpatialModuleStore.RequireUncloaked(world, shipId);
         int sourceFlag = sourceId == shipId ? (int)InventoryFlag.Cargo : (int)InventoryFlag.Hangar;
         if (
-            (sourceId != shipId && (pilot.ActiveShip.Position is not null || sourceId != pilot.ActiveShip.StationId))
+            (sourceId != shipId && (pilot.ActiveShip.Position is not null || sourceId != pilot.ActiveShip.DockedLocationId))
             || chargeIds.Count == 0
             || chargeIds.Distinct().Count() != chargeIds.Count
         )
@@ -449,7 +449,11 @@ internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmun
         if (
             !(
                 (destinationId == shipId && flagId == (int)InventoryFlag.Cargo)
-                || (pilot.ActiveShip.Position is null && destinationId == pilot.ActiveShip.StationId && flagId == (int)InventoryFlag.Hangar)
+                || (
+                    pilot.ActiveShip.Position is null
+                    && destinationId == pilot.ActiveShip.DockedLocationId
+                    && flagId == (int)InventoryFlag.Hangar
+                )
             )
             || quantity is <= 0
             || quantity.HasValue && moduleIds.Count != 1

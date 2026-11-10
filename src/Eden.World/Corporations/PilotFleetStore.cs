@@ -47,14 +47,16 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         );
     }
 
-    public IReadOnlyList<InventoryItem> Ships(long pilotId, int stationId)
+    public IReadOnlyList<InventoryItem> Ships(long pilotId, long stationId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         return world
             .Ships.AsNoTracking()
             .Include(s => s.Position)
-            .Where(s => s.OwnerId == pilotId && s.StationId == stationId && s.Position == null && s.StoredInId == null)
+            .Where(s =>
+                s.OwnerId == pilotId && (s.StructureId ?? (long)s.StationId) == stationId && s.Position == null && s.StoredInId == null
+            )
             .OrderBy(s => s.Id)
             .AsEnumerable()
             .Select(s => Read(catalog, s))
@@ -101,7 +103,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             {
                 if (
                     assembled.OwnerId != pilotId
-                    || assembled.StationId != pilot.ActiveShip.StationId
+                    || assembled.DockedLocationId != pilot.ActiveShip.DockedLocationId
                     || assembled.Position is not null
                     || assembled.StoredInId is not null
                 )
@@ -115,7 +117,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             if (
                 item is null
                 || item.OwnerId != pilotId
-                || item.LocationId != pilot.ActiveShip.StationId
+                || item.LocationId != pilot.ActiveShip.DockedLocationId
                 || item.FlagId != (int)InventoryFlag.Hangar
                 || item.Singleton
             )
@@ -146,6 +148,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                         OwnerId = pilotId,
                         TypeId = item.TypeId,
                         StationId = pilot.ActiveShip.StationId,
+                        StructureId = pilot.ActiveShip.StructureId,
                         Name = string.IsNullOrWhiteSpace(name) ? type.Name : name.Trim(),
                     }
                 )
@@ -183,7 +186,11 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             ) ?? throw new InvalidDataException("The catalog has no capsule.");
         var capsule = world
             .Ships.Where(s =>
-                s.OwnerId == pilotId && s.TypeId == type.Id && s.StationId == old.StationId && s.Position == null && s.StoredInId == null
+                s.OwnerId == pilotId
+                && s.TypeId == type.Id
+                && (s.StructureId ?? (long)s.StationId) == old.DockedLocationId
+                && s.Position == null
+                && s.StoredInId == null
             )
             .OrderBy(s => s.Id)
             .FirstOrDefault();
@@ -196,6 +203,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                     OwnerId = pilotId,
                     TypeId = type.Id,
                     StationId = old.StationId,
+                    StructureId = old.StructureId,
                     Name = type.Name,
                 }
             )
@@ -220,7 +228,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             || ship is null
             || ship.Position is not null
             || ship.StoredInId is not null
-            || ship.StationId != pilot.ActiveShip.StationId
+            || ship.DockedLocationId != pilot.ActiveShip.DockedLocationId
             || (pilot.ActiveShipId != previousShipId && pilot.ActiveShipId != shipId)
         )
         {
@@ -250,7 +258,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var active = pilot.ActiveShip;
-        if (active.Position is not null || active.StationId != stationId)
+        if (active.Position is not null || active.DockedLocationId != stationId)
         {
             throw new InvalidDataException("Board your recovery corvette while docked at your current station.");
         }
@@ -265,7 +273,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                     || world.Ships.Any(s =>
                         s.Id == previousShipId
                         && s.OwnerId == pilotId
-                        && s.StationId == stationId
+                        && (s.StructureId ?? (long)s.StationId) == stationId
                         && s.Position == null
                         && s.StoredInId == null
                     )
@@ -300,7 +308,11 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         var candidates = world
             .Ships.Include(s => s.Position)
             .Where(s =>
-                s.OwnerId == pilotId && s.TypeId == typeId && s.StationId == stationId && s.Position == null && s.StoredInId == null
+                s.OwnerId == pilotId
+                && s.TypeId == typeId
+                && (s.StructureId ?? (long)s.StationId) == stationId
+                && s.Position == null
+                && s.StoredInId == null
             )
             .OrderBy(s => s.Id)
             .ToArray();
@@ -345,6 +357,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                         OwnerId = pilotId,
                         TypeId = typeId,
                         StationId = active.StationId,
+                        StructureId = active.StructureId,
                         Name = type.Name,
                     }
                 )

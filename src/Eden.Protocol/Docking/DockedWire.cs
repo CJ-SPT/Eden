@@ -27,12 +27,28 @@ internal sealed record HomeStationInfo(int Id, int TypeId, int SystemId, bool Is
 
 internal sealed record StationItemBits(DockedPilot Pilot) : BlueModel
 {
-    public override object ToBlue() => new object?[] { Pilot.StationOwnerId, Pilot.StationId, Pilot.OperationId, Pilot.StationTypeId };
+    public override object ToBlue() =>
+        new object?[] { Pilot.StationOwnerId, Pilot.DockedLocationId, Pilot.OperationId, Pilot.StationTypeId };
 }
 
 internal sealed record StationGuest(long CharacterId, int CorporationId) : BlueModel
 {
     public override object ToBlue() => new object?[] { CharacterId, CorporationId, null, null };
+}
+
+internal sealed record StructureGuestsReply(IReadOnlyList<StationGuest> Guests) : BlueModel
+{
+    public override object ToBlue() => Guests.ToDictionary(g => g.CharacterId, g => (object?)new object?[] { g.CorporationId, null, null });
+}
+
+internal sealed record StructureGuestArrived(StationGuest Guest) : PilotNotification("OnCharacterEnteredStructure")
+{
+    public override object?[] Arguments => [Guest.CharacterId, Guest.CorporationId, null, null];
+}
+
+internal sealed record StructureGuestDeparted(StationGuest Guest) : PilotNotification("OnCharacterLeftStructure")
+{
+    public override object?[] Arguments => [Guest.CharacterId];
 }
 
 // Both native station events take one four-field guest tuple, including departure.

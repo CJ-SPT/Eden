@@ -167,9 +167,17 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
+        if (ship.Position is null && ship.StructureId is long structureId)
+        {
+            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
+            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId))
+            {
+                throw new InvalidDataException("Ship fitting requires a quantum core and access to this structure.");
+            }
+        }
         if (
             ship.Position is not null
-            || (sourceId != ship.Id && sourceId != ship.StationId)
+            || (sourceId != ship.Id && sourceId != ship.DockedLocationId)
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
             || placements is not null && (placements.Count != itemIds.Count || itemIds.Any(id => !placements.ContainsKey(id)))

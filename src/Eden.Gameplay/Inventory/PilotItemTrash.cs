@@ -2,7 +2,7 @@ namespace Eden.Gameplay.Inventory;
 
 public interface IPilotItemTrash
 {
-    IReadOnlyList<InventoryChange> Trash(long pilotId, int stationId, IReadOnlyList<long> itemIds);
+    IReadOnlyList<InventoryChange> Trash(long pilotId, long stationId, IReadOnlyList<long> itemIds);
 }
 
 public sealed record ItemTrashState(InventoryItem Item, long PilotId, bool ActiveShip, bool Committed, bool Restricted, bool Selected);

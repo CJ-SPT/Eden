@@ -1,0 +1,17 @@
+{
+  "version": "261108.1",
+  "files": {
+    "config/version.json": "0e5dea23c688686600f53ecfd2773f707baf6b133a4e02467032c4f38a5c47c8",
+    "server/src/services/structure/structureConstants.js": "c15e3373280732b15b01500e18139ac1a4d3a04fae53384ac1744bd8f7149b09",
+    "server/src/services/structure/structureDeploymentService.js": "4e3d31ea3bc82ff2094e1f128eccd47d2b276755350da8094bfd99563acf3481",
+    "server/src/services/sovereignty/sovPlayerDeployment.js": "3cb388d724c2bac03e5151298a325c5f494ba136fa0e7ac1cf4894c1e57cc2c1",
+    "server/src/services/structure/structureDeploymentPlacement.js": "957390a2753b2dc8ef6ee2ff8edb8387c17e4ed075576b75cc53cf4716cc4d98",
+    "server/src/services/structure/structureDockingService.js": "cf5ff8d81684327eb67293c2beac722bf28d28b85839fddfffe8a45404e4908f",
+    "server/src/services/structure/structureServiceAuthority.js": "5a8600a9ecce54b0b25c241a6be37a42a4ce83334f05b3ba3e1b6e87ef01a64f",
+    "server/src/services/structure/structureServiceModules.js": "fa3b71de0f25c5c746b171b6b5773098e8dd44166d9b6389de44eee57758eeea",
+    "server/src/services/structure/structureHangarViewState.js": "bd561fc881245f81dc2991b5eb5573983474f28b9bf917cf25b0cda153f12777",
+    "server/src/services/structure/structureProfilesService.js": "59c021a1c2da614763c9c3c580cd8e56c1682d5445462a1d73cea4fb5940241e",
+    "server/src/services/_shared/guestLists.js": "54b70eb92e74331f7dd945f5a7ea48f374baa48e941f631d02cdd883f64a7984"
+  },
+  "use": "Read-only behavior and wire reference. No evejs source or content files are distributed by this change."
+}

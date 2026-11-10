@@ -31,7 +31,9 @@ internal sealed partial class PilotIndustryStore
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        Eden.World.Structures.PilotStructureStore.Advance(world, catalog, Now);
         var station = CurrentStation(world, catalog, pilotId, request.FacilityId, StationService.Laboratory);
+        Eden.World.Structures.StructureIndustry.RequireService(world, catalog, pilotId, request.FacilityId, request.Activity);
         var item =
             world.Set<OwnedItem>().SingleOrDefault(i => i.Id == request.BlueprintId && i.OwnerId == pilotId)
             ?? throw new InvalidDataException("The blueprint is unavailable or belongs to another pilot.");
@@ -146,7 +148,8 @@ internal sealed partial class PilotIndustryStore
                 product?.Probability ?? 1,
                 skillProbability,
                 checked((int)(product?.Quantity ?? 1)),
-                decryptor
+                decryptor,
+                FacilityMultiplier(catalog, station, 2602)
             )
         );
         List<InventoryChange> changes = [];
@@ -211,7 +214,7 @@ internal sealed partial class PilotIndustryStore
                 : null;
         world.SaveChanges();
         transaction.Commit();
-        return new(ReadJob(catalog, job), changes, balance);
+        return new(ReadJob(world, catalog, job), changes, balance);
     }
 
     private static double BlueprintValue(CatalogDbContext catalog, IReadOnlyDictionary<int, decimal> prices, int typeId)
@@ -239,7 +242,7 @@ internal sealed partial class PilotIndustryStore
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
-        int station,
+        long station,
         IReadOnlyDictionary<int, int> materials,
         List<InventoryChange> changes
     )

@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Player Upwell structures](protocol/structures.md) records all-hull lifecycle support, dockable services,
+structure timing settings, automated validation and the remaining specialized systems.
+
 [Project overview and build instructions](../README.md)
 
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,

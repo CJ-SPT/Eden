@@ -67,7 +67,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
     private static IReadOnlyList<HomeStationCandidate> Candidates(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
     {
         var home = Read(world, catalog, pilot);
-        int? current = pilot.ActiveShip.Position is null ? pilot.ActiveShip.StationId : null;
+        int? current = pilot.ActiveShip.Position is null && pilot.ActiveShip.StructureId is null ? pilot.ActiveShip.StationId : null;
         int? school = SchoolHeadquarters(catalog, pilot);
         // Eden's pilots currently belong to NPC corporations; there are no
         // player-corporation offices that grant additional remote candidates.
@@ -149,7 +149,11 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
             throw new InvalidDataException("Your active capsule changed before the transfer.");
         }
         var type = catalog.FittingType(old.TypeId) ?? throw new InvalidDataException("Unknown active capsule.");
-        HomeStationRules.CheckSelfDestruct(old.Position is null, type.GroupId == FleetDefinitions.CapsuleGroup, old.StationId == home.Id);
+        HomeStationRules.CheckSelfDestruct(
+            old.Position is null,
+            type.GroupId == FleetDefinitions.CapsuleGroup,
+            old.DockedLocationId == home.Id
+        );
         var capsuleType =
             (
                 catalog.FittingType(FleetDefinitions.CapsuleType) is { GroupId: FleetDefinitions.CapsuleGroup } replacement
@@ -176,7 +180,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
                 PilotId = pilotId,
                 OldShipId = old.Id,
                 NewShipId = capsule.Id,
-                SourceStationId = old.StationId,
+                SourceStationId = old.DockedLocationId,
                 DestinationStationId = home.Id,
                 Time = now,
             }

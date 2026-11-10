@@ -26,31 +26,42 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
 
+internal sealed record RepairFacility(long OwnerId);
+
 [Injectable]
 internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
 {
     private static Pilot Pilot(WorldDbContext world, long pilotId) =>
         world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
 
-    private static CatalogStationDefinition Station(CatalogDbContext catalog, Pilot pilot, int stationId)
+    private static RepairFacility Station(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long stationId)
     {
-        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StationId != stationId)
+        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
         {
             throw new InvalidDataException("Repairs are available only at your current station.");
         }
-        var station = catalog.RequireStation(stationId);
+        if (pilot.ActiveShip.StructureId is long structureId)
+        {
+            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
+            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilot.Id))
+            {
+                throw new InvalidDataException("The structure requires a quantum core and repair access.");
+            }
+            return new(structure.CorporationId);
+        }
+        var station = catalog.RequireStation(checked((int)stationId));
         if (!StationCapabilities.Has(catalog, station.OperationId, StationService.Repair))
         {
             throw new InvalidDataException("This station does not provide repair facilities.");
         }
-        return station;
+        return new(station.OwnerId);
     }
 
-    public void CheckStation(long pilotId, int stationId)
+    public void CheckStation(long pilotId, long stationId)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = Station(catalog, Pilot(world, pilotId), stationId);
+        _ = Station(world, catalog, Pilot(world, pilotId), stationId);
     }
 
     private static Dictionary<long, IReadOnlyList<RepairQuote>> Quotes(
@@ -69,7 +80,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         {
             if (world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == id) is { } ship)
             {
-                if (ship.OwnerId != pilot.Id || ship.Position is not null || ship.StationId != pilot.ActiveShip.StationId)
+                if (ship.OwnerId != pilot.Id || ship.Position is not null || ship.DockedLocationId != pilot.ActiveShip.DockedLocationId)
                 {
                     throw new InvalidDataException("The ship is unavailable in your current station hangar.");
                 }
@@ -105,11 +116,11 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                     || !item.Singleton
                     || item.Quantity != 1
                     || !(
-                        item.LocationId == pilot.ActiveShip.StationId && item.FlagId == (int)InventoryFlag.Hangar
+                        item.LocationId == pilot.ActiveShip.DockedLocationId && item.FlagId == (int)InventoryFlag.Hangar
                         || ownerShip is not null
                             && ownerShip.OwnerId == pilot.Id
                             && ownerShip.Position is null
-                            && ownerShip.StationId == pilot.ActiveShip.StationId
+                            && ownerShip.DockedLocationId == pilot.ActiveShip.DockedLocationId
                     )
                 )
                 {
@@ -132,16 +143,16 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         return result;
     }
 
-    public IReadOnlyDictionary<long, IReadOnlyList<RepairQuote>> Quotes(long pilotId, int stationId, IReadOnlyList<long> itemIds)
+    public IReadOnlyDictionary<long, IReadOnlyList<RepairQuote>> Quotes(long pilotId, long stationId, IReadOnlyList<long> itemIds)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
-        _ = Station(catalog, pilot, stationId);
+        _ = Station(world, catalog, pilot, stationId);
         return Quotes(world, catalog, pilot, itemIds);
     }
 
-    public RepairResult Repair(long pilotId, int stationId, IReadOnlyList<long> itemIds, long paymentCents, long now)
+    public RepairResult Repair(long pilotId, long stationId, IReadOnlyList<long> itemIds, long paymentCents, long now)
     {
         if (paymentCents < 0)
         {
@@ -151,9 +162,10 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
-        var station = Station(catalog, pilot, stationId);
+        var station = Station(world, catalog, pilot, stationId);
         var quotes = Quotes(world, catalog, pilot, itemIds).Values.SelectMany(q => q).Where(q => q.Damage > 0).ToArray();
-        var budget = RepairRules.Allocate(quotes, paymentCents);
+        bool free = pilot.ActiveShip.StructureId.HasValue;
+        var budget = free ? new RepairBudget(0, 1) : RepairRules.Allocate(quotes, paymentCents);
         long charged = budget.ChargedCents;
         var wallet = world.Set<PilotWallet>().Find(pilotId);
         long balance = wallet?.Cents ?? 0;
@@ -161,7 +173,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         {
             throw new InvalidDataException("You do not have enough ISK for this repair payment.");
         }
-        if (charged == 0)
+        if (charged == 0 && !free)
         {
             return new(balance, [], []);
         }
@@ -186,6 +198,12 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
             // Preserve the shield snapshot and timestamp so payment does not
             // refill shields or restart their natural recharge curve.
             repairs.Add(repair);
+        }
+        if (free)
+        {
+            world.SaveChanges();
+            transaction.Commit();
+            return new(balance, repairs, modules);
         }
         wallet!.Cents = balance - charged;
         world

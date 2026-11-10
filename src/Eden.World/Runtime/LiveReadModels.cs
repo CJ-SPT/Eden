@@ -244,6 +244,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         ObserveDefenseProfiles(changes);
         _asteroids.Observe(changes);
         _miningSites.Observe(changes);
+        _structures.Observe(changes);
         _wrecks.Observe(changes);
         _drones.Observe(changes);
         _droneControllers.Observe(changes);
@@ -281,6 +282,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _defenseProfiles.Clear();
         _asteroids.Clear();
         _miningSites.Clear();
+        _structures.Clear();
         _wrecks.Clear();
         _drones.Clear();
         _droneControllers.Clear();

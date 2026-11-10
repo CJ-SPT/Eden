@@ -28,7 +28,7 @@ internal static class ShipStoragePersistence
         new(
             ship.Id,
             ship.OwnerId,
-            ship.StoredInId ?? (ship.Position is null ? ship.StationId : ship.Position.SystemId ?? ship.StationId),
+            ship.StoredInId ?? (ship.Position is null ? ship.DockedLocationId : ship.Position.SystemId ?? ship.StationId),
             ship.StoredInId is not null ? ship.StorageFlagId
                 : ship.Position is null ? (int)InventoryFlag.Hangar
                 : (int)InventoryFlag.AutoFit

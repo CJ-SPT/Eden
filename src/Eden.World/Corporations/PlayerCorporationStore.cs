@@ -149,6 +149,10 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         {
             throw new InvalidDataException("That corporation name or ticker is already taken.");
         }
+        if (pilot.ActiveShip.StructureId.HasValue)
+        {
+            throw new InvalidDataException("Establish a new corporation's headquarters from an NPC station.");
+        }
         var station = catalog.RequireStation(pilot.ActiveShip.StationId);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         int id = checked((world.Set<SavedCorporation>().Max(c => (int?)c.Id) ?? CorporationRules.FirstCorporationId - 1) + 1);

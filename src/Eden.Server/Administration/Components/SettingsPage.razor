@@ -84,6 +84,19 @@ else
                 <label>Initial wallet grant (ISK)<InputNumber @bind-Value="Form.GrantIsk" min="0" step="0.01" /></label>
                 <p class="muted">Training speed and skill requirements are unchanged.</p>
             </section>
+            <section id="settings-Structures" class="card" hidden="@(Workspace.Activity != SettingsActivity.Structures)">
+                <h2>Player structures</h2>
+                <MultiplierControl Label="Anchoring speed" @bind-Value="Form.StructureAnchoringSpeed"
+                    Description="Applies to newly deployed Upwell structures, including navigation structures."
+                    ExampleAmount="24" ExampleUnit="hours" Reward="false" Speed="true" Efficiency="false" />
+                <MultiplierControl Label="Core onlining speed" @bind-Value="Form.StructureOnliningSpeed"
+                    Description="Scales the onlining timer started after installing a quantum core."
+                    ExampleAmount="15" ExampleUnit="minutes" Reward="false" Speed="true" Efficiency="false" />
+                <MultiplierControl Label="Decommissioning speed" @bind-Value="Form.StructureUnanchoringSpeed"
+                    Description="Applies when beginning a new decommissioning timer."
+                    ExampleAmount="7" ExampleUnit="days" Reward="false" Speed="true" Efficiency="false" />
+                <p class="muted">2× speed halves duration. Saved deadlines retain their original terms after changing these values.</p>
+            </section>
             <section id="settings-Industry" class="card" hidden="@(Workspace.Activity != SettingsActivity.Industry)">
                 <h2>Industry</h2>
                 <MultiplierControl Label="Manufacturing speed" @bind-Value="Form.ManufacturingSpeed"

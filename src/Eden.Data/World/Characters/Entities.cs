@@ -170,7 +170,7 @@ public sealed class SavedHomeCloneTransfer
     public long PilotId { get; set; }
     public long OldShipId { get; set; }
     public long NewShipId { get; set; }
-    public int SourceStationId { get; set; }
+    public long SourceStationId { get; set; }
     public int DestinationStationId { get; set; }
     public long Time { get; set; }
 }

@@ -22,6 +22,7 @@ internal sealed record BlueNewObject(string Name, object? State)
     internal const string BrainEffectClass = "eve.common.script.dogma.effect.BrainEffect";
     internal const string IndustryLocationClass = "industry.job.Location";
     internal const string ContractClass = "contracts.contractStruct.ContractStruct";
+    internal const string StructureHangarClass = "structures.structureHangarViewState.StructureHangarViewState";
 }
 
 internal sealed record PaperDollRow(string Name, object?[] Fields);
@@ -237,7 +238,11 @@ internal static class BlueMarshal
             if (
                 parts.Length == 2
                 && args.Length == 1
-                && name.Name is BlueNewObject.BrainEffectClass or BlueNewObject.IndustryLocationClass or BlueNewObject.ContractClass
+                && name.Name
+                    is BlueNewObject.BrainEffectClass
+                        or BlueNewObject.IndustryLocationClass
+                        or BlueNewObject.ContractClass
+                        or BlueNewObject.StructureHangarClass
                 && parts[1] is Dictionary<string, object?> state
             )
             {

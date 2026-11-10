@@ -73,14 +73,14 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         if (
             (ship.Position is not null && !sameShipQuantityMove)
             || !(
-                (sourceId == ship.Id && destinationId == ship.StationId && flagId == (int)InventoryFlag.Hangar)
+                (sourceId == ship.Id && destinationId == ship.DockedLocationId && flagId == (int)InventoryFlag.Hangar)
                 || (
-                    sourceId == ship.StationId
-                    && destinationId == ship.StationId
+                    sourceId == ship.DockedLocationId
+                    && destinationId == ship.DockedLocationId
                     && flagId == (int)InventoryFlag.Hangar
                     && quantity.HasValue
                 )
-                || ((sourceId == ship.StationId || sourceId == ship.Id) && destinationId == ship.Id && ShipHoldRules.IsHold(flagId))
+                || ((sourceId == ship.DockedLocationId || sourceId == ship.Id) && destinationId == ship.Id && ShipHoldRules.IsHold(flagId))
             )
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
@@ -113,7 +113,8 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             .Where(s => itemIds.Contains(s.Id) && s.OwnerId == pilotId)
             .AsEnumerable()
             .Where(s =>
-                s.Position is null && (sourceId == ship.Id ? s.StoredInId == ship.Id : s.StoredInId is null && s.StationId == sourceId)
+                s.Position is null
+                && (sourceId == ship.Id ? s.StoredInId == ship.Id : s.StoredInId is null && s.DockedLocationId == sourceId)
             )
             .OrderBy(s => s.Id)
             .ToArray();
@@ -130,7 +131,7 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
         {
             throw new InvalidDataException("Deliver or cancel the industry job before moving its blueprint.");
         }
-        if (sourceId == destinationId && destinationId == ship.StationId && storedShips.Length > 0)
+        if (sourceId == destinationId && destinationId == ship.DockedLocationId && storedShips.Length > 0)
         {
             throw new InvalidDataException("Only packaged item stacks can be divided.");
         }
@@ -256,9 +257,17 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
             var previous = PilotFleetStore.Read(catalog, stored);
             stored.StoredInId = destinationId == ship.Id ? ship.Id : null;
             stored.StorageFlagId = flagId;
+            if (stored.StoredInId is not null)
+            {
+                stored.StructureId = null;
+            }
             if (stored.StoredInId is null)
             {
-                stored.StationId = checked((int)destinationId);
+                stored.StructureId = destinationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId ? destinationId : null;
+                if (stored.StructureId is null)
+                {
+                    stored.StationId = checked((int)destinationId);
+                }
             }
             changes.Add(new(PilotFleetStore.Read(catalog, stored), previous));
         }

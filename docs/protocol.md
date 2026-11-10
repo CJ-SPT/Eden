@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Player Upwell structures](protocol/structures.md) covers persistent deployment for all 18 published hulls,
+native docking/storage, supported services, configuration speeds and explicit remaining mechanics.
+
 - [T2 subcapital hull admission, November 9, 2026](protocol/fitting.md#t2-subcapital-hull-admission-november-9-2026)
 
 [Documentation index](README.md)
@@ -75,6 +78,7 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 | [Personal contracts](protocol/contracts.md) | Wizard compatibility, item exchange, courier contracts, auctions and bulk offers. |
 | [Inventory and ship ownership](protocol/inventory.md) | Stacks, personal holds, assembled ships, insurance, dirt and recovery hulls. |
 | [Mining, industry and markets](protocol/industry.md) | Asteroids, mining, reprocessing, manufacturing, science jobs, testing markets and loyalty balances. |
+| [Player Upwell structures](protocol/structures.md) | All-hull lifecycle, cores, service fuel, structure docking/storage, timing settings and remaining specialized gameplay. |
 | [Combat and NPC populations](protocol/combat.md) | Targeting, health, weapons, [combat anomalies](protocol/combat.md#combat-anomaly-foundation-november-8-2026), NPC populations, [mining fleet corrections](protocol/combat.md#mining-fleet-warp-response-and-name-corrections-november-6-2026), [jamming and bracket cleanup](protocol/combat.md#npc-jamming-scan-cancellation-and-bracket-cleanup-november-6-2026), losses, wrecks and repairs. |
 | [Fitting and module families](protocol/fitting.md) | Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle. |
 | [Information modules and salvage](protocol/information.md) | [Probe scanning and combat signatures](protocol/information.md#probe-scanning-and-combat-signatures-november-9-2026), cargo/ship and mining scans, [directional scanning completion](protocol/information.md#directional-scanning-completion-november-8-2026) and [first-open range correction](protocol/information.md#directional-scanner-first-open-range-correction-november-8-2026), targeting, tractors and saved salvage. |

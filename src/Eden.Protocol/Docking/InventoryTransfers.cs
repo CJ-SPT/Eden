@@ -1,6 +1,7 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Registration;
@@ -15,6 +16,7 @@ internal sealed class InventoryTransfers(
     TimeProvider clock,
     IPilotInventory inventory,
     IPilotFitting fitting,
+    IPilotFleet fleet,
     IPilotAmmunition ammunition,
     IWrecks wrecks,
     IPilotMissionContainers missionContainers,
@@ -22,7 +24,8 @@ internal sealed class InventoryTransfers(
     FittingOperations fittingOperations,
     DeferredRefitPrimes refits,
     ICorporationStorage corporationStorage,
-    Eden.Gameplay.Exploration.IPilotHacking? hacking = null
+    Eden.Gameplay.Exploration.IPilotHacking? hacking = null,
+    Eden.Gameplay.Structures.IPilotStructures? structures = null
 )
 {
     internal PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
@@ -31,9 +34,32 @@ internal sealed class InventoryTransfers(
         long source = request.SourceId;
         int flag = request.FlagId;
         int? quantity = request.Quantity;
-        long destination = service == "@hangar" ? context.Pilot.StationId : context.Pilot.ShipId;
+        long destination = service == "@hangar" ? context.Pilot.DockedLocationId : context.Pilot.ShipId;
         try
         {
+            if (
+                structures is not null
+                && source >= Eden.Gameplay.Structures.StructureRules.FirstStructureId
+                && structures.Read(context.Pilot.PilotId, source) is not null
+                && ids.Count == 1
+                && !inventory.List(context.Pilot.PilotId, source).Any(i => i.Id == ids[0])
+                && fleet.Find(context.Pilot.PilotId, ids[0]) is null
+            )
+            {
+                var contents = structures.Inventory(context.Pilot.PilotId, source);
+                if (contents.SingleOrDefault(i => i.Id == ids[0]) is { } owned)
+                {
+                    if (flag != (int)(service == "@hangar" ? InventoryFlag.Hangar : InventoryFlag.Cargo))
+                    {
+                        throw new InvalidDataException("Withdraw structure contents into personal hangar or ordinary cargo.");
+                    }
+                    Eden.Protocol.Structures.StructureHandler.Notify(
+                        context,
+                        structures.Withdraw(context.Pilot.PilotId, source, owned.Id, quantity ?? owned.Quantity, service != "@hangar")
+                    );
+                    return PilotCallResult.None;
+                }
+            }
             if (source is >= CorporationStorageRules.FirstOfficeId and <= CorporationStorageRules.LastOfficeId)
             {
                 CorporationStorageHandler.NotifyItems(context, corporationStorage.Move(context.Pilot.PilotId, destination, request));

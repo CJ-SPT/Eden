@@ -26,13 +26,13 @@ internal sealed class ItemTrashHandler(IPilotItemTrash trash) : ISelectedPilotCa
             if (
                 keywords is { Count: > 0 }
                 || args is not [List<object?> ids, long station]
-                || station is <= 0 or > int.MaxValue
+                || station <= 0
                 || ids.Any(id => id is not long)
             )
             {
                 throw new InvalidDataException("Select personal station items to trash.");
             }
-            foreach (var change in trash.Trash(context.Pilot.PilotId, (int)station, ids.Cast<long>().ToArray()))
+            foreach (var change in trash.Trash(context.Pilot.PilotId, station, ids.Cast<long>().ToArray()))
             {
                 InventoryChangesWire.NotifyItemChange(context, change);
             }
