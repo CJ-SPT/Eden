@@ -189,7 +189,7 @@ public sealed partial class ServerPerformanceReplayTests
         private double _reply;
         internal PilotCallContext Context { get; }
 
-        internal ReplayPlayer(ServiceProvider host, TestClock clock, long pilot, long account, ConcurrentQueue<string> reports)
+        internal ReplayPlayer(ServiceProvider host, TimeProvider clock, long pilot, long account, ConcurrentQueue<string> reports)
         {
             _scope = host.CreateScope();
             _account = account;

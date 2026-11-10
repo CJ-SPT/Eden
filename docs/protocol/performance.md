@@ -1848,3 +1848,95 @@ No full .NET suite was requested or run. The installed save and running server w
 
 **Optional maintainer checks.** Rebuild/restart the server and compare pauses on the same busy route.
 Native rendering, input and gameplay feel remain unverified.
+
+
+## Bot queue throughput, November 10, 2026
+
+The reported population panel had 5,262 jobs, 1,839 due jobs and a 68,931.99 ms oldest delay.
+Its 170.79 ms simulation value describes the last scheduler call, including admission and bookkeeping,
+not the sum of an entire maintenance batch. Maintenance requests one atomic action per scheduler call;
+the existing 10 ms execution budget cannot interrupt that action.
+
+The scheduler now samples the overdue count at most every 250 ms while work remains due. Empty/current
+queues, inactive human time and failures force a new sample. Completed-action/failure counters and oldest
+queue delay continue updating on every turn; queue ordering, exact deadlines and action budgets are unchanged.
+An activated remote community's ordinary location/route changes update identity indexes without rebuilding
+all running membership. Human membership, population revisions and fresh activation retain full reconciliation.
+
+Demotion uses a shared immutable missile-presence cache, including absent results. Committed WorldMissile
+changes invalidate it; pending transactions bypass caching and rollback cannot publish a replacement.
+The shared cache survives per-system read-cache eviction. Projection failure still retains dirty state.
+Remote actors retain a known-absent tackle/EWAR result against the committed WorldTackle/WorldNpcEwar revision;
+active effects still use their ordinary timed reads, and loading resets the actor's absence revision.
+Gate transfers return a typed authoritative location. Haulers reuse their snapshot only when a nonnull fitting
+revision and catalog generation still match; other cases rebuild through the existing pilot reader.
+Initial loading publishes the fitting cache through its owning transaction. Committed scheduler admission and
+completed actions also publish their known pilot/ship membership, avoiding repeated SQL membership resolution.
+Runtime traffic candidate pools are bounded to 128 catalog-generation/region/security/light-hull keys. Their
+immutable tiers are materialized before the catalog reader is released. Cargo-dependent selection, reservations,
+names and the roster cap continue to use their current transaction inputs.
+
+Classified commit publication selects existing affected runtimes directly instead of sorting every runtime and
+then filtering. Recipient selection never admits a new runtime. Cached participant membership no longer constructs
+an unused EF context. Cold miner/hauler and asteroid reads declare their pilot/system so an unrelated owner cannot
+force a whole-world projection. Miner initialization reuses its transaction for the pilot and laser snapshot.
+
+Saved belt preparation loads existing renewal/deposit identities in two batch queries rather than two queries
+per belt. Empty catalog systems perform neither query. Every existing saved deposit remains authoritative,
+including depleted quantities. Resupply and reload preparation load magazines together and retain duplicate
+magazine rejection and ordinary ownership, capacity, market, payment and cooldown operations.
+Static geometry already uses the catalog generation cache; pending transaction geometry retains its SQL path.
+
+The gameplay context is [EVE University server ticks](https://wiki.eveuniversity.org/Server_tick).
+The movement reference remains [Carbon Destiny bubble updater, revision
+114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_bubbleupdater.py).
+No new wire fields, save schema, movement rules or offline production policy are introduced.
+
+### Sustained replay
+
+`ServerPerformanceReplayTests.ReplaySustainedBotThroughput` is opt-in through `EDEN_BOT_REPLAY_SOURCE`.
+Use a frozen directory from `tools/Freeze-SystemReplay.py` and set `EDEN_PERFORMANCE_OUTPUT` to retain results.
+`EDEN_BOT_REPLAY_SECONDS` defaults to 600. The four cases activate 450/900 existing communities through
+human-presence handoffs and exercise ordinary work or a 70-second active-clock backlog. Communities are selected
+near fourteen saved pilots each; actual scheduled counts are reported rather than assumed to equal saved totals.
+The replay runs production maintenance with a real elapsed clock, native session frames and periodic 15-second
+checkpoints. Source databases and the running server are never modified.
+
+Reports retain per-sample completions, due counts, oldest delay, SQL/connection/fitting frame counters,
+phase timings, checkpoint stages and the frozen input manifest. Phase durations include nested children and
+must not be summed. At the smaller size, the complete 600-second acceptance requires recovery within 120 seconds
+and less than one second oldest delay throughout the final five minutes.
+The discarded first setup enrolled dormant systems directly, exposing almost ten hours of historical deadlines;
+its interrupted short run under `artifacts/bot-throughput/short` is not capacity evidence.
+
+**Automated validation.** The focused demotion, missile-cache, belt-query, travel, resource, defense and ownership
+checks passed during development. The broad capsuleer run was stopped at an existing presentation test that
+expected Refresh to execute jobs; its identical failure was reproduced on unchanged parent `33ac8372`.
+The corrected test checks presentation immutability followed by maintenance settlement. The subsequent exact
+correction/defense filter passed 7 cases in 22.70 seconds including host startup/shutdown. A later ownership,
+miner/hauler, resource, tier and defense filter passed 52 cases in 35.73 seconds including host startup/shutdown.
+Final publication checks passed: **102/102 focused cases in 48.28 seconds** including host startup/shutdown,
+tool and isolated solution restores, solution build with zero warnings/errors (23.21 seconds), both Python policy
+suites (8 and 9 cases), formatting verification across 1,629 files, line-width, new documentation links/anchor,
+UTF-8/final-newline, whitespace and diff checks. The exact final filter and retained TRX are
+`artifacts/bot-throughput/final-filter.txt` and `final-validation.trx`. The isolated build initially lacked assets
+in its new output directory; restoring into that directory resolved the setup failure. The final source/input
+manifest is `artifacts/bot-throughput/published-source-manifest.json`, SHA-256 `87d487d9fe6198a7a2b37d0ee076a25209e5e4d79723d9020ad49a27c505be80`.
+The final filter was:
+
+```text
+FullyQualifiedName~TrafficSnapshotTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerTierTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~SystemRuntimeIsolationTests
+```
+
+**Capacity limitation.** Intermediate sustained runs did not meet the recovery target. The first was interrupted
+at 288.6 seconds with 5,001 scheduled pilots, 4,238 due jobs, 312,665.5 ms oldest delay and 13,532 completed actions.
+After classified cold-read/publication changes, the next run reached 25,067 completions at 299.7 seconds, with
+4,138 due jobs and 258,748.5 ms oldest delay before interruption. These are diagnostic runs, not a matched completed
+600-second comparison. The second included a 15-second sampled-thread trace; its inclusive samples identified
+membership resolution and template selection as substantial costs. The final committed-membership and immutable
+candidate-pool changes followed that trace and have not completed sustained capacity acceptance. The 900-system
+and full final-five-minute targets remain unverified. No full .NET suite or live game was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None required for the automated throughput comparison.

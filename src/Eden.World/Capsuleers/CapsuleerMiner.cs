@@ -28,7 +28,6 @@ internal sealed class CapsuleerMinerFactory(
     SqliteWorld ships,
     CapsuleerGeometry systems,
     IAsteroidField belts,
-    IPilotInventory inventory,
     IPilotFitting fitting,
     TimeProvider clock,
     INpcCombat combat,
@@ -48,7 +47,6 @@ internal sealed class CapsuleerMinerFactory(
             ships,
             systems,
             belts,
-            inventory,
             fitting,
             clock,
             combat,
@@ -68,7 +66,6 @@ internal sealed class CapsuleerMiner(
     SqliteWorld ships,
     CapsuleerGeometry systems,
     IAsteroidField belts,
-    IPilotInventory inventory,
     IPilotFitting fitting,
     TimeProvider clock,
     INpcCombat combat,
@@ -111,6 +108,7 @@ internal sealed class CapsuleerMiner(
     }
 
     private TackleEffect[] _incoming = [];
+    private long _tackleRevision = -1;
     private bool _warpBlocked;
     private CapsuleerOperation _operation = null!;
     private long _threatenedShip;
@@ -197,7 +195,7 @@ internal sealed class CapsuleerMiner(
         if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
         {
             _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
             if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == Pilot.ShipId))
             {
                 Load();
@@ -447,12 +445,13 @@ internal sealed class CapsuleerMiner(
 
     private void Load()
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
+        using var transaction = world.Database.BeginTransaction();
         var row = world.Set<SavedCapsuleerCommunity>().AsNoTracking().SingleOrDefault(c => c.PilotId == pilotId);
         if (row?.PilotId is long id)
         {
             long account = world.Pilots.Where(p => p.Id == id).Select(p => p.AccountId).Single();
-            _pilot = ships.FindPilot(account, id)!;
+            _pilot = ships.FindPilot(world, account, id)!;
             _seed = row.Seed;
             _work = Live?.MinerCheckpoints.GetValueOrDefault(pilotId)?.Work ?? MinerCheckpoint.Read(row.Progress);
             var previous = _work;
@@ -484,18 +483,29 @@ internal sealed class CapsuleerMiner(
                 };
             }
             _incoming = [];
+            _tackleRevision = -1;
             _warpBlocked = false;
             _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            _laser = PilotInventoryStore.List(world, catalog, id, Pilot.ShipId).FirstOrDefault(i => i.Id == Work.ModuleId);
+            transaction.Commit();
             RefreshObjects();
             _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
-            _laser = inventory.List(id, Pilot.ShipId).FirstOrDefault(i => i.Id == Work.ModuleId);
         }
         _loaded = true;
     }
 
     private void RefreshTackle()
     {
+        // A demoted system discards its read views. Known-absent hostility is still valid
+        // until either owning table commits a change; exact active effects keep their normal reads.
+        var live = Live;
+        if (_background && _incoming.Length == 0 && live is not null && _tackleRevision == live.HostilityRevision)
+        {
+            return;
+        }
         var incoming = tackle.Incoming(Pilot.ShipId).ToArray();
+        _tackleRevision = live?.HostilityRevision ?? -1;
         if (_incoming.SequenceEqual(incoming))
         {
             return;

@@ -21,6 +21,45 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         .ToDictionary(group => group.Key, group => Ordered(group));
     private readonly TrafficProfile[] _global = Ordered(profiles);
 
+    private const int MaximumRuntimePools = 128;
+    private readonly Lock _runtimePoolGate = new();
+    private readonly Dictionary<(long Catalog, ReservationsKey Policy), TrafficCandidatePools> _runtimePools = [];
+
+    private readonly record struct ReservationsKey(int Region, TrafficSecurityBand Band, bool HighSecurity, bool LightAllowed);
+
+    internal TrafficCandidatePools RuntimeCandidates(
+        long catalogGeneration,
+        int region,
+        TrafficSecurityBand band,
+        bool highSecurity,
+        bool lightAllowed,
+        Func<TrafficProfile, bool> compatible,
+        Func<TrafficProfile, int> hullGroup
+    )
+    {
+        var key = (catalogGeneration, new ReservationsKey(region, band, highSecurity, lightAllowed));
+        lock (_runtimePoolGate)
+        {
+            if (_runtimePools.TryGetValue(key, out var existing))
+            {
+                return existing;
+            }
+            var prepared = PrepareCandidates(region, band, compatible, hullGroup);
+            // Materialize while the caller's catalog is alive. Completed Lazy factories release
+            // their captures, leaving only immutable snapshot profiles and stable selection order.
+            foreach (var tier in prepared.Tiers)
+            {
+                _ = tier.Value;
+            }
+            if (_runtimePools.Count >= MaximumRuntimePools)
+            {
+                _runtimePools.Remove(_runtimePools.Keys.First());
+            }
+            _runtimePools.Add(key, prepared);
+            return prepared;
+        }
+    }
+
     private static TrafficProfile[] Ordered(IEnumerable<TrafficProfile> values) =>
         values.OrderByDescending(profile => profile.KilledAt).ThenByDescending(profile => profile.KillId).ToArray();
 

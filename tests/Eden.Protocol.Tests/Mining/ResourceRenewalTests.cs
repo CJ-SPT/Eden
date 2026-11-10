@@ -44,6 +44,21 @@ public sealed class ResourceRenewalTests(ITestOutputHelper output)
         }
     }
 
+    [Fact]
+    public void RepeatedGeometryPreparationUsesTwoQueriesForSixteenSavedBelts()
+    {
+        using TestWorld db = new();
+        Prepare(db);
+        Assert.Equal(BeltCount * RocksPerBelt, db.Services.GetRequiredService<IAsteroidField>().List(SystemId).Count);
+        using WorldDbContext world = new(db.Path);
+        using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath);
+        _ = catalog.CelestialsInSystem(SystemId);
+        using var metrics = SessionPerformance.Begin("saved belt geometry", _ => { }, force: true)!;
+        AsteroidFieldStore.Populate(world, catalog, SystemId, DateTimeOffset.UtcNow.ToFileTime());
+        Assert.Equal(2, metrics.Commands);
+        Assert.False(world.ChangeTracker.HasChanges());
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]

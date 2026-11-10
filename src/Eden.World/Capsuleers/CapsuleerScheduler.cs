@@ -48,6 +48,9 @@ internal sealed partial class CapsuleerScheduler(
     private long _reconciledResumes = -1;
     private IReadOnlyList<WatchedTrafficGate> _reconciledGates = [];
     internal long Reconciliations { get; private set; }
+    private static readonly TimeSpan DiagnosticInterval = TimeSpan.FromMilliseconds(250);
+    private long? _diagnosticTimestamp;
+    private CapsuleerQueueStatus _queueStatus = new(0, null);
     private long _completed;
     private long _failures;
     private string? _lastFailure;
@@ -92,7 +95,24 @@ internal sealed partial class CapsuleerScheduler(
             );
             _blockingChanged = false;
         }
-        var status = _queue.Inspect(activity.ElapsedTicks);
+        // Counting a large overdue prefix for every single action makes backlog recovery quadratic.
+        // Queue execution and its earliest deadline remain exact between diagnostic samples.
+        long sampledAt = clock.GetTimestamp();
+        if (
+            _diagnosticTimestamp is not { } previousSample
+            || clock.GetElapsedTime(previousSample, sampledAt) >= DiagnosticInterval
+            || _queue.NextDueTicks is null
+            || _queue.NextDueTicks > activity.ElapsedTicks
+            || !activity.Active
+            || _failures != _diagnostics.Failures
+        )
+        {
+            using var inspection = SessionPerformance.Phase("traffic.queueDiagnostics");
+            _queueStatus = _queue.Inspect(activity.ElapsedTicks);
+            _diagnosticTimestamp = sampledAt;
+        }
+        var status = _queueStatus;
+        long? oldest = _queue.NextDueTicks is { } first && first <= activity.ElapsedTicks ? first : null;
         var elapsed = clock.GetElapsedTime(started);
         var overrun = elapsed > CapsuleerJobQueue.ExecutionBudget ? elapsed - CapsuleerJobQueue.ExecutionBudget : TimeSpan.Zero;
         Volatile.Write(
@@ -103,7 +123,7 @@ internal sealed partial class CapsuleerScheduler(
                 activity.ActiveSystems.Count,
                 Current.Count,
                 status.Due,
-                status.OldestDueTicks is { } due ? activity.ElapsedTicks - due : 0,
+                oldest is { } due ? activity.ElapsedTicks - due : 0,
                 _completed,
                 _failures,
                 clock.GetElapsedTime(started),
@@ -141,7 +161,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             return;
         }
-        _membershipDirty = true;
+        _membershipDirty |= !_remoteSystems.Contains(_communities.GetValueOrDefault(pilot));
         int? previousRuntime = _locations.TryGetValue(pilot, out int savedSystem) ? savedSystem : null;
         Live?.AssignCapsuleer(pilot, previousRuntime, system, _miners.GetValueOrDefault(pilot), _haulers.GetValueOrDefault(pilot));
         if (_locations.TryGetValue(pilot, out int previous) && (!_routes.TryGetValue(pilot, out var route) || !route.Contains(previous)))
@@ -157,7 +177,7 @@ internal sealed partial class CapsuleerScheduler(
         agents.Add(pilot);
     }
 
-    private sealed record SavedLocation(long PilotId, int StationId, int? SystemId);
+    private sealed record SavedLocation(long PilotId, long ShipId, int StationId, int? SystemId);
 
     private HashSet<long> _suspended = [];
     private bool _loaded;
@@ -252,6 +272,7 @@ internal sealed partial class CapsuleerScheduler(
             join pilot in world.Pilots on agent.PilotId equals pilot.Id
             select new SavedLocation(
                 agent.PilotId,
+                pilot.ActiveShipId,
                 pilot.ActiveShip.StationId,
                 pilot.ActiveShip.Position == null ? null : pilot.ActiveShip.Position.SystemId
             )
@@ -331,6 +352,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             int system = location.SystemId ?? systems[location.StationId];
             IndexLocation(location.PilotId, system);
+            RegisterShip(location.PilotId, location.ShipId);
             _systems.Register(system, _remoteSystems.Contains(system));
         }
         foreach (var job in jobs)
@@ -389,6 +411,7 @@ internal sealed partial class CapsuleerScheduler(
                     pilots.Clear();
                     pilots.UnionWith(_running.Where(p => settling is null || settling.Contains(_locations[p])));
                 }
+                using var queuePhase = SessionPerformance.Phase("traffic.queueExecution");
                 var turn = _queue.Run(
                     throughTicks,
                     job =>
@@ -397,6 +420,9 @@ internal sealed partial class CapsuleerScheduler(
                         {
                             throw new InvalidOperationException("A stale capsuleer job cannot execute.");
                         }
+                        using var actionPhase = SessionPerformance.IsActive
+                            ? SessionPerformance.Phase($"traffic.action.{job.Action}")
+                            : null;
                         CapsuleerJob next;
                         _detailedSystems.Add(_locations[job.PilotId]);
                         _detailCandidates.Add(job.PilotId);
@@ -823,6 +849,12 @@ internal sealed partial class CapsuleerScheduler(
         }
         _pilotShips[pilot] = ship;
         _ships[ship] = pilot;
+        if (_locations.TryGetValue(pilot, out int system))
+        {
+            // The location came from committed admission or a completed role action.
+            // Reuse it at SQL boundaries rather than resolving the same membership repeatedly.
+            Live?.TrackShip(ship, system, pilot);
+        }
     }
 
     public void ObserveAggression(long shipId)

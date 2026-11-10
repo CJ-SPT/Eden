@@ -75,6 +75,44 @@ public sealed class NpcMissileTests
         f.Combat.Fire(f.Pilot.PilotId, f.Pilot.ShipId, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, 1);
 
     [Fact]
+    public void CachedMissilePresenceTracksCommittedLaunchAndCompletion()
+    {
+        using Fixture f = new(liveWorld: true);
+        Prepare(f);
+        var reads = Eden.World.Runtime.LiveWorld.Find(f.Db.Path)!.Reads!;
+        int loads = 0;
+        bool Load()
+        {
+            loads++;
+            using WorldDbContext world = new(f.Db.Path);
+            return world.Set<WorldMissile>().Any(m => m.SystemId == f.Npc.SystemId && m.EndedAt == null);
+        }
+        bool Read() => reads.UnfinishedMissiles(f.Npc.SystemId, Load);
+        Assert.False(Read());
+        Assert.False(Read());
+        Assert.Equal(1, loads);
+        Fire(f);
+        Assert.True(Read());
+        int afterLaunch = loads;
+        Assert.True(Read());
+        Assert.Equal(afterLaunch, loads);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            using var transaction = world.Database.BeginTransaction();
+            world.Set<WorldMissile>().Single().EndedAt = f.Clock.Now;
+            world.SaveChanges();
+            transaction.Rollback();
+        }
+        Assert.True(Read());
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<WorldMissile>().Single().EndedAt = f.Clock.Now;
+            world.SaveChanges();
+        }
+        Assert.False(Read());
+    }
+
+    [Fact]
     public void MissileOnlyNpcLaunchesARealProjectileAndDamageWaitsForContact()
     {
         using Fixture f = new();

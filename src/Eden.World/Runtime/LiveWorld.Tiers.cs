@@ -24,12 +24,14 @@ internal sealed partial class LiveWorld
         {
             return false;
         }
-        using (WorldDbContext world = new(_path) { IsResidentProjection = true })
+        bool LoadMissiles()
         {
-            if (world.Set<WorldMissile>().Any(m => m.SystemId == system && m.EndedAt == null))
-            {
-                return false;
-            }
+            using WorldDbContext world = new(_path) { IsResidentProjection = true };
+            return world.Set<WorldMissile>().Any(m => m.SystemId == system && m.EndedAt == null);
+        }
+        if (_shared.Reads?.UnfinishedMissiles(system, LoadMissiles) ?? LoadMissiles())
+        {
+            return false;
         }
         // Projection is a transaction boundary. A failed projection leaves the dirty
         // records resident and prevents eviction; the next handoff can retry it.

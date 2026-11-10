@@ -24,7 +24,19 @@ internal sealed class PilotGateTravelStore(WorldDatabase database, SqliteWorld s
         return ships.FindPilot(account, pilotId)!;
     }
 
+    internal sealed record GateTransferResult(long AccountId, SpacePosition Position, FlightSystem System);
+
     internal static long Transfer(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long sourceGateId,
+        long exitGateId,
+        long now
+    ) => TransferDetailed(world, catalog, pilotId, shipId, sourceGateId, exitGateId, now).AccountId;
+
+    internal static GateTransferResult TransferDetailed(
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
@@ -64,6 +76,6 @@ internal sealed class PilotGateTravelStore(WorldDatabase database, SqliteWorld s
             radius
         );
         SqliteWorld.SetPosition(world, catalog, shipId, arrival, gate.DestinationSystemId, now);
-        return pilot.AccountId;
+        return new(pilot.AccountId, arrival, SystemObjects.FindSystem(catalog, gate.DestinationSystemId));
     }
 }

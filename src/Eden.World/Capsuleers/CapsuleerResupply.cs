@@ -46,10 +46,14 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
         var identity = world.Set<SavedTrafficIdentity>().Find(pilotId);
         long kill = correction?.TemplateKillId ?? identity?.KillId ?? 0;
         var source = database.Traffic.Profiles.FirstOrDefault(p => p.KillId == kill);
+        var modules = inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
+        var moduleIds = modules.Select(i => i.Id).ToArray();
+        // Keep Single's corruption check while loading every magazine in one indexed query.
+        var magazines = world.Set<OwnedItem>().Where(i => moduleIds.Contains(i.LocationId)).ToArray().ToLookup(i => i.LocationId);
         Dictionary<int, int> targets = [];
-        foreach (var module in inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)))
+        foreach (var module in modules)
         {
-            var charge = world.Set<OwnedItem>().SingleOrDefault(i => i.LocationId == module.Id);
+            var charge = magazines[module.Id].SingleOrDefault();
             int type =
                 charge?.TypeId
                 ?? source
@@ -297,10 +301,13 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
             ?? 0;
         var profile = database.Traffic.Profiles.FirstOrDefault(p => p.KillId == kill);
         var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship).ToArray();
+        var modules = inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
+        var moduleIds = modules.Select(i => i.Id).ToArray();
+        var magazines = world.Set<OwnedItem>().Where(i => moduleIds.Contains(i.LocationId)).ToArray().ToLookup(i => i.LocationId);
         List<ReloadCandidate> candidates = [];
-        foreach (var module in inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)))
+        foreach (var module in modules)
         {
-            var loaded = world.Set<OwnedItem>().SingleOrDefault(i => i.LocationId == module.Id);
+            var loaded = magazines[module.Id].SingleOrDefault();
             int type =
                 loaded?.TypeId
                 ?? profile

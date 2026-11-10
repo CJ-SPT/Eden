@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Bot queue throughput](protocol/performance.md#bot-queue-throughput-november-10-2026) records scheduler, travel and remote cleanup costs
+and the sustained replay.
+
 [Player Upwell structures](protocol/structures.md) covers persistent deployment for all 20 published hulls,
 native docking/storage, supported services, configuration speeds and explicit remaining mechanics.
 

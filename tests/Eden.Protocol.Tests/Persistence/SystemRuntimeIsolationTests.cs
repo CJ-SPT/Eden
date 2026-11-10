@@ -20,6 +20,44 @@ public sealed class SystemRuntimeIsolationTests
     private const int RemoteSystem = 30000142;
 
     [Fact]
+    public void SelectingExistingRecipientsDoesNotAdmitDormantRuntimes()
+    {
+        SystemRuntimeRegistry<int> registry = new(id => id);
+        var local = registry.Get(LocalSystem);
+        var recipients = registry.Existing([RemoteSystem, LocalSystem, LocalSystem]);
+        Assert.Same(local, Assert.Single(recipients));
+        Assert.Single(registry.Snapshot());
+        registry.Get(RemoteSystem);
+        Assert.Single(recipients);
+    }
+
+    [Fact]
+    public async Task ColdAsteroidReadDoesNotAcquireAnUnrelatedSystem()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var remote = Task.Run(() =>
+        {
+            using var ownership = live.Enter("paused remote asteroid test", RemoteSystem);
+            entered.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(15)));
+        });
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(15)));
+            await Task.Run(() => fixture.Services.GetRequiredService<Eden.Gameplay.Mining.IAsteroidField>().List(LocalSystem))
+                .WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            await remote;
+        }
+    }
+
+    [Fact]
     public void ACommittedLocalChangeDoesNotInvalidateAnotherSystemsWarmContacts()
     {
         using Combat.NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);

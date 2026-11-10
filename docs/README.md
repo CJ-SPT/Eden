@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Bot queue throughput](protocol/performance.md#bot-queue-throughput-november-10-2026) records scheduler, travel and remote cleanup costs
+and the sustained replay.
+
 [Player Upwell structures](protocol/structures.md) records all-hull lifecycle support, dockable services,
 structure timing settings, automated validation and the remaining specialized systems.
 

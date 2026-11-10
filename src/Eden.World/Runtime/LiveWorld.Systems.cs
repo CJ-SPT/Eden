@@ -515,7 +515,6 @@ internal sealed partial class LiveWorld
         {
             return systems;
         }
-        using WorldDbContext world = new(_path) { IsResidentProjection = true };
         foreach (long pilot in participants.Pilots)
         {
             if (_pilotSystems.TryGetValue(pilot, out int system))
@@ -536,6 +535,7 @@ internal sealed partial class LiveWorld
         {
             return systems;
         }
+        using WorldDbContext world = new(_path) { IsResidentProjection = true };
         var memberships = world
             .Ships.Where(ship => ships.Contains(ship.Id) || world.Pilots.Any(p => pilots.Contains(p.Id) && p.ActiveShipId == ship.Id))
             .Select(ship => new { ship.StationId, System = ship.Position == null ? null : ship.Position.SystemId })

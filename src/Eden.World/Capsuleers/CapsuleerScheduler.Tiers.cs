@@ -59,6 +59,7 @@ internal sealed partial class CapsuleerScheduler
 
     private void ReleaseRemoteDetails(HumanActivitySnapshot activity, bool membershipChanged = false)
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.detailRetention");
         foreach (int system in activity.ActiveSystems)
         {
             _detailedSystems.Add(system);

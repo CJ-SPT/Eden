@@ -50,6 +50,14 @@ internal sealed class SystemRuntimeRegistry<T>(Func<int, T> create, Func<bool>? 
         }
     }
 
+    internal IReadOnlyList<Entry> Existing(IEnumerable<int> systems) =>
+        systems
+            .Distinct()
+            .Order()
+            .Select(id => _systems.TryGetValue(id, out var entry) && entry.IsValueCreated ? entry.Value : null)
+            .OfType<Entry>()
+            .ToArray();
+
     internal Entry Get(int system)
     {
         if (_systems.TryGetValue(system, out var existing))

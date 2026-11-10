@@ -19,6 +19,22 @@ public sealed class CapsuleerTierTests
     private const int Elsewhere = 30000144;
 
     [Fact]
+    public void RepeatedEmptyDemotionDoesNotReopenSql()
+    {
+        using Combat.NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);
+        var live = LiveWorld.Find(fixture.Db.Path)!;
+        Assert.True(live.ReleaseSystemDetails(Home));
+        using var metrics = SessionPerformance.Begin("repeated empty demotion", _ => { }, force: true)!;
+        for (int turn = 0; turn < 20; turn++)
+        {
+            Assert.True(live.ReleaseSystemDetails(Home));
+        }
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Fact]
     public void FailedDemotionKeepsDirtyStateForRetry()
     {
         using Combat.NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);

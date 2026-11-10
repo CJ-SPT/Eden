@@ -22,6 +22,31 @@ public sealed class TrafficSnapshotTests
     private const int Source = 30000141;
 
     [Fact]
+    public void RuntimeCandidatePoolsPreserveSelectionAndReleaseTheirCatalogReader()
+    {
+        var profile = Profile();
+        TrafficSnapshot snapshot = new(
+            null,
+            [profile, profile with { CharacterId = profile.CharacterId + 1, KillId = profile.KillId + 1 }]
+        );
+        bool catalogAlive = true;
+        bool Compatible(TrafficProfile value)
+        {
+            Assert.True(catalogAlive);
+            return true;
+        }
+        int Group(TrafficProfile value) => value.HullTypeId;
+        var prepared = snapshot.RuntimeCandidates(1, profile.RegionId, profile.SecurityBand, true, false, Compatible, Group);
+        var expected = snapshot.Candidates(17, Source, 2, profile.RegionId, profile.SecurityBand, Compatible, Group).ToArray();
+        catalogAlive = false;
+        Assert.Equal(expected, prepared.Candidates(17, Source, 2));
+        Assert.Same(prepared, snapshot.RuntimeCandidates(1, profile.RegionId, profile.SecurityBand, true, false, Compatible, Group));
+        var changed = snapshot.RuntimeCandidates(2, profile.RegionId, profile.SecurityBand, true, false, _ => false, Group);
+        Assert.Empty(changed.Candidates(17, Source, 2));
+        Assert.Equal(expected, prepared.Candidates(17, Source, 2));
+    }
+
+    [Fact]
     public void OptInInstalledSnapshotMatchesManifestAndSupportedHullCatalog()
     {
         string? path = Environment.GetEnvironmentVariable("EDEN_TRAFFIC_SNAPSHOT");

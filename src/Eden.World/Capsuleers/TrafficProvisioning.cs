@@ -86,9 +86,21 @@ internal static class TrafficProvisioning
         int Group(TrafficProfile profile) => catalog.RequireItem(profile.HullTypeId).GroupId;
         if (reservations is null || cargoVolume != 0)
         {
-            return database
-                .Traffic.Candidates(seed, system, slot, region, band, Compatible, Group)
-                .FirstOrDefault(profile => !reserved.Contains(profile.CharacterId) && !names.Contains(profile.Name));
+            var candidates =
+                cargoVolume == 0
+                    ? database
+                        .Traffic.RuntimeCandidates(
+                            catalog.Definitions.Identity.Generation,
+                            region,
+                            band,
+                            visitsHighSecurity,
+                            lightAllowed,
+                            Compatible,
+                            Group
+                        )
+                        .Candidates(seed, system, slot)
+                    : database.Traffic.Candidates(seed, system, slot, region, band, Compatible, Group);
+            return candidates.FirstOrDefault(profile => !reserved.Contains(profile.CharacterId) && !names.Contains(profile.Name));
         }
         Reservations.PoolKey key = new(region, band, visitsHighSecurity, lightAllowed);
         if (!reservations.Pools.TryGetValue(key, out var prepared))

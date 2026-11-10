@@ -109,6 +109,10 @@ internal sealed partial class LiveWorld : IDisposable
             affectedSystems = ParticipantSystems(participants);
         }
         ReconcileHeatMembership(changes);
+        if (changes.Any(change => change.Table is "WorldTackle" or "WorldNpcEwar" or "schema"))
+        {
+            HostilityRevision++;
+        }
         if (changes.Any(change => change.Table is "WorldPilot" or "WorldTrafficIdentity" or "schema"))
         {
             PopulationIdentityRevision++;
@@ -169,12 +173,9 @@ internal sealed partial class LiveWorld : IDisposable
             ObserveState(_shared, changes);
         }
         var committed = changes.ToArray();
-        foreach (var entry in _systems.Snapshot())
+        var recipients = affectedSystems is null ? _systems.Snapshot() : _systems.Existing(affectedSystems);
+        foreach (var entry in recipients)
         {
-            if (affectedSystems is not null && !affectedSystems.Contains(entry.Id))
-            {
-                continue;
-            }
             if (entry.Ownership.IsEntered)
             {
                 using var context = UseSystem(entry.Id);
@@ -205,6 +206,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal long CapsuleerMetadataReset { get; private set; }
     internal Dictionary<int, long> CapsuleerSystemRevisions { get; } = [];
     internal long PopulationIdentityRevision { get; private set; }
+    internal long HostilityRevision { get; private set; }
     internal Dictionary<long, long> CapsuleerHullRevisions { get; } = [];
     internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];
 

@@ -97,6 +97,7 @@ internal sealed partial class CapsuleerHauler(
     private StaticSpaceObject? _target;
     private IReadOnlyList<StaticSpaceObject> _obstacles = [];
     private TackleEffect[] _incoming = [];
+    private long _tackleRevision = -1;
     private bool _warpBlocked;
     private CapsuleerTrafficRoute _route = null!;
     private long _threatenedShip;
@@ -134,6 +135,17 @@ internal sealed partial class CapsuleerHauler(
     private bool _trafficRefreshChecked;
     private CapsuleerOperation _operation = null!;
     private long _hullRevision;
+    private string? _snapshotFitRevision;
+    private long _snapshotCatalogGeneration;
+
+    private DockedPilot ReadPilot(WorldDbContext world, long account)
+    {
+        var result = ships.FindPilot(world, account, pilotId)!;
+        _snapshotFitRevision = world.FitRevision(pilotId);
+        _snapshotCatalogGeneration = database.Catalog.Identity.Generation;
+        return result;
+    }
+
     private LiveWorld? Live => LiveWorld.Find(database.Path);
     private DockedPilot Pilot => _pilot!;
     private HaulerProgress Work => _work!;
@@ -281,7 +293,7 @@ internal sealed partial class CapsuleerHauler(
                 departure.Position
                 + new SpacePosition(departure.Radius + Pilot.Flight.ShipRadius + CapsuleerTrafficFlight.ApproachRange, 0, 0);
             SqliteWorld.SetPosition(operation.World, operation.Catalog, Pilot.ShipId, departurePosition, Pilot.SystemId, Now);
-            long account = PilotGateTravelStore.Transfer(
+            var transfer = PilotGateTravelStore.TransferDetailed(
                 operation.World,
                 operation.Catalog,
                 pilotId,
@@ -290,7 +302,7 @@ internal sealed partial class CapsuleerHauler(
                 exit,
                 Now
             );
-            _pilot = ships.FindPilot(operation.World, account, pilotId)!;
+            _pilot = ReadPilot(operation.World, transfer.AccountId);
             _navigation.AdoptHull();
             _operation = operation;
             RefreshObjects();
@@ -339,7 +351,7 @@ internal sealed partial class CapsuleerHauler(
         if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
         {
             _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
             if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == Pilot.ShipId))
             {
                 Load();
@@ -589,7 +601,8 @@ internal sealed partial class CapsuleerHauler(
 
     private void Load()
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
+        using var transaction = world.Database.BeginTransaction();
         _founder = world.Set<SavedCapsuleerHauler>().AsNoTracking().SingleOrDefault(h => h.PilotId == pilotId);
         _loaded = true;
         if (_founder is null)
@@ -597,10 +610,11 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         long account = world.Pilots.Where(p => p.Id == Founder.PilotId).Select(p => p.AccountId).Single();
-        _pilot = ships.FindPilot(account, Founder.PilotId)!;
+        _pilot = ReadPilot(world, account);
         using CatalogDbContext catalog = new(database.CatalogPath);
         _route = CapsuleerTrafficFlight.Route(Founder, catalog);
         _incoming = [];
+        _tackleRevision = -1;
         _warpBlocked = false;
         _work = Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work ?? HaulerCheckpoint.Read(Founder.Progress);
         var previous = _work;
@@ -649,6 +663,7 @@ internal sealed partial class CapsuleerHauler(
         }
         _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
         LoadInboundDwells(catalog);
+        transaction.Commit();
         RefreshObjects();
         _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
     }
@@ -664,7 +679,15 @@ internal sealed partial class CapsuleerHauler(
 
     private void RefreshTackle()
     {
+        // A demoted system discards its read views. Known-absent hostility is still valid
+        // until either owning table commits a change; exact active effects keep their normal reads.
+        var live = Live;
+        if (_background && _incoming.Length == 0 && live is not null && _tackleRevision == live.HostilityRevision)
+        {
+            return;
+        }
         var incoming = tackle.Incoming(Pilot.ShipId).ToArray();
+        _tackleRevision = live?.HostilityRevision ?? -1;
         if (_incoming.SequenceEqual(incoming))
         {
             return;
@@ -738,7 +761,7 @@ internal sealed partial class CapsuleerHauler(
             if (TrafficProvisioning.Refresh(database, _operation.World, _operation.Catalog, pilotId, _route, Now))
             {
                 long account = _operation.World.Pilots.Where(value => value.Id == pilotId).Select(value => value.AccountId).Single();
-                _pilot = ships.FindPilot(_operation.World, account, pilotId)!;
+                _pilot = ReadPilot(_operation.World, account);
                 _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
             }
             _trafficRefreshChecked = true;
@@ -746,7 +769,7 @@ internal sealed partial class CapsuleerHauler(
         if (TrafficCorrection.Apply(database, _operation.World, _operation.Catalog, pilotId, Now))
         {
             long account = _operation.World.Pilots.Where(p => p.Id == pilotId).Select(p => p.AccountId).Single();
-            _pilot = ships.FindPilot(_operation.World, account, pilotId)!;
+            _pilot = ReadPilot(_operation.World, account);
             _navigation.AdoptHull();
         }
         CapsuleerSupplyStore.Ensure(_operation.World, _operation.Catalog, pilotId, Founder.FounderShipId);
@@ -959,7 +982,7 @@ internal sealed partial class CapsuleerHauler(
         using var phase = SessionPerformance.Phase("traffic.completeJump");
         long arrivalGateId = _target!.DestinationGateId!.Value;
         long arrivalAt = Now;
-        long account = PilotGateTravelStore.Transfer(
+        var transfer = PilotGateTravelStore.TransferDetailed(
             _operation.World,
             _operation.Catalog,
             Pilot.PilotId,
@@ -968,7 +991,14 @@ internal sealed partial class CapsuleerHauler(
             arrivalGateId,
             arrivalAt
         );
-        _pilot = ships.FindPilot(_operation.World, account, Pilot.PilotId)!;
+        string? revision = _operation.World.FitRevision(pilotId);
+        _pilot =
+            revision is not null && revision == _snapshotFitRevision && database.Catalog.Identity.Generation == _snapshotCatalogGeneration
+                ? Pilot with
+                {
+                    Location = new(transfer.Position, transfer.System),
+                }
+                : ReadPilot(_operation.World, transfer.AccountId);
         using var destinationContext = Live?.UseSystem(_pilot.SystemId);
         _operation.TravelChanged = true;
         _background = _background && Live?.CapsuleerActivity.Read().ActiveSystems.Contains(_pilot.SystemId) != true;

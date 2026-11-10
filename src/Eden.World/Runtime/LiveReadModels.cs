@@ -81,6 +81,10 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "WorldFitRevision",
         "WorldAccount"
     );
+    private readonly ResidentSnapshot<int, bool> _unfinishedMissiles = new("resident.unfinishedMissiles", "WorldMissile");
+
+    internal bool UnfinishedMissiles(int system, Func<bool> load) => Read(_unfinishedMissiles, system, load);
+
     private readonly ResidentSnapshot<int, IReadOnlyList<StaticSpaceObject>> _asteroids = new("resident.asteroids", "WorldAsteroid");
     private readonly ResidentSnapshot<(int System, MiningFamily Family, long Catalog), MiningSiteView> _miningSites = new(
         "resident.miningSites",
@@ -301,6 +305,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
         ObserveDefenseProfiles(changes);
         _asteroids.Observe(changes);
+        _unfinishedMissiles.Observe(changes);
         _miningSites.Observe(changes);
         ObserveStructures(changes);
         _droneControllers.Observe(changes);
@@ -338,6 +343,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _fits.Clear();
         _defenseProfiles.Clear();
         _asteroids.Clear();
+        _unfinishedMissiles.Clear();
         _miningSites.Clear();
         _structures.Clear();
         _structureNames.Clear();

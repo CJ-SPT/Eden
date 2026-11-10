@@ -30,7 +30,7 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
 
     private IReadOnlyList<StaticSpaceObject> ListSql(int systemId)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { Participants = new(systems: [systemId]) };
         using CatalogDbContext catalog = new(database.CatalogPath);
         lock (_gate)
         {
@@ -81,15 +81,22 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
     internal static void Populate(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
     {
         long? nextRenewal = null;
-        foreach (
-            var belt in catalog
-                .CelestialsInSystem(systemId)
-                .Where(b => b.GroupId == AsteroidDefinitions.BeltGroup)
-                .OrderBy(b => b.Id)
-                .ToArray()
-        )
+        var belts = catalog
+            .CelestialsInSystem(systemId)
+            .Where(b => b.GroupId == AsteroidDefinitions.BeltGroup)
+            .OrderBy(b => b.Id)
+            .ToArray();
+        if (belts.Length == 0)
         {
-            if (world.Set<SavedBeltRenewal>().Find(belt.Id) is null)
+            return;
+        }
+        var beltIds = belts.Select(b => b.Id).ToArray();
+        var renewed = world.Set<SavedBeltRenewal>().Where(b => beltIds.Contains(b.BeltId)).Select(b => b.BeltId).ToHashSet();
+        renewed.UnionWith(world.Set<SavedBeltRenewal>().Local.Select(b => b.BeltId));
+        var populated = world.Set<WorldAsteroid>().Where(a => beltIds.Contains(a.BeltId)).Select(a => a.BeltId).Distinct().ToHashSet();
+        foreach (var belt in belts)
+        {
+            if (!renewed.Contains(belt.Id))
             {
                 world.Add(
                     new SavedBeltRenewal
@@ -101,7 +108,7 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
                 );
             }
             // Visiting/reconnecting never replenishes a saved deposit.
-            if (world.Set<WorldAsteroid>().Any(a => a.BeltId == belt.Id))
+            if (populated.Contains(belt.Id))
             {
                 continue;
             }

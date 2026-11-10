@@ -248,9 +248,12 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         Assert.Equal(travelerBeforeEntry.Sequence, travelerAfterEntry.Sequence);
         Assert.True(travelerAfterEntry.Revision >= travelerBeforeEntry.Revision);
         Assert.Equal(MinerActivity.Mining, scheduler.Miner(miner)!.Work.Activity);
+        var pending = scheduler.Jobs().ToArray();
         host.GetRequiredService<ICapsuleerPresentation>().Refresh();
-        Assert.All(scheduler.Jobs(), j => Assert.True(j.DueTicks > elapsed));
+        Assert.Equal(pending, scheduler.Jobs());
         Assert.Equal(paidBeforeSampling.Cycles, scheduler.Miner(miner)!.Work.Cycles);
+        worker.Tick();
+        Assert.All(scheduler.Jobs(), j => Assert.True(j.DueTicks > elapsed));
         var settled = scheduler.Jobs().ToArray();
         worker.Tick();
         Assert.Equal(settled, scheduler.Jobs());
