@@ -180,8 +180,8 @@ public sealed class IndustrialDemandTests
         Assert.False(RegionalMarketCatalog.Read(catalog).DemandLoaded);
         using var metrics = SessionPerformance.Begin("warm best asks", _ => { }, force: true)!;
         _ = market.BestAsks(pilot.PilotId, MarketScope.Region);
-        Assert.InRange(metrics.Commands, 1, 40);
-        Assert.InRange(metrics.Connections, 1, 10);
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
         Assert.Equal(0, metrics.FittingCalculations);
         using WorldDbContext world = new(f.Database.Path);
         Assert.Empty(world.Set<NpcMarketOrder>().Where(o => o.Kind == NpcMarketKind.Regional && o.Bid));

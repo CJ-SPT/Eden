@@ -17,6 +17,30 @@ namespace Eden.World.Mining;
 [Injectable(InjectionType.Singleton)]
 internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? clock = null) : IAsteroidField
 {
+    internal sealed record PreparedBelt(int BeltId, long Catalog, string Deposits);
+
+    private static readonly CatalogDefinition<PreparedBelt> PreparedBelts = new(
+        "prepared-asteroid-belt",
+        (catalog, belt) =>
+            new(belt, catalog.Definitions.Identity.Generation, JsonSerializer.Serialize(Generate(catalog, catalog.FindCelestial(belt)!))),
+        Estimate: prepared => prepared.Deposits.Length * sizeof(char) + 64
+    );
+    private static readonly AsyncLocal<IReadOnlyDictionary<int, PreparedBelt>?> Prepared = new();
+
+    internal static PreparedBelt Prepare(CatalogDbContext catalog, int belt) => catalog.Definition(PreparedBelts, belt);
+
+    internal static IDisposable UsePrepared(IReadOnlyDictionary<int, PreparedBelt> belts)
+    {
+        var previous = Prepared.Value;
+        Prepared.Value = belts;
+        return new PreparationLease(previous);
+    }
+
+    private sealed class PreparationLease(IReadOnlyDictionary<int, PreparedBelt>? previous) : IDisposable
+    {
+        public void Dispose() => Prepared.Value = previous;
+    }
+
     private readonly Lock _gate = new();
     private readonly HashSet<int> _initialized = [];
 
@@ -121,7 +145,10 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
             }
             // A traveling pilot can initialize thousands of deposits in one action.
             // Insert each generated belt together in the caller's world transaction.
-            string deposits = JsonSerializer.Serialize(rocks);
+            string deposits =
+                Prepared.Value?.GetValueOrDefault(belt.Id) is { } prepared && prepared.Catalog == catalog.Definitions.Identity.Generation
+                    ? prepared.Deposits
+                    : Prepare(catalog, belt.Id).Deposits;
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldAsteroid(Id,BeltId,SystemId,TypeId,Quantity,X,Y,Z,Radius)

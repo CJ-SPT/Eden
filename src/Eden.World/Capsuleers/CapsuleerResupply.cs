@@ -49,7 +49,8 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
         var modules = inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
         var moduleIds = modules.Select(i => i.Id).ToArray();
         // Keep Single's corruption check while loading every magazine in one indexed query.
-        var magazines = world.Set<OwnedItem>().Where(i => moduleIds.Contains(i.LocationId)).ToArray().ToLookup(i => i.LocationId);
+        var charges = moduleIds.Length == 0 ? [] : world.Set<OwnedItem>().Where(i => moduleIds.Contains(i.LocationId)).ToArray();
+        var magazines = charges.ToLookup(i => i.LocationId);
         Dictionary<int, int> targets = [];
         foreach (var module in modules)
         {
@@ -186,20 +187,33 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
             return progress;
         }
         var needs = Requirements(database, world, catalog, pilotId, progress.Requirements);
+        var neededTypes = needs.Select(need => need.TypeId).Distinct().ToArray();
+        var hangarItems =
+            neededTypes.Length == 0
+                ? []
+                : world
+                    .Set<OwnedItem>()
+                    .Where(i =>
+                        i.OwnerId == pilotId
+                        && i.LocationId == ship.StationId
+                        && i.FlagId == (int)InventoryFlag.Hangar
+                        && neededTypes.Contains(i.TypeId)
+                    )
+                    .OrderBy(i => i.Id)
+                    .ToArray();
+        var hangar = hangarItems.ToLookup(i => i.TypeId);
+        var purchaseTypes = needs
+            .Where(need => need.Quantity > hangar[need.TypeId].Sum(i => i.Quantity) && Limit(need.TypeId) > 0)
+            .Select(need => need.TypeId)
+            .Distinct()
+            .ToArray();
+        var availableOrders = purchaseTypes.Length == 0 ? [] : market.SupplyOrders(world, catalog, ship.StationId, purchaseTypes);
+        var supply = availableOrders.ToLookup(order => order.TypeId);
         bool inventoryChanged = false;
         foreach (var need in needs.OrderBy(r => r.Drone).ThenBy(r => r.TypeId))
         {
             int remaining = need.Quantity;
-            var stock = world
-                .Set<OwnedItem>()
-                .Where(i =>
-                    i.OwnerId == pilotId
-                    && i.LocationId == ship.StationId
-                    && i.FlagId == (int)InventoryFlag.Hangar
-                    && i.TypeId == need.TypeId
-                )
-                .OrderBy(i => i.Id)
-                .ToArray();
+            var stock = hangar[need.TypeId];
             foreach (var stack in stock)
             {
                 if (remaining <= 0)
@@ -219,10 +233,7 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
             {
                 continue;
             }
-            var orders = market
-                .SupplyOrders(world, catalog, ship.StationId, [need.TypeId])
-                .Where(o => o.OwnerId != pilotId && o.PriceCents <= limit)
-                .ToArray();
+            var orders = supply[need.TypeId].Where(o => o.OwnerId != pilotId && o.PriceCents <= limit).ToArray();
             foreach (var order in orders)
             {
                 if (remaining <= 0)
@@ -303,7 +314,8 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
         var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship).ToArray();
         var modules = inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
         var moduleIds = modules.Select(i => i.Id).ToArray();
-        var magazines = world.Set<OwnedItem>().Where(i => moduleIds.Contains(i.LocationId)).ToArray().ToLookup(i => i.LocationId);
+        var charges = moduleIds.Length == 0 ? [] : world.Set<OwnedItem>().Where(i => moduleIds.Contains(i.LocationId)).ToArray();
+        var magazines = charges.ToLookup(i => i.LocationId);
         List<ReloadCandidate> candidates = [];
         foreach (var module in modules)
         {

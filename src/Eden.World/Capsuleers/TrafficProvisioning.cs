@@ -184,11 +184,14 @@ internal static class TrafficProvisioning
         // Provisioning probes names in order, so a finite occupied-name bound also
         // recognizes collision suffixes without scanning the whole name space.
         int attempts = world.Pilots.Count() + 1;
-        bool generated = Enumerable
-            .Range(0, Math.Min(attempts, CapsuleerProvisioningRules.MaximumNameAttempts))
-            .Any(attempt =>
-                CapsuleerProvisioningRules.Name(seed, agent.CommunitySystemId, agent.Career, agent.Slot, attempt) == pilot.Name
-            );
+        bool generated = CapsuleerProvisioningRules.MatchesName(
+            seed,
+            agent.CommunitySystemId,
+            agent.Career,
+            agent.Slot,
+            pilot.Name,
+            Math.Min(attempts, CapsuleerProvisioningRules.MaximumNameAttempts)
+        );
         if (!generated)
         {
             return false;

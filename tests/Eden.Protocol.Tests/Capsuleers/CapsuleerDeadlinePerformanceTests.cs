@@ -56,14 +56,6 @@ public sealed class CapsuleerDeadlinePerformanceTests(ITestOutputHelper output)
     {
         var polling = await Measure(false, occupied, observers);
         var deadlines = await Measure(true, occupied, observers);
-        Assert.Equal(polling.Jobs, deadlines.Jobs);
-        Assert.Equal(polling.Pilots, deadlines.Pilots);
-        Assert.Equal(polling.Cargo, deadlines.Cargo);
-        Assert.True(deadlines.Turns < polling.Turns / 2);
-        Assert.Equal(polling.Fits, deadlines.Fits);
-        Assert.Equal(polling.EncodedBytes, deadlines.EncodedBytes);
-        Assert.True(deadlines.Commands <= polling.Commands);
-        Assert.True(deadlines.Connections <= polling.Connections);
         string report = JsonSerializer.Serialize(
             new Comparison(occupied, observers, polling, deadlines),
             new JsonSerializerOptions { IgnoreReadOnlyProperties = true }
@@ -74,6 +66,14 @@ public sealed class CapsuleerDeadlinePerformanceTests(ITestOutputHelper output)
             Directory.CreateDirectory(directory);
             await File.WriteAllTextAsync(Path.Combine(directory, $"{occupied}-{observers}.json"), report);
         }
+        Assert.Equal(polling.Jobs, deadlines.Jobs);
+        Assert.Equal(polling.Pilots, deadlines.Pilots);
+        Assert.Equal(polling.Cargo, deadlines.Cargo);
+        Assert.True(deadlines.Turns < polling.Turns / 2);
+        Assert.Equal(polling.Fits, deadlines.Fits);
+        Assert.Equal(polling.EncodedBytes, deadlines.EncodedBytes);
+        Assert.True(deadlines.Commands <= polling.Commands);
+        Assert.True(deadlines.Connections <= polling.Connections);
     }
 
     private static async Task<Replay> Measure(bool deadlines, bool occupied, int observers)

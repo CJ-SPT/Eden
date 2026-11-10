@@ -80,6 +80,7 @@ internal sealed partial class CapsuleerHauler(
 {
     private SavedCapsuleerHauler? _founder;
     private DockedPilot? _pilot;
+    internal DockedPilot? PreparationPilot => _pilot;
     private HaulerProgress? _work;
     private NavigationState _navigation = new();
     private IReadOnlyList<StaticSpaceObject> _objects = [];
@@ -338,8 +339,9 @@ internal sealed partial class CapsuleerHauler(
         }
     }
 
-    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, bool background = false)
+    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, bool background = false, PreparedJourney? preparedJourney = null)
     {
+        _preparedJourney = preparedJourney;
         if (!_loaded)
         {
             Load();

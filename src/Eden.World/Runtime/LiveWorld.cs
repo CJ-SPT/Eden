@@ -76,6 +76,14 @@ internal sealed partial class LiveWorld : IDisposable
     internal LiveTractors Tractors => Current.Tractors;
     internal Eden.World.Capsuleers.CapsuleerActivity CapsuleerActivity { get; }
     internal bool MeasureCheckpoints { get; set; }
+    internal LiveMarketSummaries MarketSummaries { get; } = new();
+    internal LiveTrafficGeometry TrafficGeometry { get; } = new();
+    internal long PreparationRevision { get; private set; }
+    internal TrafficActionDiagnostics TrafficActions { get; } = new();
+    internal Dictionary<int, Eden.World.Market.InstitutionalPreparation> InstitutionalSupply { get; } = [];
+    internal long CheckpointCopies => Interlocked.Read(ref _checkpointCopies);
+    internal bool CheckpointCopying => Volatile.Read(ref _checkpointCopying);
+    private long _checkpointCopies;
     private readonly ThreadLocal<int> _sqlConnections = new();
     internal int SqlConnections => _sqlConnections.Value;
     private LiveTimedModules _timedModules => Current.TimedModules;
@@ -94,6 +102,38 @@ internal sealed partial class LiveWorld : IDisposable
         if (changes.Count == 0)
         {
             return;
+        }
+        var marketLocations = MarketLocations(changes);
+        MarketSummaries.Observe(changes, marketLocations);
+        if (
+            changes.Any(c => c.Table is "schema" or "WorldMarketMembership" or "WorldEconomy" or "WorldConfigurationState")
+            || marketLocations is null && changes.Any(c => c.Table == "WorldMarketDefinition")
+        )
+        {
+            InstitutionalSupply.Clear();
+        }
+        else if (marketLocations is not null && changes.Any(c => c.Table == "WorldMarketDefinition"))
+        {
+            foreach (var location in marketLocations)
+            {
+                InstitutionalSupply.Remove(location.Station);
+            }
+        }
+        TrafficGeometry.Observe(changes);
+        if (
+            changes.Any(c =>
+                c.Table
+                    is "schema"
+                        or "WorldPilot"
+                        or "WorldShip"
+                        or "WorldFitRevision"
+                        or "WorldPositionMembership"
+                        or "WorldEconomy"
+                        or "WorldConfigurationState"
+            )
+        )
+        {
+            PreparationRevision++;
         }
         IReadOnlyCollection<int>? affectedSystems = committedSystems;
         if (affectedSystems is null && projectionSystem is int source)
@@ -537,6 +577,7 @@ internal sealed partial class LiveWorld : IDisposable
                 long copyStarted = Stopwatch.GetTimestamp();
                 database.Open();
                 Volatile.Write(ref _checkpointCopying, true);
+                Interlocked.Increment(ref _checkpointCopies);
                 try
                 {
                     _copy(_memory, database);

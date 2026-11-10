@@ -32,6 +32,72 @@ public sealed class SystemRuntimeIsolationTests
     }
 
     [Fact]
+    public void PopulationSqlDoesNotGrowWithUnrelatedResidentSystems()
+    {
+        var baseline = Measure(0);
+        var populated = Measure(32);
+        Assert.InRange(populated.Commands, 0, baseline.Commands);
+        Assert.InRange(populated.Connections, 0, baseline.Connections);
+        Assert.Equal(baseline.Fits, populated.Fits);
+
+        static (int Commands, int Connections, int Fits) Measure(int unrelated)
+        {
+            TestClock clock = new();
+            using TestWorld fixture = new(clock: clock, liveWorld: true);
+            Combat.NpcEncounterTests.Prepare(fixture);
+            var live = fixture.Services.GetRequiredService<LiveWorld>();
+            foreach (int system in Enumerable.Range(1, unrelated))
+            {
+                var runtime = live.CombatForSystem(system)!;
+                Assert.Empty(runtime.Simulate(system, clock.Now, () => { }, () => long.MaxValue)!);
+            }
+            var simulation = fixture.Services.GetRequiredService<Eden.Gameplay.Combat.INpcSimulation>();
+            (int, int, int) counts;
+            using (var metrics = SessionPerformance.Begin("bounded population refresh", _ => { }, force: true)!)
+            {
+                Assert.Equal(2, simulation.Advance(LocalSystem, clock.Now).Count);
+                counts = (metrics.Commands, metrics.Connections, metrics.FittingCalculations);
+            }
+            using (var metrics = SessionPerformance.Begin("warmed population", _ => { }, force: true)!)
+            {
+                Assert.Equal(2, simulation.Advance(LocalSystem, clock.Now).Count);
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+                Assert.Equal(0, metrics.FittingCalculations);
+            }
+            return counts;
+        }
+    }
+
+    [Fact]
+    public async Task ColdNpcPopulationDoesNotAcquireAnUnrelatedSystem()
+    {
+        TestClock clock = new();
+        using TestWorld fixture = new(clock: clock, liveWorld: true);
+        Combat.NpcEncounterTests.Prepare(fixture);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var remote = Task.Run(() =>
+        {
+            using var ownership = live.Enter("paused remote NPC test", RemoteSystem);
+            entered.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(15)));
+        });
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(15)));
+            await Task.Run(() => fixture.Services.GetRequiredService<Eden.Gameplay.Combat.INpcSimulation>().Advance(LocalSystem, clock.Now))
+                .WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            await remote;
+        }
+    }
+
+    [Fact]
     public async Task ColdAsteroidReadDoesNotAcquireAnUnrelatedSystem()
     {
         using TestWorld fixture = new(liveWorld: true);

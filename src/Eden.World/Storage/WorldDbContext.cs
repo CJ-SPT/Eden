@@ -83,7 +83,12 @@ public sealed partial class WorldDbContext(string path) : DbContext
             return;
         }
         options
-            .AddInterceptors(new FitTransactions(this), new CombatPersistenceBridge(path), new CombatTransactionBridge(path))
+            .AddInterceptors(
+                new FitTransactions(this),
+                new MarketPreparationTransactions(this),
+                new CombatPersistenceBridge(path),
+                new CombatTransactionBridge(path)
+            )
             .TracePerformance()
             .UseSqlite(WorldConnections.Create(path, Participants, IsResidentProjection, CommittedSystems), contextOwnsConnection: true);
     }

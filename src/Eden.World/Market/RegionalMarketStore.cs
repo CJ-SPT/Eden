@@ -21,6 +21,16 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
         long now,
         int? typeId = null,
         bool includeDemand = true
+    ) => AdvanceTypes(world, catalog, region, stationId, now, typeId is { } selected ? [selected] : null, includeDemand);
+
+    internal void AdvanceTypes(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        int region,
+        int stationId,
+        long now,
+        IReadOnlyList<int>? types,
+        bool includeDemand = true
     )
     {
         long elapsed = activity?.Read().ElapsedTicks ?? world.Set<Eden.Data.World.Capsuleers.SavedCapsuleerClock>().Single().ElapsedTicks;
@@ -33,7 +43,7 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
         var unlocked = world
             .Set<SavedMarketUnlock>()
             .AsNoTracking()
-            .Where(u => !typeId.HasValue || u.TypeId == typeId.Value)
+            .Where(u => types == null || types.Contains(u.TypeId))
             .Select(u => u.TypeId)
             .ToHashSet();
         var products = unlocked
@@ -47,7 +57,7 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
                 o.StationId == stationId
                 && o.Kind == NpcMarketKind.Regional
                 && (includeDemand || !o.Bid)
-                && (!typeId.HasValue || o.TypeId == typeId.Value)
+                && (types == null || types.Contains(o.TypeId))
             )
             .ToDictionary(o => (o.TypeId, o.Bid));
         var states = world
@@ -59,15 +69,13 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
                         o.Id == s.OrderId
                         && o.StationId == stationId
                         && (includeDemand || !o.Bid)
-                        && (!typeId.HasValue || o.TypeId == typeId.Value)
+                        && (types == null || types.Contains(o.TypeId))
                     )
             )
             .ToDictionary(s => s.OrderId);
         IEnumerable<RegionalDemand> candidates =
             !includeDemand ? []
-            : typeId.HasValue
-                ? profiles.Demand.TryGetValue(typeId.Value, out var selected) ? [selected]
-                    : []
+            : types is not null ? types.Select(type => profiles.Demand.GetValueOrDefault(type)).OfType<RegionalDemand>()
             : profiles.Demand.Values;
         var demand = candidates
             .Where(d => !d.RequiresUnlock || unlocked.Contains(d.TypeId))

@@ -1940,3 +1940,153 @@ and full final-five-minute targets remain unverified. No full .NET suite or live
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** None required for the automated throughput comparison.
+
+## Traffic ownership and market summaries, November 10, 2026
+
+The supplied warnings occurred after the queue-throughput changes above. The 377.79 ms session tick
+spent 372.04 ms waiting for ownership; the market request instead spent 222.06 ms in its handler,
+with 35.19 ms of world wait. These inclusive phases overlap and must not be added. An “Included Trade”
+owner label identifies a job executed during that hold, not its individual contribution.
+
+The implementation retains atomic traffic settlement and the existing activity rate. Maintenance captures
+an immutable expected job and catalog/resource/fitting revisions, prepares route and institutional offers
+without ownership, and revalidates before applying it. Stale preparation does not advance the job.
+Gate settlement includes both endpoints. Committed resource geometry is reusable inside a transaction;
+pending resource writes use a private SQL view, and rollback cannot publish that view. Prepared missing
+belts insert only absent deposits and preserve depleted rows and existing renewal deadlines. Belt ownership
+is recorded before first insertion so preparing a new system does not evict unrelated committed geometry.
+
+Resupply batches magazines, hangar requirements and eligible orders across types. Institutional offer
+catalogs are immutable per catalog generation; successful preparation is published for the exact committed
+EF transaction. Rollback, including rollback followed by another transaction on the same connection, cannot
+publish a preparation marker. Actual purchases retain live stock, price, wallet, capacity and ownership checks.
+
+Best-ask summaries share immutable committed results by station/system/region, catalog and settings identity,
+with exact wall-clock expiry and active-time stock/growth deadlines. A fractional-tick-preserving immutable
+activity-clock snapshot allows warmed reads without persistence ownership. Committed changes invalidate
+relevant summaries; stock changes in other regions preserve warmed views. Bid-only changes do not invalidate best asks. Membership changes, deletion or
+unknown identity retain conservative invalidation. Market-only transactions declare no simulation participants.
+There is no client response-field or tie-breaking change.
+
+The existing coherent checkpoint boundary is retained: resident capture, database copy, projection and file
+write are measured separately, and persistence coordination spans the complete copy. Warmed market reads
+can complete during a paused partial copy. Writers unwind resident ownership before waiting for persistence.
+An internal projection/membership read no longer requests every system when making that handoff.
+The full-image database copy can still exceed 250 ms; this change does not claim to remove that cost.
+
+### Measured causes and replay method
+
+The initial diagnostic replay exposed an additional cause hidden by the owner label: one `Collect` action
+opened 11,006 connections, executed 11,184 SQL commands and allocated approximately 7.01 GB in 6,442.79 ms.
+A separate opt-in SQL call-stack capture identified repeated `ObserveEncounterPopulation` and
+`ObserveNpcPopulation` membership lookups. Unclassified NPC population transactions broadcast their changed
+identities to every resident system. The transaction and its cold system reads now declare their actual system;
+committed location-only invalidation reads do not project unrelated combat state.
+
+The subsequent 120-second diagnostic replay had no slow traffic action records. After the first 30 seconds,
+complete frame arrival latency was 21.95 ms p95 / 43.57 ms p99; `GetRegionBest` was 55.65 / 78.97 ms.
+It had not cleared its initial backlog at 120 seconds, so it is not capacity acceptance. Its phase totals
+identified repeated preparation capture as the next cost; recording ownership before missing-belt insertion
+was added afterward. Short diagnostic results are not substituted for the required ten-minute comparison.
+
+The sustained replay prioritizes the communities of all fifteen pilots in the supplied warnings, then fills
+450/900 community cases using the previous near-fourteen-pilots rule. Actual scheduled counts are retained.
+Requests arrive independently each second (every third request is `GetRegionBest`) and serialize only through
+the simulated player's own queue. Checkpoints are scheduled independently every fifteen seconds. Reports retain
+queue time, arrival-to-completion time, service/frame counters, owner holds, checkpoint stages and due-job age.
+Cold setup/session samples and the first thirty seconds are reported separately from warmed percentiles.
+Arrival latency includes producer lateness against the absolute request schedule. Backlog cases advance
+the active clock seventy seconds before starting maintenance. The input is a frozen copied save; the installed
+save and running server are not modified. `EDEN_BOT_REPLAY_CASE` selects one theory, `EDEN_BOT_REPLAY_BASELINE=1`
+records baseline results without asserting optimized latency, and `EDEN_SQL_HOTSPOTS=1` enables the optional
+query/call-stack histogram. Disable that histogram for capacity measurements.
+
+The movement reference remains [Carbon's bubble updater at revision
+114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_bubbleupdater.py).
+Gameplay references are [EVE University server ticks](https://wiki.eveuniversity.org/Server_tick) and
+[EVE buy and sell orders](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders).
+Movement, gameplay deadlines and market settlement policy remain unchanged.
+
+The first complete candidate recovered in 118.39 seconds and kept sampled oldest due-job age below
+331.55 ms in its final five minutes. Frames measured 26.36 ms p95 / 62.23 ms p99, but market requests were
+134.38 / 176.12 ms and three traffic holds exceeded 250 ms (maximum 393.36 ms). This candidate failed
+acceptance. Its query/call-stack traces and phase timings identified generated-name recognition in
+`TrafficProvisioning.Refresh`: enumerating the occupied-name prefix allocated tens of megabytes per
+check. Recognition now inverts the same name permutation and preserves the exact attempt bound.
+Best-ask invalidation now resolves committed order locations once and ignores bid-only changes;
+preparing one station no longer discards another station's committed supply preparation. Regional resupply
+advances all requested types in one batch.
+
+The candidate report also exposed an assertion-helper collision: another partial replay class had an
+array overload that expected already-sorted samples. Sustained replay now uses a uniquely named sorting
+helper, covered by a descending-arrival-order regression. All quoted candidate percentiles above were
+calculated independently from retained request records; the failing owner-hold assertion was never treated
+as completed acceptance.
+
+### Closing measurements and remaining work
+
+The closing 600-second steady replay used 5,071 scheduled pilots in 450 communities and completed
+135,306 actions. Setup took 48.24 seconds; the separately recorded first frame took 719.67 ms and first
+market call 237.81 ms. Warmed values below exclude the first thirty seconds and include lateness against
+the absolute request-arrival schedule. Reports and the measured source manifest are retained locally under
+`artifacts/traffic-latency/final/`; the frozen save is under `artifacts/traffic-stalls/frozen/`.
+
+| Measurement | Closing result | Target/result |
+| --- | --- | --- |
+| Complete frame p95 / p99 | 34.62 / 52.92 ms | Pass: below 100 / 250 ms |
+| `GetRegionBest` p95 / p99 | 126.70 / 153.42 ms | **Fail: p95 exceeds 100 ms** |
+| Maximum warmed frame / market request | 83.38 / 210.35 ms | Pass: no one-second samples |
+| Initial recovery | 119.41 seconds | Pass: within 120 seconds, with little margin |
+| Maximum sampled oldest due-job age, final five minutes | 402.09 ms | Pass: below one second |
+| Traffic-maintenance holds at least 250 ms | 3; maximum 383.38 ms | **Fail: must be zero** |
+| Zero-SQL/connection/fitting warmed frame / market samples | 280/380 and 137/190 | Actual changes still require work |
+
+The last 32 retained checkpoints had maxima of 7.88 ms resident capture, 142.49 ms database copy,
+97.46 ms projection and 1,258.89 ms file writing. These are separate stages; writing remains outside
+simulation ownership. A larger image or slower storage may still produce copies over 250 ms.
+
+The remaining traffic holds were Trade for pilots 90021899 (275.56 ms), 90022677 (262.32 ms), and
+90021743 (383.38 ms). Their phase records attribute the work to legacy template refresh/correction:
+92.25 + 180.09 ms, 258.98 + 0.56 ms, and 357.04 + 23.08 ms respectively. Refresh still performs
+cargo-dependent candidate selection and fitting settlement, and correction performs its own candidate
+selection and fitting. Further preparation must preserve candidate ordering, current reservations,
+capacity checks and the single atomic settlement. Slow-action messages now omit inclusive scheduler/action
+wrappers from their four displayed phases so these inner costs are visible; full bounded phase records remain.
+That final log-format change followed the replay and does not change simulation behavior.
+
+Most remaining slow market requests have a warmed handler around 0.1 ms but spend approximately 92–191 ms
+waiting in surrounding session updates during checkpoint access. One cold/invalidated summary also waits
+on persistence. The warmed summary itself is copy-independent; the complete production session still has
+periodic reads that propagate copy latency. Removing those reads requires dependency-specific resident
+caches and must not skip due updates or alter gameplay timing.
+
+**Acceptance is incomplete.** The replay failed its market-p95 assertion, and independent inspection also
+found the three owner holds above. The requested 70-second backlog case, twice-load stress cases and matched
+baseline/final ten-minute comparison were not completed before closeout. The earlier baseline used a different
+community selection and is diagnostic evidence only. Neither the short replay nor the closing steady result
+establishes the full capacity guarantee. Activity rates and acceptance thresholds were not reduced.
+
+**Automated validation.** Tool restore and solution restore passed. The solution built without warnings or
+errors. The affected .NET filter below passed all 646 tests in 245.81 seconds (build 1.26 seconds), including
+stale preparation, duplicate callback, rollback/retry, gate visibility, depletion, resupply/payment, market
+expiry/invalidation, populated-system isolation, and checkpoint reopen/retry coverage. Unchanged warmed
+summary/observation tests assert zero SQL commands, connections and fitting calculations. The catalog Python
+suite passed 8 tests in 0.72 seconds, the formatting-policy suite passed 9 in 0.07 seconds, and formatting
+verification passed. The full .NET suite was not run. The sustained test failed as recorded above; its three
+unselected theory cases return without running and are not counted as measured workloads.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~CheckpointOwnershipTests|FullyQualifiedName~OwnershipTimingTests|FullyQualifiedName~SystemRuntimeIsolationTests|FullyQualifiedName~ResourceRenewalTests|FullyQualifiedName~TransactionParticipantTests|FullyQualifiedName~SessionLatencyTests|FullyQualifiedName~NpcPopulationTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~SustainedPercentilesSortArrivalOrder
+```
+
+The broad result is `artifacts/feature-tests/results/e3fdd32c25f34f1cafdfb1acf5122ea4/tests.trx`.
+After the final slow-log formatting change, the exact filter
+`FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~TrafficPreparationTests|FullyQualifiedName~OwnershipTimingTests`
+passed all 22 tests in 11.63 seconds (build 16.30 seconds), with results in
+`artifacts/feature-tests/results/fd0295b7ab9d48e3a6feb798bbc58b2c/tests.trx`; formatting verification passed again.
+The closing replay result is `artifacts/traffic-latency/final/450-False.trx`; measurements are in
+`throughput-450-False.json` and its independently calculated `.summary.json` alongside that report.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After deployment, compare warning frequency and responsiveness on the same busy route.

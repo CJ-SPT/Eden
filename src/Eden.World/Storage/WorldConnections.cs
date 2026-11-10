@@ -1,4 +1,5 @@
 using Eden.Gameplay.Thermal;
+using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Microsoft.Data.Sqlite;
@@ -8,6 +9,42 @@ namespace Eden.World.Storage;
 
 internal static class WorldConnections
 {
+    internal static IDisposable? PreparingInstitutional(WorldDbContext context, int station) =>
+        context.Database.GetDbConnection() is LiveConnection connection ? connection.PreparingInstitutional(station) : null;
+
+    internal static bool PreparedInstitutional(WorldDbContext context, InstitutionalPreparation prepared) =>
+        !context
+            .ChangeTracker.Entries<Eden.Data.World.Market.NpcMarketOrder>()
+            .Any(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+        && context.Database.CurrentTransaction is { } transaction
+        && context.Database.GetDbConnection() is LiveConnection connection
+        && connection.PreparedInstitutional(prepared, transaction.TransactionId);
+
+    internal static void RememberInstitutional(WorldDbContext context, InstitutionalPreparation prepared)
+    {
+        if (context.Database.CurrentTransaction is { } transaction && context.Database.GetDbConnection() is LiveConnection connection)
+        {
+            connection.RememberInstitutional(prepared, transaction.TransactionId);
+        }
+    }
+
+    internal static void CompleteInstitutional(WorldDbContext context, Guid transaction, bool committed)
+    {
+        if (context.Database.GetDbConnection() is LiveConnection connection)
+        {
+            connection.CompleteInstitutional(transaction, committed);
+        }
+    }
+
+    internal static bool HasChanges(WorldDbContext context, params string[] tables) =>
+        context
+            .ChangeTracker.Entries()
+            .Any(e =>
+                e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted
+                && tables.Contains(e.Metadata.GetTableName(), StringComparer.Ordinal)
+            )
+        || context.Database.GetDbConnection() is LiveConnection connection && connection.HasChanges(tables);
+
     internal static SqliteConnection FileConnection(string path) =>
         new(
             new SqliteConnectionStringBuilder
@@ -99,6 +136,49 @@ internal static class WorldConnections
         private readonly HashSet<CombatRowChange> _pendingChanges = [];
         private readonly HashSet<CombatRowChange> _committingChanges = [];
 
+        private sealed record PendingInstitutional(Guid Transaction, InstitutionalPreparation Preparation);
+
+        private readonly Dictionary<int, PendingInstitutional> _pendingInstitutional = [];
+        private readonly Dictionary<int, InstitutionalPreparation> _committedInstitutional = [];
+
+        private int? _preparingStation;
+
+        internal IDisposable PreparingInstitutional(int station)
+        {
+            var previous = _preparingStation;
+            _preparingStation = station;
+            return new InstitutionalScope(this, previous);
+        }
+
+        private sealed class InstitutionalScope(LiveConnection connection, int? previous) : IDisposable
+        {
+            public void Dispose() => connection._preparingStation = previous;
+        }
+
+        internal void RememberInstitutional(InstitutionalPreparation prepared, Guid transaction) =>
+            _pendingInstitutional[prepared.StationId] = new(transaction, prepared);
+
+        internal bool PreparedInstitutional(InstitutionalPreparation prepared, Guid transaction) =>
+            _pendingInstitutional.GetValueOrDefault(prepared.StationId) == new PendingInstitutional(transaction, prepared);
+
+        internal void CompleteInstitutional(Guid transaction, bool committed)
+        {
+            foreach (var pair in _pendingInstitutional.Where(p => p.Value.Transaction == transaction).ToArray())
+            {
+                if (committed)
+                {
+                    _committedInstitutional[pair.Key] = pair.Value.Preparation;
+                }
+                _pendingInstitutional.Remove(pair.Key);
+            }
+        }
+
+        internal bool HasChanges(string[] tables) =>
+            _changes
+                .Concat(_pendingChanges)
+                .Concat(_committingChanges)
+                .Any(change => change.Table == "schema" || tables.Contains(change.Table, StringComparer.Ordinal));
+
         internal void FinalizeCommit()
         {
             _changes.UnionWith(_committingChanges);
@@ -108,6 +188,8 @@ internal static class WorldConnections
         private bool _itemMembershipWrite;
         private bool _positionMembershipWrite;
         private bool _schemaWrite;
+        private bool _marketDefinitionWrite;
+        private bool _marketMembershipWrite;
         internal bool DurableOnClose { get; set; }
 
         internal ModuleCondition? Condition(long pilot, long ship, long module) =>
@@ -152,7 +234,9 @@ internal static class WorldConnections
                 base.Open();
                 return;
             }
-            var lease = world.EnterSql(participants);
+            // Internal projection/membership reads already define their resident boundary.
+            // A cold read must not request every unrelated system during the SQL handoff.
+            var lease = world.EnterSql(projection && participants is null ? TransactionParticipants.None : participants);
             try
             {
                 base.Open();
@@ -181,6 +265,7 @@ internal static class WorldConnections
                         {
                             _pendingChanges.Clear();
                             _committingChanges.Clear();
+                            _pendingInstitutional.Clear();
                         },
                         null
                     );
@@ -191,6 +276,27 @@ internal static class WorldConnections
                             {
                                 FinalizeCommit();
                                 _pendingChanges.Add(new(table, id));
+                                if (
+                                    (table is "WorldMarketOrder" or "WorldPersonalOrder")
+                                    && (operation != SQLitePCL.raw.SQLITE_UPDATE || _marketDefinitionWrite)
+                                )
+                                {
+                                    _pendingChanges.Add(new("WorldMarketDefinition", id));
+                                    if (_preparingStation is { } station)
+                                    {
+                                        _pendingInstitutional.Remove(station);
+                                        _committedInstitutional.Remove(station);
+                                    }
+                                    else
+                                    {
+                                        _pendingInstitutional.Clear();
+                                        _committedInstitutional.Clear();
+                                    }
+                                }
+                                if ((table is "WorldMarketOrder" or "WorldPersonalOrder") && _marketMembershipWrite)
+                                {
+                                    _pendingChanges.Add(new("WorldMarketMembership", id));
+                                }
                                 if (
                                     string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
                                     && (operation != SQLitePCL.raw.SQLITE_UPDATE || _positionMembershipWrite)
@@ -216,6 +322,24 @@ internal static class WorldConnections
                         (SQLitePCL.strdelegate_authorizer)(
                             (_, action, table, column, _, _) =>
                             {
+                                if (
+                                    action == SQLitePCL.raw.SQLITE_UPDATE
+                                    && table is "WorldMarketOrder" or "WorldPersonalOrder"
+                                    && column is "StationId" or "SystemId" or "RegionId" or "Bid"
+                                )
+                                {
+                                    _marketMembershipWrite = true;
+                                }
+                                if (
+                                    action == SQLitePCL.raw.SQLITE_UPDATE
+                                    && (
+                                        table == "WorldMarketOrder" && column is not ("Remaining" or "Entered" or "Issued")
+                                        || table == "WorldPersonalOrder" && column is "StationId" or "SystemId" or "RegionId" or "Bid"
+                                    )
+                                )
+                                {
+                                    _marketDefinitionWrite = true;
+                                }
                                 if (
                                     action
                                     is SQLitePCL.raw.SQLITE_ALTER_TABLE
@@ -294,11 +418,19 @@ internal static class WorldConnections
                     {
                         FinalizeCommit();
                         world.SqlClosed(_changes, participants, _projectionSystem, committedSystems);
+                        foreach (var pair in _committedInstitutional)
+                        {
+                            world.InstitutionalSupply[pair.Key] = pair.Value;
+                        }
+                        _committedInstitutional.Clear();
+                        _pendingInstitutional.Clear();
                         _pendingChanges.Clear();
                         _changes.Clear();
                         _itemMembershipWrite = false;
                         _positionMembershipWrite = false;
                         _schemaWrite = false;
+                        _marketDefinitionWrite = false;
+                        _marketMembershipWrite = false;
                     }
                     finally
                     {

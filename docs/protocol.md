@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Traffic ownership and market summaries](protocol/performance.md#traffic-ownership-and-market-summaries-november-10-2026)
+records prepared traffic actions, committed market views, measured invalidation costs and latency acceptance.
+
 [Bot queue throughput](protocol/performance.md#bot-queue-throughput-november-10-2026) records scheduler, travel and remote cleanup costs
 and the sustained replay.
 

@@ -303,7 +303,7 @@ internal sealed partial class LiveCombatRuntime
     private LiveCombatNpc? LoadNpc(long id, long now)
     {
         using var phase = SessionPerformance.Phase("combat.hydrate.npc");
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { Participants = new(resources: [new(SharedSimulationResource.Npc, id)]) };
         var npc = world.Set<WorldNpc>().Find(id);
         if (npc is null)
         {
@@ -328,7 +328,12 @@ internal sealed partial class LiveCombatRuntime
         }
         Loading(() =>
         {
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path)
+            {
+                Participants = systemId is { } system
+                    ? new(systems: [system])
+                    : new(resources: ids.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))),
+            };
             using CatalogDbContext catalog = new(database.CatalogPath);
             var rows = world.Set<WorldNpc>().Where(n => ids.Contains(n.Id)).ToArray();
             var mining = world.Set<WorldNpcMiningMember>().Where(n => ids.Contains(n.NpcId)).ToDictionary(n => n.NpcId);

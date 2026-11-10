@@ -103,6 +103,15 @@ public static class RegionalMarketRules
             )
         );
 
+    public static long NextCapacityChange(long elapsedTicks)
+    {
+        const int growthHours = 8;
+        const int maximumGrowthStages = 3;
+        long interval = TimeSpan.FromHours(growthHours).Ticks;
+        long stage = elapsedTicks / interval;
+        return stage >= maximumGrowthStages ? long.MaxValue : (stage + 1) * interval;
+    }
+
     public static int Capacity(int initial, long elapsedTicks)
     {
         const int growthHours = 8;

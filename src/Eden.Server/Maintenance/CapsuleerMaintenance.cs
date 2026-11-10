@@ -150,7 +150,6 @@ internal sealed class CapsuleerMaintenance(
             {
                 // A job, its transaction and the queue revision are one atomic step.
                 // Let waiting sessions enter before the next job or scene capture.
-                using var owner = synchronization.Enter("traffic maintenance");
                 var batch = scheduler.Run(scene.Stamp, maximumActions: 1);
                 backlogged = batch.Turn.OldestDueTicks is not null;
                 completed += batch.Turn.Completed;

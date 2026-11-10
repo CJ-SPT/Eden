@@ -124,6 +124,7 @@ internal sealed class CapsuleerMiner(
 
     private int _seed;
     private DockedPilot? _pilot;
+    internal DockedPilot? PreparationPilot => _pilot;
     private InventoryItem? _laser;
     private MinerProgress? _work;
     private NavigationState _navigation = new();

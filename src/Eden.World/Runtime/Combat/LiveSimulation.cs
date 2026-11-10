@@ -37,7 +37,7 @@ internal sealed partial class LiveCombatRuntime
         var ids = changes.Where(change => change.Table == "WorldAsteroid").Select(change => change.Id).ToArray();
         var systems = Loading(() =>
         {
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
             return world.Set<WorldAsteroid>().Where(a => EF.Parameter(ids).Contains(a.Id)).Select(a => a.SystemId).ToArray();
         });
         if (systems.Length != ids.Length)
@@ -79,7 +79,7 @@ internal sealed partial class LiveCombatRuntime
         }
         int? current = Loading(() =>
         {
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
             return world.Set<WorldNpc>().Where(n => n.Id == id).Select(n => (int?)n.SystemId).SingleOrDefault();
         });
         if (current is int system)
@@ -97,7 +97,7 @@ internal sealed partial class LiveCombatRuntime
         }
         int? current = Loading(() =>
         {
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
             return world.Set<WorldNpcEncounter>().Where(e => e.Id == id).Select(e => (int?)e.SystemId).SingleOrDefault();
         });
         if (current is int system)
@@ -128,7 +128,7 @@ internal sealed partial class LiveCombatRuntime
             _ = DroneControllers();
             ids = Loading(() =>
             {
-                using WorldDbContext world = new(database.Path);
+                using WorldDbContext world = new(database.Path) { Participants = new(systems: [system]) };
                 return world
                     .Set<WorldNpc>()
                     .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
@@ -149,7 +149,10 @@ internal sealed partial class LiveCombatRuntime
         {
             Loading(() =>
             {
-                using WorldDbContext world = new(database.Path);
+                using WorldDbContext world = new(database.Path)
+                {
+                    Participants = new(resources: missing.Select(npc => new SimulationResource(SharedSimulationResource.Npc, npc.Id))),
+                };
                 var effects = PilotTackleStore.NpcTackles(world, missing.Select(n => n.Id).ToArray());
                 foreach (var npc in missing)
                 {

@@ -9,6 +9,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Docking;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -213,13 +214,42 @@ internal sealed partial class PilotMarketStore(
 
     public IReadOnlyList<WalletEntryDefinition> EntryTypes() => new PilotWalletReader(database).EntryTypes();
 
-    public IReadOnlyList<MarketOrder> Orders(long pilotId, int? typeId = null) => ReadOrders(pilotId, typeId, null);
+    public IReadOnlyList<MarketOrder> Orders(long pilotId, int? typeId = null) => ReadOrders(pilotId, typeId, null).Orders;
 
-    public IReadOnlyList<MarketOrder> BestAsks(long pilotId, MarketScope scope) => ReadOrders(pilotId, null, scope);
-
-    private IReadOnlyList<MarketOrder> ReadOrders(long pilotId, int? typeId, MarketScope? scope)
+    public IReadOnlyList<MarketOrder> BestAsks(long pilotId, MarketScope scope)
     {
-        using WorldDbContext world = new(database.Path);
+        var live = LiveWorld.Find(database.Path);
+        long catalog = database.Catalog.Identity.Generation;
+        long now = Now;
+        long active = live?.CapsuleerActivity.ReadElapsed() ?? 0;
+        if (
+            live is not null
+            && live.SqlConnections == 0
+            && live.MarketSummaries.TryRead(pilotId, scope, catalog, database.Settings, now, active, out var cached)
+        )
+        {
+            return cached;
+        }
+        return live is null ? LiveWorldOperation() : live.Run(LiveWorldOperation);
+
+        IReadOnlyList<MarketOrder> LiveWorldOperation()
+        {
+            // A caller holding a simulation owner must unwind before opening SQL.
+            using var owner = live?.EnterShared("market summary");
+            bool publish = live is not null && live.SqlConnections == 0;
+            var summary = ReadOrders(pilotId, null, scope);
+            if (publish)
+            {
+                live!.MarketSummaries.Publish(summary, scope, catalog, database.Settings, now, active);
+            }
+            return summary.Orders;
+        }
+    }
+
+    private MarketSummary ReadOrders(long pilotId, int? typeId, MarketScope? scope)
+    {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryLoad");
+        using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
@@ -314,14 +344,38 @@ internal sealed partial class PilotMarketStore(
             MarketScope.Region => personal.Where(o => !o.Bid),
             _ => personal,
         };
-        IEnumerable<MarketOrder> combined = result.Concat(personal.AsEnumerable().Select(o => o.Snapshot()));
+        var personalRows = personal.ToArray();
+        IEnumerable<MarketOrder> combined = result.Concat(personalRows.Select(o => o.Snapshot()));
         if (scope.HasValue)
         {
             combined = combined.GroupBy(o => o.TypeId).Select(g => g.OrderBy(o => o.PriceCents).ThenBy(o => o.Id).First());
         }
         var book = combined.OrderBy(o => o.Id).ToArray();
+        long expires = Math.Min(
+            result.Select(o => o.Issued + TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks).DefaultIfEmpty(long.MaxValue).Min(),
+            personalRows.Select(o => o.Expires).DefaultIfEmpty(long.MaxValue).Min()
+        );
+        long activeUntil = long.MaxValue;
+        if (scope.HasValue && progressive)
+        {
+            long elapsed =
+                activity?.Read().ElapsedTicks ?? world.Set<Eden.Data.World.Capsuleers.SavedCapsuleerClock>().Single().ElapsedTicks;
+            long? recovery = world
+                .Set<SavedRegionalMarketStock>()
+                .Where(s =>
+                    world
+                        .Set<NpcMarketOrder>()
+                        .Any(o => o.Id == s.OrderId && o.RegionId == region && !o.Bid && o.Kind == NpcMarketKind.Regional && o.Issued > 0)
+                )
+                .Min(s => (long?)s.RefreshedTicks);
+            activeUntil = RegionalMarketRules.NextCapacityChange(elapsed);
+            if (recovery.HasValue)
+            {
+                activeUntil = Math.Min(activeUntil, recovery.Value + RegionalMarketRules.RecoveryIntervalTicks);
+            }
+        }
         transaction.Commit();
-        return book;
+        return new(pilotId, pilot.ActiveShipId, station.Id, system, region, Array.AsReadOnly(book), expires, activeUntil);
     }
 
     private static MarketTrade Read(MarketExecution trade) =>
@@ -449,12 +503,29 @@ internal sealed partial class PilotMarketStore(
         {
             return [];
         }
-        foreach (int type in types)
+        if (types.Count == 0)
         {
-            Seed(world, catalog, station, type, includeDemand: false);
+            return [];
+        }
+        bool progressive = RegionalMarketStore.Enabled(world);
+        if (progressive)
+        {
+            SeedInstitutional(world, catalog, station);
+            new RegionalMarketStore(activity).AdvanceTypes(
+                world,
+                catalog,
+                station.RegionId,
+                stationId,
+                Now,
+                types.Distinct().ToArray(),
+                includeDemand: false
+            );
+        }
+        else
+        {
+            Seed(world, catalog, station, includeDemand: false);
         }
         world.SaveChanges();
-        bool progressive = RegionalMarketStore.Enabled(world);
         var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
             ? NpcMarketKind.Institutional
             : NpcMarketKind.Development;

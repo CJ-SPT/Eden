@@ -102,7 +102,7 @@ public sealed class MarketReadCompatibilityTests
         );
         context.Select(pilot);
         Assert.Empty(
-            Assert.IsType<Dictionary<string, object?>>(
+            Assert.IsType<Dictionary<long, object?>>(
                 router.CallWire(context, "structureDirectory", "GetMyCharacterStructures", Array.Empty<object?>(), _ => { })
             )
         );

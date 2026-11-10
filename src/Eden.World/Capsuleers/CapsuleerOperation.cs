@@ -31,10 +31,12 @@ internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob ex
                     ?? live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
                     ?? 0;
                 TransactionParticipants? participants = new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
-                if (expected.Action == CapsuleerAction.GateTransfer)
+                var work = live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
+                bool inbound = expected.Action == CapsuleerAction.Arrival && work?.Activity == HaulerActivity.Inbound;
+                if (expected.Action == CapsuleerAction.GateTransfer || inbound)
                 {
-                    var work = live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
-                    if (work?.TargetId is > 0 and <= int.MaxValue && database.Catalog.Gates.TryGetValue((int)work.TargetId, out var gate))
+                    long? sourceGate = inbound ? work?.TrafficLane?.DepartureGateId : work?.TargetId;
+                    if (sourceGate is > 0 and <= int.MaxValue && database.Catalog.Gates.TryGetValue((int)sourceGate, out var gate))
                     {
                         participants = new(
                             systems: [gate.SolarSystemId, gate.DestinationSystemId],
@@ -63,6 +65,7 @@ internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob ex
 
     internal void Commit(CapsuleerJob next, MinerCheckpoint? miner, HaulerCheckpoint? hauler)
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.commitPublication");
         var live = LiveWorld.Find(database.Path);
         if (_world is not null || live is null)
         {

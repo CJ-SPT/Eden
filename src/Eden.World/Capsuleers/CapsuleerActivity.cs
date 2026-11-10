@@ -18,6 +18,14 @@ internal sealed record CapsuleerClockCheckpoint(long ElapsedTicks)
 internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clock)
 {
     private HumanActivity? _activity;
+    private HumanActivityClock? _clockView;
+
+    internal long? ReadElapsed()
+    {
+        var view = Volatile.Read(ref _clockView);
+        return view?.ElapsedAt(clock.GetTimestamp());
+    }
+
     private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     internal Task Changed => _changed.Task;
@@ -43,10 +51,20 @@ internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clo
         }
     }
 
-    internal void Update(Guid session, int? system, long pilotId) =>
+    internal void Update(Guid session, int? system, long pilotId)
+    {
         Activity.Update(session, system, clock.GetTimestamp(), clock.TimestampFrequency, pilotId);
+        _ = Read();
+    }
 
-    internal HumanActivitySnapshot Read() => Activity.Read(clock.GetTimestamp(), clock.TimestampFrequency);
+    internal HumanActivitySnapshot Read()
+    {
+        var activity = Activity;
+        long timestamp = clock.GetTimestamp();
+        var result = activity.Read(timestamp, clock.TimestampFrequency);
+        Volatile.Write(ref _clockView, activity.CaptureClock());
+        return result;
+    }
 
     internal CapsuleerClockCheckpoint? Capture() => _activity is null ? null : new(Read().ElapsedTicks);
 }

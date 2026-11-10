@@ -43,6 +43,7 @@ public sealed class CapsuleerJobQueue
     private readonly Dictionary<long, CapsuleerJob> _jobs = [];
 
     public long? NextDueTicks => _queue.Min?.DueTicks;
+    public CapsuleerJob? NextJob => _queue.Min;
 
     public void Restore(IEnumerable<CapsuleerJob> jobs)
     {

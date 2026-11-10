@@ -89,14 +89,14 @@ public sealed class CapsuleerMaintenanceTests
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var jobs = scheduler.Jobs().ToArray();
         Assert.Equal(2, jobs.Length);
-        var ownership = new PauseAfterFirstJob(host.GetRequiredService<IWorldSynchronization>());
+        var ownership = new PauseAfterFirstJob(scheduler, host.GetRequiredService<IWorldSynchronization>());
         using CapsuleerMaintenance worker = new(
-            scheduler,
+            ownership,
             host.GetRequiredService<ICapsuleerHandoff>(),
             host.GetRequiredService<ICapsuleerScene>(),
             host.GetRequiredService<ChatRuntime>(),
             f.Clock,
-            ownership,
+            host.GetRequiredService<IWorldSynchronization>(),
             host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
         );
         f.Clock.Seconds++;
@@ -136,14 +136,20 @@ public sealed class CapsuleerMaintenanceTests
         Assert.All(scheduler.Jobs(), job => Assert.Equal(1, job.Sequence));
     }
 
-    private sealed class PauseAfterFirstJob(IWorldSynchronization actual) : IWorldSynchronization
+    private sealed class PauseAfterFirstJob(ICapsuleerScheduler scheduler, IWorldSynchronization actual) : ICapsuleerScheduler
     {
         public bool IsEntered => actual.IsEntered;
         public TaskCompletionSource BetweenJobs { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private int _acquisitions;
 
-        public IDisposable Enter(string operation, int? systemId = null)
+        public IReadOnlyList<CapsuleerJob> Jobs() => scheduler.Jobs();
+
+        public MinerObservation? Miner(long pilotId) => scheduler.Miner(pilotId);
+
+        public HaulerObservation? Hauler(long pilotId) => scheduler.Hauler(pilotId);
+
+        public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
         {
             if (++_acquisitions == 2)
             {
@@ -151,7 +157,7 @@ public sealed class CapsuleerMaintenanceTests
                 BetweenJobs.SetResult();
                 Resume.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
             }
-            return actual.Enter(operation, systemId);
+            return scheduler.Run(destinyStamp, maximumActions);
         }
     }
 
@@ -171,7 +177,8 @@ public sealed class CapsuleerMaintenanceTests
             host.GetRequiredService<CapsuleerMinerFactory>(),
             host.GetRequiredService<CapsuleerHaulerFactory>(),
             new TimedGateWatch(f.Clock),
-            host.GetRequiredService<MarketChangeSignal>()
+            host.GetRequiredService<MarketChangeSignal>(),
+            host.GetRequiredService<PilotMarketStore>()
         );
         using CapsuleerMaintenance maintenance = new(
             scheduler,

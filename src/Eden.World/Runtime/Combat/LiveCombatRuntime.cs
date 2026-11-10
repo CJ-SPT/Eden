@@ -254,7 +254,7 @@ internal sealed partial class LiveCombatRuntime(
         {
             _aggressions = Loading(() =>
             {
-                using WorldDbContext world = new(database.Path);
+                using WorldDbContext world = new(database.Path) { Participants = systemId is { } system ? new(systems: [system]) : null };
                 return world
                     .Set<NpcAggression>()
                     .AsNoTracking()

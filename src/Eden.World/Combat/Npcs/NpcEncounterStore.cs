@@ -87,7 +87,7 @@ internal sealed class NpcEncounterStore(
                 return resident;
             }
             Read(systemId, now, false);
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { Participants = new(systems: [systemId]) };
             return world
                 .Set<WorldNpc>()
                 .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
@@ -100,13 +100,13 @@ internal sealed class NpcEncounterStore(
 
     private long NextPopulation(int systemId, long now)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { Participants = new(systems: [systemId]) };
         return population?.NextUpdate(world, systemId, now) ?? long.MaxValue;
     }
 
     private IReadOnlyList<NpcContact> Read(int systemId, long now, bool buildContacts = true)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { Participants = new(systems: [systemId]) };
         using CatalogDbContext catalog = new(database.CatalogPath);
         using var transaction = world.Database.BeginTransaction();
         long populationStamp = now / TimeSpan.TicksPerSecond;

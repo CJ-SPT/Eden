@@ -21,7 +21,8 @@ internal sealed partial class CapsuleerScheduler(
     CapsuleerMinerFactory miners,
     CapsuleerHaulerFactory haulers,
     ICapsuleerGateWatch gateWatch,
-    MarketChangeSignal marketSignal
+    MarketChangeSignal marketSignal,
+    PilotMarketStore market
 ) : ICapsuleerScheduler, ICapsuleerSimulation, ICapsuleerHauling, ICapsuleerHandoff, ICapsuleerDiagnostics, ICapsuleerUpdateDiagnostics
 {
     private readonly SystemSimulationRegistry _systems = new();
@@ -388,11 +389,18 @@ internal sealed partial class CapsuleerScheduler(
     }
 
     public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn) =>
-        RunCore(destinyStamp, maximumActions);
+        RunPrepared(destinyStamp, maximumActions);
 
-    private CapsuleerBatch RunCore(int destinyStamp, int maximumActions, IReadOnlySet<int>? settling = null)
+    private CapsuleerBatch RunCore(
+        int destinyStamp,
+        int maximumActions,
+        IReadOnlySet<int>? settling = null,
+        CapsuleerHauler.PreparedJourney? preparedJourney = null,
+        bool measured = false,
+        long? turnStarted = null
+    )
     {
-        long started = clock.GetTimestamp();
+        long started = turnStarted ?? clock.GetTimestamp();
         using var owner = Live?.EnterShared();
         using (synchronization.Enter("CapsuleerScheduler"))
         {
@@ -423,6 +431,13 @@ internal sealed partial class CapsuleerScheduler(
                         using var actionPhase = SessionPerformance.IsActive
                             ? SessionPerformance.Phase($"traffic.action.{job.Action}")
                             : null;
+                        using var measurement = measured
+                            ? null
+                            : Live?.TrafficActions.Measure(
+                                job,
+                                [_locations[job.PilotId]],
+                                () => (Live!.CheckpointCopies, Live.CheckpointCopying)
+                            );
                         CapsuleerJob next;
                         _detailedSystems.Add(_locations[job.PilotId]);
                         _detailCandidates.Add(job.PilotId);
@@ -447,7 +462,7 @@ internal sealed partial class CapsuleerScheduler(
                         {
                             using var phase = SessionPerformance.Phase("traffic.haulerAction");
                             bool background = !Detailed(job.PilotId, activity);
-                            next = hauler.Execute(job, destinyStamp, background);
+                            next = hauler.Execute(job, destinyStamp, background, preparedJourney);
                             Current[job.PilotId] = next;
                             _completed++;
                             IndexJourney(job.PilotId, hauler);

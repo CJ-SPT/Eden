@@ -1,10 +1,13 @@
+using System.Collections.Concurrent;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using Eden.Data.Catalog;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,16 +15,26 @@ namespace Eden.World.Market;
 
 internal sealed partial class PilotMarketStore
 {
-    private void SeedInstitutional(WorldDbContext world, CatalogDbContext catalog, CatalogStationDefinition station)
+    private sealed record InstitutionalOffer(int TypeId, bool Bid, long PriceCents);
+
+    private static readonly ConditionalWeakTable<
+        CatalogProvider,
+        ConcurrentDictionary<int, Lazy<IReadOnlyList<InstitutionalOffer>>>
+    > InstitutionalCatalogs = new();
+
+    internal void PrepareInstitutional(CatalogDbContext catalog, int stationId) =>
+        _ = InstitutionalOffers(catalog, catalog.RequireStation(stationId));
+
+    private IReadOnlyList<InstitutionalOffer> InstitutionalOffers(CatalogDbContext catalog, CatalogStationDefinition station) =>
+        InstitutionalCatalogs
+            .GetValue(catalog.Definitions, _ => new())
+            .GetOrAdd(station.Id, _ => new(() => LoadInstitutionalOffers(catalog, station)))
+            .Value;
+
+    private IReadOnlyList<InstitutionalOffer> LoadInstitutionalOffers(CatalogDbContext catalog, CatalogStationDefinition station)
     {
-        int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
-        NpcSupplyRules.ValidateStock(stock);
         var corporation = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId);
         var trades = corporation?.CorporationTrades ?? [];
-        var existing = world
-            .Set<NpcMarketOrder>()
-            .Where(o => o.StationId == station.Id && o.Kind == NpcMarketKind.Institutional)
-            .ToDictionary(o => (o.TypeId, o.Bid));
         int[] offered = trades
             .Where(t => t.Value != 0)
             .Select(t => int.Parse(t.Key, CultureInfo.InvariantCulture))
@@ -48,7 +61,7 @@ internal sealed partial class PilotMarketStore
                         .Select(product => (int)product.TypeID!.Value)
                 )
         );
-        HashSet<(int TypeId, bool Bid)> eligible = [];
+        List<InstitutionalOffer> result = [];
         foreach (var type in types)
         {
             int typeId = type.Id;
@@ -98,10 +111,54 @@ internal sealed partial class PilotMarketStore
             {
                 continue;
             }
+            result.Add(new(typeId, bid, price.Value));
+        }
+        return result.AsReadOnly();
+    }
+
+    private void SeedInstitutional(WorldDbContext world, CatalogDbContext catalog, CatalogStationDefinition station)
+    {
+        int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
+        NpcSupplyRules.ValidateStock(stock);
+        var preparation = new InstitutionalPreparation(station.Id, catalog.Definitions.Identity.Generation, stock);
+        var live = LiveWorld.Find(world.WorldPath);
+        if (
+            live?.InstitutionalSupply.GetValueOrDefault(station.Id) == preparation
+            && !WorldConnections.HasChanges(world, "WorldMarketDefinition", "WorldEconomy")
+            && !world
+                .ChangeTracker.Entries<NpcMarketOrder>()
+                .Any(entry =>
+                    entry.State is EntityState.Added or EntityState.Deleted
+                    || entry.Properties.Any(property =>
+                        property.IsModified
+                        && property.Metadata.Name
+                            is not (nameof(NpcMarketOrder.Remaining) or nameof(NpcMarketOrder.Entered) or nameof(NpcMarketOrder.Issued))
+                    )
+                )
+        )
+        {
+            Refresh(world, world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id));
+            return;
+        }
+        if (WorldConnections.PreparedInstitutional(world, preparation))
+        {
+            Refresh(world, world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id));
+            return;
+        }
+        using var preparing = WorldConnections.PreparingInstitutional(world, station.Id);
+        var existing = world
+            .Set<NpcMarketOrder>()
+            .Where(o => o.StationId == station.Id && o.Kind == NpcMarketKind.Institutional)
+            .ToDictionary(o => (o.TypeId, o.Bid));
+        HashSet<(int TypeId, bool Bid)> eligible = [];
+        foreach (var offer in InstitutionalOffers(catalog, station))
+        {
+            int typeId = offer.TypeId;
+            bool bid = offer.Bid;
             eligible.Add((typeId, bid));
             if (existing.TryGetValue((typeId, bid), out var order))
             {
-                order.PriceCents = price.Value;
+                order.PriceCents = offer.PriceCents;
                 if (order.Issued == 0)
                 {
                     order.Issued = Now;
@@ -120,7 +177,7 @@ internal sealed partial class PilotMarketStore
                     OwnerId = station.OwnerId,
                     TypeId = typeId,
                     Bid = bid,
-                    PriceCents = price.Value,
+                    PriceCents = offer.PriceCents,
                     Remaining = stock,
                     Entered = stock,
                     Issued = Now,
@@ -133,6 +190,7 @@ internal sealed partial class PilotMarketStore
             retired.Issued = 0;
         }
         world.SaveChanges();
+        WorldConnections.RememberInstitutional(world, preparation);
         Refresh(world, world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id));
     }
 }

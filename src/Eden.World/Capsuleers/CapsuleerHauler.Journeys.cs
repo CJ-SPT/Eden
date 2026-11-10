@@ -1,71 +1,112 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Ships;
+using Eden.World.Catalog;
+using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
-    private void AssignJourney()
+    internal sealed record JourneyInput(
+        int Slot,
+        int CommunityId,
+        int StationId,
+        int SystemId,
+        int GroupId,
+        int SourceStationId,
+        long ActiveTicks,
+        TrafficJourney? Previous,
+        TravelerRoutine Routine
+    );
+
+    internal sealed record PreparedJourney(JourneyInput Input, CapsuleerTrafficRoute Route, TrafficJourney Journey);
+
+    private PreparedJourney? _preparedJourney;
+
+    internal JourneyInput? CaptureJourney(WorldDbContext world, CapsuleerJob job)
     {
-        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.assignJourney");
-        var previous = Work.Journey;
-        var routine = Work.Routine ?? TravelerRoutineRules.Create(pilotId);
+        if (!_loaded || _pilot is null || _work is null || job.Action != CapsuleerAction.Trade)
+        {
+            return null;
+        }
+        var agent = world.Set<SavedCapsuleerAgent>().Find(pilotId)!;
+        return JourneyInputs(agent, job.DueTicks);
+    }
+
+    private JourneyInput JourneyInputs(SavedCapsuleerAgent agent, long activeTicks) =>
+        new(
+            agent.Slot,
+            agent.CommunitySystemId,
+            Pilot.StationId,
+            Pilot.SystemId,
+            Pilot.ShipGroupId,
+            _route.SourceStationId,
+            activeTicks,
+            Work.Journey,
+            Work.Routine ?? TravelerRoutineRules.Create(pilotId)
+        );
+
+    internal static PreparedJourney PlanJourney(CatalogDbContext catalog, JourneyInput input)
+    {
+        var previous = input.Previous;
+        var routine = input.Routine;
         var avoidedSystems = routine
-            .Threats.Where(threat => threat.ExpiresAt > Work.ActiveTicks)
+            .Threats.Where(threat => threat.ExpiresAt > input.ActiveTicks)
             .Select(threat => threat.SystemId)
             .ToHashSet();
-        var agent = _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!;
-        bool homeRoster = agent.Slot < CapsuleerPopulationRules.MaximumHomeRosterSlots;
+        bool homeRoster = input.Slot < CapsuleerPopulationRules.MaximumHomeRosterSlots;
         int home = homeRoster
-            ? _operation
-                .Catalog.Definitions.StationsInSystem(agent.CommunitySystemId)
+            ? catalog
+                .Definitions.StationsInSystem(input.CommunityId)
                 .OrderByDescending(station => CapsuleerEncounterRules.IsTradeHubStation(station.Id))
                 .Select(station => station.Id)
-                .FirstOrDefault(previous?.HomeStationId ?? Pilot.StationId)
-            : previous?.HomeStationId ?? Pilot.StationId;
-        var plan = CapsuleerTrafficRoutes.Read(_operation.Catalog, homeRoster ? agent.CommunitySystemId : Pilot.SystemId);
+                .FirstOrDefault(previous?.HomeStationId ?? input.StationId)
+            : previous?.HomeStationId ?? input.StationId;
+        var plan = CapsuleerTrafficRoutes.Read(catalog, homeRoster ? input.CommunityId : input.SystemId);
         bool busy = plan.GateCount >= 4 || plan.StationCount >= 4;
-        var kind = homeRoster ? TrafficJourneyRules.Kind(agent.Slot, busy) : previous?.Kind ?? TrafficJourneyKind.Regional;
+        var kind = homeRoster ? TrafficJourneyRules.Kind(input.Slot, busy) : previous?.Kind ?? TrafficJourneyKind.Regional;
         if (kind == TrafficJourneyKind.Local && plan.StationCount == 0)
         {
             kind = TrafficJourneyKind.Regional;
         }
         long sequence = checked((previous?.Sequence ?? 0) + 1);
-        int avoided = previous?.SourceStationId ?? _route.SourceStationId;
+        int avoided = previous?.SourceStationId ?? input.SourceStationId;
         var route = CapsuleerTrafficRoutes.Journey(
-            _operation.Catalog,
-            Pilot.StationId,
+            catalog,
+            input.StationId,
             kind,
             sequence,
             avoided,
-            (HullClass)Pilot.ShipGroupId,
+            (HullClass)input.GroupId,
             routine,
-            Work.ActiveTicks
+            input.ActiveTicks
         );
-        if (kind == TrafficJourneyKind.Local && Pilot.StationId != home && avoidedSystems.Count == 0)
+        if (kind == TrafficJourneyKind.Local && input.StationId != home && avoidedSystems.Count == 0)
         {
             route =
                 previous is not null && previous.Kind == TrafficJourneyKind.Local && previous.SourceStationId == home
-                    ? new(Pilot.StationId, home, previous.Systems.Reverse().ToArray())
-                    : CapsuleerTrafficRoutes.ToStation(_operation.Catalog, Pilot.StationId, home, (HullClass)Pilot.ShipGroupId);
+                    ? new(input.StationId, home, previous.Systems.Reverse().ToArray())
+                    : CapsuleerTrafficRoutes.ToStation(catalog, input.StationId, home, (HullClass)input.GroupId);
         }
-        if (kind != TrafficJourneyKind.Local && previous is not null && previous.SourceStationId != home && Pilot.StationId != home)
+        if (kind != TrafficJourneyKind.Local && previous is not null && previous.SourceStationId != home && input.StationId != home)
         {
-            route =
-                CapsuleerTrafficRoutes.ToStation(_operation.Catalog, Pilot.StationId, home, (HullClass)Pilot.ShipGroupId, avoidedSystems)
-                ?? route;
+            route = CapsuleerTrafficRoutes.ToStation(catalog, input.StationId, home, (HullClass)input.GroupId, avoidedSystems) ?? route;
         }
         if (route is null)
         {
             throw new InvalidDataException("No compatible station destination is available.");
         }
-        _route = route;
-        _work = Work with
-        {
-            Journey = new(kind, home, route.SourceStationId, route.DestinationStationId, route.Systems, sequence),
-            TrafficLane = null,
-            Routine = routine,
-        };
+        return new(input, route, new(kind, home, route.SourceStationId, route.DestinationStationId, route.Systems, sequence));
+    }
+
+    private void AssignJourney()
+    {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.assignJourney");
+        var agent = _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!;
+        var input = JourneyInputs(agent, Work.ActiveTicks);
+        var prepared = _preparedJourney is { } candidate && candidate.Input == input ? candidate : PlanJourney(_operation.Catalog, input);
+        _route = prepared.Route;
+        _work = Work with { Journey = prepared.Journey, TrafficLane = null, Routine = input.Routine };
     }
 }

@@ -257,6 +257,51 @@ public static class CapsuleerProvisioningRules
         return value ^ (value >> 31);
     }
 
+    private const ulong NameStride = 7919;
+
+    public static bool MatchesName(long worldSeed, int systemId, CapsuleerCareer career, int slot, string name, int attempts)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(attempts);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(attempts, MaximumNameAttempts);
+        if (attempts == 0)
+        {
+            return false;
+        }
+        if (name == Name(worldSeed, systemId, career, slot))
+        {
+            return true;
+        }
+        var parts = name.Split(' ');
+        if (parts.Length != 3)
+        {
+            return false;
+        }
+        int given = Array.IndexOf(GivenNames, parts[0]);
+        int middle = Array.IndexOf(GivenNames, parts[1]);
+        int family = Array.IndexOf(FamilyNames, parts[2]);
+        if (given < 0 || middle < 0 || family < 0)
+        {
+            return false;
+        }
+        long combinations = MaximumNameAttempts - 1;
+        long index = given + GivenNames.Length * (middle + GivenNames.Length * family);
+        long offset = (index - (long)((Seed(worldSeed, systemId, career, slot) >> 16) % (ulong)combinations) + combinations) % combinations;
+        // Invert the same odd-stride permutation used by Name, preserving the caller's
+        // finite occupied-name bound without constructing every preceding candidate.
+        long remainder = combinations;
+        long nextRemainder = (long)NameStride;
+        long inverse = 0;
+        long nextInverse = 1;
+        while (nextRemainder != 0)
+        {
+            long quotient = remainder / nextRemainder;
+            (remainder, nextRemainder) = (nextRemainder, remainder - quotient * nextRemainder);
+            (inverse, nextInverse) = (nextInverse, inverse - quotient * nextInverse);
+        }
+        long attempt = offset * ((inverse + combinations) % combinations) % combinations + 1;
+        return attempt < attempts;
+    }
+
     public static string Name(long worldSeed, int systemId, CapsuleerCareer career, int slot = 0, int attempt = 0)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(attempt);
@@ -269,7 +314,7 @@ public static class CapsuleerProvisioningRules
         // A collision immediately adds a natural middle name. The odd stride
         // permutes this power-of-two namespace without repeating candidates.
         ulong combinations = (ulong)(MaximumNameAttempts - 1);
-        ulong index = ((seed >> 16) + (ulong)(attempt - 1) * 7919UL) % combinations;
+        ulong index = ((seed >> 16) + (ulong)(attempt - 1) * NameStride) % combinations;
         string given = GivenNames[index % (ulong)GivenNames.Length];
         string middle = GivenNames[index / (ulong)GivenNames.Length % (ulong)GivenNames.Length];
         string family = FamilyNames[index / (ulong)(GivenNames.Length * GivenNames.Length)];

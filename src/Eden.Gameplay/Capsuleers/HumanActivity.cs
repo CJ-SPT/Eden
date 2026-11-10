@@ -1,5 +1,16 @@
 namespace Eden.Gameplay.Capsuleers;
 
+public sealed record HumanActivityClock(long ElapsedTicks, long Timestamp, long Frequency, long Remainder, bool Active)
+{
+    public long ElapsedAt(long timestamp)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(timestamp, Timestamp);
+        return !Active
+            ? ElapsedTicks
+            : checked(ElapsedTicks + (long)((((Int128)timestamp - Timestamp) * TimeSpan.TicksPerSecond + Remainder) / Frequency));
+    }
+}
+
 // The world owner serializes this state. Elapsed time is monotonic human-online time,
 // never wall time, and is counted once regardless of the number of selected pilots.
 public sealed class HumanActivity
@@ -54,6 +65,8 @@ public sealed class HumanActivity
         Advance(timestamp, frequency);
         return new(_elapsedTicks, _sessions.Count, _activeSystems, _resumes) { Pilots = _pilots };
     }
+
+    public HumanActivityClock CaptureClock() => new(_elapsedTicks, _observedAt, _frequency, (long)_remainder, _sessions.Count > 0);
 
     private void Advance(long timestamp, long frequency)
     {
