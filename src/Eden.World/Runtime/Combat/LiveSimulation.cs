@@ -59,6 +59,7 @@ internal sealed partial class LiveCombatRuntime
         _populationDue.Remove(system);
         _systemNpcs.Remove(system);
         _contacts.Remove(system);
+        _npcSceneIndices.Remove(system);
         foreach (var key in _guardGroups.Keys.Where(k => k.System == system).ToArray())
         {
             _guardGroups.Remove(key);
@@ -271,7 +272,7 @@ internal sealed partial class LiveCombatRuntime
         {
             _acquisitions.Clear();
         }
-        _npcs[npc.Id] = npc;
+        SetNpc(npc);
         _dirtyNpcs.Add(npc.Id);
         owner.ObjectsChanged();
         return npc;
@@ -353,6 +354,7 @@ internal sealed partial class LiveCombatRuntime
     {
         using var ownership = owner.Enter();
         _contacts.Remove(system);
+        _npcSceneIndices.Remove(system);
         foreach (long id in _sharedNpcContacts.Where(p => p.Value.Source.SystemId == system).Select(p => p.Key).ToArray())
         {
             _sharedNpcContacts.Remove(id);
@@ -360,9 +362,23 @@ internal sealed partial class LiveCombatRuntime
         database.MotionStamps.TryRemove(system, out _);
     }
 
-    private IReadOnlyList<NpcContact> SimulationContacts(int system, long now, Action refresh, Func<long> nextPopulation)
+    private IReadOnlyList<NpcContact> SimulationContacts(
+        int system,
+        long now,
+        Action refresh,
+        Func<long> nextPopulation,
+        SpacePosition? position = null
+    )
     {
         var npcs = AdvanceSimulationNpcs(system, now, refresh, nextPopulation);
+        if (position is not null)
+        {
+            var visible = SceneIndex(system, npcs).Find(position);
+            if (visible.Count != npcs.Length)
+            {
+                npcs = visible.Select(id => _npcs[id]).ToArray();
+            }
+        }
         var effective = Effective(npcs);
         var aggression = Aggression();
         List<NpcContact> contacts = new(npcs.Length);

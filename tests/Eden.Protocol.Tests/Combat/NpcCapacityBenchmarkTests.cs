@@ -47,6 +47,8 @@ public sealed class NpcCapacityBenchmarkTests(ITestOutputHelper output)
     private const int MinimumSamples = 10;
     private const double StopMilliseconds = 2000;
     private const double Spacing = 400;
+    private const int NpcsPerSceneGroup = 100;
+    private const double SceneGroupSeparation = 1_000_000;
 
     private sealed record Client(IServiceScope Scope, PilotCallContext Context, PilotSessionTick Tick, PilotSessionOutput Sink);
 
@@ -70,12 +72,14 @@ public sealed class NpcCapacityBenchmarkTests(ITestOutputHelper output)
         int players = ReadNumber("EDEN_CAPACITY_PLAYERS", 2, 1, 256);
         int frames = ReadNumber("EDEN_CAPACITY_FRAMES", 30, MinimumSamples, 120);
         bool combat = Environment.GetEnvironmentVariable("EDEN_CAPACITY_MODE") == "combat";
+        bool spread = Environment.GetEnvironmentVariable("EDEN_CAPACITY_LAYOUT") == "spread";
         Assert.True(!combat || npcs > 0, "Combat requires at least one NPC target.");
+        Assert.True(!combat || !spread, "The dispersed scene replay measures idle populations.");
         long setup = Stopwatch.GetTimestamp();
         using NpcCombatTests.Fixture f = new(useTestClock: true);
         var database = f.Db.Services.GetRequiredService<WorldDatabase>();
         PrepareCatalog(database, combat);
-        PrepareWorld(f, npcs, players);
+        PrepareWorld(f, npcs, players, spread);
         CheckpointClock checkpoints = new(f.Clock);
         using LiveWorld live = new(database, checkpoints, _ => { });
         live.MeasureCheckpoints = true;
@@ -197,6 +201,10 @@ public sealed class NpcCapacityBenchmarkTests(ITestOutputHelper output)
             }
             var current = encounters.List(SystemId, f.Clock.Now);
             Assert.Equal(npcs, current.Count);
+            if (spread && npcs > NpcsPerSceneGroup)
+            {
+                Assert.All(clients, client => Assert.InRange(client.Context.Flight.VisibleNpcs.Count, 1, NpcsPerSceneGroup));
+            }
             Assert.All(
                 current,
                 npc =>
@@ -238,6 +246,7 @@ public sealed class NpcCapacityBenchmarkTests(ITestOutputHelper output)
                 npcs,
                 players,
                 mode = combat ? "combat" : "idle",
+                layout = spread ? "spread" : "dense",
                 measuredFrames = samples.Count,
                 setupMilliseconds,
                 frame = Summarize(samples.Select(s => s.Milliseconds)),
@@ -320,7 +329,7 @@ public sealed class NpcCapacityBenchmarkTests(ITestOutputHelper output)
         }
     }
 
-    private static void PrepareWorld(NpcCombatTests.Fixture fixture, int npcs, int players)
+    private static void PrepareWorld(NpcCombatTests.Fixture fixture, int npcs, int players, bool spread)
     {
         using WorldDbContext world = new(fixture.Db.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -333,6 +342,10 @@ public sealed class NpcCapacityBenchmarkTests(ITestOutputHelper output)
             var npc = index == 0 ? target : new WorldNpc { SystemId = SystemId, TypeId = NpcType };
             // A non-overlapping lattice keeps every entity on the same visible grid.
             var position = origin + new SpacePosition(1000 + index % 20 * Spacing, index / 20 % 20 * Spacing, index / 400 * Spacing);
+            if (spread)
+            {
+                position += new SpacePosition(index / NpcsPerSceneGroup * SceneGroupSeparation, 0, 0);
+            }
             npc.X = position.X;
             npc.HomeX = position.X;
             npc.Y = position.Y;

@@ -21,6 +21,9 @@ reward, progression and industry multipliers, including restart activation and n
 
 ## Development
 
+[Spatial NPC scenes](protocol/performance.md#spatial-npc-scenes-november-9-2026) cover shared geometry, local contact
+preparation, preserved visibility and warp tracking, and dispersed-system replay measurements.
+
 [Application icons](../assets/icons/README.md) contains the coordinated server, launcher and SDK artwork and export instructions.
 
 [Protocol buffer and library evaluation](protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)

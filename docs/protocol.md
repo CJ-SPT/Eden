@@ -49,6 +49,8 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Spatial NPC scenes, November 9, 2026](protocol/performance.md#spatial-npc-scenes-november-9-2026)
+
 - [Agent Show Info and related UI reads, November 9, 2026](protocol/agents.md#agent-show-info-and-related-ui-reads--november-9-2026)
 
 - [Corporation Show Info window audit, November 9, 2026](protocol/corporations.md#corporation-show-info-window-audit-november-9-2026)

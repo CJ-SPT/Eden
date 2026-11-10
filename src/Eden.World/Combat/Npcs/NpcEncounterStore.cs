@@ -4,6 +4,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Registration;
@@ -24,6 +25,18 @@ internal sealed class NpcEncounterStore(
     NpcProfileCatalog? hullProfiles = null
 ) : INpcEncounters, INpcSimulation
 {
+    public NpcSceneContacts ReadScene(int systemId, SpacePosition position, long now)
+    {
+        using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        lock (database.MotionLock)
+        {
+            return LiveCombatRuntime
+                    .Find(database.Path)
+                    ?.ReadScene(systemId, position, now, () => Read(systemId, now, false), () => NextPopulation(systemId, now))
+                ?? NpcSceneContacts.From(List(systemId, now), systemId, position);
+        }
+    }
+
     public IReadOnlyList<NpcContact> List(int systemId, long now)
     {
         // Take the resident owner before the shared movement gate. Bot execution

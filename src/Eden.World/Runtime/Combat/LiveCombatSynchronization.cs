@@ -50,7 +50,7 @@ internal sealed partial class LiveCombatRuntime
                 ),
                 Available = row.DestroyedAt is null && row.RetiredAt is null,
             };
-            _npcs[row.Id] = next;
+            SetNpc(next);
             _savedNpcs[row.Id] = next;
             _staleNpcs.Remove(row.Id);
             _contactEpoch++;

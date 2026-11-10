@@ -65,6 +65,8 @@ public interface INpcSimulation
 public interface INpcEncounters
 {
     IReadOnlyList<NpcContact> List(int systemId, long now);
+    NpcSceneContacts ReadScene(int systemId, SpacePosition position, long now) =>
+        NpcSceneContacts.From(List(systemId, now), systemId, position);
     bool WasDestroyed(long npcId);
 }
 

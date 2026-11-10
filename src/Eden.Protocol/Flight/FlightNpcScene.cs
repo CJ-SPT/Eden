@@ -1,9 +1,9 @@
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Combat;
-using ZLinq;
 
 namespace Eden.Protocol.Flight;
 
@@ -16,7 +16,7 @@ internal sealed class FlightNpcScene(
     Action<StampedDestinyUpdate> send
 )
 {
-    private HashSet<long> _transitingNpcs = [];
+    private IReadOnlySet<long> _transitingNpcs = FrozenSet<long>.Empty;
 
     // A shot changes one contact. Preserve prior snapshots without cloning
     // the complete observer scene for each weapon or health notification.
@@ -33,38 +33,29 @@ internal sealed class FlightNpcScene(
     {
         _contacts = [];
         _contactIndices.Clear();
-        _transitingNpcs.Clear();
+        _transitingNpcs = FrozenSet<long>.Empty;
     }
 
     internal void Capture(FlightSceneContext context) => ReplaceContacts(ReadNpcs(context));
 
-    private void ReplaceContacts(NpcContact[] contacts)
+    private void ReplaceContacts(IReadOnlyList<NpcContact> contacts)
     {
         _contacts = contacts.ToImmutableList();
         _contactIndices.Clear();
-        for (int index = 0; index < contacts.Length; index++)
+        for (int index = 0; index < contacts.Count; index++)
         {
             _contactIndices.Add(contacts[index].Id, index);
         }
     }
 
-    private NpcContact[] ReadNpcs(FlightSceneContext context)
+    private IReadOnlyList<NpcContact> ReadNpcs(FlightSceneContext context)
     {
-        var contacts = context.Pilot.Position is null
-            ? []
-            : encounters?.List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [];
-        _transitingNpcs = contacts
-            .AsValueEnumerable()
-            .Where(n => n.SystemId == context.Pilot.SystemId && n.Warp is not null)
-            .Select(n => n.Id)
-            .ToHashSet();
-        return contacts
-            .AsValueEnumerable()
-            .Where(n =>
-                n.SystemId == context.Pilot.SystemId
-                && context.Pilot.Position!.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange
-            )
-            .ToArray();
+        var scene = context.Pilot.Position is { } position
+            ? encounters?.ReadScene(context.Pilot.SystemId, position, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                ?? NpcSceneContacts.Empty
+            : NpcSceneContacts.Empty;
+        _transitingNpcs = scene.Warping;
+        return scene.Visible;
     }
 
     internal void RefreshNpcs(FlightSceneContext context)
@@ -75,14 +66,14 @@ internal sealed class FlightNpcScene(
             return;
         }
         var current = ReadNpcs(context);
-        if (Contacts.Count == current.Length && Contacts.SequenceEqual(current, ReferenceEqualityComparer.Instance))
+        if (Contacts.Count == current.Count && Contacts.SequenceEqual(current, ReferenceEqualityComparer.Instance))
         {
             return;
         }
         // The identity index addresses the previous ordering. Copy once so a busy refresh
         // can compare every contact in linear time while individual shot updates retain immutable snapshots.
         var previousContacts = _contacts.ToArray();
-        if (current.Length != previousContacts.Length || current.Any(n => !_contactIndices.ContainsKey(n.Id)))
+        if (current.Count != previousContacts.Length || current.Any(n => !_contactIndices.ContainsKey(n.Id)))
         {
             UpdateMembership(current);
         }
@@ -176,7 +167,7 @@ internal sealed class FlightNpcScene(
         ReplaceContacts(current);
     }
 
-    private void UpdateMembership(NpcContact[] current)
+    private void UpdateMembership(IReadOnlyList<NpcContact> current)
     {
         foreach (var departed in Contacts.ExceptBy(current.Select(n => n.Id), n => n.Id))
         {

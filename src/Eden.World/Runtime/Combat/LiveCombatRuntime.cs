@@ -128,7 +128,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
                 var result = settleFatal(plan, heat);
                 _ships.Remove(pilotId);
                 _savedShips.Remove(pilotId);
-                _npcs.Remove(targetId);
+                RemoveNpc(targetId);
                 _savedNpcs.Remove(targetId);
                 _aggressions = null;
                 _guardGroups.Clear();
@@ -147,7 +147,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         Hostility(target, ship.ShipId, now);
         RecordDroneModule(ship.ShipId, target.Id, now);
         _ships[pilotId] = plan.Ship;
-        _npcs[targetId] = RepairNpc(plan.Target, now);
+        SetNpc(RepairNpc(plan.Target, now));
         if (heat is not null)
         {
             owner.Heat.PublishResident(ship.ShipId, heat);
@@ -180,6 +180,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             || _positions.Count >= ships
             || _acquisitionShips.Count >= ships
             || _contacts.Count >= systems
+            || _npcSceneIndices.Count >= systems
             || _guardGroups.Count >= npcs
             || _droneSystems.Count >= systems
             || _dronePilots.Count >= ships
@@ -328,12 +329,12 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             npc = Loading(() => LoadNpc(id, now));
             if (npc is not null)
             {
-                _npcs[id] = npc;
+                SetNpc(npc);
                 _savedNpcs[id] = npc;
             }
             else
             {
-                _npcs.Remove(id);
+                RemoveNpc(id);
                 _savedNpcs.Remove(id);
             }
             _staleNpcs.Remove(id);
@@ -343,7 +344,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
             var repaired = RepairNpc(npc, now);
             if (repaired != npc)
             {
-                _npcs[id] = repaired;
+                SetNpc(repaired);
                 _dirtyNpcs.Add(id);
                 owner.ObjectsChanged();
             }
@@ -628,6 +629,7 @@ internal sealed partial class LiveCombatRuntime(LiveWorld owner, WorldDatabase d
         _aggressions = null;
         _guardGroups.Clear();
         _contacts.Clear();
+        _npcSceneIndices.Clear();
         _acquisitions.Clear();
         ClearSimulation();
     }

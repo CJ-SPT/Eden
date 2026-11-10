@@ -6,6 +6,83 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Spatial NPC scenes, November 9, 2026
+
+`INpcEncounters.ReadScene` returns nearby native contacts and an immutable set of every warping NPC in the system.
+The default interface adapter filters the existing full contact read, preserving alternate implementations and the
+nonresident path. The resident implementation advances the complete authoritative system before selecting contacts.
+It then builds native records only for nearby NPCs, using the existing shared contact and exact-time effect logic.
+Full-system gameplay and information reads retain `List`.
+
+Gameplay's geometry index preserves source order and the existing inclusive 250 km spherical visibility policy.
+It narrows dispersed candidates along the widest coordinate and checks the original three-dimensional distance.
+Dense, entirely visible scenes reuse their complete identity list. World shares the index and off-grid warp identities
+between observers; resident position, availability, system or warp transitions invalidate the affected geometry.
+SQL population invalidation, observer deactivation and runtime clearing release it too. NPC cache writes use one
+geometry-aware setter, including loading, committed SQL synchronization, gunfire, repair and drone damage.
+Health, weapons, repairs and electronic warfare remain fresh at the requested time, including repeated same-tick reads.
+
+The reference is [Carbon Destiny's bubble updater at revision 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/python/destiny/net/server/_bubbleupdater.py),
+which separates shared bubble membership changes from player-specific transitions, and CCP's
+[Drakes of Destiny optimization](https://www.eveonline.com/news/view/fixing-lag-drakes-of-destiny-part-2-1).
+[EVE University grids](https://wiki.eveuniversity.org/Grid) describe current native grid behavior; this increment retains
+Eden's existing visibility policy rather than adopting modern EVE grid geometry. No wire fields or client changes are
+introduced. Common update serialization and independently executing system workers remain separate future work.
+
+### Matched scene replay
+
+The exact capacity method ran with baseline production `bad7ddaa` and the retained changes on the same machine,
+in Debug with .NET 10.0.14 and tiered compilation disabled. Each case used four warmups and thirty measured frames.
+The dispersed baseline used the same new layout harness with unchanged baseline production code: ten groups of
+100 stationary NPCs, separated by 1,000 km, with ten observers near the first group. The dense combat case retained
+the existing workload. One baseline and one retained process per case are reported; earlier development trials are
+excluded. The output sink includes Blue encoding but excludes encryption, network backpressure and native rendering.
+
+| Workload | Baseline frame median / p95 / maximum, ms | Retained frame median / p95 / maximum, ms | Baseline / retained allocation, MiB/frame |
+| --- | ---: | ---: | ---: |
+| Ten observers, 1,000 dispersed idle NPCs | 18.75 / 25.70 / 31.13 | 14.48 / 16.35 / 17.11 | 9.96 / 7.86 |
+| Ten players, 1,000 NPCs fighting on one grid | 79.80 / 86.21 / 119.91 | 80.20 / 87.64 / 195.49 | 50.19 / 49.93 |
+| One player, empty system | 0.29 / 0.79 / 3.48 | 0.29 / 0.46 / 1.78 | 0.201 / 0.200 |
+
+The dispersed median frame improved about 23%, and managed allocation fell about 21%. Its NPC contact phase fell
+from 7.85 to 3.98 ms median; ten observers refreshing the already-advanced scene fell from 2.07 to 1.15 ms.
+Dense combat's contact phase fell from 20.34 to 19.50 ms, and its observer-only refresh fell from 3.07 to 2.79 ms.
+Complete dense-combat frames did not improve; the retained maximum was higher in these single-process samples.
+These results support the dispersed-scene improvement, not a dense battle capacity or tail-latency guarantee.
+Encoded combat output remained approximately 2.70 MiB/frame. Every warmed frame retained zero SQL commands,
+connection opens and fitting calculations. The full system still advances; candidate selection uses one coordinate
+before the exact distance test, so its worst case remains a full scan.
+
+Checkpoint medians use the final three populated captures. The dispersed capture/projection/write phases were
+0.47 / 22.24 / 15.01 ms before and 0.44 / 22.34 / 13.47 ms after. Dense combat was
+0.59 / 46.14 / 15.57 ms before and 0.71 / 50.07 / 14.53 ms after. Projection and writing remain outside the owner;
+their durations are not counted as simulation stalls. No checkpoint improvement is claimed.
+
+Reproduce with the exact filter below and `DOTNET_TieredCompilation=0`, `EDEN_CAPACITY_NPCS=1000`,
+`EDEN_CAPACITY_PLAYERS=10`, `EDEN_CAPACITY_MODE=idle` and `EDEN_CAPACITY_LAYOUT=spread`. Use `combat` and
+`dense` for the populated battle, or zero NPCs and one player for the empty case. `EDEN_CAPACITY_OUTPUT` accepts an
+absolute report directory. Raw matched reports are under ignored `artifacts/spatial-scenes/{baseline-*,retained-*}`.
+
+**Automated validation.** The first exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.NpcCapacityBenchmarkTests.MeasureNpcAndPlayerCapacityThroughNormalSessions`.
+The new index boundary theory and local-contact preparation regression also passed individually. Stable tool/solution
+restore, the warning-free solution build, 422 affected .NET tests (116.59 seconds including test host startup/shutdown),
+eight catalog policy cases and nine formatting policy cases passed in 127.02 seconds. Formatting verification passed
+in another 20.96 seconds; documentation link/anchor, UTF-8, retained-heading and whitespace checks also passed.
+The validation sequence took approximately 148 seconds, excluding the separate benchmark replays. The affected filter was:
+
+```text
+FullyQualifiedName~Combat.Npc|FullyQualifiedName~Combat.LiveCombatObjectTests|FullyQualifiedName~Combat.LiveSimulationTests|FullyQualifiedName~Combat.ResidentDroneTests|FullyQualifiedName~Combat.ResidentCombatMonitoringTests|FullyQualifiedName~Combat.PlayerEwarNpcTests|FullyQualifiedName~Mining.NpcMiningTests|FullyQualifiedName~Capsuleers.CapsuleerTrafficPerformanceTests|FullyQualifiedName~Capsuleers.CapsuleerDefensePerformanceTests|FullyQualifiedName~Persistence.DetachedCheckpointTests|FullyQualifiedName~Persistence.LiveWorldTests|FullyQualifiedName~Hosting
+```
+
+Tests exercise exact distance boundaries on all axes, large/negative coordinates, ordering, immutable snapshots,
+same-tick movement and rollback, subsecond health and weapon expiry, local-only native contact construction,
+zero-SQL observers, NPC mining response warps, destruction and reopened checkpoints. The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None for this server timing comparison.
+
 ## NPC contact refresh cost, November 9, 2026
 
 In the 10-pilot, 1,000-NPC combat replay, each client asks for contacts during flight and combat updates.

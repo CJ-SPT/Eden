@@ -344,7 +344,7 @@ internal sealed partial class LiveCombatRuntime
         foreach (var target in targets.Values)
         {
             Hostility(target, ship.ShipId, now);
-            _npcs[target.Id] = RepairNpc(target, now);
+            SetNpc(RepairNpc(target, now));
             _dirtyNpcs.Add(target.Id);
         }
         foreach (var target in pilotTargets.Values)

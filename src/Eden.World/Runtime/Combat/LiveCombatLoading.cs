@@ -355,7 +355,7 @@ internal sealed partial class LiveCombatRuntime
                     damage[row.Id].ToImmutableDictionary(d => d.AttackerId, ReadContribution),
                     now
                 );
-                _npcs[row.Id] = npc;
+                SetNpc(npc);
                 _savedNpcs[row.Id] = npc;
                 _staleNpcs.Remove(row.Id);
             }
