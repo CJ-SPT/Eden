@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+- [T2 subcapital hull admission, November 9, 2026](protocol/fitting.md#t2-subcapital-hull-admission-november-9-2026)
+
 [Documentation index](README.md)
 
 [Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) records the route planner’s history dependency, stable cache replies and empty telemetry limits.

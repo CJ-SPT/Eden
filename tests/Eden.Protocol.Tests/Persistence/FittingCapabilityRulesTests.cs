@@ -20,7 +20,7 @@ public sealed class FittingCapabilityRulesTests
         ];
         HullAssemblyProfile hull = new(11371, InventoryCategory.Ship, true, 2, HullClass.AssaultFrigate);
         Assert.True(HullSupportRules.CanAssemble(hull, cohorts));
-        Assert.False(HullSupportRules.CanAssemble(hull));
+        Assert.True(HullSupportRules.CanAssemble(hull));
         Assert.False(HullSupportRules.CanAssemble(hull with { TechLevel = 1 }, cohorts));
         Assert.False(HullSupportRules.CanAssemble(hull with { Published = false }, cohorts));
         Assert.False(HullSupportRules.CanAssemble(hull with { Category = InventoryCategory.Module }, cohorts));
@@ -48,7 +48,10 @@ public sealed class FittingCapabilityRulesTests
         Assert.Equal(275, hulls.Length);
         Assert.Equal(235, hulls.Count(HullSupportRules.CanAssemble));
         Assert.All(hulls, hull => Assert.Equal(TechOneHullRules.CanAssemble(hull), HullSupportRules.CanAssemble(hull)));
-        Assert.All(BuildContentPolicy.Current.Hulls.Cohorts, cohort => Assert.Equal(1, cohort.TechLevel));
+        Assert.All(
+            BuildContentPolicy.Current.Hulls.Cohorts.Where(c => c.Cohort != HullCohort.TechTwoSubcapital),
+            cohort => Assert.Equal(1, cohort.TechLevel)
+        );
     }
 
     [Fact]

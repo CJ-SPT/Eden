@@ -358,7 +358,7 @@ internal static class ShipContentAudit
                     ContentOperation.ConsumerCoverage,
                     AssaultDamageControlCatalog.ConsumersAdmitted(catalog),
                     ShipContentMilestone.TechTwoSubcapitals,
-                    "Assault frigate/cruiser and Herald hull admission remains in the explicit T2 cohort milestone."
+                    "AssaultDamageControlCatalog.ConsumersAdmitted checks every published eligible assault frigate/cruiser and Herald."
                 )
             );
         }

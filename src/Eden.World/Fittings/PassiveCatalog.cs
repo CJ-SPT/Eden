@@ -5,6 +5,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Combat.Weapons;
 
@@ -12,6 +13,10 @@ namespace Eden.World.Fittings;
 
 internal static class PassiveCatalog
 {
+    // Build 3662168 effects 2252/2253/6385 assign these hull attributes to fitted cloaks.
+    private const int CloakReactivationOverride = 1034;
+    private const int CloakTargetingOverride = 1035;
+    private const int CloakVelocityOverride = 2102;
     private static readonly CatalogDefinition<ImmutableArray<ClientDogmaeffects>> s_effects = new("passive-effects", LoadEffects);
     private static readonly CatalogDefinition<ImmutableArray<PassiveModifier>> s_modifiers = new("passive-modifiers", LoadModifiers);
     private const int AbyssalMetaGroup = 15;
@@ -83,6 +88,7 @@ internal static class PassiveCatalog
         ModifierSelector? selector = modifier.Func switch
         {
             "ItemModifier" => ModifierSelector.Item,
+            "LocationModifier" when hull => ModifierSelector.Location,
             "LocationGroupModifier" => ModifierSelector.Group,
             "LocationRequiredSkillModifier" => ModifierSelector.RequiredSkill,
             "OwnerRequiredSkillModifier" => ModifierSelector.OwnerRequiredSkill,
@@ -100,13 +106,27 @@ internal static class PassiveCatalog
                     && (
                         rig
                         || hull
-                            && modifier.Func == "LocationGroupModifier"
-                            && modifier.Domain == "shipID"
                             && (
-                                modifier.ModifiedAttributeID is (int)DogmaAttributeId.MaxGroupFitted or (int)DogmaAttributeId.MaxGroupOnline
-                                || modifier.ModifiedAttributeID == (int)DogmaAttributeId.NosOverride
-                                    && modifier.ModifyingAttributeID == (int)DogmaAttributeId.NosOverride
-                                    && modifier.GroupID == CapacitorWarfareRules.NosferatuGroup
+                                modifier.Func == "LocationRequiredSkillModifier"
+                                    && modifier.Domain == "shipID"
+                                    && modifier.SkillTypeID == (int)HullBonusSkill.Cloaking
+                                    && (modifier.ModifiedAttributeID, modifier.ModifyingAttributeID)
+                                        is
+                                            ((int)DogmaAttributeId.ModuleReactivationDelay, CloakReactivationOverride)
+                                            or
+                                            ((int)DogmaAttributeId.CloakingTargetingDelay, CloakTargetingOverride)
+                                            or
+                                            ((int)DogmaAttributeId.CloakVelocityMultiplier, CloakVelocityOverride)
+                                || modifier.Func == "LocationGroupModifier"
+                                    && modifier.Domain == "shipID"
+                                    && (
+                                        modifier.ModifiedAttributeID
+                                            is (int)DogmaAttributeId.MaxGroupFitted
+                                                or (int)DogmaAttributeId.MaxGroupOnline
+                                        || modifier.ModifiedAttributeID == (int)DogmaAttributeId.NosOverride
+                                            && modifier.ModifyingAttributeID == (int)DogmaAttributeId.NosOverride
+                                            && modifier.GroupID == CapacitorWarfareRules.NosferatuGroup
+                                    )
                             )
                     )
                 )
@@ -139,7 +159,7 @@ internal static class PassiveCatalog
             return null;
         }
         if (
-            selector is not (ModifierSelector.Item or ModifierSelector.OwnerRequiredSkill)
+            selector is not (ModifierSelector.Item or ModifierSelector.OwnerRequiredSkill or ModifierSelector.Location)
             && (domain != ModifierDomain.Ship || selection is null)
         )
         {

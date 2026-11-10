@@ -155,11 +155,11 @@ public sealed partial class AssaultDamageControlTests
     [InlineData(Wolf, true)]
     [InlineData(11999, true)]
     [InlineData(97793, true)]
-    public void ExactGroupAndHeraldRestrictionsAreEnforcedWithoutAdmittingHulls(int hull, bool allowed)
+    public void ExactGroupAndHeraldRestrictionsAreEnforcedOnAdmittedHulls(int hull, bool allowed)
     {
         using Fixture f = Prepare(hull);
         using CatalogDbContext catalog = new(f.CatalogPath);
-        Assert.Equal(hull == 601, HullCatalog.CanAssemble(catalog, catalog.FittingType(hull)!, (int)InventoryCategory.Ship));
+        Assert.True(HullCatalog.CanAssemble(catalog, catalog.FittingType(hull)!, (int)InventoryCategory.Ship));
         if (allowed)
         {
             long module = f.Fit(Basic);
