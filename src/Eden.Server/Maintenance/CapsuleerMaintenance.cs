@@ -20,7 +20,9 @@ internal sealed class CapsuleerMaintenance(
     IPilotOperationScope? operations = null
 ) : IDisposable, ICapsuleerPresentation
 {
-    private PeriodicTimer? _timer;
+    // System.Threading.Timer bounds one wait to uint.MaxValue - 1 milliseconds.
+    private static readonly TimeSpan MaximumTimerDelay = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
+    private CancellationTokenSource? _cancellation;
     private Task _loop = Task.CompletedTask;
     private volatile bool _stopping;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
@@ -29,19 +31,31 @@ internal sealed class CapsuleerMaintenance(
 
     internal void Start()
     {
-        if (_timer is null)
+        ObjectDisposedException.ThrowIf(_stopping, this);
+        if (_cancellation is null)
         {
-            _timer = new PeriodicTimer(CapsuleerJobQueue.WakeInterval, clock);
-            _loop = Run(_timer);
+            _cancellation = new();
+            _loop = Run(_cancellation.Token);
         }
     }
 
-    private async Task Run(PeriodicTimer timer)
+    private async Task Run(CancellationToken cancellationToken)
     {
-        while (await timer.WaitForNextTickAsync().ConfigureAwait(false))
+        var wake = CapsuleerWakePlan.Polling;
+        try
+        {
+            wake = scheduler.NextWake();
+        }
+        catch (Exception error)
+        {
+            ServerLog.Console.Error($"Capsuleer simulation failed: {error.Message}");
+        }
+        while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
+                await Wait(wake, cancellationToken).ConfigureAwait(false);
+                var changedDuringTurn = scheduler.NextWake().Changed;
                 bool backlogged;
                 do
                 {
@@ -49,15 +63,72 @@ internal sealed class CapsuleerMaintenance(
                     if (backlogged)
                     {
                         // A bounded turn releases ownership before another catch-up
-                        // turn. The normal wake interval applies once work is current.
+                        // turn. Current work then sleeps until its next deadline or input change.
                         await Task.Yield();
                     }
                 } while (backlogged && !_stopping);
+                wake = scheduler.NextWake();
+                if (changedDuringTurn.IsCompleted)
+                {
+                    // A commit or membership change between bounded jobs must receive another turn.
+                    wake = wake with
+                    {
+                        Delay = TimeSpan.Zero,
+                    };
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                return;
             }
             catch (Exception error)
             {
                 ServerLog.Console.Error($"Capsuleer simulation failed: {error.Message}");
+                // Failed actions remain due. Retain the old bounded retry interval instead of spinning.
+                wake = CapsuleerWakePlan.Polling;
             }
+        }
+    }
+
+    private async Task Wait(CapsuleerWakePlan wake, CancellationToken cancellationToken)
+    {
+        if (wake.Delay is not { } delay)
+        {
+            await wake.Changed.WaitAsync(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+        if (delay <= TimeSpan.Zero)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Yield();
+            return;
+        }
+        // Batch nearby deadlines within the existing 50 ms maintenance resolution.
+        // A large staggered population must not turn one-shot timers into per-agent wakes.
+        if (delay < CapsuleerJobQueue.WakeInterval)
+        {
+            delay = CapsuleerJobQueue.WakeInterval;
+        }
+        if (delay > MaximumTimerDelay)
+        {
+            delay = MaximumTimerDelay;
+        }
+        TaskCompletionSource elapsed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var timer = clock.CreateTimer(
+            static state => ((TaskCompletionSource)state!).TrySetResult(),
+            elapsed,
+            delay,
+            Timeout.InfiniteTimeSpan
+        );
+        try
+        {
+            var ready = await Task.WhenAny(elapsed.Task, wake.Changed).WaitAsync(cancellationToken).ConfigureAwait(false);
+            await ready.ConfigureAwait(false);
+        }
+        finally
+        {
+            // A canceled wait must also release WhenAny's change subscription.
+            elapsed.TrySetCanceled();
         }
     }
 
@@ -158,7 +229,9 @@ internal sealed class CapsuleerMaintenance(
     public void Dispose()
     {
         _stopping = true;
-        _timer?.Dispose();
+        var cancellation = Interlocked.Exchange(ref _cancellation, null);
+        cancellation?.Cancel();
         _loop.GetAwaiter().GetResult();
+        cancellation?.Dispose();
     }
 }

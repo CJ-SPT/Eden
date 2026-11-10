@@ -396,6 +396,13 @@ internal sealed partial class CapsuleerScheduler(
             if (state.Mode == SystemSimulationMode.Activating)
             {
                 _activated.Add(state.SystemId);
+                foreach (long pilot in _systemAgents.GetValueOrDefault(state.SystemId) ?? [])
+                {
+                    if (_locations.GetValueOrDefault(pilot) == state.SystemId)
+                    {
+                        WakePilot(pilot, activity.ElapsedTicks, requireElapsedTime: true);
+                    }
+                }
             }
         }
         foreach (int system in _activated)
@@ -510,6 +517,7 @@ internal sealed partial class CapsuleerScheduler(
         using var owner = Live?.Enter();
         lock (synchronization.Gate)
         {
+            long? previousDue = _queue.NextDueTicks;
             action();
             using var reconciliation = SessionLatency.Measure(SessionLatencyPhase.TrafficReconcile);
             Load();
@@ -518,6 +526,10 @@ internal sealed partial class CapsuleerScheduler(
             // Publish newly prepared metadata before observer frames begin.
             Load();
             Settle(activity.ElapsedTicks);
+            if (_queue.NextDueTicks != previousDue)
+            {
+                presence.Wake();
+            }
         }
     }
 
@@ -605,6 +617,16 @@ internal sealed partial class CapsuleerScheduler(
         }
     }
 
+    public CapsuleerWakePlan NextWake()
+    {
+        using var owner = Live?.Enter();
+        lock (synchronization.Gate)
+        {
+            var activity = presence.Read();
+            return new(CapsuleerScheduleRules.WakeDelay(_queue.NextDueTicks, activity.ElapsedTicks, activity.Active), presence.Changed);
+        }
+    }
+
     public MinerObservation? Miner(long pilotId)
     {
         using var owner = Live?.Enter();
@@ -644,7 +666,36 @@ internal sealed partial class CapsuleerScheduler(
             {
                 _miners.GetValueOrDefault(pilot)?.ObserveAggression(shipId);
                 _haulers.GetValueOrDefault(pilot)?.ObserveAggression(shipId);
+                WakePilot(pilot, presence.Read().ElapsedTicks);
+                presence.Wake();
             }
         }
+    }
+
+    private void WakePilot(long pilot, long elapsedTicks, bool requireElapsedTime = false)
+    {
+        if (!_running.Contains(pilot) || !Current.TryGetValue(pilot, out var job) || job.DueTicks <= elapsedTicks)
+        {
+            return;
+        }
+        if (requireElapsedTime)
+        {
+            long sampled = _miners.TryGetValue(pilot, out var miner)
+                ? miner.Read(includeHealth: false)!.Work.ActiveTicks
+                : _haulers[pilot].Read()!.Work.ActiveTicks;
+            if (sampled >= elapsedTicks)
+            {
+                return;
+            }
+        }
+        // An external event revises the pending job without consuming an action or paid work.
+        var next = job with
+        {
+            Revision = checked(job.Revision + 1),
+            DueTicks = elapsedTicks,
+        };
+        Current[pilot] = next;
+        _queue.Publish(next);
+        Live?.ObjectsChanged();
     }
 }

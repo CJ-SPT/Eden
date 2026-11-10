@@ -21,6 +21,9 @@ reward, progression and industry multipliers, including restart activation and n
 
 ## Development
 
+[Deadline-driven background work](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026) covers sleeping
+maintenance, early threat/arrival wakes, persistent retry deadlines and matched observer-frame measurements.
+
 [Agent header data](protocol/agents.md#corporation-to-agent-show-info-header--november-9-2026) and
 [courier package volume](protocol/contracts.md#courier-package-show-info-volume--november-9-2026) correct two remaining native Show Info paths found through evejs and the pinned client.
 

@@ -52,6 +52,8 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Deadline-driven maintenance, November 9, 2026](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026)
+
 - [Corporation-to-agent Show Info header, November 9, 2026](protocol/agents.md#corporation-to-agent-show-info-header--november-9-2026)
   and [courier package Show Info volume](protocol/contracts.md#courier-package-show-info-volume--november-9-2026).
 

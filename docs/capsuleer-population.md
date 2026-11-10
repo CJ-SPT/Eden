@@ -28,6 +28,14 @@ See the [implementation and automated evidence](protocol/capsuleers.md#zkill-bac
 
 ## Galaxy-wide station and gate traffic
 
+### Deadline-driven background work
+
+Maintenance sleeps until its next due job or a relevant input change. Quiet background retry waits retain their
+saved deadline; observed and defending pilots keep timely checks. Player arrival and committed aggression can wake
+an already-running traveler early without replaying paid work. Unobserved local encounters still pause, and the
+human-active clock still stops when the last player leaves. See the
+[scheduling replay and validation](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026).
+
 ### Belt ratting, ship variety and paid resupply
 
 Existing combat-fit travelers can choose a local belt-ratting sortie on one third of eligible observed dock departures.

@@ -94,6 +94,10 @@ internal sealed class LiveWorld : IDisposable
         Tractors.Observe(changes);
         Reads?.Observe(changes);
         Combat?.Observe(changes);
+        if (changes.Count != 0)
+        {
+            CapsuleerActivity.Wake();
+        }
     }
 
     internal long CapsuleerRevision { get; private set; }

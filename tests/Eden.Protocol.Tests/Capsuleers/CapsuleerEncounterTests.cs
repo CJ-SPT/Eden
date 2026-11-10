@@ -222,10 +222,21 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         int calls = 0;
         await host.GetRequiredService<ICapsuleerHandoff>().SynchronizeAsync(Source, () => calls++);
         Assert.Equal(1, calls);
+        var travelerBeforeEntry = scheduler.Jobs().Single(j => j.PilotId != miner);
         using var returning = presence.Select(Human + 1, Source);
         Assert.Equal(before.Select(j => j.PilotId).Order(), scheduler.Jobs().Select(j => j.PilotId).Order());
-        Assert.All(scheduler.Jobs(), j => Assert.True(j.DueTicks > presence.Read().ElapsedTicks));
+        long elapsed = presence.Read().ElapsedTicks;
+        Assert.True(scheduler.Jobs().Single(j => j.PilotId == miner).DueTicks > elapsed);
+        var travelerAfterEntry = scheduler.Jobs().Single(j => j.PilotId != miner);
+        // Entry wakes an already-running traveler for current-time sampling, without
+        // replaying its paid action or advancing the paused local miner.
+        Assert.Equal(elapsed, travelerAfterEntry.DueTicks);
+        Assert.Equal(travelerBeforeEntry.Sequence, travelerAfterEntry.Sequence);
+        Assert.Equal(travelerBeforeEntry.Revision + 1, travelerAfterEntry.Revision);
         Assert.Equal(MinerActivity.Mining, scheduler.Miner(miner)!.Work.Activity);
+        worker.Tick();
+        Assert.All(scheduler.Jobs(), j => Assert.True(j.DueTicks > elapsed));
+        Assert.Equal(travelerBeforeEntry.Sequence + 1, scheduler.Jobs().Single(j => j.PilotId != miner).Sequence);
         await host.GetRequiredService<LiveWorld>().FlushAsync();
     }
 

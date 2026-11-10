@@ -506,7 +506,7 @@ internal sealed partial class CapsuleerHauler(
     private CapsuleerJob Commit(CapsuleerJob job)
     {
         _work = Work with { Navigation = _navigation.Capture() };
-        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
+        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null, _background);
         if (
             _background
             && Work.Defense is null
