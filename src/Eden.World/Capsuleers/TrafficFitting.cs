@@ -21,6 +21,10 @@ namespace Eden.World.Capsuleers;
 
 internal static class TrafficFitting
 {
+    private readonly record struct MagazineBatch(int TypeId, int PartialSlot);
+
+    private sealed record Magazine(OwnedItem Module, TrafficEquipment Charge);
+
     internal static void CheckTypes(CatalogDbContext catalog, TrafficProfile profile)
     {
         var hull = catalog.FittingType(profile.HullTypeId);
@@ -95,11 +99,12 @@ internal static class TrafficFitting
             .ThenBy(item => item.Flag)
             .ToArray();
         Dictionary<long, int> placements = [];
+        long nextItem = InventoryPersistence.NextId(world);
         foreach (var module in modules)
         {
             var item = new OwnedItem
             {
-                Id = InventoryPersistence.NextId(world),
+                Id = nextItem++,
                 OwnerId = pilot,
                 TypeId = module.TypeId,
                 LocationId = hull.StationId,
@@ -120,32 +125,71 @@ internal static class TrafficFitting
                 hull.StationId,
                 (int)InventoryFlag.AutoFit,
                 now,
-                placements
+                placements,
+                completeOnline: true
             );
-            PilotFittingStore.OnlineCompleteFit(world, catalog, pilot, ship, now);
         }
         var fitted = world.Set<OwnedItem>().Where(item => item.LocationId == ship).OrderBy(item => item.FlagId).ToArray();
-        foreach (
-            var charge in profile.Equipment.Where(item => catalog.RequireItem(item.TypeId).CategoryId == (int)InventoryCategory.Charge)
-        )
-        {
-            var module =
+        var magazines = profile
+            .Equipment.Where(item => catalog.RequireItem(item.TypeId).CategoryId == (int)InventoryCategory.Charge)
+            .Select(charge => new Magazine(
                 fitted.SingleOrDefault(item => item.FlagId == charge.Flag)
-                ?? throw new InvalidDataException("Loaded charge has no fitted module.");
+                    ?? throw new InvalidDataException("Loaded charge has no fitted module."),
+                charge
+            ))
+            .GroupBy(magazine =>
+            {
+                var type = catalog.RequireItem(magazine.Charge.TypeId);
+                double volume = PilotInventoryStore.Volume(catalog, type.Id);
+                int full = checked(
+                    (int)
+                        Math.Floor(
+                            (catalog.RequireItem(magazine.Module.TypeId).Capacity ?? 0) / volume + InventoryDefinitions.ResourceTolerance
+                        )
+                );
+                if (AmmunitionDefinitions.IsCrystalGroup(type.GroupId) || SupportModuleDefinitions.IsScript(type.GroupId))
+                {
+                    full = Math.Min(full, 1);
+                }
+                // Full magazines can share one load. Partial magazines retain their exact per-slot quantities.
+                return new MagazineBatch(type.Id, magazine.Charge.Quantity == full ? 0 : magazine.Charge.Flag);
+            });
+        foreach (var batch in magazines)
+        {
+            var targets = batch.ToArray();
             var item = new OwnedItem
             {
                 Id = InventoryPersistence.NextId(world),
                 OwnerId = pilot,
-                TypeId = charge.TypeId,
+                TypeId = batch.Key.TypeId,
                 LocationId = hull.StationId,
                 FlagId = (int)InventoryFlag.Hangar,
-                Quantity = charge.Quantity,
+                Quantity = targets.Sum(target => target.Charge.Quantity),
             };
             world.Add(item);
             world.SaveChanges();
-            PilotAmmunitionStore.Load(world, catalog, pilot, ship, [module.Id], [item.Id], hull.StationId, now);
-            var loaded = world.Set<OwnedItem>().SingleOrDefault(value => value.LocationId == module.Id);
-            if (loaded?.TypeId != charge.TypeId || loaded.Quantity != charge.Quantity)
+            PilotAmmunitionStore.Load(
+                world,
+                catalog,
+                pilot,
+                ship,
+                targets.Select(target => target.Module.Id).ToArray(),
+                [item.Id],
+                hull.StationId,
+                now
+            );
+            var moduleIds = targets.Select(target => target.Module.Id).ToArray();
+            var loaded = world
+                .Set<OwnedItem>()
+                .Where(value => moduleIds.Contains(value.LocationId))
+                .ToDictionary(value => value.LocationId);
+            if (
+                targets.Any(target =>
+                    !loaded.TryGetValue(target.Module.Id, out var charge)
+                    || charge.TypeId != target.Charge.TypeId
+                    || charge.Quantity != target.Charge.Quantity
+                )
+            )
             {
                 throw new InvalidDataException("Recorded ammunition exceeds the legal magazine capacity.");
             }

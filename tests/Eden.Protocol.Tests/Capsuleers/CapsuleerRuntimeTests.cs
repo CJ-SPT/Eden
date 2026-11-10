@@ -45,9 +45,14 @@ public sealed class CapsuleerRuntimeTests
         WorldInitialization.Initialize(f.Database, f.Clock);
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var restored = reopened.GetRequiredService<ICapsuleerScheduler>();
-        Assert.Equal(committed, restored.Jobs().OrderBy(j => j.PilotId));
+        Assert.Empty(restored.Jobs());
+        using (WorldDbContext saved = new(f.Database.Path))
+        {
+            Assert.Equal(committed, CapsuleerPopulationStore.Jobs(saved).OrderBy(job => job.PilotId));
+        }
         Assert.Equal(0, restored.Run(100).Turn.Completed);
         using var human = reopened.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        Assert.Equal(committed, restored.Jobs().OrderBy(job => job.PilotId));
         Assert.Equal(0, restored.Run(100).Turn.Completed);
     }
 
@@ -58,8 +63,8 @@ public sealed class CapsuleerRuntimeTests
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         long miner = host.GetRequiredService<ICapsuleerCommunity>().Pilots().Single(p => p.Career == CapsuleerCareer.Mining).PilotId;
-        var expected = scheduler.Jobs().Single(j => j.PilotId == miner);
         using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        var expected = scheduler.Jobs().Single(j => j.PilotId == miner);
         using (WorldDbContext world = new(f.Database.Path))
         {
             RejectJob(world, miner);

@@ -24,9 +24,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Capsuleers;
 
 [Injectable]
-internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeProvider clock) : ICapsuleerProvisioning
+internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeProvider clock) : ICapsuleerProvisioning, IDisposable
 {
     private TrafficProvisioning.Reservations? _startupReservations;
+    private CapsuleerShipBlueprints? _startupBlueprints;
+    private bool _requirePreparedBlueprints;
 
     public CapsuleerProvisioningTurn Reconcile(
         int maximumCommunities = int.MaxValue,
@@ -42,6 +44,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         }
         lock (database.MotionLock)
         {
+            // Pin one catalog generation and reuse its read connection throughout offline preparation.
+            using var catalogScope = new CatalogReadScope().Begin();
             using CatalogDbContext catalog = new(database.CatalogPath);
             using WorldDbContext world = new(database.Path);
             world.Database.OpenConnection();
@@ -98,6 +102,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             finally
             {
                 _startupReservations = null;
+                _startupBlueprints?.Dispose();
+                _startupBlueprints = null;
             }
             return new(catalog.Definitions.Systems.Count, created, systems.Length - processed + deferred);
         }
@@ -402,8 +408,12 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         world.Database.ExecuteSql(
             $"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({ship},{pilot},{hull},{station},{name})"
         );
-        StartingSkills.Grant(world, catalog, pilot, origin.RaceId);
-        CapsuleerCommunityStore.GrantRequirements(world, catalog, pilot, hull, []);
+        bool blueprint = career == CapsuleerCareer.Hauling && _startupReservations is not null;
+        if (!blueprint)
+        {
+            StartingSkills.Grant(world, catalog, pilot, origin.RaceId);
+            CapsuleerCommunityStore.GrantRequirements(world, catalog, pilot, hull, []);
+        }
         long module = 0;
         long cents = career == CapsuleerCareer.Mining ? CapsuleerCommunityStore.StartingCents : HaulingRules.StartingCents;
         if (career == CapsuleerCareer.Mining)
@@ -451,7 +461,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 }
             );
         }
-        if (career == CapsuleerCareer.Hauling && trafficProfile is null)
+        if (career == CapsuleerCareer.Hauling && trafficProfile is null && !blueprint)
         {
             const int starterOreUnits = 100;
             int ore = CapsuleerProvisioningCatalog.FreightOre(catalog);
@@ -470,9 +480,27 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         world.Add(new SavedHomeStation { PilotId = pilot, StationId = station });
         world.Add(new PilotWallet { PilotId = pilot, Cents = cents });
         world.SaveChanges();
+        if (blueprint)
+        {
+            (_startupBlueprints ??= new(catalog)).Create(
+                world,
+                catalog,
+                origin.RaceId,
+                hull,
+                trafficProfile,
+                pilot,
+                ship,
+                station,
+                now,
+                requirePrepared: _requirePreparedBlueprints
+            );
+        }
         if (trafficProfile is not null)
         {
-            TrafficFitting.Apply(world, catalog, pilot, ship, trafficProfile, now);
+            if (!blueprint)
+            {
+                TrafficFitting.Apply(world, catalog, pilot, ship, trafficProfile, now);
+            }
             TrafficProvisioning.Record(database, world, pilot, trafficProfile);
         }
         if (career == CapsuleerCareer.Mining)
@@ -481,7 +509,10 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             PilotFittingStore.SetOnline(world, catalog, pilot, ship, module, true, now);
         }
         CapsuleerPopulationStore.AddAgent(world, new(pilot, site.SystemId, career, ship, module, cents, slot));
-        CapsuleerSupplyStore.Ensure(world, catalog, pilot, ship);
+        if (!blueprint)
+        {
+            CapsuleerSupplyStore.Ensure(world, catalog, pilot, ship);
+        }
         long elapsed =
             LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ElapsedTicks ?? world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
         var action = CapsuleerAction.Prepare;
@@ -586,4 +617,6 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         }
         return pilot;
     }
+
+    public void Dispose() => _startupBlueprints?.Dispose();
 }

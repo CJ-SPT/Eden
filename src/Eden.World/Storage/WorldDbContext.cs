@@ -542,6 +542,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<OwnedItem>().Property(i => i.Online).HasDefaultValue(false);
         model.Entity<OwnedItem>().HasOne<InventoryOwner>().WithMany().HasForeignKey(i => i.OwnerId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<OwnedItem>().HasIndex(i => new { i.OwnerId, i.LocationId });
+        model.Entity<OwnedItem>().HasIndex(i => i.LocationId);
         model.Entity<Account>().ToTable("WorldAccount");
         model.Entity<Account>().Property(a => a.CloneGrade).HasDefaultValue(AccountCloneGrade.Alpha);
         model.Entity<Pilot>().ToTable("WorldPilot");

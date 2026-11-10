@@ -40,35 +40,59 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         TrafficSecurityBand band,
         Func<TrafficProfile, bool>? compatible = null,
         Func<TrafficProfile, int>? hullGroup = null
-    )
-    {
-        HashSet<long> seen = [];
-        foreach (var values in new[] { _regions.GetValueOrDefault((region, band), []), _bands.GetValueOrDefault(band, []), _global })
-        {
-            var pool = Latest(compatible is null ? values : values.Where(compatible));
-            if (hullGroup is not null)
-            {
-                // Choose a hull group before a character; killmail volume must not weight ship classes.
-                var groups = pool.GroupBy(hullGroup).OrderBy(group => group.Key).ToArray();
-                int groupStart = TrafficRules.Start(seed, system, slot, groups.Length);
-                pool = Enumerable
-                    .Range(0, groups.Length)
-                    .SelectMany(index =>
-                    {
-                        var group = groups[(groupStart + index) % groups.Length];
-                        var members = group.ToArray();
-                        int memberStart = TrafficRules.Start(seed ^ group.Key, system, slot, members.Length);
-                        return Enumerable.Range(0, members.Length).Select(member => members[(memberStart + member) % members.Length]);
-                    })
-                    .ToArray();
-            }
-            int start = hullGroup is null ? TrafficRules.Start(seed, system, slot, pool.Length) : 0;
-            for (int index = 0; index < pool.Length; index++)
-            {
-                var profile = pool[(start + index) % pool.Length];
-                if (seen.Add(profile.CharacterId))
+    ) => PrepareCandidates(region, band, compatible, hullGroup).Candidates(seed, system, slot);
+
+    internal TrafficCandidatePools PrepareCandidates(
+        int region,
+        TrafficSecurityBand band,
+        Func<TrafficProfile, bool>? compatible,
+        Func<TrafficProfile, int>? hullGroup
+    ) =>
+        new(
+            new[] { _regions.GetValueOrDefault((region, band), []), _bands.GetValueOrDefault(band, []), _global }
+                .Select(values => new Lazy<TrafficCandidateTier>(() =>
                 {
-                    yield return profile;
+                    var pool = Latest(compatible is null ? values : values.Where(compatible));
+                    return hullGroup is null
+                        ? new TrafficCandidateTier(false, [new(0, pool)])
+                        : new TrafficCandidateTier(
+                            true,
+                            pool.GroupBy(hullGroup)
+                                .OrderBy(group => group.Key)
+                                .Select(group => new TrafficCandidateGroup(group.Key, group.ToArray()))
+                                .ToArray()
+                        );
+                }))
+                .ToArray()
+        );
+
+    internal sealed record TrafficCandidateGroup(int Key, TrafficProfile[] Members);
+
+    internal sealed record TrafficCandidateTier(bool Grouped, TrafficCandidateGroup[] Groups);
+
+    internal sealed record TrafficCandidatePools(Lazy<TrafficCandidateTier>[] Tiers)
+    {
+        internal IEnumerable<TrafficProfile> Candidates(long seed, int system, int slot)
+        {
+            HashSet<long> seen = [];
+            foreach (var prepared in Tiers)
+            {
+                var tier = prepared.Value;
+                var groups = tier.Groups;
+                int groupStart = TrafficRules.Start(seed, system, slot, groups.Length);
+                for (int index = 0; index < groups.Length; index++)
+                {
+                    var group = groups[(groupStart + index) % groups.Length];
+                    var members = group.Members;
+                    int start = TrafficRules.Start(tier.Grouped ? seed ^ group.Key : seed, system, slot, members.Length);
+                    for (int member = 0; member < members.Length; member++)
+                    {
+                        var profile = members[(start + member) % members.Length];
+                        if (seen.Add(profile.CharacterId))
+                        {
+                            yield return profile;
+                        }
+                    }
                 }
             }
         }

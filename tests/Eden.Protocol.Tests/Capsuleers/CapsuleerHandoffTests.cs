@@ -42,12 +42,15 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         using var first = presence.Select(Human, Remote);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var before = scheduler.Jobs().ToArray();
+        using WorldDbContext dormant = new(f.Database.Path);
+        var savedBefore = CapsuleerPopulationStore.Jobs(dormant);
         f.Clock.Seconds = 128;
         int calls = 0;
         await host.GetRequiredService<ICapsuleerHandoff>().SynchronizeAsync(Remote, () => calls++);
         Assert.Equal(1, calls);
         Assert.Equal(before, scheduler.Jobs());
-        Assert.Contains(before, j => j.DueTicks < presence.Read().ElapsedTicks);
+        Assert.Contains(savedBefore, j => j.DueTicks < presence.Read().ElapsedTicks);
+        Assert.Equal(savedBefore, CapsuleerPopulationStore.Jobs(dormant));
         Assert.Empty(host.GetRequiredService<LiveWorld>().MinerCheckpoints);
         Assert.Empty(host.GetRequiredService<LiveWorld>().HaulerCheckpoints);
     }
@@ -57,6 +60,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(Source);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var original = scheduler.Jobs().First();
         var live = host.GetRequiredService<LiveWorld>();
@@ -158,6 +162,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         CapsuleerJob[] jobs;
         using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
         {
+            host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(Source);
             using var human = host.GetRequiredService<IHumanPresence>().Select(Human, Remote);
             paid = UntilMiner(host, f.Clock, m => m.Work.Activity == MinerActivity.Mining);
             jobs = host.GetRequiredService<ICapsuleerScheduler>().Jobs().ToArray();
@@ -168,8 +173,13 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var scheduler = reopened.GetRequiredService<ICapsuleerScheduler>();
         Assert.All(reopened.GetRequiredService<ICapsuleerHandoff>().Systems(), s => Assert.Equal(SystemSimulationMode.Background, s.Mode));
-        Assert.Equal(jobs, scheduler.Jobs());
-        Assert.Equal(paid.Work, scheduler.Miner(paid.Pilot.PilotId)!.Work);
+        Assert.Empty(scheduler.Jobs());
+        using (WorldDbContext saved = new(f.Database.Path))
+        {
+            Assert.Equal(jobs.OrderBy(job => job.PilotId), CapsuleerPopulationStore.Jobs(saved).OrderBy(job => job.PilotId));
+            var miner = saved.Set<Eden.Data.World.Capsuleers.SavedCapsuleerCommunity>().Single(row => row.PilotId == paid.Pilot.PilotId);
+            Assert.Equal(paid.Work, MinerCheckpoint.Read(miner.Progress));
+        }
         Assert.Equal(0, reopened.GetRequiredService<CapsuleerScene>().MaterializedPilots);
         using var selected = reopened.GetRequiredService<IHumanPresence>().Select(Human, Source);
         reopened.GetRequiredService<ICapsuleerPresentation>().Refresh();

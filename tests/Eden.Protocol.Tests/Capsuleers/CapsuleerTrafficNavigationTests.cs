@@ -232,6 +232,7 @@ public sealed class CapsuleerTrafficNavigationTests
         }
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
+        host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(Source);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
         List<int> visited = [Source];
         bool dockedAtRemote = false;

@@ -313,6 +313,7 @@ public sealed class CapsuleerGlobalPopulationTests
         Restart(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0));
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, 30000144);
+        while (!host.GetRequiredService<ICapsuleerBackgroundPreparation>().PrepareNext().Complete) { }
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         var before = scheduler.Jobs().ToDictionary(job => job.PilotId);
         Assert.NotEmpty(before);

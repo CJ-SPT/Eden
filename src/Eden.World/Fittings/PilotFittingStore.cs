@@ -161,7 +161,8 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         long sourceId,
         int flagId,
         long now,
-        IReadOnlyDictionary<long, int>? placements = null
+        IReadOnlyDictionary<long, int>? placements = null,
+        bool completeOnline = false
     )
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
@@ -210,6 +211,10 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
             )
             .ToArray();
         var occupied = rack.Select(i => i.FlagId).ToHashSet();
+        if (completeOnline && (placements is null || rack.Length != 0))
+        {
+            throw new InvalidDataException("Complete fitting initialization requires an empty hull and explicit module placements.");
+        }
         double calibrationUsed = rack.Where(i => InventoryDefinitions.IsRigSlot(i.FlagId))
             .Sum(i => Attributes(catalog, i.TypeId).GetValueOrDefault(DogmaAttributeId.CalibrationCost));
         var equipment = rack.Select(i =>
@@ -354,6 +359,11 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
                 : TaskEvents.FittedLow;
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, rackEvent);
         }
+        if (completeOnline)
+        {
+            OnlineCompleteFit(world, catalog, pilotId, ship.Id, now, checkpoint);
+            return result;
+        }
         var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
         return result.Concat(cascaded).ToArray();
 
@@ -476,7 +486,14 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
 
     // Traffic reconstructs a complete saved fit atomically. Validate its final
     // online graph together so resource providers need no artificial fit order.
-    internal static void OnlineCompleteFit(WorldDbContext world, CatalogDbContext catalog, long pilotId, long shipId, long now)
+    private static void OnlineCompleteFit(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long now,
+        FittingCheckpoint before
+    )
     {
         var pilot = world
             .Pilots.Include(value => value.ActiveShip)
@@ -486,7 +503,6 @@ internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clo
         {
             throw new InvalidDataException("Bring a complete fit online only on a docked active ship.");
         }
-        var before = FittingChanges.Capture(world, catalog, pilot, now);
         var modules = world
             .Set<OwnedItem>()
             .Where(item =>

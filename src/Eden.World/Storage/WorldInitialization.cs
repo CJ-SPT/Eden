@@ -161,9 +161,11 @@ public static class WorldInitialization
         WorldDatabase database,
         TimeProvider? clock = null,
         CancellationToken cancellationToken = default,
-        Action<Eden.Gameplay.Capsuleers.CapsuleerPreparationProgress>? progress = null
+        Action<Eden.Gameplay.Capsuleers.CapsuleerPreparationProgress>? progress = null,
+        int maximumCommunities = int.MaxValue
     ) =>
         new Eden.World.Capsuleers.CapsuleerProvisioner(database, clock ?? TimeProvider.System).Reconcile(
+            maximumCommunities: maximumCommunities,
             cancellationToken: cancellationToken,
             progress: progress
         );

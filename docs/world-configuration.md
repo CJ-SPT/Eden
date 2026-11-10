@@ -280,12 +280,14 @@ In **World & economy → Simulated pilots**, configure the saved world's populat
 All edits use the ordinary pending revision, comparison, history, export/import and restart workflow. Lower limits hide excess
 pilots from space, Local, station guests and directional scans and exclude them from scheduled work. No pilot, ship, cargo,
 equipment, wallet, loss, grant record or saved activity is deleted. Raising a limit reactivates the eligible saved roster slots
-before any missing station-traffic/miner slots are provisioned globally at restart. New gate visitors are prepared on gate watches. A lost ship remains lost.
+before missing station-traffic/miner slots are prepared in entered regions. New gate visitors are prepared on gate watches. A lost ship remains lost.
 Activity deadlines shift by the paused interval; suspended pilots earn no catch-up actions, items or rewards.
 Repeated restarts preserve the original pause and never replay a supply or wallet grant.
-The normal server startup completes galaxy-wide station-traffic/miner preparation before accepting logins. Visiting a system
-is not required to apply the multiplier. Completed catalog/settings/snapshot fingerprints are reused; interrupted startup
-retries missing communities without replacing completed pilots. Unsupported or temporarily depleted communities are recorded
+Normal startup retains saved pilots without loading NPC jobs throughout the galaxy. A region activates when a player enters it,
+starting with the entered system and preparing its remaining systems in background batches. Other regions stay dormant until entered.
+Saved identities and possessions are reused, and dormant time produces no catch-up rewards. Completed catalog/settings/snapshot
+fingerprints are reused; interrupted preparation retries missing communities
+without replacing completed pilots. Unsupported or temporarily depleted communities are recorded
 as deferred rather than receiving invented fits or replacement supplies. Offline configuration export/import and account
 administration commands do not populate the galaxy.
 

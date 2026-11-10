@@ -4,6 +4,12 @@
 
 [Documentation index](README.md)
 
+[World-loading and ammunition lookup hotspots](protocol/performance.md#world-loading-and-ammunition-lookup-hotspots-november-10-2026)
+records the missing container index and repeated world/fitting lookup corrections.
+
+[Batched population startup](protocol/capsuleers.md#batched-population-startup--november-10-2026)
+records in-memory ship preparation, bulk grants and matched 2× startup measurements.
+
 [Simulated-pilot target lock retention](protocol/capsuleers.md#simulated-pilot-target-lock-retention-november-9-2026)
 fixes completed locks disappearing during peaceful defense updates while retaining normal warp lock loss.
 

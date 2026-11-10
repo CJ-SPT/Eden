@@ -239,7 +239,8 @@ internal sealed class LiveWorld : IDisposable
         }
     }
 
-    internal static LiveWorld? Find(string path) => s_worlds.GetValueOrDefault(Path.GetFullPath(path));
+    internal static LiveWorld? Find(string path) =>
+        s_worlds.TryGetValue(path, out var world) ? world : s_worlds.GetValueOrDefault(Path.GetFullPath(path));
 
     internal IDisposable Enter([CallerMemberName] string operation = "")
     {

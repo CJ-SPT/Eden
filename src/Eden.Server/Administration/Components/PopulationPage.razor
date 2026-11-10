@@ -7,7 +7,8 @@
 <PageTitle>Population · Eden</PageTitle>
 <h1>Autonomous population</h1>
 <button class="secondary" @onclick="Load">Refresh population</button>
-<p class="muted">Station traffic and miners are prepared globally on restart, before logins. Gate visitors are prepared when gates are watched.
+<p class="muted">NPC regions activate when entered, starting with your current system. The remaining systems in that region
+    prepare in the background. Untouched regions stay dormant. Gate visitors are prepared when gates are watched.
     Excess pilots are paused and retained for reuse, including their ships, possessions and progress.</p>
 @if (Error is not null)
 {
@@ -36,7 +37,8 @@
         <p class="muted">Enabled pilots may travel outside watched systems. Scheduled pilots currently have simulation work enrolled.
             Pilots in watched systems include docked guests. Saved totals include paused pilots.</p>
         <p class="muted">@snapshot.Population.RegisteredSystems saved system records are retained, including earlier settings.
-            Preparation and eligibility refresh globally on restart. Deferred systems retry on a visit or the next restart.</p>
+            Saved prepared totals can include dormant regions. Preparation refreshes in entered regions;
+            deferred systems retry on a visit or after re-entry following restart.</p>
     </section>
     <section class="card">
         <h2>Waiting pilots</h2>

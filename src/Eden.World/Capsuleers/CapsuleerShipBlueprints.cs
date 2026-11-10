@@ -1,0 +1,299 @@
+using System.Collections.Frozen;
+using System.Text.Json;
+using Eden.Data.Catalog.Capsuleers;
+using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
+using Eden.Data.World.Fittings;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Skills;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
+using Eden.World.Catalog;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
+using Eden.World.Skills;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
+
+namespace Eden.World.Capsuleers;
+
+// New pilots use these blueprints. Background validation runs outside the live world owner.
+// Existing pilots never receive copied assets or skills.
+internal sealed class CapsuleerShipBlueprints : IDisposable
+{
+    private const int MaximumBlueprints = 128;
+    private const long TemplatePilot = 90000001;
+    private const long TemplateShip = 140000000001;
+    private const long TemplateTime = TimeSpan.TicksPerDay;
+    private const int ShipContainer = -1;
+    private const int StationContainer = -2;
+    private readonly TrafficValidationImage _image = new();
+    private readonly Dictionary<(int Race, string Fit), Blueprint> _blueprints = [];
+    private readonly int _station;
+
+    private sealed record Skill(int TypeId, long Points);
+
+    private sealed record Item(int TypeId, int FlagId, int Quantity, bool Singleton, bool Online, int Container, double CrystalDamage);
+
+    private sealed record Cooldown(int Item, long Delay, ModuleCooldownKind Kind);
+
+    private sealed record Health(double ShieldCharge, double ArmorDamage, double StructureDamage);
+
+    private sealed record Blueprint(
+        Skill[] Skills,
+        Item[] Items,
+        Cooldown[] Cooldowns,
+        Health? Health,
+        double? Capacitor,
+        FrozenDictionary<DogmaAttributeId, double> Attributes
+    );
+
+    private sealed record InventoryGrant(
+        long Id,
+        long OwnerId,
+        int TypeId,
+        long LocationId,
+        int FlagId,
+        int Quantity,
+        bool Singleton,
+        bool Online,
+        double CrystalDamage
+    );
+
+    internal CapsuleerShipBlueprints(CatalogDbContext catalog)
+    {
+        _station = catalog.Definitions.Stations.Keys.First();
+        using WorldDbContext world = _image.Open();
+        world.Database.EnsureCreated();
+        using var transaction = world.Database.BeginTransaction();
+        world.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys=ON");
+        world.Add(
+            new Account
+            {
+                Id = 1,
+                UserName = "Population blueprint",
+                CloneGrade = AccountCloneGrade.Omega,
+            }
+        );
+        world.Add(new InventoryOwner { Id = TemplatePilot });
+        world.Add(
+            new Ship
+            {
+                Id = TemplateShip,
+                OwnerId = TemplatePilot,
+                StationId = _station,
+                Name = "Population blueprint",
+            }
+        );
+        world.Add(
+            new Pilot
+            {
+                Id = TemplatePilot,
+                AccountId = 1,
+                ActiveShipId = TemplateShip,
+                Name = "Population blueprint",
+            }
+        );
+        world.SaveChanges();
+        transaction.Commit();
+    }
+
+    internal void Create(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        int race,
+        int hull,
+        TrafficProfile? profile,
+        long pilot,
+        long ship,
+        int station,
+        long now,
+        bool requirePrepared = false
+    )
+    {
+        string signature = profile is null ? $"generated:{hull}" : TrafficSnapshot.Signature(profile);
+        if (!_blueprints.TryGetValue((race, signature), out var blueprint))
+        {
+            if (requirePrepared)
+            {
+                throw new CapsuleerBlueprintNotPreparedException();
+            }
+            blueprint = Build(catalog, race, hull, profile);
+            if (_blueprints.Count == MaximumBlueprints)
+            {
+                _blueprints.Clear();
+            }
+            _blueprints.Add((race, signature), blueprint);
+        }
+        long first = InventoryPersistence.NextId(world);
+        var items = blueprint
+            .Items.Select(
+                (item, index) =>
+                    new InventoryGrant(
+                        checked(first + index),
+                        pilot,
+                        item.TypeId,
+                        item.Container == ShipContainer ? ship
+                            : item.Container == StationContainer ? station
+                            : checked(first + item.Container),
+                        item.FlagId,
+                        item.Quantity,
+                        item.Singleton,
+                        item.Online,
+                        item.CrystalDamage
+                    )
+            )
+            .ToArray();
+        string skills = JsonSerializer.Serialize(blueprint.Skills);
+        world.Database.ExecuteSql(
+            $"""
+            INSERT INTO WorldPilotSkill(PilotId,TypeId,Points)
+            SELECT {pilot},json_extract(value,'$.TypeId'),json_extract(value,'$.Points') FROM json_each({skills})
+            """
+        );
+        if (items.Length > 0)
+        {
+            string inventory = JsonSerializer.Serialize(items);
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldItem(Id,OwnerId,TypeId,LocationId,FlagId,Quantity,Singleton,Online,
+                    MaterialEfficiency,TimeEfficiency,BlueprintRuns,CrystalDamage)
+                SELECT json_extract(value,'$.Id'),json_extract(value,'$.OwnerId'),json_extract(value,'$.TypeId'),
+                    json_extract(value,'$.LocationId'),json_extract(value,'$.FlagId'),json_extract(value,'$.Quantity'),
+                    json_extract(value,'$.Singleton'),json_extract(value,'$.Online'),0,0,-1,json_extract(value,'$.CrystalDamage')
+                FROM json_each({inventory})
+                """
+            );
+        }
+        foreach (var cooldown in blueprint.Cooldowns)
+        {
+            world.Add(
+                new ModuleCooldown
+                {
+                    ModuleId = checked(first + cooldown.Item),
+                    Kind = cooldown.Kind,
+                    ReadyAt = checked(now + cooldown.Delay),
+                }
+            );
+        }
+        if (blueprint.Health is { } health)
+        {
+            world.Add(
+                new ShipHealthState
+                {
+                    ShipId = ship,
+                    ShieldCharge = health.ShieldCharge,
+                    ArmorDamage = health.ArmorDamage,
+                    StructureDamage = health.StructureDamage,
+                    UpdatedAt = now,
+                }
+            );
+        }
+        if (blueprint.Capacitor is double energy)
+        {
+            world.Add(
+                new ShipEnergy
+                {
+                    ShipId = ship,
+                    Charge = energy,
+                    UpdatedAt = now,
+                }
+            );
+        }
+        world.Add(new Eden.Data.World.Capsuleers.SavedCapsuleerSupplies { PilotId = pilot, ShipId = ship });
+        world.SaveChanges();
+        // Publish through the normal revision/transaction cache. Navigation need not rebuild the validated new fit.
+        world.StageFit(new(pilot, ship, 0), world.FitRevision(pilot), blueprint.Attributes);
+    }
+
+    internal void Prepare(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile)
+    {
+        string signature = profile is null ? $"generated:{hull}" : TrafficSnapshot.Signature(profile);
+        if (_blueprints.ContainsKey((race, signature)))
+        {
+            return;
+        }
+        var blueprint = Build(catalog, race, hull, profile);
+        if (_blueprints.Count == MaximumBlueprints)
+        {
+            _blueprints.Clear();
+        }
+        _blueprints.Add((race, signature), blueprint);
+    }
+
+    private Blueprint Build(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile)
+    {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.shipBlueprint");
+        using WorldDbContext world = _image.Open();
+        using var transaction = world.Database.BeginTransaction();
+        world.Ships.Single().TypeId = hull;
+        world.Pilots.Single().RaceId = race;
+        world.SaveChanges();
+        StartingSkills.Grant(world, catalog, TemplatePilot, race);
+        CapsuleerCommunityStore.GrantRequirements(world, catalog, TemplatePilot, hull, []);
+        if (profile is not null)
+        {
+            TrafficFitting.Apply(world, catalog, TemplatePilot, TemplateShip, profile, TemplateTime);
+        }
+        else
+        {
+            const int StarterOreUnits = 100;
+            world.Add(
+                new OwnedItem
+                {
+                    Id = InventoryPersistence.NextId(world),
+                    OwnerId = TemplatePilot,
+                    TypeId = CapsuleerProvisioningCatalog.FreightOre(catalog),
+                    LocationId = TemplateShip,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    Quantity = StarterOreUnits,
+                }
+            );
+            world.SaveChanges();
+        }
+        CapsuleerSupplyStore.Ensure(world, catalog, TemplatePilot, TemplateShip);
+        world.SaveChanges();
+        var items = world.Set<OwnedItem>().AsNoTracking().OrderBy(item => item.Id).ToArray();
+        var indices = items.Select((item, index) => (item.Id, Index: index)).ToDictionary(item => item.Id, item => item.Index);
+        var health = world.Set<ShipHealthState>().AsNoTracking().SingleOrDefault();
+        var energy = world.Set<ShipEnergy>().AsNoTracking().SingleOrDefault();
+        var blueprint = new Blueprint(
+            world
+                .Set<PilotSkill>()
+                .AsNoTracking()
+                .OrderBy(skill => skill.TypeId)
+                .Select(skill => new Skill(skill.TypeId, skill.Points))
+                .ToArray(),
+            items
+                .Select(item => new Item(
+                    item.TypeId,
+                    item.FlagId,
+                    item.Quantity,
+                    item.Singleton,
+                    item.Online,
+                    item.LocationId == TemplateShip ? ShipContainer
+                        : item.LocationId == _station ? StationContainer
+                        : indices[item.LocationId],
+                    item.CrystalDamage
+                ))
+                .ToArray(),
+            world
+                .Set<ModuleCooldown>()
+                .AsNoTracking()
+                .AsEnumerable()
+                .Select(cooldown => new Cooldown(indices[cooldown.ModuleId], cooldown.ReadyAt - TemplateTime, cooldown.Kind))
+                .ToArray(),
+            health is null ? null : new(health.ShieldCharge, health.ArmorDamage, health.StructureDamage),
+            energy?.Charge,
+            PilotFittingStore.ShipAttributes(world, catalog, TemplatePilot).ToFrozenDictionary()
+        );
+        // The scratch transaction rolls back every identity and grant. Only immutable blueprint values escape.
+        return blueprint;
+    }
+
+    public void Dispose() => _image.Dispose();
+}
+
+internal sealed class CapsuleerBlueprintNotPreparedException : Exception { }

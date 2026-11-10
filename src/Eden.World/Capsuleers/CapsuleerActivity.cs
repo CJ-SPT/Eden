@@ -55,6 +55,9 @@ internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clo
 internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvider clock, IWorldSynchronization synchronization)
 {
     private readonly CapsuleerActivity _standalone = new(database, clock);
+    private TaskCompletionSource _membershipChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    internal Task MembershipChanged => Volatile.Read(ref _membershipChanged).Task;
 
     // Scheduling reads this under the same owner as the queue and activity clock.
     internal Task Changed => (LiveWorld.Find(database.Path)?.CapsuleerActivity ?? _standalone).Changed;
@@ -81,6 +84,9 @@ internal sealed class CapsuleerActivitySource(WorldDatabase database, TimeProvid
             var activity = live?.CapsuleerActivity ?? _standalone;
             activity.Update(session, systemId, pilotId);
             activity.Wake();
+            var previous = _membershipChanged;
+            _membershipChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            previous.TrySetResult();
             if (live is not null)
             {
                 live.ObjectsChanged();

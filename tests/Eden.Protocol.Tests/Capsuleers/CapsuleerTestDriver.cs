@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Eden.Gameplay.Capsuleers;
+using Eden.World.Capsuleers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Capsuleers;
@@ -8,6 +9,7 @@ namespace Eden.Protocol.Tests.Capsuleers;
 // never invoke a private role state machine or bypass due/revision checks.
 internal sealed class CapsuleerTestDriver
 {
+    private const int FixtureSystem = 30000141;
     private static readonly ConditionalWeakTable<ServiceProvider, CapsuleerTestDriver> Drivers = new();
     private readonly ServiceProvider _host;
     private readonly Guid _observer = Guid.NewGuid();
@@ -23,9 +25,11 @@ internal sealed class CapsuleerTestDriver
         _scheduler = host.GetRequiredService<ICapsuleerScheduler>();
         _presence = host.GetRequiredService<IHumanPresence>();
         _pilots = host.GetRequiredService<ICapsuleerCommunity>().Pilots();
+        // A role fixture explicitly activates its home before driving jobs; production restores only entered regions.
+        host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(FixtureSystem);
         if (!_presence.Read().Active)
         {
-            _presence.Update(Guid.NewGuid(), 30000141);
+            _presence.Update(Guid.NewGuid(), FixtureSystem);
         }
     }
 

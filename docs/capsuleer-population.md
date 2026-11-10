@@ -16,16 +16,24 @@ the main population switch pauses both, including miners. Reciprocal gate observ
 Suspended jobs retain their remaining timing and cannot produce offline rewards or duplicate starter grants.
 See [configuration details](world-configuration.md#autonomous-population).
 
-The station-traffic multiplier applies globally on normal server restart, including systems nobody has visited. It scales
+The station-traffic multiplier applies when a region is entered after restart. It scales
 each system's geography-based traffic roster; miners use their separate enable switch and remain limited to one per eligible
-system. New gate visitors are prepared when a gate is watched. Startup reuses saved slots first, fills only missing slots and
-skips unchanged completed rosters. A failed community expansion rolls back that community; completed communities survive and
-are reused on the next attempt. Initial expansion can take longer than an unchanged restart.
+system. New gate visitors are prepared when a gate is watched. Startup reuses saved slots and opens logins without waiting for
+expansion. The entered system activates first, followed by its region in background batches. Untouched regions stay dormant.
+Saved NPCs in dormant regions are retained without loading their simulation jobs. Unchanged completed rosters are reused.
+A failed community expansion rolls back that community while others continue. Completed communities survive and are reused on restart.
+
+New traffic ships are prepared in a separate memory workspace and written in bounded community batches.
+Matching ship setups reuse validated blueprints. Background hauler validation releases the live world owner;
+each committed community registers its new jobs with the running scheduler.
+See the [startup performance record](protocol/capsuleers.md#batched-population-startup--november-10-2026)
+for measurements and automated persistence checks. A running server must be rebuilt and restarted to use these changes.
 
 
 The **Population** page shows the active settings and separates saved, enabled, paused, scheduled and watched-system pilots.
-Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Startup prepares all catalog systems
-against the active settings and traffic snapshot before admitting logins. Deferred systems retain a pending-preparation label
+Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Preparation runs only for regions
+entered in this server session, using the active settings and traffic snapshot. Prepared totals can include dormant saved regions.
+Deferred systems retain a pending-preparation label
 and retry on a visit or another restart. Use **Refresh population** while pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 

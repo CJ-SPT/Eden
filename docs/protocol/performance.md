@@ -6,6 +6,45 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## World-loading and ammunition lookup hotspots, November 10, 2026
+
+The reported Rider DPA screenshot identified `PilotAmmunitionStore.Contents` taking 53 seconds in the captured run.
+The installed save had 232,512 inventory rows when first inspected and only the `(OwnerId,LocationId)` index.
+`Contents` queries by `LocationId` alone, so `EXPLAIN QUERY PLAN` confirmed `SCAN WorldItem`. Every loaded-magazine
+read could traverse the entire inventory during fitting, supply creation and combat-ship hydration.
+
+Schema 135 adds the nonunique `IX_WorldItem_LocationId` index to new worlds and upgrades existing worlds.
+Migration establishes it before saved-world validation and restores it after historical table upgrades.
+The owner/location index remains available for personal inventory queries. The lookup and its duplicate detection,
+ownership checks, ammunition quantities and cooldowns retain their existing behavior. No running save was modified.
+
+A fresh read-only backup of the running save contained **250,835 rows**. In a disposable memory image, 200 identical
+magazine queries returned identical data in **1,359.69 ms before** and **0.58 ms after** adding the index.
+The plan changed to `SEARCH WorldItem USING INDEX IX_WorldItem_LocationId (LocationId=?)`.
+These are SQL-only timings in one copied-image sample, not a whole-server speedup or a repeat of the 53-second capture.
+The raw local summary is `artifacts/population-startup/ammo-index-measurement.json`.
+
+Other reported hotspots were fitting application, cold combat-ship hydration, skill levels, ship attributes and
+`LiveWorld.Find`. Registered canonical world paths now use the dictionary directly, preserving normalized alias
+fallback; 10,000 warmed direct lookups allocate no path strings. New-ship blueprints retain validated final attributes
+and stage them through the existing revision-checked, transaction-published fitting cache. Initial navigation can reuse
+those values without recalculating the new fit. Cold combat hydration still constructs its weapon profile when needed;
+its magazine lookups now use the container index.
+
+The [background population record](capsuleers.md#batched-population-startup--november-10-2026) describes the associated
+login-readiness, memory preparation and batch changes. Flight simulation and wire representations are unchanged.
+
+**Automated validation.** Focused tests cover fresh and schema-134-upgraded worlds with 25,000 unrelated inventory items,
+the actual query plan, preserved magazine ownership/type/quantity, repeated reads, reopened persistence, canonical and
+aliased world lookup, and the zero-allocation direct lookup. Blueprint/background tests cover cached attributes, exact
+grants, rollback, cancellation, scheduler registration and resumed preparation. Final check results are recorded with
+the population milestone.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Restart a rebuilt server to apply the index, then capture the same ammunition/loading
+workload in Rider and compare the reported hotspots. No running server was restarted by the agent.
+
 ## Spatial NPC scenes, November 9, 2026
 
 `INpcEncounters.ReadScene` returns nearby native contacts and an immutable set of every warping NPC in the system.

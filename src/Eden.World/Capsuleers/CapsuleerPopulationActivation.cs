@@ -11,6 +11,7 @@ internal static class CapsuleerPopulationActivation
     // Restart-only configuration: reconcile before admitting observers or starting any jobs.
     internal static void Apply(WorldDatabase database, TimeProvider clock)
     {
+        using var catalogScope = new CatalogReadScope().Begin();
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         using var transaction = world.Database.BeginTransaction();
@@ -21,7 +22,8 @@ internal static class CapsuleerPopulationActivation
         var suspended = world.Set<SavedCapsuleerSuspension>().ToDictionary(s => s.PilotId);
         foreach (var community in world.Set<SavedCapsuleerAgent>().AsNoTracking().ToArray().GroupBy(a => a.CommunitySystemId))
         {
-            var traffic = CapsuleerTrafficRoutes.Read(catalog, community.Key);
+            // Restoring saved policy limits needs local counts, not a route search for every dormant community.
+            var traffic = CapsuleerTrafficRoutes.Geography(catalog, community.Key);
             int count = CapsuleerEncounterRules.Haulers(seed, community.Key, traffic.GateCount, traffic.StationCount, policy);
             foreach (var agent in community)
             {

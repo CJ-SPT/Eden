@@ -40,6 +40,17 @@ public sealed record CapsuleerProvisioningTurn(int RegisteredSystems, int Create
 // Completed counts include cached systems and systems examined but deferred this run.
 public sealed record CapsuleerPreparationProgress(int CompletedSystems, int TotalSystems, int DeferredSystems);
 
+public sealed record CapsuleerBackgroundTurn(CapsuleerPreparationProgress Progress, int? SystemId, bool Complete)
+{
+    public string? Failure { get; init; }
+}
+
+public interface ICapsuleerBackgroundPreparation
+{
+    Task Changed { get; }
+    CapsuleerBackgroundTurn PrepareNext(CancellationToken cancellationToken = default);
+}
+
 public sealed record CapsuleerPopulationSummary(int RegisteredSystems, int EligibleSystems, int Communities, int Agents, long WorldSeed)
 {
     public int PausedAgents { get; init; }

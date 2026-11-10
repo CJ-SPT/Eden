@@ -8,6 +8,8 @@ internal sealed record CapsuleerTrafficRoute(int SourceStationId, int Destinatio
 
 internal sealed record CapsuleerTrafficPlan(int GateCount, int StationCount, CapsuleerTrafficRoute[] Routes);
 
+internal sealed record CapsuleerTrafficGeography(int GateCount, int StationCount);
+
 internal static partial class CapsuleerTrafficRoutes
 {
     private const int MaximumRoutes = 8;
@@ -35,6 +37,12 @@ internal static partial class CapsuleerTrafficRoutes
     private sealed record StationPath(int StationId, int[] Systems);
 
     internal static CapsuleerTrafficPlan Read(CatalogDbContext catalog, int systemId) => catalog.Definition(s_plans, systemId);
+
+    internal static CapsuleerTrafficGeography Geography(CatalogDbContext catalog, int systemId)
+    {
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
+        return new(graph.Links.GetValueOrDefault(systemId)?.Length ?? 0, graph.Stations.GetValueOrDefault(systemId)?.Length ?? 0);
+    }
 
     internal static void Prepare(CatalogDbContext catalog)
     {

@@ -140,6 +140,8 @@ internal sealed partial class CapsuleerScheduler(
     private HashSet<long> _suspended = [];
     private bool _loaded;
     private long _populationRevision;
+    private readonly HashSet<int> _loadedSystems = [];
+    private readonly HashSet<long> _loadedPilots = [];
     private LiveWorld? Live => LiveWorld.Find(database.Path);
     private Dictionary<long, CapsuleerJob> Current => Live?.CapsuleerJobs ?? _jobs;
 
@@ -151,6 +153,15 @@ internal sealed partial class CapsuleerScheduler(
         Load();
     }
 
+    internal void PopulationPrepared(int system)
+    {
+        using var owner = synchronization.Enter("population scheduler registration");
+        lock (synchronization.Gate)
+        {
+            Load(system);
+        }
+    }
+
     private void Load(int? preparedSystem = null, long? preparedPilot = null)
     {
         if (preparedSystem is null && preparedPilot is null && _loaded && _populationRevision == (Live?.CapsuleerRevision ?? 0))
@@ -158,8 +169,23 @@ internal sealed partial class CapsuleerScheduler(
             return;
         }
         using WorldDbContext world = new(database.Path);
+        bool regional = Live is not null;
         bool incremental = _loaded && (preparedSystem is not null || preparedPilot is not null);
+        if (preparedSystem is int selectedSystem)
+        {
+            _loadedSystems.Add(selectedSystem);
+        }
+        if (preparedPilot is long selectedPilot)
+        {
+            _loadedPilots.Add(selectedPilot);
+        }
         var agentQuery = world.Set<SavedCapsuleerAgent>().AsNoTracking();
+        if (regional)
+        {
+            agentQuery = agentQuery.Where(agent =>
+                _loadedSystems.Contains(agent.CommunitySystemId) || _loadedPilots.Contains(agent.PilotId)
+            );
+        }
         if (incremental)
         {
             agentQuery = preparedPilot is { } pilotId
@@ -172,15 +198,19 @@ internal sealed partial class CapsuleerScheduler(
         }
         var agents = agentQuery.OrderBy(a => a.PilotId).ToArray();
         var pilotIds = agents.Select(a => a.PilotId).ToArray();
-        var jobs = incremental
-            ? world
-                .Set<SavedCapsuleerJob>()
-                .Where(j => pilotIds.Contains(j.PilotId))
-                .Select(j => new CapsuleerJob(j.PilotId, j.Revision, j.Sequence, j.DueTicks, j.Action))
-                .ToArray()
-            : CapsuleerPopulationStore.Jobs(world);
+        var jobs =
+            incremental || regional
+                ? world
+                    .Set<SavedCapsuleerJob>()
+                    .Where(j => pilotIds.Contains(j.PilotId))
+                    .Select(j => new CapsuleerJob(j.PilotId, j.Revision, j.Sequence, j.DueTicks, j.Action))
+                    .ToArray()
+                : CapsuleerPopulationStore.Jobs(world);
         foreach (
-            int system in world.Set<SavedCapsuleerSystem>().Where(s => !incremental || s.SystemId == preparedSystem).Select(s => s.SystemId)
+            int system in world
+                .Set<SavedCapsuleerSystem>()
+                .Where(s => (!regional || _loadedSystems.Contains(s.SystemId)) && (!incremental || s.SystemId == preparedSystem))
+                .Select(s => s.SystemId)
         )
         {
             _systems.Register(system);
@@ -202,13 +232,39 @@ internal sealed partial class CapsuleerScheduler(
             .Select(a => a.PilotId)
             .ToHashSet();
         foreach (
-            var route in world.Set<SavedCapsuleerHauler>().AsNoTracking().Where(r => !incremental || pilotIds.Contains(r.PilotId)).ToArray()
+            var route in world
+                .Set<SavedCapsuleerHauler>()
+                .AsNoTracking()
+                .Where(r => (!incremental && !regional) || pilotIds.Contains(r.PilotId))
+                .ToArray()
         )
         {
             var progress = Live?.HaulerCheckpoints.GetValueOrDefault(route.PilotId)?.Work ?? HaulerCheckpoint.Read(route.Progress);
             if (laneAgents.Contains(route.PilotId) || progress?.TrafficLane is not null)
             {
                 _travelers.Add(route.PilotId);
+            }
+            if (
+                regional
+                && !_haulers.ContainsKey(route.PilotId)
+                && !_suspended.Contains(route.PilotId)
+                && progress is { InboundPaused: false }
+            )
+            {
+                // An untouched region has not been simulating. Shift saved deadlines without hydrating its fit
+                // or replaying the time spent dormant in another region.
+                long elapsed = presence.Read().ElapsedTicks;
+                long delay = Math.Max(0, elapsed - progress.ActiveTicks);
+                if (delay > 0)
+                {
+                    var job = Current.GetValueOrDefault(route.PilotId) ?? jobs.Single(value => value.PilotId == route.PilotId);
+                    var resumed = CapsuleerPauseRules.Resume(progress, delay, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+                    using CapsuleerOperation operation = new(database, job, marketSignal);
+                    var next = job.Next(Math.Max(checked(elapsed + TimeSpan.TicksPerSecond), checked(job.DueTicks + delay)), job.Action);
+                    operation.Commit(next, null, new HaulerCheckpoint(route.PilotId, resumed));
+                    Current[route.PilotId] = next;
+                    progress = resumed;
+                }
             }
             if (!_suspended.Contains(route.PilotId) && progress is { Activity: HaulerActivity.Inbound, InboundPaused: true })
             {
@@ -377,18 +433,9 @@ internal sealed partial class CapsuleerScheduler(
         {
             if (!_visited.Contains(system))
             {
-                var prepared = new CapsuleerProvisioner(database, clock).EnsureSystem(system);
+                new CapsuleerProvisioner(database, clock).EnsureSystem(system);
                 _visited.Add(system);
-                if (prepared.CreatedCommunities > 0)
-                {
-                    Load(system);
-                }
-                else
-                {
-                    _systems.Register(system);
-                    _populationRevision = Live?.CapsuleerRevision ?? 0;
-                    _population = population.Summary();
-                }
+                Load(system);
             }
         }
         foreach (var state in _systems.Begin(activity.ActiveSystems))

@@ -167,13 +167,8 @@ internal static class Program
             if (preparePopulation)
             {
                 using var populationPhase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.capsuleerPopulation");
-                ServerLog.Console.Information("NPC population: checking saved pilots before preparing system rosters...");
-                var progress = new Eden.Server.Capsuleers.PopulationStartupProgress(ServerLog.Console.Information);
-                var population = WorldInitialization.PrepareCapsuleers(database, progress: progress.Report);
-                ServerLog.Console.Information(
-                    $"Global pilot preparation: {population.RegisteredSystems} systems, "
-                        + $"{population.CreatedCommunities} rosters expanded, {population.PendingCommunities} deferred."
-                );
+                WorldInitialization.PrepareCapsuleers(database, maximumCommunities: 0);
+                ServerLog.Console.Information("Saved NPC data ready; regions activate on entry, starting with the entered system.");
             }
             ServerLog.Console.Information(
                 $"World reconciliation completed in {Stopwatch.GetElapsedTime(reconciliationStarted).TotalSeconds:F2}s."
@@ -275,7 +270,12 @@ internal static class Program
         ServerLog.Console.Information($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
         try
         {
-            await services.GetRequiredService<LoopbackServer>().RunAsync(startupStarted);
+            Task server = services.GetRequiredService<LoopbackServer>().RunAsync(startupStarted);
+            if (!server.IsCompleted)
+            {
+                services.GetRequiredService<CapsuleerPopulationMaintenance>().Start();
+            }
+            await server;
         }
         finally
         {

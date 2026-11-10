@@ -2,6 +2,85 @@
 
 [Protocol index](../protocol.md)
 
+## Batched population startup — November 10, 2026
+
+Normal startup no longer loads NPC jobs or creates missing rosters throughout the galaxy. Regions activate on player entry:
+the entered system restores or creates its population first, then the remaining systems in that region prepare in bounded
+background batches. Untouched regions stay dormant. Activated regions remain available for the rest of the server session;
+after restart they wait for entry again, retaining all saved identities and possessions. Existing on-visit preparation remains
+available. The Population page and console distinguish saved coverage from activated regions.
+
+The scheduler restores only explicitly activated communities and individually required gate visitors. It does not hydrate
+saved hauler routes and jobs for untouched regions. Activation shifts saved hauler deadlines using typed pause rules without
+hydrating their fits or replaying dormant time. Saved-limit restoration uses shared geography counts rather than performing a
+route search for every saved community. The background worker waits on human membership changes when its entered-region queue
+is empty, and wakes for subsequent region entries instead of exiting permanently or polling SQL.
+
+The background worker snapshots roster/identity inputs briefly under the live world owner, validates hauler blueprints in its
+separate memory workspace outside that owner, then refreshes reservations and commits one community under ownership.
+If a concurrent reservation changes the required fit, it rolls back and revalidates next turn. Newly committed jobs register
+incrementally with the running scheduler. Cancellation before commit publishes no pilot. Failed communities stay pending for
+visit/restart recovery while other communities continue. Live checkpoints persist completed work through the usual save path.
+Turns check at most 16 systems or a 25 ms scheduling budget, yielding for 100 ms between turns; an individual community can
+exceed that budget, so it is not a guaranteed foreground latency ceiling. Completed queues stop without repeated SQL polling.
+
+The reported 2× startup and Rider Dynamic Program Analysis screenshot exposed repeated catalog lookup,
+traffic selection, fitting finalization, ammunition loading and supply setup during global expansion.
+The screenshot identifies repeated operations; its displayed issue values are not treated as CPU timings.
+The attached DPA stream was preserved outside version control. The measurements below come from automated
+copied-save replays, rather than an exported timing report from that stream.
+
+Offline reconciliation now pins one catalog generation and read connection. Region/security/route-compatible
+traffic pools retain their newest compatible observations and hull groups across pilot selections, with lazy
+fallback tiers and an exhausted-pool marker valid only while startup reservations grow. Selection keeps the
+existing world-seed ordering, light-hull allowance, unique imported characters and name checks.
+
+New haulers use a separate in-memory SQLite workspace to construct typed ship blueprints through the normal
+skill, fitting, ammunition and supply rules. A bounded cache retains up to 128 race/complete-fit blueprints;
+ammunition quantities are part of the identity. Skills and inventory are materialized with parameterized bulk
+inserts, remapping every ship/module/container identity. Health, capacitor, reload delays, starter cargo,
+drone supplies and supply markers are preserved. Scratch creation rolls back; no scratch identity is saved.
+Saved pilots retain their possessions and jobs. The existing per-community transaction bounds each durable
+batch, so interrupted expansion reuses completed communities and rolls back the incomplete community.
+
+Complete fitting initialization on an empty hull now shares its initial resource checkpoint with final online
+validation instead of finalizing an intermediate offline fit. Full magazines of the same ammunition type load
+together through the normal ammunition owner; partial magazines keep separate loads and exact recorded counts.
+Slot, hull, hardpoint, rig, CPU/power, online-limit, charge and cargo checks remain authoritative.
+
+Gameplay reference: [EVE University NPC mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations).
+This changes preparation and persistence, without changing flight simulation or wire formats. The existing
+pinned Carbon simulation evidence remains applicable; no Carbon behavior is reimplemented here.
+
+**Automated validation.** Focused regressions compare ordinary and batched ship grants, full and partial
+magazines, skills, supplies, health, capacitor, reload deadlines and reopened persistence. A warmed blueprint
+performs zero fitting calculations; the prepared 10,000-profile selection pool does not repeat compatibility
+work while selecting 100 system/slot variants. Global tests cover retained/lost ships, lowered and raised
+limits, imported identities, interrupted transactions, cancellation and cached restart.
+
+The opt-in replay is
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerStartupPerformanceTests.CopiedSaveMeasuresBoundedTwofoldExpansion`.
+Set `EDEN_STARTUP_PERFORMANCE_SOURCE` to a stopped or frozen copied save and optionally
+`EDEN_STARTUP_PERFORMANCE_SYSTEMS` (1–128, default 12). The test takes another SQLite backup and copies its
+catalog/snapshot, activates 2× only in that disposable world and selects incomplete rosters deterministically.
+The source world and running server are not changed by these replays. Whole-galaxy startup, live rendering and gameplay feel
+are not established by this bounded replay. EF counters include work inside the memory validation workspace.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+Final validation: tool and solution restore, solution build (zero warnings/errors, 5.29 s), both Python policy suites
+(8 and 9 cases), formatting (1,580 files) and line-width verification passed. The final targeted run passed **50 tests**
+in **22.89 s** including runner startup (feature build 3.98 s). It covers regional creation/restoration, cancellation,
+restart, ownership/checkpoint behavior, schema migration, indexed ammunition reads and navigation.
+The broader affected-feature run was interrupted after two navigation fixtures assumed startup-loaded jobs; both were
+corrected to activate their fixture system explicitly and passed in the final targeted run. No full .NET suite was run.
+The final filter was:
+
+`FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerRuntimeTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerGlobalPopulationTests|FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerTrafficNavigationTests.WitnessedMultiHopAndStationlessTurnaroundKeepTheSameShipAndPersistCursor|FullyQualifiedName~AmmunitionLookupTests|FullyQualifiedName~WorldLookupTests|FullyQualifiedName~WorldMigrationTests`
+
+**Optional maintainer checks.** Restart a rebuilt server and compare the preparation progress and Population
+page at 2×; enter another region and confirm its entered system becomes available first.
+
 ## Population startup progress — November 10, 2026
 
 Normal server startup now reports NPC population preparation with a 20-cell ASCII loading bar,
