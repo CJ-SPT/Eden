@@ -8,6 +8,24 @@ namespace Eden.Protocol.Tests.Gateway;
 public sealed class GatewayRequestsTests
 {
     [Fact]
+    public void CorporationFreelanceTabReceivesAnEmptyNativeProjectCollection()
+    {
+        var request = new Request
+        {
+            ApplicationInstanceUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
+            CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
+            Payload = new Any { TypeUrl = "type.googleapis.com/eve_public.freelance.project.api.GetAllActiveForCorporationRequest" },
+        };
+        var response = new GatewayRequests(TimeProvider.System).Handle(request);
+        Assert.Equal(200u, response.StatusCode);
+        Assert.Equal(request.ApplicationInstanceUuid, response.ApplicationInstanceUuid);
+        Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
+        Assert.Equal("type.googleapis.com/eve_public.freelance.project.api.GetAllActiveForCorporationResponse", response.Payload.TypeUrl);
+        Assert.Empty(response.Payload.Unpack<Protocol.Gateway.Freelance.GetAllActiveForCorporationResponse>().Projects);
+        Assert.Empty(response.Payload.Value);
+    }
+
+    [Fact]
     public void LocalPlexBalanceUsesTheNativeSuccessShapeInsteadOfWalletFailureCallback()
     {
         var request = new Request

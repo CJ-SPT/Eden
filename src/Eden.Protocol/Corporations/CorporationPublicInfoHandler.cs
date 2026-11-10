@@ -50,7 +50,9 @@ internal sealed record CorporationPublicInfoReply(
     string Url,
     double TaxRate,
     long Shares,
-    int MemberCount
+    int MemberCount,
+    long? CreatorId,
+    double LoyaltyPointTaxRate
 ) : BlueModel
 {
     internal CorporationPublicInfoReply(PlayerCorporation corporation)
@@ -66,7 +68,9 @@ internal sealed record CorporationPublicInfoReply(
             corporation.Details.Url,
             corporation.Details.TaxRate,
             CorporationRules.InitialShares,
-            corporation.MemberCount
+            corporation.MemberCount,
+            corporation.CreatorId,
+            corporation.Details.LoyaltyPointTaxRate
         ) { }
 
     internal CorporationPublicInfoReply(NpcCorporationInfo corporation)
@@ -82,6 +86,8 @@ internal sealed record CorporationPublicInfoReply(
             corporation.Url,
             corporation.TaxRate,
             corporation.Shares,
+            0,
+            corporation.CeoId,
             0
         ) { }
 
@@ -96,12 +102,14 @@ internal sealed record CorporationPublicInfoReply(
                 ["corporationName"] = new BlueUnicode(Name),
                 ["tickerName"] = Ticker,
                 ["ceoID"] = CeoId,
+                ["creatorID"] = CreatorId,
                 ["stationID"] = StationId,
                 ["solarSystemID"] = SystemId,
                 ["factionID"] = FactionId,
                 ["description"] = new BlueUnicode(Description),
                 ["url"] = Url,
                 ["taxRate"] = TaxRate,
+                ["loyaltyPointTaxRate"] = LoyaltyPointTaxRate,
                 ["shares"] = Shares,
                 ["memberCount"] = MemberCount,
                 ["allianceID"] = null,

@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation Show Info window audit, November 9, 2026](#corporation-show-info-window-audit-november-9-2026)
+
 - [Public corporation Show Info, November 9, 2026](#public-corporation-show-info-november-9-2026)
 
 - [Corporation offices and shared storage, November 6, 2026](#corporation-offices-and-shared-storage-november-6-2026)
@@ -26,6 +28,69 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation Show Info window audit, November 9, 2026
+
+The follow-up screenshot reaches the corporation header and then reports
+`Unsupported local call corporationSvc.GetCorpInfo`. The earlier `GetPublicInfo` correction fixed the first request,
+but did not establish acceptance of the body or tabs. This change traces the pinned build **3662168**
+`CorporationInfoWindow`, `Info.UpdateDataCorp`, tab callbacks and their local service adapters before adding the
+remaining read routes.
+
+| Window path | Native dependency and implementation |
+| --- | --- |
+| Header and Attributes | Existing `corpmgr.GetPublicInfo` now also supplies `creatorID` and `loyaltyPointTaxRate`. Saved player founder and LP tax are authoritative; NPC founder retains the existing corporation reply's CEO fallback and NPC LP tax is zero. Existing aggression-settings and permitted-enlistment reads are reused. |
+| NPC Market Activity | New `corporationSvc.GetCorpInfo(corporationID)` returns a nine-column native Rowset: `typeID`, `sellPrice`, `sellQuantity`, `sellDate`, `sellStationID`, `buyPrice`, `buyQuantity`, `buyDate`, `buyStationID`. It reports the latest completed NPC sale and purchase per type from Eden's saved executions, converts cents to ISK, and preserves None for a missing side. An untouched market returns an empty Rowset. It does not invent retail activity, seed orders or disclose pilot identities/wallet data. |
+| Stations and map highlighting | New `config.GetStationSolarSystemsByOwner(corporationID)` returns sorted, distinct `solarSystemID` rows from the existing station directory. Catalog ownership determines the results; renting an office does not transfer station ownership. The client obtains individual station rows locally through `eveCfg.GetLocationsLocalBySystem`; existing station/location priming and pathfinding routes are reused. |
+| Agents | `PanelAgents.GetAgentsOfLevel` uses the existing `agentMgr.GetAgents` directory through the local agents service, then filters by corporation and level. Existing saved personal standings determine availability. No new agent route is required. |
+| Standings | Existing personal/corporate contact reads, `standingMgr.GetCharStandings`, `GetCorpStandings` and `GetNPCNPCStandings` supply the local standings service. The existing public corporation lookup supplies alliance affiliation. No new standings route is required. |
+| Alliance History | New `allianceRegistry.GetEmploymentRecord(corporationID)` returns the saved player corporation founding row (`allianceID=None`, `startDate=CreatedAt`). The native callback treats the last row as the founding event. NPC founding dates are unavailable, so their result is empty. There are no fabricated alliance memberships. |
+| War History and affiliation | New `warsInfoMgr.GetWarsByOwnerID(corporationID)` returns an empty list, and the shared `GetWarsByOwners(set(ownerIDs))` cache read returns an empty list for every requested owner. New `facWarMgr.GetCorporationWarFactionID(corporationID)` returns None for Eden's unenlisted corporations; NPC militia affiliation and faction wars remain local static client data. Eden has no declared player wars. |
+| Freelance Projects | The modern tab uses the public gateway rather than a local MachoNet RPC: `eve_public.freelance.project.api.GetAllActiveForCorporationRequest`. The gateway now returns a successful native response with an empty repeated `projects` field. Repository polling requests stats only for cached project IDs; no IDs exist in Eden. Project creation, participation and rewards remain unavailable. |
+| Members, application button and shared menu | The local `GetMembersAsEveOwners` adapter primes the caller's existing corporation-scoped `corpRegistry.GetEveOwners`. Application reads/writes already have owners; the window-specific menu extension opens the existing contracts search. These paths retain their existing membership/role restrictions. Opening downstream management windows does not add their deferred gameplay features. |
+
+All new MachoNet reads require character selection and reject malformed IDs, extra arguments and unexpected keywords;
+normal `machoVersion` metadata remains router-owned. Single-corporation information reads reject unknown corporations.
+Station ownership follows the existing station-directory convention of an empty result for an unknown positive owner.
+War cache batches accept native integer sets with at most **1,000** positive Int32 owner IDs and include each requested
+owner, so an absent cache entry cannot cause repeated requests. No schema, codec or corporation mutations are added.
+The public gateway follows its existing account-independent empty-information response policy.
+
+Evidence: inert inspection of `E:/EdenDev/3662168/.eden-original-code.ccp`, SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. In addition to the window and `infosvc`, reviewed
+`panelAgents`, `panelStandings`, `panelFreelanceProjects`, `bco_members`, `base_corporation`, `standingsvc`, `facWarSvc`,
+`wars/war_cso`, `menusvc.GetMenuFromItemIDTypeID`, `warPermit`, `eveCfg.GetLocationsLocalBySystem`, the freelance repository/messenger/parser, and the native freelance
+protobuf message definitions. This reuses [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+for unchanged Rowset/KeyVal/None/list/dictionary encoding. Gameplay references include
+[EVE University's Agents-tab instructions](https://wiki.eveuniversity.org/Datacore_farming) and
+[corporation diplomacy and War-tab overview](https://wiki.eveuniversity.org/Corporation_diplomacy).
+
+**Automated validation:** development started with
+`.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationShowInfoTests.NativeStartupAndAllTabReadsReturnExpectedShapesWithoutUnsupportedCalls'`.
+The two session cases passed after correcting test-only assertions to use the existing native set constructor and
+decoded dictionary types (build **5.75s**, tests **15.22s**). An initial test build also exposed an invalid test result
+type name. The first expanded run passed 17 cases and rejected one market fixture that omitted required order price
+and stock; the corrected market/reopen regression passed (build **4.34s**, tests **6.83s**). No codec changes were made.
+The final pre-integration filter below passed **65 tests in 20s**; tool/solution restore, solution build (zero
+warnings/errors), both Python policy suites (**8 catalog**, **9 formatting**), formatting (**1,509 files**) and width
+checks passed in **63.55s**. The session regression exercises startup and tab reads together for NPC and other-player
+corporations. Further cases cover malformed requests and selection gating, bounded war-cache sets, authoritative
+market rows and absent-side None values, isolation from other corporations/personal activity, saved-world reopen
+and the freelance gateway response. After integrating main through **2b4f8a8a** (including **15ad8f3a**'s market
+changes), the same focused filter passed **65 tests in 29s**. Tool/solution restore, solution build (zero
+warnings/errors), both Python suites (**8 + 9 tests**), formatting (**1,522 files**), width and documentation/diff
+checks passed; the integration sequence took **80.71s**. These results cover the combined code, without the unrelated
+uncommitted work in the main checkout.
+
+Focused filter:
+`FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~AgentDirectoryServiceTests|FullyQualifiedName~CharacterInteractionHistory|FullyQualifiedName~GatewayRequestsTests|FullyQualifiedName~HomeStationServiceTests`.
+No full .NET suite was run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Restart the server; open NPC and player Corporation Show Info and visit each tab.
+Confirm native layout, localized NPC content and empty War/Freelance displays. The screenshot establishes the original
+failure only; rendering, input and client-side tab construction remain unverified.
 
 ## Public corporation Show Info, November 9, 2026
 

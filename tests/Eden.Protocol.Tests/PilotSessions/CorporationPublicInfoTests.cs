@@ -138,7 +138,7 @@ public sealed class CorporationPublicInfoTests
         Assert.Empty(context.Notifications);
     }
 
-    private static int CreateCorporation(TestWorld db, bool playerCorporation)
+    internal static int CreateCorporation(TestWorld db, bool playerCorporation)
     {
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {
@@ -165,6 +165,8 @@ public sealed class CorporationPublicInfoTests
         var fields = BlueRead.Fields(reply.State);
         Assert.Equal((long)corporation, fields["corporationID"]);
         Assert.Equal(playerCorporation ? 90000001L : 3004181L, fields["ceoID"]);
+        Assert.Equal(playerCorporation ? 90000001L : 3004181L, fields["creatorID"]);
+        Assert.Equal(playerCorporation ? 0.05 : 0, fields["loyaltyPointTaxRate"]);
         Assert.Equal(60003760L, fields["stationID"]);
         Assert.Equal(30000142L, fields["solarSystemID"]);
         Assert.Equal(playerCorporation ? "Eden Explorers" : "School of Applied Knowledge", BlueMarshal.Text(fields["corporationName"]));

@@ -3,6 +3,18 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Docking;
 
+internal sealed record CorporationStationSystemsReply(IReadOnlyList<int> Systems) : BlueModel
+{
+    // Build 3662168 Info.UpdateDataCorp iterates rows and reads solarSystemID.
+    public override object ToBlue() =>
+        new CompatibilityRowset(["solarSystemID"], Systems.Select(system => new CorporationStationSystemRow(system)).ToArray()).ToBlue();
+}
+
+internal sealed record CorporationStationSystemRow(int SystemId) : BlueModel
+{
+    public override object ToBlue() => new object?[] { SystemId };
+}
+
 internal sealed record OwnerStationsReply(IReadOnlyList<StationDirectoryEntry> Stations) : BlueModel
 {
     public override object ToBlue() =>

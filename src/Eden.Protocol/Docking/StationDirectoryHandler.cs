@@ -41,7 +41,10 @@ internal sealed class StationDirectoryHandler(IStationDirectory stations) : ISel
                 ? new StationDetailsReply(station, StationDirectoryReply.ServiceMask(directory, station))
                 : PilotCallResult.None;
         }
-        if (service == "stationSvc" && method == "GetStationsForOwner")
+        if (
+            (service == "stationSvc" && method == "GetStationsForOwner")
+            || (service == "config" && method == "GetStationSolarSystemsByOwner")
+        )
         {
             if (args is not [long ownerId] || ownerId is <= 0 or > int.MaxValue || keywords is { Count: > 0 })
             {
@@ -49,7 +52,10 @@ internal sealed class StationDirectoryHandler(IStationDirectory stations) : ISel
             }
             // Pinned LPStoreSvc.GetNearestDockableWithLPStoreForCorp groups these
             // attribute-bearing rows by solarSystemID, then compares route lengths.
-            return new OwnerStationsReply(stations.Read().Stations.Where(station => station.OwnerId == ownerId).ToArray());
+            var owned = stations.Read().Stations.Where(station => station.OwnerId == ownerId).ToArray();
+            return method == "GetStationSolarSystemsByOwner"
+                ? new CorporationStationSystemsReply(owned.Select(station => station.SystemId).Distinct().Order().ToArray())
+                : new OwnerStationsReply(owned);
         }
         if (service != "map" || method != "GetStationInfo")
         {

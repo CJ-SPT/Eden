@@ -17,6 +17,7 @@
       GrpcServices="None"
     />
     <Protobuf Include="Gateway/plex.proto;Gateway/plex_vault.proto" ProtoRoot="Gateway" GrpcServices="None" />
+    <Protobuf Include="Gateway/freelance_project.proto;Gateway/freelance_requests.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
     <InternalsVisibleTo Include="Eden.Benchmarks" />
   </ItemGroup>

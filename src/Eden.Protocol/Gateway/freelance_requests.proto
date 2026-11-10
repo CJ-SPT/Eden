@@ -1,0 +1,10 @@
+syntax = "proto3";
+package eve_public.freelance.project.api;
+option csharp_namespace = "Eden.Protocol.Gateway.Freelance";
+
+import "freelance_project.proto";
+
+// Pinned requests_pb2.pyj: the Show Info repository reads repeated projects.
+message GetAllActiveForCorporationResponse {
+  repeated eve_public.freelance.project.Identifier projects = 1;
+}

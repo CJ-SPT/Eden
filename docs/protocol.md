@@ -48,6 +48,8 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Corporation Show Info window audit, November 9, 2026](protocol/corporations.md#corporation-show-info-window-audit-november-9-2026)
+
 - [Public corporation Show Info, November 9, 2026](protocol/corporations.md#public-corporation-show-info-november-9-2026)
 
 - [Pooled protocol buffers and selective libraries, November 9, 2026](protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)

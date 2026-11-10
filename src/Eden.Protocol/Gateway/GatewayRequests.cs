@@ -33,6 +33,9 @@ public sealed class GatewayRequests(TimeProvider clock)
             // zero balance avoids the stock wallet's failure callback re-entering
             // PersonalWalletPanel.Load while its tabs are still being constructed.
             "eve_public.plex.vault.api.BalanceRequest" => new PlexVault.BalanceResponse { Balance = new Plex.Currency() },
+            // Corporation Show Info has a Freelance Projects tab. Eden publishes
+            // no projects, so the repository receives a successful empty collection.
+            "eve_public.freelance.project.api.GetAllActiveForCorporationRequest" => new Freelance.GetAllActiveForCorporationResponse(),
             _ => null,
         };
         var response = new Response
