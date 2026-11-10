@@ -351,6 +351,13 @@ internal sealed partial class LiveWorld
         {
             throw new PersistenceRequiredException(participants);
         }
+        if (!_ownershipMonitor.IsEntered && Volatile.Read(ref _checkpointCopying))
+        {
+            long started = System.Diagnostics.Stopwatch.GetTimestamp();
+            var lease = Acquire(operation);
+            RecordPersistenceWait(operation, System.Diagnostics.Stopwatch.GetElapsedTime(started));
+            return lease;
+        }
         return Acquire(operation);
     }
 
@@ -393,6 +400,7 @@ internal sealed partial class LiveWorld
         var lease = new SimulationLease(this, entry.Enter(operation), system);
         try
         {
+            entry.State.SimulationEntered = true;
             if (_sharedHeatSystems.TryRemove(system, out _))
             {
                 if (!_ownershipMonitor.IsEntered)

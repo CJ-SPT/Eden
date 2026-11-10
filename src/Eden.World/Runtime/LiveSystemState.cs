@@ -14,6 +14,7 @@ internal sealed class LiveSystemState
     internal LiveNaniteRepairs Nanites { get; }
     internal LiveTimedModules TimedModules { get; }
     internal bool Expiring { get; set; }
+    internal bool SimulationEntered { get; set; }
     internal Dictionary<long, CapsuleerMiner> Miners { get; } = [];
     internal Dictionary<long, CapsuleerHauler> Haulers { get; } = [];
 

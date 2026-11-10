@@ -10,6 +10,9 @@ native docking/storage, supported services, configuration speeds and explicit re
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) records native provider contracts,
 saved signature and ice discovery, source fingerprints and automated validation.
 
+[Checkpoint copy outside system ownership](protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
+records milestone 5 coherent capture, independently measured copy/projection and queued database writes.
+
 [Tiered simulation and detail retention](protocol/performance.md#tiered-simulation-and-detail-retention-november-10-2026)
 records milestone 4 remote deadlines, resumable activation and safe scene eviction.
 

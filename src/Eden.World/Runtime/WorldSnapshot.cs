@@ -17,7 +17,10 @@ internal sealed class WorldSnapshot(
     IReadOnlyList<Eden.World.Capsuleers.HaulerCheckpoint>? haulers = null,
     Eden.World.Capsuleers.CapsuleerClockCheckpoint? activity = null,
     Eden.World.Capsuleers.CapsuleerJobCheckpoint? jobs = null,
-    TimeSpan copy = default
+    TimeSpan copy = default,
+    long captureAllocatedBytes = 0,
+    long copyAllocatedBytes = 0,
+    long copyBytes = 0
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -25,32 +28,44 @@ internal sealed class WorldSnapshot(
     internal TimeSpan Wait => wait;
     internal TimeSpan Capture => capture;
     internal TimeSpan Copy => copy;
+    internal long CaptureAllocatedBytes => captureAllocatedBytes;
+    internal long CopyAllocatedBytes => copyAllocatedBytes;
+    internal long CopyBytes => copyBytes;
+    internal long ProjectionAllocatedBytes { get; private set; }
 
     internal TimeSpan Project()
     {
         long started = Stopwatch.GetTimestamp();
-        if (
-            combat is not null
-            || heat is not null
-            || tractors is not null
-            || miners is not null
-            || haulers is not null
-            || activity is not null
-            || jobs is not null
-        )
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        try
         {
-            using WorldDbContext world = new(database);
-            using var transaction = world.Database.BeginTransaction();
-            combat?.Apply(world);
-            heat?.Apply(world);
-            tractors?.Apply(world);
-            Eden.World.Capsuleers.MinerCheckpoint.Apply(world, miners ?? []);
-            Eden.World.Capsuleers.HaulerCheckpoint.Apply(world, haulers ?? []);
-            jobs?.Apply(world);
-            activity?.Apply(world);
-            transaction.Commit();
+            if (
+                combat is not null
+                || heat is not null
+                || tractors is not null
+                || miners is not null
+                || haulers is not null
+                || activity is not null
+                || jobs is not null
+            )
+            {
+                using WorldDbContext world = new(database);
+                using var transaction = world.Database.BeginTransaction();
+                combat?.Apply(world);
+                heat?.Apply(world);
+                tractors?.Apply(world);
+                Eden.World.Capsuleers.MinerCheckpoint.Apply(world, miners ?? []);
+                Eden.World.Capsuleers.HaulerCheckpoint.Apply(world, haulers ?? []);
+                jobs?.Apply(world);
+                activity?.Apply(world);
+                transaction.Commit();
+            }
+            return Stopwatch.GetElapsedTime(started);
         }
-        return Stopwatch.GetElapsedTime(started);
+        finally
+        {
+            ProjectionAllocatedBytes = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        }
     }
 
     public void Dispose() => database.Dispose();

@@ -134,7 +134,13 @@ Stable character monitoring, balances, fitting attributes and scene contacts als
 
 Corporation identity, missing corporation records and authorized corporation loyalty balances are bounded resident views. Their row dependencies include membership, effective roles, titles and wallet selection. Docking membership invalidates location roles; coordinate-only movement does not. Crimewatch read snapshots use the resident owner without opening a transaction that projects unrelated dirty combat. SQL mutation boundaries retain their existing synchronization. Damage contribution maps use immutable path-copy updates so many attackers do not require copying the full history after each shot. NPC scene contacts likewise use an identity index and persistent list to preserve earlier snapshots without rebuilding every contact for each shot notification. New monitoring and simulation changes must follow the [contributor performance rules](../AGENTS.md#simulation-performance) and measure full sessions as well as isolated operations.
 
-Checkpoint capture copies the relational image and retains immutable combat records from the same generation under the owner. Projection applies those records to the detached image outside the owner, then durable file writing installs it atomically. Dirty live objects remain available for synchronization at SQL transaction and ownership/destruction boundaries. Diagnostics separate capture, detached projection and file writing; see the [checkpoint pause comparison](protocol/performance.md#detached-checkpoint-projection-november-7-2026).
+Checkpoint capture takes persistence first, freezes new runtime admission briefly, then acquires system owners in
+ascending order to capture immutable state and one common generation. It releases system owners and admission
+before copying the relational image, while retaining persistence coordination. Warm resident operations can advance
+during copying; SQL operations queue until the copy finishes. Projection and atomic file installation use the
+detached image outside simulation ownership. Dirty live objects remain available for transaction synchronization
+and failed-save retries. Diagnostics separate capture, copy, projection, managed allocations, image bytes and
+persistence queue delays. See [checkpoint copy isolation](protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026).
 
 The last completed checkpoint remains at the configured world path, with its predecessor at `world.sqlite.previous`. A crash restores the last completed checkpoint; the rollback window can exceed 15 seconds when saves are delayed or failing. Save failures retain resident changes and retry on the next interval. Stop the server before editing or restoring its saved world. See [checkpoint behavior and the ten-Brutix comparison](protocol/performance.md#resident-world-checkpoints-and-ten-brutix-replay-november-5-2026).
 

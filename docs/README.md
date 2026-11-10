@@ -8,6 +8,9 @@ structure timing settings, automated validation and the remaining specialized sy
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,
 saved signature counts, known/unknown ice fields and activities with empty directories.
 
+[Checkpoint copy outside system ownership](protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
+records milestone 5 coherent capture, independently measured copy/projection and queued database writes.
+
 [Tiered simulation and detail retention](protocol/performance.md#tiered-simulation-and-detail-retention-november-10-2026)
 records milestone 4 remote deadlines, resumable activation and safe scene eviction.
 

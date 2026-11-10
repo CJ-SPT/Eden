@@ -65,7 +65,7 @@ public sealed class OwnershipTimingTests
     }
 
     [Fact]
-    public async Task CheckpointCaptureIsMeasuredAfterExecutionContextIsDetached()
+    public async Task CheckpointCaptureAndCopyAreMeasuredSeparatelyAfterExecutionContextIsDetached()
     {
         using TestWorld fixture = new();
         using LiveWorld world = new(new(fixture.Path), new TestClock(), _ => { });
@@ -80,7 +80,8 @@ public sealed class OwnershipTimingTests
         var checkpoint = Assert.IsType<WorldCheckpoint>(world.LastCheckpoint);
         Assert.True(checkpoint.Copy > TimeSpan.Zero);
         Assert.True(capture.Hold >= checkpoint.Copy);
-        Assert.True(checkpoint.Capture >= checkpoint.Copy);
+        Assert.True(checkpoint.Capture > TimeSpan.Zero);
+        Assert.True(capture.Hold >= checkpoint.Capture + checkpoint.Copy);
     }
 
     [Fact]

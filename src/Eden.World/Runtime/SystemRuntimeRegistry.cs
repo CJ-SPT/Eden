@@ -6,9 +6,10 @@ namespace Eden.World.Runtime;
 // Registry admission is separate from simulation admission: creating a runtime must
 // never require entering another system. Runtime identities remain stable for the
 // lifetime of the live world, including while transactions wait for their owners.
-internal sealed class SystemRuntimeRegistry<T>(Func<int, T> create)
+internal sealed class SystemRuntimeRegistry<T>(Func<int, T> create, Func<bool>? canCreate = null)
 {
     private readonly ConcurrentDictionary<int, Lazy<Entry>> _systems = new();
+    private readonly object _admission = new();
 
     internal sealed class Entry(int id, T state)
     {
@@ -49,7 +50,32 @@ internal sealed class SystemRuntimeRegistry<T>(Func<int, T> create)
         }
     }
 
-    internal Entry Get(int system) => _systems.GetOrAdd(system, id => new(() => new Entry(id, create(id)))).Value;
+    internal Entry Get(int system)
+    {
+        if (_systems.TryGetValue(system, out var existing))
+        {
+            return existing.Value;
+        }
+        if (canCreate?.Invoke() == false)
+        {
+            throw new InvalidOperationException("Release the current system owner before admitting another runtime.");
+        }
+        lock (_admission)
+        {
+            return _systems.GetOrAdd(system, id => new(() => new Entry(id, create(id)))).Value;
+        }
+    }
+
+    internal IDisposable FreezeAdmissions()
+    {
+        Monitor.Enter(_admission);
+        return new AdmissionLease(_admission);
+    }
+
+    private sealed class AdmissionLease(object gate) : IDisposable
+    {
+        public void Dispose() => Monitor.Exit(gate);
+    }
 
     internal IReadOnlyList<Entry> Snapshot() =>
         _systems.Values.Where(value => value.IsValueCreated).Select(value => value.Value).OrderBy(entry => entry.Id).ToArray();

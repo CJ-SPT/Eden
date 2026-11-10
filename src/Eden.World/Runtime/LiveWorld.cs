@@ -22,12 +22,17 @@ internal sealed record WorldCheckpoint(
     int? Commands = null,
     int? Connections = null,
     TimeSpan Projection = default,
-    TimeSpan Copy = default
+    TimeSpan Copy = default,
+    long CaptureAllocatedBytes = 0,
+    long CopyAllocatedBytes = 0,
+    long ProjectionAllocatedBytes = 0,
+    long WriteAllocatedBytes = 0,
+    long CopyBytes = 0
 );
 
 // The resident relational image preserves the existing transaction, constraint and trigger rules.
-// Checkpoints copy the SQL image and capture immutable combat state under the owner.
-// Projection and filesystem work use only the detached image outside that owner.
+// Checkpoints capture immutable state under system owners, then copy the SQL image
+// under persistence alone. Projection and file writing use the detached image.
 internal sealed partial class LiveWorld : IDisposable
 {
     internal static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(15);
@@ -48,6 +53,7 @@ internal sealed partial class LiveWorld : IDisposable
     private readonly FileStream _ownership;
     private readonly TimeProvider _clock;
     private readonly Action<SqliteConnection, string> _persist;
+    private readonly Action<SqliteConnection, SqliteConnection> _copy;
     private readonly Action<string> _report;
     private readonly Action<string> _reportFailure;
     private readonly Action<string> _reportTrace;
@@ -263,20 +269,25 @@ internal sealed partial class LiveWorld : IDisposable
         Action<SqliteConnection, string>? persist = null,
         bool combatObjects = true,
         bool residentReads = true,
-        bool simulationObjects = true
+        bool simulationObjects = true,
+        Action<SqliteConnection, SqliteConnection>? copy = null
     )
     {
         _database = database;
         _ownershipMonitor = new("world", _gate);
         _path = Path.GetFullPath(database.Path);
         _shared = new(this, database, clock, combatObjects, residentReads, simulationObjects);
-        _systems = new(system => new(this, database, clock, combatObjects, residentReads, simulationObjects, system));
+        _systems = new(
+            system => new(this, database, clock, combatObjects, residentReads, simulationObjects, system),
+            () => _heldSystems.Value!.Count == 0 || _ownershipMonitor.IsEntered
+        );
         CapsuleerActivity = new(database, clock);
         _clock = clock;
         _report = report ?? ServerLog.Console.Debug;
         _reportFailure = report ?? ServerLog.Console.Error;
         _reportTrace = report ?? ServerLog.Console.Trace;
         _persist = persist ?? PersistSnapshot;
+        _copy = copy ?? ((source, destination) => source.BackupDatabase(destination));
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         _ownership = new(_path + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         ConnectionString = new SqliteConnectionStringBuilder
@@ -445,9 +456,9 @@ internal sealed partial class LiveWorld : IDisposable
         if (version != _observedDataVersion)
         {
             _observedDataVersion = version;
-            _generation++;
+            Interlocked.Increment(ref _generation);
         }
-        return _generation;
+        return Interlocked.Read(ref _generation);
     }
 
     private Task<Exception?> QueueSave(bool duringShutdown = false)
@@ -499,10 +510,9 @@ internal sealed partial class LiveWorld : IDisposable
     {
         using var context = UseShared();
         long started = Stopwatch.GetTimestamp();
-        using (EnterCoordinated("checkpoint capture"))
+        using (EnterPersistence("checkpoint capture"))
         {
             var wait = Stopwatch.GetElapsedTime(started);
-            started = Stopwatch.GetTimestamp();
             if (_disposed)
             {
                 return null;
@@ -511,49 +521,49 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 throw new InvalidOperationException("Complete world connections before capturing a checkpoint.");
             }
-            Heat.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-            Nanites.Advance(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-            foreach (var entry in _systems.Snapshot())
-            {
-                using var systemContext = UseSystem(entry.Id);
-                using var ownership = EnterSimulation("checkpoint deadlines", entry.Id);
-            }
-            var activity = CapsuleerActivity.Capture();
-            if (activity is not null && activity.ElapsedTicks != _activityCheckpointTicks)
-            {
-                _activityCheckpointTicks = activity.ElapsedTicks;
-                ObjectsChanged();
-            }
-            long generation = ObserveGeneration();
-            if (generation == _savedGeneration)
+            var resident = CaptureResidents();
+            if (resident is null)
             {
                 return null;
             }
-            var combat = _shared.Combat?.CaptureCheckpoint();
-            var heat = new ShipHeatCheckpoint(AllStates.SelectMany(state => state.Heat.CaptureOwn()?.Ships ?? []).ToArray());
-            var tractors = new TractorCheckpoint(AllStates.SelectMany(state => state.Tractors.Capture()?.Positions ?? []).ToArray());
+            // System owners and registry admission are released. Persistence remains
+            // held so SQL cannot advance beyond the captured resident generation.
             SqliteConnection database = new("Data Source=:memory:;Pooling=False;Foreign Keys=True");
             try
             {
-                database.Open();
+                long allocated = GC.GetAllocatedBytesForCurrentThread();
                 long copyStarted = Stopwatch.GetTimestamp();
-                _memory.BackupDatabase(database);
+                database.Open();
+                Volatile.Write(ref _checkpointCopying, true);
+                try
+                {
+                    _copy(_memory, database);
+                }
+                finally
+                {
+                    Volatile.Write(ref _checkpointCopying, false);
+                }
                 TimeSpan copy = Stopwatch.GetElapsedTime(copyStarted);
+                long copyAllocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
+                using var size = database.CreateCommand();
+                size.CommandText = "SELECT page_count*page_size FROM pragma_page_count(),pragma_page_size()";
+                long bytes = Convert.ToInt64(size.ExecuteScalar(), CultureInfo.InvariantCulture);
                 return new(
                     database,
-                    combat,
-                    generation,
-                    wait,
-                    Stopwatch.GetElapsedTime(started),
-                    heat,
-                    tractors,
-                    MinerCheckpoints.Values.Where(m => ProjectedMiners.GetValueOrDefault(m.PilotId) != m).ToArray(),
-                    HaulerCheckpoints.Values.Where(h => ProjectedHaulers.GetValueOrDefault(h.PilotId) != h).ToArray(),
-                    activity,
-                    new CapsuleerJobCheckpoint(
-                        CapsuleerJobs.Values.Where(j => ProjectedCapsuleerJobs.GetValueOrDefault(j.PilotId) != j).ToArray()
-                    ),
-                    copy
+                    resident.Combat,
+                    resident.Generation,
+                    wait + resident.Wait,
+                    resident.Capture,
+                    resident.Heat,
+                    resident.Tractors,
+                    resident.Miners,
+                    resident.Haulers,
+                    resident.Activity,
+                    resident.Jobs,
+                    copy,
+                    resident.AllocatedBytes,
+                    copyAllocated,
+                    bytes
                 );
             }
             catch
@@ -576,8 +586,10 @@ internal sealed partial class LiveWorld : IDisposable
             }
             var projection = snapshot.Project();
             long started = Stopwatch.GetTimestamp();
+            long allocated = GC.GetAllocatedBytesForCurrentThread();
             _persist(snapshot.Database, _path);
             TimeSpan write = Stopwatch.GetElapsedTime(started);
+            long writeAllocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
             WorldCheckpoint completed = new(
                 snapshot.Generation,
                 _clock.GetUtcNow(),
@@ -588,7 +600,12 @@ internal sealed partial class LiveWorld : IDisposable
                 metrics?.Commands,
                 metrics?.Connections,
                 projection,
-                snapshot.Copy
+                snapshot.Copy,
+                snapshot.CaptureAllocatedBytes,
+                snapshot.CopyAllocatedBytes,
+                snapshot.ProjectionAllocatedBytes,
+                writeAllocated,
+                snapshot.CopyBytes
             );
             using (Acquire())
             {
@@ -607,7 +624,9 @@ internal sealed partial class LiveWorld : IDisposable
                     $"World checkpoint {completed.Generation}: wait={completed.Wait.TotalMilliseconds:F2} ms, "
                         + $"capture={completed.Capture.TotalMilliseconds:F2} ms, copy={completed.Copy.TotalMilliseconds:F2} ms, "
                         + $"project={projection.TotalMilliseconds:F2} ms, "
-                        + $"write={write.TotalMilliseconds:F2} ms, bytes={completed.Bytes}."
+                        + $"write={write.TotalMilliseconds:F2} ms, bytes={completed.Bytes}, copyBytes={completed.CopyBytes}, "
+                        + $"allocated capture/copy/project/write={completed.CaptureAllocatedBytes}/{completed.CopyAllocatedBytes}/"
+                        + $"{completed.ProjectionAllocatedBytes}/{completed.WriteAllocatedBytes}."
                 )
             );
             return null;

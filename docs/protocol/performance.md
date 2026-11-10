@@ -1719,3 +1719,55 @@ run used the preceding compiled binaries after a missing-import build failure an
 
 **Optional maintainer checks.** Revisit a mining system after playing elsewhere and check the visible arrival and
 mining presentation. Native rendering and gameplay feel remain unverified.
+
+## Checkpoint copy outside system ownership, November 10, 2026
+
+Simulation scaling milestone 5 captures immutable resident state and its common generation under persistence and
+sorted system owners, then releases every system owner before copying SQLite. A brief registry-admission barrier
+prevents a newly created runtime escaping that capture. Existing resident requests continue to use their system
+owner; new runtime admission is open again during copying. A deadline that admits another runtime causes the
+capture group to release and reacquire the expanded sorted set. Dormant runtime shells do not initialize module,
+repair or fitting inputs merely because a save occurs.
+
+Persistence coordination remains held throughout the relational backup. SQL writes and cold SQL dependencies
+therefore still wait for copying; warmed movement, complete frames and nonfatal resident payments can finish
+before the copy resumes. Atomic generation increments preserve concurrent resident changes. Applying projections
+and writing the replacement file remain detached. A copy, projection or installation failure retains pending
+changes for retry; successful saves do not discard dirty objects needed by later SQL boundaries. Shutdown flushing,
+durable authentication, atomic replacement and the existing **15-second** interval are preserved.
+
+Checkpoint reports now separate resident capture time, relational copy time, detached projection time and file
+writing time. They record copied SQLite page bytes, installed file bytes and managed allocations on each stage's
+executing thread. These allocation counters exclude SQLite's native allocations; copied page bytes describe that
+image separately. A bounded 128-record persistence-wait history identifies operations that arrived during copying,
+including explicit coordinated mutations and direct SQL entry. SQL admission also has its own performance phase.
+Queue delay includes the copy and any earlier admitted operations; it is not a claim that copying is free for writers.
+
+The consistency boundary follows [SQLite's backup API documentation](https://www.sqlite.org/backup.html). Automated
+copy isolation pauses a real incremental SQLite backup after its first page, while independently arriving requests
+must complete before release. The workload includes 1/2/4 same-system or separate-system movement requests alongside
+a complete session frame with traffic and anomaly hooks, and both direct and explicitly coordinated SQL writers.
+Additional tests cover a paid shot during copy, immutable earlier ammunition/damage, new runtime admission, queued
+destruction without resurrection, failed-copy retry, reopened checkpoints and 32/160/320 dormant runtime shells.
+
+**Automated validation.** Tool/solution restore, the warning-free build, **512/512 affected tests**
+(202.73 seconds TRX wall time), both Python policy suites (8 and 9 tests) and formatting verification passed.
+Exact development filters began with
+`CheckpointOwnershipTests.CopyAllowsAnotherPaidShotAndKeepsEachCapturedGenerationCoherent`. Warm isolated paths
+assert zero live SQL commands, connection opens and fitting calculations. The copy-pause tests use real elapsed-time
+completion limits and retain stage/queue measurements in their reports. Deliberately paused-copy durations are
+isolation evidence, not capacity benchmarks. No installed-save p95/p99 claim or full .NET run is made.
+
+`artifacts/milestone5-validation/` retains `milestone5-published.trx`, `final-filter.txt`, `published-summary.json`
+and the source/input manifest. The summary is generated directly from the retained TRX. Parent revision is
+`cb48dd8a`; manifest SHA-256 is `8a978ec44edd962be62b3ee9a5bb185ed641fc277b76ea662300a14c92b75672`.
+Six subsequent unpaused fixture saves copied **1,728,512 bytes** each: resident capture **0.03–0.05 ms**, copy
+**0.60–0.71 ms**, and projection **0.09–0.11 ms**. Managed stage allocations were capture **15,792–29,464 bytes**,
+copy **1,320**, projection **64,064**, and writing **7,032**. SQL-writer waits during the deliberately paused
+earlier copies were **2.10–17.82 ms**. These small fixtures and artificial pauses do not establish installed-save
+throughput or session latency percentiles.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None; persistence boundaries and recovery are covered automatically. Native rendering,
+input and gameplay feel remain unverified by this milestone.

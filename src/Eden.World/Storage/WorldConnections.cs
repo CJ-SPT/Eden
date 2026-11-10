@@ -152,7 +152,7 @@ internal static class WorldConnections
                 base.Open();
                 return;
             }
-            var lease = world.EnterPersistence("SQLite connection", participants);
+            var lease = world.EnterSql(participants);
             try
             {
                 base.Open();
