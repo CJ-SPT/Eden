@@ -45,6 +45,8 @@ public sealed class StructureTests
             37534,
             35840,
             81826,
+            81080,
+            32458,
         }.Select(id => new object[] { id });
 
     internal sealed class Fixture : IDisposable
@@ -268,6 +270,42 @@ public sealed class StructureTests
     }
 
     [Fact]
+    public void UnimplementedServiceCannotConsumeFuelOrAdvertiseAvailability()
+    {
+        using Fixture f = new();
+        var structure = f.Online(35833);
+        long module = f.Item(35892);
+        f.Structures.FitService(f.PilotId, structure.Id, module, StructureRules.FirstServiceSlot);
+        f.Structures.DepositFuel(f.PilotId, structure.Id, f.Item(4051, 1000), 1000);
+        Assert.Throws<InvalidDataException>(() => f.Structures.SetServiceOnline(f.PilotId, structure.Id, module, true));
+        var unchanged = f.Structures.Read(f.PilotId, structure.Id)!;
+        Assert.False(Assert.Single(unchanged.Modules).Online);
+        Assert.Null(Assert.Single(unchanged.Modules).NextFuelAt);
+        Assert.DoesNotContain(StructureService.Market, unchanged.Services);
+        Assert.Equal(1000, f.Structures.Inventory(f.PilotId, structure.Id).Single(i => i.FlagId == StructureRules.FuelBayFlag).Quantity);
+    }
+
+    [Fact]
+    public void LateDecommissioningSettlesFuelOnlyThroughItsSavedDeadlineBeforeOffliningServices()
+    {
+        using Fixture f = new();
+        var structure = f.Online(35825);
+        long module = f.Item(35878);
+        f.Structures.FitService(f.PilotId, structure.Id, module, StructureRules.FirstServiceSlot);
+        f.Structures.DepositFuel(f.PilotId, structure.Id, f.Item(4051, 5000), 5000);
+        f.Structures.SetServiceOnline(f.PilotId, structure.Id, module, true);
+        f.Structures.Unanchor(f.PilotId, structure.Id);
+        f.Clock.AdvanceWallTime(TimeSpan.FromDays(8));
+        var stopped = f.Structures.Read(f.PilotId, structure.Id)!;
+        Assert.Equal(StructureState.Unanchored, stopped.State);
+        Assert.False(Assert.Single(stopped.Modules).Online);
+        Assert.Null(Assert.Single(stopped.Modules).NextFuelAt);
+        Assert.Equal(2840, f.Structures.Inventory(f.PilotId, structure.Id).Single(i => i.FlagId == StructureRules.FuelBayFlag).Quantity);
+        f.Structures.Advance();
+        Assert.Equal(2840, f.Structures.Inventory(f.PilotId, structure.Id).Single(i => i.FlagId == StructureRules.FuelBayFlag).Quantity);
+    }
+
+    [Fact]
     public void ConfiguredSpeedsApplyToNewTimersWhileSavedDeadlinesRemainStable()
     {
         using Fixture f = new();
@@ -320,12 +358,14 @@ public sealed class StructureTests
         var empty = contacts.Contacts(0);
         Assert.Single(populated);
         Assert.Empty(empty);
+        Assert.Equal(structure.Name, Assert.Single(f.Structures.Names([structure.Id, long.MaxValue])).Name);
         using (var metrics = SessionPerformance.Begin("warm structures", _ => { }, force: true)!)
         {
             for (int i = 0; i < 20; i++)
             {
                 Assert.Same(populated, contacts.Contacts(Fixture.SystemId));
                 Assert.Same(empty, contacts.Contacts(0));
+                Assert.Equal(structure.Name, Assert.Single(f.Structures.Names([structure.Id, long.MaxValue])).Name);
             }
             Assert.Equal(0, metrics.Commands);
             Assert.Equal(0, metrics.Connections);
@@ -333,6 +373,7 @@ public sealed class StructureTests
         }
         f.Structures.Rename(f.PilotId, structure.Id, "Renamed home");
         Assert.Equal("Renamed home", Assert.Single(contacts.Contacts(Fixture.SystemId)).Name);
+        Assert.Equal("Renamed home", Assert.Single(f.Structures.Names([structure.Id])).Name);
     }
 
     [Fact]
@@ -362,6 +403,13 @@ public sealed class StructureTests
         );
         var entries = Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(directory.Reply)));
         Assert.Contains(structure.Id, entries.Keys);
+        var names = Assert.IsType<PilotCallResult.Success>(
+            router.Call(context, "config", "GetMultiLocationsEx", new object?[] { new List<object?> { structure.Id } }, _ => { })
+        );
+        var location = Assert.Single(Assert.IsType<Eden.Protocol.Docking.LocationTable>(names.Reply).Locations);
+        Assert.Equal(structure.Id, location.Id);
+        Assert.Equal(structure.Name, location.Name);
+        Assert.Equal(Fixture.SystemId, location.SystemId);
         Assert.IsType<PilotCallResult.Success>(
             router.Call(context, "structureDocking", "Undock", new object?[] { structure.Id, docked.ShipId }, _ => { })
         );
@@ -545,8 +593,11 @@ public sealed class StructureTests
         f.Structures.Unanchor(f.PilotId, structure.Id);
         f.Clock.AdvanceWallTime(TimeSpan.FromDays(7));
         Assert.Equal(StructureState.Unanchored, f.Structures.Read(f.PilotId, structure.Id)!.State);
-        foreach (var integral in f.Structures.Inventory(f.PilotId, structure.Id).Where(i =>
-            i.TypeId == structure.Profile.BuiltinCoreTypeId || i.TypeId == structure.Profile.BuiltinModuleTypeId))
+        foreach (
+            var integral in f
+                .Structures.Inventory(f.PilotId, structure.Id)
+                .Where(i => i.TypeId == structure.Profile.BuiltinCoreTypeId || i.TypeId == structure.Profile.BuiltinModuleTypeId)
+        )
         {
             Assert.Throws<InvalidDataException>(() => f.Structures.Withdraw(f.PilotId, structure.Id, integral.Id, 1, toCargo: true));
             Assert.Contains(f.Structures.Inventory(f.PilotId, structure.Id), i => i.Id == integral.Id && i.Quantity == 1);

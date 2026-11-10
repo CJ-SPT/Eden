@@ -79,7 +79,7 @@ internal sealed partial class PilotStructureStore
                 }
                 if (online)
                 {
-                    if (!StructureRules.Operational(structure.State) || !structure.HasCore)
+                    if (!StructureRules.Operational(structure.State) || !structure.HasCore || structure.UnanchorAt <= now)
                     {
                         throw new InvalidDataException("The structure must be operational and have its core installed.");
                     }
@@ -125,8 +125,10 @@ internal sealed partial class PilotStructureStore
                 }
                 item.Online = online;
                 module.Online = online;
-                structure.LowPowerAt = online ? null : structure.LowPowerAt ?? now;
                 world.SaveChanges();
+                structure.LowPowerAt = world.Set<SavedStructureService>().Any(m => m.StructureId == structureId && m.Online)
+                    ? null
+                    : structure.LowPowerAt ?? now;
                 StructureIndustry.Synchronize(world, catalog, structure, now);
             }
         );
@@ -272,61 +274,91 @@ internal sealed partial class PilotStructureStore
                 structure.StateStartedAt = structure.StateEndsAt!.Value;
                 structure.StateEndsAt = null;
             }
-            if (
-                structure.UnanchorAt <= now
-                && !world.Ships.Any(s => s.StructureId == structure.Id)
-                && !world.Set<OwnedItem>().Any(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId)
-            )
-            {
-                // Retain corporation-owned contents in the unanchored container for recovery.
-                structure.State = StructureState.Unanchored;
-                structure.UnanchorAt = null;
-                structure.StateEndsAt = null;
-                foreach (var module in world.Set<SavedStructureService>().Where(m => m.StructureId == structure.Id))
-                {
-                    module.Online = false;
-                    module.NextFuelAt = null;
-                    world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
-                }
-            }
         }
+        world.SaveChanges();
+        var stopping = due.Where(s => s.UnanchorAt <= now).ToDictionary(s => s.Id);
         var services = world
             .Set<SavedStructureService>()
             .Where(m => m.Online && m.NextFuelAt != null && m.NextFuelAt <= now)
             .OrderBy(m => m.StructureId)
             .ThenBy(m => m.Slot)
             .ToArray();
-        foreach (var module in services)
+        foreach (var group in services.GroupBy(m => m.StructureId))
         {
-            var structure = Require(world, module.StructureId);
+            var structure = Require(world, group.Key);
             var profile = StructureCatalog.Require(catalog, structure.TypeId);
-            var item = world.Set<OwnedItem>().Find(module.ItemId)!;
-            var service = StructureCatalog.Service(catalog, item.TypeId);
-            int hourly = AdjustedFuel(catalog, profile, service, service.HourlyFuel);
-            long cycles = (now - module.NextFuelAt!.Value) / StructureRules.FuelInterval + 1;
-            long available = world
+            var modules = group.ToDictionary(m => m.ItemId);
+            var profiles = modules.Values.ToDictionary(
+                m => m.ItemId,
+                m => StructureCatalog.Service(catalog, world.Set<OwnedItem>().Find(m.ItemId)!.TypeId)
+            );
+            long until = stopping.TryGetValue(structure.Id, out var stop) ? stop.UnanchorAt!.Value : now;
+            var reserves = world
                 .Set<OwnedItem>()
                 .Where(i => i.LocationId == structure.Id && i.FlagId == StructureRules.FuelBayFlag)
                 .AsEnumerable()
-                .Where(i => catalog.RequireItem(i.TypeId).GroupId == service.FuelGroupId)
-                .Sum(i => (long)i.Quantity);
-            long paid = hourly == 0 ? cycles : Math.Min(cycles, available / hourly);
-            if (paid > 0)
+                .GroupBy(i => catalog.RequireItem(i.TypeId).GroupId)
+                .Select(g => new StructureFuelReserve(g.Key, g.Sum(i => (long)i.Quantity)))
+                .ToArray();
+            var plan = StructureFuelRules.Advance(
+                modules
+                    .Values.Select(m => new StructureFuelCycle(
+                        m.ItemId,
+                        m.Slot,
+                        profiles[m.ItemId].FuelGroupId,
+                        AdjustedFuel(catalog, profile, profiles[m.ItemId], profiles[m.ItemId].HourlyFuel),
+                        m.NextFuelAt!.Value
+                    ))
+                    .ToArray(),
+                reserves,
+                until
+            );
+            foreach (var charge in plan.Charges)
             {
-                Fuel(world, catalog, structure, service, checked((int)(paid * hourly)));
-                module.NextFuelAt = checked(module.NextFuelAt.Value + paid * StructureRules.FuelInterval);
-                world.SaveChanges();
+                Fuel(world, catalog, structure, profiles.Values.First(p => p.FuelGroupId == charge.GroupId), checked((int)charge.Quantity));
             }
-            if (paid < cycles)
+            foreach (var deadline in plan.Deadlines.Where(d => d.OfflineAt is null))
             {
-                long offlineAt = module.NextFuelAt!.Value;
+                modules[deadline.ItemId].NextFuelAt = deadline.NextFuelAt;
+            }
+            world.SaveChanges();
+            foreach (var deadline in plan.Deadlines.Where(d => d.OfflineAt.HasValue).OrderBy(d => d.OfflineAt).ThenBy(d => d.Slot))
+            {
+                var module = modules[deadline.ItemId];
                 module.Online = false;
-                item.Online = false;
-                structure.LowPowerAt ??= module.NextFuelAt;
                 module.NextFuelAt = null;
+                world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
                 world.SaveChanges();
-                StructureIndustry.Synchronize(world, catalog, structure, offlineAt);
+                structure.LowPowerAt = world.Set<SavedStructureService>().Any(m => m.StructureId == structure.Id && m.Online)
+                    ? null
+                    : structure.LowPowerAt ?? deadline.OfflineAt;
+                StructureIndustry.Synchronize(world, catalog, structure, deadline.OfflineAt!.Value);
             }
+        }
+        foreach (var structure in stopping.Values)
+        {
+            long stoppedAt = structure.UnanchorAt!.Value;
+            foreach (var module in world.Set<SavedStructureService>().Where(m => m.StructureId == structure.Id && m.Online))
+            {
+                module.Online = false;
+                module.NextFuelAt = null;
+                world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
+            }
+            // Services stop at the saved deadline even if personal assets delay packaging.
+            // Settle their preceding fuel hours before changing the module state.
+            if (
+                !world.Ships.Any(s => s.StructureId == structure.Id)
+                && !world.Set<OwnedItem>().Any(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId)
+            )
+            {
+                structure.State = StructureState.Unanchored;
+                structure.StateStartedAt = stoppedAt;
+                structure.UnanchorAt = null;
+                structure.StateEndsAt = null;
+            }
+            structure.LowPowerAt ??= stoppedAt;
+            world.SaveChanges();
+            StructureIndustry.Synchronize(world, catalog, structure, stoppedAt);
         }
         world.SaveChanges();
     }

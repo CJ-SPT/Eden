@@ -1,3 +1,5 @@
+using Eden.Gameplay.Ships;
+
 namespace Eden.Gameplay.Structures;
 
 public static class StructureRules
@@ -40,12 +42,7 @@ public static class StructureRules
                 or StructureService.Copying
                 or StructureService.Invention;
 
-    public static int FuelAmount(
-        StructureFamily family,
-        IReadOnlyList<StructureService> services,
-        double roleBonus,
-        int amount
-    )
+    public static int FuelAmount(StructureFamily family, IReadOnlyList<StructureService> services, double roleBonus, int amount)
     {
         bool matching = family switch
         {
@@ -70,9 +67,7 @@ public static class StructureRules
             ),
             _ => false,
         };
-        double multiplier = matching
-            ? 1 + roleBonus / 100
-            : 1;
+        double multiplier = matching ? 1 + roleBonus / 100 : 1;
         return checked((int)Math.Ceiling(amount * multiplier));
     }
 
@@ -85,13 +80,24 @@ public static class StructureRules
         {
             return false;
         }
-        // Capital and supercapital groups from the pinned catalog. Freighters remain subcapital dockable.
-        bool supercapital = shipGroupId is 30 or 659;
-        bool capital = supercapital || shipGroupId is 485 or 547 or 1538 or 883 or 4594;
-        return profile.Size switch
+        // Freighters remain dockable as subcapitals. Only Keepstar-family citadels accept supercapitals.
+        var hull = (HullClass)shipGroupId;
+        bool supercapital = hull is HullClass.Titan or HullClass.Supercarrier;
+        bool capital =
+            supercapital
+            || hull
+                is HullClass.Dreadnought
+                    or HullClass.Carrier
+                    or HullClass.ForceAuxiliary
+                    or HullClass.CapitalIndustrial
+                    or HullClass.LancerDreadnought
+                    or HullClass.CommandCarrier;
+        return (profile.Family, profile.Size) switch
         {
-            StructureSize.ExtraLarge => true,
-            StructureSize.Large => !supercapital && (profile.Family != StructureFamily.Refinery || shipGroupId == 883 || !capital),
+            (StructureFamily.Citadel, StructureSize.ExtraLarge) => true,
+            (StructureFamily.Citadel, StructureSize.Large) => !supercapital,
+            (StructureFamily.EngineeringComplex, StructureSize.ExtraLarge) => !supercapital,
+            (StructureFamily.Refinery, StructureSize.Large) => hull == HullClass.CapitalIndustrial || !capital,
             _ => !capital,
         };
     }

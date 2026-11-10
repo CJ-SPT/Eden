@@ -222,6 +222,24 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                 && Snapshot(world, catalog, structure).Services.Contains(service)
         );
 
+    public IReadOnlyList<StructureLocation> Names(IReadOnlyList<long> structureIds)
+    {
+        var reads = Eden.World.Runtime.LiveReadModels.Find(database.Path);
+        return structureIds
+            .Distinct()
+            .Select(id => reads is null ? LoadName(id) : reads.StructureName(id, () => LoadName(id)))
+            .OfType<StructureLocation>()
+            .ToArray();
+    }
+
+    private StructureLocation? LoadName(long id)
+    {
+        using WorldDbContext world = new(database.Path);
+        return world.Set<SavedStructure>().Find(id) is { State: not StructureState.Destroyed } s
+            ? new(s.Id, s.Name, s.SystemId, new(s.X, s.Y, s.Z))
+            : null;
+    }
+
     public IReadOnlyList<InventoryItem> Inventory(long pilotId, long structureId) =>
         Execute(
             (world, catalog, _) =>
@@ -565,7 +583,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                         s.Id,
                         s.TypeId,
                         StructureCatalog.Require(catalog, s.TypeId).GroupId,
-                        StructureRules.CategoryId,
+                        StructureCatalog.Require(catalog, s.TypeId).CategoryId,
                         s.CorporationId,
                         new(s.X, s.Y, s.Z),
                         (float)StructureCatalog.Require(catalog, s.TypeId).Radius

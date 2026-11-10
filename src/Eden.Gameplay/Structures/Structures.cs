@@ -61,6 +61,8 @@ public enum StructureFamily
     CynoBeacon,
     CynoJammer,
     MoonDrill,
+    Skyhook,
+    SovereigntyHub,
 }
 
 public enum StructureSize
@@ -92,6 +94,7 @@ public sealed record StructureProfile(
 {
     public bool Dockable => Family is StructureFamily.Citadel or StructureFamily.EngineeringComplex or StructureFamily.Refinery;
     public int? BuiltinCoreTypeId { get; init; }
+    public int CategoryId { get; init; } = StructureRules.CategoryId;
 }
 
 public sealed record StructureServiceProfile(
@@ -110,6 +113,8 @@ public sealed record StructureServiceProfile(
 public sealed record StructureModule(long ItemId, int TypeId, int Slot, bool Online, long? NextFuelAt);
 
 public sealed record StructureAccess(long MemberId, bool Allowed);
+
+public sealed record StructureLocation(long Id, string Name, int SystemId, SpacePosition Position);
 
 public sealed record StructureContact(StructureState State, long StateStartedAt, long? StateEndsAt, long? UnanchorAt, bool HasCore);
 
@@ -153,6 +158,7 @@ public interface IPilotStructures
 {
     IReadOnlyList<StructureSnapshot> List(long pilotId, int? systemId = null);
     StructureSnapshot? Read(long pilotId, long structureId);
+    IReadOnlyList<StructureLocation> Names(IReadOnlyList<long> structureIds);
     StructureResult Deploy(long pilotId, StructureDeployment deployment);
     StructureResult Rename(long pilotId, long structureId, string name);
     StructureResult Describe(long pilotId, long structureId, string description);

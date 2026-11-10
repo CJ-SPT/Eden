@@ -13,7 +13,7 @@ def export(path, output):
         )}
         hulls = [i for i, in db.execute(
             'SELECT t.Id FROM ItemType t JOIN ItemGroup g ON g.Id=t.GroupId '
-            'WHERE g.CategoryId=65 AND g.Id IN (1657,1404,1406,1408,2016,2017,4744) ORDER BY t.Id'
+            'WHERE g.Id IN (1657,1404,1406,1408,2016,2017,4744,4736,1012) ORDER BY t.Id'
         ) if definitions.get(i, {}).get('published') == 1]
         services = [35892, 35894, 35899, 35891, 45550, 35886, 35878, 35881, 35877,
                     45538, 45537, 45539, 45009, 35913, 35912, 35914, 82941, 78330]

@@ -334,6 +334,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _asteroids.Clear();
         _miningSites.Clear();
         _structures.Clear();
+        _structureNames.Clear();
         _wrecks.Clear();
         _drones.Clear();
         _droneControllers.Clear();

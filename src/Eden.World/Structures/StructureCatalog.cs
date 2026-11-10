@@ -31,7 +31,7 @@ internal static class StructureCatalog
 
     internal static IEnumerable<StructureProfile> All(CatalogDbContext catalog) =>
         catalog
-            .Definitions.Items.Values.Where(t => t.CategoryId == StructureRules.CategoryId)
+            .Definitions.Items.Values.Where(t => t.CategoryId == StructureRules.CategoryId || t.GroupId is 1012 or 4736)
             .Select(t => catalog.Definition(s_profiles, t.Id))
             .OfType<StructureProfile>();
 
@@ -40,7 +40,7 @@ internal static class StructureCatalog
         var type = catalog.FittingType(typeId);
         if (
             type is null
-            || type.CategoryId != StructureRules.CategoryId
+            || type.CategoryId != StructureRules.CategoryId && type.GroupId is not (1012 or 4736)
             || catalog.Read(CatalogData.Client.Types, (long)typeId)?.Published != 1
         )
         {
@@ -55,6 +55,8 @@ internal static class StructureCatalog
             2017 => StructureFamily.CynoBeacon,
             2016 => StructureFamily.CynoJammer,
             4744 => StructureFamily.MoonDrill,
+            4736 => StructureFamily.Skyhook,
+            1012 => StructureFamily.SovereigntyHub,
             _ => null,
         };
         if (family is null)
@@ -86,6 +88,7 @@ internal static class StructureCatalog
         )
         {
             BuiltinCoreTypeId = Type(PrefitCoreType),
+            CategoryId = type.CategoryId,
         };
     }
 

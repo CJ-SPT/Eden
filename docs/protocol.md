@@ -1,6 +1,6 @@
 # Protocol findings and milestone records
 
-[Player Upwell structures](protocol/structures.md) covers persistent deployment for all 18 published hulls,
+[Player Upwell structures](protocol/structures.md) covers persistent deployment for all 20 published hulls,
 native docking/storage, supported services, configuration speeds and explicit remaining mechanics.
 
 - [T2 subcapital hull admission, November 9, 2026](protocol/fitting.md#t2-subcapital-hull-admission-november-9-2026)

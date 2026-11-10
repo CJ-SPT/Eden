@@ -8,7 +8,11 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, DirectionalScanHandler scanner) : ISelectedPilotCallHandler
+internal sealed class DockedCompatibilityHandler(
+    IPilotFleet fleet,
+    DirectionalScanHandler scanner,
+    Eden.Gameplay.Structures.IPilotStructures structures
+) : ISelectedPilotCallHandler
 {
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
 
@@ -68,7 +72,7 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, DirectionalS
                             .OfType<InventoryItem>()
                             .Where(ship =>
                                 ShipStorageRules.CanRead(
-                                    new(pilot.PilotId, pilot.ShipId, pilot.StationId, pilot.Position is null),
+                                    new(pilot.PilotId, pilot.ShipId, pilot.DockedLocationId, pilot.Position is null),
                                     ship,
                                     fleet.Find(pilot.PilotId, ship.LocationId)
                                 )
@@ -94,6 +98,11 @@ internal sealed class DockedCompatibilityHandler(IPilotFleet fleet, DirectionalS
                             .Select(w => new LocationRow(w.Id, w.Name, w.SystemId, w.Position.X, w.Position.Y, w.Position.Z))
                     )
                     .Concat(scanner.Names(context, ids.OfType<long>().ToHashSet()))
+                    .Concat(
+                        structures
+                            .Names(ids.OfType<long>().Where(id => id >= Eden.Gameplay.Structures.StructureRules.FirstStructureId).ToArray())
+                            .Select(s => new LocationRow(s.Id, s.Name, s.SystemId, s.Position.X, s.Position.Y, s.Position.Z))
+                    )
                     .DistinctBy(location => location.Id)
                     .ToArray()
             ),

@@ -60,7 +60,7 @@ internal sealed class StructureInventoryHandler(IPilotStructures structures) : I
                         (int)InventoryFlag.AutoFit,
                         1,
                         s.Profile.GroupId,
-                        StructureRules.CategoryId,
+                        s.Profile.CategoryId,
                         0,
                         true
                     )

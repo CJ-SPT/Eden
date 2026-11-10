@@ -22,7 +22,7 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 ## Current status
 
-[Player Upwell structures](docs/protocol/structures.md) now have a shared foundation for all 18 published hulls:
+[Player Upwell structures](docs/protocol/structures.md) now have a shared foundation for all 20 published hulls:
 deployment, cores, saved timers, service fuel, dockable hangars and supported personal industry/reprocessing.
 The Settings page includes anchoring, onlining and decommissioning speeds. Specialized navigation, moon mining,
 reactions, structure combat and asset safety remain pending; native presentation is unverified.
