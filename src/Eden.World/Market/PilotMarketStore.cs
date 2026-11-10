@@ -402,7 +402,7 @@ internal sealed partial class PilotMarketStore(
                 && t.Time >= start
                 && t.Time <= end
             );
-        return executions
+        var local = executions
             .AsEnumerable()
             .Concat(personalFills.AsEnumerable())
             .GroupBy(t => (t.TypeId, Date: DateTime.FromFileTimeUtc(t.Time).Date))
@@ -423,6 +423,8 @@ internal sealed partial class PilotMarketStore(
                 );
             })
             .ToArray();
+        int[] knownTypes = typeIds.Where(catalog.Definitions.Items.ContainsKey).ToArray();
+        return MarketHistoryCatalog.Merge(local, knownTypes, start, end);
     }
 
     private static PilotWallet Wallet(WorldDbContext world, long pilotId) =>

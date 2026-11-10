@@ -118,3 +118,6 @@ independent of production-unlocked NPC supply, with finite active-play recovery 
 
 [NPC purchases from resting sell orders](protocol/industry.md#npc-purchases-from-resting-sell-orders--november-9-2026)
 consume competitively priced listings during active play and preserve finite demand, taxes, escrow and saved recovery.
+
+[Inventory estimates and reference market history](protocol/industry.md#inventory-estimates-and-reference-market-history--november-9-2026)
+cover separate average/adjusted values and deterministic simulated history generated from the existing market snapshot.

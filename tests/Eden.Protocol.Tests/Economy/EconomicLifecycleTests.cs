@@ -346,7 +346,7 @@ public sealed class EconomicLifecycleTests
             .IsType<PilotCallResult.Success>(handler.Call(context, "config", "GetAverageMarketPrices", Array.Empty<object?>(), null))
             .Reply;
         Assert.NotEmpty(BlueMarshal.Encode(reply));
-        var row = Assert.IsType<BlueInstance>(new EconomicPriceReply(new(34, 2)).ToBlue());
+        var row = Assert.IsType<BlueInstance>(new EconomicPriceReply(new(34, 9, 2)).ToBlue());
         Assert.Equal(2d, Assert.IsType<Dictionary<string, object?>>(row.State)["adjustedPrice"]);
     }
 
@@ -399,7 +399,14 @@ public sealed class EconomicLifecycleTests
             WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
             Assert.Equal((cycle + 1) * 100, f.Quantity(StarterProductionTests.Consumer, 215));
         }
-        Assert.Equal(300, f.Market.History(StarterProductionTests.Consumer, [215]).Sum(h => h.Volume));
+        var tradedDays = f
+            .Market.Transactions(StarterProductionTests.Consumer)
+            .Select(t => DateTime.FromFileTimeUtc(t.Time).Date.ToFileTimeUtc())
+            .ToHashSet();
+        Assert.Equal(
+            300,
+            f.Market.History(StarterProductionTests.Consumer, [215]).Where(h => tradedDays.Contains(h.Date)).Sum(h => h.Volume)
+        );
         using WorldDbContext saved = new(f.Db.Path);
         var payments = saved.Set<SavedServicePayment>().ToArray();
         Assert.Equal(9, payments.Length);

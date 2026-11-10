@@ -916,3 +916,69 @@ filter then passed all three hull variants in 206.88 seconds (build 13.50 second
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect native partial-listing updates and wallet credits while the selling pilot is offline.
+
+## Inventory estimates and reference market history — November 9, 2026
+
+`config.GetAverageMarketPrices` previously returned only the saved adjusted industrial inputs, and returned an empty map
+when service costs were disabled. Most finished goods therefore lacked the `averagePrice` read by inventory and other
+estimated-value views. `IMarketValuations` now supplies every published snapshot-priced catalog type independently of
+service-cost settings and manufacturing unlocks. Inventory estimates use the existing snapshot's bid/ask midpoint or
+its sole available quote side. Unknown/unquoted items stay unpriced. Saved adjusted prices and their service-cost gate
+remain separate: inventory estimates and simulated history cannot change manufacturing fees or NPC trade quotes.
+
+Pinned build-3662168 `invWindow.Inventory.UpdateIskPriceLabel` reads `eveFormat.GetAveragePrice(item)` and multiplies by
+stack size. That helper returns None for blueprint copies and otherwise reads
+`inventorycommon.typeHelpers.GetAveragePrice(typeID)` from `cfg._averageMarketPrice[typeID].averagePrice`. The server
+supplies the map before pilot selection. Blueprint-copy exclusion is unchanged; no client archive patch is used.
+
+The ticker's `TickerItem.LoadData` rejects fewer than seven daily entries, nonpositive prices and histories without
+traded volume. It batches ordinary types through `GetHistoryForManyTypeIDs` and PLEX through `GetPlexHistory`.
+The graph/table use individual old/new history routes with the same native `CRowset` descriptor. A new solo world has
+too few actual local executions for these displays. Eden therefore creates **simulated reference history**, using the
+existing embedded market price snapshot. This is generated NPC reference activity, not historical Tranquility trades
+and not executed trades in the saved Eden world. No external history download or extra dataset is required.
+
+`MarketReferenceHistoryRules` generates 30 consecutive UTC days on demand. Each item's midpoint/sole quote anchors the
+series, with deterministic daily variation up to 3% and a 0.5% low/high band (rounded to representable cents). The last
+reference day ends exactly at its snapshot anchor. Positive reference volumes vary from 75% to 125% of the existing
+initial hub demand quantity; reference order counts are capped at 20 and cannot exceed units. Fixed integer mixing
+keeps output stable across processes and runtime versions. `MarketHistorySource.SimulatedReference` marks these rows
+internally; actual rows retain `LocalExecution`. These source labels do not change the pinned client wire descriptor.
+
+The 30-day window ends on the completed UTC day before the price snapshot's recorded capture date. It does not slide
+or reroll on server restart. Refreshing the existing price snapshot deliberately refreshes this dated baseline too.
+The rule is cached per requested type, so the server does not construct a complete universe-sized history upfront.
+Local regional executions replace simulated statistics completely for an overlapping type/day. Actual local averages
+remain quantity-weighted, personal fills count once, future rows are excluded and the 365-day local window remains.
+Individual, batched and PLEX routes share this merged result and the same old/new UTC boundary. Reference reads do
+not create orders, ledger executions, wallet credits, inventory, manufacturing unlocks or demand replenishment.
+
+Existing own-order/account notifications and native order-cache invalidation remain unchanged. The client retains its
+native ticker cache behavior; restarting it refreshes a ticker already loaded in that session. Restart the server and
+client after deployment to load the new price feed and baseline. Native rendering remains unverified by agent tests.
+
+References: [EVE University market](https://wiki.eveuniversity.org/Market), pinned inventory/market/ticker bytecode read
+inertly, and Carbon Blue `src/Marshal.cpp` at `fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae`. Existing row, integer-volume,
+KeyVal and tuple/list wire forms are retained. The simulated baseline is explicit Eden policy requested for solo play.
+
+**Automated validation:** The exact
+`FullyQualifiedName=Eden.Protocol.Tests.Market.MarketReferenceHistoryTests.ReferenceGenerationIsStableBoundedAndAnchoredToItsQuote`
+regression passed first, followed by all 11 valuation/reference/compatibility cases. Final tool restore, solution restore,
+build, affected tests, both Python policy suites (8 catalog and 9 formatting cases) and formatting verification passed
+in **494.97 seconds**. The affected filter
+`FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~EconomicLifecycleTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~StarterProductionTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`
+passed **236 tests in 458.58 seconds**, including all three starter-hull variants. This was a filtered run, not the full
+.NET regression suite; no full regression was requested or run. Added documentation links and anchors also passed.
+
+The exact
+`FullyQualifiedName=Eden.Protocol.Tests.Market.MarketCatalogPerformanceTests.FullCatalogValuationFeedFitsTheTransportAndWarmReferenceReadsUseNoSql`
+filter then passed against the installed read-only catalog with `EDEN_MARKET_PERFORMANCE_CATALOG`: build **1.45 seconds**,
+runner **4.15 seconds**. All **19,425** average-price rows round-trip in **1,444,545 bytes**, below the transport budget.
+The warmed reference lookup used **zero SQL commands, connections and fitting calculations** (0.47 ms). This measures
+the cached catalog read, not a complete live session frame. Test results are under ignored `artifacts/market-improvements/`
+and `artifacts/feature-tests/results/`. Typed-rule and automated-session coverage includes all priced types, native ticker
+prerequisites, price independence, UTC boundaries, local-day replacement, restart persistence and unchanged ledgers.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect native inventory estimates and ticker/graph/table data after a fresh client start.

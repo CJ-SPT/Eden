@@ -314,15 +314,19 @@ public sealed class MarketTests
             world.SaveChanges();
         }
         var days = f.Store.History(f.Pilot.PilotId, [Tritanium, Scordite]);
-        var tritanium = Assert.Single(days, d => d.TypeId == Tritanium);
+        var tritanium = Assert.Single(days, d => d.TypeId == Tritanium && d.Date == DateTime.UtcNow.Date.ToFileTimeUtc());
         Assert.Equal(DateTime.UtcNow.Date.ToFileTimeUtc(), tritanium.Date);
         Assert.Equal(100, tritanium.LowPriceCents);
         Assert.Equal(200, tritanium.HighPriceCents);
         Assert.Equal(1200m / 7, tritanium.AveragePriceCents);
         Assert.Equal(7, tritanium.Volume);
         Assert.Equal(3, tritanium.Orders);
-        Assert.Equal(133, Assert.Single(days, d => d.TypeId == Scordite).Volume);
-        Assert.Empty(f.Store.History(f.Pilot.PilotId, [(int)MiningLaserType.MinerII]));
+        Assert.Equal(
+            133,
+            Assert.Single(days, d => d.TypeId == Scordite && d.Date == DateTime.UtcNow.Date.AddDays(-1).ToFileTimeUtc()).Volume
+        );
+        Assert.DoesNotContain(days, d => d.Date > DateTime.UtcNow.ToFileTimeUtc());
+        Assert.All(f.Store.History(f.Pilot.PilotId, [(int)MiningLaserType.MinerII]), d => Assert.True(d.AveragePriceCents > 0));
         _ = WorldInitialization.Open(f.Db.Path);
         Assert.Equal(days, f.Store.History(f.Pilot.PilotId, [Tritanium, Scordite]));
     }
@@ -659,12 +663,22 @@ public sealed class MarketTests
             Call("marketProxy", "GetHistoryForManyTypeIDs", new HashSet<long> { Scordite, Tritanium })
         );
         var pair = Assert.IsType<object?[]>(history[Scordite]);
-        Assert.Empty(Assert.IsType<List<object?>>(Assert.IsType<BlueConstructor>(pair[0]).Arguments[1]));
+        var referenceRows = Assert.IsType<List<object?>>(Assert.IsType<BlueConstructor>(pair[0]).Arguments[1]);
+        Assert.NotEmpty(referenceRows);
+        Assert.All(
+            referenceRows,
+            value =>
+            {
+                var cells = Assert.IsType<object?[]>(Assert.IsType<BlueConstructor>(value).Arguments[1]);
+                Assert.True(Assert.IsType<long>(cells[0]) < now.Date.ToFileTimeUtc());
+            }
+        );
         var today = Assert.Single(Assert.IsType<List<object?>>(Assert.IsType<BlueConstructor>(pair[1]).Arguments[1]));
         Assert.Equal(new object?[] { now.Date.ToFileTimeUtc(), 5d, 5d, 5d, 133L, 1 }, Assert.IsType<BlueConstructor>(today).Arguments[1]);
         Assert.NotEmpty(BlueMarshal.Encode(history));
-        var empty = Assert.IsType<object?[]>(history[Tritanium]);
-        Assert.All(empty, rows => Assert.Empty(Assert.IsType<List<object?>>(Assert.IsType<BlueConstructor>(rows).Arguments[1])));
+        var untraded = Assert.IsType<object?[]>(history[Tritanium]);
+        Assert.NotEmpty(Assert.IsType<List<object?>>(Assert.IsType<BlueConstructor>(untraded[0]).Arguments[1]));
+        Assert.Empty(Assert.IsType<List<object?>>(Assert.IsType<BlueConstructor>(untraded[1]).Arguments[1]));
         Assert.IsType<Dictionary<long, object?>>(Call("marketProxy", "GetPlexHistory"));
         Assert.IsType<PilotCallResult.Failure>(
             Call("marketProxy", "PlaceBuyOrder", (long)pilot.StationId, 3651L, 100d, 1L, -1L, 1L, 2L, false, null)

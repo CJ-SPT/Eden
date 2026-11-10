@@ -112,7 +112,8 @@ public sealed class PersonalMarketTests
         Assert.Equal(Budget - 10_000 + 44_400, f.Market.Balance(Seller));
         Assert.Equal(Budget - 48_000, f.Market.Balance(Buyer));
         Assert.Single(f.Market.Transactions(Seller));
-        Assert.Equal(40, Assert.Single(f.Market.History(Buyer, [Ammo])).Volume);
+        long buyerDay = DateTime.FromFileTimeUtc(f.Market.Transactions(Buyer).Last().Time).Date.ToFileTimeUtc();
+        Assert.Equal(40, Assert.Single(f.Market.History(Buyer, [Ammo]), day => day.Date == buyerDay).Volume);
         if (live)
         {
             var runtime = f.Db.Services.GetRequiredService<LiveWorld>();
@@ -151,7 +152,8 @@ public sealed class PersonalMarketTests
         Assert.Equal(Budget - 70_000, f.Market.Balance(Buyer));
         var journal = f.Db.Services.GetRequiredService<IPilotWalletReader>().Journal(Buyer);
         Assert.Equal(-70_000, journal.MarketPayments!.Sum(p => p.AmountCents));
-        Assert.Equal(40, Assert.Single(f.Market.History(Seller, [Ammo])).Volume);
+        long sellerDay = DateTime.FromFileTimeUtc(f.Market.Transactions(Seller).Last().Time).Date.ToFileTimeUtc();
+        Assert.Equal(40, Assert.Single(f.Market.History(Seller, [Ammo]), day => day.Date == sellerDay).Volume);
     }
 
     [Fact]

@@ -1,11 +1,11 @@
-using Eden.Gameplay.Economy;
+using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Industry;
 
-internal sealed record EconomicPriceReply(AdjustedPrice Price) : BlueModel
+internal sealed record EconomicPriceReply(MarketValuation Price) : BlueModel
 {
     public override object ToBlue() =>
         new BlueInstance(
@@ -13,14 +13,14 @@ internal sealed record EconomicPriceReply(AdjustedPrice Price) : BlueModel
             new Dictionary<string, object?>
             {
                 ["typeID"] = Price.TypeId,
-                ["adjustedPrice"] = (double)Price.PriceIsk,
-                ["averagePrice"] = (double)Price.PriceIsk,
+                ["adjustedPrice"] = Price.AdjustedPriceIsk is { } adjusted ? (double)adjusted : null,
+                ["averagePrice"] = Price.AveragePriceIsk is { } average ? (double)average : null,
             }
         );
 }
 
 [Injectable]
-internal sealed class EconomicPriceHandler(IEconomicPrices prices) : IPilotCallHandler
+internal sealed class EconomicPriceHandler(IMarketValuations prices) : IPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -30,7 +30,11 @@ internal sealed class EconomicPriceHandler(IEconomicPrices prices) : IPilotCallH
         Dictionary<string, object?>? keywords
     )
     {
-        return service == "config" && method == "GetAverageMarketPrices" && arguments is object?[] { Length: 0 }
+        return
+            service == "config"
+            && method == "GetAverageMarketPrices"
+            && arguments is object?[] { Length: 0 }
+            && keywords is not { Count: > 0 }
             ? new BlueMap<int, EconomicPriceReply>(prices.Prices().ToDictionary(p => p.TypeId, p => new EconomicPriceReply(p)))
             : PilotCallResult.Unsupported;
     }

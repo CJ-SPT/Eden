@@ -50,7 +50,16 @@ public sealed record MarketHistoryDay(
     decimal AveragePriceCents,
     long Volume,
     int Orders
-);
+)
+{
+    public MarketHistorySource Source { get; init; } = MarketHistorySource.LocalExecution;
+}
+
+public enum MarketHistorySource
+{
+    LocalExecution,
+    SimulatedReference,
+}
 
 public interface IPilotMarket
 {

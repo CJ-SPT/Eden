@@ -406,6 +406,12 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Mining, industry and markets
 
+- [Inventory estimates and reference market history (November 9, 2026)](protocol/industry.md#inventory-estimates-and-reference-market-history--november-9-2026)
+
+- [NPC purchases from resting sell orders (November 9, 2026)](protocol/industry.md#npc-purchases-from-resting-sell-orders--november-9-2026)
+
+- [Industrial NPC demand (November 9, 2026)](protocol/industry.md#industrial-npc-demand--november-9-2026)
+
 - [Science jobs (November 8, 2026)](protocol/industry.md#science-jobs-november-8-2026)
 
 - [PLEX history and multibuy structure discovery (November 8, 2026)](protocol/industry.md#plex-history-and-multibuy-structure-discovery-november-8-2026)

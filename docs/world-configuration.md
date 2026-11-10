@@ -23,13 +23,27 @@ The Economy card exposes **Progressive regional markets**. Save the setting and 
 
 Markets use one shared selected-human clock. Economic age and replenishment advance while at least one human pilot is selected, including while docked. Additional humans share the same elapsed interval. Training and installed industry retain their established deadline policies.
 
-The initial policy supplies materials immediately, equipment after four active hours, and the Venture, Merlin and Badger at hubs after eight, sixteen and twenty-four hours. Stock targets grow every eight active hours through three growth stages. Finite stock and demand recover in ten-minute intervals, by one sixth of capacity per interval. Repeated reads retain partial intervals. Local shortages move quotes up to fifteen percent from their station-specific anchors. Hull availability uses the audited starter cohort; other products require supported recipes and positively priced mineral inputs. These are Eden progression defaults.
+NPC suppliers follow the pinned corporation offers. Generated sell stock requires a delivered manufacturing claim.
+Resources and non-faction Tech I items have NPC buyers immediately; supported advanced products require a production
+claim for demand. Hubs start with approximately 150 million ISK of demand per type, growing through eight-hour stages
+to 600 million after 24 active hours. Specialist stations have one fifth of the budget. Finite quantities recover at
+ten-minute boundaries, retain partial intervals and move quotes by at most fifteen percent as they deplete. Blueprint,
+skillbook, faction and supercapital exclusions are described in the [industrial demand record](protocol/industry.md#industrial-npc-demand--november-9-2026).
 
-Regional quotes are prepared lazily for the current station, its regional hub and previously prepared stations in that region. Direct station trades consume the relevant finite order. Personal listings continue to trade between humans. Mining-area mineral supply and hub mineral demand provide an initial transport opportunity. Prices use saved adjusted mineral values, with pinned catalog reference values for remaining inputs, recipe quantities and output portions. Station roles use catalog market/manufacturing facilities, gate connectivity and station counts.
+Regional quotes are prepared lazily for the current station, its regional hub and previously prepared stations in that
+region. Direct trades and NPC purchases from competitively priced personal sell listings consume the same finite demand.
+Quotes use the embedded real-market snapshot, independent of adjusted prices used for service fees. Station roles use
+catalog market/manufacturing facilities, gate connectivity and station counts. The superseded time-unlock/material-price
+policy remains in the [historical protocol record](protocol/industry.md#progressive-regional-markets--november-8-2026).
 
 ## Overrides and compatibility
 
 Supported overrides change the server-supplied **adjusted price** for an existing catalog item or the **manufacturing index** for an existing system. The client obtains these values through `config.GetAverageMarketPrices` and the industry facility response. IDs must exist in the installed catalog, prices must be positive, indices must be within zero and one, and entries cannot repeat. Enabling service costs requires adjusted prices for catalog materials with positive source base prices.
+
+The same native price feed exposes a separate `averagePrice` for inventory and other estimated values, even with service
+costs disabled. It uses the existing snapshot midpoint or sole observed quote side. Simulated reference history
+supports the native ticker and charts. Adjusted-price overrides
+change industrial fee inputs and do not change inventory estimates or NPC trade prices.
 
 These overrides are economic projections belonging to the saved world. They do not modify the original item payload, base price, recipe or shared catalog cache. Two worlds using the same catalog retain separate active and pending definitions. Skills use the separate [skill editor and signed client package workflow](#skill-editor). Other native-client physics, volumes, recipes, identities and schema fields remain read-only. Adding another writable field requires an explicit compatible server/client synchronization contract.
 

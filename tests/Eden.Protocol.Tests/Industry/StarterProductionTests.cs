@@ -440,7 +440,15 @@ public sealed class StarterProductionTests
         Assert.Single(saved.Set<ShipLoss>().Where(l => l.PilotId == Consumer));
         Assert.All(saved.Set<NpcMarketOrder>(), order => Assert.NotEqual(NpcMarketKind.Development, order.Kind));
         Assert.Empty(saved.Set<TestingWalletGrant>());
-        Assert.All(quantities, q => Assert.Equal(q.Value, Assert.Single(f.Market.History(Consumer, [q.Key])).Volume));
+        var trades = f.Market.Transactions(Consumer);
+        Assert.All(
+            quantities,
+            q =>
+            {
+                long day = DateTime.FromFileTimeUtc(Assert.Single(trades, t => t.TypeId == q.Key).Time).Date.ToFileTimeUtc();
+                Assert.Equal(q.Value, Assert.Single(f.Market.History(Consumer, [q.Key]), h => h.Date == day).Volume);
+            }
+        );
     }
 
     [Fact]

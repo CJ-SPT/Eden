@@ -141,7 +141,12 @@ public sealed class MarketReadCompatibilityTests
             var reply = router.CallWire(context, "marketProxy", method, Array.Empty<object?>(), _ => { });
             Assert.Equal(BlueMarshal.Encode(pair[index]), BlueMarshal.Encode(reply));
             var rows = Assert.IsType<BlueConstructor>(reply);
-            var row = Assert.IsType<BlueConstructor>(Assert.Single(Assert.IsType<List<object?>>(rows.Arguments[1])));
+            var row = Assert.IsType<BlueConstructor>(
+                Assert.Single(
+                    Assert.IsType<List<object?>>(rows.Arguments[1]),
+                    value => Assert.IsType<BlueConstructor>(value).Arguments[1] is object?[] cells && Equals(cells[0], date.ToFileTimeUtc())
+                )
+            );
             Assert.Equal(new object?[] { date.ToFileTimeUtc(), 1d, 1d, 1d, quantity, 1 }, row.Arguments[1]);
         }
         Assert.Empty(context.Notifications);

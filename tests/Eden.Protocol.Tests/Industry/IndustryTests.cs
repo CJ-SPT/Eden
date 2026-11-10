@@ -352,7 +352,8 @@ public sealed class IndustryTests
         Assert.Equal(60, Assert.Single(personal.PersonalOrders(f.Pilot.PilotId)).Remaining);
         Assert.Equal(1_027_000, market.Balance(f.Pilot.PilotId));
         Assert.Equal(960_000, market.Balance(wing.PilotId));
-        Assert.Equal(40, Assert.Single(market.History(wing.PilotId, [215])).Volume);
+        long tradedDay = DateTime.FromFileTimeUtc(market.Transactions(wing.PilotId).Last().Time).Date.ToFileTimeUtc();
+        Assert.Equal(40, Assert.Single(market.History(wing.PilotId, [215]), day => day.Date == tradedDay).Volume);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(40, saved.Set<OwnedItem>().Single(i => i.OwnerId == wing.PilotId && i.TypeId == 215).Quantity);
         Assert.Single(saved.Set<IndustryJob>());

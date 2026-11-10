@@ -161,7 +161,10 @@ public sealed class RegionalMarketTests
         Assert.Contains(orders, o => o.TypeId == HaulingRules.BadgerType && !o.Bid && o.StationId == HubStation && o.Remaining > 0);
         Assert.DoesNotContain(orders, o => o.TypeId == Merlin && !o.Bid);
         Assert.Empty(market.Transactions(pilot.PilotId));
-        Assert.Empty(market.History(pilot.PilotId, [HaulingRules.BadgerType]));
+        Assert.All(
+            market.History(pilot.PilotId, [HaulingRules.BadgerType]),
+            day => Assert.Contains(day, MarketHistoryCatalog.Days(HaulingRules.BadgerType))
+        );
     }
 
     [Fact]

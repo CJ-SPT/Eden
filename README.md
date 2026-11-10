@@ -209,3 +209,7 @@ for resources and non-faction Tech I goods before supply unlocks. Advanced produ
 manufacturing a product remains necessary before generated NPC sell orders appear.
 NPC buyers also consume competitively priced personal sell listings as finite demand recovers during active play;
 see [resting-order purchases](docs/protocol/industry.md#npc-purchases-from-resting-sell-orders--november-9-2026).
+
+[Inventory estimated values and market history](docs/protocol/industry.md#inventory-estimates-and-reference-market-history--november-9-2026)
+use existing snapshot prices and simulated reference history for fresh-world ticker data, without a history download.
+Industrial fee overrides remain separate.
