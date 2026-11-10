@@ -39,7 +39,6 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
-        var fit = FittingCalculation.Read(world, catalog, pilot);
         var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id).ToArray();
         var correction = world.Set<SavedTrafficCorrection>().Find(pilotId);
         var identity = world.Set<SavedTrafficIdentity>().Find(pilotId);
@@ -109,6 +108,7 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
         }
         if (DroneRules.SupportsHull(ship.TypeId))
         {
+            var fit = FittingCalculation.Read(world, catalog, pilot);
             double bay = fit.Graph.Read(ship.Id, DogmaAttributeId.DroneCapacity);
             double bandwidth = fit.Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
             int controls = DroneCatalog.ControlLimit(fit);
@@ -163,6 +163,7 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
         long now
     )
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.resupply");
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
         var progress =
@@ -178,6 +179,7 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
             return progress;
         }
         var needs = Requirements(database, world, catalog, pilotId, progress.Requirements);
+        bool inventoryChanged = false;
         foreach (var need in needs.OrderBy(r => r.Drone).ThenBy(r => r.TypeId))
         {
             int remaining = need.Quantity;
@@ -197,6 +199,7 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
                 if (quantity > 0)
                 {
                     Load(world, catalog, pilotId, ship.Id, ship.StationId, stack.Id, quantity, need.Drone, now);
+                    inventoryChanged = true;
                     remaining -= quantity;
                 }
             }
@@ -252,17 +255,23 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
                     if (amount > 0)
                     {
                         Load(world, catalog, pilotId, ship.Id, ship.StationId, stack.Id, amount, need.Drone, now);
+                        inventoryChanged = true;
                         bought -= amount;
                     }
                 }
             }
         }
-        Reload(database, world, catalog, pilotId, now);
-        return progress with { Checked = true, Requirements = Requirements(database, world, catalog, pilotId, needs) };
+        inventoryChanged |= Reload(database, world, catalog, pilotId, now);
+        return progress with
+        {
+            Checked = true,
+            Requirements = inventoryChanged ? Requirements(database, world, catalog, pilotId, needs) : needs,
+        };
     }
 
-    private static void Reload(WorldDatabase database, WorldDbContext world, CatalogDbContext catalog, long pilotId, long now)
+    private static bool Reload(WorldDatabase database, WorldDbContext world, CatalogDbContext catalog, long pilotId, long now)
     {
+        bool changed = false;
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
         long ship = pilot.ActiveShipId;
         long kill =
@@ -313,8 +322,10 @@ internal sealed class CapsuleerResupply(PilotMarketStore market)
             if (sources.Length > 0)
             {
                 PilotAmmunitionStore.Load(world, catalog, pilotId, ship, [module.Id], sources, ship, now);
+                changed = true;
             }
         }
+        return changed;
     }
 
     internal CapsuleerTrafficRoute? Shop(

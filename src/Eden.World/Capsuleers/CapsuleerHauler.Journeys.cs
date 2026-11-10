@@ -8,6 +8,7 @@ internal sealed partial class CapsuleerHauler
 {
     private void AssignJourney()
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.assignJourney");
         var previous = Work.Journey;
         var routine = Work.Routine ?? TravelerRoutineRules.Create(pilotId);
         var avoidedSystems = routine

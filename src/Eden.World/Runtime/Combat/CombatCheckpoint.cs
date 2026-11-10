@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
@@ -27,16 +28,24 @@ internal sealed record CombatCheckpoint(
     IReadOnlyList<DroneCombatTriggers> DroneTriggers
 )
 {
+    private const int PositionBatchSize = 128;
+    private static readonly JsonSerializerOptions PositionOptions = new() { IgnoreReadOnlyProperties = true };
+
     internal void Apply(WorldDbContext world)
     {
         using var phase = SessionPerformance.Phase("combat.project");
         using var transaction = world.Database.CurrentTransaction is null ? world.Database.BeginTransaction() : null;
-        foreach (var position in Positions)
+        foreach (var batch in Positions.Chunk(PositionBatchSize))
         {
+            // A traffic mutation projects all pending resident motion before reading SQL.
+            // Bound command preparation by batches instead of issuing one command per traveler.
+            string positions = JsonSerializer.Serialize(batch, PositionOptions);
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldPosition(ShipId,SystemId,X,Y,Z)
-                VALUES({position.ShipId},{position.SystemId},{position.Position.X},{position.Position.Y},{position.Position.Z})
+                SELECT json_extract(value,'$.ShipId'),json_extract(value,'$.SystemId'),
+                    json_extract(value,'$.Position.X'),json_extract(value,'$.Position.Y'),json_extract(value,'$.Position.Z')
+                FROM json_each({positions}) WHERE 1
                 ON CONFLICT(ShipId) DO UPDATE SET X=excluded.X,Y=excluded.Y,Z=excluded.Z
                 """
             );

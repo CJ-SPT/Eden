@@ -87,6 +87,7 @@ internal static class TrafficProvisioning
         long now
     )
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.refreshTemplate");
         var agent = world.Set<SavedCapsuleerAgent>().Find(pilotId);
         if (agent is null || agent.Career != CapsuleerCareer.Hauling || world.Set<SavedTrafficIdentity>().Find(pilotId) is not null)
         {

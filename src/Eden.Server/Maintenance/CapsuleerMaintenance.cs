@@ -138,6 +138,9 @@ internal sealed class CapsuleerMaintenance(
     private MinerObservation? Tick(out bool backlogged)
     {
         using var operation = operations?.Begin();
+        using var performance = SessionPerformance.IsActive
+            ? SessionPerformance.Phase("traffic maintenance")
+            : SessionPerformance.Begin("traffic maintenance", ServerLog.Console.Trace);
         long started = clock.GetTimestamp();
         try
         {

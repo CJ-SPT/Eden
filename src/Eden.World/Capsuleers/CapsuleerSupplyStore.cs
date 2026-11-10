@@ -27,6 +27,7 @@ internal static class CapsuleerSupplyStore
 
     internal static void Ensure(WorldDbContext world, CatalogDbContext catalog, long pilotId, long founderShip)
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.ensureSupplies");
         if (world.Set<SavedCapsuleerSupplies>().Find(pilotId) is not null)
         {
             return;
@@ -188,13 +189,16 @@ internal static class CapsuleerSupplyStore
     private static DroneProfile[] LoadDrones(CatalogDbContext catalog, int unused)
     {
         List<DroneProfile> profiles = [];
-        foreach (var pair in catalog.Records(CatalogData.Client.Types).Where(pair => pair.Value.GroupID == DroneRules.CombatDroneGroup))
+        // Use the projected group index. Pinning every type payload here can hold
+        // the world owner for seconds on the first station resupply.
+        var group = catalog.Definitions.TypesInGroup(DroneRules.CombatDroneGroup);
+        var attributes = catalog.Definitions.AttributeSets(group);
+        var types = group.Where(type => attributes[type].GetValueOrDefault(DogmaAttributeId.TechLevel) == 1).ToArray();
+        // Warm only this group's payloads together, rather than one query per drone.
+        _ = catalog.ReadMany(CatalogData.Client.Types, types.Select(type => (long)type));
+        _ = catalog.ReadMany(CatalogData.Client.Typedogma, types.Select(type => (long)type));
+        foreach (int type in types)
         {
-            int type = checked((int)pair.Key);
-            if (catalog.FittingAttributes(type).GetValueOrDefault(DogmaAttributeId.TechLevel) != 1)
-            {
-                continue;
-            }
             try
             {
                 var profile = DroneCatalog.Profile(catalog, type);

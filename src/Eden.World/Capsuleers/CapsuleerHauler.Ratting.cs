@@ -71,6 +71,7 @@ internal sealed partial class CapsuleerHauler
 
     private bool TryLaunchActivity()
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.launchActivity");
         var supplies = Work.Resupply!;
         if (supplies.DestinationStationId is null && supplies.Requirements.Length > 0)
         {

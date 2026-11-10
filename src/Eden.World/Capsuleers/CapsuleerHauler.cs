@@ -9,6 +9,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Docking;
@@ -611,6 +612,7 @@ internal sealed partial class CapsuleerHauler(
 
     private void RefreshObjects()
     {
+        using var phase = SessionPerformance.Phase("traffic.geometry");
         _objects = _operation is { HasWorld: true }
             ? CapsuleerGeometry.Load(_operation.World, _operation.Catalog, Pilot.SystemId, Now)
             : systems.Load(Pilot.SystemId);
@@ -683,6 +685,7 @@ internal sealed partial class CapsuleerHauler(
 
     private void TradeAndLaunch()
     {
+        using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
             throw new InvalidDataException("Waiting for a replacement hauling ship.");
@@ -910,6 +913,7 @@ internal sealed partial class CapsuleerHauler(
 
     private void CompleteJump()
     {
+        using var phase = SessionPerformance.Phase("traffic.completeJump");
         long arrivalGateId = _target!.DestinationGateId!.Value;
         long arrivalAt = Now;
         long account = PilotGateTravelStore.Transfer(

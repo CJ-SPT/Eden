@@ -18,6 +18,7 @@ internal static class TrafficCorrection
 {
     internal static bool Apply(WorldDatabase database, WorldDbContext world, CatalogDbContext catalog, long pilotId, long now)
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.correctTemplate");
         if (world.Set<SavedTrafficCorrection>().Find(pilotId) is not null)
         {
             return false;

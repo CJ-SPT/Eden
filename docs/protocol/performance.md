@@ -1219,3 +1219,72 @@ The established client contract is recorded in [Catalog agent directory and save
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Rebuild/restart the server and confirm the first agent-directory request no longer incurs catalog initialization during dispatch.
+
+## Gate-area traffic stalls, November 9, 2026
+
+The supplied tenfold-population log showed background traffic retaining the world owner for up to **2,699.79 ms**,
+with a player frame waiting **2,587.20 ms**. These are shared-world stalls: waiting near a gate exposes delays caused
+by traffic actions elsewhere, including station trades. The same log also contains shorter dogma, initial-output and
+contact-refresh spikes; this change does not establish that every logged delay has been eliminated.
+
+Starter-drone discovery now uses the catalog's combat-drone group index and batches that group's attributes, type
+payloads and dogma payloads. It previously pinned the complete type-payload dataset during first resupply. The cold
+lookup now uses three queries in the focused fixture, with no full type-payload pin; repeated lookup uses no SQL,
+connections or fitting calculation. Hulls without drone support skip the unused fitting calculation. Resupply also
+keeps its initial requirements when loading, purchasing and reloading have left onboard inventory unchanged. Actual
+inventory changes still recalculate requirements within the same payment transaction.
+
+Resident motion projection now writes at most 128 positions per command. Gate transfers and trades still synchronize
+pending resident state before their SQL transaction, but no longer prepare one command for every moving traveler.
+The existing conflict update changes coordinates only: membership changes remain owned by docking and gate transfer.
+The same batching applies to detached checkpoints. Regression cases cover exact large/fractional coordinates, failed
+later batches with complete rollback, retry, and reopening the checkpoint.
+
+| Matched warmed workload | Previous projection | Batched projection | Projection commands before / after |
+| --- | ---: | ---: | ---: |
+| 512 moving ships | 10.60 ms | 3.41 ms | 512 / 4 |
+| 2,048 moving ships | 44.15 ms | 13.07 ms | 2,048 / 16 |
+
+These are workstation observations of projection at a transaction boundary, not end-to-end client latency. Both runs
+used the same deterministic fixture. Connection counts stayed at two for projection plus the verifying read, and
+fitting counts stayed at zero. Detached capture, projection and file writing are measured separately by the test.
+
+An opt-in diagnostic copies the reported save, catalog and traffic snapshot before profiling the four reported pilots,
+the three systems with the largest gate-transfer warnings, and five seconds of ordinary maintenance. An exploratory
+scoped replay reproduced a **1,763.60 ms** station departure, of which **1,669.26 ms** was resupply. It did not reproduce
+the full 2.7-second gate transfer. Source copies and cold-cache effects make these diagnostic samples unsuitable as a
+matched whole-world before/after benchmark. The installed save and game client are never modified by the test.
+The final isolated diagnostic on the integrated code measured the first sampled resupply at **76.83 ms** and five
+sampled gate transfers at **25.95–48.81 ms**. These measurements do not prove a bound for all populated-world actions.
+
+To reproduce, set `EDEN_GATE_PERFORMANCE_SOURCE` to that save's `world.sqlite` and select
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerGatePerformanceTests.CopiedSaveProfilesReportedTrafficActions`.
+Without that variable the diagnostic reports its opt-in requirement and returns without measuring a workload. The
+ordinary tenfold fixture separately asserts that real scheduled gate transfers and station departures occur.
+`EDEN_TRACE_PERFORMANCE=1` also enables maintenance phase, SQL, connection and fitting diagnostics in the server;
+the added phases distinguish template refresh, resupply, route selection, geometry and gate completion.
+
+Gameplay references were rechecked against [EVE University stargates](https://wiki.eveuniversity.org/Stargates).
+[Carbon Destiny Ballpark.cpp revision 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp)
+retains separate evolution and collision work for live actors and skips dead-bubble actors. Eden retains its existing
+movement, collision, gate validation and wire rules; these changes concern catalog access and SQL projection.
+
+**Automated validation.** Tool and solution restores, solution build with zero warnings/errors, catalog policy **8/8**,
+formatting policy **9/9**, formatting/140-column verification of 1,567 files and diff checks passed. Exact development regressions used
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerGatePerformanceTests.StarterDroneDiscoveryDoesNotPinTheEntireTypeCatalog`
+and `FullyQualifiedName=Eden.Protocol.Tests.Persistence.MotionProjectionTests.TransactionProjectsMovingTrafficInBoundedBatchesAndCheckpointsLatestPositions`.
+The former failed on the original full-catalog pin before passing with the indexed lookup. The broader pre-integration
+filter `FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Persistence.MotionProjectionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.DetachedCheckpointTests`
+passed **326 tests in 181.86 seconds**, including the configured copied-save diagnostic. After integrating main
+`77b3fd5c` and the maintenance tracing entry point, an initial **97-pass/1-failure** run exposed a diagnostic sink
+routing issue. Preserving the caller's ambient reporting scope fixed it; the exact tenfold regression then passed.
+Final filter `FullyQualifiedName~CapsuleerGatePerformanceTests|FullyQualifiedName~MotionProjectionTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~CapsuleerSupplyTests|FullyQualifiedName~PilotSpaceActivitiesTests|FullyQualifiedName~CapsuleerHaulerTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~CapsuleerDeadlinePerformanceTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~CapsuleerEncounterTests`
+passed **98/98 in 49.65 seconds**. That run includes the opt-in diagnostic's unconfigured return; a separate configured
+run passed in approximately **14 seconds**. That diagnostic plus the Python policies and formatting verification took
+**37.23 seconds**. Existing complete-frame tests include owners/observers, occupied and empty systems, output encoding
+and separate checkpoints. No full .NET suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Rebuild/restart the server and revisit the same gate with the tenfold setting; compare
+world-owner warnings and frame waits. If another long atomic action remains, capture its enabled maintenance phases.
