@@ -78,6 +78,9 @@ The [ship and module completion program](docs/feature-notes.md#ship-and-module-c
 [NPC bounty skill points](docs/protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026) award the killer an additional **0.25% of the gross ISK bounty as unallocated SP**, rounded down per kill. A **150,000 ISK** bounty grants **375 SP** alongside its normal ISK payment.
 
 Bounty SP gains are silent; refresh the skill window to read the updated total.
+[Mining skill points](docs/protocol/industry.md#mining-skill-point-rewards-november-11-2026) use the same rate for the reference
+value of collected ore, ice and gas. Yield multipliers affect the collected amount; Settings → Progression adds a separate
+mining-SP multiplier. One ice unit is valued as a whole block. Mining SP credits are also silent.
 
 [CONCORD criminal response](docs/protocol/combat.md#concord-criminal-response--november-9-2026) now enforces supported high-security criminal offenses with persistent response deadlines, catalog Captains/Commanders, capsule escape and no insurance payout. Baseline response times approximate a fresh live response; existing-squad timing and pulling remain unsupported. CONCORD overview icons remain blue during attacks through the signed login adapter; restart the server and fully reopen the client after updating.
 

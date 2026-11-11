@@ -11,7 +11,9 @@ using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
@@ -19,6 +21,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Market;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -368,6 +371,18 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         asteroid.Quantity -= (long)extracted + collected.Residue;
         if (extracted + bonus > 0)
         {
+            // Use the pinned reference quote, never player orders or the testing market price.
+            var quote = MarketSnapshotCatalog.Quotes.GetValueOrDefault(asteroid.TypeId);
+            decimal value = quote is null ? 0 : MarketValuationRules.EstimateIsk(quote.BuyCents, quote.SellCents) ?? 0;
+            long points = ActivitySkillPointRewards.FromValue(
+                value,
+                checked(extracted + bonus),
+                world.Settings.Progression.MiningSkillPointMultiplier
+            );
+            if (points > 0)
+            {
+                PilotTrainingStore.CreditSilentFreePoints(world, pilotId, points);
+            }
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Mined);
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.TotalMined, extracted + bonus);
         }

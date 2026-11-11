@@ -1,12 +1,12 @@
-using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Skills;
 
 namespace Eden.Gameplay.Combat;
 
 public static class NpcSkillPointRewards
 {
     // Eden progression policy: award 0.25% of the gross ISK bounty as additional SP.
-    public const int IskPerSkillPoint = 400;
+    public const int IskPerSkillPoint = ActivitySkillPointRewards.IskPerSkillPoint;
 
     public static long FromBounty(long bountyCents, decimal multiplier = 1)
     {
@@ -15,7 +15,6 @@ public static class NpcSkillPointRewards
             throw new InvalidDataException("Invalid NPC bounty.");
         }
         // Whole points only; discard the fractional remainder for each kill.
-        WorldTuningRules.ValidateRate(multiplier, true);
-        return checked((long)decimal.Floor(bountyCents * multiplier / (IskPerSkillPoint * MarketDefinitions.CentsPerIsk)));
+        return ActivitySkillPointRewards.FromValue(bountyCents / (decimal)MarketDefinitions.CentsPerIsk, 1, multiplier);
     }
 }

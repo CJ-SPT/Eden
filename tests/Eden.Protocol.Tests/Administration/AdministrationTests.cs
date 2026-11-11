@@ -34,6 +34,8 @@ public sealed class AdministrationTests
         Assert.Contains("Active settings", html);
         Assert.Contains("aria-pressed=\"true\"", html);
         Assert.Contains("Reset Ore mining yield to 1×", html);
+        Assert.Contains("Reset Mining skill points to 1\u00d7", html);
+        Assert.Contains("1 SP per 400 ISK of collected ore, ice or gas reference value", html);
         Assert.Contains("Training speed and skill requirements are unchanged", html);
     }
 
@@ -69,6 +71,25 @@ public sealed class AdministrationTests
             }
         );
         Assert.False((await invalid.Content.ReadFromJsonAsync<AdminValidationResult>())!.Valid);
+    }
+
+    [Fact]
+    public async Task MiningSkillPointControlSavesExportsAndComparesPendingRates()
+    {
+        await using var fixture = await Fixture.Start();
+        await fixture.SignIn();
+        var state = (await fixture.Client.GetFromJsonAsync<ConfigurationState>("/api/admin/configuration"))!;
+        var policy = state.Active.Draft.Settings.Progression with { MiningSkillPointMultiplier = 2.5m };
+        var draft = state.Active.Draft with { Settings = state.Active.Draft.Settings with { Progression = policy } };
+        using var saved = await fixture.Client.PostAsJsonAsync("/api/admin/revisions", new AdminSaveRequest(state.Generation, draft));
+        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+        var pending = (await saved.Content.ReadFromJsonAsync<ConfigurationState>())!;
+        Assert.Equal(1, pending.Active.Draft.Settings.Progression.MiningSkillPointMultiplier);
+        Assert.Equal(policy, pending.Pending!.Draft.Settings.Progression);
+        using var export = await fixture.Client.GetAsync($"/api/admin/export/{pending.Pending.Id}");
+        Assert.Equal(policy, (await export.Content.ReadFromJsonAsync<WorldConfigurationDraft>())!.Settings.Progression);
+        var differences = await fixture.Client.GetFromJsonAsync<RevisionDifference[]>("/api/admin/compare?left=1&right=2");
+        Assert.Contains(differences!, c => c.Field == "Mining skill points" && c.After == "2.5\u00d7");
     }
 
     private const string Password = "local administrator password";

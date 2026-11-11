@@ -18,6 +18,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
 using Eden.Protocol.Tests.Persistence;
 using Eden.World.Catalog;
@@ -35,6 +36,41 @@ namespace Eden.Protocol.Tests.Mining;
 
 public sealed class MiningTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MiningCreditsStaySilentAndNativeSkillReadsSeeEachRepeatedCycle(bool resident)
+    {
+        using Fixture f = new(liveWorld: resident);
+        var (context, _, mining, module) = f.Client();
+        using var scope = f.Db.Services.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<FreeSkillPointHandler>();
+        var points = f.Db.Services.GetRequiredService<IPilotFreeSkillPoints>();
+        handler.Enter(context);
+        Assert.Equal(0, points.Balance(context.Pilot.PilotId));
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Activate", [module, "miningLaser", Fixture.Asteroid, 100L]));
+        long earned = 0;
+        for (int cycle = 0; cycle < 2; cycle++)
+        {
+            context.Notifications.Clear();
+            f.Clock.Milliseconds += 10000;
+            mining.Advance(context);
+            var harvested = Assert.Single(context.Notifications.OfType<OreMined>()).Yield;
+            earned += MiningSkillPointRewardTests.Expected(harvested.TypeId, harvested.Extracted + harvested.CriticalBonus);
+            Assert.True(earned > 0);
+            Assert.Equal(new(earned, 0), points.Observe(context.Pilot.PilotId));
+            context.Notifications.Clear();
+            handler.Advance(context);
+            Assert.Empty(context.Notifications);
+            var reply = Assert.IsType<PilotCallResult.Success>(handler.Call(context, "@skills", "GetFreeSkillPoints", []));
+            Assert.Equal(earned, BlueMarshal.Decode(BlueMarshal.Encode(reply.Reply)));
+            var queue = Assert.IsType<PilotCallResult.Success>(handler.Call(context, "@skills", "GetSkillQueueAndFreePoints", []));
+            Assert.Equal(earned, Assert.IsType<SkillQueueReply>(queue.Reply).FreePoints);
+            Assert.Empty(context.Notifications);
+        }
+        Assert.Null(mining.CallWire(context, "dogmaIM", "Deactivate", [module, "miningLaser"]));
+    }
+
     [Fact]
     public void WorldYieldScalesPlayerExtractionAndNativeAttributesAfterRestart()
     {

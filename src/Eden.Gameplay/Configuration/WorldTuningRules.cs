@@ -34,6 +34,7 @@ public static class WorldTuningRules
         ValidateRate(settings.Rewards.MissionLpMultiplier, true);
         ValidateRate(settings.Rewards.MissionStandingMultiplier, true);
         ValidateRate(settings.Progression.KillSkillPointMultiplier, true);
+        ValidateRate(settings.Progression.MiningSkillPointMultiplier, true);
         ValidateRate(settings.Industry.ManufacturingSpeed);
         ValidateRate(settings.Industry.ResearchSpeed);
         ValidateRate(settings.Industry.CopyingSpeed);

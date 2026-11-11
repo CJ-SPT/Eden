@@ -84,6 +84,10 @@ internal sealed class SettingsForm
     [Display(Name = "NPC kill skill points")]
     public decimal KillSkillPointMultiplier { get; set; } = 1;
 
+    [Range(typeof(decimal), "0", "100")]
+    [Display(Name = "Mining skill points")]
+    public decimal MiningSkillPointMultiplier { get; set; } = 1;
+
     [Range(typeof(decimal), "0.1", "100")]
     [Display(Name = "Manufacturing speed")]
     public decimal ManufacturingSpeed { get; set; } = 1;
@@ -124,6 +128,7 @@ internal sealed class SettingsForm
             MissionLpMultiplier = settings.Rewards.MissionLpMultiplier,
             MissionStandingMultiplier = settings.Rewards.MissionStandingMultiplier,
             KillSkillPointMultiplier = settings.Progression.KillSkillPointMultiplier,
+            MiningSkillPointMultiplier = settings.Progression.MiningSkillPointMultiplier,
             ManufacturingSpeed = settings.Industry.ManufacturingSpeed,
             ResearchSpeed = settings.Industry.ResearchSpeed,
             CopyingSpeed = settings.Industry.CopyingSpeed,
@@ -176,7 +181,7 @@ internal sealed class SettingsForm
             Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
             Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
-            Progression = new(StartingSkills, KillSkillPointMultiplier),
+            Progression = new(StartingSkills, KillSkillPointMultiplier, MiningSkillPointMultiplier),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
         };

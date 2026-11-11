@@ -73,7 +73,7 @@ public sealed class WorldSettingsPageTests
         {
             Resources = new(OreYieldMultiplier: 2, IceYieldMultiplier: 3, GasYieldMultiplier: 4),
             Rewards = new(5, 6, 7, 8),
-            Progression = new(KillSkillPointMultiplier: 9),
+            Progression = new(KillSkillPointMultiplier: 9, MiningSkillPointMultiplier: 2.5m),
             Industry = new(10, 11, 12, 13, 14),
             Structures = new(2, 3, 4),
         };
@@ -86,6 +86,7 @@ public sealed class WorldSettingsPageTests
         Assert.Equal(settings.Structures, result.Structures);
         form.OreYieldMultiplier = 0;
         form.BountyMultiplier = -1;
+        form.MiningSkillPointMultiplier = 101;
         form.InventionSpeed = 101;
         form.StructureAnchoringSpeed = 0;
         form.StructureOnliningSpeed = 101;
@@ -94,17 +95,24 @@ public sealed class WorldSettingsPageTests
         Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.OreYieldMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.BountyMultiplier)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningSkillPointMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.InventionSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureAnchoringSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureOnliningSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureUnanchoringSpeed)));
         form.OreYieldMultiplier = 0.1m;
         form.BountyMultiplier = 0;
+        form.MiningSkillPointMultiplier = 0;
         form.InventionSpeed = 100;
         form.StructureAnchoringSpeed = .1m;
         form.StructureOnliningSpeed = 100;
         form.StructureUnanchoringSpeed = 1;
         Assert.True(Validator.TryValidateObject(form, new(form), [], true));
+        Assert.Equal("2.5×", ConfigurationDisplay.Settings(new(), settings, null).Single(r => r.Label == "Mining skill points").Active);
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = settings }),
+            c => c.Field == "Mining skill points" && c.After == "2.5×"
+        );
         Assert.Equal("2×", ConfigurationDisplay.Settings(new(), settings, null).Single(r => r.Label == "Ore mining yield").Active);
     }
 

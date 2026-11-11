@@ -51,7 +51,7 @@ internal sealed class FreeSkillPointHandler(IPilotFreeSkillPoints points, SkillH
         }
         else
         {
-            // Absorb silent bounty credits so a later skill-only revision cannot announce them.
+            // Absorb silent activity credits so a later skill-only revision cannot announce them.
             Observe(context, latest.Points, latest.Revision, false);
         }
     }

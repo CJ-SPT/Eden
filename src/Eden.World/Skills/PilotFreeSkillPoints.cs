@@ -49,7 +49,7 @@ internal sealed partial class PilotTrainingStore
     {
         var state = world.Set<SavedFreeSkillPoints>().Find(pilotId) ?? world.Add(new SavedFreeSkillPoints { PilotId = pilotId }).Entity;
         state.Points = balance;
-        // Pool-only bounty credits stay silent. Revisions request skill/brain/queue notifications.
+        // Pool-only activity credits stay silent. Revisions request skill/brain/queue notifications.
         if (advanceRevision)
         {
             state.Revision = checked(state.Revision + 1);

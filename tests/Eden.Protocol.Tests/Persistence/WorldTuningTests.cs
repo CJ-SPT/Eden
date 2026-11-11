@@ -36,6 +36,7 @@ public sealed class WorldTuningTests
     [InlineData("rewards", "missionLpMultiplier", true)]
     [InlineData("rewards", "missionStandingMultiplier", true)]
     [InlineData("progression", "killSkillPointMultiplier", true)]
+    [InlineData("progression", "miningSkillPointMultiplier", true)]
     [InlineData("industry", "manufacturingSpeed", false)]
     [InlineData("industry", "researchSpeed", false)]
     [InlineData("industry", "copyingSpeed", false)]
@@ -108,6 +109,7 @@ public sealed class WorldTuningTests
         Assert.Equal(new RewardPolicy(), legacy.Settings.Rewards);
         Assert.Equal(new IndustryPolicy(), legacy.Settings.Industry);
         Assert.Equal(1, legacy.Settings.Progression.KillSkillPointMultiplier);
+        Assert.Equal(1, legacy.Settings.Progression.MiningSkillPointMultiplier);
         WorldTuningRules.Validate(legacy.Settings);
         foreach (decimal value in new[] { 0.1m, 1m, 100m })
         {
@@ -136,7 +138,7 @@ public sealed class WorldTuningTests
         {
             Resources = new(OreYieldMultiplier: 2, IceYieldMultiplier: 3, GasYieldMultiplier: 4),
             Rewards = new(5, 6, 7, 8),
-            Progression = new(KillSkillPointMultiplier: 9),
+            Progression = new(KillSkillPointMultiplier: 9, MiningSkillPointMultiplier: 2.5m),
             Industry = new(10, 11, 12, 13, 14),
         };
         var pending = store.Save(original.Generation, original.Active.Draft with { Settings = settings }, "tuning-test");

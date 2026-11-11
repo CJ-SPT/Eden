@@ -79,6 +79,10 @@ else
                     Description="Scales 0.25% of original bounty ISK independently of bounty tuning. Credits stay silent."
                     ExampleAmount="250" ExampleUnit="SP" Reward="true"
                     Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Mining skill points" @bind-Value="Form.MiningSkillPointMultiplier"
+                    Description="Awards 1 SP per 400 ISK of collected ore, ice or gas reference value. Credits stay silent."
+                    ExampleAmount="250" ExampleUnit="SP" Reward="true"
+                    Speed="false" Efficiency="false" />
                 <label><InputCheckbox @bind-Value="Form.StartingSkills" />Grant catalog starting skills to new pilots</label>
                 <label><InputCheckbox @bind-Value="Form.TestingGrants" />Initial wallet grants for new pilots</label>
                 <label>Initial wallet grant (ISK)<InputNumber @bind-Value="Form.GrantIsk" min="0" step="0.01" /></label>

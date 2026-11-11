@@ -982,3 +982,79 @@ prerequisites, price independence, UTC boundaries, local-day replacement, restar
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect native inventory estimates and ticker/graph/table data after a fresh client start.
+
+## Mining skill point rewards (November 11, 2026)
+
+Mining now credits the collecting pilot's unallocated SP pool silently, using the bounty progression rate:
+`floor(reference unit value in ISK × delivered units × mining SP multiplier / 400)`.
+The quote is the existing bundled market snapshot's buy/sell midpoint (one side if only one exists), as used for inventory
+estimates. Personal orders, development testing prices and bounty multipliers do not alter it. Unpriced resources earn zero.
+The current implemented ice/gas sites all have positive reference quotes. Fractional SP is discarded per collection,
+matching bounty behavior. Bounties and mining share the typed Gameplay value-to-SP rule.
+
+The shared paid-collection path covers ordinary lasers, strip miners, modulated and admitted deep-core tools, ice harvesters
+and ice lasers, and gas scoops/harvesters. Existing unsupported tools and hazardous resources remain unsupported.
+Resource yield multipliers apply before collection limits. Only the actual delivered base and critical units earn SP;
+residue is excluded. Cargo capacity and deposit exhaustion can limit the reward even with high yield multipliers.
+Ore/gas partial cycles earn on their delivered units. Interrupted ice cycles yield nothing and earn nothing.
+An ice unit is one 1,000 m³ block; its full unit price is used, so one block can award hundreds of points. Increasing ice
+block yield increases rewarded value without changing the cycle duration.
+
+The credit shares the inventory/deposit transaction. Failed or duplicate collections cannot award extra points;
+a rejected pool credit rolls back cargo, depletion and cycle consumption. The pool revision remains unchanged, preserving
+silent bounty behavior: no SP popup, skill/brain update or training-queue refresh is emitted solely for a harvest.
+Native free-point and skill-queue reads return the updated pool, including through resident observation and repeated cycles.
+
+Settings → Progression exposes **Mining skill points**, including reset/example/range, changed values, and original/active/
+pending comparisons. `progression.miningSkillPointMultiplier` defaults to 1, accepts 0–100, and is staged for restart.
+Zero disables the reward. Existing saved configuration documents without the property load at 1×.
+
+Gameplay references: [EVE University mining](https://wiki.eveuniversity.org/Mining) and
+[mining yield](https://wiki.eveuniversity.org/Mining_Yield), checked November 11, 2026, establish ore/ice/gas families and
+whole-block ice collection. Exact tools and yields use build 3662168 catalog data. The SP reward is Eden policy.
+The local evejs `server/src/services/mining/miningCargoCommits.js` reference was consulted for its delivered-versus-wasted
+settlement distinction; its checkout exposes no Git revision (SHA-256
+`435179627c1ab3cbd91b98f8faee879d0cff3197abd4fdcff6b1c01ffeffb61b`). No source was copied. No new wire or Destiny behavior
+is introduced; existing Eden bounty credit and native SP adapters are reused from baseline `7c1576fa`.
+
+**Automated validation:** Development began with the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Mining.MiningSkillPointRewardTests.HarvestCreditsTheScaledDeliveredValueAndPersists`:
+16 cases passed (14.88 s build, 26.30 s test invocation). The subsequent reward/session selection passed 43 cases
+(5.12 s build, 37.58 s test invocation), covering yield/SP combinations, whole ice blocks, critical/residue, partial cycles,
+capacity/deposit clipping, duplicate collection, rollback, reopen and silent native reads with and without resident state.
+After integrating main `36f4e2e6`, tool/solution restore passed and the final solution build passed with zero warnings/errors
+(4.40 s). The final focused run passed all **282 cases** with no skips (95.06 s including test-host startup/teardown).
+Both Python policy suites passed: 8 catalog cases (0.837 s) and 9 formatting-policy cases (0.020 s).
+`tools/Format.ps1 -Check` passed across 1,647 files, including the 140-column policy; combined policy/format checks took
+38.35 s. `git diff --check` and the new documentation links/anchor checks passed.
+The final filter is reproduced below; it includes bounty/free-point dependencies, saved configuration, authenticated web
+save/export/compare, and simulated miner/coarse settlement. The full .NET suite was not run.
+
+```powershell
+$classes = @(
+    'Mining.MiningSkillPointRewardTests',
+    'Mining.MiningTests',
+    'Mining.MiningRulesTests',
+    'Mining.MiningTierTests',
+    'Mining.MiningCrystalTests',
+    'Mining.IceMiningTests',
+    'Mining.GasMiningTests',
+    'Combat.NpcSkillPointRewardTests',
+    'Persistence.WorldTuningTests',
+    'Persistence.WorldConfigurationTests',
+    'Persistence.FreeSkillPointTests',
+    'PilotSessions.FreeSkillPointServiceTests',
+    'Administration.WorldSettingsPageTests',
+    'Administration.AdministrationTests',
+    'Capsuleers.CapsuleerMinerTests',
+    'Capsuleers.CapsuleerCoarseTests'
+)
+$filter = ($classes | ForEach-Object { "FullyQualifiedName~Eden.Protocol.Tests.$_" }) -join '|'
+dotnet test tests/Eden.Protocol.Tests/Eden.Protocol.Tests.csproj --no-build `
+    --artifacts-path artifacts/feature-tests --filter $filter
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After saving and restarting, inspect the mining-SP control and refreshed skill-window pool
+following an ore, ice or gas harvest. Native rendering remains unverified.
