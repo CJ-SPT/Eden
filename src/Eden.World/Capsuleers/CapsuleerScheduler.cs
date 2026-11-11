@@ -719,6 +719,8 @@ internal sealed partial class CapsuleerScheduler(
         );
         foreach (long pilot in running.Except(_running))
         {
+            RefreshCoarseRole(pilot);
+            _coarseInputs.Remove(pilot);
             if (
                 _coarseWork.ContainsKey(_locations[pilot])
                 && activity.ActiveSystems.Contains(_locations[pilot])
@@ -757,6 +759,7 @@ internal sealed partial class CapsuleerScheduler(
         RecordDemotions(demoted, activity.ElapsedTicks);
         foreach (long pilot in demoted)
         {
+            _coarseInputs.Remove(pilot);
             _resumePilots.Remove(pilot);
             _queue.Remove(pilot);
             // Release navigation, contacts and fitting references. The immutable
@@ -957,6 +960,7 @@ internal sealed partial class CapsuleerScheduler(
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
+            RefreshCoarseRole(pilotId);
             return _miners.GetValueOrDefault(pilotId)?.Read();
         }
     }
@@ -967,6 +971,7 @@ internal sealed partial class CapsuleerScheduler(
         using (synchronization.Enter("CapsuleerScheduler"))
         {
             Load();
+            RefreshCoarseRole(pilotId);
             return _haulers.GetValueOrDefault(pilotId)?.Read();
         }
     }

@@ -49,6 +49,7 @@ internal sealed class CapsuleerBackgroundBudget(TimeProvider clock)
     private sealed class Lease(CapsuleerBackgroundBudget owner, long started, string operation, TimeSpan available) : IDisposable
     {
         private bool _disposed;
+        private readonly SessionPerformance _metrics = SessionPerformance.Begin("background unit", _ => { }, force: true)!;
 
         public void Dispose()
         {
@@ -70,11 +71,14 @@ internal sealed class CapsuleerBackgroundBudget(TimeProvider clock)
                 }
                 owner._busy = false;
             }
+            _metrics.Dispose();
             if (overrun)
             {
                 ServerLog.Console.Warning(
                     $"Background budget overrun ({operation}): unit={elapsed.TotalMilliseconds:F2} ms, "
-                        + $"available={available.TotalMilliseconds:F2} ms. Subsequent remote work is postponed."
+                        + $"available={available.TotalMilliseconds:F2} ms, SQL={_metrics.Commands}, "
+                        + $"connections={_metrics.Connections}, fits={_metrics.FittingCalculations}. "
+                        + "Subsequent remote work is postponed."
                 );
             }
         }

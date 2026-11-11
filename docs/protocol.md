@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Compact remote role reuse](protocol/performance.md#reusing-compact-remote-roles-november-11-2026)
+records repeated role-loading removal, committed input invalidation and enriched background-budget warnings.
+
 [Coarse distant populations](protocol/capsuleers.md#coarse-distant-populations--november-10-2026)
 records persistent regional rosters, bounded remote settlements, paid-work preservation and prompt re-entry.
 
