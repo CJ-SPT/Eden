@@ -50,9 +50,6 @@ internal sealed class DockedCompatibilityHandler(
             ("clientStatLogger", "LogString") => PilotCallResult.None,
             ("shipKillCounter", "GetItemKillCountPlayer") => 0,
             ("userSvc", "GetMultiCharactersTrainingSlots") => BlueEmpty.Dictionary,
-            // Build 3662168 corporation.GetContactList forwards this directly to addressbook.
-            // Standing.GetStanding then calls corpContacts.get(characterID) while building Show Info.
-            ("corpRegistry", "GetCorporateContacts") => BlueEmpty.IndexedDictionary,
             ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => new LocationTable(
                 context
                     .Flight.VisiblePilots()

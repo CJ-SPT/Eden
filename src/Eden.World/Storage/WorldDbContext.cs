@@ -137,6 +137,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         HistorySchema.Configure(model);
         ConfigureInteractionHistory(model);
         ConfigureCorporations(model);
+        Eden.World.Corporations.CorporationContactSchema.Configure(model);
         model.Entity<SavedFittingRecord>().ToTable("WorldSavedFitting").HasKey(f => f.Id);
         model.Entity<SavedFittingRecord>().HasOne<InventoryOwner>().WithMany().HasForeignKey(f => f.OwnerId);
         model.Entity<SavedFittingRecord>().HasIndex(f => f.OwnerId);

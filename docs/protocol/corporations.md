@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation contacts and standings, November 11, 2026](#corporation-contacts-and-standings--november-11-2026)
+
 - [Corporation Show Info window audit, November 9, 2026](#corporation-show-info-window-audit-november-9-2026)
 
 - [Public corporation Show Info, November 9, 2026](#public-corporation-show-info-november-9-2026)
@@ -28,6 +30,76 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation contacts and standings — November 11, 2026
+
+Milestone 6 replaces the empty corporate-contact placeholder with authoritative contacts, standings and labels.
+`corpRegistry` owns `GetCorporateContacts`, `GetContactList`, `AddCorporateContact`, `EditCorporateContact`,
+`RemoveCorporateContacts`, `EditContactsRelationshipID`, `GetLabels`, `CreateLabel`, `EditLabel`, `DeleteLabel`,
+`AssignLabels` and `RemoveLabels`. Reads return native dictionaries keyed by contact/label ID, containing
+named `utillib.KeyVal` records. Contact fields are `contactID`, floating `relationshipID`, false `inWatchlist` and signed
+long `labelMask`; labels retain Unicode `name`, long `labelID`, and nullable `color`. Creation returns the label bit;
+mutations return None. Zero is an explicit colour; None leaves an edited field unchanged.
+
+Any current member can read their corporation's book. Mutations require the current CEO, Director or global Diplomat
+role, including title-derived roles, checked from saved membership and effective roles inside the transaction. Stale
+session roles do not authorize a write. A corporation contact belongs to the organization, so a member may update a
+contact for their own character. Targets are known Eden pilots and known player/NPC corporations. Alliance contacts and
+unknown owners are not fabricated. Manual contact standings do not change mission-derived NPC standings or standings
+in the opposite direction. NPC-corporation books remain empty/read-only. Personal contacts and labels remain separate.
+
+Schema **144** adds corporation-owned contact and label tables with cascading owner references and unique label names.
+Existing personal data is preserved. Standings retain the native -10 through +10 range; batches are bounded to 1,024
+IDs and validate the entire selection before changing state. Labels occupy the 63 positive signed-long bits. Removing a
+label clears its bit on every owned contact in the same transaction; deleting/reusing a bit does not reassign it.
+Invalid owners, missing contacts for label assignment, unknown label bits, invalid text/colour, exhausted label capacity
+and database failures preserve the prior book and its change revision. No inventory, wallet or ownership operation is
+performed by contact management.
+
+Primed sessions monitor an in-memory corporation revision. Unchanged empty/populated monitor polls perform no SQL, open no
+connections and calculate no fittings. Committed contact changes reload an authorized snapshot and send
+`OnOrganizationContactsUpdated(ownerID, listOfUpdateTuples)`. New/changed standing is `(contactID, standing, None)`,
+a mask update is `(contactID, None, mask)`, and deletion is `(contactID, None, None)`. The pinned client applies either
+standing **or** mask to an existing row, so simultaneous field changes use separate tuples. Departed members receive
+no former-corporation data, including when their session identity has not yet refreshed.
+
+**Native cache limitation:** Addressbook's pinned notification handler refreshes contact standings and assignments but
+has no label-definition invalidation event. The editing client changes its own name/colour cache after successful
+label operations; another signed-in member may retain old label names/colours until session reset/reconnection. No
+unsupported event or remote client-reset call was introduced. Live rendering and cache timing remain unverified.
+
+References: [EVE University corporation diplomacy](https://wiki.eveuniversity.org/Corporation_diplomacy) covers shared,
+one-way standings and labels; [corporation roles](https://wiki.eveuniversity.org/Managing_corporation_members) describes
+Diplomat/Director authority; [contacts](https://wiki.eveuniversity.org/Contacts) describes contact groups and labels.
+Inert build **3662168** inspection covered `addressbookService.GetContacts`, `GetContactLabels`, `AddToAddressBook`,
+`EditContacts`, `AssignLabelFromWnd`, `ShowLabelMenuAndManageBtn`, and `OnOrganizationContactsUpdated` from archive
+SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`; no client code was executed.
+Existing Blue dictionary/KeyVal/list/tuple adapters suffice. Codec and transport are unchanged; the
+[Carbon Blue serialization reference](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+remains revision `fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae`.
+
+EveJs installed source **261108.1**, without Git metadata, was consulted as a behavioral reference and independently
+reconciled with the pinned client. Source SHA-256 identifiers:
+
+- `services/corporation/corpRegistryRuntime.js`: `41D691387FF45DCE3CF4680DA40291557B868F0B3F589234D0EB244B77C4E35C`
+- `services/corporation/corporationNotifications.js`: `101462C93041E9DE1F42AE8707F4E90C0A34A96483FB3D6D55B8CC686DDDD3C9`
+- `services/corporation/contactLabelState.js`: `BB7A2C70CEA505FF3B229C59C5D03CE91A6EB3D1EBF2A6D04CB2E9E8290B2D40`
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors. Final filter
+`FullyQualifiedName~CorporationContactsTests|FullyQualifiedName~ContactsServiceTests|FullyQualifiedName~PilotContactsTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`
+passed **143 cases**, including **15 corporation-contact cases**, zero failed/skipped, in **49.47 seconds** with four test
+workers. Both Python policy suites passed (**8 catalog**, **9 formatting**), formatting verification checked **1,716 files**,
+and documentation text/link/anchor/whitespace checks passed. Required checks took **79.76 seconds** on base `fa2f8838`
+plus this milestone. Coverage includes disk/resident native CRUD and reopen, current role/title/director authority and
+revocation, malformed/late-invalid selections, organization/personal isolation, all label bits and quota reuse, two-session
+native notification tuple semantics, idle polling, stale-membership privacy, forced transaction rollback and version-143
+upgrade preservation. Development began with the exact native CRUD/reopen method (2 cases), then combined the affected
+class and persistence methods. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** With two corporation members, change a standing and label assignment and inspect the
+other member's contact list/overview. Reconnect the second member after editing label names/colours.
 
 ## Corporation Show Info window audit, November 9, 2026
 

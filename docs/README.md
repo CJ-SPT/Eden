@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Corporation contacts and standings](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026) covers shared contacts, labels, roles and native updates.
+
 [Personal mining ledger](protocol/industry.md#personal-mining-ledger--november-11-2026) covers committed daily mining totals and waste.
 
 [Bulk and corporation saved fittings](protocol/fitting.md#bulk-and-corporation-saved-fittings--november-11-2026) covers atomic fitting imports/deletes and corporation access.

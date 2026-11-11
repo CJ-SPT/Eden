@@ -476,6 +476,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Corporations
 
+- [Corporation contacts and standings, November 11, 2026](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026)
+
 - <a id="corporation-share-holdings-and-native-wallet-panels"></a>[Corporation share holdings and native wallet panels](protocol/corporations.md#corporation-share-holdings-and-native-wallet-panels)
 - <a id="corporation-bills-and-market-transactions-panel-calls"></a>[Corporation Bills and Market Transactions panel calls](protocol/corporations.md#corporation-bills-and-market-transactions-panel-calls)
 - <a id="corporation-isk-header-permission-correction"></a>[Corporation ISK header permission correction](protocol/corporations.md#corporation-isk-header-permission-correction)

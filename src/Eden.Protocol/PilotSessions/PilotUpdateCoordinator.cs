@@ -81,6 +81,7 @@ internal sealed class PilotUpdateCoordinator(
     InformationHandler information,
     MissionTrackerHandler missionTracker,
     SavedFittingMonitor savedFittings,
+    CorporationContactsMonitor corporationContacts,
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null
 )
@@ -91,6 +92,7 @@ internal sealed class PilotUpdateCoordinator(
         || overload.IsMonitoring
         || corporations.IsMonitoring
         || fleets.IsMonitoring
+        || corporationContacts.IsMonitoring
         || savedFittings.IsMonitoring
         || missionTracker.IsMonitoring
         || industry.IsMonitoring
@@ -147,6 +149,7 @@ internal sealed class PilotUpdateCoordinator(
         context.ActiveFlight?.Checkpoint();
         context.ActiveFlight?.PrepareDisconnect();
         savedFittings.Reset();
+        corporationContacts.Reset();
         chat.Dispose();
         fleets.Dispose();
         PrepareTranslocation(context);
@@ -272,6 +275,7 @@ internal sealed class PilotUpdateCoordinator(
             corporations.Advance(context);
             corporationWallet.Advance(context);
             savedFittings.Advance(context);
+            corporationContacts.Advance(context);
             fleets.Advance(context);
             chat.Advance(context);
             guests.Advance(context);
