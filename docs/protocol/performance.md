@@ -6,6 +6,102 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Arrival movement and fitting costs, November 11, 2026
+
+The supplied 03:22:56–03:23:20 sample contains 48 budget warnings: 32 Arrival units (38.90 ms mean,
+118.28 ms maximum), 14 Trade units (30.37 ms mean, 75.50 ms maximum) and two Lock units. Arrival units
+average 84.88 SQL commands; Trade includes one 499-command unit. These are warning-only samples, not the
+distribution of all actions. They cannot establish overall frame latency or queue capacity.
+
+An automated remote hauler reproduction identified repeated pilot/crimewatch queries for every analytic
+movement boundary, fitting invalidation caused by station changes, and a redundant first-departure fit:
+
+- Existing positions moving within the same explicit system now update coordinates directly. Undocking,
+  legacy positions without a system, inter-system transfer and removal retain membership, task-tracking,
+  heat and CONCORD handling. Position writes remain in the owning transaction, visible to subsequent
+  docking/jump checks and rolled back with a rejected settlement.
+- Schema 141 replaces the two WorldShip UPDATE fitting triggers. Changes to hull identity, type or owner
+  still invalidate the appropriate owners; station, storage and name changes preserve the fitted graph.
+  Actual module, skill and active-effect invalidation is unchanged. Station geometry is still read by the
+  pilot snapshot, separately from the reused fitting attributes.
+- Founder supply provisioning reads the unchanged fit before adding its permanent supplies marker. Pending
+  tracked writes intentionally disable fitting-cache reuse; the marker previously forced an unnecessary
+  recalculation. The marker and inventory still commit atomically, preserving finite one-time supplies.
+
+The same deterministic remote fixture compared the baseline at `da5a3a17` with this implementation:
+
+| Selected complete scheduler turn | Baseline SQL / connections / fits | Updated SQL / connections / fits |
+| --- | --- | --- |
+| Cold first Trade | 79 / 3 / 2 | 70 / 3 / 1 |
+| Warm movement Arrival (pass 3) | 21 / 1 / 0 | 11 / 1 / 0 |
+| First station docking Arrival | 49 / 1 / 1 | 30 / 1 / 0 |
+| Second station docking Arrival | 43 / 1 / 1 | 28 / 1 / 0 |
+
+Baseline and updated trace reports are retained locally at
+`artifacts/feature-tests/results/7a42621181a84b028e56cb02e87d05c3/tests.trx` and
+`artifacts/feature-tests/results/1bef9305eaf4438e9836991268bc2ebc/tests.trx`.
+The final regression asserts work counts and successful repeated arrivals/dockings. Separate tests cover
+same-transaction coordinate visibility, commit/rollback and reopened positions, unchanged crimewatch state,
+real hull/ownership invalidation, rolled-back fitting changes, and upgrading/reopening version-140 saves.
+
+These reductions do not guarantee that atomic work completes within 5 ms. Cold catalog/profile loading,
+resupply and multi-boundary transactions can still overrun. Population, activity and budget settings are
+unchanged. Installed-world warning frequency, complete-session frame latency, sustained queue freshness
+and checkpoint costs remain unmeasured. No live server was restarted or save modified for this investigation.
+
+The existing matched maintenance/session fixture also measured 200 maintenance windows and ten complete
+session ticks per observer, after warmup, with checkpoint capture/projection/write measured separately.
+The baseline and updated deadline-driven runs retained identical jobs, pilot positions and cargo:
+
+| Fixture | Baseline / updated combined maintenance and session time, ms | Baseline / updated SQL / connections / fits |
+| --- | --- | --- |
+| Empty observer system, one observer | 6.14 / 5.80 | 0 / 0 / 0 versus 0 / 0 / 0 |
+| Populated system, one observer | 23.42 / 21.47 | 23 / 10 / 0 versus 22 / 10 / 0 |
+| Populated system, two observers | 25.59 / 26.50 | 22 / 10 / 0 versus 22 / 10 / 0 |
+
+| Fixture | Baseline checkpoint capture / projection / write, ms | Updated checkpoint capture / projection / write, ms |
+| --- | --- | --- |
+| Empty observer system, one observer | 0.117 / 0.335 / 39.939 | 0.116 / 0.322 / 40.366 |
+| Populated system, one observer | 0.081 / 0.524 / 39.078 | 0.304 / 0.605 / 39.800 |
+| Populated system, two observers | 0.279 / 0.495 / 41.888 | 0.267 / 0.446 / 39.890 |
+
+These single-process fixture measurements show mixed timing and do not establish a frame or checkpoint
+speedup. They do not recreate the installed population or sustained remote backlog. Full reports are in
+`artifacts/budget-frame-costs/baseline/` and `artifacts/budget-frame-costs/updated/`.
+The baseline frame fixture originally passed two cases and failed one comparison because independent
+catalog warming added one SourceRecord read (report `d18deef1f4d14abebc0434e8b9c93827`). Jobs, positions and
+cargo matched. Its assertion now compares saved-world SQL while retaining all SQL in telemetry. The updated
+three cases passed in 14.12 seconds (build 4.79 seconds), report `daae55ee8a4e4eaca742484b4697a8ff`.
+An intermediate invocation reused baseline binaries before rebuilding and is excluded from these comparisons.
+
+References: [EVE University server ticks](https://wiki.eveuniversity.org/Server_tick),
+[Carbon Destiny Ballpark.cpp at `114e89fa584f0e1a81eb0a679aabf41af8870072`](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp),
+and the local evejs `server/src/space/destiny/simulation/README.md` were consulted for simulation/gameplay
+boundaries. Movement laws and wire formats are unchanged; no reference implementation was copied.
+
+**Automated validation:** the five exact regression cases passed in 7.74 seconds including runner startup
+(feature build 4.19 seconds). An initial broader run passed 206/207 in 90.86 seconds; its cold Trade assertion
+allowed 72 commands but saw 73 with shared catalog warming. The corrected bound allows 76 while retaining
+the one-fit assertion and strict warm movement/docking limits. Its exact rerun passed in 9.47 seconds.
+The final affected run passed **261/261** in **111.04 seconds**, including runner startup
+(feature build 2.59 seconds), with the filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHaulerTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerMinerTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerTierTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHandoffTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerInboundRuntimeTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerSupplyTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerDeadlinePerformanceTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerTrafficNavigationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerGatePerformanceTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.ResidentFitTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.FittingSnapshotTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.CrimewatchTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.ConcordTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.TaskTrackingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.DetachedCheckpointTests|FullyQualifiedName~Eden.Protocol.Tests.Docking.MovementPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.Docking.DockedServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.GateActivityProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.GateTravelRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.AutoNavigationTests
+```
+
+Its report is `artifacts/feature-tests/results/f5cc16f2d10f4f07a37c826dd1368f1e/tests.trx`.
+The final broad run measured 73 cold Trade commands; warm movement and docking counts matched the table.
+Tool restore, solution restore and solution build passed (zero warnings/errors; final solution build 1.02 seconds).
+Both Python policy suites passed: eight catalog tests in 0.996 seconds and nine formatting tests in 0.285 seconds.
+Formatting verification, local documentation links/anchor checks and Git whitespace checks passed.
+The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer check:** after deploying the rebuilt server, compare enriched overrun warnings under
+the same saved population and activity settings.
+
 ## Remote action budget costs, November 11, 2026
 
 The supplied 03:01:33–03:01:54 warning sample contains remote Trade, Arrival, GateTransfer and Lock actions.

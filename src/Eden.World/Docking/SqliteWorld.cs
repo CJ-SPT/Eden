@@ -59,6 +59,14 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
     )
     {
         var saved = world.Positions.Find(shipId);
+        if (position is not null && systemId is int sameSystem && saved?.SystemId == sameSystem)
+        {
+            // Ordinary movement changes coordinates only. Membership, crimewatch,
+            // task tracking and CONCORD are handled when the ship enters or transfers.
+            (saved.X, saved.Y, saved.Z) = (position.X, position.Y, position.Z);
+            world.SaveChanges();
+            return false;
+        }
         var pilot = world.Pilots.SingleOrDefault(pilot => pilot.ActiveShipId == shipId);
         bool transfer =
             position is null

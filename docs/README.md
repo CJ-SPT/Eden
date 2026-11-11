@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Arrival movement and fitting costs](protocol/performance.md#arrival-movement-and-fitting-costs-november-11-2026)
+covers repeated movement reads, docking fit reuse, schema-141 invalidation and matched remote-action work counts.
+
 [Remote action budget costs](protocol/performance.md#remote-action-budget-costs-november-11-2026) covers
 remote hauler resource loading, repeated mining validation and measured-cost background admission.
 

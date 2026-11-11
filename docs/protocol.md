@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Arrival movement and fitting costs](protocol/performance.md#arrival-movement-and-fitting-costs-november-11-2026)
+records coordinate-only updates, fitting invalidation boundaries, finite supplies and matched remote-action work counts.
+
 [Beginner market supply](protocol/industry.md#beginner-market-supply--november-11-2026) records starter-station and hub
 stock, catalog skill dependencies, retained production unlocks and automated early-game purchasing/fitting coverage.
 
