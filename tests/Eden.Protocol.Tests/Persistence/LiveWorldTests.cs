@@ -17,6 +17,56 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class LiveWorldTests
 {
+    [Fact]
+    public async Task DurableFlushDoesNotCaptureTheCallingSynchronizationContext()
+    {
+        using TestWorld db = new();
+        using ManualResetEventSlim release = new();
+        using LiveWorld live = new(
+            new(db.Path),
+            new TestClock(),
+            _ => { },
+            (snapshot, path) =>
+            {
+                Assert.True(release.Wait(TimeSpan.FromSeconds(10)));
+                LiveWorld.PersistSnapshot(snapshot, path);
+            }
+        );
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Database.ExecuteSqlRaw("UPDATE WorldPilot SET Name='Circuit saved' WHERE Id=90000001");
+        }
+        CheckpointSynchronizationContext context = new();
+        var previous = SynchronizationContext.Current;
+        Task saving;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+            saving = live.FlushAsync();
+            Assert.False(saving.IsCompleted);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+            release.Set();
+        }
+        await saving.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(0, context.Posts);
+        Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM WorldPilot WHERE Name='Circuit saved'"));
+    }
+
+    private sealed class CheckpointSynchronizationContext : SynchronizationContext
+    {
+        internal int Posts;
+
+        public override void Post(SendOrPostCallback callback, object? state)
+        {
+            Interlocked.Increment(ref Posts);
+            // Forward rather than block so a regression fails without stranding the test runner.
+            base.Post(callback, state);
+        }
+    }
+
     private static long DiskValue(string path, string sql)
     {
         using SqliteConnection connection = new(

@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Administration;
 
-public sealed class AdministrationTests
+public sealed partial class AdministrationTests
 {
     [Fact]
     public async Task WorldSettingsPageRendersAllActivityTabsAndTheSharedRestartSaveBar()
@@ -96,22 +96,23 @@ public sealed class AdministrationTests
 
     private sealed class Fixture : IAsyncDisposable
     {
-        internal TestWorld World { get; } = new();
+        internal TestWorld World { get; }
         internal AdministratorAccounts Accounts { get; }
         internal WebApplication App { get; }
         internal HttpClient Client { get; }
 
-        private Fixture()
+        private Fixture(bool liveWorld)
         {
+            World = new(liveWorld: liveWorld);
             Accounts = new(World.Path);
             Accounts.SetPassword("Corey", Password);
             App = AdministrationHost.Create(World.Services, World.Path, 0);
             Client = new(new HttpClientHandler { AllowAutoRedirect = false });
         }
 
-        internal static async Task<Fixture> Start()
+        internal static async Task<Fixture> Start(bool liveWorld = false)
         {
-            Fixture fixture = new();
+            Fixture fixture = new(liveWorld);
             await fixture.App.StartAsync();
             fixture.Client.BaseAddress = new Uri(Assert.Single(fixture.App.Urls));
             return fixture;

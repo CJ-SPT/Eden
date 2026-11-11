@@ -2,6 +2,41 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Administration save interactivity — November 11, 2026
+
+Saving settings in an interactive administration connection could commit a pending revision and its checkpoint while leaving
+the page unresponsive. Refreshing opened another connection and displayed the saved revision. The synchronous durable-close
+boundary waited on `LiveWorld.FlushAsync`, whose checkpoint continuation captured the blocked Blazor synchronization context.
+The checkpoint wait now resumes independently of its caller's synchronization context, so save completion can return to the
+page and update its status. Revision transactions, durable-save failure propagation and restart activation retain their terms.
+
+A deterministic checkpoint test forces an incomplete save under a recording synchronization context and asserts that no
+continuation is posted back to it. It failed before the correction and passed afterward. Interactive renderer tests exercise
+repeated saves, status changes, tab switching, reset, discard and validation against both file-backed and resident worlds.
+An optional automated Playwright test exercises Firefox and Chromium against an isolated resident-world administration host,
+including checkbox and numeric edits, invalid-input reset and reload of saved values. Enable it with
+`EDEN_TEST_ADMIN_BROWSER=1` after installing Python Playwright and its Firefox/Chromium browsers; the test owns its disposable
+world and never uses an installed administrator account.
+
+**Automated validation:** The exact development renderer filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.SettingsSaveUpdatesStatusAndKeepsControlsInteractiveAcrossRepeatedSaves`.
+The regression filter
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.LiveWorldTests.DurableFlushDoesNotCaptureTheCallingSynchronizationContext`
+failed before the fix (one unwanted synchronization-context post) and passed after it (zero posts and the expected disk state).
+The final affected filter below passed **61 tests, zero failures/skips**, including the opt-in Firefox and Chromium scenarios,
+in **43.66 seconds including runner startup**. Tool restore, solution restore/build (zero warnings/errors), those focused tests,
+both Python policy suites (8 catalog and 9 formatting checks), and formatting verification passed in **101.80 seconds combined**.
+No full .NET suite was requested or run.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~AdministrationComponentTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~CheckpointOwnershipTests|FullyQualifiedName~DetachedCheckpointTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After restarting the updated server, save a settings change in the existing Firefox session
+and confirm the pending-restart status appears without refreshing.
+
 ## World tuning — November 9, 2026
 
 The existing saved-world revision system now carries decimal player gathering, reward and industry multipliers. Historical

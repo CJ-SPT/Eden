@@ -562,7 +562,8 @@ internal sealed partial class LiveWorld : IDisposable
         }
         while (true)
         {
-            if (await QueueSave(duringShutdown: true) is { } failure)
+            // Synchronous durable-close callers may hold a UI circuit's synchronization context.
+            if (await QueueSave(duringShutdown: true).ConfigureAwait(false) is { } failure)
             {
                 ExceptionDispatchInfo.Capture(failure).Throw();
             }

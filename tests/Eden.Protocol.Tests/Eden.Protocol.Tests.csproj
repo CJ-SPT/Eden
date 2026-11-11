@@ -5,6 +5,11 @@
   <ItemGroup>
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <Content
+      Include="../../tools/Test-AdministrationInteractivity.py"
+      Link="administration-browser-tests/Test-AdministrationInteractivity.py"
+      CopyToOutputDirectory="PreserveNewest"
+    />
+    <Content
       Include="PilotSessions/portrait_client_test.py"
       Link="portrait-client-tests/portrait_client_test.py"
       CopyToOutputDirectory="PreserveNewest"
