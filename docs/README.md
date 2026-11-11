@@ -86,6 +86,9 @@ covers pooled encoding, selected in-memory LINQ queries, bounded console logging
 
 [Universal native search](protocol/characters.md#universal-native-search-november-9-2026) covers mixed categories, current saved names, catalog indexing and owner-name resolution.
 
+[Direct skill purchasing](protocol/characters.md#direct-skill-purchasing-november-11-2026) covers character-sheet purchases,
+remote injection, catalog prices and atomic wallet history.
+
 [Ice harvesting and public ice fields](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)
 covers native ice tools, complete-cycle collection, public scanner discovery and saved field replacement.
 

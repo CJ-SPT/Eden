@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Direct skill purchasing, November 11, 2026](#direct-skill-purchasing-november-11-2026)
+
 - [Universal native search, November 9, 2026](#universal-native-search-november-9-2026)
 
 - [Native redemption pairs and batched training queues, November 9, 2026](#native-redemption-pairs-and-batched-training-queues-november-9-2026)
@@ -40,6 +42,51 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Direct skill purchasing, November 11, 2026
+
+The reported client dialog was `Invalid Packet Destination: Unsupported local call @skills.PurchaseSkills`.
+The selected-pilot skill handler now accepts one Python list of skill type IDs and returns a Python list of the purchased IDs.
+Successful purchases immediately inject each skill at level zero and zero SP, emit `OnServerSkillsChanged` and `OnAccountChange`,
+and retain the ordinary training prerequisites. Purchasing works while docked or in space and creates no inventory skillbook.
+
+The server requires a published skill with a positive finite training rank and base price, eligible under pinned catalog type
+list **93**. Category, group and type inclusions/exclusions use the existing native type-list rules. Prices use catalog base
+price plus **30%**, rounded to integer cents per skill; testing-market one-ISK pricing does not replace this character-sheet price.
+Duplicate, invalid, unavailable or already-injected skills reject the batch. Empty lists return an empty list without changes.
+The wallet debits, per-skill `Skill Purchase` journal entries (**141**, with skill type references), skill rows and injection task
+progress commit in one transaction. Insufficient funds, competing requests and failed writes cannot charge for unlearned skills.
+No schema migration is needed: journal entries use the existing service-payment ledger.
+
+**Sources.** Inert inspection of original build-3662168 archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`:
+`characterskills/client/purchase.pyj`, `SkillPurchaseContext.send_skill_purchase_request` passes the type list and extends its
+purchased list with the reply; `characterskills/common/purchase.pyj`, `get_direct_purchase_price` uses base price and 0.3 tax;
+`evetypes/__init__.pyj`, `IsSkillAvailableForPurchase`, uses publication and the list ID from `evetypes/const.pyj`;
+`appConst.pyj` identifies `refSkillPurchase = 141`.
+[EVE University's skills guide](https://wiki.eveuniversity.org/Skills_and_learning) describes remote injection, the 30% premium
+and learning skills at level zero before satisfying training requirements. The reference `evejs`
+`server/src/services/skills/skillbooks/skillbookRuntime.js` was consulted as a behavior cross-check (local snapshot SHA-256
+`b3b516533689a5785dd371fd21a23b0c8605debf4ef87f449776aad1e3dd2cf9`; checkout has no Git metadata).
+Its broader positive-base-price eligibility is superseded here by the pinned client's explicit type list. Existing Blue adapters
+are reused; no serialization, transport or Destiny behavior changed.
+
+**Automated validation.** The initial exact-method regression passed (one test; 7.50 seconds build and 7.63 seconds test command).
+The first combined development run passed 55 cases in 19.11 seconds after a 4.62-second build. An initial test compile failed on
+collection-expression arguments to the router's object boundary; explicit tuple arrays corrected it before those passing runs.
+The root sequence passed tool/solution restores, a zero-warning/error solution build, **144 focused .NET cases** (26 seconds),
+both Python policy suites (**8 catalog**, **9 formatting**), formatting verification (**1,682 files**, 140-character limit),
+documentation links/unique anchor and `git diff --check`. Root validation took **58.98 seconds**. The filter was
+`FullyQualifiedName~SkillPurchase|FullyQualifiedName~PilotSkillBookTests|FullyQualifiedName~PilotTrainingTests|FullyQualifiedName~Eden.Protocol.Tests.Market.MarketTests|FullyQualifiedName~EconomicLifecycleTests|FullyQualifiedName~TaskTrackingTests|FullyQualifiedName~TaskTrackingServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`.
+The exact first filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.SkillPurchaseTests.DirectPurchaseInjectsAtZeroAndPersistsChargesWithoutCreatingBooks`.
+No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The supplied error screenshot is report evidence,
+not acceptance of this implementation.
+
+**Optional maintainer checks.** Buy an eligible missing skill from the character sheet and verify its skill row and wallet
+entry; try **Buy and Train** to verify the native dialog and queue presentation.
 
 ## Mining skill bonus configuration and search — November 9, 2026
 

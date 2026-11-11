@@ -412,6 +412,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Characters and skills
 
+- [Direct skill purchasing, November 11, 2026](protocol/characters.md#direct-skill-purchasing-november-11-2026)
 - [Faction-warfare rank overview, November 8, 2026](protocol/characters.md#faction-warfare-rank-overview-november-8-2026)
 - <a id="character-interaction-history-november-5-2026"></a>[Character interaction history (November 5, 2026)](protocol/characters.md#character-interaction-history-november-5-2026)
 - <a id="private-pilot-show-info-notes-november-4-2026"></a>[Private pilot Show Info notes (November 4, 2026)](protocol/characters.md#private-pilot-show-info-notes-november-4-2026)
