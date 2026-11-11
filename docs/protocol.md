@@ -12,6 +12,9 @@ records native row/count divergence, the signed login correction and headless co
 [Planetary industry](protocol/planetary.md) records colony construction, extraction and all 68 schematics,
 transactional orbital cargo, saved deadlines, native reply contracts and source-backed limitations.
 
+[Remote action budget costs](protocol/performance.md#remote-action-budget-costs-november-11-2026) records
+remote navigation resource loading, mining SQL reduction and measured-cost admission.
+
 [Compact remote role reuse](protocol/performance.md#reusing-compact-remote-roles-november-11-2026)
 records repeated role-loading removal, committed input invalidation and enriched background-budget warnings.
 
@@ -425,6 +428,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="persistent-personal-jump-clones"></a>[Persistent personal jump clones](protocol/characters.md#persistent-personal-jump-clones)
 - <a id="persistent-account-redemption"></a>[Persistent account redemption](protocol/characters.md#persistent-account-redemption)
 - <a id="persistent-unallocated-skill-points"></a>[Persistent unallocated skill points](protocol/characters.md#persistent-unallocated-skill-points)
+- [Free-point time estimates and silent activity rewards](protocol/characters.md#free-point-preview-and-silent-activity-refresh--november-11-2026)
 - <a id="persistent-learning-implants"></a>[Persistent learning implants](protocol/characters.md#persistent-learning-implants)
 - <a id="persistent-cerebral-accelerators"></a>[Persistent cerebral accelerators](protocol/characters.md#persistent-cerebral-accelerators)
 - <a id="persistent-skill-extraction"></a>[Persistent skill extraction](protocol/characters.md#persistent-skill-extraction)

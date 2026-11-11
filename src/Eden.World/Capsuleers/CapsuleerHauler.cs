@@ -349,6 +349,10 @@ internal sealed partial class CapsuleerHauler(
     )
     {
         _preparedJourney = preparedJourney;
+        if (coarse is not null && !RequiresDetail)
+        {
+            SetDetailed(false);
+        }
         if (!_loaded)
         {
             Load();
@@ -731,6 +735,15 @@ internal sealed partial class CapsuleerHauler(
     private void RefreshObjects()
     {
         using var phase = SessionPerformance.Phase("traffic.geometry");
+        if (!_detailed && !RequiresDetail && Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) != true)
+        {
+            // Remote navigation uses station/gate targets and no collision obstacles.
+            // Loading every belt here created resource rows and opened a connection per belt.
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            _objects = SystemObjects.Geometry(catalog, Pilot.SystemId);
+            _obstacles = [];
+            return;
+        }
         _objects = _operation is { HasWorld: true }
             ? CapsuleerGeometry.Load(_operation.World, _operation.Catalog, Pilot.SystemId, Now)
             : systems.Load(Pilot.SystemId);

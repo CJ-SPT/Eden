@@ -33,7 +33,9 @@ names = ['eve', 'eve.client', 'eve.client.script', 'eve.client.script.ui',
          'spacecomponents.client.components.entitystandings']
 names += ['locks', 'xmppchatclient', 'xmppchatclient.xmppchatwindow',
           'eve.client.script.ui.shared', 'eve.client.script.ui.shared.dockedUI',
-          'eve.client.script.ui.shared.dockedUI.guests']
+          'eve.client.script.ui.shared.dockedUI.guests',
+          'eve.client.script.ui.services.skillQueueSvc', 'eve.client.script.ui.services.skillsvc',
+          'eve.client.script.ui.skilltrading', 'eve.client.script.ui.skilltrading.applySkillPointsWindow']
 for name in names:
     module = type(sys)(name)
     module.__path__ = []
@@ -43,6 +45,12 @@ for name in names:
         setattr(sys.modules[parent], child, module)
 photo = sys.modules['eve.client.script.ui.services.evePhotosvc']
 photo.EvePhoto = type('EvePhoto', (object,), {})
+sys.modules['eve.client.script.ui.services.skillQueueSvc'].SkillQueueService = type(
+    'SkillQueueService', (object,), {'GetSkillLevelAndProgressWithFreePoints': lambda *args: None})
+sys.modules['eve.client.script.ui.services.skillsvc'].SkillsSvc = type(
+    'SkillsSvc', (object,), {'SetFreeSkillPoints': lambda *args: None, 'OnFreeSkillPointsChanged': lambda *args: None})
+sys.modules['eve.client.script.ui.skilltrading.applySkillPointsWindow'].ApplySkillPointsListEntry = type(
+    'ApplySkillPointsListEntry', (object,), {})
 chat_window = type('XmppChatWindow', (object,), {
     name: lambda *args: None for name in ['InitUsers', 'CharacterJoinedChannel', 'CharacterLeftChannel']})
 guest_panel = type('GuestsPanel', (object,), {

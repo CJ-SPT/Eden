@@ -12,10 +12,12 @@ internal sealed class CapsuleerBackgroundBudget(TimeProvider clock)
     private long? _window;
     private TimeSpan _spent;
     private bool _busy;
+    private readonly Dictionary<CapsuleerAction, TimeSpan> _costs = [];
+    private static readonly TimeSpan MinimumAllowance = TimeSpan.FromMilliseconds(1);
     internal long Overruns { get; private set; }
     internal int PendingSystems { get; set; }
 
-    internal IDisposable? TryEnter(string operation = "coarse simulation")
+    internal IDisposable? TryEnter(string operation = "coarse simulation", CapsuleerAction? action = null)
     {
         lock (_gate)
         {
@@ -37,16 +39,19 @@ internal sealed class CapsuleerBackgroundBudget(TimeProvider clock)
                 _spent = TimeSpan.FromTicks(Math.Max(0, _spent.Ticks - windows * CapsuleerCoarseRules.Budget.Ticks));
                 _window = now;
             }
-            if (_spent >= CapsuleerCoarseRules.Budget)
+            TimeSpan available = CapsuleerCoarseRules.Budget - _spent;
+            TimeSpan estimate = action is { } kind ? _costs.GetValueOrDefault(kind, CapsuleerCoarseRules.Budget) : MinimumAllowance;
+            if (available < estimate)
             {
                 return null;
             }
             _busy = true;
-            return new Lease(this, now, operation, CapsuleerCoarseRules.Budget - _spent);
+            return new Lease(this, now, operation, available, action);
         }
     }
 
-    private sealed class Lease(CapsuleerBackgroundBudget owner, long started, string operation, TimeSpan available) : IDisposable
+    private sealed class Lease(CapsuleerBackgroundBudget owner, long started, string operation, TimeSpan available, CapsuleerAction? action)
+        : IDisposable
     {
         private bool _disposed;
         private readonly SessionPerformance _metrics = SessionPerformance.Begin("background unit", _ => { }, force: true)!;
@@ -63,6 +68,14 @@ internal sealed class CapsuleerBackgroundBudget(TimeProvider clock)
                 }
                 _disposed = true;
                 elapsed = owner._clock.GetElapsedTime(started);
+                if (action is { } kind)
+                {
+                    // Reserve the previous unit's cost, bounded by one full allowance.
+                    // Expensive atomic work can still run, and still repays its debt.
+                    owner._costs[kind] = TimeSpan.FromTicks(
+                        Math.Clamp(elapsed.Ticks, MinimumAllowance.Ticks, CapsuleerCoarseRules.Budget.Ticks)
+                    );
+                }
                 owner._spent += elapsed;
                 overrun = owner._spent > CapsuleerCoarseRules.Budget;
                 if (overrun)

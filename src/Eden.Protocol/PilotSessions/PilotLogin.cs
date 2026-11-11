@@ -39,7 +39,7 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session, S
 
         await packets.WriteAsync(2);
         byte[] challenge = RandomNumberGenerator.GetBytes(64);
-        // Install the portrait and CONCORD icon adapters before the roster opens.
+        // Install native UI compatibility adapters before the roster opens.
         // The signed expression returns no settings or other client data.
         byte[] expression = LoginClient.Expression;
         byte[] signature = key.SignData(PilotLoginWire.HashArgument(expression), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);

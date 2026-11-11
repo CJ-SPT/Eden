@@ -5,22 +5,160 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Docking;
+using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
-public sealed class CapsuleerCoarseTests
+public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
 {
     private const int Home = 30000141;
     private const int Elsewhere = 30000144;
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(180)]
+    public void RemotePaidMiningReusesValidationWithinItsTransaction(int availableSeconds)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        MinerObservation? paid = null;
+        for (int action = 0; action < 1000; action++)
+        {
+            paid = CapsuleerTestDriver.Miner(host, fixture.Clock);
+            if (paid.Work.Activity == MinerActivity.Mining)
+            {
+                break;
+            }
+        }
+        Assert.Equal(MinerActivity.Mining, paid!.Work.Activity);
+        fixture.Clock.Seconds += 180;
+        using WorldDbContext world = new(fixture.Database.Path) { Participants = new(pilots: [paid.Pilot.PilotId]) };
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        long before = world.Set<WorldAsteroid>().Find(paid.Work.TargetId)!.Quantity;
+        using var metrics = SessionPerformance.Begin("remote mining validation", _ => { }, force: true)!;
+        var result = PilotMiningStore.CollectRemote(
+            world,
+            catalog,
+            paid.Pilot.PilotId,
+            paid.Work.ModuleId,
+            paid.Work.TargetId,
+            TimeSpan.FromSeconds(availableSeconds).Ticks,
+            new(.5, .5, .5, .5, .5),
+            fixture.Clock.Now
+        );
+        output.WriteLine($"Remote mining: SQL={metrics.Commands}, connections={metrics.Connections}, fits={metrics.FittingCalculations}");
+        Assert.InRange(metrics.Commands, 1, 64);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+        Assert.Equal(availableSeconds > 0, result.Cycles > 1);
+        long remaining = world.Set<WorldAsteroid>().Find(paid.Work.TargetId)!.Quantity;
+        Assert.True(remaining < before);
+        Assert.Throws<InvalidDataException>(() =>
+            PilotMiningStore.CollectRemote(
+                world,
+                catalog,
+                paid.Pilot.PilotId,
+                paid.Work.ModuleId,
+                paid.Work.TargetId,
+                0,
+                new(.5, .5, .5, .5, .5),
+                fixture.Clock.Now
+            )
+        );
+        Assert.Equal(remaining, world.Set<WorldAsteroid>().Find(paid.Work.TargetId)!.Quantity);
+        transaction.Rollback();
+        using WorldDbContext reopened = new(fixture.Database.Path) { Participants = TransactionParticipants.None };
+        Assert.Equal(before, reopened.Set<WorldAsteroid>().Find(paid.Work.TargetId)!.Quantity);
+    }
+
+    [Fact]
+    public void RemoteHaulerNavigationDoesNotLoadAsteroidResources()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
+        human.Transfer(Elsewhere);
+        scheduler.Run(0);
+        long pilot = fixture.Founder().PilotId;
+        var previous = scheduler.Jobs().Single(job => job.PilotId == pilot);
+        fixture.Clock.Seconds += 180;
+        for (int turn = 0; turn < CapsuleerCoarseRules.PageSize; turn++)
+        {
+            List<string> commands = [];
+            using var operation = host.GetRequiredService<IPilotOperationScope>().Begin();
+            using var metrics = SessionPerformance.Begin("remote hauler geometry", _ => { }, force: true, command: commands.Add)!;
+            scheduler.Run(checked((int)fixture.Clock.Seconds));
+            if (scheduler.Jobs().Single(job => job.PilotId == pilot).Revision > previous.Revision)
+            {
+                output.WriteLine(
+                    $"Remote hauler: SQL={metrics.Commands}, connections={metrics.Connections}, fits={metrics.FittingCalculations}"
+                );
+                Assert.DoesNotContain(commands, sql => sql.Contains("WorldAsteroid", StringComparison.Ordinal));
+                Assert.DoesNotContain(commands, sql => sql.Contains("WorldBeltRenewal", StringComparison.Ordinal));
+                Assert.InRange(metrics.Connections, 1, 4);
+                Assert.Equal(0, scheduler.Read().Failures);
+                return;
+            }
+            fixture.Clock.Milliseconds += 50;
+        }
+        Assert.Fail("The remote hauler did not settle.");
+    }
+
+    [Fact]
+    public void BackgroundAdmissionReservesTheLastActionCostAndStillRunsLargeUnits()
+    {
+        TestClock clock = new();
+        CapsuleerBackgroundBudget budget = new(clock);
+        using (budget.TryEnter("trade", CapsuleerAction.Trade))
+        {
+            clock.Milliseconds += 4;
+        }
+        Assert.Null(budget.TryEnter("trade", CapsuleerAction.Trade));
+        Assert.Null(budget.TryEnter("unmeasured arrival", CapsuleerAction.Arrival));
+        clock.Milliseconds += 50;
+        using (var admitted = budget.TryEnter("trade", CapsuleerAction.Trade))
+        {
+            Assert.NotNull(admitted);
+            clock.Milliseconds += 8;
+        }
+        clock.Milliseconds += 50;
+        Assert.Null(budget.TryEnter("trade", CapsuleerAction.Trade));
+        clock.Milliseconds += 50;
+        using var retried = budget.TryEnter("trade", CapsuleerAction.Trade);
+        Assert.NotNull(retried);
+        Assert.Equal(1, budget.Overruns);
+    }
+
+    [Fact]
+    public void BackgroundAdmissionAllowsExactRemainingAllowance()
+    {
+        TestClock clock = new();
+        CapsuleerBackgroundBudget budget = new(clock);
+        using (budget.TryEnter())
+        {
+            clock.Milliseconds += 4;
+        }
+        using (var last = budget.TryEnter())
+        {
+            Assert.NotNull(last);
+            clock.Milliseconds += 1;
+        }
+        Assert.Null(budget.TryEnter());
+        Assert.Equal(0, budget.Overruns);
+    }
 
     [Fact]
     public void WarmRemoteSettlementsReuseRoleInputsWithoutReloadingFounders()

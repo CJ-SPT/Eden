@@ -21,6 +21,7 @@ public sealed class ConcordOverviewTests
         Assert.Contains("EvePhoto.GetPortrait = get_portrait", expression);
         Assert.Contains("install_concord_overview()", expression);
         Assert.Contains("install_presence_lists()", expression);
+        Assert.Contains("install_free_point_preview()", expression);
     }
 
     [PinnedPortraitClientFact]

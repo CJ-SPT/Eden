@@ -32,7 +32,12 @@ namespace Eden.World.Mining;
 [Injectable]
 internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider clock) : IPilotMining
 {
-    private sealed record ValidatedMining(Pilot Pilot, WorldAsteroid Asteroid, MiningLaser Laser);
+    private sealed record ValidatedMining(
+        Pilot Pilot,
+        WorldAsteroid Asteroid,
+        MiningLaser Laser,
+        IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes
+    );
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
@@ -52,7 +57,9 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
     )
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-        var levels = Enum.GetValues<MiningSkill>().ToDictionary(s => s, s => PilotSkillReader.Level(world, catalog, pilotId, (int)s));
+        var skills = Enum.GetValues<MiningSkill>();
+        var trained = PilotSkillReader.Levels(world, catalog, pilotId, skills.Select(skill => (int)skill).ToArray());
+        var levels = skills.ToDictionary(skill => skill, skill => trained[(int)skill]);
         return MiningRules.ModuleAttributes(
             new(
                 module.GroupId,
@@ -183,7 +190,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         {
             throw new InvalidDataException("Invalid mining cycle attributes.");
         }
-        return new(pilot, asteroid, laser);
+        return new(pilot, asteroid, laser, ship);
     }
 
     private static InventoryFlag OreHold(CatalogDbContext catalog, int hull, MiningFamily family) =>
@@ -231,7 +238,20 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         DogmaEffect? effect = null
     )
     {
-        var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        return BeginValidated(world, catalog, Validate(world, catalog, pilotId, moduleId, asteroidId, now), now, effect);
+    }
+
+    private static MiningStart BeginValidated(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        ValidatedMining validated,
+        long now,
+        DogmaEffect? effect = null
+    )
+    {
+        var (pilot, asteroid, laser, attributes) = validated;
+        long pilotId = pilot.Id;
+        long moduleId = laser.ItemId;
         if (effect is not null && effect != laser.Effect)
         {
             throw new InvalidDataException("The mining effect does not match the fitted module.");
@@ -261,20 +281,14 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             }
         }
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId, laser.Family);
-        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
+        double capacity = ShipHoldRules.Capacity((int)hold, attributes);
         double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
         double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
         if (available + InventoryDefinitions.ResourceTolerance < volume)
         {
             throw new CargoCapacityException(available, volume);
         }
-        double charge = ShipResources.SpendCapacitor(
-            world,
-            pilot.ActiveShipId,
-            PilotFittingStore.ShipAttributes(world, catalog, pilotId),
-            laser.CapacitorNeed,
-            now
-        );
+        double charge = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, attributes, laser.CapacitorNeed, now);
         // Keep the already funded beam visible to authoritative repair checks,
         // even when its owning protocol controller has not collected it yet.
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId) ?? world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
@@ -313,10 +327,11 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         long asteroidId,
         MiningCollection collection,
         long now,
-        int cycles
+        int cycles,
+        ValidatedMining? validated = null
     )
     {
-        var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        var (pilot, asteroid, laser, attributes) = validated ?? Validate(world, catalog, pilotId, moduleId, asteroidId, now);
         if (cycles < 1 || cycles > 1 && PilotAmmunitionStore.Contents(world, moduleId) is not null)
         {
             throw new InvalidDataException("Crystal cycles must settle individually.");
@@ -327,7 +342,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             throw new InvalidDataException("There is no paid mining cycle to collect.");
         }
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId, laser.Family);
-        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
+        double capacity = ShipHoldRules.Capacity((int)hold, attributes);
         double oreVolume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
         if (!(oreVolume > 0))
         {
@@ -403,7 +418,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
 
     internal sealed record CoarseCollection(MiningYield Yield, int Cycles);
 
-    internal static CoarseCollection? CollectCoarse(
+    internal static CoarseCollection CollectRemote(
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
@@ -414,11 +429,23 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         long now
     )
     {
-        var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var validated = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        var first = CollectPaid(world, catalog, pilotId, moduleId, asteroidId, new(1, true, rolls), now, 1, validated);
+        if (first.Depleted || first.CargoFull || availableTicks <= 0)
+        {
+            return new(first, 1);
+        }
+        // Crystal wear/destruction can change module attributes between cycles.
+        if (first.Crystal is not null)
+        {
+            validated = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        }
+        // Cargo, capacitor and ore are read again; unchanged fitting inputs remain
+        // local to this transaction and are never cached across commands or commits.
+        var (pilot, asteroid, laser, attributes) = validated;
         double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
         var hold = OreHold(catalog, pilot.ActiveShip.TypeId, laser.Family);
-        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
+        double capacity = ShipHoldRules.Capacity((int)hold, attributes);
         double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
         int cycles = CapsuleerCoarseRules.MiningCycles(
             new(
@@ -433,14 +460,14 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         );
         if (cycles <= 0)
         {
-            return null;
+            return new(first, 1);
         }
-        Begin(world, catalog, pilotId, moduleId, asteroidId, now);
+        BeginValidated(world, catalog, validated, now);
         if (cycles > 1)
         {
             ShipResources.SpendCapacitor(world, pilot.ActiveShipId, attributes, (cycles - 1) * laser.CapacitorNeed, now);
         }
-        return new(CollectPaid(world, catalog, pilotId, moduleId, asteroidId, new(1, true, rolls), now, cycles), cycles);
+        return new(CollectPaid(world, catalog, pilotId, moduleId, asteroidId, new(1, true, rolls), now, cycles, validated), cycles + 1);
     }
 
     public void Stop(long pilotId, long moduleId, long expectedCompletesAt)
