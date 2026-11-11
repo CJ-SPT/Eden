@@ -52,7 +52,11 @@ public sealed record NpcPopulationPolicy(
     bool MajorThreatAnomalies = false
 );
 
-public sealed record ProgressionPolicy(bool GrantStartingSkills = true, decimal KillSkillPointMultiplier = 1);
+public sealed record ProgressionPolicy(
+    bool GrantStartingSkills = true,
+    decimal KillSkillPointMultiplier = 1,
+    decimal MiningSkillPointMultiplier = 1
+);
 
 public sealed record CapsuleerPopulationPolicy(
     bool GlobalProvisioning = true,

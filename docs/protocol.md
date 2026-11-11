@@ -653,3 +653,6 @@ Progressive supply, demand, trade settlement and validation are recorded under [
 
 [Persistent traveler routines](protocol/capsuleers.md#persistent-traveler-routines--november-9-2026) add personal travel habits and saved threat memory.
 [Simulated-pilot retaliation](protocol/capsuleers.md#simulated-pilot-retaliation--november-9-2026) uses normal combat owners, fitted equipment, shared locks and finite supplies.
+
+[Mining skill points](protocol/industry.md#mining-skill-point-rewards-november-11-2026) cover silent unallocated rewards
+for delivered ore, ice and gas, combined yield/SP multipliers, atomic persistence and web configuration.

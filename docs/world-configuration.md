@@ -13,7 +13,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Gathering | Separate ore, ice and gas yield multipliers; enable belt renewal and set its UTC hour. |
 | Rewards | NPC bounty ISK, mission ISK, mission loyalty points and positive mission standing-gain multipliers. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
-| Progression | NPC kill-SP multiplier; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
+| Progression | NPC kill-SP and mining-SP multipliers; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
 | Structures | Anchoring, core onlining and decommissioning speeds for new timers; saved deadlines retain their original terms. |
 | Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
@@ -41,6 +41,12 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 - Bounty ISK scales the gross amount before corporation tax. Kill SP uses the original bounty independently: the default remains
   0.25% of original bounty ISK, multiplied by the kill-SP setting, then rounded down to whole points. For example, a 3,000 ISK NPC
   with a 2× kill-SP multiplier awards 15 SP. Bounty ISK set to zero can still award SP. These credits remain silent.
+- Mining SP uses the reference ISK value of units actually delivered to the hold: multiply that value by the mining-SP
+  setting, divide by 400 and round down once per collection. Ore, ice and gas yield multipliers therefore also scale SP
+  when they increase delivered resources. One ice unit is a whole block: a single block can award SP based on its value,
+  and 3 blocks award three blocks' value before rounding. Critical cargo counts; residue, full holds and empty interrupted
+  ice cycles do not. Credits are silent and saved atomically with the harvest. The Progression control accepts 0–100×,
+  defaults to 1× for existing worlds, and activates after **Save for restart** and a restart. Zero disables mining SP.
 - Mission ISK, LP and positive standing gains are calculated when an offer is created and saved with it. Existing offers and
   accepted missions keep their terms. Standing gain fractions cap at 100%; penalties remain unchanged.
 - Industry speed divides normal duration: 2× means half the time, retaining ordinary skill/blueprint bonuses and rounding.
