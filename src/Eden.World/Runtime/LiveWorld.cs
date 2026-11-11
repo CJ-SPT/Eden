@@ -164,6 +164,21 @@ internal sealed partial class LiveWorld : IDisposable
         }
         foreach (var change in changes)
         {
+            if (change.Table is "schema" or "WorldConfigurationState")
+            {
+                CapsuleerInputReset++;
+            }
+            if (change.Table is "WorldPilot" or "WorldFitRevision" && CapsuleerJobs.ContainsKey(change.Id))
+            {
+                CapsuleerInputRevisions[change.Id] = CapsuleerInputRevisions.GetValueOrDefault(change.Id) + 1;
+            }
+            if (
+                change.Table is "WorldShip" or "WorldPosition" or "WorldPositionMembership"
+                && (_shipSystems.ContainsKey(change.Id) || _shipOwners.ContainsKey(change.Id))
+            )
+            {
+                CapsuleerShipRevisions[change.Id] = CapsuleerShipRevisions.GetValueOrDefault(change.Id) + 1;
+            }
             if (change.Table == "WorldPilot" && CapsuleerJobs.ContainsKey(change.Id))
             {
                 CapsuleerHullRevisions[change.Id] = CapsuleerHullRevisions.GetValueOrDefault(change.Id) + 1;
@@ -258,6 +273,9 @@ internal sealed partial class LiveWorld : IDisposable
     internal long PopulationIdentityRevision { get; private set; }
     internal long HostilityRevision { get; private set; }
     internal Dictionary<long, long> CapsuleerHullRevisions { get; } = [];
+    internal long CapsuleerInputReset { get; private set; }
+    internal Dictionary<long, long> CapsuleerInputRevisions { get; } = [];
+    internal Dictionary<long, long> CapsuleerShipRevisions { get; } = [];
     internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];
 
     // These versions describe the resident SQL image, which is the source for every backup.

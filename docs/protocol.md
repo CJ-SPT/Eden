@@ -6,6 +6,9 @@ records native row/count divergence, the signed login correction and headless co
 [Planetary industry](protocol/planetary.md) records colony construction, extraction and all 68 schematics,
 transactional orbital cargo, saved deadlines, native reply contracts and source-backed limitations.
 
+[Compact remote role reuse](protocol/performance.md#reusing-compact-remote-roles-november-11-2026)
+records repeated role-loading removal, committed input invalidation and enriched background-budget warnings.
+
 [Coarse distant populations](protocol/capsuleers.md#coarse-distant-populations--november-10-2026)
 records persistent regional rosters, bounded remote settlements, paid-work preservation and prompt re-entry.
 

@@ -3,6 +3,9 @@
 [Planetary industry](protocol/planetary.md) covers saved colonies, all 68 planetary schematics, extraction,
 routing, orbital cargo, Interbus customs, source evidence and automated validation.
 
+[Compact remote role reuse](protocol/performance.md#reusing-compact-remote-roles-november-11-2026)
+records repeated role-loading removal, committed input invalidation and enriched background-budget warnings.
+
 [Traffic ownership and market summaries](protocol/performance.md#traffic-ownership-and-market-summaries-november-10-2026)
 records prepared traffic actions, committed market views, measured invalidation costs and latency acceptance.
 
