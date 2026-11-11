@@ -60,6 +60,7 @@
     <EmbeddedResource Include="Fixtures/ProbeCatalog.json" />
     <EmbeddedResource Include="Fixtures/MiningCatalog.json" />
     <EmbeddedResource Include="Fixtures/StructureCatalog.json" />
+    <EmbeddedResource Include="Fixtures/CompressionCatalog.json" />
     <EmbeddedResource Include="Fixtures/HackingCatalog.json" />
     <EmbeddedResource Include="Fixtures/PlanetaryCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />

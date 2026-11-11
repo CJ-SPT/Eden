@@ -521,4 +521,9 @@ public enum DogmaAttributeId
     CalibrationCost = 1153,
     RigSlotsLeft = 1154,
     RigSize = 1547,
+
+    // Build 3662168 dogma.const; refinery hulls add their 3261 value to the service module's 3262 base.
+    GasDecompressionEfficiencyBonus = 3260,
+    GasDecompressionStructureBonus = 3261,
+    GasDecompressionBaseEfficiency = 3262,
 }
