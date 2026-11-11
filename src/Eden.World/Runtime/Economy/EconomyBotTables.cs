@@ -2166,6 +2166,7 @@ internal sealed partial class ResidentEconomy
                 "ModuleId,ExpiresAt,ShipId",
                 reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3)),
                 state => new(state.ModuleId),
+                changed: TimedModuleChanged,
                 indexes: [new("ModuleId", row => row.ModuleId), new("ShipId", row => row.ShipId)],
                 primaryColumn: "ModuleId"
             )
@@ -2686,6 +2687,56 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Repair.StationRepairPayment, EconomyStationRepairPayment>(
+                "WorldRepairPayment",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.AmountCents,
+                        row.BalanceCents,
+                        row.PilotId,
+                        row.RepairsJson,
+                        row.StationId,
+                        row.StationOwnerId,
+                        row.Time
+                    ),
+                state => new Eden.Data.World.Repair.StationRepairPayment
+                {
+                    Id = state.Id,
+                    AmountCents = state.AmountCents,
+                    BalanceCents = state.BalanceCents,
+                    PilotId = state.PilotId,
+                    RepairsJson = state.RepairsJson,
+                    StationId = state.StationId,
+                    StationOwnerId = state.StationOwnerId,
+                    Time = state.Time,
+                },
+                ProjectStationRepairPayment,
+                "Id,AmountCents,BalanceCents,PilotId,RepairsJson,StationId,StationOwnerId,Time",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetString(5),
+                        reader.GetInt64(6),
+                        reader.GetInt64(7),
+                        reader.GetInt64(8)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("PilotId", row => row.PilotId),
+                    new("StationId", row => row.StationId),
+                    new("StationOwnerId", row => row.StationOwnerId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Repair.WorldRemoteAssistance, EconomyWorldRemoteAssistance>(
                 "WorldRemoteAssistance",
                 row => new(row.ModuleId),
@@ -2701,6 +2752,43 @@ internal sealed partial class ResidentEconomy
                 },
                 ProjectWorldRemoteAssistance,
                 "ModuleId,ContactJson,PilotId,SourceShipId,SystemId,TargetId",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetString(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt32(5),
+                        reader.GetInt64(6)
+                    ),
+                state => new(state.ModuleId),
+                indexes:
+                [
+                    new("ModuleId", row => row.ModuleId),
+                    new("PilotId", row => row.PilotId),
+                    new("SourceShipId", row => row.SourceShipId),
+                    new("SystemId", row => row.SystemId),
+                    new("TargetId", row => row.TargetId),
+                ],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Repair.WorldRemoteRepair, EconomyWorldRemoteRepair>(
+                "WorldRemoteRepair",
+                row => new(row.ModuleId),
+                row => new(row.ModuleId, row.CycleJson, row.PilotId, row.SourceShipId, row.SystemId, row.TargetId),
+                state => new Eden.Data.World.Repair.WorldRemoteRepair
+                {
+                    ModuleId = state.ModuleId,
+                    CycleJson = state.CycleJson,
+                    PilotId = state.PilotId,
+                    SourceShipId = state.SourceShipId,
+                    SystemId = state.SystemId,
+                    TargetId = state.TargetId,
+                },
+                ProjectWorldRemoteRepair,
+                "ModuleId,CycleJson,PilotId,SourceShipId,SystemId,TargetId",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -3009,6 +3097,10 @@ internal sealed partial class EconomyTransaction
             case Eden.Data.World.Mining.SavedPersonalMiningLog value:
                 value.Id = value.Id == 0 ? Next("WorldPersonalMiningLog") : value.Id;
                 Reserve("WorldPersonalMiningLog", value.Id);
+                break;
+            case Eden.Data.World.Repair.StationRepairPayment value:
+                value.Id = value.Id == 0 ? Next("WorldRepairPayment") : value.Id;
+                Reserve("WorldRepairPayment", value.Id);
                 break;
             case Eden.Data.World.Structures.SavedStructure value:
                 value.Id = value.Id == 0 ? Next("WorldStructure") : value.Id;
@@ -3713,7 +3805,33 @@ internal sealed partial class EconomyTransaction
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
         }
+        foreach (var row in Retained<Eden.Data.World.Repair.StationRepairPayment>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
         foreach (var row in Retained<Eden.Data.World.Repair.WorldRemoteAssistance>())
+        {
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.SourceShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.TargetId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Repair.WorldRemoteRepair>())
         {
             if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
             {

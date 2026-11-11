@@ -33,7 +33,7 @@ using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Repair;
 
-public sealed class ShieldBoostTests
+public sealed partial class ShieldBoostTests
 {
     [Fact]
     public void AutomaticRepeatsKeepHudEffectActiveUntilARealStop()

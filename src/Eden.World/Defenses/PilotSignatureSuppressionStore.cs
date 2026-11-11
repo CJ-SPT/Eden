@@ -11,6 +11,7 @@ using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -23,10 +24,10 @@ internal sealed class PilotSignatureSuppressionStore(WorldDatabase database) : I
 {
     public SignatureSuppressionActivation Activate(long pilotId, long moduleId, long now)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
         if (
             pilot.ActiveShip.Position is null
@@ -54,7 +55,7 @@ internal sealed class PilotSignatureSuppressionStore(WorldDatabase database) : I
                 .Any(a =>
                     a.ShipId == pilot.ActiveShipId
                     && a.ModuleId != moduleId
-                    && suppressors.Contains(a.ModuleId)
+                    && Enumerable.Contains(suppressors, a.ModuleId)
                     && (a.ExpiresAt == 0 || a.ExpiresAt > now)
                 )
         )
@@ -99,21 +100,21 @@ internal sealed class PilotSignatureSuppressionStore(WorldDatabase database) : I
 
     private long ReadActive(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        var membership = (
-            from active in world.Set<ActiveFittedModule>()
-            join item in world.Set<OwnedItem>() on active.ModuleId equals item.Id
-            where
-                active.ModuleId == moduleId
-                && active.ShipId == shipId
-                && item.OwnerId == pilotId
-                && item.LocationId == shipId
-                && item.Online
-                && item.Singleton
-                && item.FlagId >= (int)InventoryFlag.MediumSlot0
-                && item.FlagId <= (int)InventoryFlag.MediumSlot7
-            select new ActiveMembership(item.TypeId, active.ExpiresAt)
-        ).FirstOrDefault();
+        using WorldActionScope inspection = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = inspection.World;
+        var active = world.Set<ActiveFittedModule>().Find(moduleId);
+        var item = world.Set<OwnedItem>().Find(moduleId);
+        ActiveMembership? membership =
+            active?.ShipId == shipId
+            && item is not null
+            && item.OwnerId == pilotId
+            && item.LocationId == shipId
+            && item.Online
+            && item.Singleton
+            && item.FlagId >= (int)InventoryFlag.MediumSlot0
+            && item.FlagId <= (int)InventoryFlag.MediumSlot7
+                ? new(item.TypeId, active.ExpiresAt)
+                : null;
         using CatalogDbContext catalog = new(database.CatalogPath);
         return
             membership is not null
@@ -124,15 +125,16 @@ internal sealed class PilotSignatureSuppressionStore(WorldDatabase database) : I
 
     public IReadOnlyDictionary<DogmaAttributeId, double> Stop(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (!world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
         {
             return new Dictionary<DogmaAttributeId, double>();
         }
-        world.Set<ActiveFittedModule>().Where(a => a.ModuleId == moduleId && a.ShipId == shipId).ExecuteDelete();
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        world.RemoveRange(world.Set<ActiveFittedModule>().Where(a => a.ModuleId == moduleId && a.ShipId == shipId));
+        world.SaveChanges();
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var result = PilotFittingStore.ShipAttributes(world, catalog, pilot, world.Ships.Find(shipId)!);
         transaction.Commit();
         return result;

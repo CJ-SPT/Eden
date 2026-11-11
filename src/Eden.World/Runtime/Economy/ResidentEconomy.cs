@@ -252,6 +252,7 @@ internal sealed partial class ResidentEconomy
         _sequences.Clear();
         _prepared.Clear();
         _openOrders.Clear();
+        ClearTimedModules();
         _marketHeads.Clear();
         _staleHeads.Clear();
         foreach (var table in _tables.Values)
@@ -323,6 +324,7 @@ internal sealed partial class ResidentEconomy
     )
     {
         InvalidateFits(changes);
+        ReindexTimedModules(changes);
         foreach (var sequence in sequences)
         {
             _sequences[sequence.Key] = sequence.Value;
@@ -439,6 +441,7 @@ internal sealed partial class ResidentEconomy
         {
             table.Observe(world, affected[table.Name]);
         }
+        ReindexTimedModules(changes);
         if (affected.TryGetValue("WorldStructure", out var structures))
         {
             foreach (long id in structures)

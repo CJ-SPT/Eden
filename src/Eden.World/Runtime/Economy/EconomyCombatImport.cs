@@ -36,7 +36,7 @@ internal sealed partial class EconomyTransaction
         foreach (long ship in heatShips)
         {
             var heatOwner = owner.HeatForKnownShip(ship);
-            var projection = heatOwner.CaptureOwn()?.Ships.SingleOrDefault(s => s.ShipId == ship);
+            var projection = heatOwner.CaptureShip(ship);
             if (projection is null)
             {
                 continue;

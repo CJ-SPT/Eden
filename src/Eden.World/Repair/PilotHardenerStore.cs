@@ -11,6 +11,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -29,11 +30,11 @@ internal sealed class PilotHardenerStore(WorldDatabase database, TimeProvider cl
 
     private HardenerActivation Activate(long pilotId, long moduleId, DogmaEffect effect, long now, bool overloaded)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         int group = module is null ? 0 : catalog.RequireItem(module.TypeId).GroupId;
         bool correctSlot =
@@ -101,8 +102,8 @@ internal sealed class PilotHardenerStore(WorldDatabase database, TimeProvider cl
 
     public IReadOnlyDictionary<DogmaAttributeId, double> Stop(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var ship = world.Ships.SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
         if (ship is null)
@@ -119,7 +120,7 @@ internal sealed class PilotHardenerStore(WorldDatabase database, TimeProvider cl
             world.Remove(active);
             world.SaveChanges();
         }
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, ship);
         transaction.Commit();
         return attributes;

@@ -147,7 +147,7 @@ public sealed class ShipHeatTests
     [Fact]
     public void AFailedHeatWriteRollsBackTheBoostCapacitorAndCooldown()
     {
-        using Fixture f = new();
+        using Fixture f = new(live: false);
         using (WorldDbContext world = new(f.Fit.Db.Path))
         {
             world.Database.ExecuteSqlRaw(
@@ -166,6 +166,46 @@ public sealed class ShipHeatTests
         }
         Assert.Equal(capacitor, f.Fit.Db.Services.GetRequiredService<IPilotShipResources>().Capacitor(f.Pilot, f.Now), 8);
         Assert.True(f.Read().Idle);
+    }
+
+    [Fact]
+    public void ResidentBoostCheckpointFailureRetainsThePaidHealthCapacitorCooldownAndHeatForRetry()
+    {
+        using Fixture f = new();
+        double before = f.Fit.Db.Services.GetRequiredService<IPilotShipResources>().Capacitor(f.Pilot, f.Now);
+        double? savedCharge;
+        using (WorldDbContext baseline = new(f.Fit.Db.Path))
+        {
+            savedCharge = baseline.Set<ShipEnergy>().Find(f.Ship)?.Charge;
+        }
+        var paid = f.Pay();
+        var heat = Assert.Single(f.Read().Cycles);
+        Assert.True(paid.Capacitor < before);
+        Assert.True(paid.Health.Remaining.Shield > 0);
+        Assert.Throws<InvalidDataException>(() => f.Pay());
+        using (var failed = Assert.IsType<WorldSnapshot>(f.Live!.CaptureSnapshot()))
+        {
+            using (var command = failed.Database.CreateCommand())
+            {
+                command.CommandText =
+                    "CREATE TRIGGER RejectHeat BEFORE INSERT ON WorldShipHeat BEGIN SELECT RAISE(ABORT,'test heat failure'); END";
+                command.ExecuteNonQuery();
+            }
+            Assert.Throws<SqliteException>(() => failed.Project());
+            using WorldDbContext saved = new(failed.Database);
+            Assert.Equal(0, saved.Set<ShipHealthState>().Find(f.Ship)!.ShieldCharge);
+            Assert.Equal(savedCharge, saved.Set<ShipEnergy>().Find(f.Ship)?.Charge);
+            Assert.Empty(saved.Set<ModuleCooldown>());
+            Assert.Empty(saved.Set<SavedShipHeat>());
+        }
+        Assert.Equal(heat.Key, Assert.Single(f.Read().Cycles).Key);
+        using var retry = Assert.IsType<WorldSnapshot>(f.Live!.CaptureSnapshot());
+        retry.Project();
+        using WorldDbContext reopened = new(retry.Database);
+        Assert.Equal(paid.Health.Remaining.Shield, reopened.Set<ShipHealthState>().Find(f.Ship)!.ShieldCharge, 8);
+        Assert.Equal(paid.Capacitor, reopened.Set<ShipEnergy>().Find(f.Ship)!.Charge, 8);
+        Assert.Equal(heat.CompletesAt, reopened.Set<ModuleCooldown>().Find(f.Module)!.ReadyAt);
+        Assert.Equal(heat.Key, Assert.Single(ShipHeatPersistence.Decode(reopened.Set<SavedShipHeat>().Find(f.Ship)!.StateJson).Cycles).Key);
     }
 
     [Fact]

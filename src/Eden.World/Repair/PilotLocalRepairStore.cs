@@ -10,6 +10,8 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -44,11 +46,11 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
             throw new InvalidDataException("Ancillary local repairs apply to armor or shields, not hull.");
         }
         var profile = LocalRepairDefinitions.Profile(layer);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, LocalParticipants(pilotId, moduleId));
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         if (
             pilot.ActiveShip.Position is null
@@ -95,7 +97,7 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
             // An unfitted module keeps its paid completion on the original hull.
             // Settle that debt before the same module can start on another ship.
             var previous = world.Ships.Find(prior.ShipId)!;
-            var owner = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == previous.OwnerId);
+            var owner = world.Pilots.Single(p => p.Id == previous.OwnerId);
             var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, owner, previous));
             _ = PilotHealthStore.Read(world, previous.Id, defense, now);
         }
@@ -157,32 +159,30 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
 
     public IReadOnlyList<LocalRepairSchedule> Read(long pilotId, long shipId, long now)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var schedules = (
-            from repair in world.Set<PendingLocalRepair>()
-            join item in world.Set<OwnedItem>() on repair.ModuleId equals item.Id
-            where
-                repair.ShipId == shipId
-                && item.OwnerId == pilotId
-                && item.LocationId == shipId
-                && item.Online
-                && (
-                    (
+        var schedules = world
+            .Set<PendingLocalRepair>()
+            .Where(repair => repair.ShipId == shipId && repair.CompletesAt > now)
+            .AsEnumerable()
+            .Select(repair =>
+            {
+                var item = world.Set<OwnedItem>().Find(repair.ModuleId);
+                bool valid =
+                    item is not null
+                    && item.OwnerId == pilotId
+                    && item.LocationId == shipId
+                    && item.Online
+                    && (
                         repair.Layer == RepairLayer.Armor
-                        && item.FlagId >= (int)InventoryFlag.LowSlot0
-                        && item.FlagId <= (int)InventoryFlag.LowSlot7
-                    )
-                    || (
-                        repair.Layer == RepairLayer.Hull
-                        && item.FlagId >= (int)InventoryFlag.MediumSlot0
-                        && item.FlagId <= (int)InventoryFlag.MediumSlot7
-                    )
-                )
-                && repair.CompletesAt > now
-            select new LocalRepairSchedule(item.Id, item.TypeId, repair.StartedAt, repair.CompletesAt, repair.Layer)
-        ).ToArray();
+                            ? InventoryDefinitions.IsLowSlot(item.FlagId)
+                            : repair.Layer == RepairLayer.Hull && InventoryDefinitions.IsMediumSlot(item.FlagId)
+                    );
+                return valid ? new LocalRepairSchedule(item!.Id, item.TypeId, repair.StartedAt, repair.CompletesAt, repair.Layer) : null;
+            })
+            .OfType<LocalRepairSchedule>()
+            .ToArray();
         return schedules
             .Select(s => s with { Ancillary = catalog.FittingType(s.TypeId)?.GroupId == AncillaryRepairRules.ArmorGroup })
             .ToArray();
@@ -190,10 +190,10 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
 
     public ShipHealth Complete(long pilotId, long shipId, long now)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId && p.ActiveShipId == shipId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId && p.ActiveShipId == shipId);
         var health = PilotHealthStore.Read(
             world,
             shipId,
@@ -202,5 +202,11 @@ internal sealed class PilotLocalRepairStore(WorldDatabase database) : IPilotLoca
         );
         transaction.Commit();
         return health;
+    }
+
+    private TransactionParticipants LocalParticipants(long pilot, long module)
+    {
+        long? previous = LiveWorld.Find(database.Path)?.Economy.Inspect(world => world.Set<PendingLocalRepair>().Find(module)?.ShipId);
+        return new(pilots: [pilot], ships: previous is long ship ? [ship] : []);
     }
 }

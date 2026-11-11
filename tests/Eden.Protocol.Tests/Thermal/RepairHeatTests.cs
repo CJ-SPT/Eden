@@ -1,4 +1,6 @@
 using Eden.Data.World.Combat;
+using Eden.Data.World.Fittings;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Repair;
 using Eden.Data.World.Thermal;
 using Eden.Gameplay.Ammunition;
@@ -14,6 +16,7 @@ using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Eden.World.Thermal;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using FittingFixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
@@ -296,7 +299,6 @@ public sealed class RepairHeatTests
     }
 
     [Theory]
-    [InlineData(AncillaryArmor)]
     [InlineData(AncillaryRemoteArmor)]
     [InlineData(AncillaryRemoteShield)]
     public void RejectedHeatPersistenceRollsBackRepairsFuelCapacitorAndEvents(int type)
@@ -341,6 +343,56 @@ public sealed class RepairHeatTests
             world.Database.ExecuteSqlRaw("DROP TRIGGER RejectRepairHeat");
         }
         Assert.True(f.Read().Idle);
+    }
+
+    [Fact]
+    public void ResidentAncillaryRepairCheckpointFailureRetainsFuelPaymentHeatAndCompletionForRetry()
+    {
+        using Fixture f = new(AncillaryArmor, fueled: true);
+        int charges = Assert.Single(f.Ammo.Read(f.Pilot, f.Ship)).Quantity;
+        double capacitor = f.Fit.Db.Services.GetRequiredService<IPilotShipResources>().Capacitor(f.Pilot, f.Now);
+        ModuleCooldownKind previousKind;
+        long previousDeadline;
+        using (WorldDbContext baseline = new(f.Fit.Db.Path))
+        {
+            var previous = Assert.Single(baseline.Set<ModuleCooldown>());
+            previousKind = previous.Kind;
+            previousDeadline = previous.ReadyAt;
+        }
+        var paid = f.Local.StartOverloaded(f.Pilot, f.Module, f.Now, ancillary: true);
+        var heat = Assert.Single(f.Read().Cycles);
+        int remaining = f.Live.Economy.Inspect(world => world.Set<OwnedItem>().Single(item => item.LocationId == f.Module).Quantity);
+        Assert.True(remaining < charges);
+        Assert.True(paid.Capacitor < capacitor);
+        Assert.Throws<InvalidDataException>(() => f.Local.StartOverloaded(f.Pilot, f.Module, f.Now, ancillary: true));
+        Assert.Empty(f.Events.Applied);
+        using (var failed = Assert.IsType<WorldSnapshot>(f.Live.CaptureSnapshot()))
+        {
+            using (var command = failed.Database.CreateCommand())
+            {
+                command.CommandText =
+                    "CREATE TRIGGER RejectRepairHeat BEFORE INSERT ON WorldShipHeat BEGIN SELECT RAISE(ABORT,'test heat failure'); END";
+                command.ExecuteNonQuery();
+            }
+            Assert.Throws<SqliteException>(() => failed.Project());
+            using WorldDbContext saved = new(failed.Database);
+            Assert.Empty(saved.Set<SavedShipHeat>());
+            Assert.Empty(saved.Set<PendingLocalRepair>());
+            Assert.Equal(charges, saved.Set<OwnedItem>().Single(item => item.LocationId == f.Module).Quantity);
+            var unchanged = Assert.Single(saved.Set<ModuleCooldown>());
+            Assert.Equal(previousKind, unchanged.Kind);
+            Assert.Equal(previousDeadline, unchanged.ReadyAt);
+        }
+        Assert.Equal(heat.Key, Assert.Single(f.Read().Cycles).Key);
+        using var retry = Assert.IsType<WorldSnapshot>(f.Live.CaptureSnapshot());
+        retry.Project();
+        using WorldDbContext reopened = new(retry.Database);
+        Assert.Equal(remaining, reopened.Set<OwnedItem>().Single(item => item.LocationId == f.Module).Quantity);
+        Assert.Equal(paid.Capacitor, reopened.Set<ShipEnergy>().Find(f.Ship)!.Charge, 8);
+        Assert.Equal(paid.Schedule.CompletesAt, reopened.Set<PendingLocalRepair>().Find(f.Module)!.CompletesAt);
+        Assert.Equal(paid.Schedule.CompletesAt, reopened.Set<ModuleCooldown>().Find(f.Module)!.ReadyAt);
+        Assert.Equal(Damage, reopened.Set<ShipHealthState>().Find(f.Ship)!.ArmorDamage);
+        Assert.Equal(heat.Key, Assert.Single(ShipHeatPersistence.Decode(reopened.Set<SavedShipHeat>().Find(f.Ship)!.StateJson).Cycles).Key);
     }
 
     [Theory]

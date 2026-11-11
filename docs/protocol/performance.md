@@ -2925,3 +2925,80 @@ Not performed; agent client testing is disabled.
 
 Repeat the reported installed-save workload after rebuilding; compare warmed admission and trade allocations,
 world-owner hold time, SQL commands and connections.
+
+## Resident repair, propulsion and timed defenses (November 11, 2026)
+
+Shield boosts, local armor/hull repairs, capacitor injections, hardeners, support modules, propulsion and temporary
+signature/assault defenses now use resident actions while the server is running. Fuel, capacitor, paid completion,
+cooldown, active effects and fitting changes publish together. Stopped-world operations retain the SQL adapter.
+An unfitted repairer includes the hull of its earlier paid cycle among the action participants before reuse.
+
+Local repair schedule reads and timed-defense membership reads resolve selected module identities rather than
+joining complete world inventory. Fitting, module, skill-bonus and signature reads use current resident revisions
+once loaded, including configurations with optional combat/read caches disabled. A projected SQL revision cannot
+keep an already expired resident bonus alive in those fallback reads.
+
+Timed bonuses have resident deadline indexes globally, by system and by ship. Activation, removal and committed
+membership changes update them with the canonical generation; rollback leaves the index unchanged. Empty-system
+checks do not scan other systems' modules. Expiry removes only effects due at the current clock and preserves the
+paid reactivation cooldown. The system-index directory permits concurrent independent system reads. Only the
+current persistence owner skips recursive expiry inside its own action; an unrelated transaction cannot make
+another system publish an already expired cached bonus. Heat profile hydration also uses resident inputs after
+initial loading. Paid heat
+registration stays in the activation action; subsequent module burnout still retains its existing SQL boundary.
+Participant heat capture resolves each named ship directly instead of repeatedly copying its system's dirty heat
+list during multi-ship work.
+
+The existing capacitor, fuel, timing and stacking rules are unchanged. Gameplay reference:
+[EVE University tanking](https://wiki.eveuniversity.org/Tanking), reconciled with the existing catalog-backed rules
+and automated fixtures. Shields restore at activation; local armor repair retains its funded completion deadline.
+
+### Automated validation
+
+Development started with exact shield-payment and armor-completion methods. Added warmed checks assert zero SQL
+commands, connections and fitting calculations for a boost plus rejected repeat, and for paid repair through its
+exact completion and a later duplicate read. Reopened checkpoints preserve health, capacitor, completion and
+cooldown. The resident deadline check covers rejected/committed system transfers, 256 empty-system frames,
+SQL-free expiry and preserved cooldown. Optional-cache-disabled and signature-consumer expiry checks also passed.
+
+Two earlier affected runs were deliberately stopped and are incomplete: **127 passes / 47 failures**, then
+**228 passes / 2 failures**. The first exposed array-expression compatibility in newly resident queries. The next
+exposed fallback reads reusing an older SQL fitting revision after canonical expiry. Targeted corrected checks
+passed before closing validation. Development measurement also identified a fixture property performing SQL and
+an unwarmed standalone fitting cache; those fixture reads now happen before the measured calls.
+
+A subsequent affected selection was stopped after **330 passes / 3 failures** and is incomplete. Two propulsion
+SQL-trigger tests were moved to detached checkpoint failure/retry checks, while tackle retains its current SQL
+adapter checks. The remaining catalog-admission assertion also failed on an untouched `1746b2f5` archive; that exact
+baseline test is excluded, together with the previously reproduced shopping baseline. Corrected checkpoint and
+offline-stop checks passed before the final selection. No unrelated catalog behavior was changed.
+
+A later selection was stopped after **438 passes / 10 failures** and is incomplete. Nine failures exposed committed
+heat publication advancing an invalidated prior image through an already completed action. Publication now installs
+the committed source under the held owner before subsequent advancement. The remaining local ancillary-repair
+SQL-trigger check now exercises detached checkpoint rollback and retry, retaining fuel payment, capacitor, heat
+and the funded completion together. All **43 repair/remaining-module heat checks passed in 32.60 seconds** after
+these corrections.
+
+A further selection reached **946 passes / 1 failure** before being stopped. The remaining shield-boost test now
+retains its stopped-world SQL rejection case and adds resident checkpoint rollback/retry coverage for paid health,
+capacitor, cooldown and heat. Both exact corrected methods passed in **7.12 seconds**; this correction changed the
+test boundary only.
+
+The complete affected selection then passed **1,481 tests in 8m46s**. Subsequent concurrency review added a regression
+that failed against the global active-action skip and passed after expiry checks were limited to the current owner.
+All **195 affected expiry, system-frame, bot-defense and checkpoint checks passed in 1m10s** against this final
+correction. The final warning-free solution build took **0.89 seconds**. Tool/solution restore, both Python policy
+suites (8 catalog and 9 formatting cases) and formatting verification passed. Filters and results are recorded
+under `artifacts/bot-resident-modules`.
+No full .NET suite was run. Initial missile, remote-effect, loss-settlement and burnout operations still retain SQL paths;
+the installed-world workload has not been replayed and no supported-population or live-latency gain is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After rebuilding, repeat the reported workload and a bot defense cycle; compare world-owner hold time, action
+allocation, SQL commands and connections.

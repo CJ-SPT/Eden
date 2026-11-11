@@ -88,7 +88,8 @@ internal sealed partial class LiveWorld
         if (_shipSystems.TryGetValue(ship, out int system))
         {
             using var context = UseSystem(system);
-            using var ownership = EnterSimulation("committed heat", system);
+            // Replace the committed source before any advancement can reload its invalidated prior image.
+            using var ownership = EnterSimulation("committed heat", system, advanceEffects: false);
             Heat.PublishCommitted(pilot, ship, state);
         }
         else

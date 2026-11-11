@@ -10,6 +10,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -18,12 +19,12 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Repair;
 
 [Injectable]
-internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShieldBoosting
+internal sealed partial class PilotShieldBoostStore(WorldDatabase database) : IPilotShieldBoosting
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var result = ModuleAttributes(world, catalog, pilotId, module);
         transaction.Commit();
@@ -46,11 +47,11 @@ internal sealed class PilotShieldBoostStore(WorldDatabase database) : IPilotShie
 
     private ShieldBoost BoostCycle(long pilotId, long moduleId, long now, bool ancillary, bool overloaded)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         if (
             pilot.ActiveShip.Position is null

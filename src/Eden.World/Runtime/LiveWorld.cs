@@ -40,6 +40,7 @@ internal sealed partial class LiveWorld : IDisposable
     private readonly object _gate = new();
     private readonly OwnershipMonitor _ownershipMonitor;
     internal bool IsEntered => _ownershipMonitor.IsEntered || _heldSystems.Value!.Count != 0;
+    internal bool HasPersistenceOwnership => _ownershipMonitor.IsEntered;
     internal int WaitingOwners => _ownershipMonitor.WaitingCount;
 
     internal IDisposable ObserveOwnership(Action<OwnershipTiming> observer) => _ownershipMonitor.Subscribe(observer);

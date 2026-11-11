@@ -36,6 +36,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Propulsion.WorldTackle>().Where(child => child.ModuleId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.PendingLocalRepair>().Where(child => child.ModuleId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteAssistance>().Where(child => child.ModuleId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteRepair>().Where(child => child.ModuleId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedModuleCondition>().Where(child => child.ModuleId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedNaniteRepair>().Where(child => child.ModuleId == removed.Id));
                 break;
@@ -80,7 +81,9 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Market.SavedPersonalOrder>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Mining.SavedPersonalMiningLog>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Propulsion.WorldTackle>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Repair.StationRepairPayment>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteAssistance>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteRepair>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Skills.PilotSkill>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Skills.SavedFreeSkillPoints>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedNaniteRepair>().Where(child => child.PilotId == removed.Id));
@@ -126,6 +129,8 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Repair.PendingLocalRepair>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteAssistance>().Where(child => child.SourceShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteAssistance>().Where(child => child.TargetId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteRepair>().Where(child => child.SourceShipId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteRepair>().Where(child => child.TargetId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedNaniteRepair>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedShipHeat>().Where(child => child.ShipId == removed.Id));
                 break;

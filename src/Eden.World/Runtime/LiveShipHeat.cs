@@ -489,6 +489,14 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         _internal++;
         try
         {
+            if (owner.Economy.IsLoaded && owner.SqlConnections == 0)
+            {
+                using CatalogDbContext residentCatalog = new(database.CatalogPath);
+                return owner.Economy.Inspect(
+                    action => ShipHeatPersistence.Load(action, residentCatalog, ship, now, liveChange, current, expectedPilot),
+                    new(ships: [ship])
+                );
+            }
             using WorldDbContext world = new(database.Path) { Participants = new(ships: [ship]) };
             world.Database.OpenConnection();
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -516,6 +524,9 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         _dirty.Count == 0
             ? null
             : new(_dirty.Where(_ships.ContainsKey).Select(id => new ShipHeatProjection(id, _ships[id].State)).ToArray());
+
+    internal ShipHeatProjection? CaptureShip(long ship) =>
+        _dirty.Contains(ship) && _ships.TryGetValue(ship, out var loaded) ? new(ship, loaded.State) : null;
 
     internal void TransferSystemTo(LiveShipHeat destination, int system)
     {

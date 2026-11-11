@@ -13,7 +13,7 @@ namespace Eden.World.Repair;
 
 internal sealed record AncillaryFuelUse(AncillaryRepairPayment Payment, Magazine? Magazine);
 
-internal static class AncillaryFuelPersistence
+internal static partial class AncillaryFuelPersistence
 {
     internal static AncillaryFuelUse Consume(
         WorldDbContext world,

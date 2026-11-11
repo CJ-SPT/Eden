@@ -20,6 +20,7 @@ using Eden.World.Combat;
 using Eden.World.Inventory;
 using Eden.World.Propulsion;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -95,6 +96,11 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     private IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributesSql(long pilotId)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        {
+            using CatalogDbContext source = new(database.CatalogPath);
+            return live.Economy.Read(world => ShipAttributes(world, source, pilotId), new(pilots: [pilotId]));
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         ExpireTimedModules(world);
@@ -106,6 +112,14 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public double SignatureRadius(long itemId, int typeId)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        {
+            using CatalogDbContext source = new(database.CatalogPath);
+            return live.Economy.Read(
+                world => SignatureRadius(world, source, itemId, typeId),
+                new(ships: [itemId], resources: [new(SharedSimulationResource.Npc, itemId)])
+            );
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         ExpireTimedModules(world);
@@ -554,6 +568,19 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyList<FittingSkillBonus> SkillBonuses(long pilotId)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        {
+            using CatalogDbContext source = new(database.CatalogPath);
+            return live.Economy.Read(
+                world =>
+                {
+                    var pilot = world.Pilots.Find(pilotId)!;
+                    var snapshot = world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId));
+                    return snapshot?.SkillBonuses ?? FittingCalculation.Read(world, source, pilot).SkillBonuses;
+                },
+                new(pilots: [pilotId])
+            );
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -633,6 +660,11 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        {
+            using CatalogDbContext source = new(database.CatalogPath);
+            return live.Economy.Read(world => ReadModuleAttributes(world, source, pilotId, module), new(pilots: [pilotId]));
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         ExpireTimedModules(world);

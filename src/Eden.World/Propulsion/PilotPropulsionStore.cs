@@ -11,6 +11,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -36,7 +37,8 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
 
     public IReadOnlyList<NavigationBonus> NavigationBonuses(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldActionScope inspection = new(database, new(pilots: [pilotId]));
+        var world = inspection.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         return NavigationBonuses(world, catalog, pilotId);
     }
@@ -87,8 +89,8 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var result = ModuleAttributes(world, catalog, pilotId, module);
         transaction.Commit();
@@ -119,11 +121,11 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
 
     private PropulsionCycle ActivateCycle(long pilotId, long moduleId, long now, DogmaEffect? effect, bool overloaded)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var module = world.Set<OwnedItem>().Find(moduleId);
         IReadOnlySet<DogmaEffect> effects = module is null ? new HashSet<DogmaEffect>() : FittingCatalog.Effects(catalog, module.TypeId);
         var activation = effects.Contains(DogmaEffect.Microwarpdrive) ? DogmaEffect.Microwarpdrive : DogmaEffect.Afterburner;
@@ -175,11 +177,11 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
         var groupTypes = catalog.Definitions.TypesInGroup(PropulsionDefinitions.AfterburnerGroup).ToArray();
         var groupModules = world
             .Set<OwnedItem>()
-            .Where(i => i.LocationId == pilot.ActiveShipId && groupTypes.Contains(i.TypeId))
+            .Where(i => i.LocationId == pilot.ActiveShipId && Enumerable.Contains(groupTypes, i.TypeId))
             .Select(i => i.Id)
             .ToArray();
         int limit = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxGroupActive, 1));
-        if (limit <= 0 || world.Set<ModuleCooldown>().Count(c => groupModules.Contains(c.ModuleId) && c.ReadyAt > now) >= limit)
+        if (limit <= 0 || world.Set<ModuleCooldown>().Count(c => Enumerable.Contains(groupModules, c.ModuleId) && c.ReadyAt > now) >= limit)
         {
             throw new InvalidDataException("Only one propulsion module can run at a time.");
         }
@@ -212,8 +214,8 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
 
     public double Stop(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var ship = world.Ships.SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
         if (ship is null)
@@ -227,7 +229,7 @@ internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilo
             world.Remove(active);
             world.SaveChanges();
         }
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         double signature = PilotFittingStore
             .ShipAttributes(world, catalog, pilot, ship)
             .GetValueOrDefault(DogmaAttributeId.SignatureRadius);

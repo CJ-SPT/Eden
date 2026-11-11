@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Resident repair, propulsion and timed defenses](protocol/performance.md#resident-repair-propulsion-and-timed-defenses-november-11-2026)
+records atomic module payments, resident expiry, fitting reads and coherent paid-cycle saves.
+
 [Resident population admission and owned blueprints](protocol/performance.md#resident-population-admission-and-owned-blueprints-november-11-2026)
 records atomic resident founders and gate visitors, copied fits, rollback and coherent saves.
 

@@ -16,6 +16,7 @@ using Eden.World.Propulsion;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Eden.World.Thermal;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using FittingFixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
@@ -299,7 +300,6 @@ public sealed class MobilityHeatTests
 
     [Theory]
     [InlineData(false)]
-    [InlineData(true)]
     public void FailedHeatInsertionRollsBackPaymentEffectsAndAggression(bool propulsion)
     {
         using Fixture f = new(propulsion ? Afterburner : Web);
@@ -342,7 +342,6 @@ public sealed class MobilityHeatTests
 
     [Theory]
     [InlineData(false)]
-    [InlineData(true)]
     public void FailedEffectRemovalKeepsThePaidHeatAndEffectTogether(bool propulsion)
     {
         using Fixture f = new(propulsion ? Afterburner : Web);
@@ -388,6 +387,85 @@ public sealed class MobilityHeatTests
             Assert.Single(saved.Set<WorldTackle>());
         }
         saved.Database.ExecuteSqlRaw("DROP TRIGGER RejectMobilityStop");
+    }
+
+    [Fact]
+    public void ResidentPropulsionCheckpointFailureRetainsTheCompletePaidActivationForRetry()
+    {
+        using Fixture f = new(Afterburner);
+        double before = f.Capacitor;
+        f.StartPropulsion();
+        var paid = Assert.Single(f.Read().Cycles);
+        double capacitor = f.Live.Economy.Inspect(world => world.Set<ShipEnergy>().Find(f.Ship)!.Charge);
+        Assert.True(capacitor < before);
+        RejectCheckpoint(
+            f,
+            "CREATE TRIGGER RejectMobilityHeat BEFORE INSERT ON WorldShipHeat BEGIN SELECT RAISE(ABORT,'test heat failure'); END",
+            saved =>
+            {
+                Assert.Empty(saved.Set<SavedShipHeat>());
+                Assert.Empty(saved.Set<ActiveFittedModule>());
+                Assert.Empty(saved.Set<ModuleCooldown>());
+                Assert.Null(saved.Set<ShipEnergy>().Find(f.Ship));
+            }
+        );
+        Assert.Equal(paid.Key, Assert.Single(f.Read().Cycles).Key);
+        using var retry = Assert.IsType<WorldSnapshot>(f.Live.CaptureSnapshot());
+        retry.Project();
+        using WorldDbContext reopened = new(retry.Database);
+        Assert.Equal(capacitor, reopened.Set<ShipEnergy>().Find(f.Ship)!.Charge, 8);
+        Assert.NotNull(reopened.Set<ActiveFittedModule>().Find(f.Module));
+        Assert.Equal(paid.Key, Assert.Single(ShipHeatPersistence.Decode(reopened.Set<SavedShipHeat>().Find(f.Ship)!.StateJson).Cycles).Key);
+        Assert.Equal(paid.CompletesAt, reopened.Set<ModuleCooldown>().Find(f.Module)!.ReadyAt);
+    }
+
+    [Fact]
+    public void ResidentPropulsionStopCheckpointFailureRetainsTheCompleteCancellationForRetry()
+    {
+        using Fixture f = new(Afterburner);
+        f.StartPropulsion();
+        var paid = Assert.Single(f.Read().Cycles);
+        f.At(paid.StartedAt + (paid.CompletesAt - paid.StartedAt) / 2);
+        _ = f.Read();
+        // Retain a relational image of the paid state, then cancel in resident state.
+        using (WorldDbContext baseline = new(f.Fit.Db.Path))
+        {
+            Assert.NotNull(baseline.Set<ActiveFittedModule>().Find(f.Module));
+        }
+        f.Propulsion.Stop(f.Pilot, f.Ship, f.Module);
+        Assert.Empty(f.Read().Cycles);
+        RejectCheckpoint(
+            f,
+            "CREATE TRIGGER RejectMobilityStop BEFORE DELETE ON WorldActiveModule BEGIN SELECT RAISE(ABORT,'test stop failure'); END",
+            saved =>
+            {
+                Assert.NotNull(saved.Set<ActiveFittedModule>().Find(f.Module));
+                Assert.Equal(
+                    paid.Key,
+                    Assert.Single(ShipHeatPersistence.Decode(saved.Set<SavedShipHeat>().Find(f.Ship)!.StateJson).Cycles).Key
+                );
+            }
+        );
+        Assert.Empty(f.Read().Cycles);
+        using var retry = Assert.IsType<WorldSnapshot>(f.Live.CaptureSnapshot());
+        retry.Project();
+        using WorldDbContext reopened = new(retry.Database);
+        Assert.Null(reopened.Set<ActiveFittedModule>().Find(f.Module));
+        Assert.Empty(ShipHeatPersistence.Decode(reopened.Set<SavedShipHeat>().Find(f.Ship)!.StateJson).Cycles);
+        Assert.Equal(paid.CompletesAt, reopened.Set<ModuleCooldown>().Find(f.Module)!.ReadyAt);
+    }
+
+    private static void RejectCheckpoint(Fixture fixture, string trigger, Action<WorldDbContext> unchanged)
+    {
+        using var failed = Assert.IsType<WorldSnapshot>(fixture.Live.CaptureSnapshot());
+        using (var command = failed.Database.CreateCommand())
+        {
+            command.CommandText = trigger;
+            command.ExecuteNonQuery();
+        }
+        Assert.Throws<SqliteException>(() => failed.Project());
+        using WorldDbContext saved = new(failed.Database);
+        unchanged(saved);
     }
 
     [Theory]

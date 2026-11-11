@@ -28,7 +28,7 @@ using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
 namespace Eden.Protocol.Tests.Repair;
 
-public sealed class ArmorRepairTests
+public sealed partial class ArmorRepairTests
 {
     [Fact]
     public void ExistingRepairerFixturesUseLowSlotsAndTheNativeBrainIncludesRepairSystems()

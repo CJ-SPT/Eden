@@ -14,6 +14,27 @@ internal sealed class LiveTimedModules(WorldDatabase database, int? system = nul
 
     internal void Expire(long now)
     {
+        if (LiveWorld.Find(database.Path) is { } live && live.Economy.IsLoaded && live.SqlConnections == 0)
+        {
+            if (live.Economy.HasActiveAction && live.HasPersistenceOwnership || live.Economy.NextModuleExpiry(system) > now)
+            {
+                return;
+            }
+            var modules = live.Economy.DueModules(system, now);
+            var members = live.Economy.Inspect(world =>
+                modules.Select(module => world.Set<ActiveFittedModule>().Find(module)?.ShipId).OfType<long>().Distinct().ToArray()
+            );
+            using var action = live.Economy.Begin(new(ships: members));
+            foreach (long moduleId in modules)
+            {
+                if (action.Set<ActiveFittedModule>().Find(moduleId) is { ExpiresAt: > 0 } module && module.ExpiresAt <= now)
+                {
+                    action.Remove(module);
+                }
+            }
+            action.Commit();
+            return;
+        }
         if (!_deadline.TryRead(0, 0, out long due))
         {
             using WorldDbContext world = new(database.Path) { IsResidentProjection = true };

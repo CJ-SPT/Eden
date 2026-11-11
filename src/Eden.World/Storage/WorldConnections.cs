@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Storage;
 
-internal static class WorldConnections
+internal static partial class WorldConnections
 {
     internal static IDisposable? PreparingInstitutional(WorldDbContext context, int station) =>
         context.Database.GetDbConnection() is LiveConnection connection ? connection.PreparingInstitutional(station) : null;

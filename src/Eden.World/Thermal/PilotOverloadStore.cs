@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Thermal;
 
 [Injectable]
-internal sealed class PilotOverloadStore(WorldDatabase database) : IPilotOverloading
+internal sealed partial class PilotOverloadStore(WorldDatabase database) : IPilotOverloading
 {
     internal static bool Selected(WorldDbContext world, string path, long pilot, long module)
     {
