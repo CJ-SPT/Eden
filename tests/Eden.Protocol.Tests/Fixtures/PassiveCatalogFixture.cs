@@ -88,6 +88,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadStarterProduction(string path) => Load(path, "StarterProductionCatalog.json", null);
 
+    internal static void LoadStarterMarket(string path) => Load(path, "StarterMarketCatalog.json", null);
+
     internal static void LoadFrigateHulls(string path) => Load(path, "FrigateHullCatalog.json", null);
 
     internal static void LoadSmallHulls(string path, IReadOnlySet<int>? types = null) => Load(path, "SmallHullCatalog.json", types);

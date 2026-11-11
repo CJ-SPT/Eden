@@ -13,7 +13,7 @@ namespace Eden.Protocol.Tests.Market;
 public sealed class NpcSupplyTests
 {
     [Fact]
-    public void StartupUsesCatalogNpcOffersAndSnapshotPricesWithoutInventedBlueprintsOrUnclaimedGoods()
+    public void StartupUsesCatalogNpcOffersAndStarterSupplyWithoutInventedBlueprintsOrAdvancedGoods()
     {
         using TestWorld f = new();
         WorldDatabase database = new(f.Path);
@@ -50,10 +50,13 @@ public sealed class NpcSupplyTests
         Assert.Contains(offers, o => o.TypeId == 41 && o.Bid && o.PriceCents == MarketSnapshotCatalog.Quotes[41].BuyCents);
         Assert.Contains(offers, o => o.TypeId == 43 && !o.Bid);
         Assert.Contains(offers, o => o.TypeId == 785 && !o.Bid && o.PriceCents == MarketSnapshotCatalog.Quotes[785].SellCents);
-        Assert.DoesNotContain(offers, o => o.TypeId == 1130 || o.TypeId == 603);
+        Assert.DoesNotContain(offers, o => o.TypeId == 1130);
         using WorldDbContext saved = new(f.Path);
         Assert.Empty(saved.Set<SavedMarketUnlock>());
-        Assert.All(saved.Set<NpcMarketOrder>(), o => Assert.Equal(NpcMarketKind.Institutional, o.Kind));
+        Assert.All(
+            saved.Set<NpcMarketOrder>().Where(o => o.Kind != NpcMarketKind.Institutional),
+            o => Assert.Contains(o.TypeId, StarterMarketRules.Types)
+        );
     }
 
     [Theory]

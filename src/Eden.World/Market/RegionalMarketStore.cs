@@ -51,6 +51,13 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
             .OfType<RegionalProduct>()
             .Where(p => RegionalMarketRules.Stocks(p.TypeId, p.Category, profile.Role))
             .ToDictionary(p => p.TypeId);
+        if (profile.StarterSupply)
+        {
+            foreach (var starter in profiles.StarterProducts.Values.Where(p => types == null || types.Contains(p.TypeId)))
+            {
+                products.TryAdd(starter.TypeId, starter);
+            }
+        }
         var orders = world
             .Set<NpcMarketOrder>()
             .Where(o =>
@@ -110,7 +117,7 @@ internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
             else
             {
                 int initial =
-                    profile.Role == RegionalMarketRole.Hub
+                    profile.Role == RegionalMarketRole.Hub || profile.StartingStation && profiles.StarterProducts.ContainsKey(productType)
                         ? products[productType].Quantity
                         : Math.Max(1, products[productType].Quantity / RegionalMarketRules.SecondaryStockDivisor);
                 capacity = RegionalMarketRules.Capacity(initial, elapsed);

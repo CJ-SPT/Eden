@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Beginner market supply](protocol/industry.md#beginner-market-supply--november-11-2026) records starter-station and hub
+stock, catalog skill dependencies, retained production unlocks and automated early-game purchasing/fitting coverage.
+
 [R&D agents and datacores](protocol/agents.md#rd-agents-and-datacores--november-11-2026) records persistent
 research points, native dialogs, paid datacore redemption, eligibility, schema migration, and automated validation.
 

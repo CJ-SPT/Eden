@@ -54,6 +54,7 @@
     <EmbeddedResource Include="Fixtures/PlanetaryCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />
+    <EmbeddedResource Include="Fixtures/StarterMarketCatalog.json" />
     <EmbeddedResource Include="../../docs/production-catalog.json" LogicalName="Eden.Protocol.Tests.Fixtures.ProductionCatalog.json" />
     <EmbeddedResource Include="../../docs/starter-production.json" LogicalName="Eden.Protocol.Tests.Fixtures.StarterProductionAudit.json" />
     <EmbeddedResource Include="Fixtures/PassiveTierCatalog.json" />

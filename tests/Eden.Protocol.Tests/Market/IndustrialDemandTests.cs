@@ -215,7 +215,7 @@ public sealed class IndustrialDemandTests
     }
 
     [Fact]
-    public void FreshWorldHasMaterialAndProductBuyersWithoutUnlockingSupply()
+    public void FreshWorldHasMaterialAndProductBuyersAndOnlyBootstrapProductSupply()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
@@ -227,12 +227,15 @@ public sealed class IndustrialDemandTests
             var bid = Assert.Single(book, o => o.Bid && o.StationId == 60003760);
             long reference = MarketSnapshotCatalog.Quotes[type].BuyCents!.Value;
             Assert.Equal(RegionalMarketRules.DemandCapacity(reference, RegionalMarketRole.Hub, 0), bid.Entered);
-            Assert.DoesNotContain(book, o => !o.Bid);
+            Assert.Equal(StarterMarketRules.Types.Contains(type), book.Any(o => !o.Bid));
         }
         using WorldDbContext world = new(f.Database.Path);
         Assert.Empty(world.Set<SavedMarketUnlock>());
         Assert.Empty(world.Set<MarketExecution>());
-        Assert.All(world.Set<NpcMarketOrder>().Where(o => o.Kind == NpcMarketKind.Regional), o => Assert.True(o.Bid));
+        Assert.All(
+            world.Set<NpcMarketOrder>().Where(o => o.Kind == NpcMarketKind.Regional && !o.Bid),
+            o => Assert.Contains(o.TypeId, StarterMarketRules.Types)
+        );
         // Type-filtered preparation does not materialize the rest of the catalog.
         Assert.All(
             world.Set<NpcMarketOrder>().Where(o => o.Kind == NpcMarketKind.Regional),

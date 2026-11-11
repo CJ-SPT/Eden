@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Beginner market supply](protocol/industry.md#beginner-market-supply--november-11-2026) covers immediately purchasable
+combat frigates, Ventures, basic equipment and prerequisite skillbooks at starting stations and regional hubs.
+
 [R&D agents and datacores](protocol/agents.md#rd-agents-and-datacores--november-11-2026) covers passive research,
 science fields, native journal/dialogs, paid datacore redemption, and cancellation.
 

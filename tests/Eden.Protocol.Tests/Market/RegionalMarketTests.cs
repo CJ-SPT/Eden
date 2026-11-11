@@ -100,7 +100,7 @@ public sealed class RegionalMarketTests
                 wallet.Cents = funds;
                 funded.SaveChanges();
             }
-            Assert.Equal(1000, quote.Remaining);
+            Assert.Equal(RegionalMarketRules.InitialStock(InventoryCategory.Charge), quote.Remaining);
             Assert.DoesNotContain(market.Orders(pilot.PilotId), o => o.TypeId == HaulingRules.BadgerType && !o.Bid);
             market.Buy(pilot.PilotId, pilot.StationId, [new(Ammunition, quote.PriceCents, 100)]);
             var depleted = market.Orders(pilot.PilotId, Ammunition).Single(o => o.StationId == pilot.StationId && !o.Bid);
@@ -181,7 +181,7 @@ public sealed class RegionalMarketTests
         }
         var orders = market.Orders(pilot.PilotId);
         Assert.Contains(orders, o => o.TypeId == HaulingRules.BadgerType && !o.Bid && o.StationId == HubStation && o.Remaining > 0);
-        Assert.DoesNotContain(orders, o => o.TypeId == Merlin && !o.Bid);
+        Assert.Contains(orders, o => o.TypeId == Merlin && !o.Bid && o.StationId == HubStation);
         Assert.Empty(market.Transactions(pilot.PilotId));
         Assert.All(
             market.History(pilot.PilotId, [HaulingRules.BadgerType]),

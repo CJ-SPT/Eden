@@ -532,6 +532,6 @@ public sealed class StarterProductionTests
                 Assert.Equal(25, order.Remaining);
             }
         );
-        Assert.Throws<InvalidDataException>(() => f.Market.Buy(Producer, Home, [new(603, long.MaxValue, 1)]));
+        Assert.Contains(f.Market.Orders(Producer, (int)StarterMarketType.Merlin), order => order.StationId == Home && !order.Bid);
     }
 }

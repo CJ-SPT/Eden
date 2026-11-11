@@ -253,7 +253,10 @@ public sealed class IndustryTests
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(
-                "INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{\"securityStatus\":1.0}}')"
+                """
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{"securityStatus":1.0}}'),
+                    ('client/types','215','{{"published":1,"marketGroupID":1,"volume":0.0025,"techLevel":2,"metaGroupID":2}}');
+                """
             );
         }
         using (WorldDbContext world = new(f.Db.Path))

@@ -924,6 +924,72 @@ Final automated checks used the combined capsuleer/market/administration/institu
 An earlier broader 247-case run passed 245 and failed two institutional-only assertions that also included the new regional offers. Those assertions were corrected to check institutional orders specifically and passed the later affected checks. That broader run completed the three starter mining/production/trade/fitting/loss/replacement cases, plus economy lifecycle, migrations, world configuration, administration, architecture and login coverage. Development checks also corrected the renewal fixture's attempt to initialize a running world. Tool and solution restores, solution builds with zero warnings/errors, both Python policy suites (eight catalog and nine formatting cases), formatting verification, UTF-8 documentation checks, 460 local documentation targets and diff checks passed. No full .NET suite was requested or run.
 
 
+## Beginner market supply — November 11, 2026
+
+Production-driven progression previously required the first player to manufacture every ship and module before NPCs could sell it.
+Ordinary career-agent ship/equipment rewards are not implemented. The beginner cohort now provides an earned-ISK purchasing route
+out of the corvette, while later products keep their production unlocks.
+
+Every market-capable, high-security character starting station and each existing regional hub supplies the Merlin, Rifter,
+Punisher, Incursus and Venture immediately. Starting stations follow the same school-system mapping and single-station
+starter-school rule as character creation; alternate stations in the school record do not become suppliers merely by appearing
+in that list. Ordinary secondary stations retain their existing unlocked-product assortment.
+
+Basic stock includes Miner I, 75mm Gatling Rail I, 125mm Gatling AutoCannon I, Gatling Pulse Laser I, Small Shield Booster I,
+Small Armor Repairer I, 1MN Afterburner I and Damage Control I, plus Iron Charge S, Antimatter Charge S, EMP S and Standard S.
+All direct and transitive prerequisite skillbooks for these hulls and items are resolved from the pinned catalog. Supply still
+requires publication, a market group, Tech I eligibility and a positive embedded sell quote; faction/advanced variants and
+blueprints are not bootstrap products. Missing quotes do not invent prices or goods.
+
+Prices use the existing dated market snapshot, with the normal 5% secondary-station margin. Starter stations receive full initial
+capacities of five hulls, 50 modules/books and 5,000 charges per type, sharing existing human-active capacity growth, ten-minute
+finite recovery and scarcity pricing. Buying uses ordinary inventory, ownership, skill and wallet rules. Starter supply creates
+no production audit unlock, grants no ISK or skills, and preserves player listings. Successful later manufacture still records its
+normal exactly-once unlock. Existing saves adopt the cohort lazily on market access after updating/restarting; no schema change,
+manual save edit or world reset is required. Testing-only market mode and the existing grant settings retain their own policy.
+
+The ordinary Venture blueprint remains an ORE NPC offer in Outer Ring, not a beginner-stock original. Strip Miner I blueprints
+retain their catalog suppliers. Their prices and the production inputs are unchanged; a Venture uses regular mining lasers,
+not barge strip miners.
+
+References: build **3662168** `client/types`, `client/requiredskillsfortypes`, dogma, race starting-skill bundles, schools and
+school maps. [EVE University career agents](https://wiki.eveuniversity.org/Career_Agents) describe the usual early ship/equipment
+bridge, and the [ORE ship guide](https://wiki.eveuniversity.org/ORE_Basic_Ship_and_Skill_Overview) distinguishes Venture lasers
+from barge strip miners. These references guide the cohort; the local supplier/replenishment policy is explicitly Eden's.
+The reference evejs `starterShipFittingState.js` was inspected for its starter-fitting boundary; no source was copied, and no
+Carbon codec/transport/Destiny behavior changes. Native market order, inventory and skillbook wire forms are unchanged.
+
+Reproduce the portable catalog evidence with:
+
+```powershell
+python tools/Export-StarterMarket.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures/StarterMarketCatalog.json
+```
+
+**Automated validation:** Tool/solution restore and the final solution build passed with zero warnings/errors (9.62 seconds).
+The affected filter below passed **264 tests in 346.98 seconds**, including **18 new starter-market cases**, all three complete
+mining/production/trade/fitting/loss/replacement paths, startup, migrations and character creation. The full-catalog cases ran
+with `EDEN_MARKET_PERFORMANCE_CATALOG` pointing at the installed read-only catalog. Warm market profiles used **zero SQL
+commands, connections and fitting calculations**; cold station profiles used six commands. Both Python policy suites passed
+(eight catalog cases in 3.789 seconds; nine formatting cases in 0.103 seconds). The portable export reproduced byte for byte,
+and changed-file UTF-8, newline, whitespace, new topic links/anchor and diff checks passed. Formatting verification passed for
+1,676 files, including the 140-column check. No full .NET suite was requested or run.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.StarterProductionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CharacterCreationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.GameplayDependenciesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.DataModelOwnershipTests
+```
+
+Coverage verifies fresh market supply, school mapping, finite stock and persisted settlement, catalog rejection variants, and
+purchases/fitting/online checks for all four racial combat frigates plus the Venture. Each tested starter fit, ammunition and
+needed skillbooks costs less than 750,000 ISK at its starting station. Additional training is applied explicitly by those tests;
+books do not waive native training requirements. Development checks corrected fixture geography and protected bootstrap stock
+from a synthetic Tech II catalog variant. Two broader development runs were interrupted after failures; the final affected run
+supersedes them. The final correction updated an old one-fifth ammunition-stock assertion to the intended full starter capacity.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After restarting, inspect starter-station stock and buy/assemble a first ship. Native presentation,
+input, travel safety, combat difficulty and time spent training remain unverified.
+
 ## Production-driven market progression — November 8, 2026
 
 A new server world starts with NPC supply only. The pinned catalog's signed `npccorporations.corporationTrades` entries identify the station owner's sell offers and buy demand. Published physical market types are eligible, including skillbooks, original blueprints, NPC shuttles and trade goods. Eden does not infer NPC supply from publication or a market group alone. Institutional sell stock replenishes to the saved `institutionalStock` setting; native buy demand remains finite. Supplier locations retain their catalog corporation geography and are materialized on market access; the regional hub is also materialized when its region is viewed. Ordinary personal orders remain available independently of progression unlocks.

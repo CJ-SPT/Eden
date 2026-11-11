@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Serialization;
@@ -66,9 +67,13 @@ public sealed class MarketCatalogPerformanceTests(ITestOutputHelper output)
             Assert.True(profile.Demand[22436].RequiresUnlock);
             Assert.InRange(demand.Commands, 0, 300);
         }
+        var starters = profile.StarterProducts;
+        Assert.All(StarterMarketRules.Types, type => Assert.Contains(type, starters.Keys));
+        Assert.Contains(profile.Stations, station => station.StartingStation && station.Station.Id == 60015157);
         using var warm = SessionPerformance.Begin("warm market profiles", output.WriteLine, force: true)!;
         Assert.Same(profile, RegionalMarketCatalog.Read(catalog));
         Assert.NotEmpty(profile.Demand);
+        Assert.Same(starters, profile.StarterProducts);
         Assert.Equal(0, warm.Commands);
         Assert.Equal(0, warm.Connections);
         Assert.Equal(0, warm.FittingCalculations);
