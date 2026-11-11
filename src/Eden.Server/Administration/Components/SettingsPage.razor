@@ -163,6 +163,12 @@ else
             </section>
             </div>
             <div id="settings-Advanced" hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
+            <section class="card"><h2>Navigation</h2>
+                <label>Autopilot gate landing distance (metres)
+                    <InputNumber @bind-Value="Form.AutopilotGateLandingMeters" min="0" max="100000" step="1" />
+                </label>
+                <p class="muted">Default: 15000 metres. Choose 0 to warp close to gates. Changes apply after restart.</p>
+            </section>
             <section class="card"><h2>Simulation</h2>
                 <label>Checkpoint interval (seconds)<InputNumber @bind-Value="Form.CheckpointSeconds" min="1" max="300" /></label>
                 <label>Market polling interval (milliseconds)<InputNumber @bind-Value="Form.MarketPollMilliseconds" min="100" max="60000" /></label>

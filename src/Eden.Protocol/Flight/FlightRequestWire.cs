@@ -35,6 +35,17 @@ internal static class FlightRequestWire
         }
         return (method, arguments) switch
         {
+            // Build 3662168 MenuSvc._AlignTo sends both keyword names, with one None.
+            ("CmdAlignTo", []) when keywords?.Keys.All(key => key is "dstID" or "bookmarkID") == true => (
+                keywords.GetValueOrDefault("dstID"),
+                keywords.GetValueOrDefault("bookmarkID")
+            ) switch
+            {
+                (long target, null) when target > 0 => new FlightCommand.AlignTo(target),
+                (null, long bookmark) when bookmark > 0 => new FlightCommand.AlignToBookmark(bookmark),
+                _ => null,
+            },
+            ("CmdWarpToStuffAutopilot", [long target]) when keywords is null or { Count: 0 } => new FlightCommand.AutopilotWarp(target),
             ("CmdStargateJump", [long source, long exit, long ship]) => new FlightCommand.Jump(source, exit, ship),
             ("CmdWarpToStuff", [string or byte[], string or byte[]])
                 when BlueMarshal.Text(arguments[0]) == "scan" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long =>

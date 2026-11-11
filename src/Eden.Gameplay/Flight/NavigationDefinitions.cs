@@ -13,6 +13,7 @@ public enum NavigationMode : byte
 
 public static class NavigationDefinitions
 {
+    public const int AutopilotLandingMeters = 15_000;
     public const double MaximumTargetDistance = 8_000_000;
     public const double MaximumFollowRange = 1_000_000;
     public const int ReconciliationTicks = 10;

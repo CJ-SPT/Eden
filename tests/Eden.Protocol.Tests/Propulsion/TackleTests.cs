@@ -468,6 +468,35 @@ public sealed class TackleTests
     }
 
     [Fact]
+    public void AutopilotCannotBypassDisruptionAndSubwarpAlignmentRemainsAvailable()
+    {
+        using Fixture fixture = Prepare(447);
+        long scrambler = fixture.Fit(447);
+        Space(fixture);
+        using Clients clients = new(fixture);
+        long destination = fixture.Db.Objects.First(body => body.DestinationGateId.HasValue).Id;
+        using var scope = fixture.Db.Services.CreateScope();
+        var handler = scope.ServiceProvider.GetRequiredService<FlightCallHandler>();
+        Assert.Same(
+            PilotCallResult.None,
+            clients.Tackle.Call(clients.Pilot, "dogmaIM", "Activate", [scrambler, "warpScrambleBlockMWDWithNPCEffect", Wing(fixture), 100L])
+        );
+        Assert.Same(
+            PilotCallResult.None,
+            handler.Call(clients.Wing, "beyonce", "CmdAlignTo", [], new() { ["dstID"] = destination, ["bookmarkID"] = null })
+        );
+        Assert.True(clients.Wing.Flight.Moving);
+        Assert.False(clients.Wing.Flight.PreparingWarp);
+        var before = clients.Wing.Pilot.Position;
+        Assert.IsType<PilotCallResult.Failure>(handler.Call(clients.Wing, "beyonce", "CmdWarpToStuffAutopilot", [destination]));
+        Assert.Equal(before, clients.Wing.Pilot.Position);
+        Assert.False(clients.Wing.Flight.PreparingWarp);
+        clients.Tackle.Cancel(clients.Pilot);
+        Assert.Same(PilotCallResult.None, handler.Call(clients.Wing, "beyonce", "CmdWarpToStuffAutopilot", [destination]));
+        Assert.True(clients.Wing.Flight.PreparingWarp);
+    }
+
+    [Fact]
     public void NewPointCancelsAlignmentAndCoreStrengthAllowsOnlyTiedDisruption()
     {
         using Fixture f = Prepare(447, 3242, 10998);

@@ -8,6 +8,64 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class BookmarkServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativeAlignToBookmarkUsesAuthorizedLocalTargetsWithoutStartingWarp(bool staticLocation)
+    {
+        using Fixture fixture = new();
+        fixture.Select(true);
+        long folder = fixture.Folder("Align destinations");
+        var target = staticLocation
+            ? fixture.Store.CreateStatic(90000001, 60003760, folder, null, new("Station", ""), BookmarkExpiry.Never)
+            : fixture.Store.Create(
+                90000001,
+                new(null, 5, fixture.Context.Pilot.SystemId, Fixture.Start + new SpacePosition(1_000_000_000, 0, 0)),
+                folder,
+                null,
+                new("Point", ""),
+                BookmarkExpiry.Never
+            );
+        Assert.Null(Reply(Align(target.Id)));
+        var anchor = staticLocation ? fixture.Db.Objects.Single(body => body.Id == target.Target.ItemId).Position : target.Target.Position;
+        var direction = (anchor - Fixture.Start).Unit;
+        Assert.InRange(direction.DistanceTo(fixture.Context.Flight.Heading), 0, 1e-12);
+        Assert.True(fixture.Context.Flight.Moving);
+        Assert.False(fixture.Context.Flight.PreparingWarp);
+        fixture.Clock.Seconds += 30;
+        fixture.Context.Flight.Checkpoint();
+        Assert.False(fixture.Context.Flight.InWarp);
+        Assert.True(fixture.Context.Flight.Velocity.Unit.Dot(direction) > 0.999);
+        Assert.Equal(target, fixture.Store.Find(90000001, target.Id));
+        Assert.Null(Reply(fixture.Call("CmdStop", [], "beyonce")));
+        fixture.Clock.Seconds += 60;
+        fixture.Context.Flight.Checkpoint();
+        Assert.False(fixture.Context.Flight.Moving);
+        var before = fixture.Context.Pilot.Position;
+        var otherFolder = fixture.Store.AddFolder(90000002, "Private", "");
+        var other = fixture.Store.CreateStatic(90000002, 60003760, otherFolder.Id, null, new("Private", ""), BookmarkExpiry.Never);
+        Assert.IsType<PilotCallResult.Failure>(Align(other.Id));
+        var remote = fixture.Store.Create(
+            90000001,
+            target.Target with
+            {
+                LocationId = 30000144,
+            },
+            folder,
+            null,
+            new("Remote", ""),
+            BookmarkExpiry.Never
+        );
+        Assert.IsType<PilotCallResult.Failure>(Align(remote.Id));
+        fixture.Store.SetFolderState(90000001, folder, false);
+        Assert.IsType<PilotCallResult.Failure>(Align(target.Id));
+        Assert.Equal(before, fixture.Context.Pilot.Position);
+        Assert.False(fixture.Context.Flight.Moving);
+        Assert.Empty(fixture.Context.Notifications);
+
+        PilotCallResult Align(long id) => fixture.Call("CmdAlignTo", [], "beyonce", new() { ["dstID"] = null, ["bookmarkID"] = id });
+    }
+
     [Fact]
     public void NativePersonalFolderLocationAndCopyCallsPreserveEveryReplyShapeAndSavedField()
     {

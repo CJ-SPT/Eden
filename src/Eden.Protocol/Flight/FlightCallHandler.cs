@@ -1,4 +1,5 @@
 using Eden.Gameplay.Bookmarks;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Planetary;
@@ -16,7 +17,8 @@ internal sealed class FlightCallHandler(
     ICombatAnomalies anomalies,
     TimeProvider clock,
     IPilotProbeScanning? scanning = null,
-    IPilotPlanetaryIndustry? planetary = null
+    IPilotPlanetaryIndustry? planetary = null,
+    IWorldTuning? tuning = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -49,6 +51,45 @@ internal sealed class FlightCallHandler(
                 context.Flight.Checkpoint();
             }
             return PilotCallResult.Unsupported;
+        }
+        if (command is FlightCommand.AutopilotWarp autopilot)
+        {
+            var target = systems.Load(context.Pilot.SystemId).FirstOrDefault(body => body.Id == autopilot.TargetId);
+            if (target is null)
+            {
+                return new PilotCallResult.Failure("This autopilot destination is unavailable in this solar system.");
+            }
+            double range = target.DestinationGateId.HasValue
+                ? (tuning?.Settings.Navigation ?? new NavigationPolicy()).AutopilotGateLandingMeters
+                : NavigationDefinitions.AutopilotLandingMeters;
+            command = new FlightCommand.WarpTo(target.Id, range);
+        }
+        if (command is FlightCommand.AlignToBookmark align)
+        {
+            try
+            {
+                var bookmark = bookmarks.Find(context.Pilot.PilotId, align.BookmarkId);
+                if (bookmark.Target.LocationId != context.Pilot.SystemId)
+                {
+                    throw new InvalidDataException("Travel to the bookmarked solar system before aligning to this location.");
+                }
+                if (bookmark.Target.ItemId is { } item)
+                {
+                    if (!systems.Load(context.Pilot.SystemId).Any(body => body.Id == item))
+                    {
+                        throw new InvalidDataException("This bookmark is a map destination rather than an alignment target.");
+                    }
+                    command = new FlightCommand.AlignTo(item);
+                }
+                else
+                {
+                    command = new FlightCommand.AlignToPoint(bookmark.Target.Position);
+                }
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
         }
         if (
             command is FlightCommand.WarpToScan

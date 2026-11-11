@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 
 namespace Eden.Server.Administration;
@@ -51,6 +52,10 @@ internal sealed class SettingsForm
 
     [Range(1, 3600)]
     public int ResourceCheckSeconds { get; set; }
+
+    [Range(0, (int)NavigationState.MaximumWarpRange)]
+    [Display(Name = "Autopilot gate landing distance (metres)")]
+    public int AutopilotGateLandingMeters { get; set; } = NavigationDefinitions.AutopilotLandingMeters;
 
     [Range(typeof(decimal), "0.1", "100")]
     [Display(Name = "Ore mining yield")]
@@ -162,6 +167,7 @@ internal sealed class SettingsForm
             CheckpointSeconds = settings.Simulation.CheckpointSeconds,
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
             ResourceCheckSeconds = settings.Simulation.ResourceCheckSeconds,
+            AutopilotGateLandingMeters = settings.Navigation.AutopilotGateLandingMeters,
         };
 
     internal WorldSettings Build() =>
@@ -184,6 +190,7 @@ internal sealed class SettingsForm
             Progression = new(StartingSkills, KillSkillPointMultiplier, MiningSkillPointMultiplier),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
+            Navigation = new(AutopilotGateLandingMeters),
         };
 
     private static long Cents(decimal isk)

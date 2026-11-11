@@ -389,6 +389,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Navigation and travel
 
+- [Aligning and native autopilot, November 11, 2026](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026)
 - [Direct station-to-space TR, November 8, 2026](protocol/navigation.md#direct-station-to-space-tr-november-8-2026)
 - [Station-origin TR camera sequencing, November 8, 2026](protocol/navigation.md#station-origin-tr-camera-sequencing-november-8-2026)
 - [Sovereignty nullsec cyno-jammer state, November 8, 2026](protocol/navigation.md#sovereignty-nullsec-cyno-jammer-state-november-8-2026)

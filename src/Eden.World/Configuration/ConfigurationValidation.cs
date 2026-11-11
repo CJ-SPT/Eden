@@ -39,6 +39,7 @@ internal static class ConfigurationValidation
             || settings.Capsuleers is null
             || settings.Rewards is null
             || settings.Industry is null
+            || settings.Navigation is null
         )
         {
             throw new InvalidDataException("Every typed settings group is required.");

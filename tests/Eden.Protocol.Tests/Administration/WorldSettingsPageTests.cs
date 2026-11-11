@@ -16,6 +16,27 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class WorldSettingsPageTests
 {
     [Fact]
+    public void AutopilotDistanceRoundTripsValidatesAndAppearsInRevisionChanges()
+    {
+        Assert.Equal(15000, SettingsForm.From(new()).AutopilotGateLandingMeters);
+        var form = SettingsForm.From(new() { Navigation = new(0) });
+        Assert.Equal(0, form.Build().Navigation.AutopilotGateLandingMeters);
+        foreach (int distance in new[] { -1, 100001 })
+        {
+            form.AutopilotGateLandingMeters = distance;
+            List<ValidationResult> errors = [];
+            Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
+            Assert.Contains(errors, error => error.MemberNames.Contains(nameof(form.AutopilotGateLandingMeters)));
+        }
+        form.AutopilotGateLandingMeters = 100000;
+        Assert.True(Validator.TryValidateObject(form, new(form), [], true));
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = form.Build() }),
+            change => change.Field == "Autopilot gate landing distance (metres)" && change.After == "100000"
+        );
+    }
+
+    [Fact]
     public void PopulationControlsRoundTripPreserveLegacyPreferencesAndValidateRanges()
     {
         CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9);

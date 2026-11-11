@@ -20,6 +20,57 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class WorldConfigurationTests
 {
     [Fact]
+    public void AutopilotDistanceDefaultsForLegacyDocumentsAndActivatesOnlyAfterRestart()
+    {
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        WorldConfigurationStore store = new(database, TimeProvider.System);
+        var original = store.Read();
+        Assert.Equal(15000, database.Settings.Navigation.AutopilotGateLandingMeters);
+        var legacy = JsonNodeWithoutNavigation(store.Export(original.Active.Id));
+        var imported = store.Import(original.Generation, legacy, "legacy import");
+        Assert.Equal(15000, imported.Pending!.Draft.Settings.Navigation.AutopilotGateLandingMeters);
+        foreach (int invalid in new[] { -1, 100001 })
+        {
+            Assert.Throws<InvalidDataException>(() =>
+                store.Save(
+                    imported.Generation,
+                    original.Active.Draft with
+                    {
+                        Settings = original.Active.Draft.Settings with { Navigation = new(invalid) },
+                    },
+                    "invalid"
+                )
+            );
+        }
+        var staged = store.Save(
+            imported.Generation,
+            original.Active.Draft with
+            {
+                Settings = original.Active.Draft.Settings with { Navigation = new(0) },
+            },
+            "admin"
+        );
+        Assert.Equal(15000, database.Settings.Navigation.AutopilotGateLandingMeters);
+        WorldInitialization.Initialize(database);
+        Assert.Equal(staged.Pending!.Id, store.Read().Active.Id);
+        Assert.Equal(0, database.Settings.Navigation.AutopilotGateLandingMeters);
+        Assert.Equal(
+            0,
+            new WorldConfigurationStore(new(fixture.Path), TimeProvider.System)
+                .Read()
+                .Active.Draft.Settings.Navigation.AutopilotGateLandingMeters
+        );
+
+        static string JsonNodeWithoutNavigation(string document)
+        {
+            var node = System.Text.Json.Nodes.JsonNode.Parse(document)!;
+            node["settings"]!.AsObject().Remove("navigation");
+            return node.ToJsonString();
+        }
+    }
+
+    [Fact]
     public void NewlyReconciledBeltDeadlinesUseTheActivatedPolicyAndSavedDeadlinesRemainUnchanged()
     {
         using TestWorld fixture = new();

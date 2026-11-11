@@ -22,6 +22,14 @@ public abstract record FlightCommand
 
     public sealed record Heading(double X, double Y, double Z) : FlightCommand;
 
+    public sealed record AlignTo(long TargetId) : FlightCommand;
+
+    public sealed record AlignToBookmark(long BookmarkId) : FlightCommand;
+
+    public sealed record AlignToPoint(SpacePosition Position) : FlightCommand;
+
+    public sealed record AutopilotWarp(long TargetId) : FlightCommand;
+
     public sealed record Follow(long TargetId, double Range, bool Orbit) : FlightCommand;
 
     public sealed record Speed(double Fraction) : FlightCommand;

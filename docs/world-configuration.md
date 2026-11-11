@@ -18,6 +18,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Structures | Anchoring, core onlining and decommissioning speeds for new timers; saved deadlines retain their original terms. |
 | Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
+| Navigation | Autopilot gate landing distance, from 0 to 100,000 metres; default 15,000 metres. |
 
 Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling an NPC population prevents new spawns without deleting residents or changing their mechanics. Simulated-pilot limits also pause and despawn excess saved pilots at restart, as described below.
 
@@ -29,6 +30,11 @@ Switching categories retains the draft. Activity reward/yield multipliers show t
 **Discard unsaved changes** returns to the last loaded or saved draft, including any already pending revision.
 The shared **Save for restart** bar shows unsaved, active or pending-restart status. Review the changed-values summary before saving;
 expand **Original, active and pending values** for the complete comparison. Economic overrides are under Advanced.
+
+**Advanced → Navigation → Autopilot gate landing distance (metres)** controls the requested stand-off for future autopilot
+gate warps after restart. Set it to **0** for close gate landings, or keep **15000** for the usual approach leg.
+The existing hull clearance and deterministic warp landing offset still apply. Manual warp ranges and autopilot station
+landings retain their existing/requested distances. Historical configuration documents that omit Navigation use 15000 metres.
 
 All new multipliers default to **1× current Eden behavior**, including when loading historical documents that omit the new fields.
 Gathering, structure/industry speed and reprocessing multipliers accept **0.1–100×**. Reward multipliers accept **0–100×**;

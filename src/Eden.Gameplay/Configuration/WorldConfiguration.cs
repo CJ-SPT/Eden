@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 
 namespace Eden.Gameplay.Configuration;
@@ -68,6 +69,8 @@ public sealed record CapsuleerPopulationPolicy(
 
 public sealed record SimulationPolicy(int CheckpointSeconds = 15, int MarketPollMilliseconds = 1000, int ResourceCheckSeconds = 60);
 
+public sealed record NavigationPolicy(int AutopilotGateLandingMeters = NavigationDefinitions.AutopilotLandingMeters);
+
 public sealed record WorldSettings
 {
     public EconomicPolicy Economy { get; init; } = new();
@@ -80,6 +83,7 @@ public sealed record WorldSettings
     public ProgressionPolicy Progression { get; init; } = new();
     public CapsuleerPopulationPolicy Capsuleers { get; init; } = new();
     public SimulationPolicy Simulation { get; init; } = new();
+    public NavigationPolicy Navigation { get; init; } = new();
 }
 
 // Read-only access to the active in-memory policy, never a pending administrator draft.

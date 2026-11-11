@@ -1075,6 +1075,12 @@ internal sealed partial class FlightSession(
             case FlightCommand.RefreshState:
                 Snapshot();
                 return PilotCallResult.None;
+            case FlightCommand.AlignTo align:
+                var alignTarget =
+                    Scene.Objects.FirstOrDefault(body => body.Id == align.TargetId && body.IsGlobal) ?? NavigationTarget(align.TargetId);
+                return alignTarget is null ? PilotCallResult.Unsupported : AlignTo(alignTarget.Position);
+            case FlightCommand.AlignToPoint align:
+                return AlignTo(align.Position);
             case FlightCommand.Heading(var x, var y, var z):
                 if (!_navigation.SetHeading(x, y, z))
                 {
@@ -1156,5 +1162,17 @@ internal sealed partial class FlightSession(
             default:
                 return PilotCallResult.Unsupported;
         }
+    }
+
+    private PilotCallResult AlignTo(SpacePosition target)
+    {
+        if (!InBallpark || !_navigation.AlignTo(Pilot.Position!, target))
+        {
+            return PilotCallResult.Unsupported;
+        }
+        var heading = _navigation.LastHeading;
+        Update(new DestinyCommand.GotoDirection(Pilot.ShipId, heading.X, heading.Y, heading.Z));
+        Update(new DestinyCommand.SetSpeedFraction(Pilot.ShipId, _navigation.SpeedFraction));
+        return PilotCallResult.None;
     }
 }

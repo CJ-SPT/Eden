@@ -53,6 +53,7 @@ internal static class ConfigurationDisplay
         ["simulation.checkpointSeconds"] = "Checkpoint interval (seconds)",
         ["simulation.marketPollMilliseconds"] = "Market polling (milliseconds)",
         ["simulation.resourceCheckSeconds"] = "Resource checks (seconds)",
+        ["navigation.autopilotGateLandingMeters"] = "Autopilot gate landing distance (metres)",
     };
 
     private static readonly HashSet<string> s_multipliers =

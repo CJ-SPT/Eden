@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Aligning and native autopilot, November 11, 2026](#aligning-and-native-autopilot-november-11-2026)
+
 - [Cloaking and standard micro-jump drives, November 9, 2026](#cloaking-and-standard-micro-jump-drives-november-9-2026)
 
 - [Native map navigation support, November 9, 2026](#native-map-navigation-support-november-9-2026)
@@ -36,6 +38,66 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Aligning and native autopilot, November 11, 2026
+
+Build **3662168** owns route selection, waypoints, autopilot toggling and the timer that chooses warp, approach, jump and
+final station docking. Eden now accepts its missing `beyonce.CmdAlignTo(dstID=..., bookmarkID=...)` and
+`beyonce.CmdWarpToStuffAutopilot(destinationID)` requests. No parallel server route controller is required.
+
+Align takes no positional arguments and exactly one positive item/bookmark ID; the other native keyword may be None.
+It resolves local static/global celestials or visible navigation contacts, and personal bookmarks through the existing
+access, active-folder and expiry checks. Remote-system and map-only bookmarks reject. A typed gameplay operation sets a
+fixed heading toward the resolved position and full throttle, retaining current velocity/inertia. It cancels following,
+does not start warp, and publishes ordinary `GotoDirection`/`SetSpeedFraction` commands to owner and observers. Stop and
+subsequent warp reuse the existing navigation state, including alignment readiness and travel restrictions.
+
+Autopilot warp takes one item ID and no service keywords. Its destination must exist in the current system. It enters the
+ordinary authoritative warp path, including range checks, tackle, cloak, crimewatch, mission redirects and stable retry
+handling. The client then issues existing `CmdFollowBall`, `CmdStargateJump` and `CmdDock` calls as distance permits.
+Gate stand-off comes from saved `Navigation.AutopilotGateLandingMeters` (default **15000**, supported **0–100000**).
+Other autopilot destinations request **15000** metres. Existing hull clearance, landing offsets, gate activation range and
+station docking range still apply. Settings are available under **Advanced → Navigation**, stage for restart, round-trip
+through imports/exports and revision comparisons, and default safely for old documents without the new group.
+
+Sources: inert inspection of the original pinned `code.ccp`, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, specifically
+`eve/client/script/ui/services/menusvc.pyj` (`MenuSvc._AlignTo`) and
+`eve/client/script/parklife/autopilot.pyj` (`AutoPilot.Update`, `AP_WarpToDestID`).
+[EVE University advanced piloting](https://wiki.eveuniversity.org/Advanced_piloting_techniques) describes alignment and
+[travel tips](https://wiki.eveuniversity.org/Tips_for_New_Players#Don't_use_autopilot) describe the 15 km gate approach.
+[Carbon Destiny Ballpark.cpp revision 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+confirms `GotoDirection` normalization, distant Goto mode and existing speed/warp behavior. The local older-client evejs
+reference was consulted for method ownership only; its AGPL implementation was not copied. No client Python was executed.
+
+**Automated validation:** Tool/solution restore and final solution build passed (zero warnings/errors; build **1.35 seconds**).
+The affected filter below passed **205 tests**, with **110.35 seconds** from runner start to finish, after integration with
+main `446ef27c`. Both Python policy suites passed (8 catalog checks in 2.795 seconds; 9 formatting checks in 0.071 seconds).
+Formatting verification passed for 1,677 files and the 140-column policy. Local documentation links, encoding, whitespace
+and diff checks passed. No full .NET suite was requested or run.
+
+```text
+FullyQualifiedName~AutoNavigationTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~FlightBoundaryTests|
+FullyQualifiedName~TypedFlightTests|FullyQualifiedName~GateTravelRulesTests|FullyQualifiedName~BookmarkServiceTests|
+FullyQualifiedName~PilotBookmarksTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~WorldConfigurationTests|
+FullyQualifiedName~WorldTuningTests|FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~TackleTests|
+FullyQualifiedName~SpatialModuleSessionTests|FullyQualifiedName~MapNavigationTests|FullyQualifiedName~ServerServicesTests|
+FullyQualifiedName~AdministrationComponentTests
+```
+
+Join those lines without whitespace to reproduce the filter. Exact-method development began with
+`FullyQualifiedName~AutoNavigationTests.AlignRequestUsesExclusiveNativeKeywordsAndAutopilotUsesOneItemId`.
+New coverage includes exclusive native keywords, invalid points, full throttle without velocity reset, pre-aligned warp
+entry, owner/observer courses, stopping, personal static/point bookmarks, bookmark rejection, gate distances **0/15000/100000**,
+warp retries, approach, two gate transfers, final station docking, reopened saved locations, warp disruption, form bounds,
+revision comparison, legacy imports and restart-only activation. Earlier development runs failed on fixture expectations or
+were interrupted during travel catch-up; no pass is claimed for those runs. The final route fixture uses real durable
+position/gate/dock operations and typed catch-up motion; existing affected flight tests cover shared-world movement.
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native controls, route timer and rendering remain unverified.
+
+**Optional maintainer checks:** Align to a gate/bookmark and stop; enable autopilot on a multi-system station route;
+save a different gate distance, restart and compare the next gate landing.
 
 ## Insider tools and reward destinations, November 9, 2026
 

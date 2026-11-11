@@ -114,6 +114,17 @@ public sealed class NavigationState
         return true;
     }
 
+    public bool AlignTo(SpacePosition origin, SpacePosition target)
+    {
+        var direction = target - origin;
+        if (!SetHeading(direction.X, direction.Y, direction.Z))
+        {
+            return false;
+        }
+        SpeedFraction = 1;
+        return true;
+    }
+
     public bool SetHeading(double x, double y, double z)
     {
         double length = Math.Sqrt(x * x + y * y + z * z);

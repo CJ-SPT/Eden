@@ -1,5 +1,6 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Mining;
 
@@ -26,6 +27,10 @@ public static class WorldTuningRules
         ArgumentNullException.ThrowIfNull(settings.Industry);
         ArgumentNullException.ThrowIfNull(settings.Structures);
         ArgumentNullException.ThrowIfNull(settings.Progression);
+        if (settings.Navigation is null || settings.Navigation.AutopilotGateLandingMeters is < 0 or > (int)NavigationState.MaximumWarpRange)
+        {
+            throw new InvalidDataException("Autopilot gate landing distance must be between 0 and 100000 metres.");
+        }
         ValidateRate(settings.Resources.OreYieldMultiplier);
         ValidateRate(settings.Resources.IceYieldMultiplier);
         ValidateRate(settings.Resources.GasYieldMultiplier);

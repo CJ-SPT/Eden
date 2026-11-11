@@ -3,6 +3,9 @@
 [Beginner market supply](protocol/industry.md#beginner-market-supply--november-11-2026) covers immediately purchasable
 combat frigates, Ventures, basic equipment and prerequisite skillbooks at starting stations and regional hubs.
 
+[Aligning and native autopilot](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026) covers target/bookmark
+alignment, native route travel and the configurable autopilot gate landing distance.
+
 [R&D agents and datacores](protocol/agents.md#rd-agents-and-datacores--november-11-2026) covers passive research,
 science fields, native journal/dialogs, paid datacore redemption, and cancellation.
 
