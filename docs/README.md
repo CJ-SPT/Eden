@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Neocom skill startup](protocol/characters.md#neocom-skill-startup-november-11-2026) records the built-in service-manager
+lookup correction and automated native skill-button startup regression.
+
 [Remote action budget costs](protocol/performance.md#remote-action-budget-costs-november-11-2026) covers
 remote hauler resource loading, repeated mining validation and measured-cost background admission.
 

@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Neocom skill startup, November 11, 2026](#neocom-skill-startup-november-11-2026)
+
 - [Direct skill purchasing, November 11, 2026](#direct-skill-purchasing-november-11-2026)
 
 - [Universal native search, November 9, 2026](#universal-native-search-november-9-2026)
@@ -42,6 +44,56 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Neocom skill startup, November 11, 2026
+
+The maintainer reported that the skill tree would not open, followed by several parallel Neocom bars in the supplied
+screenshot. The recent free-point adapter incorrectly accessed `skillsvc.sm` when silently refreshing an initial or increased
+SP balance. Build 3662168's `ServiceManager.__init__` places the service manager in **`__builtin__.sm`**; `skillsvc` does not
+export that attribute. The adapter now uses the same built-in `sm.ScatterEvent` lookup as the native setter. It still updates
+the local balance and sends `OnFreeSkillPointsChanged_Local`; passive activity refreshes remain silent, explicit reward
+notifications retain their native behavior, and the saved-time corrections remain installed.
+
+The failure is reproducible without starting the game: native `ButtonSkills.UpdateSkillData` requests `skillqueue`, whose
+`Run` calls `PrimeSkillQueue`; with saved unallocated points, that calls the patched setter and raises
+`AttributeError: 'module' object has no attribute 'sm'` before queue startup completes. This interrupts the Neocom skill-button
+startup path. The screenshot establishes the reported duplicate-bar symptom; automated checks do not establish native layout
+or input acceptance. No settings reset, account-data change, new Neocom implementation or client archive rebuild is required.
+The server supplies the corrected signed expression at the next login after updating/restarting the host and fully reopening
+the client.
+
+**Sources.** Original build-3662168 archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, inspected inertly:
+`carbon/common/script/sys/serviceManager.pyj`, `ServiceManager.__init__`;
+`eve/client/script/ui/services/skillsvc.pyj`, `SkillsSvc.SetFreeSkillPoints`;
+`eve/client/script/ui/services/skillQueueSvc.pyj`, `Run` and `PrimeSkillQueue`;
+`eve/client/script/ui/shared/neocom/neocom/buttons/buttonSkills.pyj`, `ButtonSkills.UpdateSkillData`.
+[EVE University's Neocom guide](https://wiki.eveuniversity.org/Neocom) documents skill/character-sheet access; exact startup
+and built-in lookup behavior come from the pinned client. The local reference engine has no equivalent signed UI adapter.
+Existing Blue/transport behavior is unchanged.
+
+**Automated validation.** The earlier test fixture incorrectly supplied `skillsvc.sm`, hiding the bug. The revised fixture
+exposes only the native built-in manager and reproduces the exception before the fix, then passes afterward. The first
+harness attempt required correcting the native `Run(None)` argument before reproducing that exception. The pinned test now
+exercises 18 initial/saved-SP and active/idle queue combinations, each with three repeated skill-button reads, and retains
+the existing preview, silent-refresh, explicit-reward and repeated-installation checks. A separate ordinary test exercises
+the signed adapter with built-in services and no client installation, so the lookup regression also runs by default.
+The exact native method filter was
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.FreePointClientTests.NativeFreePointPreviewAndNeocomStartupUseBuiltinServices`.
+It passed after the fix (2.51 seconds build, 2.49 seconds test command); the ordinary startup regression passed separately
+(4.47 seconds build, 2.46 seconds test command). The neighboring development run passed 66 cases in 23.25 seconds after a
+1.40-second build. The final root sequence passed tool/solution restores, a zero-warning/error build, **100 focused tests**
+(zero skipped, 21-second runner duration), **8 catalog** and **9 formatting policy cases**, formatting verification
+(**1,683 files**, 140-character limit), documentation link/unique-anchor checks and `git diff --check`. It took
+**50.94 seconds**, with `EDEN_TEST_CLIENT_ROOT=E:\EdenDev\3662168`. Final filter:
+`FullyQualifiedName~FreePointClientTests|FullyQualifiedName~FreeSkillPoint|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~ConcordOverviewTests|FullyQualifiedName~Portrait|FullyQualifiedName~PresenceList|FullyQualifiedName~SkillPurchase|FullyQualifiedName~Eden.Protocol.Tests.Hosting`.
+Failure, correction and final TRX reports are retained under ignored `artifacts/neocom-startup-20261111/`.
+No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After updating/restarting the server and fully reopening the client, verify one Neocom bar
+and open the skill tree/queue with saved unallocated SP. Confirm a passive reward refresh remains silent.
 
 ## Direct skill purchasing, November 11, 2026
 

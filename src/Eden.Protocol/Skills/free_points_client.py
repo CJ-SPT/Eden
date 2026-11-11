@@ -52,8 +52,8 @@ def install_free_point_preview():
         if not getattr(self, '_eden_announce_free_points', False) and (
                 self.freeSkillPoints is None or new_points > self.freeSkillPoints):
             self.freeSkillPoints = new_points
-            from eve.client.script.ui.services import skillsvc
-            skillsvc.sm.ScatterEvent('OnFreeSkillPointsChanged_Local')
+            # Native ServiceManager installs sm in builtins, not on skillsvc.
+            sm.ScatterEvent('OnFreeSkillPointsChanged_Local')
             return
         return original_set_points(self, new_points, showPointer)
 

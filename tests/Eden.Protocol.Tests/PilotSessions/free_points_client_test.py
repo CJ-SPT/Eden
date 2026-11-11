@@ -24,12 +24,13 @@ assert hashlib.sha256(archive.read_bytes()).hexdigest() == (
 modules = ['characterskills/util.pyj', 'characterskills/skill_training.pyj',
            'eve/client/script/ui/services/skillsvc.pyj',
            'eve/client/script/ui/services/skillQueueSvc.pyj',
-           'eve/client/script/ui/skilltrading/applySkillPointsWindow.pyj']
+           'eve/client/script/ui/skilltrading/applySkillPointsWindow.pyj',
+           'eve/client/script/ui/shared/neocom/neocom/buttons/buttonSkills.pyj']
 with zipfile.ZipFile(archive) as source:
     blobs = [zlib.decompress(source.read(name)) for name in modules]
 
 worker = r'''
-import marshal, sys, math
+import __builtin__, marshal, sys, math
 
 class Value(object):
     def __init__(self, **values):
@@ -53,10 +54,13 @@ characterskills.SKILL_POINT_MULTIPLIER = 250
 now = [0]
 sys.modules['gametime'].GetWallclockTime = lambda: now[0]
 events, toasts = [], []
+service_manager = Value(ScatterEvent=lambda *args: events.append(args))
+# The native ServiceManager writes __builtin__.sm; skillsvc has no sm attribute.
+# The signed expression also runs in its own empty globals, as it does at login.
+__builtin__.sm = service_manager
 scope = {'__builtins__': __builtins__, 'math': math, 'characterskills': characterskills, 'DIVCONSTANT': 2.5 * math.log(2),
          'MIN': 600000000L, 'gametime': sys.modules['gametime'],
          'GetWallclockTime': lambda: now[0],
-         'sm': Value(ScatterEvent=lambda *args: events.append(args)),
          'uthread': Value(new=lambda callback: toasts.append(callback)), 'HIGHLIGHT_SP_ADDED': 'sp'}
 
 def walk(code):
@@ -116,6 +120,10 @@ class Queue(object):
     def GetServerQueue(self):
         return [Value(trainingTypeID=3327, trainingEndTime=1)] if self.active else []
     SkillInTraining = native(3, 'SkillQueueService', 'SkillInTraining')
+    SkillInTraining.func_defaults = (None,)
+    Run = native(3, 'SkillQueueService', 'Run')
+    PrimeSkillQueue = native(3, 'SkillQueueService', 'PrimeSkillQueue')
+    GetActiveSkillTypeID = native(3, 'SkillQueueService', 'GetActiveSkillTypeID')
     GetSkillLevelAndProgressWithFreePoints = native(3, 'SkillQueueService', 'GetSkillLevelAndProgressWithFreePoints')
     def GetEstimatedSkillPointsTrained(self, type_id):
         assert self.active and type_id == 3327
@@ -130,7 +138,7 @@ class Row(object):
 
 skills = Skills()
 queue = Queue(skills)
-scope['sm'].GetService = lambda name: skills if name == 'skills' else Value(highlight_ui_element=lambda value: None)
+service_manager.GetService = lambda name: skills if name == 'skills' else Value(highlight_ui_element=lambda value: None)
 old = queue.GetSkillLevelAndProgressWithFreePoints({3327: 352})[3327][1]
 current = scope['GetLevelProgress'](queue.estimated, skills.rank)
 assert old < current  # Reproduces the negative native time estimate.
@@ -140,12 +148,46 @@ skills.freeSkillPoints = 0
 toasts[:] = []
 sys.modules['eve.client.script.ui.services.skillQueueSvc'].SkillQueueService = Queue
 sys.modules['eve.client.script.ui.services.skillsvc'].SkillsSvc = Skills
-sys.modules['eve.client.script.ui.services.skillsvc'].sm = scope['sm']
+assert not hasattr(sys.modules['eve.client.script.ui.services.skillsvc'], 'sm')
 sys.modules['eve.client.script.ui.skilltrading.applySkillPointsWindow'].ApplySkillPointsListEntry = Row
 assert eval(marshal.loads(EXPRESSION), {}) == {}
 installed = Queue.GetSkillLevelAndProgressWithFreePoints.im_func
 assert eval(marshal.loads(EXPRESSION), {}) == {}
 assert Queue.GetSkillLevelAndProgressWithFreePoints.im_func is installed
+
+# Use the actual button -> service Run -> PrimeSkillQueue -> setter call chain.
+# A positive saved pool must not prevent the Neocom's skill service from starting.
+class Button(object):
+    UpdateSkillData = native(5, 'ButtonSkills', 'UpdateSkillData')
+
+scope['SkillController'] = lambda typeID: Value(typeID=typeID)
+for saved_points in [0, 352, 727]:
+    for initial_points in [None, 0, saved_points]:
+        for active in [False, True]:
+            skills.freeSkillPoints = initial_points
+            queue.active = active
+            queue.GetSkillQueueAndFreeSPsFromServer = lambda: (queue.GetServerQueue(), saved_points)
+            starts = []
+            def get_service(name):
+                assert name == 'skillqueue'
+                if not starts:
+                    queue.Run(None)
+                    starts.append(name)
+                return queue
+            service_manager.GetService = get_service
+            before = len(events)
+            button = Button()
+            for _ in range(3):
+                button.UpdateSkillData()
+            assert starts == ['skillqueue']
+            assert (button.skill.typeID if button.skill else None) == (3327 if active else None)
+            assert skills.freeSkillPoints == (saved_points if saved_points > 0 else initial_points)
+            assert not toasts
+            expected_event = saved_points > 0 and (initial_points is None or initial_points != saved_points)
+            assert len(events) - before == int(expected_event)
+print('Native Neocom skill queue startup assertions passed')
+service_manager.GetService = lambda name: skills if name == 'skills' else Value(highlight_ui_element=lambda value: None)
+skills.freeSkillPoints = 0
 
 for active in [False, True]:
     queue.active = active
