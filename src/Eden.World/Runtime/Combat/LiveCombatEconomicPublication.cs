@@ -13,6 +13,21 @@ internal sealed partial class LiveCombatRuntime
                 _dirtyShips.Remove(pilot);
             }
         }
+        foreach (var change in checkpoint.Npcs)
+        {
+            if (_npcs.GetValueOrDefault(change.After.Id) == change.After)
+            {
+                _savedNpcs[change.After.Id] = change.After;
+                _dirtyNpcs.Remove(change.After.Id);
+            }
+        }
+        foreach (var aggression in checkpoint.Aggressions)
+        {
+            if (_aggressions?.GetValueOrDefault(aggression.NpcId) == aggression)
+            {
+                _dirtyAggressions.Remove(aggression.NpcId);
+            }
+        }
         foreach (var position in checkpoint.Positions)
         {
             if (

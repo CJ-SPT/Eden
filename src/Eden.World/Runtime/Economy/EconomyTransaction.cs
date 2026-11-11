@@ -352,6 +352,7 @@ internal sealed partial class EconomyTransaction(
             );
         store.Committed(_sequences, changes, affected, pilots);
         _completed = true;
+        PublishActions();
     }
 
     public void Dispose()

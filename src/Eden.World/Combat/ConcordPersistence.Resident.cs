@@ -55,4 +55,28 @@ internal static partial class ConcordPersistence
             )
             .Entity;
     }
+
+    internal static void Attack(WorldAction world, CatalogDbContext catalog, WorldNpc npc, long shipId, long now)
+    {
+        var pilot = world.Pilots.SingleOrDefault(p => p.ActiveShipId == shipId);
+        if (pilot is null)
+        {
+            return;
+        }
+        var decision = CrimewatchRules.Decide(
+            new(
+                CrimewatchPersistence.Security(catalog, npc.SystemId),
+                pilot.SafetyLevel,
+                world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
+                false,
+                CrimewatchFlag.None,
+                false,
+                false
+            )
+        );
+        var state = CrimewatchPersistence.State(world, pilot.Id);
+        state.SystemId = npc.SystemId;
+        state.Apply(CrimewatchRules.Player(state.Timers(), now, decision.Flag, true, now));
+        Schedule(world, catalog, pilot, now);
+    }
 }

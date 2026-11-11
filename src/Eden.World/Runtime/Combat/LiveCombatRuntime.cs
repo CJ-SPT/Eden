@@ -7,6 +7,7 @@ using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -173,7 +174,6 @@ internal sealed partial class LiveCombatRuntime(
         };
         if (plan.Volley.Shot.Destroyed)
         {
-            Flush();
             _internal++;
             try
             {
@@ -182,7 +182,9 @@ internal sealed partial class LiveCombatRuntime(
                 _savedShips.Remove(pilotId);
                 RemoveNpc(targetId);
                 _savedNpcs.Remove(targetId);
-                _aggressions = null;
+                _aggressions?.Remove(targetId);
+                _dirtyAggressions.Remove(targetId);
+                RefreshAggression();
                 _guardGroups.Clear();
                 _contactEpoch++;
                 _acquisitions.Clear();
@@ -250,6 +252,20 @@ internal sealed partial class LiveCombatRuntime(
 
     private ResidentMap<long, LiveAggression> Aggression()
     {
+        if (_aggressions is null && owner.SqlConnections == 0)
+        {
+            _aggressions = owner.Economy.Inspect(
+                world =>
+                    world
+                        .Set<NpcAggression>()
+                        .Where(a => systemId == null || world.Set<WorldNpc>().Any(n => n.Id == a.NpcId && n.SystemId == systemId))
+                        .ToDictionary(
+                            a => a.NpcId,
+                            a => new LiveAggression(a.NpcId, a.TargetShipId, a.ReadyAt, a.MissileReadyAt, a.LastShotAt, a.LastTargetId)
+                        ),
+                TransactionParticipants.None
+            );
+        }
         if (_aggressions is null)
         {
             _aggressions = Loading(() =>
@@ -269,6 +285,17 @@ internal sealed partial class LiveCombatRuntime(
         return _aggressions;
     }
 
+    private void RefreshAggression()
+    {
+        var pending = _aggressions?.Values.Where(a => _dirtyAggressions.Contains(a.NpcId)).ToArray() ?? [];
+        _aggressions = null;
+        var current = Aggression();
+        foreach (var aggression in pending)
+        {
+            current[aggression.NpcId] = aggression;
+        }
+    }
+
     private void Hostility(LiveCombatNpc attacked, long shipId, long now)
     {
         if (attacked.Role is NpcRole.Convoy or NpcRole.MissionStructure)
@@ -284,6 +311,22 @@ internal sealed partial class LiveCombatRuntime(
         {
             members = Loading(() =>
             {
+                if (owner.SqlConnections == 0)
+                {
+                    return owner.Economy.Inspect(world =>
+                        world
+                            .Set<WorldNpc>()
+                            .Where(n =>
+                                n.SystemId == attacked.SystemId
+                                && n.EncounterId == attacked.EncounterId
+                                && n.Role != NpcRole.Pirate
+                                && n.DestroyedAt == null
+                                && n.RetiredAt == null
+                            )
+                            .Select(n => n.Id)
+                            .ToArray()
+                    );
+                }
                 using WorldDbContext world = new(database.Path);
                 return world
                     .Set<WorldNpc>()
@@ -480,6 +523,7 @@ internal sealed partial class LiveCombatRuntime(
             "WorldArmorRepair",
             "WorldNpc",
             "WorldCombatDamage",
+            "WorldNpcAggression",
             "WorldDrone",
         ];
         if (
@@ -683,7 +727,7 @@ internal sealed partial class LiveCombatRuntime(
                     break;
                 case "WorldNpcEncounter":
                 case "WorldNpcMiningOperation":
-                    ObserveEncounterPopulation(change.Id);
+                    ObserveEncounterPopulation(change.Id, change.Resident);
                     break;
                 case "WorldNpcStanding":
                     _populationDue.Clear();

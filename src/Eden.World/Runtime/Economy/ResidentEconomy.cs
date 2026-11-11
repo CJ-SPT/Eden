@@ -120,6 +120,13 @@ internal sealed partial class ResidentEconomy
     internal IReadOnlyDictionary<Type, IEconomyTable> Mappings => _tables;
     private bool _loaded;
     internal bool IsLoaded => _loaded;
+
+    internal void Warm()
+    {
+        using var action = Begin(TransactionParticipants.None);
+        action.Commit();
+    }
+
     private bool _projecting;
     internal bool IsProjecting => _projecting;
 
@@ -128,6 +135,17 @@ internal sealed partial class ResidentEconomy
 
     private bool _transaction;
     private EconomyTransaction? _active;
+
+    internal T Inspect<T>(Func<WorldAction, T> read, TransactionParticipants? participants = null)
+    {
+        using var lease = _owner.EnterShared("resident inspection");
+        if (_active is not null)
+        {
+            return read(_active);
+        }
+        using var action = Begin(participants ?? TransactionParticipants.None);
+        return read(action);
+    }
 
     internal T Read<T>(Func<WorldAction, T> read, TransactionParticipants? participants = null)
     {

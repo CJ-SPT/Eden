@@ -9,7 +9,7 @@ using Eden.World.Storage;
 
 namespace Eden.World.Combat.Npcs;
 
-internal static class NpcHostility
+internal static partial class NpcHostility
 {
     // Call only after the owning offensive operation has validated and paid its
     // costs. The caller's transaction includes group alerting and damage/launch.

@@ -37,6 +37,7 @@ internal sealed class WorldActionScope : IDisposable
         {
             _sql!.SaveChanges();
             _transaction!.Commit();
+            World.PublishActions();
         }
     }
 

@@ -62,8 +62,12 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
             "WorldShip",
             "WorldNpc",
             "WorldCombatDamage",
+            "WorldNpcAggression",
             "WorldDrone",
             "WorldArmorRepair",
+            "WorldWeaponCooldown",
+            "WorldShipEnergy",
+            "WorldShipHealth",
             "WorldWreck",
         ];
         bool timer =

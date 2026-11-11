@@ -13,6 +13,19 @@ namespace Eden.World.Runtime.Economy;
 // SQL transaction. Neither adapter starts a second transaction inside an action.
 internal abstract class WorldAction
 {
+    private readonly List<Action> _committed = [];
+
+    internal void AfterCommit(Action action) => _committed.Add(action);
+
+    internal void PublishActions()
+    {
+        foreach (var action in _committed)
+        {
+            action();
+        }
+        _committed.Clear();
+    }
+
     internal abstract int PilotCount { get; }
     internal abstract bool HasPilotName(string name);
     internal abstract bool TrafficCharacterTaken(long character);

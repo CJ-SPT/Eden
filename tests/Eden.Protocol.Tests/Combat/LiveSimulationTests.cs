@@ -22,7 +22,7 @@ public sealed class LiveSimulationTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void BulkAsteroidChangesInvalidatePopulationWithOneLookup(bool delete)
+    public void BulkAsteroidChangesRefreshResidentRowsAndInvalidatePopulation(bool delete)
     {
         using TestWorld db = new(liveWorld: true);
         const int system = 30000144;
@@ -67,7 +67,9 @@ public sealed class LiveSimulationTests
                     world.Set<WorldAsteroid>().ExecuteUpdate(setters => setters.SetProperty(rock => rock.Quantity, 2));
                 }
             }
-            Assert.Equal(2, measured.Commands);
+            // One mutation, one canonical row refresh and one identity-sequence read.
+            // Population invalidation reuses the canonical rows instead of opening another lookup.
+            Assert.Equal(3, measured.Commands);
             Assert.Equal(2, measured.Connections);
             Assert.Equal(0, measured.FittingCalculations);
         }
@@ -333,8 +335,8 @@ public sealed class LiveSimulationTests
         {
             Advance(1);
             Assert.Equal(1, cold.TackleReads);
-            Assert.Equal(1, cold.AggressionReads);
-            // Both population sizes hydrate the same four batched NPC datasets.
+            Assert.Equal(0, cold.AggressionReads);
+            // NPC rows, mining metadata, effects and contributions come from the resident image.
             Assert.InRange(cold.Commands, 1, 20);
             Assert.InRange(cold.Connections, 1, 12);
         }

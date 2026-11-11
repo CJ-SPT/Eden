@@ -139,20 +139,23 @@ public sealed class NpcPopulationTests
     }
 
     [Theory]
-    [InlineData(NpcRole.Pirate, true)]
-    [InlineData(NpcRole.Navy, false)]
-    [InlineData(NpcRole.Customs, false)]
-    public void KillRewardsUseRoleAndActualCorporation(NpcRole role, bool rewarded)
+    [InlineData(NpcRole.Pirate, true, false)]
+    [InlineData(NpcRole.Pirate, true, true)]
+    [InlineData(NpcRole.Navy, false, false)]
+    [InlineData(NpcRole.Navy, false, true)]
+    [InlineData(NpcRole.Customs, false, false)]
+    [InlineData(NpcRole.Customs, false, true)]
+    public void KillRewardsUseRoleAndActualCorporation(NpcRole role, bool rewarded, bool resident)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: resident);
         Prepare(db, role);
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw("INSERT INTO SourceRecord VALUES ('client/types','30381','{{\"wreckTypeID\":26557}}')");
         }
-        using WorldDbContext world = new(db.Path);
+        using Eden.World.Runtime.Economy.WorldActionScope transaction = new(new(db.Path));
+        var world = transaction.World;
         using CatalogDbContext lookup = new(new WorldDatabase(db.Path).CatalogPath);
-        using var transaction = world.Database.BeginTransaction();
         var npc = world.Set<WorldNpc>().Find(Npc)!;
         var attributes = PilotFittingStore.ReadAttributes(lookup, OtherType).ToDictionary();
         attributes[DogmaAttributeId.EntityKillBounty] = 3000;
@@ -161,16 +164,18 @@ public sealed class NpcPopulationTests
         var result = NpcDamagePersistence.Apply(world, lookup, npc, world.Pilots.Find(Pilot)!, Ship, attributes, new(100000, 0, 0, 0), Now);
         world.SaveChanges();
         transaction.Commit();
+        transaction.Dispose();
+        using WorldDbContext saved = new(db.Path);
         Assert.True(result.Destroyed);
         Assert.Equal(rewarded, result.Reward is not null);
-        var pending = world.Set<PendingSecurityReward>().Find(Pilot);
+        var pending = saved.Set<PendingSecurityReward>().Find(Pilot);
         Assert.Equal(rewarded, pending is not null);
         if (pending is not null)
         {
             Assert.Equal(OtherCorporation, pending.CorporationId);
         }
-        Assert.Equal(rewarded ? 1 : 0, world.Set<NpcBounty>().Count());
-        Assert.Equal(rewarded ? 7 : 0, world.Set<SavedFreeSkillPoints>().Sum(p => p.Points));
+        Assert.Equal(rewarded ? 1 : 0, saved.Set<NpcBounty>().Count());
+        Assert.Equal(rewarded ? 7 : 0, saved.Set<SavedFreeSkillPoints>().Sum(p => p.Points));
     }
 
     [Fact]

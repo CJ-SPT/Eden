@@ -35,13 +35,14 @@ internal sealed partial class LiveCombatRuntime
             return;
         }
         var ids = changes.Where(change => change.Table == "WorldAsteroid").Select(change => change.Id).ToArray();
-        var systems = changes.Any(c => c.Resident)
-            ? ids.Select(id => owner.Economy.Peek<WorldAsteroid>(id)?.SystemId).OfType<int>().ToArray()
-            : Loading(() =>
-            {
-                using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-                return world.Set<WorldAsteroid>().Where(a => EF.Parameter(ids).Contains(a.Id)).Select(a => a.SystemId).ToArray();
-            });
+        var systems =
+            owner.Economy.IsLoaded || changes.Any(c => c.Resident)
+                ? ids.Select(id => owner.Economy.Peek<WorldAsteroid>(id)?.SystemId).OfType<int>().ToArray()
+                : Loading(() =>
+                {
+                    using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+                    return world.Set<WorldAsteroid>().Where(a => EF.Parameter(ids).Contains(a.Id)).Select(a => a.SystemId).ToArray();
+                });
         if (systems.Length != ids.Length)
         {
             // Deleted identities have no remaining location; retain conservative invalidation.
@@ -79,31 +80,35 @@ internal sealed partial class LiveCombatRuntime
         {
             InvalidatePopulation(previous.SystemId);
         }
-        int? current = resident
-            ? owner.Economy.Peek<WorldNpc>(id)?.SystemId
-            : Loading(() =>
-            {
-                using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-                return world.Set<WorldNpc>().Where(n => n.Id == id).Select(n => (int?)n.SystemId).SingleOrDefault();
-            });
+        int? current =
+            resident || owner.Economy.IsLoaded
+                ? owner.Economy.Peek<WorldNpc>(id)?.SystemId
+                : Loading(() =>
+                {
+                    using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+                    return world.Set<WorldNpc>().Where(n => n.Id == id).Select(n => (int?)n.SystemId).SingleOrDefault();
+                });
         if (current is int system)
         {
             InvalidatePopulation(system);
         }
     }
 
-    private void ObserveEncounterPopulation(long id)
+    private void ObserveEncounterPopulation(long id, bool resident = false)
     {
         if (_populationRefreshSystem is { } scoped)
         {
             InvalidatePopulation(scoped);
             return;
         }
-        int? current = Loading(() =>
-        {
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-            return world.Set<WorldNpcEncounter>().Where(e => e.Id == id).Select(e => (int?)e.SystemId).SingleOrDefault();
-        });
+        int? current =
+            resident || owner.Economy.IsLoaded
+                ? owner.Economy.Peek<WorldNpcEncounter>(id)?.SystemId
+                : Loading(() =>
+                {
+                    using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+                    return world.Set<WorldNpcEncounter>().Where(e => e.Id == id).Select(e => (int?)e.SystemId).SingleOrDefault();
+                });
         if (current is int system)
         {
             InvalidatePopulation(system);

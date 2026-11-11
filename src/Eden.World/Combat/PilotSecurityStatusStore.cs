@@ -26,7 +26,7 @@ internal sealed class SecurityStatusSignal
 }
 
 [Injectable]
-internal sealed class PilotSecurityStatusStore(WorldDatabase database, TimeProvider clock, SecurityStatusSignal signal)
+internal sealed partial class PilotSecurityStatusStore(WorldDatabase database, TimeProvider clock, SecurityStatusSignal signal)
     : IPilotSecurityStatus
 {
     public long Revision => signal.Revision;

@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Resident fatal NPC settlement and filtered lookups](protocol/performance.md#resident-fatal-npc-settlement-and-filtered-lookups-november-11-2026)
+records atomic kill rewards, retryable checkpoints and bounded resident pilot lookups.
+
 [Resident bot action transactions](protocol/performance.md#resident-bot-action-transactions-november-11-2026)
 records complete resident miner/hauler mutations, atomic pilot-template refresh and coherent checkpoints.
 

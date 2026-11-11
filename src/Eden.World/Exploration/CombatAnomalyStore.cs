@@ -17,8 +17,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Exploration;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CombatAnomalyStore(WorldDatabase database, IPirateExploration? exploration = null, IMiningSites? mining = null)
-    : ICombatAnomalies
+internal sealed partial class CombatAnomalyStore(
+    WorldDatabase database,
+    IPirateExploration? exploration = null,
+    IMiningSites? mining = null
+) : ICombatAnomalies
 {
     private sealed record View(
         long Version,

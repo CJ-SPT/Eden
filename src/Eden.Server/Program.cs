@@ -225,6 +225,11 @@ internal static class Program
             Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
             return;
         }
+        // Load the canonical world image before accepting players or starting bot turns.
+        // The first economic action must not pay the full saved-world hydration cost.
+        long residentStarted = Stopwatch.GetTimestamp();
+        services.GetService<Eden.World.Runtime.LiveWorld>()?.Economy.Warm();
+        ServerLog.Console.Information($"Resident world loaded in {Stopwatch.GetElapsedTime(residentStarted).TotalSeconds:F2}s.");
         services.GetRequiredService<Eden.Server.Modding.ModRuntime>().Start();
         services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
         services.GetRequiredService<CatalogProvider>().PreloadCore();

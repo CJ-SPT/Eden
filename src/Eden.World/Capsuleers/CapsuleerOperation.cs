@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Eden.World.Capsuleers;
 
-// A role action opens SQL only when it crosses an inventory, ownership or payment
-// boundary. Navigation and nonfatal simulation keep their existing resident path.
+// Live role actions commit inventory, ownership and payments in a private resident view.
+// Offline tools use the same typed operations within their SQL transaction.
 internal sealed class CapsuleerOperation(
     WorldDatabase database,
     CapsuleerJob expected,

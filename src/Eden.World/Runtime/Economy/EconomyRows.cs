@@ -752,9 +752,21 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectSavedNpcStanding(WorldDbContext world, IReadOnlyList<EconomyChange<EconomySavedNpcStanding>> changes)
     {
-        if (changes.Count != 0)
+        foreach (var change in changes)
         {
-            throw new InvalidOperationException("Reference economic rows cannot be projected.");
+            if (change.Value is { } row)
+            {
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldNpcStanding(PilotId,SourceId,Value) VALUES({row.PilotId},{row.SourceId},{row.Value})
+                    ON CONFLICT(PilotId,SourceId) DO UPDATE SET Value=excluded.Value
+                    """
+                );
+            }
+            else
+            {
+                world.Database.ExecuteSql($"DELETE FROM WorldNpcStanding WHERE PilotId={change.Key.Id} AND SourceId={change.Key.Part}");
+            }
         }
     }
 }
@@ -1493,7 +1505,7 @@ internal sealed partial class ResidentEconomy
                 "PilotId,SourceId,Value",
                 reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetDouble(3)),
                 state => new(state.PilotId, state.SourceId),
-                readOnly: true,
+                readOnly: false,
                 indexes: [new("PilotId", row => row.PilotId)],
                 primaryColumn: null
             )

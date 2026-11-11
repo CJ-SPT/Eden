@@ -28,6 +28,147 @@ public sealed class LiveCombatObjectTests
         fixture.Space();
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FatalNpcShotCommitsResidentRewardsOrRejectsEveryPayment(bool reject)
+    {
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        using (var catalog = new Eden.World.Catalog.CatalogDbContext(new WorldDatabase(fixture.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                UPDATE TypeAttribute SET Value=40 WHERE ItemTypeId=30380 AND AttributeId=9;
+                INSERT OR IGNORE INTO DogmaAttribute VALUES (481,'entityKillBounty');
+                INSERT INTO TypeAttribute VALUES (30380,481,3000);
+                """
+            );
+            if (reject)
+            {
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    UPDATE SourceRecord SET Data='{{"wreckTypeID":999999}}' WHERE Dataset='client/types' AND Key='30380';
+                    """
+                );
+            }
+        }
+        Ready(fixture);
+        long pilot = fixture.Pilot.PilotId;
+        long ship = fixture.Pilot.ShipId;
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            var npc = world.Set<WorldNpc>().Find(fixture.Npc.Id)!;
+            npc.ShieldCharge = 0;
+            npc.ArmorDamage = 15;
+            world.SaveChanges();
+        }
+        CombatShot Fire() =>
+            fixture.Combat.Fire(pilot, fixture.Gun, fixture.Npc.Id, SpacePosition.Zero, fixture.Clock.Now, .5, WeaponActivation.AmmoFed);
+        var paid = Fire();
+        Assert.False(paid.Destroyed);
+        fixture.Clock.Milliseconds += 3000;
+        var live = LiveWorld.Find(fixture.Db.Path)!;
+        long balance = live.Economy.Read(w => w.Set<Eden.Data.World.Market.PilotWallet>().Find(pilot)!.Cents);
+        using (
+            var dryRun = live.Economy.Begin(
+                new(pilots: [pilot], ships: [ship], resources: [new(SharedSimulationResource.Npc, fixture.Npc.Id)])
+            )
+        )
+        using (var catalog = new Eden.World.Catalog.CatalogDbContext(new WorldDatabase(fixture.Db.Path).CatalogPath))
+        {
+            var npc = dryRun.Set<WorldNpc>().Find(fixture.Npc.Id)!;
+            var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
+            try
+            {
+                _ = NpcDamagePersistence.Apply(
+                    dryRun,
+                    catalog,
+                    npc,
+                    dryRun.Pilots.Find(pilot)!,
+                    ship,
+                    attributes,
+                    new(100000, 0, 0, 0),
+                    fixture.Clock.Now,
+                    561
+                );
+            }
+            catch (InvalidDataException) when (reject) { }
+        }
+        List<string> commands = [];
+        CombatShot? fatal = null;
+        using (var measure = SessionPerformance.Begin("resident fatal NPC shot", _ => { }, force: true, command: commands.Add)!)
+        {
+            if (reject)
+            {
+                Assert.Throws<InvalidDataException>(() => Fire());
+            }
+            else
+            {
+                fatal = Fire();
+                Assert.True(fatal.Destroyed);
+                Assert.Equal(198, fatal.Magazine!.Quantity);
+                Assert.Equal(300000, fatal.Reward!.AmountCents);
+            }
+            Assert.True(measure.Commands == 0, string.Join(Environment.NewLine, commands));
+            Assert.Equal(0, measure.Connections);
+        }
+        if (!reject)
+        {
+            using var failed = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+            using (var command = failed.Database.CreateCommand())
+            {
+                command.CommandText = """
+                    CREATE TRIGGER reject_bounty BEFORE INSERT ON WorldNpcBounty
+                    BEGIN SELECT RAISE(ABORT,'test failed bounty checkpoint'); END
+                    """;
+                command.ExecuteNonQuery();
+            }
+            Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => failed.Project());
+            using var unchanged = new WorldDbContext(failed.Database);
+            Assert.Null(unchanged.Set<WorldNpc>().Find(fixture.Npc.Id)!.DestroyedAt);
+            Assert.Empty(unchanged.Set<NpcBounty>());
+            Assert.Equal(balance, unchanged.Set<Eden.Data.World.Market.PilotWallet>().Find(pilot)!.Cents);
+        }
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext saved = new(checkpoint.Database);
+        var savedNpc = saved.Set<WorldNpc>().Find(fixture.Npc.Id)!;
+        Assert.Equal(!reject, savedNpc.DestroyedAt.HasValue);
+        Assert.Equal(reject ? 199 : 198, saved.Set<OwnedItem>().Single(i => i.LocationId == fixture.Gun).Quantity);
+        Assert.Equal(balance + (reject ? 0 : 300000), saved.Set<Eden.Data.World.Market.PilotWallet>().Find(pilot)!.Cents);
+        Assert.Equal(reject ? 0 : 1, saved.Set<NpcBounty>().Count());
+        Assert.Equal(reject ? 0 : 1, saved.Set<Eden.Data.World.Loot.WorldWreck>().Count());
+        Assert.Equal(reject ? 0 : 1, saved.Set<SavedCombatReport>().Count());
+        Assert.Equal(reject ? 0 : 7, saved.Set<Eden.Data.World.Skills.SavedFreeSkillPoints>().Sum(p => p.Points));
+        Assert.Equal(reject ? paid.Capacitor : fatal!.Capacitor, saved.Set<ShipEnergy>().Find(ship)!.Charge);
+        if (reject)
+        {
+            Assert.Equal(paid.Health.Remaining.Structure, 40 - savedNpc.StructureDamage);
+            Assert.NotEmpty(saved.Set<SavedCombatDamage>());
+            using (var catalog = new Eden.World.Catalog.CatalogDbContext(new WorldDatabase(fixture.Db.Path).CatalogPath, writable: true))
+            {
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    UPDATE SourceRecord SET Data='{{"wreckTypeID":26557}}' WHERE Dataset='client/types' AND Key='30380';
+                    """
+                );
+            }
+            Assert.True(Fire().Destroyed);
+            using var retry = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+            retry.Project();
+            using var recovered = new WorldDbContext(retry.Database);
+            Assert.Single(recovered.Set<NpcBounty>());
+            Assert.Equal(198, recovered.Set<OwnedItem>().Single(i => i.LocationId == fixture.Gun).Quantity);
+        }
+        else
+        {
+            Assert.Empty(saved.Set<SavedCombatDamage>());
+            Assert.Throws<InvalidDataException>(() => Fire());
+            using var next = live.Economy.Begin(new(pilots: [pilot], resources: [new(SharedSimulationResource.Npc, fixture.Npc.Id)]));
+            Assert.Single(next.Set<NpcBounty>());
+        }
+    }
+
     [Fact]
     public void SharedNpcParticipantProjectsItsDamageWithoutProjectingTheAttackingShip()
     {

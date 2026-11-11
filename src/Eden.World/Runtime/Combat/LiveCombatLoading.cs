@@ -312,6 +312,10 @@ internal sealed partial class LiveCombatRuntime
 
     private LiveCombatNpc? LoadNpc(long id, long now)
     {
+        if (owner.SqlConnections == 0)
+        {
+            return owner.Economy.Inspect(world => LoadNpcResident(world, id, now), new(resources: [new(SharedSimulationResource.Npc, id)]));
+        }
         using var phase = SessionPerformance.Phase("combat.hydrate.npc");
         using WorldDbContext world = new(database.Path) { Participants = new(resources: [new(SharedSimulationResource.Npc, id)]) };
         var npc = world.Set<WorldNpc>().Find(id);
@@ -334,6 +338,20 @@ internal sealed partial class LiveCombatRuntime
     {
         if (ids.Count == 0)
         {
+            return;
+        }
+        if (owner.SqlConnections == 0)
+        {
+            var loaded = owner.Economy.Inspect(
+                world => ids.Select(id => LoadNpcResident(world, id, now)).OfType<LiveCombatNpc>().ToArray(),
+                new(resources: ids.Select(id => new SimulationResource(SharedSimulationResource.Npc, id)))
+            );
+            foreach (var npc in loaded)
+            {
+                SetNpc(npc);
+                _savedNpcs[npc.Id] = npc;
+                _staleNpcs.Remove(npc.Id);
+            }
             return;
         }
         Loading(() =>

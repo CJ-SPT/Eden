@@ -171,7 +171,12 @@ public sealed class ResidentBotEconomyTests(ITestOutputHelper output)
             using var action = live.Economy.Begin(participants);
             int count = action.Pilots.Count();
             Assert.Equal(count, action.Pilots.Select(p => p.Name).ToArray().Length);
+            Assert.True(action.Pilots.Any(p => p.Id == pilotId));
+            Assert.Equal(1, action.Pilots.Count(p => p.Id == pilotId));
+            Assert.Equal(1L, action.Pilots.LongCount(p => p.Id == pilotId));
             Assert.Empty(action.Pilots.Local);
+            Assert.Equal(pilotId, action.Pilots.Single(p => p.Id == pilotId).Id);
+            Assert.Single(action.Pilots.Local);
             Assert.True(TrafficProvisioning.Refresh(fixture.Database, action, catalog, pilotId, route, fixture.Clock.Now));
             Assert.Single(action.Pilots.Local);
             Assert.Equal(profile.Name, action.Pilots.Find(pilotId)!.Name);

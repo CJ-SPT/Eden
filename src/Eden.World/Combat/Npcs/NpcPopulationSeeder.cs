@@ -15,8 +15,12 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Combat.Npcs;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class NpcPopulationSeeder(NpcSpawnCatalog profiles, NpcGuardSeeder guards, NpcConvoySeeder convoys, NpcMiningSeeder mining)
-    : INpcPopulationSeeder
+internal sealed partial class NpcPopulationSeeder(
+    NpcSpawnCatalog profiles,
+    NpcGuardSeeder guards,
+    NpcConvoySeeder convoys,
+    NpcMiningSeeder mining
+) : INpcPopulationSeeder
 {
     public long NextUpdate(WorldDbContext world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
 

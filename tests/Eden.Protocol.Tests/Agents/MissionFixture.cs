@@ -120,6 +120,30 @@ internal sealed class MissionFixture : IDisposable
 
     internal void Kill(long npcId, bool commit = true)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(Db.Path) is { } live)
+        {
+            using var action = live.Economy.Begin(new(pilots: [PilotId], resources: [new(SharedSimulationResource.Npc, npcId)]));
+            using var residentCatalog = new CatalogDbContext(new WorldDatabase(Db.Path).CatalogPath);
+            var residentNpc = action.Set<WorldNpc>().Find(npcId)!;
+            var residentPilot = action.Pilots.Single(p => p.Id == PilotId);
+            var residentProfile = new NpcProfileCatalog().Read(residentCatalog, residentNpc.TypeId);
+            var residentResult = NpcDamagePersistence.Apply(
+                action,
+                residentCatalog,
+                residentNpc,
+                residentPilot,
+                residentPilot.ActiveShipId,
+                residentProfile.Attributes,
+                new DamageVector(1_000_000, 1_000_000, 1_000_000, 1_000_000),
+                Clock.Now
+            );
+            Assert.True(residentResult.Destroyed);
+            if (commit)
+            {
+                action.Commit();
+            }
+            return;
+        }
         using WorldDbContext world = new(Db.Path);
         using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath);
         using var transaction = world.Database.BeginTransaction();

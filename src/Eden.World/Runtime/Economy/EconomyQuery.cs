@@ -26,6 +26,38 @@ internal sealed class EconomyQueryProvider<T>(EconomySet<T> source) : IQueryProv
         {
             if (
                 node.Method.DeclaringType == typeof(Queryable)
+                && node.Arguments.Count >= 2
+                && node.Arguments[1] is UnaryExpression { Operand: LambdaExpression }
+                && node.Method.Name
+                    is nameof(Queryable.Any)
+                        or nameof(Queryable.Count)
+                        or nameof(Queryable.LongCount)
+                        or nameof(Queryable.First)
+                        or nameof(Queryable.FirstOrDefault)
+                        or nameof(Queryable.Last)
+                        or nameof(Queryable.LastOrDefault)
+                        or nameof(Queryable.Single)
+                        or nameof(Queryable.SingleOrDefault)
+            )
+            {
+                var filtered = Expression.Call(
+                    typeof(Queryable),
+                    nameof(Queryable.Where),
+                    node.Method.GetGenericArguments(),
+                    node.Arguments[0],
+                    node.Arguments[1]
+                );
+                return Visit(
+                    Expression.Call(
+                        typeof(Queryable),
+                        node.Method.Name,
+                        node.Method.GetGenericArguments(),
+                        [filtered, .. node.Arguments.Skip(2)]
+                    )
+                );
+            }
+            if (
+                node.Method.DeclaringType == typeof(Queryable)
                 && node.Arguments.Count > 0
                 && Predicate(node.Arguments[0], out var projectionFilter)
             )

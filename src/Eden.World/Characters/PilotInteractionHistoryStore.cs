@@ -17,7 +17,7 @@ using Eden.World.Storage;
 namespace Eden.World.Characters;
 
 [Injectable]
-internal sealed class PilotInteractionHistoryStore(WorldDatabase database) : IPilotInteractionHistory
+internal sealed partial class PilotInteractionHistoryStore(WorldDatabase database) : IPilotInteractionHistory
 {
     public IReadOnlyList<ShipCombatReport> Combat(long pilotId, int count, long? beforeId)
     {

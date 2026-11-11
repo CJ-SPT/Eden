@@ -23,6 +23,7 @@ using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -575,13 +576,15 @@ internal sealed partial class PilotCombatStore(
 
     private CombatVolley SettleLiveFatal(Eden.Gameplay.Combat.LiveVolley plan, long now, ShipHeatSnapshot? heat)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(
+            database,
+            new(pilots: [plan.Ship.PilotId], ships: [plan.Ship.ShipId], resources: [new(SharedSimulationResource.Npc, plan.Target.Id)])
+        );
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == plan.Ship.PilotId);
+        var pilot = world.Pilots.Single(p => p.Id == plan.Ship.PilotId);
         var npc = world.Set<WorldNpc>().Find(plan.Target.Id)!;
-        // Previous object volleys have been projected. This transaction pays every member
-        // and settles destruction, loot, history and rewards together.
+        // The private view imports prior paid volleys and settles this shot with all rewards.
         var before = LiveCombatRuntime.Find(database.Path, plan.Ship.PilotId)!.CurrentShip(plan.Ship.PilotId);
         LiveCombatRuntime.ProjectShip(world, before, plan.Ship);
         var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
@@ -606,7 +609,7 @@ internal sealed partial class PilotCombatStore(
         transaction.Commit();
         if (heat is not null)
         {
-            WorldConnections.PublishHeat(world, pilot.Id, plan.Ship.ShipId, heat);
+            Eden.World.Runtime.LiveWorld.Find(database.Path)?.PublishHeat(pilot.Id, plan.Ship.ShipId, heat);
         }
         security.Publish();
         return plan.Volley with

@@ -2707,3 +2707,63 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 Repeat the installed-save trade workload to measure owner hold time and allocation after loading the new build.
+
+## Resident fatal NPC settlement and filtered lookups (November 11, 2026)
+
+Live fatal NPC turret volleys now import the participating dirty ship, NPC, aggression and contribution snapshots
+into one private resident action. Ammunition, capacitor, cooldowns, heat, health, destruction, wreck, loot, combat
+report, bounty, corporation tax, silent free skill points, security reward and standing changes publish only after
+validation. Mission structures, mission waves and anomaly waves use typed versions of their existing rules.
+Rejection preserves prior paid volleys for the next coherent checkpoint. Successful publication acknowledges only
+the imported generation; checkpoint projection still uses the detached image and can retry after failure.
+
+NPC hydration, guard membership and aggression loading inspect resident rows when no SQL transaction is active.
+Inspection does not publish imported state or invalidate another dirty combat baseline. Participant membership
+uses resident ship/NPC/wreck rows once loaded. Compatibility SQL readers of health, energy and cooldowns synchronize
+prior resident payments before reading, including grouped reload-to-cycle transitions. Anomaly cache invalidations
+publish after commit. Resident unique-index checks and mapped foreign-key cascades preserve rejection behavior.
+
+The later installed-world report identifies revision `164186f0`: its worst recorded trade took **7,942.69 ms**,
+issued **295 SQL commands**, and allocated **5,653,409,304 bytes**. That is evidence of an incomplete migration.
+Predicate terminal operators such as `Single(predicate)` were materializing the entire resident source before
+filtering. The query adapter now filters before materialization, preserving staged-row visibility and terminal
+semantics. The portrait-payload regression now exercises predicate aggregates and `Single(predicate)` as well as
+template refresh; only the selected pilot may materialize and allocation must stay below 8 MiB. Initial canonical
+hydration also runs before production listeners and bot maintenance, rather than on the first bot action.
+
+References: [Missions](https://wiki.eveuniversity.org/Missions),
+[Salvaging](https://wiki.eveuniversity.org/Salvaging), and
+[NPC mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations). Existing gameplay calculations remain
+unchanged; these changes concern storage and publication.
+
+### Automated validation
+
+Development used exact fatal-shot, grouped-reload, template-roster, corporation-tax and role-reward method filters.
+Fatal-shot tests cover warmed zero SQL commands/connections, rejection with unchanged payment and NPC state, retry,
+duplicate rejection, reward/history outcomes, and failed checkpoint projection followed by successful retry without
+replay. Resident mission fixture kills now use typed actions. Military role rewards and corporate tax settlement
+exercise both adapters. The closing filter is recorded in `artifacts/bot-combat-migration/closing-filter.txt`.
+
+Tool/solution restore passed. The solution build passed with zero warnings/errors in **7.66 s**. Closing validation
+passed **774 affected tests / 364.94 s** including runner overhead. Catalog policy passed **8 tests / 1.008 s**;
+formatting policy passed **9 tests / 0.015 s**. Formatting verification checked **1,892 files / 3.287 s** and the
+140-column policy. No full .NET suite was run. Reports are under `artifacts/bot-combat-migration/validated`.
+
+The widened portrait fixture allocated **2,654,256 bytes** for rollback and **2,875,616 bytes** for commit, with zero
+SQL commands/connections. This is a bounded regression fixture, not a replay of the installed population.
+An earlier widened run was deliberately stopped after seven failures and 568 passes; it is incomplete. Those
+failures exposed aggression/cooldown compatibility synchronization and changed SQL-count expectations. The corrected
+boundaries passed 31 focused checks before the complete 774-test closing selection above.
+
+The full no-SQL bot goal remains open. Background population preparation/admission, scheduler preparation and
+several combat loss/effect paths still have SQL boundaries. The reported installed-world workload has not been
+replayed on this revision; no larger supported simulation size is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Repeat the reported installed-save trade/collection workload after rebuilding this revision, comparing owner hold
+time, SQL commands/connections and allocation. This is required to establish the live improvement.

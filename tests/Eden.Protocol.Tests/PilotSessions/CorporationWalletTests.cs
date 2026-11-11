@@ -200,12 +200,12 @@ public sealed class CorporationWalletTests
         int id = world.Services.GetRequiredService<IPlayerCorporations>().Create(90000001, PlayerCorporationTests.Details()).Corporation.Id;
         world.Store.SetPosition(NpcCombatTests.Fixture.ShipId, fixture.Npc.Position, fixture.Npc.SystemId);
         long now = world.Services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        using (WorldDbContext saved = new(world.Path))
-        using (var transaction = saved.Database.BeginTransaction())
+        using (Eden.World.Runtime.Economy.WorldActionScope transaction = new(new(world.Path)))
         using (CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath))
         {
+            var saved = transaction.World;
             var npc = saved.Set<WorldNpc>().Find(fixture.Npc.Id)!;
-            var pilot = saved.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == 90000001);
+            var pilot = saved.Pilots.Single(p => p.Id == 90000001);
             var attributes = catalog
                 .Set<TypeAttribute>()
                 .Where(a => a.ItemTypeId == npc.TypeId)

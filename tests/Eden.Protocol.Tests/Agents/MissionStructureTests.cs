@@ -103,24 +103,56 @@ public sealed partial class MissionStructureTests
             target.StructureDamage = warehouse.Health.Defense.Structure - 0.5;
             world.SaveChanges();
             transaction.Commit();
-            world.Database.ExecuteSqlRaw(
-                """
-                CREATE TRIGGER Reject_Structure_Death BEFORE UPDATE ON WorldMissionStructure
-                    BEGIN SELECT RAISE(ABORT,'injected structure death failure'); END;
-                """
-            );
         }
         f.Clock.Seconds += 2;
-        Assert.Throws<DbUpdateException>(() => Fire());
-        using (WorldDbContext world = new(f.Db.Path))
+        if (resident)
         {
-            Assert.Null(world.Set<WorldNpc>().Find(warehouse.Id)!.DestroyedAt);
-            Assert.Null(world.Set<SavedMissionStructure>().Find(warehouse.Id)!.DestroyedAt);
-            Assert.Empty(world.Set<OwnedItem>().Where(i => i.TypeId == ObjectiveType));
-            Assert.False(world.Set<SavedMission>().Find(mission.Id)!.ObjectiveComplete);
-            world.Database.ExecuteSqlRaw("DROP TRIGGER Reject_Structure_Death");
+            Assert.True(Fire().Destroyed);
+            var live = LiveWorld.Find(f.Db.Path)!;
+            using (var failed = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot()))
+            {
+                using (var command = failed.Database.CreateCommand())
+                {
+                    command.CommandText = """
+                        CREATE TRIGGER Reject_Structure_Death BEFORE UPDATE ON WorldMissionStructure
+                        BEGIN SELECT RAISE(ABORT,'injected structure checkpoint failure'); END
+                        """;
+                    command.ExecuteNonQuery();
+                }
+                Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => failed.Project());
+                using var rejected = new WorldDbContext(failed.Database);
+                Assert.Null(rejected.Set<WorldNpc>().Find(warehouse.Id)!.DestroyedAt);
+                Assert.Null(rejected.Set<SavedMissionStructure>().Find(warehouse.Id)!.DestroyedAt);
+                Assert.Empty(rejected.Set<OwnedItem>().Where(i => i.TypeId == ObjectiveType));
+                Assert.False(rejected.Set<SavedMission>().Find(mission.Id)!.ObjectiveComplete);
+            }
+            using var retry = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+            retry.Project();
+            using var recovered = new WorldDbContext(retry.Database);
+            Assert.Equal(15, recovered.Set<OwnedItem>().Where(i => i.TypeId == ObjectiveType).Sum(i => i.Quantity));
         }
-        Assert.True(Fire().Destroyed);
+        else
+        {
+            using (WorldDbContext world = new(f.Db.Path))
+            {
+                world.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TRIGGER Reject_Structure_Death BEFORE UPDATE ON WorldMissionStructure
+                    BEGIN SELECT RAISE(ABORT,'injected structure death failure'); END
+                    """
+                );
+            }
+            Assert.Throws<DbUpdateException>(() => Fire());
+            using (WorldDbContext world = new(f.Db.Path))
+            {
+                Assert.Null(world.Set<WorldNpc>().Find(warehouse.Id)!.DestroyedAt);
+                Assert.Null(world.Set<SavedMissionStructure>().Find(warehouse.Id)!.DestroyedAt);
+                Assert.Empty(world.Set<OwnedItem>().Where(i => i.TypeId == ObjectiveType));
+                Assert.False(world.Set<SavedMission>().Find(mission.Id)!.ObjectiveComplete);
+                world.Database.ExecuteSqlRaw("DROP TRIGGER Reject_Structure_Death");
+            }
+            Assert.True(Fire().Destroyed);
+        }
         Assert.True(Current(f).CombatComplete);
         using (WorldDbContext world = new(f.Db.Path))
         {

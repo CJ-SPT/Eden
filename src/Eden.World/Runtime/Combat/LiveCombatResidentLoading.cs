@@ -36,6 +36,25 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
+    private LiveCombatNpc? LoadNpcResident(WorldAction world, long id, long now)
+    {
+        using var phase = SessionPerformance.Phase("combat.hydrate.npc");
+        var npc = world.Set<WorldNpc>().Find(id);
+        if (npc is null)
+        {
+            return null;
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return HydrateNpc(
+            catalog,
+            npc,
+            world.Set<WorldNpcMiningMember>().Find(id),
+            PlayerEwarStore.Active(world, id),
+            Contributions(world, id),
+            now
+        );
+    }
+
     private LiveCombatShip LoadShipResident(WorldAction world, long pilotId, long now)
     {
         using var phase = SessionPerformance.Phase("combat.hydrate.ship");

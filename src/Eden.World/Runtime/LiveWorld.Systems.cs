@@ -568,6 +568,35 @@ internal sealed partial class LiveWorld
         {
             return systems;
         }
+        if (Economy.IsLoaded)
+        {
+            foreach (long id in ships.Concat(pilots.Select(p => Economy.Peek<Eden.Data.World.Characters.Pilot>(p)?.ActiveShipId ?? 0)))
+            {
+                if (Economy.Peek<Eden.Data.World.Inventory.Ship>(id) is { } hull)
+                {
+                    int system =
+                        Economy.Peek<Eden.Data.World.Docking.FlightPosition>(id)?.SystemId
+                        ?? _database.Catalog.FindStation(hull.StationId)?.SolarSystemId
+                        ?? 0;
+                    if (system > 0)
+                    {
+                        systems.Add(system);
+                    }
+                }
+            }
+            foreach (var resource in participants.Resources)
+            {
+                int system =
+                    resource.Kind == SharedSimulationResource.Npc
+                        ? Economy.Peek<Eden.Data.World.Combat.Npcs.WorldNpc>(resource.Id)?.SystemId ?? 0
+                        : Economy.Peek<Eden.Data.World.Loot.WorldWreck>(resource.Id)?.SystemId ?? 0;
+                if (system > 0)
+                {
+                    systems.Add(system);
+                }
+            }
+            return systems;
+        }
         using WorldDbContext world = new(_path) { IsResidentProjection = true };
         var memberships = world
             .Ships.Where(ship => ships.Contains(ship.Id) || world.Pilots.Any(p => pilots.Contains(p.Id) && p.ActiveShipId == ship.Id))

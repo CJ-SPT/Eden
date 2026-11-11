@@ -24,7 +24,7 @@ namespace Eden.World.Combat.Npcs;
 
 internal sealed record CombatDamageSettlement(ShipHealth Health, double Applied, bool Destroyed, NpcBounty? Reward);
 
-internal static class NpcDamagePersistence
+internal static partial class NpcDamagePersistence
 {
     internal static CombatDamageSettlement Apply(
         WorldDbContext world,
