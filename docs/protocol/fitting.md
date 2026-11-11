@@ -2,6 +2,71 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Bulk and corporation saved fittings — November 11, 2026
+
+Milestone 4 completes existing fitting-plan management with native `SaveManyFittings` and `DeleteManyFittings` on
+`charFittingMgr`, and the same seven single/bulk operations on `corpFittingMgr`. `GetCommunityFittings` remains an
+empty directory; this milestone does not introduce community or alliance fitting ownership.
+
+Pinned build **3662168** `fittingSvc.PersistManyFittings` sends a dictionary keyed by decreasing negative temporary
+IDs. Each value is the existing `utillib.KeyVal` fitting model. Save returns a Python **list** of KeyVals with
+`tempFittingID` and `realFittingID`; delete accepts a Python list of positive IDs and returns the committed ID list.
+Empty batches succeed without notifications. Both batches validate all entries and owner access before committing;
+unknown catalog types, malformed wire values, duplicates, foreign/missing fitting IDs, exhausted capacity and database
+failures leave the selection unchanged. Quotas from pinned `appConst` are **500 personal** and **600 corporation**
+fittings, including a whole import batch. Overwrites retain the original ID and work at capacity.
+
+Corporation reads require actual current membership. Mutations require the current **CEO**, **Director** or global
+**Fitting Manager** role, including title-derived roles; permissions are read from saved membership and effective roles
+inside the mutation transaction. Stale session roles, other pilots, other corporations and NPC-corporation writes do not
+authorize access. Template changes never buy, fit or move inventory or change wallets.
+
+Schema **142** reuses the existing pilot/corporation inventory-owner registry for saved-fitting ownership. The upgrade
+preserves personal rows, IDs, saved timestamps, the AUTOINCREMENT high-water mark, indexes and table triggers. Explicit
+pilot/corporation deletion triggers preserve template cleanup. Startup retains foreign-key enforcement throughout the
+fitting-table conversion. Earlier records describing the pilot-only foreign key are historical.
+
+Primed fitting sessions monitor an in-memory owner revision; unchanged polls open no connections, run no SQL and perform
+no fitting calculations. A committed change reloads an authorized snapshot and emits native add, update and delete
+notifications. A local acknowledgement suppresses its own duplicate event while still publishing other committed changes.
+Membership is rechecked on reload and departed members receive no fitting contents. Add uses the integer form of
+`OnFittingAdded`; overwrite/rename uses its Python-list form because the pinned client invalidates an **existing** cached
+ID only in the list branch. Bulk deletion uses `OnManyFittingsDeleted(ownerID, listOfIDs)`. Corporation reads return the
+same native dictionary as personal reads, without adding a second object-cache wrapper requiring remote cache eviction.
+
+References: [EVE University corporation role guide](https://wiki.eveuniversity.org/Managing_corporation_members) describes
+Fitting Manager and Director authority; [fitting management](https://wiki.eveuniversity.org/NeoCom#Fitting_Management)
+describes personal/corporate plans and import/export. Inert inspection used `fittingSvc` bulk persistence/deletion,
+`PrimeFittings`, `OnFittingAdded`, `OnFittingDeleted`, `OnManyFittingsDeleted`, and `appConst` from the unchanged pinned
+archive SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. No client code was executed.
+The existing explicit Blue adapters retain native dictionary/list/tuple/KeyVal forms; the codec and transport are unchanged.
+[Carbon Blue Marshal.cpp](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+remains the serialization reference at revision `fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae`.
+
+EveJs installed source **261108.1** was consulted as a behavioral reference, independently reconciled with the pinned
+client; no implementation was copied. Its snapshot has no Git metadata. Source SHA-256 identifiers:
+
+- `services/fitting/charFittingMgrService.js`: `4A781900585AB05F95F3293FFABD20296ACD5C5739E3B58FF17DCA1106321ADC`
+- `services/fitting/corpFittingMgrService.js`: `7C2AAB6C205601A6AAA01CE362461D99C59B1F7052391A192817F7E5846A5B0F`
+- `services/fitting/fittingMgrServiceHelpers.js`: `8C41CA9B9C4424285B03915E57B70EA5969F665A5B57885400979340CE01DC5F`
+- `_secondary/fitting/fittingStore.js`: `BE4E3EBD0B4CB389C74576E91542D636B1C59D3203192149D0E79247BD4602C9`
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors. Final filter
+`FullyQualifiedName~Eden.Protocol.Tests.Fittings|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationStorageTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~CharacterDeletionTests|FullyQualifiedName~PilotFittingTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`
+passed **207 cases** (including **43 saved-fitting cases**), zero failed/skipped, in **72.70 seconds** with four test
+workers. Both Python policy suites passed (**8 catalog**, **9 formatting**), formatting verification checked **1,699 files**,
+and text/link/anchor/whitespace checks passed. Required checks took **120.72 seconds** on base `bc0444de` plus this
+milestone. Coverage includes disk/resident bulk replies and reopen, transaction failures, whole-batch quotas, role
+revocation/title/director/CEO authority, foreign-owner isolation, native notifications, unchanged polling, concurrent
+change acknowledgement, pilot deletion cleanup and the pilot-only ownership upgrade including sequence/index/trigger
+preservation. Development exact filters selected the native bulk/reopen method (2 cases), then the failed-request and
+migration/deletion methods (3 cases); all passed after fixture corrections. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Import/delete several personal fits in the fitting browser; with two corporation members,
+change a corporation fit and confirm the other open browser refreshes. Native rendering remains unverified.
+
 ## T2 subcapital hull admission, November 9, 2026
 
 All **130 published Tech II subcapital hulls** in build **3662168** now support station assembly, boarding, fitting,
@@ -75,6 +140,8 @@ Catalog fitting rules, weapon tiers, ammunition, repairs, propulsion and tackle.
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
 ## Contents
+
+- [Bulk and corporation saved fittings, November 11, 2026](#bulk-and-corporation-saved-fittings--november-11-2026)
 
 - [Multifit item-creation capability, November 9, 2026](#multifit-item-creation-capability-november-9-2026)
 

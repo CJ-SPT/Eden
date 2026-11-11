@@ -16,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Fittings;
 
-public sealed class SavedFittingsTests
+public sealed partial class SavedFittingsTests
 {
     private const long Owner = 90000001;
     private const long Other = 90000002;
@@ -362,12 +362,14 @@ public sealed class SavedFittingsTests
     {
         private readonly IServiceScope _scope;
         private readonly long _owner;
+        private readonly string _service;
         public PilotCallContext Context { get; }
 
-        public Client(TestWorld db, long owner = Owner, bool inSpace = false)
+        public Client(TestWorld db, long owner = Owner, bool inSpace = false, string service = "charFittingMgr")
         {
             _scope = db.Services.CreateScope();
             _owner = owner;
+            _service = service;
             var pilot = db.Store.FindPilot(owner == Owner ? 1000001 : 1000002)!;
             if (inSpace)
             {
@@ -388,7 +390,7 @@ public sealed class SavedFittingsTests
         public PilotCallResult Call(string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             _scope
                 .ServiceProvider.GetRequiredService<PilotCallRouter>()
-                .Call(Context, "charFittingMgr", method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+                .Call(Context, _service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
 
         public object? Success(string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(Call(method, args, keywords)).Reply));
@@ -402,6 +404,11 @@ public sealed class SavedFittingsTests
             }
             return Assert.IsType<Dictionary<long, object?>>(reply);
         }
+
+        public void AdvanceFittings() => _scope.ServiceProvider.GetRequiredService<SavedFittingMonitor>().Advance(Context);
+
+        public void AcknowledgeFittings(long owner, params long[] ids) =>
+            _scope.ServiceProvider.GetRequiredService<SavedFittingMonitor>().Refresh(Context, owner, ids);
 
         public void Dispose()
         {

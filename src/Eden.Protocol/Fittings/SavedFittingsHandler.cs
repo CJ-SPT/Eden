@@ -6,7 +6,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Fittings;
 
 [Injectable]
-internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings) : ISelectedPilotCallHandler
+internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings, SavedFittingMonitor monitor) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -17,20 +17,31 @@ internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings) : ISele
     )
     {
         if (
-            service != "charFittingMgr"
-            || method is not ("GetFittings" or "SaveFitting" or "UpdateFitting" or "DeleteFitting" or "UpdateNameAndDescription")
+            service is not ("charFittingMgr" or "corpFittingMgr")
+            || method
+                is not (
+                    "GetFittings"
+                    or "SaveFitting"
+                    or "UpdateFitting"
+                    or "DeleteFitting"
+                    or "UpdateNameAndDescription"
+                    or "SaveManyFittings"
+                    or "DeleteManyFittings"
+                )
         )
         {
             return PilotCallResult.Unsupported;
         }
         try
         {
-            long owner = context.Pilot.PilotId;
+            long pilotId = context.Pilot.PilotId;
+            long owner = service == "charFittingMgr" ? pilotId : context.Pilot.CorpId;
             int ownerIndex = method == "UpdateNameAndDescription" ? 1 : 0;
             if (args.ElementAtOrDefault(ownerIndex) is not long requestedOwner || requestedOwner != owner)
             {
-                throw new InvalidDataException("Read and save personal fittings for the selected pilot only.");
+                throw new InvalidDataException("Choose the selected pilot or their current corporation as fitting owner.");
             }
+            monitor.Advance(context);
             if (
                 method == "UpdateFitting"
                 && args is [_, var replacement]
@@ -39,7 +50,10 @@ internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings) : ISele
                 && updatedId > 0
             )
             {
-                return fittings.Save(owner, SavedFittingWire.Read(replacement, owner), updatedId);
+                long savedId = fittings.Save(pilotId, SavedFittingWire.Read(replacement, owner), updatedId, owner);
+                context.Notifications.Add(new FittingsUpdatedNotification(owner, [savedId]));
+                monitor.Refresh(context, owner, [savedId]);
+                return savedId;
             }
             if (keywords is { Count: > 0 })
             {
@@ -49,22 +63,46 @@ internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings) : ISele
             {
                 case ("GetFittings", [_]):
                     return new BlueMap<long, SavedFittingReply>(
-                        fittings.Read(owner).ToDictionary(f => f.Id, f => new SavedFittingReply(f))
+                        monitor.Read(context, owner).ToDictionary(f => f.Id, f => new SavedFittingReply(f))
                     );
                 case ("SaveFitting", [_, var plan]):
-                    long createdId = fittings.Save(owner, SavedFittingWire.Read(plan, owner));
+                    long createdId = fittings.Save(pilotId, SavedFittingWire.Read(plan, owner), ownerId: owner);
                     // PersistFitting does not cache newly saved fits itself. Native OnFittingAdded
                     // invalidates its primed dictionary so the next draw reloads the saved entry.
                     context.Notifications.Add(new FittingAddedNotification(owner, createdId));
+                    monitor.Refresh(context, owner, [createdId]);
                     return createdId;
                 case ("UpdateFitting", [_, var plan, long id]) when id > 0:
-                    return fittings.Save(owner, SavedFittingWire.Read(plan, owner), id);
+                    long savedId = fittings.Save(pilotId, SavedFittingWire.Read(plan, owner), id, owner);
+                    context.Notifications.Add(new FittingsUpdatedNotification(owner, [savedId]));
+                    monitor.Refresh(context, owner, [savedId]);
+                    return savedId;
                 case ("DeleteFitting", [_, long id]) when id > 0:
-                    fittings.Delete(owner, id);
+                    fittings.Delete(pilotId, id, owner);
+                    context.Notifications.Add(new FittingDeletedNotification(owner, id));
+                    monitor.Refresh(context, owner, [id]);
                     return PilotCallResult.None;
                 case ("UpdateNameAndDescription", [long id, _, var name, var description]) when id > 0:
-                    fittings.Rename(owner, id, BlueMarshal.Text(name), BlueMarshal.Text(description));
+                    fittings.Rename(pilotId, id, BlueMarshal.Text(name), BlueMarshal.Text(description), owner);
+                    context.Notifications.Add(new FittingsUpdatedNotification(owner, [id]));
+                    monitor.Refresh(context, owner, [id]);
                     return PilotCallResult.None;
+                case ("SaveManyFittings", [_, var plans]):
+                    var mappings = fittings.SaveMany(pilotId, owner, SavedFittingWire.ReadMany(plans, owner));
+                    foreach (var mapping in mappings)
+                    {
+                        context.Notifications.Add(new FittingAddedNotification(owner, mapping.FittingId));
+                    }
+                    monitor.Refresh(context, owner, mappings.Select(m => m.FittingId).ToArray());
+                    return new BlueList<FittingImportReply>(mappings.Select(m => new FittingImportReply(m)).ToArray());
+                case ("DeleteManyFittings", [_, var ids]):
+                    var deleted = fittings.DeleteMany(pilotId, owner, SavedFittingWire.ReadIds(ids));
+                    if (deleted.Count > 0)
+                    {
+                        context.Notifications.Add(new FittingsDeletedNotification(owner, deleted));
+                    }
+                    monitor.Refresh(context, owner, deleted);
+                    return new BlueList<long>(deleted);
                 default:
                     throw new InvalidDataException("Invalid saved fitting request.");
             }

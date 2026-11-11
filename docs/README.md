@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Bulk and corporation saved fittings](protocol/fitting.md#bulk-and-corporation-saved-fittings--november-11-2026) covers atomic fitting imports/deletes and corporation access.
+
 [Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026) covers native multi-job completion and atomic rollback.
 
 [Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026) covers asteroid/object bookmarks and resolved scan results.

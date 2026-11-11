@@ -8,23 +8,39 @@ public sealed record FittingPlan(string Name, string Description, int ShipTypeId
 
 public sealed record SavedFitting(long Id, long OwnerId, FittingPlan Plan, long SavedAt);
 
+public sealed record FittingImport(long TemporaryId, FittingPlan Plan);
+
+public sealed record FittingImportResult(long TemporaryId, long FittingId);
+
 public interface IPilotSavedFittings
 {
-    IReadOnlyList<SavedFitting> Read(long pilotId);
-    long Save(long pilotId, FittingPlan plan, long? fittingId = null);
-    void Rename(long pilotId, long fittingId, string name, string description);
-    void Delete(long pilotId, long fittingId);
+    long Revision(long ownerId);
+    IReadOnlyList<SavedFitting> Read(long pilotId, long? ownerId = null);
+    long Save(long pilotId, FittingPlan plan, long? fittingId = null, long? ownerId = null);
+    IReadOnlyList<FittingImportResult> SaveMany(long pilotId, long ownerId, IReadOnlyList<FittingImport> plans);
+    void Rename(long pilotId, long fittingId, string name, string description, long? ownerId = null);
+    void Delete(long pilotId, long fittingId, long? ownerId = null);
+    IReadOnlyList<long> DeleteMany(long pilotId, long ownerId, IReadOnlyList<long> fittingIds);
 }
 
 public static class SavedFittingRules
 {
     // Build 3662168 appConst and fittingSvc.VerifyFitting.
     public const int MaximumFittings = 500;
+    public const int MaximumCorporationFittings = 600;
     public const int MaximumNameLength = 50;
     public const int MaximumDescriptionLength = 500;
 
     // Bound template storage without applying real hull capacity or fitting restrictions.
     public const int MaximumItems = 1024;
+
+    public static void CheckBatch(IReadOnlyList<long> ids, bool temporary)
+    {
+        if (ids.Count > MaximumCorporationFittings || ids.Distinct().Count() != ids.Count || ids.Any(id => temporary ? id >= 0 : id <= 0))
+        {
+            throw new InvalidDataException("Choose distinct fitting IDs within the batch limit.");
+        }
+    }
 
     public static void CheckText(string name, string description)
     {
