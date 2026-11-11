@@ -20,6 +20,18 @@ internal sealed class LiveCapsuleerRoutines(LiveWorld owner, string path)
     private readonly HashSet<long> _dirtySettled = [];
     private bool _projecting;
     internal long Revision { get; private set; }
+    internal IEnumerable<int> ActivatedSystems => _activations.Keys;
+    internal IEnumerable<long> Admissions => _admissions;
+
+    internal void RestoreMissing(CapsuleerCoarseWork work)
+    {
+        _work.TryAdd(work.SystemId, work);
+    }
+
+    internal void RestoreMissing(long pilot, long elapsed)
+    {
+        _settled.TryAdd(pilot, elapsed);
+    }
 
     internal CapsuleerRoutineCheckpoint Capture(TransactionParticipants? participants = null, IReadOnlyCollection<long>? pilots = null) =>
         new(

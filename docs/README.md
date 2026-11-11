@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Resident scheduler metadata and remote preparation](protocol/performance.md#resident-scheduler-metadata-and-remote-preparation-november-11-2026)
+records resident enrollment, preserved pending cursors and remote preparation outside world ownership.
+
 [Resident detail retirement and drone publication](protocol/performance.md#resident-detail-retirement-and-drone-publication-november-11-2026)
 records SQL-free detail retirement, paid drone publication and preservation of other pending combat work.
 

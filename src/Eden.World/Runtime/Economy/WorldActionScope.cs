@@ -27,6 +27,26 @@ internal sealed class WorldActionScope : IDisposable
         }
     }
 
+    internal static T Inspect<T>(WorldDatabase database, Func<WorldAction, T> read)
+    {
+        if (LiveWorld.Find(database.Path) is { } live)
+        {
+            return live.Economy.Inspect(read);
+        }
+        using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+        return read(new SqlWorldAction(world));
+    }
+
+    internal static void Inspect(WorldDatabase database, Action<WorldAction> read) =>
+        Inspect(
+            database,
+            world =>
+            {
+                read(world);
+                return true;
+            }
+        );
+
     internal void Commit()
     {
         if (_resident is not null)

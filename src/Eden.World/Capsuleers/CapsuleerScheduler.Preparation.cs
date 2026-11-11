@@ -3,6 +3,7 @@ using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Mining;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +25,28 @@ internal sealed partial class CapsuleerScheduler
         IReadOnlyList<CapsuleerGeometry.ResourcePreparation> Geometry,
         CapsuleerHauler.JourneyInput? Journey,
         TrafficTemplateInput? Template
-    );
+    )
+    {
+        internal CapsuleerCoarseWork? Coarse { get; init; }
+    }
+
+    private sealed record CoarsePreparation(CapsuleerJob Job, CapsuleerCoarseWork Work);
+
+    private CoarsePreparation? SelectCoarsePreparation(HumanActivitySnapshot activity)
+    {
+        if (
+            !activity.Active
+            || _queue.NextDueTicks <= activity.ElapsedTicks
+            || NextCoarseDue(activity) is not { } due
+            || due > activity.ElapsedTicks
+        )
+        {
+            return null;
+        }
+        var work = _coarseWork[_coarseQueue.Min.System];
+        long pilot = _coarseMembers[work.SystemId].GetViewBetween(checked(work.Cursor + 1), long.MaxValue).FirstOrDefault();
+        return pilot == 0 ? null : new(Current[pilot], work);
+    }
 
     internal PreparationInput? CapturePreparation()
     {
@@ -33,7 +55,8 @@ internal sealed partial class CapsuleerScheduler
         Load();
         var activity = presence.Read();
         Reconcile(activity);
-        var job = _queue.NextJob;
+        var coarse = SelectCoarsePreparation(activity);
+        var job = coarse?.Job ?? _queue.NextJob;
         if (
             job is null
             || job.DueTicks > activity.ElapsedTicks
@@ -43,7 +66,15 @@ internal sealed partial class CapsuleerScheduler
         {
             return null;
         }
-        using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+        if (coarse is not null)
+        {
+            RefreshCoarseRole(job.PilotId);
+        }
+        return WorldActionScope.Inspect(database, world => CapturePreparation(world, job, coarse?.Work));
+    }
+
+    private PreparationInput CapturePreparation(WorldAction world, CapsuleerJob job, CapsuleerCoarseWork? coarse)
+    {
         using CatalogDbContext catalog = new(database.CatalogPath);
         var resident =
             _haulers.GetValueOrDefault(job.PilotId)?.PreparationPilot ?? _miners.GetValueOrDefault(job.PilotId)?.PreparationPilot;
@@ -56,9 +87,8 @@ internal sealed partial class CapsuleerScheduler
         }
         else
         {
-            var pilot = world.Pilots.Where(p => p.Id == job.PilotId).Select(p => new { p.ActiveShipId, p.ActiveShip.StationId }).Single();
-            shipId = pilot.ActiveShipId;
-            stationId = pilot.StationId;
+            shipId = world.Pilots.Where(p => p.Id == job.PilotId).Select(p => p.ActiveShipId).Single();
+            stationId = world.Ships.Where(ship => ship.Id == shipId).Select(ship => ship.StationId).Single();
         }
         int system = _locations[job.PilotId];
         HashSet<int> systems = [system];
@@ -100,12 +130,19 @@ internal sealed partial class CapsuleerScheduler
                     _haulers.GetValueOrDefault(job.PilotId)?.PreparationRoute
                 )
                 : null
-        );
+        )
+        {
+            Coarse = coarse,
+        };
     }
 
     internal bool PreparationCurrent(PreparationInput input) =>
         Current.GetValueOrDefault(input.Job.PilotId) == input.Job
-        && _queue.NextJob == input.Job
+        && (
+            input.Coarse is null
+                ? _queue.NextJob == input.Job
+                : SelectCoarsePreparation(presence.Read()) is { } selected && selected.Job == input.Job && selected.Work == input.Coarse
+        )
         && _locations.GetValueOrDefault(input.Job.PilotId) == input.SystemId
         && (Live?.PreparationRevision ?? 0) == input.Revision
         && (Live?.TrafficGeometry.Revision ?? 0) == input.Resources
@@ -123,10 +160,6 @@ internal sealed partial class CapsuleerScheduler
             return RunCore(destinyStamp, maximumActions);
         }
         long started = clock.GetTimestamp();
-        if (RunCoarse(destinyStamp))
-        {
-            return IncludeCoarseDue(new(new(1, Current.Count, null, false), [], []));
-        }
         var input = CapturePreparation();
         using var measurement = input is null
             ? null
@@ -192,6 +225,10 @@ internal sealed partial class CapsuleerScheduler
             }
         }
         using var prepared = AsteroidFieldStore.UsePrepared(belts);
+        if (RunCoarse(destinyStamp, journey, input?.Coarse is not null))
+        {
+            return IncludeCoarseDue(new(new(1, Current.Count, null, false), [], []));
+        }
         return IncludeCoarseDue(
             RunCore(destinyStamp, maximumActions, preparedJourney: journey, measured: input is not null, turnStarted: started)
         );

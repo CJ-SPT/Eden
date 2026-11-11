@@ -4,6 +4,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -170,34 +171,36 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
         }
     }
 
-    public IReadOnlyList<CapsuleerCommunitySummary> Communities()
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedCapsuleerPopulation>()
-            .OrderBy(c => c.SystemId)
-            .Select(c => new CapsuleerCommunitySummary(c.SystemId, c.HomeStationId, c.Seed, c.Version))
-            .ToArray();
-    }
+    public IReadOnlyList<CapsuleerCommunitySummary> Communities() =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Set<SavedCapsuleerPopulation>()
+                    .OrderBy(c => c.SystemId)
+                    .Select(c => new CapsuleerCommunitySummary(c.SystemId, c.HomeStationId, c.Seed, c.Version))
+                    .ToArray()
+        );
 
-    public IReadOnlyList<CapsuleerAgent> Agents(int communitySystemId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedCapsuleerAgent>()
-            .Where(a => a.CommunitySystemId == communitySystemId)
-            .OrderBy(a => a.PilotId)
-            .Select(a => new CapsuleerAgent(
-                a.PilotId,
-                a.CommunitySystemId,
-                a.Career,
-                a.FounderShipId,
-                a.FounderModuleId,
-                a.StartingCents,
-                a.Slot
-            ))
-            .ToArray();
-    }
+    public IReadOnlyList<CapsuleerAgent> Agents(int communitySystemId) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Set<SavedCapsuleerAgent>()
+                    .Where(a => a.CommunitySystemId == communitySystemId)
+                    .OrderBy(a => a.PilotId)
+                    .Select(a => new CapsuleerAgent(
+                        a.PilotId,
+                        a.CommunitySystemId,
+                        a.Career,
+                        a.FounderShipId,
+                        a.FounderModuleId,
+                        a.StartingCents,
+                        a.Slot
+                    ))
+                    .ToArray()
+        );
 
     public IReadOnlyList<CapsuleerSystemSummary> Systems() => ReadMetadata().Systems;
 
@@ -212,20 +215,34 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
     {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
+        bool cache = live?.Economy.HasActiveAction != true;
         lock (_gate)
         {
-            if (live is not null && _metadata?.Revision == live.CapsuleerRevision)
+            if (cache && live is not null && _metadata?.Revision == live.CapsuleerRevision)
             {
                 return _metadata;
             }
-            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-            bool incremental = live is not null && _metadata is not null && _metadata.Revision >= live.CapsuleerMetadataReset;
+            return WorldActionScope.Inspect(database, world => ReadMetadataOwned(world, cache));
+        }
+    }
+
+    private Metadata ReadMetadataOwned(WorldAction world, bool cache)
+    {
+        var live = LiveWorld.Find(database.Path);
+        using var owner = live?.Enter();
+        lock (_gate)
+        {
+            if (cache && live is not null && _metadata?.Revision == live.CapsuleerRevision)
+            {
+                return _metadata;
+            }
+            bool incremental = cache && live is not null && _metadata is not null && _metadata.Revision >= live.CapsuleerMetadataReset;
             int[] changedSystems = incremental
                 ? live!.CapsuleerSystemRevisions.Where(p => p.Value > _metadata!.Revision).Select(p => p.Key).ToArray()
                 : [];
             var communities = world
                 .Set<SavedCapsuleerPopulation>()
-                .Where(c => !incremental || changedSystems.Contains(c.SystemId))
+                .Where(c => !incremental || Enumerable.Contains(changedSystems, c.SystemId))
                 .Select(c => c.SystemId)
                 .ToHashSet();
             using CatalogDbContext catalog = new(database.CatalogPath);
@@ -233,7 +250,7 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             string fingerprint = CapsuleerProvisioner.Fingerprint(database, catalog, seed, world.Settings.Capsuleers);
             var systems = world
                 .Set<SavedCapsuleerSystem>()
-                .Where(s => !incremental || changedSystems.Contains(s.SystemId))
+                .Where(s => !incremental || Enumerable.Contains(changedSystems, s.SystemId))
                 .AsNoTracking()
                 .OrderBy(s => s.SystemId)
                 .AsEnumerable()
@@ -274,7 +291,7 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
                 PreparedEligibleSystems = systems.Count(s => s.CurrentPolicy && s.Eligibility == CapsuleerEligibility.Eligible),
             };
             var metadata = new Metadata(live?.CapsuleerRevision ?? 0, summary, Array.AsReadOnly(systems));
-            if (live is not null)
+            if (cache && live is not null)
             {
                 _metadata = metadata;
             }
@@ -283,6 +300,15 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
     }
 
     internal static CapsuleerJob[] Jobs(WorldDbContext world) =>
+        world
+            .Set<SavedCapsuleerJob>()
+            .OrderBy(j => j.DueTicks)
+            .ThenBy(j => j.PilotId)
+            .ThenBy(j => j.Sequence)
+            .Select(j => new CapsuleerJob(j.PilotId, j.Revision, j.Sequence, j.DueTicks, j.Action))
+            .ToArray();
+
+    internal static CapsuleerJob[] Jobs(WorldAction world) =>
         world
             .Set<SavedCapsuleerJob>()
             .OrderBy(j => j.DueTicks)

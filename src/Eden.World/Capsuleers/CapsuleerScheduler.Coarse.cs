@@ -173,18 +173,15 @@ internal sealed partial class CapsuleerScheduler
         return batch;
     }
 
-    private bool RunCoarse(int stamp)
+    private bool RunCoarse(int stamp, CapsuleerHauler.PreparedJourney? journey = null, bool measured = false)
     {
         try
         {
-            return RunCoarseCore(stamp);
+            return RunCoarseCore(stamp, journey, measured);
         }
-        catch (CapsuleerCoarseConflictException conflict)
+        catch (CapsuleerCoarseConflictException)
         {
             using var owner = synchronization.Enter("coarse cursor refresh");
-            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-            var saved = world.Set<SavedCapsuleerCoarseWork>().AsNoTracking().Single(s => s.SystemId == conflict.SystemId);
-            Live!.CapsuleerRoutines.Restore(new(saved.SystemId, saved.Generation, saved.Cursor, saved.SettledTicks, saved.NextTicks));
             _membershipDirty = true;
             return false;
         }
@@ -205,7 +202,7 @@ internal sealed partial class CapsuleerScheduler
         }
     }
 
-    private bool RunCoarseCore(int stamp)
+    private bool RunCoarseCore(int stamp, CapsuleerHauler.PreparedJourney? journey, bool measured)
     {
         using var owner = synchronization.Enter("coarse traffic selection");
         Load();
@@ -263,11 +260,9 @@ internal sealed partial class CapsuleerScheduler
         };
         using var context = Live!.UseSystem(_locations[pilot]);
         using var roleOwnership = Live.EnterTransactionSystems(new(systems: [_locations[pilot]]));
-        using var measurement = Live.TrafficActions.Measure(
-            job,
-            [_locations[pilot]],
-            () => (Live.CheckpointCopies, Live.CheckpointCopying)
-        );
+        using var measurement = measured
+            ? null
+            : Live.TrafficActions.Measure(job, [_locations[pilot]], () => (Live.CheckpointCopies, Live.CheckpointCopying));
         CapsuleerJob settled;
         _miners.TryGetValue(pilot, out var miner);
         if (job.DueTicks > activity.ElapsedTicks)
@@ -284,7 +279,7 @@ internal sealed partial class CapsuleerScheduler
         else
         {
             var hauler = _haulers[pilot];
-            settled = hauler.Execute(job, stamp, background: true, coarse: input);
+            settled = hauler.Execute(job, stamp, background: true, preparedJourney: journey, coarse: input);
             IndexJourney(pilot, hauler);
             IndexLocation(pilot, hauler.SystemId);
         }

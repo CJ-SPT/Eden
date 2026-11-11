@@ -21,7 +21,7 @@ internal sealed record TrafficTemplateInput(
     internal long Revision { get; init; }
 }
 
-internal static class TrafficTemplatePreparation
+internal static partial class TrafficTemplatePreparation
 {
     internal static TrafficTemplateInput? Capture(
         WorldDatabase database,

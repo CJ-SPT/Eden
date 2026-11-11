@@ -2820,3 +2820,55 @@ Not performed; agent client testing is disabled.
 
 Repeat the reported installed-save trade/collection workload after rebuilding this revision; compare action and
 owner hold time, allocation and SQL command/connection counts.
+
+## Resident scheduler metadata and remote preparation (November 11, 2026)
+
+Scheduler enrollment, incremental population refresh, community/agent summaries and preparation capture now read
+typed resident tables while the server is running. Stopped-world tools retain the SQL adapter. Enrollment resolves
+only the selected pilots and their active hulls instead of joining the complete pilot roster, including portrait
+payloads. Metadata inspections reuse an existing private action view without committing it or clearing pending
+physical work.
+
+Scheduler recreation merges saved coarse cursors, settlements, admissions and activated systems with current
+resident work. It cannot replace a newer unprojected cursor with its older relational image. Suspended and resumed
+deadlines use the authoritative activity clock. Detailed miner restoration preserves the previous valid-JSON and
+defense-object selection rules.
+
+Remote coarse jobs now take the existing preparation path before entering the world owner. Geometry, template,
+market and available journey preparation can run outside ownership. Publication rechecks the job, location,
+catalog/input revisions and the coarse cursor generation; a concurrent settlement invalidates old preparation.
+One coarse action still publishes its economic changes, deadline and cursor together.
+
+### Automated validation
+
+Exact-method development validation began with
+`PopulationMetadataRefreshLeavesUnrelatedResidentMotionDirty`. New resident population tests cover private-view
+visibility, rollback, committed metadata, reopened checkpoints, scheduler recreation with pending admissions and
+stale coarse preparation. Warmed metadata/recreation/preparation checks assert zero SQL commands, connections and
+fitting calculations. The immediate 65-case selection passed. The final filter is recorded in
+`artifacts/bot-resident-metadata/closing-filter.txt`; it selects capsuleer behavior and immediate checkpoint/economy
+dependencies, excluding the previously reproduced baseline shopping test.
+
+Tool and solution restore passed. The final solution build passed with zero warnings/errors in **6.26 s**.
+The final affected selection passed **478 tests / 197.10 s**, including runner overhead. Catalog policy passed
+**8 tests / 1.010 s** and formatting policy passed **9 tests / 0.016 s**. Reports are under
+`artifacts/bot-resident-metadata/stable`. Formatting verification checks the pinned formatter and 140-column limit.
+
+The first four-case development selection had three passes and one fixture assertion failure: a completely
+rolled-back action correctly produced no changed snapshot. The test now explicitly requests a new snapshot before
+checking unchanged saved rows. An earlier 478-case run also passed before the final private-summary cache and
+resident journey-preparation refinements. No full .NET suite was run.
+
+This removes scheduler metadata SQL and the remote preparation bypass. Live population preparation/admission and
+several initial combat/effect/destruction boundaries still need migration. Cold catalog queries contribute to the
+existing combined SQL counters. The attached installed-world log was from revision `164186f`; it has not been
+replayed with these changes, and no installed-world latency improvement is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Repeat the reported remote trade/collection workload after rebuilding this revision; compare action allocations,
+SQL/connection counts and world-owner hold time.

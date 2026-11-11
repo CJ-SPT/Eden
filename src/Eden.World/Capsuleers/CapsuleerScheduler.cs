@@ -6,6 +6,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Market;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -219,6 +220,18 @@ internal sealed partial class CapsuleerScheduler(
 
     private void Load(int? preparedSystem = null, long? preparedPilot = null)
     {
+        // The common unchanged path must not allocate a resident transaction view.
+        if (preparedSystem is null && preparedPilot is null && _loaded && _populationRevision == (Live?.CapsuleerRevision ?? 0))
+        {
+            return;
+        }
+        WorldActionScope.Inspect(database, world => Load(world, preparedSystem, preparedPilot));
+    }
+
+    private sealed record PilotShip(long PilotId, long ShipId);
+
+    private void Load(WorldAction world, int? preparedSystem, long? preparedPilot)
+    {
         if (preparedSystem is null && preparedPilot is null && _loaded && _populationRevision == (Live?.CapsuleerRevision ?? 0))
         {
             return;
@@ -236,23 +249,25 @@ internal sealed partial class CapsuleerScheduler(
         }
         using var loading = SessionPerformance.Phase("traffic.load");
         _membershipDirty = true;
-        // Identity, docking and system membership commit in SQL; coordinates do
-        // not participate in scheduler enrollment. Do not project remote motion.
-        using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+        // Read current identity and membership without projecting remote motion.
         bool regional = Live is not null;
         if (!_loaded && regional)
         {
             _remoteSystems.UnionWith(world.Set<SavedCapsuleerSimulation>().Select(s => s.SystemId));
+            _remoteSystems.UnionWith(Live!.CapsuleerRoutines.ActivatedSystems);
             _loadedSystems.UnionWith(_remoteSystems);
             _admittedTravelers.UnionWith(world.Set<SavedCapsuleerAdmission>().Select(a => a.PilotId));
+            _admittedTravelers.UnionWith(Live!.CapsuleerRoutines.Admissions);
             _loadedPilots.UnionWith(_admittedTravelers);
             foreach (var saved in world.Set<SavedCapsuleerCoarsePilot>().AsNoTracking())
             {
-                Live!.CapsuleerRoutines.Restore(saved.PilotId, saved.SettledTicks);
+                Live!.CapsuleerRoutines.RestoreMissing(saved.PilotId, saved.SettledTicks);
             }
             foreach (var saved in world.Set<SavedCapsuleerCoarseWork>().AsNoTracking())
             {
-                Live!.CapsuleerRoutines.Restore(new(saved.SystemId, saved.Generation, saved.Cursor, saved.SettledTicks, saved.NextTicks));
+                Live!.CapsuleerRoutines.RestoreMissing(
+                    new(saved.SystemId, saved.Generation, saved.Cursor, saved.SettledTicks, saved.NextTicks)
+                );
             }
         }
         bool incremental = _loaded && (preparedSystem is not null || preparedPilot is not null);
@@ -264,7 +279,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             _loadedPilots.Add(selectedPilot);
         }
-        var agentQuery = world.Set<SavedCapsuleerAgent>().AsNoTracking();
+        IQueryable<SavedCapsuleerAgent> agentQuery = world.Set<SavedCapsuleerAgent>().AsNoTracking();
         if (regional && !incremental)
         {
             agentQuery = agentQuery.Where(agent =>
@@ -292,7 +307,7 @@ internal sealed partial class CapsuleerScheduler(
             incremental || regional
                 ? world
                     .Set<SavedCapsuleerJob>()
-                    .Where(j => pilotIds.Contains(j.PilotId))
+                    .Where(j => Enumerable.Contains(pilotIds, j.PilotId))
                     .Select(j => new CapsuleerJob(j.PilotId, j.Revision, j.Sequence, j.DueTicks, j.Action))
                     .ToArray()
                 : CapsuleerPopulationStore.Jobs(world);
@@ -305,16 +320,17 @@ internal sealed partial class CapsuleerScheduler(
         {
             _systems.Register(system, _remoteSystems.Contains(system));
         }
-        var locations = (
-            from agent in agentQuery
-            join pilot in world.Pilots on agent.PilotId equals pilot.Id
-            select new SavedLocation(
-                agent.PilotId,
-                pilot.ActiveShipId,
-                pilot.ActiveShip.StationId,
-                pilot.ActiveShip.Position == null ? null : pilot.ActiveShip.Position.SystemId
-            )
-        ).ToArray();
+        var locations = world
+            .Pilots.Where(pilot => Enumerable.Contains(pilotIds, pilot.Id))
+            .Select(pilot => new PilotShip(pilot.Id, pilot.ActiveShipId))
+            .AsEnumerable()
+            .Select(pilot =>
+            {
+                var ship = world.Ships.Find(pilot.ShipId)!;
+                var position = world.Positions.Find(pilot.ShipId);
+                return new SavedLocation(pilot.PilotId, pilot.ShipId, ship.StationId, position?.SystemId);
+            })
+            .ToArray();
         var stations = locations.Where(l => l.SystemId is null).Select(l => l.StationId).Distinct().ToArray();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var systems = stations.ToDictionary(id => id, id => catalog.RequireStation(id).SolarSystemId);
@@ -326,7 +342,7 @@ internal sealed partial class CapsuleerScheduler(
             var route in world
                 .Set<SavedCapsuleerHauler>()
                 .AsNoTracking()
-                .Where(r => (!incremental && !regional) || pilotIds.Contains(r.PilotId))
+                .Where(r => (!incremental && !regional) || Enumerable.Contains(pilotIds, r.PilotId))
                 .ToArray()
         )
         {
@@ -368,7 +384,7 @@ internal sealed partial class CapsuleerScheduler(
             if (!_suspended.Contains(route.PilotId) && progress is { Activity: HaulerActivity.Inbound, InboundPaused: true })
             {
                 var job = Current.GetValueOrDefault(route.PilotId) ?? jobs.Single(value => value.PilotId == route.PilotId);
-                long elapsed = world.Set<SavedCapsuleerClock>().Single().ElapsedTicks;
+                long elapsed = world.ActiveTicks;
                 long delay = Math.Max(0, elapsed - progress.ActiveTicks);
                 var resumed = progress with
                 {

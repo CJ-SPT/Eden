@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +10,7 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
-    private void RestoreDetailedMiners(WorldDbContext world, IReadOnlyList<SavedCapsuleerAgent> agents)
+    private void RestoreDetailedMiners(WorldAction world, IReadOnlyList<SavedCapsuleerAgent> agents)
     {
         if (Live is not { } live)
         {
@@ -21,22 +23,38 @@ internal sealed partial class CapsuleerScheduler
         {
             var pinned = world
                 .Set<SavedCapsuleerCommunity>()
-                .FromSqlRaw(
-                    """
-                    SELECT * FROM WorldCapsuleerCommunity
-                    WHERE json_valid(Progress) AND json_type(Progress,'$.Defense')='object'
-                    """
-                )
-                .AsNoTracking()
-                .Where(c => c.PilotId != null && page.Contains(c.PilotId.Value))
+                .Where(c => c.PilotId != null && Enumerable.Contains(page, c.PilotId.Value))
                 .ToArray();
             foreach (var saved in pinned)
             {
+                if (!HasDefense(saved.Progress))
+                {
+                    continue;
+                }
                 long pilot = saved.PilotId!.Value;
                 var checkpoint = new MinerCheckpoint(pilot, MinerCheckpoint.Read(saved.Progress)!);
                 live.MinerCheckpoints.TryAdd(pilot, checkpoint);
                 live.ProjectedMiners.TryAdd(pilot, checkpoint);
             }
+        }
+    }
+
+    private static bool HasDefense(string? progress)
+    {
+        if (progress is null)
+        {
+            return false;
+        }
+        try
+        {
+            using var document = JsonDocument.Parse(progress);
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                && document.RootElement.TryGetProperty("Defense", out var defense)
+                && defense.ValueKind == JsonValueKind.Object;
+        }
+        catch (JsonException)
+        {
+            return false;
         }
     }
 
@@ -56,20 +74,29 @@ internal sealed partial class CapsuleerScheduler
         }
         if (pilots.Length > 0)
         {
-            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-            foreach (var batch in pilots.Chunk(CapsuleerCoarseRules.PageSize))
-            {
-                var agents = world.Set<SavedCapsuleerAgent>().AsNoTracking().Where(a => batch.Contains(a.PilotId)).ToArray();
-                foreach (var agent in agents)
+            WorldActionScope.Inspect(
+                database,
+                world =>
                 {
-                    if (_loadedSystems.Contains(agent.CommunitySystemId) || _loadedPilots.Contains(agent.PilotId))
+                    foreach (var batch in pilots.Chunk(CapsuleerCoarseRules.PageSize))
                     {
-                        Load(agent.CommunitySystemId, agent.PilotId);
+                        var agents = world
+                            .Set<SavedCapsuleerAgent>()
+                            .AsNoTracking()
+                            .Where(a => Enumerable.Contains(batch, a.PilotId))
+                            .ToArray();
+                        foreach (var agent in agents)
+                        {
+                            if (_loadedSystems.Contains(agent.CommunitySystemId) || _loadedPilots.Contains(agent.PilotId))
+                            {
+                                Load(agent.CommunitySystemId, agent.PilotId);
+                            }
+                        }
                     }
+                    _suspended = world.Set<SavedCapsuleerSuspension>().Select(s => s.PilotId).ToHashSet();
+                    _membershipDirty = true;
                 }
-            }
-            _suspended = world.Set<SavedCapsuleerSuspension>().Select(s => s.PilotId).ToHashSet();
-            _membershipDirty = true;
+            );
         }
         _populationRevision = live.CapsuleerRevision;
         _population = population.Summary();

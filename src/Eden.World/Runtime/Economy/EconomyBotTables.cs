@@ -199,6 +199,20 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerAdmission, EconomySavedCapsuleerAdmission>(
+                "WorldCapsuleerAdmission",
+                row => new(row.PilotId),
+                row => new(row.PilotId),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerAdmission { PilotId = state.PilotId },
+                ProjectSavedCapsuleerAdmission,
+                "PilotId",
+                reader => new(reader.GetInt64(1)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerAgent, EconomySavedCapsuleerAgent>(
                 "WorldCapsuleerAgent",
                 row => new(row.PilotId),
@@ -245,6 +259,59 @@ internal sealed partial class ResidentEconomy
                     new("Slot", row => row.Slot),
                 ],
                 primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerClock, EconomySavedCapsuleerClock>(
+                "WorldCapsuleerClock",
+                row => new(row.Id),
+                row => new(row.Id, row.ElapsedTicks),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerClock { Id = state.Id, ElapsedTicks = state.ElapsedTicks },
+                ProjectSavedCapsuleerClock,
+                "Id,ElapsedTicks",
+                reader => new(reader.GetInt32(1), reader.GetInt64(2)),
+                state => new(state.Id),
+                indexes: [new("Id", row => row.Id)],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerCoarsePilot, EconomySavedCapsuleerCoarsePilot>(
+                "WorldCapsuleerCoarsePilot",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.SettledTicks),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerCoarsePilot
+                {
+                    PilotId = state.PilotId,
+                    SettledTicks = state.SettledTicks,
+                },
+                ProjectSavedCapsuleerCoarsePilot,
+                "PilotId,SettledTicks",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerCoarseWork, EconomySavedCapsuleerCoarseWork>(
+                "WorldCapsuleerCoarseWork",
+                row => new(row.SystemId),
+                row => new(row.SystemId, row.Cursor, row.Generation, row.NextTicks, row.SettledTicks),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerCoarseWork
+                {
+                    SystemId = state.SystemId,
+                    Cursor = state.Cursor,
+                    Generation = state.Generation,
+                    NextTicks = state.NextTicks,
+                    SettledTicks = state.SettledTicks,
+                },
+                ProjectSavedCapsuleerCoarseWork,
+                "SystemId,Cursor,Generation,NextTicks,SettledTicks",
+                reader => new(reader.GetInt32(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetInt64(4), reader.GetInt64(5)),
+                state => new(state.SystemId),
+                indexes: [new("SystemId", row => row.SystemId)],
+                primaryColumn: "SystemId"
             )
         );
         Register(
@@ -426,6 +493,24 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerSimulation, EconomySavedCapsuleerSimulation>(
+                "WorldCapsuleerSimulation",
+                row => new(row.SystemId),
+                row => new(row.SystemId, row.StartedTicks),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerSimulation
+                {
+                    SystemId = state.SystemId,
+                    StartedTicks = state.StartedTicks,
+                },
+                ProjectSavedCapsuleerSimulation,
+                "SystemId,StartedTicks",
+                reader => new(reader.GetInt32(1), reader.GetInt64(2)),
+                state => new(state.SystemId),
+                indexes: [new("SystemId", row => row.SystemId)],
+                primaryColumn: "SystemId"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerSupplies, EconomySavedCapsuleerSupplies>(
                 "WorldCapsuleerSupplies",
                 row => new(row.PilotId),
@@ -455,6 +540,49 @@ internal sealed partial class ResidentEconomy
                 state => new(state.PilotId),
                 indexes: [new("PilotId", row => row.PilotId)],
                 primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerSystem, EconomySavedCapsuleerSystem>(
+                "WorldCapsuleerSystem",
+                row => new(row.SystemId),
+                row =>
+                    new(
+                        row.SystemId,
+                        row.CatalogFingerprint,
+                        row.DestinationStationId,
+                        row.Eligibility,
+                        row.HomeStationId,
+                        row.PolicyVersion
+                    ),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerSystem
+                {
+                    SystemId = state.SystemId,
+                    CatalogFingerprint = state.CatalogFingerprint,
+                    DestinationStationId = state.DestinationStationId,
+                    Eligibility = state.Eligibility,
+                    HomeStationId = state.HomeStationId,
+                    PolicyVersion = state.PolicyVersion,
+                },
+                ProjectSavedCapsuleerSystem,
+                "SystemId,CatalogFingerprint,DestinationStationId,Eligibility,HomeStationId,PolicyVersion",
+                reader =>
+                    new(
+                        reader.GetInt32(1),
+                        reader.GetString(2),
+                        reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                        (Eden.Gameplay.Capsuleers.CapsuleerEligibility)reader.GetInt32(4),
+                        reader.IsDBNull(5) ? null : reader.GetInt32(5),
+                        reader.GetInt32(6)
+                    ),
+                state => new(state.SystemId),
+                indexes:
+                [
+                    new("SystemId", row => row.SystemId),
+                    new("DestinationStationId", row => row.DestinationStationId),
+                    new("HomeStationId", row => row.HomeStationId),
+                ],
+                primaryColumn: "SystemId"
             )
         );
         Register(
@@ -2808,6 +2936,10 @@ internal sealed partial class EconomyTransaction
                 value.Id = value.Id == 0 ? Next("WorldMission") : value.Id;
                 Reserve("WorldMission", value.Id);
                 break;
+            case Eden.Data.World.Capsuleers.SavedCapsuleerClock value:
+                value.Id = value.Id == 0 ? checked((int)Next("WorldCapsuleerClock")) : value.Id;
+                Reserve("WorldCapsuleerClock", value.Id);
+                break;
             case Eden.Data.World.Capsuleers.SavedCapsuleerCommunity value:
                 value.Id = value.Id == 0 ? checked((int)Next("WorldCapsuleerCommunity")) : value.Id;
                 Reserve("WorldCapsuleerCommunity", value.Id);
@@ -2929,6 +3061,7 @@ internal sealed partial class EconomyTransaction
                 throw new InvalidDataException("Duplicate resident SavedMissionStructure unique value.");
             }
         }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerAdmission>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>())
         {
             if (Set<Eden.Data.World.Capsuleers.SavedCapsuleerPopulation>().Find(row.CommunitySystemId) is null)
@@ -2954,6 +3087,9 @@ internal sealed partial class EconomyTransaction
                 throw new InvalidDataException("Duplicate resident SavedCapsuleerAgent unique value.");
             }
         }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerClock>()) { }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerCoarsePilot>()) { }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerCoarseWork>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerCommunity>())
         {
             if (row.PilotId is not null && Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId.Value) is null)
@@ -2994,6 +3130,7 @@ internal sealed partial class EconomyTransaction
         }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerPopulation>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerProvisioning>()) { }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerSimulation>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerSupplies>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerSuspension>())
         {
@@ -3002,6 +3139,7 @@ internal sealed partial class EconomyTransaction
                 throw new InvalidDataException("Missing resident SavedCapsuleerAgent reference.");
             }
         }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerSystem>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedTrafficCorrection>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedTrafficIdentity>())
         {
