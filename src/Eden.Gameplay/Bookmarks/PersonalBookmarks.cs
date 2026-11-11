@@ -105,6 +105,11 @@ public static class BookmarkRules
         }
     }
 
+    // Pinned catalog object IDs fit Int32. Larger IDs belong to generated world objects;
+    // their saved position remains usable after the object disappears or is replaced.
+    public static BookmarkTarget DurableTarget(BookmarkTarget target) =>
+        target.ItemId is > int.MaxValue ? target with { ItemId = null, TypeId = SolarSystemTypeId } : target;
+
     public static void CheckTarget(BookmarkTarget target)
     {
         if (

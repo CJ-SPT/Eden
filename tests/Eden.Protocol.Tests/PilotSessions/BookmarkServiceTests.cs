@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
-public sealed class BookmarkServiceTests
+public sealed partial class BookmarkServiceTests
 {
     [Theory]
     [InlineData(false)]
@@ -336,12 +336,19 @@ public sealed class BookmarkServiceTests
         public PilotCallContext Context { get; }
         public IPilotBookmarks Store => Db.Services.GetRequiredService<IPilotBookmarks>();
 
-        public Fixture()
+        public Fixture(IReadOnlyList<StaticSpaceObject>? objects = null)
         {
             Db = new(clock: Clock);
             _scope = Db.Services.CreateScope();
             var pilot = Db.Store.FindPilot(1000001)!;
-            Context = new(1000001, pilot.Account, [pilot], p => new(Db.Store, p, Clock, new(), Db.Objects), 42, SignedSettings.Empty);
+            Context = new(
+                1000001,
+                pilot.Account,
+                [pilot],
+                p => new(Db.Store, p, Clock, new(), objects ?? Db.Objects),
+                42,
+                SignedSettings.Empty
+            );
         }
 
         public void Select(bool space = false)

@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026) covers asteroid/object bookmarks and resolved scan results.
+
 [Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) connects existing mission progress to the native tracker.
 
 [Resident remote bot routines](protocol/performance.md#resident-remote-bot-routines-november-11-2026)

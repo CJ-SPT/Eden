@@ -187,6 +187,8 @@ internal sealed partial class FlightSession(
         }
     }
 
+    internal StaticSpaceObject? FindBookmarkObject(long id) => Scene.NavigationTarget(SceneContext, id);
+
     public TargetContact? FindTarget(long id) => Scene.FindTarget(SceneContext, id);
 
     internal PilotWeaponTarget? FindPilotWeaponTarget(long id) => Scene.FindPilotWeaponTarget(SceneContext, id);

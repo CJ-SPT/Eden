@@ -30,7 +30,7 @@ using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
 namespace Eden.Protocol.Tests.Exploration;
 
-public sealed class ProbeScanningTests
+public sealed partial class ProbeScanningTests
 {
     [Fact]
     public void GasSignatureResolvesWithNativeLadarFieldsAndArrivalDoesNotCreateACombatEncounter()

@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Dynamic and scan-result bookmarks, November 11, 2026](#dynamic-and-scan-result-bookmarks--november-11-2026)
+
 - [Aligning and native autopilot, November 11, 2026](#aligning-and-native-autopilot-november-11-2026)
 
 - [Cloaking and standard micro-jump drives, November 9, 2026](#cloaking-and-standard-micro-jump-drives-november-9-2026)
@@ -38,6 +40,57 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Dynamic and scan-result bookmarks — November 11, 2026
+
+The bookmarking milestone includes the maintainer's report that asteroids and other visible objects could not be
+bookmarked reliably. `ISystemObjects` contains generated asteroids and structures as well as catalog celestials;
+the previous handler treated every match as a permanent catalog object. Other scenery used a combat-target lookup,
+which excluded non-targetable objects and depended on the pilot's targeting readiness.
+
+`beyonce.BookmarkLocation` now uses the existing navigation scene for visible-object resolution. Catalog objects
+retain their identities; generated asteroids, ice/gas resources, scenery, ships, drones, wrecks and structures save
+their authoritative coordinates. Resource visibility limits and current-system membership remain enforced.
+The native structure path, `accessGroupBookmarkMgr.BookmarkStaticLocation`, also accepts known current-system
+Upwell structures. The saved position remains usable after depletion, destruction, movement or removal.
+Legacy bookmarks containing generated object IDs are normalized to coordinate targets in every World read/copy
+projection, preserving their existing IDs, names, folders, expiry and coordinates. New writes store durable targets.
+No schema migration is required.
+
+`beyonce.BookmarkScanResult(systemID, name, note, resultID, folderID, expiry, subfolderID=...)` accepts native signature
+labels and the EveJs numeric-site compatibility form. Public anomalies can be saved directly; signatures require
+that selected pilot's authoritative 100% resolution and a current live site. Unknown, unresolved, expired or
+wrong-system results, foreign folders, malformed arguments and forged coordinate keywords reject without creating
+bookmarks. Both creation paths preserve the native eight-value reply and existing expiry/subfolder behavior.
+
+References: installed EveJs **261108.1**, `ship/beyonceService.js` SHA-256
+`5c13b78749bd02c31d7844d631fc88b818b299deff4ac49058a860eeb3f9027d`, and
+`bookmark/bookmarkTargetResolver.js` SHA-256 `e878c8c807aabe5161f719c1c31b03934c089b34fe08203a2f60b9d89ebf649c`.
+The installation has no Git metadata. Inert inspection of pinned build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, checked
+`bookmarkSvc.ACLBookmarkLocation` and `ACLBookmarkScanResult`: structures use the static service, ordinary visible
+objects use the bound park, and scan results use the six positional arguments above.
+[EVE University bookmarks](https://wiki.eveuniversity.org/Bookmarks) and
+[mining bookmarks](https://wiki.eveuniversity.org/Mining#Bookmarks) describe the saved-location and asteroid workflows.
+Existing Blue serialization and navigation are reused; no codec or Destiny wire format changes.
+
+**Automated validation:** Tool/solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog and 9 formatting cases), formatting verification (1,689 files and the 140-column check),
+UTF-8/newline/trailing-whitespace checks, new documentation links/anchors and diff checks passed.
+Final filter `FullyQualifiedName~BookmarkServiceTests|FullyQualifiedName~PilotBookmarksTests|FullyQualifiedName~ProbeScanningTests|FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`,
+with `xUnit.MaxParallelThreads=4`, passed **138 cases in 115.29 seconds**; the complete sequence took **218.56 seconds**.
+The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.BookmarkServiceTests.VisibleObjectBookmarksSaveCoordinatesAndRemainWarpableAfterTheObjectDisappears`
+passed three object-category cases; a combined bookmark/new-scan development filter passed 26 cases.
+Coverage checks asteroid/scenery/structure coordinate capture, legacy reads/copies, creation and warp after object
+removal/reopen, native structure dispatch, off-grid/unknown rejection, invalid typed targets, native string and numeric
+scan IDs, subfolders/expiry, unresolved/expired signatures, foreign folders and forged-coordinate rejection.
+Existing static locations, personal/fleet warps, fitting/probe rules and session routing remain covered by the affected filter.
+No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Bookmark an asteroid, warp away and return; bookmark a resolved signature from scan results.
 
 ## Aligning and native autopilot, November 11, 2026
 

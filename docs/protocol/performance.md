@@ -2471,13 +2471,26 @@ its expected missing shopping route is present. No shopping implementation or ex
 The closing 88-test selection covers the final ownership guard and integration changes. The full .NET suite and
 installed-save stress replay were not run.
 
+Main's bookmarking change `2b785fe8` was then merged without source conflicts; the integrated solution build passed
+in **11.43 seconds**. The additional filter selected `CapsuleerResidentRoutineTests`, `SessionPerformanceTests`,
+`BookmarkServiceTests` and `ProbeScanningTests` with their complete namespaces. It completed **57 passed / 3 setup
+failures** in **97.12 seconds** (build 2.26 seconds). The three failures shared a denied Windows staging-directory
+rename in `TestWorldSeed.Load`, before gameplay assertions. A create/rename/remove probe passed in that cache directory.
+`EDEN_TEST_TEMP_DIRECTORY=artifacts/test-data-resident-frames` isolated scratch data for the affected
+`FullyQualifiedName~Eden.Protocol.Tests.Combat.SessionPerformanceTests` filter: **all 6 tests passed** in **12.35 seconds**
+(build 2.45 seconds), including the previously blocked frame checks. No fixture implementation was changed.
+Reports are preserved under `artifacts/resident-bot-state-20261111` in the primary checkout, including the baseline,
+expanded selection, 88-test close, bookmarking integration attempt and isolated frame retry.
+
 Development began with the exact method filter
 `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests.CoarseCursorAndJobsReopenWithoutOfflineProduction`.
 The exact-method baseline for `RemoteArrivalsReuseFitsAndAvoidRepeatedMovementMembershipReads` at
 `a9e0596b79d09360d066d42f02b9bb2cfb1df54d` used the same fixture, clock advances and two-role workload. Its warmed movement
 sample issued **11 SQL commands / 1 connection / 0 fittings**; the resident version asserts **0 / 0 / 0**. This is a
-counter comparison, not a claim about installed-save latency or total simulation capacity. Mutation samples can open an
-additional connection to project retained positions before their transaction. Complete session-frame and checkpoint
+counter comparison, not a claim about installed-save latency or total simulation capacity. Across the same 17 reported
+role-action samples, commands fell **337 → 223**, connection opens changed **25 → 32**, and fitting calculations remained
+**1 → 1**. Cold/projection boundaries are still measurable: mutation samples can open additional connections to
+project retained positions before their transaction. Complete session-frame and checkpoint
 checks are included in the affected test selection; checkpoint costs remain separate from simulation counters.
 
 New regressions exercise a detached old generation while newer cursor/job/position state advances, atomic rollback of
