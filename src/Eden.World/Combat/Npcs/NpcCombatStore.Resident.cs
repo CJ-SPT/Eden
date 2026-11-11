@@ -26,6 +26,38 @@ namespace Eden.World.Combat.Npcs;
 
 internal sealed partial class NpcCombatStore
 {
+    private static TransactionParticipants DisengageParticipants(WorldAction world, long ship, long? npc, IReadOnlyList<long> sources)
+    {
+        var npcs = world
+            .Set<NpcAggression>()
+            .Where(row => row.TargetShipId == ship && (npc == null || row.NpcId == npc))
+            .Select(row => row.NpcId)
+            .AsEnumerable()
+            .Concat(
+                world
+                    .Set<WorldMissile>()
+                    .Where(row =>
+                        row.SourceKind == MissileSourceKind.Npc
+                        && row.TargetId == ship
+                        && (npc == null || row.SourceShipId == npc)
+                        && row.Status == MissileFlightStatus.Flying
+                    )
+                    .Select(row => row.SourceShipId)
+            )
+            .Concat(sources.Where(id => npc == null || id == npc))
+            .Distinct()
+            .ToArray();
+        var ships = world
+            .Set<WorldNpcEwar>()
+            .Where(row => Enumerable.Contains(npcs, row.NpcId))
+            .Select(row => row.TargetShipId)
+            .AsEnumerable()
+            .Append(ship)
+            .Distinct()
+            .ToArray();
+        return new(ships: ships, resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id)));
+    }
+
     internal static void Disengage(WorldAction world, long shipId, long? npcId = null)
     {
         var aggression = world

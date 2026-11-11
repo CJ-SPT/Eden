@@ -51,9 +51,9 @@ public sealed partial class NpcEwarTests
         internal IPilotFitting Fitting => Combat.Db.Services.GetRequiredService<IPilotFitting>();
         internal long Now => Combat.Clock.Now;
 
-        internal Fixture(int typeId, bool resident = false)
+        internal Fixture(int typeId, bool resident = false, bool simulationObjects = true)
         {
-            Combat = new(liveWorld: resident, useTestClock: true);
+            Combat = new(liveWorld: resident, simulationObjects: simulationObjects, useTestClock: true);
             PassiveCatalogFixture.LoadNpcPopulation(new WorldDatabase(Combat.Db.Path).CatalogPath);
             using (CatalogDbContext catalog = new(new WorldDatabase(Combat.Db.Path).CatalogPath, writable: true))
             {
@@ -293,7 +293,14 @@ public sealed partial class NpcEwarTests
         var rolls = f.Roll.Count;
         Assert.Equal(f.Advance(), f.Warfare.Incoming(NpcCombatTests.Fixture.ShipId));
         Assert.Equal(rolls, f.Roll.Count);
-        f.Combat.Combat.Disengage(NpcCombatTests.Fixture.ShipId);
+        if (resident)
+        {
+            ResidentMonitorAssertions.WithoutSql(() => f.Combat.Combat.Disengage(NpcCombatTests.Fixture.ShipId));
+        }
+        else
+        {
+            f.Combat.Combat.Disengage(NpcCombatTests.Fixture.ShipId);
+        }
         Assert.Empty(f.Warfare.Incoming(NpcCombatTests.Fixture.ShipId));
         var restored = f.Fitting.ShipAttributes(NpcCombatTests.Fixture.PilotId);
         Assert.Equal(

@@ -3110,3 +3110,71 @@ Not performed; agent client testing is disabled.
 
 After rebuilding, repeat the captured workload and compare SQL commands, connections, allocation and world-owner
 hold time; separate first-use catalog/validation work from ordinary simulation work.
+
+## Resident NPC electronic-warfare cycles (November 11, 2026)
+
+NPC electronic-warfare advancement, cancellation and public disengagement now mutate the resident action view. Capacitor spending,
+ability/contact rows, drone hostility triggers and crimewatch deadlines publish only after the same atomic commit.
+Participant discovery retains the coordinator while selecting the actor, affected targets and NPC resources,
+then acquires their actual system owners. It does not request every system owner merely to discover participants.
+The SQL adapter remains available for offline worlds.
+
+Repeated callbacks before an ability deadline do not recalculate the target fitting. The target attributes are
+loaded lazily once when the next ability attempt is due. Ability rolls, range/leash rules, source ordering and
+saved deadlines retain their existing behavior. References remain the pinned catalog-backed fixtures and
+[EVE University electronic warfare](https://wiki.eveuniversity.org/Electronic_warfare).
+
+### Automated validation
+
+The new two-mode paid-cycle regression failed against `76b2e305` because repeated active-effect callbacks opened
+SQL transactions. The first resident conversion removed those commands/connections but exposed **32 fitting
+calculations in 32 early callbacks**. Lazy attribute loading removed those recalculations; both corrected cases
+passed in **8.26 seconds**. They cover simulation objects enabled/disabled, repeated callback identity, invalid
+roll rejection, unchanged charge/deadline, a reopened rejected-state checkpoint, successful exact-deadline retry,
+cancellation and a reopened paid-state checkpoint. Idle callbacks require zero commands, connections and fitting
+calculations; due/rejected operations require zero commands/connections with at most one target fitting calculation.
+Initial development builds corrected a missing fixture namespace, an ambiguous constructor overload and the
+explicit numeric composite-key boundary before these behavioral checks ran.
+
+The first broader selection was stopped after **255 passes / 3 failures** and is incomplete. Offline composite
+lookups needed the saved effect kind converted to the EF enum key type; the SQL action adapter now converts
+that persistence boundary using its primary-key metadata. All seven exact guard, reaction/range and new paid-cycle
+cases then passed in **13.06 seconds**. Participant selection also limits cancellation to existing effect sources
+and advancement to its supplied sources (using aggression membership only for the fallback), rather than importing
+unrelated attackers of the same target.
+
+A later selection stopped after **125 passes / 1 failure** and is incomplete. A legacy SQL disengagement removed
+aggression while the newly resident child effect could remain unprojected. Public disengagement now uses the
+resident action and its mapped cascades, returning NPC motion and expiring matching pending missiles in the same
+commit. Source discovery includes current resident aggression and prior affected targets before participant capture.
+All **17 effect/cancellation checks passed in 19.90 seconds** after correction, including zero-SQL cancellation for
+all tested NPC ability kinds and a reopened checkpoint with no surviving aggression/effect. The wider closing
+selection adds missile tests for this newly resident expiration boundary.
+
+A further selection stopped after **127 passes / 1 failure** and is incomplete. Aggression-only captures were
+missing from the system acknowledgement set; a newly acquired encounter could also be imported and cancelled
+with no net canonical row delta. Publication now names the aggression's NPC/target system owners and reconciles
+an acknowledged aggression against the committed resident row. The existing destroyed-NPC detection regression
+now asserts immediate cancellation before any SQL read can mask a stale cache. Its first strengthened run had
+3 passes / 1 failure; all **four exact detection, cancellation and cold-acquisition cases passed in 8.14 seconds**
+after the final reconciliation.
+
+The cold acquisition pilot lookup also reads resident identities and hull/position inputs, selecting scalar pilot
+identities before linking hulls. The new check hydrates NPC population inputs, leaves the actor lookup cold, then
+requires zero commands, connections and fitting calculations and verifies saved aggression in a reopened image.
+
+The final **414 affected NPC, missile, bot-defense, ownership and checkpoint tests passed in 2m53s**. The final
+solution build passed without warnings in **2.63 seconds**. Tool/solution restore, both Python policy suites
+(8 catalog and 9 formatting checks), formatting verification (1,938 files) and line-width verification passed.
+Closing filters/results are recorded under `artifacts/bot-resident-effects`. No full .NET suite
+was run. Missile mutations, player/remote effect mutations, pilot-loss settlement and burnout still retain SQL
+paths. The installed-world workload has not been replayed; no live latency or supported-population gain is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After rebuilding, repeat the reported workload with an NPC effect cycle and compare SQL commands, allocation and
+world-owner hold time separately from cold catalog preparation and checkpoint capture.

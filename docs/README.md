@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Resident NPC electronic-warfare cycles](protocol/performance.md#resident-npc-electronic-warfare-cycles-november-11-2026)
+records SQL-free paid cycles, exact deadlines, rejected drain and coherent checkpoint saves.
+
 [Resident monitoring indexes and cold scene reads](protocol/performance.md#resident-monitoring-indexes-and-cold-scene-reads-november-11-2026)
 records SQL-free missile/effect monitoring, private-view isolation, scene rehydration and restored deadline membership.
 

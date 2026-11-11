@@ -4,12 +4,14 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,8 +33,7 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
 
     private IReadOnlyList<NpcEwarContact> ReadIncoming(long shipId)
     {
-        using WorldDbContext world = new(database.Path);
-        return Active(world, shipId);
+        return WorldActionScope.Inspect(database, world => Active(world, shipId));
     }
 
     internal static IReadOnlyList<NpcEwarContact> Active(WorldDbContext world, long shipId) =>
@@ -50,13 +51,15 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
         {
             return;
         }
-        using WorldDbContext world = new(database.Path);
-        world.Set<WorldNpcEwar>().Where(e => e.TargetShipId == shipId).ExecuteDelete();
+        using WorldActionScope transaction = new(database, select: world => EffectParticipants(world, shipId));
+        var world = transaction.World;
+        world.RemoveRange(world.Set<WorldNpcEwar>().Where(e => e.TargetShipId == shipId));
+        transaction.Commit();
     }
 
     public IReadOnlyList<NpcEwarContact> Advance(long pilotId, long shipId, long now)
     {
-        return LiveWorld.Execute(database.Path, () => AdvanceOwned(pilotId, shipId, now), nameof(Advance));
+        return LiveWorld.ExecuteForShip(database.Path, shipId, () => AdvanceOwned(pilotId, shipId, now), nameof(Advance));
     }
 
     private IReadOnlyList<NpcEwarContact> AdvanceOwned(long pilotId, long shipId, long now)
@@ -71,17 +74,17 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
             {
                 return [];
             }
-            return AdvanceSql(pilotId, shipId, now, sources);
+            return AdvanceCycle(pilotId, shipId, now, sources);
         }
     }
 
-    private IReadOnlyList<NpcEwarContact> AdvanceSql(long pilotId, long shipId, long now, IReadOnlyList<NpcEwarSource>? sources)
+    private IReadOnlyList<NpcEwarContact> AdvanceCycle(long pilotId, long shipId, long now, IReadOnlyList<NpcEwarSource>? sources)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => EffectParticipants(world, shipId, pilotId, sources));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var saved = world.Set<WorldNpcEwar>().Where(e => e.TargetShipId == shipId).ToArray();
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var type = catalog.RequireItem(pilot.ActiveShip.TypeId);
         List<WorldNpcEwar> current = [];
         if (
@@ -93,7 +96,7 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
         {
             int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
             var target = new SpacePosition(position.X, position.Y, position.Z);
-            var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+            IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null;
             sources ??= Sources(world, catalog, shipId);
             foreach (var source in sources.OrderBy(s => s.Id))
             {
@@ -126,7 +129,7 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
                 {
                     var row =
                         saved.SingleOrDefault(e => e.NpcId == source.Id && e.Kind == ability.Kind)
-                        ?? world.Set<WorldNpcEwar>().Find(source.Id, ability.Kind);
+                        ?? world.Set<WorldNpcEwar>().Find(source.Id, (long)ability.Kind);
                     if (row is not null && row.TargetShipId != shipId)
                     {
                         row.TargetShipId = shipId;
@@ -154,6 +157,7 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
                         continue;
                     }
                     double distance = Math.Max(0, target.DistanceTo(source.Position) - (type.Radius ?? 0) - source.Radius);
+                    attributes ??= PilotFittingStore.ShipAttributes(world, catalog, pilotId);
                     var applied = NpcEwarRules.Attempt(ability, distance, attributes, rolls.Next());
                     if (distance <= NpcEncounterDefinitions.VisibilityRange && NpcEwarRules.RangeFactor(ability, distance) > 0)
                     {
@@ -183,14 +187,14 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
         return current.Select(e => e.Contact()).OfType<NpcEwarContact>().ToArray();
     }
 
-    private IReadOnlyList<NpcEwarSource> Sources(WorldDbContext world, CatalogDbContext catalog, long shipId)
+    private IReadOnlyList<NpcEwarSource> Sources(WorldAction world, CatalogDbContext catalog, long shipId)
     {
         var aggression = world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId).ToDictionary(a => a.NpcId);
         var ids = aggression.Keys.ToArray();
         var npcs = world
             .Set<WorldNpc>()
             .Where(n =>
-                ids.Contains(n.Id)
+                Enumerable.Contains(ids, n.Id)
                 && n.DestroyedAt == null
                 && n.RetiredAt == null
                 && n.Navigation != NpcNavigationState.Warping

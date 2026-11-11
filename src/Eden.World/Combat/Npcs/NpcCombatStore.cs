@@ -17,7 +17,9 @@ using Eden.World.Docking;
 using Eden.World.Drones;
 using Eden.World.Fittings;
 using Eden.World.Propulsion;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -175,9 +177,23 @@ internal sealed partial class NpcCombatStore(
 
     public void Disengage(long shipId, long? npcId = null)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        Disengage(world, shipId, npcId);
+        LiveWorld.ExecuteForShip(
+            database.Path,
+            shipId,
+            () =>
+            {
+                DisengageOwned(shipId, npcId);
+                return true;
+            },
+            nameof(Disengage)
+        );
+    }
+
+    private void DisengageOwned(long shipId, long? npcId)
+    {
+        var sources = LiveWorld.Find(database.Path)?.CombatForShip(shipId)?.Aggressors(shipId) ?? [];
+        using WorldActionScope transaction = new(database, select: world => DisengageParticipants(world, shipId, npcId, sources));
+        Disengage(transaction.World, shipId, npcId);
         transaction.Commit();
     }
 

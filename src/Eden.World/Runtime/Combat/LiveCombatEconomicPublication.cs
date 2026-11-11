@@ -1,3 +1,5 @@
+using Eden.Data.World.Combat;
+
 namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
@@ -26,6 +28,22 @@ internal sealed partial class LiveCombatRuntime
             if (_aggressions?.GetValueOrDefault(aggression.NpcId) == aggression)
             {
                 _dirtyAggressions.Remove(aggression.NpcId);
+                // A newly imported encounter can be cancelled with no net canonical row change to publish.
+                if (owner.Economy.Peek<NpcAggression>(aggression.NpcId) is { } saved)
+                {
+                    _aggressions[aggression.NpcId] = new(
+                        saved.NpcId,
+                        saved.TargetShipId,
+                        saved.ReadyAt,
+                        saved.MissileReadyAt,
+                        saved.LastShotAt,
+                        saved.LastTargetId
+                    );
+                }
+                else
+                {
+                    _aggressions.Remove(aggression.NpcId);
+                }
             }
         }
         foreach (var drone in checkpoint.Drones)

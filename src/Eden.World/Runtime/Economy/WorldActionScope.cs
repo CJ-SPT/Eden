@@ -12,10 +12,22 @@ internal sealed class WorldActionScope : IDisposable
     private readonly EconomyTransaction? _resident;
     internal WorldAction World { get; }
 
-    internal WorldActionScope(WorldDatabase database, TransactionParticipants? participants = null)
+    internal WorldActionScope(
+        WorldDatabase database,
+        TransactionParticipants? participants = null,
+        Func<WorldAction, TransactionParticipants>? select = null
+    )
     {
         if (LiveWorld.Find(database.Path) is { } live)
         {
+            // Keep participant discovery and acquisition under the same coordinator lease.
+            using var selection = select is null
+                ? null
+                : live.EnterPersistence("resident participant selection", TransactionParticipants.None);
+            if (select is not null)
+            {
+                participants = live.Economy.Inspect(select);
+            }
             _resident = live.Economy.Begin(participants);
             World = _resident;
         }

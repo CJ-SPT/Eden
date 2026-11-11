@@ -550,6 +550,8 @@ internal sealed partial class LiveCombatRuntime
         }
     }
 
+    private sealed record AcquisitionIdentity(long PilotId, long ShipId);
+
     private sealed record AcquisitionShip(long PilotId, long ShipId, int SystemId, SpacePosition Position, double Radius, int GroupId);
 
     private readonly ResidentMap<long, AcquisitionShip?> _acquisitionShips = [];
@@ -561,29 +563,34 @@ internal sealed partial class LiveCombatRuntime
         {
             Loading(() =>
             {
-                using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
                 var loaded = missing.ToDictionary(id => id, _ => (AcquisitionShip?)null);
-                var pilots = world
-                    .Pilots.Include(p => p.ActiveShip)
-                        .ThenInclude(s => s.Position)
-                    .Where(p => missing.Contains(p.Id) && p.ActiveShip.Position != null)
-                    .ToArray();
-                foreach (var pilot in pilots)
+                owner.Economy.Inspect(world =>
                 {
-                    var ship = pilot.ActiveShip;
-                    var position = ship.Position!;
-                    var type = catalog.RequireItem(ship.TypeId);
-                    int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
-                    loaded[pilot.Id] = new(
-                        pilot.Id,
-                        ship.Id,
-                        system,
-                        new(position.X, position.Y, position.Z),
-                        type.Radius ?? 0,
-                        type.GroupId
-                    );
-                }
+                    var pilots = world
+                        .Pilots.Where(p => Enumerable.Contains(missing, p.Id))
+                        .Select(p => new AcquisitionIdentity(p.Id, p.ActiveShipId))
+                        .ToArray();
+                    foreach (var pilot in pilots)
+                    {
+                        var ship = world.Ships.Find(pilot.ShipId);
+                        if (ship?.Position is not { } position)
+                        {
+                            continue;
+                        }
+                        var type = catalog.RequireItem(ship.TypeId);
+                        int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
+                        loaded[pilot.PilotId] = new(
+                            pilot.PilotId,
+                            ship.Id,
+                            system,
+                            new(position.X, position.Y, position.Z),
+                            type.Radius ?? 0,
+                            type.GroupId
+                        );
+                    }
+                    return true;
+                });
                 foreach (var pair in loaded)
                 {
                     _acquisitionShips[pair.Key] = pair.Value;

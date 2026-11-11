@@ -16,6 +16,7 @@ using Eden.Protocol.Targeting;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -106,6 +107,22 @@ public sealed class NpcAggressionTests
         Assert.Empty(saved.Set<ShipHealthState>());
     }
 
+    [Fact]
+    public void ResidentColdAcquisitionReadsItsPilotAndHullWithoutSql()
+    {
+        using NpcCombatTests.Fixture f = new(liveWorld: true, useTestClock: true);
+        f.Db.Store.SetPosition(s_pilot.ShipId, f.Npc.Position, f.Npc.SystemId);
+        f.Db.Store.Advance(f.Npc.SystemId, 1, f.Clock.Now, [], []);
+        var live = LiveWorld.Find(f.Db.Path)!;
+        live.Economy.Warm();
+        ResidentMonitorAssertions.WithoutSql(() => f.Combat.Acquire([s_pilot], f.Clock.Now));
+        Assert.Contains(f.Npc.Id, f.Combat.Aggressors(s_pilot.ShipId));
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext reopened = new(checkpoint.Database);
+        Assert.Contains(reopened.Set<NpcAggression>(), row => row.NpcId == f.Npc.Id && row.TargetShipId == s_pilot.ShipId);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -120,6 +137,7 @@ public sealed class NpcAggressionTests
         f.Combat.Acquire([s_pilot], f.Clock.Now);
         Assert.Single(f.Combat.Aggressors(s_pilot.ShipId));
         f.Combat.Disengage(s_pilot.ShipId);
+        Assert.Empty(f.Combat.Aggressors(s_pilot.ShipId));
         using (WorldDbContext world = new(f.Db.Path))
         {
             var npc = world.Set<WorldNpc>().Find(f.Npc.Id)!;

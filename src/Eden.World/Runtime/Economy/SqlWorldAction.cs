@@ -126,6 +126,7 @@ internal sealed class SqlActionRows<T>(WorldDbContext world) : EconomySet<T>
             .Select(
                 (property, index) =>
                     property.ClrType == typeof(string) ? (object)id.Name!
+                    : property.ClrType.IsEnum ? Enum.ToObject(property.ClrType, index == 0 ? id.Id : id.Part)
                     : property.ClrType == typeof(int) ? (object)checked((int)(index == 0 ? id.Id : id.Part))
                     : index == 0 ? id.Id
                     : id.Part
