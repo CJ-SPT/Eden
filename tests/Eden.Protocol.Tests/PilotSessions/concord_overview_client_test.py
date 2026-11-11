@@ -17,6 +17,8 @@ runtime_path = binaries / 'python27.dll'
 assert hashlib.sha256(runtime_path.read_bytes()).hexdigest() == (
     '1266e119d5db70281831f06049faa2694e658a68d504e0cc5680ec5726ba3aa2')
 archive = root / 'tq/code.ccp'
+if (root / '.eden-original-code.ccp').exists():
+    archive = root / '.eden-original-code.ccp'
 assert hashlib.sha256(archive.read_bytes()).hexdigest() == (
     '37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368')
 with zipfile.ZipFile(archive) as source:
@@ -29,6 +31,9 @@ names = ['eve', 'eve.client', 'eve.client.script', 'eve.client.script.ui',
          'inventorycommon', 'inventorycommon.const', 'spacecomponents',
          'spacecomponents.client', 'spacecomponents.client.components',
          'spacecomponents.client.components.entitystandings']
+names += ['locks', 'xmppchatclient', 'xmppchatclient.xmppchatwindow',
+          'eve.client.script.ui.shared', 'eve.client.script.ui.shared.dockedUI',
+          'eve.client.script.ui.shared.dockedUI.guests']
 for name in names:
     module = type(sys)(name)
     module.__path__ = []
@@ -38,6 +43,12 @@ for name in names:
         setattr(sys.modules[parent], child, module)
 photo = sys.modules['eve.client.script.ui.services.evePhotosvc']
 photo.EvePhoto = type('EvePhoto', (object,), {})
+chat_window = type('XmppChatWindow', (object,), {
+    name: lambda *args: None for name in ['InitUsers', 'CharacterJoinedChannel', 'CharacterLeftChannel']})
+guest_panel = type('GuestsPanel', (object,), {
+    name: lambda *args: None for name in ['_update_scroll_content', '_add_guest_to_scroll', '_remove_guest_from_scroll']})
+sys.modules['xmppchatclient.xmppchatwindow'].XmppChatWindow = chat_window
+sys.modules['eve.client.script.ui.shared.dockedUI.guests'].GuestsPanel = guest_panel
 const = sys.modules['inventorycommon.const']
 const.groupConcordDrone = 301
 entity = sys.modules['spacecomponents.client.components.entitystandings']

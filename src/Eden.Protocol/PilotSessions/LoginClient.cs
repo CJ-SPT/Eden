@@ -6,7 +6,8 @@ internal static class LoginClient
         ClientExpression.Create(
             "eden-login",
             "Eden.Protocol.Characters.portrait_client.py",
-            "Eden.Protocol.Flight.concord_overview_client.py"
+            "Eden.Protocol.Flight.concord_overview_client.py",
+            "Eden.Protocol.Docking.presence_lists_client.py"
         )
     );
 
