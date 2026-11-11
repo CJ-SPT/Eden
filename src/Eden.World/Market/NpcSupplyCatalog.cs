@@ -17,6 +17,10 @@ internal sealed partial class PilotMarketStore
 {
     private sealed record InstitutionalOffer(int TypeId, bool Bid, long PriceCents);
 
+    private sealed record InstitutionalType(int TypeId, bool Bid);
+
+    private static readonly ConditionalWeakTable<CatalogProvider, Lazy<int[]>> BlueprintSupplies = new();
+
     private static readonly ConditionalWeakTable<
         CatalogProvider,
         ConcurrentDictionary<int, Lazy<IReadOnlyList<InstitutionalOffer>>>
@@ -35,16 +39,27 @@ internal sealed partial class PilotMarketStore
     {
         var corporation = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId);
         var trades = corporation?.CorporationTrades ?? [];
-        int[] offered = trades
+        bool hub = RegionalMarketCatalog.Read(catalog).Stations.Any(s => s.Station.Id == station.Id && s.Role == RegionalMarketRole.Hub);
+        // Hubs share the catalog's NPC blueprint sell assortment, regardless of
+        // the local corporation. Other institutional goods retain their suppliers.
+        int[] suppliedBlueprints = hub ? HubBlueprints(catalog) : [];
+        var offered = trades
             .Where(t => t.Value != 0)
-            .Select(t => int.Parse(t.Key, CultureInfo.InvariantCulture))
+            .Select(t => new InstitutionalType(int.Parse(t.Key, CultureInfo.InvariantCulture), t.Value < 0))
             .Union(
                 database
                     .PublishedSkills.Values.Where(skill => skill.UserCreated && !skill.Deleted && skill.Definition.Published)
-                    .Select(skill => skill.Definition.TypeId)
+                    .Select(skill => new InstitutionalType(
+                        skill.Definition.TypeId,
+                        trades.GetValueOrDefault(skill.Definition.TypeId.ToString(CultureInfo.InvariantCulture)) < 0
+                    ))
             )
+            .Union(suppliedBlueprints.Select(type => new InstitutionalType(type, false)))
+            .OrderBy(offer => offer.TypeId)
+            .ThenBy(offer => offer.Bid)
             .ToArray();
-        var types = offered.Select(catalog.FittingType).OfType<CatalogItemDefinition>().OrderBy(type => type.Id).ToArray();
+        var types = offered.Select(offer => offer.TypeId).Distinct().Select(catalog.FittingType).OfType<CatalogItemDefinition>().ToArray();
+        var items = types.ToDictionary(type => type.Id);
         var definitions = catalog.ReadMany(CatalogData.Client.Types, types.Select(type => (long)type.Id));
         var blueprints = types.Where(type => type.CategoryId == (int)InventoryCategory.Blueprint).ToArray();
         var recipes = catalog.ReadMany(
@@ -62,11 +77,15 @@ internal sealed partial class PilotMarketStore
                 )
         );
         List<InstitutionalOffer> result = [];
-        foreach (var type in types)
+        foreach (var offer in offered)
         {
-            int typeId = type.Id;
+            int typeId = offer.TypeId;
+            if (!items.TryGetValue(typeId, out var type))
+            {
+                continue;
+            }
             var definition = definitions.GetValueOrDefault(typeId);
-            bool bid = trades.GetValueOrDefault(typeId.ToString(CultureInfo.InvariantCulture)) < 0;
+            bool bid = offer.Bid;
             if (
                 !RegionalMarketRules.CanUnlock((InventoryCategory)type.CategoryId, type.GroupId, true, true)
                 && type.CategoryId != (int)InventoryCategory.Blueprint
@@ -115,6 +134,26 @@ internal sealed partial class PilotMarketStore
         }
         return result.AsReadOnly();
     }
+
+    private static int[] HubBlueprints(CatalogDbContext catalog) =>
+        BlueprintSupplies
+            .GetValue(
+                catalog.Definitions,
+                definitions =>
+                    new(() =>
+                    {
+                        using CatalogDbContext reader = new(definitions.Identity.Path);
+                        return reader
+                            .Records(CatalogData.Client.Npccorporations)
+                            .SelectMany(entry => entry.Value.CorporationTrades ?? [])
+                            .Where(trade => trade.Value > 0)
+                            .Select(trade => int.Parse(trade.Key, CultureInfo.InvariantCulture))
+                            .Distinct()
+                            .Where(type => reader.FittingType(type)?.CategoryId == (int)InventoryCategory.Blueprint)
+                            .ToArray();
+                    })
+            )
+            .Value;
 
     private void SeedInstitutional(WorldDbContext world, CatalogDbContext catalog, CatalogStationDefinition station)
     {

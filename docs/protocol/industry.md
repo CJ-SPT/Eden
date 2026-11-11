@@ -7,6 +7,59 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Blueprint supply at every regional hub (November 11, 2026)
+
+Every seeded regional hub now sells the combined assortment of blueprint originals offered for sale by NPC corporations
+in the pinned build-3662168 catalog. Previously, institutional blueprint supply followed only the station owner's
+`client/npccorporations.corporationTrades`, leaving regions without another corporation's blueprints. Hub selection is
+unchanged: one market-capable high-security station per eligible region, preferring established trade hubs.
+
+The shared assortment includes positive NPC sell offers only and is cached for the catalog generation. Each blueprint
+still requires a published market type, a usable snapshot sell price and the existing blueprint/product tech-level
+checks. Buy-only types, unquoted types and Tech II/III originals do not gain sell orders. Local NPC bids remain separate
+from the new asks. Other institutional goods and non-hub suppliers retain their existing geography.
+
+Hub orders use the existing institutional stock setting, price snapshots, replenishment, purchase transactions and
+remote station pickup. Existing saves backfill missing orders on market access, including remote viewing of the region's
+hub, without changing existing order identities. Restart the server after updating; no database reset or market export
+is required. Regions without an eligible seeded hub retain their existing suppliers.
+
+References consulted November 11, 2026: [EVE University blueprints](https://wiki.eveuniversity.org/Blueprint) describes
+NPC originals and regional supplier gaps; [CCP blueprints](https://support.eveonline.com/hc/en-us/articles/203269951-Blueprints)
+distinguishes ordinary market originals from invention/copy sources. Universal hub coverage is explicit Eden policy.
+The local evejs `tools/market-seederv3/src/overlay.rs` was inspected as a reference for NPC blueprint sell supply
+(SHA-256 `BD03B18F186AECC616D15E8A1DDB7E18D0FFC0854CEC1C5F23E2ADB725D9A13A`; checkout revision unavailable).
+No reference code was copied. Native service replies and codecs are unchanged.
+
+**Automated validation:** Tool restore and solution restore passed. Solution build passed with zero warnings/errors
+in 17.18 seconds. The final affected filter below passed **208/208 tests** in **420.09 seconds** (feature build
+6.31 seconds). Both Python policy suites passed (**8 catalog setup**, **9 formatting**); formatting verification,
+documentation links/anchor, UTF-8, final-newline, trailing-whitespace and diff checks passed. No full .NET suite was run.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Industry.StarterProductionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests
+```
+
+Development began with the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Market.BlueprintMarketTests.EveryRegionalHubStocksTheGlobalNpcBlueprintSellAssortment`
+(final exact run: 2/2 cases, build 17.23 seconds, tests 26.77 seconds). Initial development runs found test-fixture
+compile/schema/blueprint-key issues, followed by a missing purchase-volume definition; those fixtures were corrected.
+The exact purchase/reopen regression then passed (1/1, build 7.98 seconds, tests 14.14 seconds), and the final combined
+run above covers every correction. Coverage includes two regions, remote hub discovery, ordinary-station suppliers,
+retained NPC bids, blueprint eligibility, existing-order backfill, rejected cross-region purchases, purchased originals
+and wallet/history/order identities across reopen. A read-only installed-catalog audit found **1,791** NPC-offered
+blueprint types, of which **1,437** pass the current eligibility and snapshot-price rules. This is catalog evidence;
+the running server was not restarted or changed during validation.
+
+Before pushing, main advanced with the independent bookmark update `2b785fe8`. Rebase preserved both protocol-index
+entries; market implementation and tests were unchanged. The combined solution build passed in **12.85 seconds** with
+zero warnings/errors, followed by **6/6 blueprint regressions** through
+`FullyQualifiedName~Eden.Protocol.Tests.Market.BlueprintMarketTests` (build 3.32 seconds, tests 14.18 seconds).
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After restart, inspect an original previously missing from your region at its seeded hub.
+
 ## Native licensed-run metadata outside copying (November 11, 2026)
 
 The follow-up Miner I screenshots reported `Manufacturing does not accept licensed copy runs.` and

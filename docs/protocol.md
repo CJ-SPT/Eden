@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Blueprint supply at every regional hub](protocol/industry.md#blueprint-supply-at-every-regional-hub-november-11-2026)
+records global NPC-original coverage, retained eligibility rules and existing-save backfill.
+
 [Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026) covers asteroid/object bookmarks and resolved scan results.
 
 [Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) connects existing mission progress to the native tracker.
