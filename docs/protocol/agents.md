@@ -2,6 +2,101 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## R&D agents and datacores — November 11, 2026
+
+Station R&D agents now support **Start Research**, **Buy Datacores**, and **Cancel Research** through native
+agent conversations. A pilot chooses one of the agent's offered science fields. Each agent has one project per
+pilot; capacity starts at one and increases by one per trained Research Project Management level. Starting
+requires Omega, Science V, the field skill at the agent's level, and effective standing eligibility. Unlike
+ordinary level-one agents, R&D agents retain the negative-standing gate; corporation standing must also reach
+two points below the normal level threshold. Starting and redeeming require docking at the agent's station.
+
+Points accrue across offline time and restarts at
+`(1 + (20 + 5 * Negotiation + effectiveAgentStanding) / 100) * (fieldSkill + agentLevel)^2` per day.
+Fractional points are retained. A project stores its balance, rate, and settlement timestamp; settlement uses
+the previous rate through that timestamp, then refreshes the rate for future time. Show Info projects accrued
+points without changing the saved balance. Clock rollback cannot mint points. Each datacore costs **100 RP
+and 10,000 ISK**, paid from the personal wallet and delivered to personal Item Hangar at that agent's station.
+Cancellation requires confirmation and discards every unspent point with that agent.
+
+The owning Gameplay research contracts/rules, Data project model, World transactions, and Protocol adapters
+remain separate. Schema **140** adds `WorldResearchProject`, with a unique pilot/agent pair and monotonic project
+identities. Redemption commits points, wallet journal entry (native datacore fee type **112**), and inventory
+together. Concurrent redemptions serialize under existing ownership. Foreign/stale project identities, wrong
+stations, inadequate points or ISK, stack overflow, and missing datacore mappings reject without partial changes.
+R&D fields come from pinned `client/npccharacters.skills`; published group **333** datacores map back to fields
+through dogma **182**, rather than a handwritten field/output table. Immutable catalog projections are shared.
+Fields with no published datacore remain visible but cannot produce invented output.
+An installed-catalog read-only audit found **244 R&D agents**, **19 fields**, and **17 fields with published
+datacore mappings**; fields **11487** and **11858** have none. No installed world was changed.
+
+Native `agents.SingleChoiceBox`, `GetQuantity`, and `YesNo` are server-to-client calls with correlated node call
+IDs. The original `DoAction` response is deferred while other calls proceed; no world owner or SQL transaction
+is held across player input. Both direct and `[key, substream]` response wrappers are accepted. Responses are
+consumed once, pilot identity is rechecked, and project identity is revalidated when mutating. Embedded agent
+binds retain their binding envelope after a dialog. `GetQuantity` receives only supported popup keywords;
+`SingleChoiceBox` answers use the native `radioboxOptionNSelected` form. Failed/cancelled dialogs do not mutate.
+
+Both journal routes now include seven-field research rows:
+`(agentID, skillTypeID, pointsPerDay, currentPoints, level, quality, stationID)`.
+Agent Show Info advertises the `research` service with `(skillID, effectiveSkillLevel)` entries and current
+research data. Inventory and wallet notifications follow committed purchases. Research changes invalidate the
+whole native journal: the pinned partial updater removes mission rows only before appending research rows,
+so agent-specific invalidation would retain duplicate or cancelled projects. Other mission behavior is unchanged.
+
+This implements passive datacore research. Daily bonus research missions, their standings rewards and storyline
+progression remain unsupported; ordinary combat/courier missions are not substituted for them.
+
+Gameplay references: [EVE University research missions](https://wiki.eveuniversity.org/Research_missions),
+[datacore farming](https://wiki.eveuniversity.org/Datacore_farming), and
+[agent eligibility](https://wiki.eveuniversity.org/Agent#R.26D_agents).
+Inert inspection used stock build **3662168** `code.ccp`, SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`, including `appConst`, `eveCfg.CanUseAgent`,
+station `agents`, `browserResearch`, and `journal`. The installed archive differed; relevant module bytecode
+was compared with the stock archive rather than treating its archive hash as stock evidence. All six inspected
+modules (`appConst`, `eveCfg`, station `agents`, `browserResearch`, `journal`, and `machoNetAddress`) matched
+recursively in bytecode, constants, symbols and argument metadata. No client Python
+was executed. Existing tuple/list/substream encoding was checked against
+[Carbon Blue Marshal.cpp, revision af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
+Secondary reference inspection used the local evejs snapshot's `researchRuntime.js` (SHA-256
+`D6E8E398BB3FF9BA1F0711BA86BA1DCCA4707CD935D287C9760A8A8BDD0C6EE8`), `researchDialogue.js`
+(`85744360855F688656AC6BD698D9BD7E9671E430C210BE178682EC4D00BC7648`), and research-field generator
+(`776DF02A7F98CD96D34C4F188C1F931384F648DFD545CC4B7165E1231F0C7927`). That snapshot has no Git metadata;
+the implementation uses Eden's own typed rules, SQLite transaction, and session architecture.
+
+**Automated validation:** Final affected checks are recorded below. The initial exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.ResearchAgentTests.AccruesOfflineAndPurchasePersistsPointsWalletInventoryAndJournal`.
+Tool and solution restores passed; the final solution build passed with zero warnings/errors in **0.93 seconds**.
+Both Python policy suites passed (**8 catalog** tests in **2.780 seconds**, **9 formatting** tests in **0.033 seconds**).
+Formatting verified **1,674 files** and the 140-character limit. No full .NET suite was requested or run.
+
+The earlier broad development selection on `eb8443b1` plus pre-correction feature changes was deliberately
+interrupted after **723.49 seconds** with **855 passed, 3 failed and 3 skipped** results reported; it did not
+complete. Its failures were the unsupported stationless-agent advertisement, a rate-test fixture that assumed
+Negotiation had rank one, and an existing scene performance test including cold owner/effect reads. The last
+failure reproduced on unchanged `eb8443b1` (exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionEncounterTests.WarmEmptyAndPopulatedMissionViewsUseNoSqlAndInvalidateAfterCommittedAcceptance`).
+The benchmark now warms system effects before measuring empty reads and warms the new generation after NPC
+creation; its unchanged zero-SQL/connection/fitting assertions pass. The stationless-agent and rate tests also
+passed after correction. Final checks use current main `c4a94903` plus the complete feature and these fixes.
+Other development corrections covered the missing fixture wallet, missing-map fixture column name,
+floating-point balance arithmetic, and an attempt to decode an outbound-only object reference in a test.
+
+Final feature filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.ResearchAgentTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.AgentShowInfoTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.AgentInformationRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionEncounterTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.TypedSessionTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.TargetLockSessionTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotBindingsTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.AgentDirectoryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.CharacterDeletionTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ScienceJobTests
+```
+
+The final feature selection passed **183 tests**, with **zero failures or skips**, in **115.86 seconds**
+(feature build **1.45 seconds**). Raw baseline, interrupted-development, and final reports are retained under
+ignored `artifacts/research-agents-20261111/` in the main checkout.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Open an eligible agent, select a science field, and inspect Industry's Research
+tab; redeem datacores and check native wallet/hangar updates; cancel and confirm the journal row disappears.
+
 ## Corporation-to-agent Show Info header — November 9, 2026
 
 The maintainer recalled a remaining failure when opening an agent from a corporation's Agents tab. This path

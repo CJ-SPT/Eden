@@ -26,10 +26,17 @@ internal sealed class PilotSessionCalls(
 )
 {
     private bool _initialStateSent;
+    private readonly PilotClientCalls _clientCalls = new();
 
     public async Task ProcessAsync(object? incoming, long? received = null)
     {
         var packet = IncomingMachoPacket.Read(incoming);
+        PilotClientCalls.Pending? resumed = null;
+        object? answer = null;
+        if (_clientCalls.TryTake(packet, out resumed, out answer))
+        {
+            packet = resumed!.Request;
+        }
         if (packet.Name == PacketNamespace + "PingReq")
         {
             await output.WriteAsync(packet.Ping(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()));
@@ -86,7 +93,11 @@ internal sealed class PilotSessionCalls(
             using (SessionLatency.Measure(SessionLatencyPhase.Handler))
             using (SessionPerformance.Begin("dispatch", diagnostics?.Trace ?? report))
             {
-                result = modResult ?? router.Call(context, service, method, call.Arguments, report, call.Keywords);
+                result = resumed is not null
+                    ? context.Selected && context.Pilot.PilotId == resumed.PilotId
+                        ? resumed.Dialog.Complete(answer)
+                        : new PilotCallResult.Failure("The agent dialog belongs to a previous pilot session.")
+                    : modResult ?? router.Call(context, service, method, call.Arguments, report, call.Keywords);
             }
             if (!selected && context.Selected)
             {
@@ -174,6 +185,13 @@ internal sealed class PilotSessionCalls(
             );
         }
 
+        if (result is PilotCallResult.ClientCall clientCall)
+        {
+            await output.WriteAsync(_clientCalls.Begin(packet, clientCall.Dialog, accountId, clientId, context.Pilot.PilotId));
+            await output.FlushFlightUpdatesAsync();
+            await output.FlushNotificationsAsync();
+            return;
+        }
         var reply = ((PilotCallResult.Success)result).Reply;
         if (reply is TargetLockReply { Completion: { } completion })
         {

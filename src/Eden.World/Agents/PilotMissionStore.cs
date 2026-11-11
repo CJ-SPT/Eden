@@ -22,7 +22,7 @@ internal sealed partial class PilotMissionStore(
     INpcDirectory directory,
     TimeProvider clock,
     PilotTrainingStore training
-) : IPilotMissions, IPilotMissionContainers
+) : IPilotMissions, IPilotMissionContainers, IPilotResearch
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -32,16 +32,19 @@ internal sealed partial class PilotMissionStore(
         world.Pilots.Include(p => p.Account).Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == id)
         ?? throw new InvalidDataException("Unknown mission pilot.");
 
-    private static int Skill(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, MissionSocialSkill skill)
+    private static int Skill(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, MissionSocialSkill skill) =>
+        Skill(world, catalog, pilot, (int)skill);
+
+    private static int Skill(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int skill)
     {
-        int level = PilotSkillReader.Level(world, catalog, pilot.Id, (int)skill);
+        int level = PilotSkillReader.Level(world, catalog, pilot.Id, skill);
         if (pilot.Account.CloneGrade == AccountCloneGrade.Alpha)
         {
             var alpha = catalog.Read(
                 CatalogData.Client.Clonegrades,
                 pilot.RaceId.ToString(System.Globalization.CultureInfo.InvariantCulture)
             );
-            int maximum = checked((int)(alpha?.Skills?.FirstOrDefault(s => s.TypeID == (int)skill)?.Level ?? 0));
+            int maximum = checked((int)(alpha?.Skills?.FirstOrDefault(s => s.TypeID == skill)?.Level ?? 0));
             level = Math.Min(level, maximum);
         }
         return level;
@@ -92,13 +95,31 @@ internal sealed partial class PilotMissionStore(
                     && (m.State == MissionState.Offered || m.State == MissionState.Accepted)
                 );
             bool content = agent.Type == AgentType.Basic && access.Allowed && ProfilesForAgent(catalog, agent, agent.Level, false).Any();
-            return AgentInformationRules.Describe(agent, access, content, active is not null, active?.Storyline == true);
+            var information = AgentInformationRules.Describe(agent, access, content, active is not null, active?.Storyline == true);
+            if (agent.Type != AgentType.Research)
+            {
+                return information;
+            }
+            var project = world.Set<SavedResearchProject>().SingleOrDefault(p => p.PilotId == pilotId && p.AgentId == agentId);
+            return information with
+            {
+                ResearchFields = ResearchFields(catalog, agentId),
+                Research = project is null
+                    ? null
+                    : new(
+                        project.Id,
+                        agent,
+                        project.SkillId,
+                        ResearchRules.Accrue(project.Points, project.PointsPerDay, project.SettledAt, now),
+                        project.PointsPerDay
+                    ),
+            };
         }
     }
 
     private static AgentAccess Access(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent)
     {
-        if (agent.Type != AgentType.Basic || agent.Level is < 1 or > 5)
+        if (agent.Type is not (AgentType.Basic or AgentType.Research) || agent.Level is < 1 or > 5)
         {
             return new(false, "This special agent's mission service is not implemented.", 0, 0, 0, 0);
         }
@@ -132,13 +153,21 @@ internal sealed partial class PilotMissionStore(
                 pirate,
                 bonuses
             );
-        return MissionRules.Access(
-            agent.Level,
-            Effective(agent.Id),
-            Effective(agent.CorporationId),
-            agent.FactionId is int faction ? Effective(faction) : 0,
-            pilot.Account.CloneGrade == AccountCloneGrade.Omega
-        );
+        return agent.Type == AgentType.Research
+            ? ResearchRules.Access(
+                agent.Level,
+                Effective(agent.Id),
+                Effective(agent.CorporationId),
+                agent.FactionId is int researchFaction ? Effective(researchFaction) : 0,
+                pilot.Account.CloneGrade == AccountCloneGrade.Omega
+            )
+            : MissionRules.Access(
+                agent.Level,
+                Effective(agent.Id),
+                Effective(agent.CorporationId),
+                agent.FactionId is int faction ? Effective(faction) : 0,
+                pilot.Account.CloneGrade == AccountCloneGrade.Omega
+            );
     }
 
     public IReadOnlyList<MissionOffer> Journal(long pilotId, long? agentId = null)

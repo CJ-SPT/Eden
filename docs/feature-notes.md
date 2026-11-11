@@ -1,5 +1,8 @@
 # Feature implementation notes
 
+Station [R&D agents](protocol/agents.md#rd-agents-and-datacores--november-11-2026) support persistent passive
+research and paid datacore redemption. Daily bonus research missions remain unsupported.
+
 [Documentation index](README.md) / [Project status](../README.md#current-status)
 
 Detailed implementation summaries formerly collected in the root README, grouped by feature. The [README](../README.md#current-status) provides the short project overview; [protocol records](protocol.md) retain validation evidence and subsequent corrections.

@@ -1,6 +1,10 @@
 namespace Eden.Gameplay.Agents;
 
-public sealed record AgentServiceInformation(CatalogAgent Agent, bool MissionService, bool MissionAvailable, string Incompatible);
+public sealed record AgentServiceInformation(CatalogAgent Agent, bool MissionService, bool MissionAvailable, string Incompatible)
+{
+    public IReadOnlyList<ResearchField> ResearchFields { get; init; } = [];
+    public ResearchProject? Research { get; init; }
+}
 
 public static class AgentInformationRules
 {
@@ -19,6 +23,10 @@ public static class AgentInformationRules
         if (agent.Type is AgentType.GenericStoryline or AgentType.Storyline)
         {
             return new(agent, true, false, hasActiveStoryline ? "" : "This agent has no active storyline mission for you.");
+        }
+        if (agent.Type == AgentType.Research)
+        {
+            return new(agent, false, false, access.Reason);
         }
         if (agent.Type != AgentType.Basic)
         {

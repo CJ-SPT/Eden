@@ -1,5 +1,8 @@
 # Eden documentation
 
+[R&D agents and datacores](protocol/agents.md#rd-agents-and-datacores--november-11-2026) covers passive research,
+science fields, native journal/dialogs, paid datacore redemption, and cancellation.
+
 [Planetary industry](protocol/planetary.md) covers saved colonies, all 68 planetary schematics, extraction,
 routing, orbital cargo, Interbus customs, source evidence and automated validation.
 

@@ -16,8 +16,9 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Agents;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class MissionHandler(
+internal sealed partial class MissionHandler(
     IPilotMissions missions,
+    IPilotResearch research,
     INpcDirectory directory,
     IStationDirectory stations,
     IPilotInteractionHistory history,
@@ -69,7 +70,10 @@ internal sealed class MissionHandler(
             {
                 return method switch
                 {
-                    "GetMyJournalDetails" when args.Length == 0 => new MissionJournal(missions.Journal(pilotId)),
+                    "GetMyJournalDetails" when args.Length == 0 => new MissionJournal(
+                        missions.Journal(pilotId),
+                        research.Research(pilotId)
+                    ),
                     "GetDisabledMissions" when args.Length == 0 => BlueEmpty.List,
                     _ => new PilotCallResult.Failure("Invalid agent mission directory request."),
                 };
@@ -83,7 +87,7 @@ internal sealed class MissionHandler(
             }
             if (method == "GetMyJournalDetails" && args.Length == 0)
             {
-                return new MissionJournal(missions.Journal(pilotId, agentId));
+                return new MissionJournal(missions.Journal(pilotId, agentId), research.Research(pilotId, agentId));
             }
             if (method == "GetInfoServiceDetails")
             {
@@ -116,6 +120,10 @@ internal sealed class MissionHandler(
             }
             if (method == "DoAction" && args is [var action] && action is null or long)
             {
+                if (agent.Type == AgentType.Research)
+                {
+                    return ResearchActionCall(context, agentId, action);
+                }
                 if (action is null)
                 {
                     var current = missions.Current(pilotId, agentId);

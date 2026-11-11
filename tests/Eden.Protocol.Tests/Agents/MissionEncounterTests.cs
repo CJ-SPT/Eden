@@ -145,6 +145,8 @@ public sealed class MissionEncounterTests
     {
         using MissionFixture f = new(division: MissionRules.SecurityDivision, live: true);
         Assert.Empty(f.Missions.Sites(30000142));
+        // Warm the system owner's effect deadlines as well as the shared mission view.
+        f.Missions.Arrive(30000142, new(0, 0, 0));
         using (var measure = SessionPerformance.Begin("empty mission scenes", _ => { }, force: true)!)
         {
             Assert.Empty(f.Missions.Sites(30000142));
@@ -157,6 +159,8 @@ public sealed class MissionEncounterTests
         f.Missions.Arrive(30000142, mission.Position);
         var warmed = f.Missions.Sites(30000142);
         Assert.True(Assert.Single(warmed).Started);
+        // Committed NPC creation invalidates effect deadlines; warm that new generation.
+        f.Missions.Arrive(30000142, mission.Position);
         using var metrics = SessionPerformance.Begin("warm mission scenes", _ => { }, force: true)!;
         Assert.Same(warmed, f.Missions.Sites(30000142));
         f.Missions.Arrive(30000142, mission.Position);

@@ -9,6 +9,9 @@ internal static class MissionSchema
 {
     internal static void Configure(ModelBuilder model)
     {
+        model.Entity<SavedResearchProject>().ToTable("WorldResearchProject").HasKey(p => p.Id);
+        model.Entity<SavedResearchProject>().HasIndex(p => new { p.PilotId, p.AgentId }).IsUnique();
+        model.Entity<SavedResearchProject>().HasOne<Pilot>().WithMany().HasForeignKey(p => p.PilotId).OnDelete(DeleteBehavior.Cascade);
         model.Entity<SavedMission>().ToTable("WorldMission").HasKey(m => m.Id);
         model.Entity<SavedMission>().HasOne<Pilot>().WithMany().HasForeignKey(m => m.PilotId).OnDelete(DeleteBehavior.Cascade);
         model.Entity<SavedMission>().HasIndex(m => new { m.PilotId, m.AgentId }).IsUnique().HasFilter("ClosedAt IS NULL");
@@ -65,6 +68,11 @@ internal static class MissionSchema
     {
         world.Database.ExecuteSqlRaw(
             """
+            CREATE TABLE IF NOT EXISTS WorldResearchProject (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                AgentId INTEGER NOT NULL, SkillId INTEGER NOT NULL, Points REAL NOT NULL, PointsPerDay REAL NOT NULL,
+                SettledAt INTEGER NOT NULL);
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldResearchProject_PilotId_AgentId ON WorldResearchProject(PilotId,AgentId);
             CREATE TABLE IF NOT EXISTS WorldMission (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                 AgentId INTEGER NOT NULL, MissionId INTEGER NOT NULL, Level INTEGER NOT NULL, State INTEGER NOT NULL,
