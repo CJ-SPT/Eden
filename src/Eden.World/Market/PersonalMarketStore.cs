@@ -58,6 +58,11 @@ internal sealed partial class PilotMarketStore
     {
         get
         {
+            if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+            {
+                using var resident = live.Economy.Begin();
+                return resident.NextExpiry;
+            }
             if (signal.Deadline != 0)
             {
                 return signal.Deadline;
@@ -73,6 +78,10 @@ internal sealed partial class PilotMarketStore
 
     public WorldEconomySettings Economy()
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentSettings(live);
+        }
         using WorldDbContext world = new(database.Path);
         var settings = world.Set<SavedWorldEconomy>().Single();
         return new(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock);
@@ -80,12 +89,20 @@ internal sealed partial class PilotMarketStore
 
     public long Observe(long pilotId)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentObserve(live, pilotId);
+        }
         using WorldDbContext world = new(database.Path);
         return world.Set<SavedMarketChange>().Where(c => c.PilotId == pilotId).Max(c => (long?)c.Id) ?? 0;
     }
 
     public IReadOnlyList<PersonalMarketChange> Changes(long pilotId, long after)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentChanges(live, pilotId, after);
+        }
         using WorldDbContext world = new(database.Path);
         return world
             .Set<SavedMarketChange>()
@@ -100,6 +117,10 @@ internal sealed partial class PilotMarketStore
 
     public IReadOnlyList<MarketOrder> PersonalOrders(long pilotId, bool history = false)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentPersonalOrders(live, pilotId, history);
+        }
         using WorldDbContext world = new(database.Path);
         return world
             .Set<SavedPersonalOrder>()
@@ -113,6 +134,10 @@ internal sealed partial class PilotMarketStore
 
     public MarketEscrow Escrow(long pilotId)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentEscrow(live, pilotId);
+        }
         using WorldDbContext world = new(database.Path);
         var orders = world.Set<SavedPersonalOrder>().Where(o => o.PilotId == pilotId && o.Status == PersonalOrderStatus.Open).ToArray();
         return new(orders.Sum(o => o.EscrowCents), orders.Where(o => !o.Bid).Sum(o => checked(o.PriceCents * o.Remaining)));
@@ -437,6 +462,10 @@ internal sealed partial class PilotMarketStore
 
     private MarketResult ExecuteBuy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items, int days)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentBuy(live, pilotId, stationId, items, days);
+        }
         Expire();
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -491,6 +520,10 @@ internal sealed partial class PilotMarketStore
 
     private MarketResult ExecuteSell(long pilotId, IReadOnlyList<MarketSale> items, int days)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentSell(live, pilotId, items, days);
+        }
         Expire();
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -588,6 +621,11 @@ internal sealed partial class PilotMarketStore
 
     public void Modify(long pilotId, PersonalMarketModification request)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            ResidentModify(live, pilotId, request);
+            return;
+        }
         Expire();
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -684,6 +722,11 @@ internal sealed partial class PilotMarketStore
 
     public void Cancel(long pilotId, long orderId, int regionId)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            ResidentCancel(live, pilotId, orderId, regionId);
+            return;
+        }
         Expire();
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -701,6 +744,10 @@ internal sealed partial class PilotMarketStore
 
     public int Expire(int limit = PersonalMarketRules.MaintenanceBatch)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentExpire(live, limit);
+        }
         if (limit is < 1 or > PersonalMarketRules.MaintenanceBatch)
         {
             throw new ArgumentOutOfRangeException(nameof(limit));

@@ -85,6 +85,10 @@ internal sealed partial class PilotMarketStore
 
     public int AdvanceDemand(int limit = PersonalMarketRules.MaintenanceBatch)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentAdvanceDemand(live, limit);
+        }
         if (limit is < 1 or > PersonalMarketRules.MaintenanceBatch)
         {
             throw new ArgumentOutOfRangeException(nameof(limit));

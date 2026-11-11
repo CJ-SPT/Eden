@@ -227,6 +227,11 @@ internal sealed partial class PilotMarketStore(
 
     public void CheckStation(long pilotId, int stationId)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            ResidentCheckStation(live, pilotId, stationId);
+            return;
+        }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         _ = TradeStation(catalog, Pilot(world, pilotId), stationId);
@@ -270,6 +275,10 @@ internal sealed partial class PilotMarketStore(
 
     private MarketSummary ReadOrders(long pilotId, int? typeId, MarketScope? scope)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentReadOrders(live, pilotId, typeId, scope);
+        }
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryLoad");
         using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
         using var transaction = world.Database.BeginTransaction();
@@ -419,6 +428,10 @@ internal sealed partial class PilotMarketStore(
 
     public IReadOnlyList<MarketTrade> Transactions(long pilotId, MarketTransactionQuery? query = null)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentTransactions(live, pilotId, query);
+        }
         using WorldDbContext world = new(database.Path);
         if (query is { Limit: < 1 or > 1000 })
         {
@@ -449,6 +462,10 @@ internal sealed partial class PilotMarketStore(
 
     public IReadOnlyList<MarketHistoryDay> History(long pilotId, IReadOnlyList<int> typeIds)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentHistory(live, pilotId, typeIds);
+        }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);

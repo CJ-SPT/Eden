@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident inventory and market transactions](protocol/performance.md#resident-inventory-and-market-transactions-november-11-2026)
+records atomic resident trades and ordinary cargo, coherent saves and matched economic-frame measurements.
+
 [Blueprint supply at every regional hub](protocol/industry.md#blueprint-supply-at-every-regional-hub-november-11-2026)
 records global NPC-original coverage, retained eligibility rules and existing-save backfill.
 

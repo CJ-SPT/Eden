@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Market;
 
-internal sealed class RegionalMarketStore(CapsuleerActivitySource? activity)
+internal sealed partial class RegionalMarketStore(CapsuleerActivitySource? activity)
 {
     internal static bool Enabled(WorldDbContext world) =>
         world.Settings.Economy.ProgressiveMarkets

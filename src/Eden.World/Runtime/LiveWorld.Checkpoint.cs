@@ -18,6 +18,7 @@ internal sealed record WorldResidentCapture(
     CapsuleerClockCheckpoint? Activity,
     CapsuleerJobCheckpoint Jobs,
     CapsuleerRoutineCheckpoint Routines,
+    Eden.World.Runtime.Economy.EconomyCheckpoint Economy,
     TimeSpan Wait,
     TimeSpan Capture,
     long AllocatedBytes
@@ -106,6 +107,7 @@ internal sealed partial class LiveWorld
                 activity,
                 new(CapsuleerJobs.Values.Where(j => ProjectedCapsuleerJobs.GetValueOrDefault(j.PilotId) != j).ToArray()),
                 CapsuleerRoutines.Capture(),
+                Economy.Capture(),
                 wait,
                 Stopwatch.GetElapsedTime(started) - wait,
                 GC.GetAllocatedBytesForCurrentThread() - allocated

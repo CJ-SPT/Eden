@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Inventory;
 
 // Callers own the transaction and feature-specific eligibility/stack-selection policy.
-internal static class InventoryPersistence
+internal static partial class InventoryPersistence
 {
     internal static OwnedItem? OwnedStack(WorldDbContext world, long pilotId, long id) =>
         world.Set<OwnedItem>().Find(id) is { } item && item.OwnerId == pilotId ? item : null;

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Combat;
 
-internal readonly record struct CombatRowChange(string Table, long Id);
+internal readonly record struct CombatRowChange(string Table, long Id, bool Resident = false);
 
 internal sealed partial class LiveCombatRuntime(
     LiveWorld owner,
@@ -662,8 +662,11 @@ internal sealed partial class LiveCombatRuntime(
                     // Invalidate the previous mapped owner's profile on the new row too.
                     if (_itemPilots.TryGetValue(change.Id, out long previousPilot))
                     {
-                        _ships.Remove(previousPilot);
-                        _savedShips.Remove(previousPilot);
+                        if (!change.Resident)
+                        {
+                            _ships.Remove(previousPilot);
+                            _savedShips.Remove(previousPilot);
+                        }
                     }
                     break;
                 case "WorldWeaponLink":

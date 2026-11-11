@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Characters;
 
 [Injectable]
-internal sealed class PilotTaskTrackingStore(WorldDatabase database, TimeProvider clock) : IPilotTaskTracking
+internal sealed partial class PilotTaskTrackingStore(WorldDatabase database, TimeProvider clock) : IPilotTaskTracking
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 

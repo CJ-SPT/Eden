@@ -100,11 +100,33 @@ internal sealed partial class LiveWorld : IDisposable
     )
     {
         _sqlConnections.Value--;
+        if (Economy.IsProjecting)
+        {
+            return;
+        }
+        ObserveCommitted(changes, participants, projectionSystem, committedSystems);
+    }
+
+    internal void PublishEconomic(IReadOnlyCollection<CombatRowChange> changes, TransactionParticipants? participants = null) =>
+        ObserveCommitted(changes, participants, resident: true);
+
+    private void ObserveCommitted(
+        IReadOnlyCollection<CombatRowChange> changes,
+        TransactionParticipants? participants = null,
+        int? projectionSystem = null,
+        IReadOnlySet<int>? committedSystems = null,
+        bool resident = false
+    )
+    {
+        if (!resident)
+        {
+            Economy.Observe(changes);
+        }
         if (changes.Count == 0)
         {
             return;
         }
-        var marketLocations = MarketLocations(changes);
+        var marketLocations = resident ? null : MarketLocations(changes);
         MarketSummaries.Observe(changes, marketLocations);
         if (
             changes.Any(c => c.Table is "schema" or "WorldMarketMembership" or "WorldEconomy" or "WorldConfigurationState")
@@ -141,7 +163,8 @@ internal sealed partial class LiveWorld : IDisposable
         {
             PreparationRevision++;
         }
-        IReadOnlyCollection<int>? affectedSystems = committedSystems;
+        IReadOnlyCollection<int>? affectedSystems =
+            resident && participants is not null ? ParticipantSystems(participants) : committedSystems;
         if (affectedSystems is null && projectionSystem is int source)
         {
             affectedSystems = [source];
@@ -277,6 +300,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal long CapsuleerInputReset { get; private set; }
     internal Dictionary<long, long> CapsuleerInputRevisions { get; } = [];
     internal Dictionary<long, long> CapsuleerShipRevisions { get; } = [];
+    internal Eden.World.Runtime.Economy.ResidentEconomy Economy { get; }
     internal LiveCapsuleerRoutines CapsuleerRoutines { get; }
     internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];
 
@@ -355,6 +379,7 @@ internal sealed partial class LiveWorld : IDisposable
         );
         CapsuleerActivity = new(database, clock);
         CapsuleerRoutines = new(this, _path);
+        Economy = new(this, database);
         _clock = clock;
         _report = report ?? ServerLog.Console.Debug;
         _reportFailure = report ?? ServerLog.Console.Error;
@@ -639,7 +664,8 @@ internal sealed partial class LiveWorld : IDisposable
                     resident.AllocatedBytes,
                     copyAllocated,
                     bytes,
-                    resident.Routines
+                    resident.Routines,
+                    resident.Economy
                 );
             }
             catch

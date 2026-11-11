@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Capsuleers;
 
 [Injectable]
-internal sealed class CapsuleerTrade(WorldDatabase database, PilotMarketStore market, MarketChangeSignal signal)
+internal sealed partial class CapsuleerTrade(WorldDatabase database, PilotMarketStore market, MarketChangeSignal signal)
 {
     internal bool Enabled()
     {
@@ -24,6 +24,18 @@ internal sealed class CapsuleerTrade(WorldDatabase database, PilotMarketStore ma
 
     internal void ListStock(long pilot, int station, decimal multiplier = 1)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            using var resident = live.Economy.Begin(new(pilots: [pilot]));
+            using CatalogDbContext source = new(database.CatalogPath);
+            bool changedResident = ListStock(resident, source, market, pilot, station, multiplier);
+            resident.Commit();
+            if (changedResident)
+            {
+                signal.Changed();
+            }
+            return;
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);

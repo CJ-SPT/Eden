@@ -12,10 +12,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Inventory;
 
 [Injectable]
-internal sealed class PilotAssetStore(WorldDatabase database) : IPilotAssets
+internal sealed partial class PilotAssetStore(WorldDatabase database) : IPilotAssets
 {
     public IReadOnlyList<PersonalAssetLocation> Locations(long pilotId)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentLocations(live, pilotId);
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -43,6 +47,10 @@ internal sealed class PilotAssetStore(WorldDatabase database) : IPilotAssets
 
     public IReadOnlyList<InventoryItem> Items(long pilotId, PersonalAssetQuery query)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentItems(live, pilotId, query);
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);

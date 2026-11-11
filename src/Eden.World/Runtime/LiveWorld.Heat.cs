@@ -36,16 +36,28 @@ internal sealed partial class LiveWorld
             return;
         }
         using WorldDbContext world = new(_path) { IsResidentProjection = true };
-        var rows = world
-            .Ships.Where(ship => ships.Contains(ship.Id))
-            .Select(ship => new HeatMembership(
-                ship.Id,
-                ship.OwnerId,
-                ship.StationId,
-                ship.Position == null ? null : ship.Position.SystemId,
-                ship.Position != null
-            ))
-            .ToDictionary(ship => ship.Id);
+        var rows = changes.Any(c => c.Resident)
+            ? ships
+                .Select(id => Economy.Peek<Eden.Data.World.Inventory.Ship>(id))
+                .OfType<Eden.Data.World.Inventory.Ship>()
+                .Select(ship => new HeatMembership(
+                    ship.Id,
+                    ship.OwnerId,
+                    ship.StationId,
+                    Economy.Peek<Eden.Data.World.Docking.FlightPosition>(ship.Id)?.SystemId,
+                    Economy.Peek<Eden.Data.World.Docking.FlightPosition>(ship.Id) is not null
+                ))
+                .ToDictionary(ship => ship.Id)
+            : world
+                .Ships.Where(ship => ships.Contains(ship.Id))
+                .Select(ship => new HeatMembership(
+                    ship.Id,
+                    ship.OwnerId,
+                    ship.StationId,
+                    ship.Position == null ? null : ship.Position.SystemId,
+                    ship.Position != null
+                ))
+                .ToDictionary(ship => ship.Id);
         foreach (long ship in ships)
         {
             var previous = _heatOwners[ship];

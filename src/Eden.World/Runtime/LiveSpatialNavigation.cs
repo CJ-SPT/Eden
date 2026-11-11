@@ -22,7 +22,10 @@ internal sealed partial class LiveReadModels
         {
             return;
         }
-        var modules = changes.Where(c => c.Table is "WorldActiveModule" or "WorldItemMembership").Select(c => c.Id).ToArray();
+        var modules = changes
+            .Where(c => c.Table == "WorldActiveModule" || c.Table == "WorldItemMembership" && !c.Resident)
+            .Select(c => c.Id)
+            .ToArray();
         HashSet<long> currentShips = [];
         if (modules.Length > 0)
         {

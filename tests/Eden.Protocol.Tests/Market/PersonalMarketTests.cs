@@ -31,7 +31,7 @@ public sealed class PersonalMarketTests
     private const long Stack = InventoryDefinitions.FirstOwnedItemId + 100;
     private const long Budget = 10_000_000;
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         internal TestClock Clock { get; } = new();
         internal TestWorld Db { get; }
@@ -183,10 +183,12 @@ public sealed class PersonalMarketTests
         Assert.Equal(60, f.Quantity(Seller));
     }
 
-    [Fact]
-    public void FullyFundedBuyOrdersRefundPriceImprovementAndDoNotChargeTheWalletTwice()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FullyFundedBuyOrdersRefundPriceImprovementAndDoNotChargeTheWalletTwice(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         f.Market.PlaceBuy(Buyer, new(f.Pilot.StationId, Ammo, 2000, 60, 1));
         Assert.Equal(Budget - 120_000 - 10_000, f.Market.Balance(Buyer));
         Assert.Equal(120_000, f.Market.Escrow(Buyer).IskCents);
@@ -203,10 +205,12 @@ public sealed class PersonalMarketTests
         Assert.Equal(40, Assert.Single(f.Market.History(Seller, [Ammo]), day => day.Date == sellerDay).Volume);
     }
 
-    [Fact]
-    public void MatchingUsesPriceThenTimeAndModificationRematchesWithEscrowAndFeeRollback()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MatchingUsesPriceThenTimeAndModificationRematchesWithEscrowAndFeeRollback(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         f.List(20, 900);
         long first = f.Order().Id;
         f.List(30, 800);
@@ -232,10 +236,12 @@ public sealed class PersonalMarketTests
         Assert.Equal(0, f.Market.Escrow(Buyer).IskCents);
     }
 
-    [Fact]
-    public async Task CompetingBuyersCannotDuplicateListedGoodsOrOverdrawEscrow()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CompetingBuyersCannotDuplicateListedGoodsOrOverdrawEscrow(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         f.List(10);
         async Task<bool> Attempt() =>
             await Task.Run(() =>
@@ -272,10 +278,12 @@ public sealed class PersonalMarketTests
         Assert.Empty(f.Market.Changes(Seller, 0));
     }
 
-    [Fact]
-    public void InvalidOwnershipFundsSourcesAndModificationCannotChangeAssets()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InvalidOwnershipFundsSourcesAndModificationCannotChangeAssets(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         Assert.Throws<InvalidDataException>(() => f.Market.PlaceSell(Buyer, [new(Stack, f.Pilot.StationId, Ammo, 1000, 1)], 1));
         f.List();
         var order = f.Order();
@@ -377,10 +385,12 @@ public sealed class PersonalMarketTests
         }
     }
 
-    [Fact]
-    public void OrderSlotsEscrowModificationsAndRejectedBatchRemainAtomic()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OrderSlotsEscrowModificationsAndRejectedBatchRemainAtomic(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         for (int index = 0; index < 5; index++)
         {
             f.List(1);
