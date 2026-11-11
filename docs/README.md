@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Shared bookmark folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026) covers shared locations, permissions, subscriptions and native updates.
+
 [Structure compression and gas decompression](protocol/structures.md#structure-compression-and-gas-decompression--november-11-2026) covers native resource conversion, losses and fuel/access checks.
 
 [Corporation contacts and standings](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026) covers shared contacts, labels, roles and native updates.

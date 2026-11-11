@@ -33,6 +33,12 @@ public sealed class SavedBookmarkFolder
     public bool IsActive { get; set; } = true;
     public bool IsKnown { get; set; } = true;
 
+    public bool IsPersonal { get; set; } = true;
+    public long? AdminGroupId { get; set; }
+    public long? ManageGroupId { get; set; }
+    public long? UseGroupId { get; set; }
+    public long? ViewGroupId { get; set; }
+
     public BookmarkFolder Snapshot() => new(Id, PilotId, Name, Description, IsActive, IsKnown);
 }
 
@@ -42,5 +48,14 @@ public sealed class SavedBookmarkSubfolder
     public long FolderId { get; set; }
     public string Name { get; set; } = "";
 
-    public BookmarkSubfolder Snapshot() => new(Id, FolderId, Name);
+    public long CreatorId { get; set; }
+
+    public BookmarkSubfolder Snapshot() => new(Id, FolderId, Name, CreatorId);
+}
+
+public sealed class SavedBookmarkConnection
+{
+    public long PilotId { get; set; }
+    public long FolderId { get; set; }
+    public bool IsActive { get; set; }
 }

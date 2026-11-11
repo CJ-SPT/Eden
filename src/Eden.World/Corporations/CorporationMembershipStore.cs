@@ -125,7 +125,16 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
             WithdrawOtherApplications(world, pilot.Id, application.Id, Now);
         }
         world.SaveChanges();
+        if (update.Status == CorporationApplicationStatus.Joined)
+        {
+            Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
+            world.SaveChanges();
+        }
         transaction.Commit();
+        if (update.Status == CorporationApplicationStatus.Joined)
+        {
+            database.NotifyAccessGroupsChanged();
+        }
         return application.Snapshot();
     }
 
@@ -160,7 +169,10 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         }
         Move(world, pilot, destination, Now);
         world.SaveChanges();
+        Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
+        world.SaveChanges();
         transaction.Commit();
+        database.NotifyAccessGroupsChanged();
     }
 
     private CorporationLeavePermission Permission(WorldDbContext world, long actorId, long pilotId)

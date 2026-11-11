@@ -11,6 +11,7 @@ namespace Eden.Protocol.Bookmarks;
 [Injectable]
 internal sealed class BookmarksHandler(
     IPilotBookmarks bookmarks,
+    BookmarkMonitor monitor,
     ISystemObjects systems,
     ICombatAnomalies sites,
     IPilotProbeScanning scanning,
@@ -62,18 +63,42 @@ internal sealed class BookmarksHandler(
             bool creating = park || method == "BookmarkStaticLocation";
             if (keywords is { Count: > 0 } && (!creating || keywords.Keys.Any(key => key != "subfolderID")))
             {
-                throw new InvalidDataException("Unexpected personal location arguments.");
+                throw new InvalidDataException("Unexpected location arguments.");
             }
             long pilotId = context.Pilot.PilotId;
             switch (method, args)
             {
                 case ("GetMyActiveBookmarks", []):
-                    return new BookmarkContentsReply(bookmarks.Read(pilotId));
+                    return new BookmarkContentsReply(monitor.Read(context));
                 case ("AddFolder", [true, var name, var description, null, null, null, null]):
                     return new BookmarkFolderReply(bookmarks.AddFolder(pilotId, Text(name), Text(description)));
-                case ("UpdateFolder", [long folder, var name, var description, null, null, null, null]):
-                    bookmarks.UpdateFolder(pilotId, folder, Text(name), Text(description));
-                    return PersonalAccessLevel;
+                case ("AddFolder", [false, var name, var description, var admin, var manage, var use, var view]):
+                    return new BookmarkFolderReply(
+                        bookmarks.AddSharedFolder(
+                            pilotId,
+                            Text(name),
+                            Text(description),
+                            new(OptionalId(admin), OptionalId(manage), OptionalId(use), OptionalId(view))
+                        )
+                    );
+                case ("UpdateFolder", [long folder, var name, var description, var admin, var manage, var use, var view]):
+                    if (bookmarks.Folder(pilotId, folder).IsPersonal)
+                    {
+                        if (admin is not null || manage is not null || use is not null || view is not null)
+                        {
+                            throw new InvalidDataException("Personal folders cannot use access lists.");
+                        }
+                        bookmarks.UpdateFolder(pilotId, folder, Text(name), Text(description));
+                        return PersonalAccessLevel;
+                    }
+                    return (int)
+                        bookmarks.UpdateSharedFolder(
+                            pilotId,
+                            folder,
+                            Text(name),
+                            Text(description),
+                            new(OptionalId(admin), OptionalId(manage), OptionalId(use), OptionalId(view))
+                        );
                 case ("DeleteFolder", [long folder]):
                     bookmarks.DeleteFolder(pilotId, folder);
                     break;
@@ -134,9 +159,9 @@ internal sealed class BookmarksHandler(
                         copy
                     );
                 case ("AddFolder" or "UpdateFolder", _):
-                    return new PilotCallResult.Failure("Choose a private personal folder; shared access groups are not available yet.");
+                    return new PilotCallResult.Failure("Invalid location folder arguments.");
                 default:
-                    return new PilotCallResult.Failure("Invalid personal location request.");
+                    return new PilotCallResult.Failure("Invalid location request.");
             }
             // The native bookmark service mutates its local cache after each RPC.
             return PilotCallResult.None;

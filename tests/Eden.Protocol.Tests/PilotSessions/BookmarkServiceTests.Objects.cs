@@ -145,6 +145,7 @@ public sealed partial class BookmarkServiceTests
     private static BookmarksHandler Handler(Fixture f, IReadOnlyList<StaticSpaceObject> objects) =>
         new(
             f.Store,
+            new BookmarkMonitor(f.Store, f.Clock),
             new BookmarkObjects(objects),
             f.Db.Services.GetRequiredService<ICombatAnomalies>(),
             f.Db.Services.GetRequiredService<IPilotProbeScanning>(),

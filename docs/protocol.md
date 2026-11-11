@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Shared bookmark folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026) covers shared locations, permissions, subscriptions and native updates.
+
 [Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026) covers native multi-job completion and atomic rollback.
 
 [Blueprint supply at every regional hub](protocol/industry.md#blueprint-supply-at-every-regional-hub-november-11-2026)
