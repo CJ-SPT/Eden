@@ -481,7 +481,7 @@ public sealed partial class ElectronicSupportHeatTests
     public void HeatInsertionFailureRollsBackBothPoolsEffectsCooldownsAndPublishedEvents(int type)
     {
         using Fixture f = new(type);
-        if (f.Kind == Family.Capacitor)
+        if (f.Kind is Family.Capacitor or Family.Ewar)
         {
             // Preserve rejection coverage at the offline SQL adapter boundary.
             f.Live.Dispose();
@@ -519,7 +519,7 @@ public sealed partial class ElectronicSupportHeatTests
     public void FailedStopKeepsTheStoredEffectAndHeatFromTheSamePaidGeneration(int type)
     {
         using Fixture f = new(type);
-        if (f.Kind == Family.Capacitor)
+        if (f.Kind is Family.Capacitor or Family.Ewar)
         {
             // Preserve rejection coverage at the offline SQL adapter boundary.
             f.Live.Dispose();

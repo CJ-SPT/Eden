@@ -3245,3 +3245,47 @@ Not performed; agent client testing is disabled.
 
 After rebuilding, repeat the reported workload and compare SQL commands, connections, fitting calculations,
 allocation and owner hold time; separate cold preparation and checkpoint capture.
+
+## Resident player electronic warfare (November 11, 2026)
+
+Player electronic-warfare activation, sweep, stop, cancellation and cold membership now use resident actions.
+Participant selection includes the actor, existing source/target endpoints and the new target before importing
+physical state. Cleanup includes the saved effect system as well as current memberships. Capacitor, replacement
+contact, cooldown, marker, hostility/crimewatch and paid heat publish together. The previous target's modifiers
+and heat source are removed through the same action.
+
+Normal activation shares cached ship/module inputs; cold or overloaded activation shares one source calculation.
+Private replacement remains atomic with the offline SQL adapter as well. Existing source-controlled repeat
+boundaries, stacking, legality, rolls, timing and range rules are preserved. Reference remains
+[EVE University electronic warfare](https://wiki.eveuniversity.org/Electronic_warfare), reconciled with the pinned
+catalog/rules fixtures.
+
+### Automated validation
+
+The exact resident lifecycle check failed against `7083bc36` on SQL commands and passed after conversion in
+**6.42 seconds**. The expanded ECM, dampener, tracking/guidance disruptor and target-painter matrix passed all
+**five cases in 9.01 seconds**. Each requires zero commands, connections and fitting calculations after warm-up
+for paid repeat/rejection, sweep and stop, and reopens active and stopped checkpoint generations.
+
+Existing SQL heat insertion/stop rejection checks retain the EWAR family through the offline adapter. The detached
+save-failure checks now include ECM contact rollback and retry together with heat, energy and marker state; all
+**ten boundary cases passed in 14.90 seconds**. Live state stays committed and events are not republished on retry.
+
+All **375 affected electronic-warfare, combat, bot-defense, ownership and checkpoint tests passed in 2m59s**.
+The solution build passed without warnings in **5.64 seconds**.
+Tool/solution restore, both Python policy suites (8 catalog and 9 formatting checks), formatting verification
+(1,943 files) and line-width verification passed.
+
+Closing filters/results are recorded under `artifacts/bot-resident-offensive-effects`. No full
+.NET suite was run. Tackle, other remote-effect mutations, missile launch/advancement, pilot loss, burnout and
+population maintenance still retain SQL paths. The installed-world workload has not been replayed and no live
+latency or supported-population increase is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After rebuilding, compare the reported workload with repeated electronic-warfare cycles and cancellation; measure
+owner hold time, SQL, fitting calculations and allocation separately from checkpoint work.

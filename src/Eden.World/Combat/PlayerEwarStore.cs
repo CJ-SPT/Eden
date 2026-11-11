@@ -17,6 +17,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -31,21 +32,21 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         LiveReadModels.Find(database.Path)?.EwarModuleOnline(pilotId, shipId, moduleId, ReadOnline)
         ?? ReadOnline(pilotId, shipId, moduleId);
 
-    private bool ReadOnline(long pilotId, long shipId, long moduleId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<OwnedItem>()
-            .Any(i =>
-                i.Id == moduleId
-                && i.OwnerId == pilotId
-                && i.LocationId == shipId
-                && i.Singleton
-                && i.Online
-                && i.FlagId >= (int)InventoryFlag.MediumSlot0
-                && i.FlagId <= (int)InventoryFlag.MediumSlot7
-            );
-    }
+    private bool ReadOnline(long pilotId, long shipId, long moduleId) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Set<OwnedItem>()
+                    .Any(item =>
+                        item.Id == moduleId
+                        && item.OwnerId == pilotId
+                        && item.LocationId == shipId
+                        && item.Singleton
+                        && item.Online
+                        && InventoryDefinitions.IsMediumSlot(item.FlagId)
+                    )
+        );
 
     private sealed record Target(
         TackleTarget Identity,
@@ -85,11 +86,14 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         bool overloaded
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(
+            database,
+            select: world => EwarParticipants(world, pilotId, module: moduleId, target: target)
+        );
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
         int group = item is null ? 0 : catalog.FittingType(item.TypeId)!.GroupId;
         if (
@@ -108,13 +112,16 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
-        var calculation = FittingCalculation.Read(
-            world,
-            catalog,
-            pilot,
-            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+        bool cached = !overloaded && world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId)) is not null;
+        var calculation = cached
+            ? null
+            : FittingCalculation.Read(world, catalog, pilot, overloadedModules: overloaded ? new HashSet<long> { moduleId } : null);
+        var module = PlayerEwarRules.Define(
+            item.Id,
+            item.TypeId,
+            effect,
+            PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, item), calculation)
         );
-        var module = PlayerEwarRules.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
         {
@@ -147,7 +154,8 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         var decision = victim.Pilot is null ? null : CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim.Pilot, system, now);
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
         long expires = checked(now + (long)Math.Ceiling(module.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
-        world.Set<WorldPlayerEwar>().Where(e => e.ModuleId == moduleId).ExecuteDelete();
+        world.RemoveRange(world.Set<WorldPlayerEwar>().Where(e => e.ModuleId == moduleId));
+        world.SaveChanges();
         var applied = PlayerEwarRules.Attempt(module, Distance(victim), victim.Attributes, rolls.Next());
         ElectronicWarfareContact contact = new(pilotId, pilot.ActiveShipId, module, victim.Identity, applied, now, expires);
         Eden.World.Drones.DroneCombatPersistence.Module(world, pilot.ActiveShipId, victim.Identity.Id, victim.Pilot is not null, now);
@@ -179,7 +187,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = expires;
-        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, expires) : null;
+        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation!, moduleId, now, expires) : null;
         world.SaveChanges();
         transaction.Commit();
         if (heat is not null)
@@ -192,7 +200,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
             Math.Max(0, origin.DistanceTo(victim.Position) - radius - (catalog.FittingType(victim.TypeId)!.Radius ?? 0));
     }
 
-    private static Target? ReadTarget(WorldDbContext world, CatalogDbContext catalog, TackleTarget target, int system, long now)
+    private static Target? ReadTarget(WorldAction world, CatalogDbContext catalog, TackleTarget target, int system, long now)
     {
         if (target.Kind == TackleTargetKind.Npc)
         {
@@ -206,7 +214,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
                 ? null
                 : new(target, NpcMotion.Position(npc), npc.TypeId, PilotFittingStore.ReadAttributes(catalog, npc.TypeId), Npc: npc);
         }
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == target.Id);
+        var pilot = world.Pilots.SingleOrDefault(p => p.ActiveShipId == target.Id);
         if (
             pilot?.ActiveShip.Position is not { } position
             || CrimewatchPersistence.System(catalog, pilot.ActiveShip) != system
@@ -238,8 +246,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         {
             return reads.PlayerEwarIncoming(targetId);
         }
-        using WorldDbContext world = new(database.Path);
-        return Active(world, targetId);
+        return WorldActionScope.Inspect(database, world => Active(world, targetId));
     }
 
     public void Sweep(long now)
@@ -248,16 +255,16 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         {
             return;
         }
-        using WorldDbContext world = new(database.Path);
+        using WorldActionScope transaction = new(database, select: world => EwarParticipants(world, all: true));
+        var world = transaction.World;
         if (!world.Set<WorldPlayerEwar>().Any())
         {
             return;
         }
-        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         foreach (var row in world.Set<WorldPlayerEwar>().ToArray())
         {
-            var source = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == row.PilotId);
+            var source = world.Pilots.SingleOrDefault(p => p.Id == row.PilotId);
             var item = world.Set<OwnedItem>().Find(row.ModuleId);
             // Paid rows belong to the source controller, including at repeat
             // boundaries. A victim advancing first cannot expire a continuous effect.
@@ -282,8 +289,8 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
 
     public void Stop(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => EwarParticipants(world, pilotId, shipId, moduleId));
+        var world = transaction.World;
         if (
             world.Set<WorldPlayerEwar>().SingleOrDefault(e => e.PilotId == pilotId && e.SourceShipId == shipId && e.ModuleId == moduleId) is
             { } row
@@ -293,7 +300,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         }
         else if (world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
         {
-            world.Set<ActiveFittedModule>().Where(m => m.ModuleId == moduleId && m.ShipId == shipId).ExecuteDelete();
+            world.RemoveRange(world.Set<ActiveFittedModule>().Where(m => m.ModuleId == moduleId && m.ShipId == shipId));
         }
         world.SaveChanges();
         transaction.Commit();
@@ -301,8 +308,8 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
 
     public void Cancel(long pilotId, long shipId, bool incoming = false)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => EwarParticipants(world, pilotId, shipId, incoming: incoming));
+        var world = transaction.World;
         var rows = world
             .Set<WorldPlayerEwar>()
             .Where(e =>
@@ -321,7 +328,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    private static void Remove(WorldDbContext world, WorldPlayerEwar row, long now)
+    private static void Remove(WorldAction world, WorldPlayerEwar row, long now)
     {
         var contact = row.Contact();
         ShipHeatPersistence.CancelSource(

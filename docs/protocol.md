@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident player electronic warfare](protocol/performance.md#resident-player-electronic-warfare-november-11-2026)
+records paid contact replacement, bounded participants, cleanup and coherent heat/effect saves.
+
 [Resident capacitor transactions and resource reads](protocol/performance.md#resident-capacitor-transactions-and-resource-reads-november-11-2026)
 records paired player/NPC energy payment, rejected repeats, cached fits and coherent saves.
 
