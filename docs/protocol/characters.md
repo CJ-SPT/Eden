@@ -82,6 +82,13 @@ The exact first filter was
 `FullyQualifiedName=Eden.Protocol.Tests.Persistence.SkillPurchaseTests.DirectPurchaseInjectsAtZeroAndPersistsChargesWithoutCreatingBooks`.
 No full .NET suite was requested or run.
 
+Main advanced during development. After merging `87c572a8` into the task branch, the complete root sequence passed again in
+**87.45 seconds**: **166 .NET tests passed**, with one optional `FreePointClientTests` case skipped because
+`EDEN_TEST_CLIENT_ROOT` was unset; the zero-warning/error build, **8 + 9 Python policy cases**, and formatting verification
+(**1,683 files**) passed. The integrated filter was the root filter above plus
+`|FullyQualifiedName~FreeSkillPoint|FullyQualifiedName~FreePointClient`. Test reports were preserved in ignored
+`artifacts/skill-purchase-20261111/` in the main checkout before task-worktree removal.
+
 **Live acceptance.** Not performed; agent client testing is disabled. The supplied error screenshot is report evidence,
 not acceptance of this implementation.
 
