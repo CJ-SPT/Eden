@@ -27,7 +27,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
                 .Where(b => active.Contains(b.FolderId) && (b.ExpiresAt == null || b.ExpiresAt > now))
                 .OrderBy(b => b.Id)
                 .AsEnumerable()
-                .Select(b => b.Snapshot())
+                .Select(b => Snapshot(b))
                 .ToArray(),
             world
                 .Set<SavedBookmarkSubfolder>()
@@ -121,7 +121,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
                             .Where(b => b.FolderId == folderId && (b.ExpiresAt == null || b.ExpiresAt > now))
                             .OrderBy(b => b.Id)
                             .AsEnumerable()
-                            .Select(b => b.Snapshot())
+                            .Select(b => Snapshot(b))
                             .ToArray()
                         : [],
                     active && known
@@ -246,6 +246,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
     )
     {
         BookmarkRules.CheckTarget(target);
+        target = BookmarkRules.DurableTarget(target);
         BookmarkRules.CheckName(text.Name);
         BookmarkRules.CheckDescription(text.Note);
         long now = Now;
@@ -274,7 +275,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
                 };
                 world.Add(bookmark);
                 world.SaveChanges();
-                return bookmark.Snapshot();
+                return Snapshot(bookmark);
             }
         );
     }
@@ -288,7 +289,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
         {
             throw new InvalidDataException("This personal location is inactive or expired.");
         }
-        return bookmark.Snapshot();
+        return Snapshot(bookmark);
     }
 
     public void Update(long pilotId, BookmarkEdit edit)
@@ -374,7 +375,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
                     })
                     .ToArray();
                 world.SaveChanges();
-                return (IReadOnlyList<PersonalBookmark>)changed.Select(b => b.Snapshot()).ToArray();
+                return (IReadOnlyList<PersonalBookmark>)changed.Select(b => Snapshot(b)).ToArray();
             }
         );
 
@@ -387,6 +388,12 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
         world.SaveChanges();
         transaction.Commit();
         return result;
+    }
+
+    private static PersonalBookmark Snapshot(SavedBookmark row)
+    {
+        var bookmark = row.Snapshot();
+        return bookmark with { Target = BookmarkRules.DurableTarget(bookmark.Target) };
     }
 
     private static void CheckPilot(WorldDbContext world, long pilotId)

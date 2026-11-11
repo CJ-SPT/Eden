@@ -1,5 +1,7 @@
 using Eden.Gameplay.Bookmarks;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -7,7 +9,13 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Bookmarks;
 
 [Injectable]
-internal sealed class BookmarksHandler(IPilotBookmarks bookmarks, ISystemObjects systems) : ISelectedPilotCallHandler
+internal sealed class BookmarksHandler(
+    IPilotBookmarks bookmarks,
+    ISystemObjects systems,
+    ICombatAnomalies sites,
+    IPilotProbeScanning scanning,
+    TimeProvider clock
+) : ISelectedPilotCallHandler
 {
     private const int PersonalAccessLevel = 1;
 
@@ -19,7 +27,7 @@ internal sealed class BookmarksHandler(IPilotBookmarks bookmarks, ISystemObjects
         Dictionary<string, object?>? keywords = null
     )
     {
-        bool park = service == "beyonce" && method == "BookmarkLocation";
+        bool park = service == "beyonce" && method is "BookmarkLocation" or "BookmarkScanResult";
         if (
             !park
             && (
@@ -93,8 +101,20 @@ internal sealed class BookmarksHandler(IPilotBookmarks bookmarks, ISystemObjects
                     long? subfolderId = OptionalId(keywords?.GetValueOrDefault("subfolderID"));
                     var saved = park
                         ? bookmarks.Create(pilotId, CurrentLocation(context, item), folder, subfolderId, text, duration)
-                        : bookmarks.CreateStatic(pilotId, item, folder, subfolderId, text, duration);
+                        : StaticLocation(context, item, folder, subfolderId, text, duration);
                     return new BookmarkCreationReply(saved);
+                case ("BookmarkScanResult", [long system, var name, var note, var result, long folder, long expiry]):
+                    var scanTarget = ScanLocation(context, system, result);
+                    return new BookmarkCreationReply(
+                        bookmarks.Create(
+                            pilotId,
+                            scanTarget,
+                            folder,
+                            OptionalId(keywords?.GetValueOrDefault("subfolderID")),
+                            new(Text(name), Text(note)),
+                            Expiry(expiry)
+                        )
+                    );
                 case ("UpdateBookmark", [long id, long folder, var name, var note, var subfolder, long destination, var cancel]):
                     bookmarks.Update(
                         pilotId,
@@ -139,17 +159,64 @@ internal sealed class BookmarksHandler(IPilotBookmarks bookmarks, ISystemObjects
         {
             return new(null, BookmarkRules.SolarSystemTypeId, pilot.SystemId, position);
         }
-        if (systems.Load(pilot.SystemId).FirstOrDefault(body => body.Id == itemId) is { } body)
+        if (itemId <= int.MaxValue && systems.Load(pilot.SystemId).FirstOrDefault(body => body.Id == itemId) is { } body)
         {
             return new(body.Id, body.TypeId, pilot.SystemId, body.Position);
         }
-        if (context.Flight.FindTarget(itemId) is { } target)
+        if (context.Flight.FindBookmarkObject(itemId) is { } target)
         {
-            // Mobile objects are saved as coordinates, so disappearance does not
-            // turn a bookmark into a reference to a different later object.
+            // Generated rocks, scenery, ships and other temporary objects remain useful
+            // as coordinates after depletion, destruction, movement or removal.
             return new(null, BookmarkRules.SolarSystemTypeId, pilot.SystemId, target.Position);
         }
         throw new InvalidDataException("Choose your ship or a visible location in this solar system.");
+    }
+
+    private PersonalBookmark StaticLocation(
+        PilotCallContext context,
+        long item,
+        long folder,
+        long? subfolder,
+        BookmarkText text,
+        BookmarkExpiry expiry
+    )
+    {
+        if (item <= int.MaxValue)
+        {
+            return bookmarks.CreateStatic(context.Pilot.PilotId, item, folder, subfolder, text, expiry);
+        }
+        // The native client routes Upwell structures through BookmarkStaticLocation too.
+        var structure =
+            systems.Load(context.Pilot.SystemId).SingleOrDefault(body => body.Id == item && body.CategoryId == StructureRules.CategoryId)
+            ?? throw new InvalidDataException("Choose a known structure in your current solar system.");
+        return bookmarks.Create(
+            context.Pilot.PilotId,
+            new(null, BookmarkRules.SolarSystemTypeId, context.Pilot.SystemId, structure.Position),
+            folder,
+            subfolder,
+            text,
+            expiry
+        );
+    }
+
+    private BookmarkTarget ScanLocation(PilotCallContext context, long system, object? result)
+    {
+        context.Flight.Checkpoint();
+        if (!context.Flight.InBallpark || context.Pilot.Position is null || system != context.Pilot.SystemId)
+        {
+            throw new InvalidDataException("Bookmark scan results while in space in their solar system.");
+        }
+        string? target = result is string or byte[] ? BlueMarshal.Text(result) : null;
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var site = sites
+            .List(context.Pilot.SystemId, now)
+            .Concat(sites.Signatures(context.Pilot.SystemId, now))
+            .SingleOrDefault(site => target is not null ? site.TargetId == target : result is long id && site.Id == id);
+        if (site is null || site.IsSignature && !scanning.Resolved(context.Pilot.PilotId, site.Id, site.SystemId, now))
+        {
+            throw new InvalidDataException("Choose a current public anomaly or a cosmic signature you have resolved to 100%.");
+        }
+        return new(null, BookmarkRules.SolarSystemTypeId, site.SystemId, site.Position);
     }
 
     private static string Text(object? value) =>

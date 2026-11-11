@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026) covers asteroid/object bookmarks and resolved scan results.
+
 [Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) covers mission-panel goals and updates.
 
 [Neocom skill startup](protocol/characters.md#neocom-skill-startup-november-11-2026) records the built-in service-manager
