@@ -46,6 +46,7 @@ internal sealed partial class CapsuleerScheduler(
     private IReadOnlyList<CapsuleerBlockingReason> _blockingReasons = [];
     private bool _blockingChanged;
     private bool _membershipDirty = true;
+    private long _routineRevision;
     private int[] _reconciledSystems = [];
     private IReadOnlyList<SelectedHumanPilot> _reconciledPilots = [];
     private long _reconciledResumes = -1;
@@ -247,11 +248,11 @@ internal sealed partial class CapsuleerScheduler(
             _loadedPilots.UnionWith(_admittedTravelers);
             foreach (var saved in world.Set<SavedCapsuleerCoarsePilot>().AsNoTracking())
             {
-                _coarseSettled[saved.PilotId] = saved.SettledTicks;
+                Live!.CapsuleerRoutines.Restore(saved.PilotId, saved.SettledTicks);
             }
             foreach (var saved in world.Set<SavedCapsuleerCoarseWork>().AsNoTracking())
             {
-                _coarseWork[saved.SystemId] = new(saved.SystemId, saved.Generation, saved.Cursor, saved.SettledTicks, saved.NextTicks);
+                Live!.CapsuleerRoutines.Restore(new(saved.SystemId, saved.Generation, saved.Cursor, saved.SettledTicks, saved.NextTicks));
             }
         }
         bool incremental = _loaded && (preparedSystem is not null || preparedPilot is not null);
@@ -597,6 +598,12 @@ internal sealed partial class CapsuleerScheduler(
 
     private void Reconcile(HumanActivitySnapshot activity)
     {
+        long revision = Live?.CapsuleerRoutines.Revision ?? 0;
+        if (_routineRevision != revision)
+        {
+            _routineRevision = revision;
+            _membershipDirty = true;
+        }
         var policy = _populationSettings.Settings.Capsuleers;
         IReadOnlyList<WatchedTrafficGate> gates = policy.Enabled && policy.GateVisitors > 0 ? gateWatch.Read(activity) : [];
         if (

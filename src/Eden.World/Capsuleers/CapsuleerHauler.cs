@@ -364,7 +364,11 @@ internal sealed partial class CapsuleerHauler(
         if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
         {
             _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
-            using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
+            using WorldDbContext world = new(database.Path)
+            {
+                Participants = new(pilots: [pilotId]),
+                UsesResidentCapsuleerRoutines = Live is not null,
+            };
             if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == Pilot.ShipId))
             {
                 Load();
@@ -664,7 +668,11 @@ internal sealed partial class CapsuleerHauler(
 
     private void Load()
     {
-        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
+        using WorldDbContext world = new(database.Path)
+        {
+            Participants = new(pilots: [pilotId]),
+            UsesResidentCapsuleerRoutines = Live is not null,
+        };
         using var transaction = world.Database.BeginTransaction();
         _founder = world.Set<SavedCapsuleerHauler>().AsNoTracking().SingleOrDefault(h => h.PilotId == pilotId);
         _loaded = true;
@@ -682,7 +690,13 @@ internal sealed partial class CapsuleerHauler(
         _work = Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work ?? HaulerCheckpoint.Read(Founder.Progress);
         var previous = _work;
         long anchor =
-            previous?.ActiveTicks ?? (world.Set<SavedCapsuleerJob>().Single(j => j.PilotId == pilotId).DueTicks - TimeSpan.TicksPerSecond);
+            previous?.ActiveTicks
+            ?? (
+                (
+                    Live?.CapsuleerJobs.GetValueOrDefault(pilotId)?.DueTicks
+                    ?? world.Set<SavedCapsuleerJob>().Single(j => j.PilotId == pilotId).DueTicks
+                ) - TimeSpan.TicksPerSecond
+            );
         if (_work is null || Work.ShipId != Pilot.ShipId)
         {
             _navigation = new();
@@ -948,10 +962,9 @@ internal sealed partial class CapsuleerHauler(
             _obstacles
         );
         _pilot = Pilot with { Position = tick.Position };
-        if (_coarse)
+        if (_operation.HasWorld)
         {
-            // Several analytic boundaries share this transaction. Subsequent
-            // docking/jump validation must see its own latest position in SQL.
+            // An open mutation must see subsequent movement in its private transaction.
             SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, tick.Position, Pilot.SystemId, Now);
         }
         else if (Live?.Combat is { } resident)
@@ -962,7 +975,7 @@ internal sealed partial class CapsuleerHauler(
         {
             SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, tick.Position, Pilot.SystemId, Now);
         }
-        if (!wasWarping && _navigation.Warp is not null)
+        if (!_background && !wasWarping && _navigation.Warp is not null)
         {
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
         }

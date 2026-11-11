@@ -35,7 +35,7 @@ public sealed class CapsuleerTierTests
     }
 
     [Fact]
-    public void FailedDemotionKeepsDirtyStateForRetry()
+    public void DemotionRetainsMotionAndFailedProjectionKeepsItForRetry()
     {
         using Combat.NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);
         var live = LiveWorld.Find(fixture.Db.Path)!;
@@ -49,10 +49,19 @@ public sealed class CapsuleerTierTests
             command.CommandText = "CREATE TRIGGER RejectDemotion BEFORE UPDATE ON WorldPosition BEGIN SELECT RAISE(ABORT,'test'); END";
             command.ExecuteNonQuery();
         }
-        Assert.Throws<SqliteException>(() => live.ReleaseSystemDetails(Elsewhere));
-        Assert.Equal(moved, runtime.InformationPosition(Combat.NpcCombatTests.Fixture.ShipId));
-        using (var command = fault.CreateCommand())
+        try
         {
+            Assert.True(live.ReleaseSystemDetails(Elsewhere));
+            Assert.Equal(moved, runtime.InformationPosition(Combat.NpcCombatTests.Fixture.ShipId));
+            Assert.Equal(0, runtime.DetailedEntries);
+            Assert.Equal(1, runtime.CompactPositions);
+            using WorldDbContext rejected = new(fixture.Db.Path);
+            Assert.Throws<SqliteException>(() => rejected.Positions.Single(p => p.ShipId == Combat.NpcCombatTests.Fixture.ShipId));
+            Assert.Equal(moved, runtime.InformationPosition(Combat.NpcCombatTests.Fixture.ShipId));
+        }
+        finally
+        {
+            using var command = fault.CreateCommand();
             command.CommandText = "DROP TRIGGER RejectDemotion";
             command.ExecuteNonQuery();
         }
@@ -64,7 +73,7 @@ public sealed class CapsuleerTierTests
     }
 
     [Fact]
-    public void DemotionProjectsDirtyMotionAndLeavesAnotherSystemsContactsWarm()
+    public void DemotionRetainsCompactMotionAndLeavesAnotherSystemsContactsWarm()
     {
         using Combat.NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);
         var live = LiveWorld.Find(fixture.Db.Path)!;
@@ -74,6 +83,7 @@ public sealed class CapsuleerTierTests
         live.CombatForSystem(Elsewhere)!.PublishPilotPosition(Combat.NpcCombatTests.Fixture.ShipId, Elsewhere, moved);
         Assert.True(live.ReleaseSystemDetails(Elsewhere));
         Assert.Equal(0, live.CombatForSystem(Elsewhere)!.DetailedEntries);
+        Assert.Equal(1, live.CombatForSystem(Elsewhere)!.CompactPositions);
         using (WorldDbContext world = new(fixture.Db.Path))
         {
             var position = world.Positions.Single(p => p.ShipId == Combat.NpcCombatTests.Fixture.ShipId);

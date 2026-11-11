@@ -25,6 +25,12 @@ Regional preparation creates residents without continuously scheduling every res
 explicit gate visitors keep progressing remotely in roughly minute-scale batches. Selected human systems and unfinished
 interactions retain detailed simulation. Remote updates may lag under load; returning uses committed state and skips
 unprocessed time rather than replaying a history of actions. Existing paid work, ships, cargo and wallets are retained.
+Remote cursors, deadlines and role progress now remain authoritative in ordinary resident objects. Releasing native scene
+detail retains compact moving positions, and checkpoints capture these records together with the relational economic image.
+Ordinary warmed remote navigation and routine settlement do not issue SQL. Docking, gate transfers, finite resource payments,
+inventory and market transactions still use the existing SQL transaction boundary; eliminating those transactions is subsequent
+work, requiring shared resident ownership and equivalent rejection/rollback rules for both humans and bots.
+See [resident routine evidence](protocol/performance.md#resident-remote-bot-routines-november-11-2026).
 The simulation clock still pauses when no humans are selected and while the server is stopped.
 A failed community expansion rolls back that community while others continue. Completed communities survive and are reused on restart.
 

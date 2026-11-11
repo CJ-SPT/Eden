@@ -121,6 +121,7 @@ internal sealed partial class LiveWorld : IDisposable
             }
         }
         TrafficGeometry.Observe(changes);
+        CapsuleerRoutines.Observe(changes);
         if (changes.Any(c => c.Table is "WorldItem" or "WorldCapsuleerAgent" or "schema"))
         {
             TrafficTemplateRevision++;
@@ -276,6 +277,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal long CapsuleerInputReset { get; private set; }
     internal Dictionary<long, long> CapsuleerInputRevisions { get; } = [];
     internal Dictionary<long, long> CapsuleerShipRevisions { get; } = [];
+    internal LiveCapsuleerRoutines CapsuleerRoutines { get; }
     internal Dictionary<long, CapsuleerJob> CapsuleerJobs { get; } = [];
 
     // These versions describe the resident SQL image, which is the source for every backup.
@@ -352,6 +354,7 @@ internal sealed partial class LiveWorld : IDisposable
             () => _heldSystems.Value!.Count == 0 || _ownershipMonitor.IsEntered
         );
         CapsuleerActivity = new(database, clock);
+        CapsuleerRoutines = new(this, _path);
         _clock = clock;
         _report = report ?? ServerLog.Console.Debug;
         _reportFailure = report ?? ServerLog.Console.Error;
@@ -635,7 +638,8 @@ internal sealed partial class LiveWorld : IDisposable
                     copy,
                     resident.AllocatedBytes,
                     copyAllocated,
-                    bytes
+                    bytes,
+                    resident.Routines
                 );
             }
             catch

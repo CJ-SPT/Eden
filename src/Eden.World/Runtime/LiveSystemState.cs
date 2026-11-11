@@ -15,6 +15,7 @@ internal sealed class LiveSystemState
     internal LiveTimedModules TimedModules { get; }
     internal bool Expiring { get; set; }
     internal bool SimulationEntered { get; set; }
+    internal HashSet<long> Capsuleers { get; } = [];
     internal Dictionary<long, CapsuleerMiner> Miners { get; } = [];
     internal Dictionary<long, CapsuleerHauler> Haulers { get; } = [];
 

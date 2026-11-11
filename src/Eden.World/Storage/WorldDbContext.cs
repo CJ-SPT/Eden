@@ -64,6 +64,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
     internal TransactionParticipants? Participants { get; init; }
     internal IReadOnlySet<int>? CommittedSystems { get; init; }
     internal bool IsResidentProjection { get; init; }
+    internal bool UsesResidentCapsuleerRoutines { get; init; }
 
     private readonly SqliteConnection? _snapshot;
 

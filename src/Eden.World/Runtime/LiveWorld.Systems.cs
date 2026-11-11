@@ -136,6 +136,27 @@ internal sealed partial class LiveWorld
         }
     }
 
+    internal IReadOnlyCollection<long> CapsuleerParticipants(TransactionParticipants? participants)
+    {
+        if (participants is null)
+        {
+            return CapsuleerJobs.Keys.ToArray();
+        }
+        HashSet<long> pilots = [.. participants.Pilots.Where(CapsuleerJobs.ContainsKey)];
+        foreach (long ship in participants.Ships)
+        {
+            if (_shipOwners.TryGetValue(ship, out long pilot) && CapsuleerJobs.ContainsKey(pilot))
+            {
+                pilots.Add(pilot);
+            }
+        }
+        foreach (var entry in _systems.Existing(participants.Systems))
+        {
+            pilots.UnionWith(entry.State.Capsuleers);
+        }
+        return pilots;
+    }
+
     internal void ProjectShared(TransactionParticipants? participants)
     {
         using var context = UseShared();
@@ -205,11 +226,13 @@ internal sealed partial class LiveWorld
         {
             var prior = _systems.Get(old);
             using var ownership = prior.Enter("capsuleer departure");
+            prior.State.Capsuleers.Remove(pilot);
             prior.State.Miners.Remove(pilot);
             prior.State.Haulers.Remove(pilot);
         }
         var entry = _systems.Get(system);
         using var arrival = entry.Enter("capsuleer admission");
+        entry.State.Capsuleers.Add(pilot);
         entry.State.Miners.Remove(pilot);
         entry.State.Haulers.Remove(pilot);
         if (miner is not null)

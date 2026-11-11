@@ -17,6 +17,7 @@ internal sealed record WorldResidentCapture(
     IReadOnlyList<HaulerCheckpoint> Haulers,
     CapsuleerClockCheckpoint? Activity,
     CapsuleerJobCheckpoint Jobs,
+    CapsuleerRoutineCheckpoint Routines,
     TimeSpan Wait,
     TimeSpan Capture,
     long AllocatedBytes
@@ -104,6 +105,7 @@ internal sealed partial class LiveWorld
                 HaulerCheckpoints.Values.Where(h => ProjectedHaulers.GetValueOrDefault(h.PilotId) != h).ToArray(),
                 activity,
                 new(CapsuleerJobs.Values.Where(j => ProjectedCapsuleerJobs.GetValueOrDefault(j.PilotId) != j).ToArray()),
+                CapsuleerRoutines.Capture(),
                 wait,
                 Stopwatch.GetElapsedTime(started) - wait,
                 GC.GetAllocatedBytesForCurrentThread() - allocated

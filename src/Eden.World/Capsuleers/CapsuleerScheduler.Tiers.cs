@@ -22,18 +22,9 @@ internal sealed partial class CapsuleerScheduler
         {
             return;
         }
-        try
-        {
-            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-            world.Database.ExecuteSql($"INSERT OR IGNORE INTO WorldCapsuleerSimulation(SystemId,StartedTicks) VALUES({system},{elapsed})");
-            _systems.Register(system);
-            _freshRemote.Add(system);
-        }
-        catch
-        {
-            _remoteSystems.Remove(system);
-            throw;
-        }
+        Live.CapsuleerRoutines.Activate(system, elapsed);
+        _systems.Register(system);
+        _freshRemote.Add(system);
     }
 
     private bool Detailed(long pilot, HumanActivitySnapshot activity) =>

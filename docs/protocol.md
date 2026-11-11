@@ -2,6 +2,9 @@
 
 [Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) connects existing mission progress to the native tracker.
 
+[Resident remote bot routines](protocol/performance.md#resident-remote-bot-routines-november-11-2026)
+records SQL-free warm remote navigation and routine settlement, retained compact positions, and coherent detached saves.
+
 [Arrival movement and fitting costs](protocol/performance.md#arrival-movement-and-fitting-costs-november-11-2026)
 records coordinate-only updates, fitting invalidation boundaries, finite supplies and matched remote-action work counts.
 

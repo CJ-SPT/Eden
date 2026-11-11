@@ -2,6 +2,9 @@
 
 [Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) covers mission-panel goals and updates.
 
+[Resident remote bot routines](protocol/performance.md#resident-remote-bot-routines-november-11-2026)
+records SQL-free warm remote navigation and routine settlement, retained compact positions, and coherent detached saves.
+
 [Neocom skill startup](protocol/characters.md#neocom-skill-startup-november-11-2026) records the built-in service-manager
 lookup correction and automated native skill-button startup regression.
 

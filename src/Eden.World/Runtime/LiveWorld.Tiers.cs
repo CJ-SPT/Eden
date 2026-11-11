@@ -35,7 +35,9 @@ internal sealed partial class LiveWorld
         }
         // Projection is a transaction boundary. A failed projection leaves the dirty
         // records resident and prevents eviction; the next handoff can retry it.
-        entry.State.Combat?.Clear();
+        // Compact positions remain resident after detail eviction, retaining their
+        // dirty SQL difference for future transactions and detached checkpoints.
+        entry.State.Combat?.Clear(retainPositions: true);
         entry.State.Reads?.Clear();
         return true;
     }

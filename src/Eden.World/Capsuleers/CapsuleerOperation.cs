@@ -60,11 +60,14 @@ internal sealed class CapsuleerOperation(
                         participants = null;
                     }
                 }
-                _world = new(database.Path) { Participants = participants };
+                _world = new(database.Path) { Participants = participants, UsesResidentCapsuleerRoutines = live is not null };
                 _transaction = _world.Database.BeginTransaction();
-                // Resident scheduling is canonical between checkpoints. Bring its
-                // expected revision into the same transaction before the mutation.
-                CapsuleerJobCheckpoint.Apply(_world, expected);
+                // Offline tools retain the SQL job contract. Live progress is published
+                // only after this mutation commits, under the same scheduler owner.
+                if (live is null)
+                {
+                    CapsuleerJobCheckpoint.Apply(_world, expected);
+                }
             }
             return _world;
         }
@@ -76,58 +79,42 @@ internal sealed class CapsuleerOperation(
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.commitPublication");
         var live = LiveWorld.Find(database.Path);
-        if (_world is not null || live is null || coarse is not null)
+        if (live?.CapsuleerJobs.TryGetValue(expected.PilotId, out var current) == true && current != expected)
+        {
+            throw new InvalidOperationException("A stale capsuleer job cannot commit.");
+        }
+        if (coarse is not null)
+        {
+            live?.CapsuleerRoutines.Validate(coarse);
+        }
+        if (_world is not null || live is null)
         {
             var world = World;
-            miner?.Apply(world);
-            hauler?.Apply(world);
-            int changed = world.Database.ExecuteSql(
-                $"""
-                UPDATE WorldCapsuleerJob SET Revision={next.Revision},Sequence={next.Sequence},
-                    DueTicks={next.DueTicks},Action={next.Action}
-                WHERE PilotId={expected.PilotId} AND Revision={expected.Revision} AND Sequence={expected.Sequence}
-                    AND DueTicks={expected.DueTicks} AND Action={expected.Action}
-                """
-            );
-            if (changed != 1)
+            if (live is null)
             {
-                throw new InvalidOperationException("The capsuleer job changed before settlement.");
-            }
-            if (coarse is not null)
-            {
-                int advanced = world.Database.ExecuteSql(
+                miner?.Apply(world);
+                hauler?.Apply(world);
+                int changed = world.Database.ExecuteSql(
                     $"""
-                    UPDATE WorldCapsuleerCoarseWork SET Cursor={expected.PilotId},Generation=Generation+1
-                    WHERE SystemId={coarse.SystemId} AND Generation={coarse.Generation} AND Cursor={coarse.Cursor}
+                    UPDATE WorldCapsuleerJob SET Revision={next.Revision},Sequence={next.Sequence},
+                        DueTicks={next.DueTicks},Action={next.Action}
+                    WHERE PilotId={expected.PilotId} AND Revision={expected.Revision} AND Sequence={expected.Sequence}
+                        AND DueTicks={expected.DueTicks} AND Action={expected.Action}
                     """
                 );
-                if (advanced != 1)
+                if (changed != 1)
                 {
-                    throw new CapsuleerCoarseConflictException(coarse.SystemId);
+                    throw new InvalidOperationException("The capsuleer job changed before settlement.");
                 }
-                world.Database.ExecuteSql(
-                    $"""
-                    INSERT INTO WorldCapsuleerCoarsePilot(PilotId,SettledTicks) VALUES({expected.PilotId},{coarse.ThroughTicks})
-                    ON CONFLICT(PilotId) DO UPDATE SET SettledTicks=excluded.SettledTicks
-                    """
-                );
             }
             world.SaveChanges();
             _transaction!.Commit();
-            if (live is not null)
-            {
-                live.ProjectedCapsuleerJobs[next.PilotId] = next;
-                if (miner is not null)
-                {
-                    live.ProjectedMiners[miner.PilotId] = miner;
-                }
-                if (hauler is not null)
-                {
-                    live.ProjectedHaulers[hauler.PilotId] = hauler;
-                }
-            }
         }
         Dispose();
+        if (coarse is not null)
+        {
+            live?.CapsuleerRoutines.Complete(coarse, expected.PilotId);
+        }
         if (live is not null)
         {
             if (miner is not null)

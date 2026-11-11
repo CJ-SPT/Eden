@@ -563,15 +563,18 @@ internal sealed partial class LiveCombatRuntime
             );
     }
 
-    private void ClearSimulation()
+    private void ClearSimulation(bool retainPositions)
     {
         _acquisitionShips.Clear();
         _systemNpcs.Clear();
         _populationDue.Clear();
         _effectiveNpcs.Clear();
-        _positions.Clear();
-        _savedPositions.Clear();
-        _dirtyPositions.Clear();
+        if (!retainPositions)
+        {
+            _positions.Clear();
+            _savedPositions.Clear();
+            _dirtyPositions.Clear();
+        }
         _sharedNpcContacts.Clear();
     }
 }

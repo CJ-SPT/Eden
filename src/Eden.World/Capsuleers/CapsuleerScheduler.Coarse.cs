@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Storage;
@@ -9,12 +8,14 @@ namespace Eden.World.Capsuleers;
 internal sealed partial class CapsuleerScheduler
 {
     private readonly CapsuleerBackgroundBudget _backgroundBudget = backgroundBudget ?? new(clock);
-    private readonly Dictionary<int, CapsuleerCoarseWork> _coarseWork = [];
+    private readonly Dictionary<int, CapsuleerCoarseWork> _offlineCoarseWork = [];
+    private IReadOnlyDictionary<int, CapsuleerCoarseWork> _coarseWork => Live?.CapsuleerRoutines.Work ?? _offlineCoarseWork;
     private readonly Dictionary<int, SortedSet<long>> _coarseMembers = [];
     private readonly SortedSet<(long Due, long Order, int System)> _coarseQueue = [];
     private readonly SortedSet<(long Settled, int System)> _coarseFreshness = [];
     private readonly Dictionary<long, CapsuleerResumeWork> _resumePilots = [];
-    private readonly Dictionary<long, long> _coarseSettled = [];
+    private readonly Dictionary<long, long> _offlineCoarseSettled = [];
+    private IReadOnlyDictionary<long, long> _coarseSettled => Live?.CapsuleerRoutines.Settled ?? _offlineCoarseSettled;
     private readonly HashSet<long> _pendingArrivals = [];
     private readonly HashSet<long> _admittedTravelers = [];
     private readonly Dictionary<long, CoarseRoleInputs> _coarseInputs = [];
@@ -67,23 +68,9 @@ internal sealed partial class CapsuleerScheduler
         {
             return;
         }
-        using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-        using var transaction = world.Database.BeginTransaction();
-        foreach (var page in pilots.Chunk(CapsuleerCoarseRules.PageSize))
-        {
-            string ids = JsonSerializer.Serialize(page);
-            world.Database.ExecuteSql(
-                $"""
-                INSERT INTO WorldCapsuleerCoarsePilot(PilotId,SettledTicks)
-                SELECT value,{elapsed} FROM json_each({ids}) WHERE true
-                ON CONFLICT(PilotId) DO UPDATE SET SettledTicks=MAX(SettledTicks,excluded.SettledTicks)
-                """
-            );
-        }
-        transaction.Commit();
         foreach (long pilot in pilots)
         {
-            _coarseSettled[pilot] = Math.Max(_coarseSettled.GetValueOrDefault(pilot), elapsed);
+            Live.CapsuleerRoutines.Settle(pilot, Math.Max(_coarseSettled.GetValueOrDefault(pilot), elapsed));
         }
     }
 
@@ -150,15 +137,8 @@ internal sealed partial class CapsuleerScheduler
             if (!_coarseWork.TryGetValue(system, out var work))
             {
                 long due = CapsuleerCoarseRules.FirstDue(system, activity.ElapsedTicks);
-                using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-                world.Database.ExecuteSql(
-                    $"""
-                    INSERT OR IGNORE INTO WorldCapsuleerCoarseWork(SystemId,Generation,Cursor,SettledTicks,NextTicks)
-                    VALUES({system},0,0,{activity.ElapsedTicks},{due})
-                    """
-                );
                 work = new(system, 0, 0, activity.ElapsedTicks, due);
-                _coarseWork.Add(system, work);
+                Live.CapsuleerRoutines.Publish(work);
             }
             _systems.SetCoarse(system, true);
             _coarseQueue.Add((work.NextTicks, ++_coarseOrder, system));
@@ -176,16 +156,7 @@ internal sealed partial class CapsuleerScheduler
         {
             return;
         }
-        try
-        {
-            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-            world.Database.ExecuteSql($"INSERT OR IGNORE INTO WorldCapsuleerAdmission(PilotId) VALUES({pilot})");
-        }
-        catch
-        {
-            _admittedTravelers.Remove(pilot);
-            throw;
-        }
+        Live.CapsuleerRoutines.Admit(pilot);
     }
 
     private long? NextCoarseDue(HumanActivitySnapshot activity) =>
@@ -213,7 +184,7 @@ internal sealed partial class CapsuleerScheduler
             using var owner = synchronization.Enter("coarse cursor refresh");
             using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
             var saved = world.Set<SavedCapsuleerCoarseWork>().AsNoTracking().Single(s => s.SystemId == conflict.SystemId);
-            _coarseWork[saved.SystemId] = new(saved.SystemId, saved.Generation, saved.Cursor, saved.SettledTicks, saved.NextTicks);
+            Live!.CapsuleerRoutines.Restore(new(saved.SystemId, saved.Generation, saved.Cursor, saved.SettledTicks, saved.NextTicks));
             _membershipDirty = true;
             return false;
         }
@@ -275,21 +246,10 @@ internal sealed partial class CapsuleerScheduler
                 SettledTicks = activity.ElapsedTicks,
                 NextTicks = CapsuleerCoarseRules.NextDue(activity.ElapsedTicks),
             };
-            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-            int changed = world.Database.ExecuteSql(
-                $"""
-                UPDATE WorldCapsuleerCoarseWork SET Generation={next.Generation},Cursor=0,
-                    SettledTicks={next.ThroughTicks},NextTicks={next.NextTicks}
-                WHERE SystemId={work.SystemId} AND Generation={work.Generation} AND Cursor={work.Cursor}
-                """
-            );
-            if (changed != 1)
-            {
-                throw new CapsuleerCoarseConflictException(work.SystemId);
-            }
+            Live!.CapsuleerRoutines.Validate(work);
             _coarseQueue.Remove(selected);
             _coarseQueue.Add((next.NextTicks, ++_coarseOrder, next.SystemId));
-            _coarseWork[next.SystemId] = next;
+            Live.CapsuleerRoutines.Publish(next);
             _coarseFreshness.Remove((work.SettledTicks, work.SystemId));
             _coarseFreshness.Add((next.SettledTicks, next.SystemId));
             return true;
@@ -302,6 +262,7 @@ internal sealed partial class CapsuleerScheduler
             Systems = (_routes.GetValueOrDefault(pilot) ?? []).Append(_locations[pilot]).Distinct().Order().ToArray(),
         };
         using var context = Live!.UseSystem(_locations[pilot]);
+        using var roleOwnership = Live.EnterTransactionSystems(new(systems: [_locations[pilot]]));
         using var measurement = Live.TrafficActions.Measure(
             job,
             [_locations[pilot]],
@@ -333,9 +294,7 @@ internal sealed partial class CapsuleerScheduler
             RegisterShip(pilot, loadedPilot.ShipId);
         }
         Current[pilot] = settled;
-        _coarseSettled[pilot] = activity.ElapsedTicks;
-        CapsuleerCoarseResult result = new(settled, input with { Cursor = pilot, Generation = checked(work.Generation + 1) });
-        _coarseWork[work.SystemId] = result.Work;
+        // Commit publishes progress and its cursor together under shared ownership.
         _coarseQueue.Remove(selected);
         _coarseQueue.Add((activity.ElapsedTicks, ++_coarseOrder, selected.System));
         _completed++;

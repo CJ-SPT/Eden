@@ -20,7 +20,8 @@ internal sealed class WorldSnapshot(
     TimeSpan copy = default,
     long captureAllocatedBytes = 0,
     long copyAllocatedBytes = 0,
-    long copyBytes = 0
+    long copyBytes = 0,
+    Eden.World.Capsuleers.CapsuleerRoutineCheckpoint? routines = null
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -47,6 +48,7 @@ internal sealed class WorldSnapshot(
                 || haulers is not null
                 || activity is not null
                 || jobs is not null
+                || routines is not null
             )
             {
                 using WorldDbContext world = new(database);
@@ -57,6 +59,7 @@ internal sealed class WorldSnapshot(
                 Eden.World.Capsuleers.MinerCheckpoint.Apply(world, miners ?? []);
                 Eden.World.Capsuleers.HaulerCheckpoint.Apply(world, haulers ?? []);
                 jobs?.Apply(world);
+                routines?.Apply(world);
                 activity?.Apply(world);
                 transaction.Commit();
             }

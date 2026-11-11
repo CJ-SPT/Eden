@@ -198,7 +198,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             long before = Quantity();
             saved.Database.ExecuteSqlRaw(
                 """
-                CREATE TRIGGER reject_collection BEFORE UPDATE OF Progress ON WorldCapsuleerCommunity
+                CREATE TRIGGER reject_collection BEFORE UPDATE OF Quantity ON WorldAsteroid
                 BEGIN SELECT RAISE(ABORT,'test failed collection'); END
                 """
             );
@@ -208,7 +208,8 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 Assert.Equal(MinerActivity.Mining, resumed.Tick()!.Work.Activity);
             }
             clock.Seconds++;
-            Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => resumed.Tick());
+            var failure = Assert.Throws<DbUpdateException>(() => resumed.Tick());
+            Assert.IsType<Microsoft.Data.Sqlite.SqliteException>(failure.InnerException);
             Assert.Equal(before, Quantity());
             saved.Database.ExecuteSqlRaw("DROP TRIGGER reject_collection");
             clock.Seconds++;

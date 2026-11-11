@@ -20,6 +20,14 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
         {
             return;
         }
+        if (
+            data.Context is not WorldDbContext { UsesResidentCapsuleerRoutines: true }
+            && command.CommandText.Contains("WorldCapsuleer", StringComparison.Ordinal)
+            && data.Context?.Database.CurrentTransaction is null
+        )
+        {
+            LiveWorld.Find(path)?.CapsuleerRoutines.Flush();
+        }
         if (data.Context is WorldDbContext { Participants: { } participants })
         {
             WorldConnections.HoldSimulation((WorldDbContext)data.Context);
@@ -153,6 +161,10 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
             {
                 WorldConnections.HoldSimulation(context);
             }
+            if (eventData.Context is not WorldDbContext { UsesResidentCapsuleerRoutines: true })
+            {
+                LiveWorld.Find(path)?.CapsuleerRoutines.Flush((eventData.Context as WorldDbContext)?.Participants);
+            }
             Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return result;
@@ -171,6 +183,10 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
             if (eventData.Context is WorldDbContext context)
             {
                 WorldConnections.HoldSimulation(context);
+            }
+            if (eventData.Context is not WorldDbContext { UsesResidentCapsuleerRoutines: true })
+            {
+                LiveWorld.Find(path)?.CapsuleerRoutines.Flush((eventData.Context as WorldDbContext)?.Participants);
             }
             Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }

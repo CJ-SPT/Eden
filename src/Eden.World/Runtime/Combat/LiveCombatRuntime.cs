@@ -495,7 +495,7 @@ internal sealed partial class LiveCombatRuntime(
         }
     }
 
-    internal void Flush(TransactionParticipants? participants = null)
+    internal void Flush(TransactionParticipants? participants = null, bool retainPositions = false)
     {
         if (systemId is null && owner.CurrentSystem is null && _internal == 0)
         {
@@ -521,6 +521,10 @@ internal sealed partial class LiveCombatRuntime(
         try
         {
             var checkpoint = CaptureOwnCheckpoint(participants);
+            if (retainPositions)
+            {
+                checkpoint = checkpoint with { Positions = [] };
+            }
             if (
                 checkpoint.Ships.Count
                     + checkpoint.Npcs.Count
@@ -711,13 +715,13 @@ internal sealed partial class LiveCombatRuntime(
         }
     }
 
-    internal void Clear()
+    internal void Clear(bool retainPositions = false)
     {
         if (systemId is null && owner.CurrentSystem is null)
         {
             owner.ClearSystems();
         }
-        Flush();
+        Flush(retainPositions: retainPositions);
         ClearDrones();
         ClearDronePlayers();
         _droneCombatTriggers.Clear();
@@ -734,6 +738,6 @@ internal sealed partial class LiveCombatRuntime(
         _contacts.Clear();
         _npcSceneIndices.Clear();
         _acquisitions.Clear();
-        ClearSimulation();
+        ClearSimulation(retainPositions);
     }
 }

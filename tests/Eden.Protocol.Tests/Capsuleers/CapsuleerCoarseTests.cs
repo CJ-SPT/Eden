@@ -62,7 +62,7 @@ public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
                         Assert.Equal(CapsuleerAction.Trade, before.Action);
                         // Cold catalog query counts vary with shared definition warming.
                         Assert.InRange(total.Commands, 1, 76);
-                        Assert.InRange(total.Connections, 1, 3);
+                        Assert.InRange(total.Connections, 1, 4);
                         Assert.Equal(1, total.Fittings);
                     }
                     else
@@ -73,14 +73,15 @@ public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
                     {
                         dockings++;
                         Assert.InRange(total.Commands, 1, 32);
-                        Assert.Equal(1, total.Connections);
+                        // Docking projects retained motion before its atomic SQL membership change.
+                        Assert.InRange(total.Connections, 1, 5);
                     }
                     if (pass == 3)
                     {
                         movements++;
                         Assert.Equal(HaulerActivity.Flying, work.Activity);
-                        Assert.InRange(total.Commands, 1, 12);
-                        Assert.Equal(1, total.Connections);
+                        Assert.Equal(0, total.Commands);
+                        Assert.Equal(0, total.Connections);
                         Assert.DoesNotContain(commands, sql => sql.Contains("FROM \"WorldPilot\"", StringComparison.Ordinal));
                         Assert.DoesNotContain(commands, sql => sql.Contains("FROM \"WorldCrimewatch\"", StringComparison.Ordinal));
                     }
@@ -176,7 +177,7 @@ public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
                 );
                 Assert.DoesNotContain(commands, sql => sql.Contains("WorldAsteroid", StringComparison.Ordinal));
                 Assert.DoesNotContain(commands, sql => sql.Contains("WorldBeltRenewal", StringComparison.Ordinal));
-                Assert.InRange(metrics.Connections, 1, 4);
+                Assert.InRange(metrics.Connections, 1, 5);
                 Assert.Equal(0, scheduler.Read().Failures);
                 return;
             }
@@ -927,8 +928,10 @@ public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
         Assert.Equal(MinerActivity.FlyingToBelt, live.MinerCheckpoints[paid.Pilot.PilotId].Work.Activity);
     }
 
-    [Fact]
-    public void FailedCursorWriteRollsBackTheBotAndRetriesTheSamePilot()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExternalCursorChangesPublishOnlyAfterCommitBeforeTheNextSettlement(bool commit)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
@@ -936,51 +939,22 @@ public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
         using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
         human.Transfer(Elsewhere);
         scheduler.Run(0);
-        var before = scheduler.Jobs().ToArray();
+        var live = host.GetRequiredService<LiveWorld>();
         using (WorldDbContext world = new(fixture.Database.Path))
         {
-            world.Database.ExecuteSqlRaw(
-                "CREATE TRIGGER RejectCoarse BEFORE UPDATE ON WorldCapsuleerCoarseWork BEGIN SELECT RAISE(ABORT,'test'); END"
-            );
-        }
-        fixture.Clock.Seconds += 70;
-        Assert.Throws<SqliteException>(() => scheduler.Run(70));
-        Assert.Equal(before, scheduler.Jobs());
-        using (WorldDbContext world = new(fixture.Database.Path))
-        {
-            Assert.Equal(0, Assert.Single(world.Set<SavedCapsuleerCoarseWork>()).Cursor);
-            Assert.All(world.Set<SavedCapsuleerCoarsePilot>(), p => Assert.Equal(0, p.SettledTicks));
-            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectCoarse");
-        }
-        fixture.Clock.Milliseconds += 50;
-        fixture.Clock.Seconds++;
-        Assert.Equal(1, scheduler.Run(70).Turn.Completed);
-        using WorldDbContext committed = new(fixture.Database.Path);
-        Assert.Equal(1, Assert.Single(committed.Set<SavedCapsuleerCoarseWork>()).Generation);
-        Assert.Single(committed.Set<SavedCapsuleerCoarsePilot>().Where(p => p.SettledTicks > 0));
-    }
-
-    [Fact]
-    public void StaleCursorRefreshesWithoutPublishingSpeculativeWork()
-    {
-        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
-        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
-        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
-        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
-        human.Transfer(Elsewhere);
-        scheduler.Run(0);
-        var before = scheduler.Jobs().ToArray();
-        using (WorldDbContext world = new(fixture.Database.Path))
-        {
+            using var transaction = world.Database.BeginTransaction();
             world.Database.ExecuteSqlRaw("UPDATE WorldCapsuleerCoarseWork SET Generation=Generation+1");
+            if (commit)
+            {
+                transaction.Commit();
+            }
         }
+        Assert.Equal(commit ? 1 : 0, live.CapsuleerRoutines.Work[Home].Generation);
         fixture.Clock.Seconds += 70;
-        Assert.Equal(0, scheduler.Run(70).Turn.Completed);
-        Assert.Equal(before, scheduler.Jobs());
-        fixture.Clock.Milliseconds += 50;
         Assert.Equal(1, scheduler.Run(70).Turn.Completed);
+        Assert.Equal(commit ? 2 : 1, live.CapsuleerRoutines.Work[Home].Generation);
         using WorldDbContext saved = new(fixture.Database.Path);
-        Assert.Equal(2, Assert.Single(saved.Set<SavedCapsuleerCoarseWork>()).Generation);
+        Assert.Equal(commit ? 2 : 1, Assert.Single(saved.Set<SavedCapsuleerCoarseWork>()).Generation);
     }
 
     [Fact]

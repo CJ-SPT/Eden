@@ -84,7 +84,7 @@ public sealed class CapsuleerRuntimeTests
     }
 
     [Fact]
-    public void FailedFinalJobWriteRollsBackFittingUndockingAndResidentProgress()
+    public void FailedUndockRollsBackFittingAndResidentProgress()
     {
         using CapsuleerHaulerTests.Fixture f = new();
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
@@ -97,7 +97,8 @@ public sealed class CapsuleerRuntimeTests
             RejectJob(world, miner);
         }
         f.Clock.Seconds++;
-        Assert.Throws<SqliteException>(() => scheduler.Run(1));
+        var failure = Assert.Throws<DbUpdateException>(() => scheduler.Run(1));
+        Assert.IsType<SqliteException>(failure.InnerException);
         Assert.Equal(expected, scheduler.Jobs().Single(j => j.PilotId == miner));
         var before = scheduler.Miner(miner)!;
         Assert.Null(before.Pilot.Position);
@@ -179,9 +180,9 @@ public sealed class CapsuleerRuntimeTests
         world.Database.ExecuteSqlRaw(
             """
             CREATE TABLE TestRejectedCapsuleerJob(PilotId INTEGER PRIMARY KEY);
-            CREATE TRIGGER reject_job BEFORE UPDATE OF Revision ON WorldCapsuleerJob
-            WHEN NEW.PilotId IN (SELECT PilotId FROM TestRejectedCapsuleerJob) AND NEW.Revision>OLD.Revision
-            BEGIN SELECT RAISE(ABORT,'test final job failure'); END;
+            CREATE TRIGGER reject_job BEFORE INSERT ON WorldPosition
+            WHEN NEW.ShipId IN (SELECT ActiveShipId FROM WorldPilot WHERE Id IN (SELECT PilotId FROM TestRejectedCapsuleerJob))
+            BEGIN SELECT RAISE(ABORT,'test undock failure'); END;
             """
         );
         world.Database.ExecuteSql($"INSERT INTO TestRejectedCapsuleerJob(PilotId) VALUES ({pilot})");

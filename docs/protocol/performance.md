@@ -2405,3 +2405,100 @@ The closing replay result is `artifacts/traffic-latency/final/450-False.trx`; me
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** After deployment, compare warning frequency and responsiveness on the same busy route.
+
+
+## Resident remote bot routines (November 11, 2026)
+
+This is the first resident-object migration in the requested order. The saved world already runs in an in-memory
+SQLite image; this change removes SQL work from warmed ordinary remote navigation and routine settlement. It does
+not claim that bot economic actions, initial hydration or cold catalog loads are SQL-free.
+
+Remote work cursors, settled clocks, community activation and traveler admission now publish typed resident records
+under the shared scheduler owner. Role actions validate the canonical job and cursor before commit. Economic mutations
+retain their transaction; only after success are the next job, role progress and cursor published under the same owner.
+They no longer serialize progress or update a job/cursor row merely to finish a live action. A stale cursor rejects the
+commit and rolls back the economic mutation. Offline tooling retains its SQL job/progress contract.
+
+Remote movement publishes the existing resident position object until an action actually opens a mutation. Scene
+release evicts contacts, combat inputs and geometry while retaining compact positions and their dirty projection state.
+An ensuing docking or transfer transaction projects the latest resident position before validating SQL membership;
+subsequent movement within an open mutation uses that transaction's private view. Ordinary remote warp entry skips
+NPC-disengagement SQL only while the existing background-safety checks establish that detail is unnecessary.
+
+Checkpoint capture freezes admission and captures cursor/settlement/admission/activation arrays with the existing
+immutable job/progress/position arrays and the same relational generation. All projection and file writing remain
+outside system ownership. Batched routine projection uses the detached database's transaction, so a projection failure
+cannot leave a partly advanced job or cursor. Successful file saves retain differences from the live SQL image, and
+failed saves retain changes for retry. No schema migration or changes to saved timing, rates or gameplay rules are needed.
+Legacy saved-row readers and transactions synchronize resident routines before using the SQL view. Classified
+transactions use a system membership index and project only their participating pilots; they do not scan or flush
+every bot or acquire unrelated system owners. Committed external cursor edits refresh the resident cursor before the next selection; rolled-back changes do not publish.
+
+Reference checks: [EVE University trading](https://wiki.eveuniversity.org/Market) describes finite buy/sell orders and
+wallet taxes; those economic semantics are retained. The local evejs reference identifies itself as `261108.1` in
+`config/version.json`. Its `server/src/services/market/marketRuntimeState.js` delegates runtime updates to its game store
+and offers no applicable Eden owner/checkpoint contract. The inspected file's SHA-256 is
+`A848B21E2E2BF4FF8B6CF9846AB05BB09ACC606062F3FC15958A463AA9BBDD36`; the local reference has no Git metadata.
+No source was copied, and wire formats, navigation formulas and Carbon-owned Destiny behavior are unchanged.
+
+### Automated validation
+
+Tool restore and solution restore passed. The closing solution build on top of main `c921bc9e` passed in
+44.37 seconds with zero warnings/errors. The final focused run passed **88 tests** in **82.02 seconds**, including
+its runner overhead (focused build 3.47 seconds). Both Python policy suites passed: catalog setup **8 tests / 1.384 s**
+and formatting policy **9 tests / 0.020 s**. Formatting verification passed in **32.65 seconds**; no width exceptions were added.
+
+The final filter was the OR of `FullyQualifiedName~` and each complete class name below:
+
+```text
+Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests
+Eden.Protocol.Tests.Capsuleers.CapsuleerResidentRoutineTests
+Eden.Protocol.Tests.Capsuleers.CapsuleerTierTests
+Eden.Protocol.Tests.Persistence.DetachedCheckpointTests
+Eden.Protocol.Tests.Persistence.CheckpointOwnershipTests
+Eden.Protocol.Tests.Persistence.MotionProjectionTests
+Eden.Protocol.Tests.Combat.SessionPerformanceTests
+Eden.Protocol.Tests.Agents.MissionTrackerTests
+```
+
+Before the final action-ownership guard and main integration, an expanded focused selection covered all
+`Eden.Protocol.Tests.Capsuleers` plus `DetachedCheckpointTests`, `CheckpointOwnershipTests`, `MotionProjectionTests`
+and `ResidentCombatMonitoringTests`. It completed **453 tests: 452 passed / 1 failed** in **341.65 seconds**
+(focused build 6.43 seconds). The failure was
+`PilotSpaceActivitiesTests.ShoppingChoosesRealAffordableStockAndHonorsThreatMemory(overpriced: true, avoided: false)`.
+The same three-case method filter on unchanged main `c921bc9e` reproduced **2 passed / 1 failed** in 14.56 seconds:
+its expected missing shopping route is present. No shopping implementation or expectation was changed in this migration.
+The closing 88-test selection covers the final ownership guard and integration changes. The full .NET suite and
+installed-save stress replay were not run.
+
+Development began with the exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests.CoarseCursorAndJobsReopenWithoutOfflineProduction`.
+The exact-method baseline for `RemoteArrivalsReuseFitsAndAvoidRepeatedMovementMembershipReads` at
+`a9e0596b79d09360d066d42f02b9bb2cfb1df54d` used the same fixture, clock advances and two-role workload. Its warmed movement
+sample issued **11 SQL commands / 1 connection / 0 fittings**; the resident version asserts **0 / 0 / 0**. This is a
+counter comparison, not a claim about installed-save latency or total simulation capacity. Mutation samples can open an
+additional connection to project retained positions before their transaction. Complete session-frame and checkpoint
+checks are included in the affected test selection; checkpoint costs remain separate from simulation counters.
+
+New regressions exercise a detached old generation while newer cursor/job/position state advances, atomic rollback of
+failed cursor projection, retry across repeated successful saves, reopened cursors/jobs, stale resident cursor rejection
+of an economic mutation, zero-SQL scene release, participant-only projection while an unrelated owner is held, and
+immediate committed external cursor visibility with rollback isolation. Existing mining
+and fitting/undocking rejection tests now fail the actual economic/resource mutation instead of relying on a progress
+row that live simulation no longer writes.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None for this state/persistence migration. Native rendering, input and gameplay feel remain unverified.
+
+### Remaining resident migration
+
+Inventory, ownership and economic transactions still use SQL, including bot resupply, ore payments/collection, cargo
+moves, market fills, fitting, docking and gate membership. They must move to one shared typed resident transaction
+owner, rather than a separate bot-only copy, with atomic wallet/order/escrow/item changes, rejection without partial
+publication, coherent human/bot reads, destruction/transfer invalidation and reopened checkpoint coverage. Cold catalog
+hydration remains separately measurable. The overall goal of eliminating every bot SQL call is not complete here.

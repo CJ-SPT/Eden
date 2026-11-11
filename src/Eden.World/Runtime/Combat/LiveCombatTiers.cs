@@ -2,7 +2,8 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
-    internal int DetailedEntries => _ships.Count + _npcs.Count + _positions.Count + _contacts.Count + _npcSceneIndices.Count;
+    internal int CompactPositions => _positions.Count;
+    internal int DetailedEntries => _ships.Count + _npcs.Count + _contacts.Count + _npcSceneIndices.Count;
 
     internal bool HasDetailedInteraction(long now) =>
         _ships.Values.Any(s => s.NpcAggression?.ActiveUntil > now)

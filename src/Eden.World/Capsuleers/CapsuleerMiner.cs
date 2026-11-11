@@ -206,7 +206,11 @@ internal sealed class CapsuleerMiner(
         if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
         {
             _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
-            using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
+            using WorldDbContext world = new(database.Path)
+            {
+                Participants = new(pilots: [pilotId]),
+                UsesResidentCapsuleerRoutines = Live is not null,
+            };
             if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == Pilot.ShipId))
             {
                 Load();
@@ -519,7 +523,11 @@ internal sealed class CapsuleerMiner(
 
     private void Load()
     {
-        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
+        using WorldDbContext world = new(database.Path)
+        {
+            Participants = new(pilots: [pilotId]),
+            UsesResidentCapsuleerRoutines = Live is not null,
+        };
         using var transaction = world.Database.BeginTransaction();
         var row = world.Set<SavedCapsuleerCommunity>().AsNoTracking().SingleOrDefault(c => c.PilotId == pilotId);
         if (row?.PilotId is long id)
@@ -531,7 +539,12 @@ internal sealed class CapsuleerMiner(
             var previous = _work;
             long anchor =
                 previous?.ActiveTicks
-                ?? (world.Set<SavedCapsuleerJob>().Single(j => j.PilotId == pilotId).DueTicks - TimeSpan.TicksPerSecond);
+                ?? (
+                    (
+                        Live?.CapsuleerJobs.GetValueOrDefault(pilotId)?.DueTicks
+                        ?? world.Set<SavedCapsuleerJob>().Single(j => j.PilotId == pilotId).DueTicks
+                    ) - TimeSpan.TicksPerSecond
+                );
             if (_work is null || Work.ShipId != Pilot.ShipId)
             {
                 _navigation = new();
@@ -751,11 +764,11 @@ internal sealed class CapsuleerMiner(
             _obstacles
         );
         _pilot = Pilot with { Position = tick.Position };
-        if (!wasWarping && _navigation.Warp is not null)
+        if (!_background && !wasWarping && _navigation.Warp is not null)
         {
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
         }
-        if (_coarseThrough is not null)
+        if (_operation.HasWorld)
         {
             SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, tick.Position, Pilot.SystemId, Now);
         }
