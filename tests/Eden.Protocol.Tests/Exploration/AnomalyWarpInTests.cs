@@ -1,5 +1,6 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Mining;
 using Eden.Protocol.Flight;
 using Eden.World.Catalog;
 using Eden.World.Exploration;
@@ -9,6 +10,37 @@ namespace Eden.Protocol.Tests.Exploration;
 
 public sealed class AnomalyWarpInTests
 {
+    [Fact]
+    public void SerpentisRefugeAndEveryOtherLayoutSendAsteroidsWithPositiveNativeRotationPeriods()
+    {
+        using TestWorld test = new();
+        var database = new WorldDatabase(test.Path);
+        PassiveCatalogFixture.LoadCombatAnomalyWorld(database.CatalogPath);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        const int serpentisRefugeDungeon = 2315;
+        var definitions = CombatAnomalyCatalog.Read(catalog);
+        var refuge = definitions.Single(d => d.DungeonId == serpentisRefugeDungeon);
+        Assert.Equal("Serpentis Refuge", refuge.Name);
+        Assert.Contains(refuge.Objects, o => o.CategoryId == AsteroidDefinitions.Category);
+        foreach (var definition in definitions)
+        {
+            foreach (var body in definition.Objects.Where(o => o.CategoryId == AsteroidDefinitions.Category))
+            {
+                using BinaryReader reader = new(new MemoryStream(Ballpark.AddObjects([body], 7).State));
+                Assert.Equal(0, reader.ReadByte());
+                Assert.Equal(7, reader.ReadInt32());
+                Assert.Equal(body.Id, reader.ReadInt64());
+                Assert.Equal((byte)NavigationMode.Rigid, reader.ReadByte());
+                float radius = reader.ReadSingle();
+                double minimumPeriod = 50 * Math.Log(radius);
+                Assert.True(
+                    double.IsFinite(minimumPeriod) && minimumPeriod > 0,
+                    $"Dungeon {definition.DungeonId} asteroid {body.Id} has unsafe native rotation radius {radius}."
+                );
+            }
+        }
+    }
+
     [Theory]
     [InlineData(2341)]
     [InlineData(2354)]

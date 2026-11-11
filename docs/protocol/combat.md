@@ -1353,3 +1353,75 @@ maintainer-observed evidence; the corrected native presentation remains unverifi
 
 **Optional maintainer checks.** Restart the server, then warp to Drone Assembly and Drone Cluster and
 confirm the ship remains stable after landing and while moving away from the entry.
+
+## Anomaly asteroid rotation crash — November 11, 2026
+
+The maintainer reported a client crash after warping to a combat anomaly and repeated crashes on
+reconnect. The saved character was beside Serpentis Refuge dungeon **2315** in Botane. Three Windows
+minidumps recorded integer divide-by-zero **0xc0000094** in `_trinity_dx11.dll+0x1374f1`. The captured
+object's native RTTI identified `Tr2CurveRandomAxisRotation`, with its period equal to zero.
+
+Inert bytecode inspection of the pinned build-3662168 `asteroid.pyj`, `Asteroid.Assemble`, establishes
+the cause: the client computes `50 * (1 + random()) * log(radius)` and assigns that value to the native
+rotation curve's period. A one-metre radius produces zero; the native update divides the current
+time by that period before its later zero check. The catalog gives ordinary ore types a placeholder
+radius of one. Some Serpentis Refuge rocks have no authored deposit quantity, so the existing dungeon
+geometry fallback exposed that placeholder directly. Other anomaly layouts contain the same case.
+The inspected staged archive includes local overlays; its SHA-256 was
+`051a2f027309aa9e806273200c9f5e969cad8675f49ef97313ff57a6b4549bb9`.
+The decompressed `asteroid.pyj` SHA-256 was
+`8174194db67e9d91aeab00a341ee221bff899a7e548d8529edbe326eebeba9d4`.
+
+`DungeonObjectGeometry` now applies a conservative **two-metre minimum** to decorative asteroid
+radii, including missing/zero quantities and quantities whose derived radius is too small. Normal
+quantity-derived radii and other object categories keep their existing calculation. The shared rule
+also protects mission scenery. This is an Eden presentation safeguard, not an ore grant or a claim
+about retail fallback sizes. Existing worlds need no migration: scenery is rebuilt from the catalog.
+Destiny records and Blue fields are unchanged.
+
+The gameplay reference is [EVE University's Serpentis Refuge](https://wiki.eveuniversity.org/Serpentis_Refuge).
+The local evejs `server/src/space/asteroids/asteroidService.js` was checked as the requested engine
+reference; its generated belts use an explicit larger shell-radius floor, rather than establishing
+the fallback for Eden's pinned dungeon scenery. That local release has no Git metadata. No reference
+implementation or content was copied; the correction follows the pinned client and catalog evidence.
+
+**Recovery.** With the server stopped, a complete saved-world backup was made and only the affected
+active ship's `WorldPosition` row was removed. Its retained station placed it in Dodixie. Owned items
+were unchanged; SQLite quick and foreign-key checks passed. After restarting and resolving
+the server DLL build lock, the maintainer confirmed login succeeded. Recovery artifacts, original
+location and crash dumps are under `artifacts/login-recovery-20261111`; the backup is beside the local
+world database as `world.pre-anomaly-login-recovery-20261111.sqlite`.
+
+**Automated validation.** The exact-method regression filter combines
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.DungeonObjectGeometryTests.TinyDecorativeAsteroidsKeepTheNativeRotationPeriodPositive`
+and
+`FullyQualifiedName=Eden.Protocol.Tests.Exploration.AnomalyWarpInTests.SerpentisRefugeAndEveryOtherLayoutSendAsteroidsWithPositiveNativeRotationPeriods`.
+All seven cases failed against the original rule, including a catalog-backed one-metre asteroid
+encoded into an outbound ball. An initial test invocation also exposed incorrectly typed nullable
+theory arguments; those arguments were corrected before the seven-case reproduction. After the fix,
+`FullyQualifiedName~DungeonObjectGeometryTests|FullyQualifiedName~AnomalyWarpInTests` passed **25 cases**
+in **36.76 seconds**, plus **4.62 seconds** building. Coverage checks missing/zero/tiny deposit inputs,
+positive native rotation periods, the actual outbound radius across all **199** layouts, and existing
+landing/collision behavior.
+
+Final focused filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Exploration|FullyQualifiedName~DungeonObjectGeometryTests|FullyQualifiedName~MissionLayoutTests|FullyQualifiedName~MissionGateTests
+```
+
+All **241 cases passed**, with zero failures/skips, in **102.06 seconds** including runner startup
+(reported duration: 1 minute 40 seconds). The solution build passed with zero warnings/errors in
+**8.17 seconds**. Tool/solution restore and both Python policy suites passed (8 catalog cases in
+0.714 seconds; 9 formatting cases in 0.016 seconds). Formatting verification passed for **1,645 files**
+with the 140-character limit in **22.83 seconds**. The first repository formatting check found a
+missing blank line in the unrelated, in-progress bot replay test; its spacing was corrected and
+left outside this change. UTF-8, final-newline, whitespace, protocol-link/anchor and diff checks
+passed. No full .NET suite was requested or run. TRX:
+`artifacts/login-recovery-20261111/final-results/tests.trx`.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The maintainer confirmed
+recovered station login; returning to the corrected anomaly remains unverified.
+
+**Optional maintainer checks.** Restart with the rebuilt server and revisit Serpentis Refuge in
+Botane, then reconnect while the character is at that site.
