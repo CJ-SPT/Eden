@@ -18,6 +18,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -33,6 +34,31 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
 
     private SpatialStatus ReadStatus(long shipId)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        {
+            using CatalogDbContext source = new(database.CatalogPath);
+            return live.Economy.Inspect(world =>
+            {
+                var state = world.Set<SpatialNavigationState>().Find(shipId);
+                var module = world
+                    .Set<ActiveFittedModule>()
+                    .Where(row => row.ShipId == shipId)
+                    .Select(row => row.ModuleId)
+                    .AsEnumerable()
+                    .Select(id => world.Set<OwnedItem>().Find(id))
+                    .FirstOrDefault(item =>
+                        item is { Online: true, Singleton: true }
+                        && item.LocationId == shipId
+                        && InventoryDefinitions.IsHighSlot(item.FlagId)
+                        && source.FittingType(item.TypeId)?.GroupId == SpatialModuleRules.CloakGroup
+                    );
+                return new SpatialStatus(
+                    module?.Id ?? 0,
+                    module is not null && FittingCatalog.DefaultEffect(source, module.TypeId) == DogmaEffect.CovertCloaking,
+                    state is { CloakModuleId: not 0 } && module is null ? long.MaxValue : state?.TargetingReadyAt ?? 0
+                );
+            });
+        }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var state = world.Set<SpatialNavigationState>().Find(shipId);
@@ -63,18 +89,21 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
 
     private bool ReadAvailable(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<OwnedItem>()
-            .Any(i =>
-                i.Id == moduleId
-                && i.OwnerId == pilotId
-                && i.LocationId == shipId
-                && i.Online
-                && i.Singleton
-                && i.FlagId >= (int)InventoryFlag.MediumSlot0
-                && i.FlagId <= (int)InventoryFlag.HighSlot7
-            );
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Set<OwnedItem>()
+                    .Any(i =>
+                        i.Id == moduleId
+                        && i.OwnerId == pilotId
+                        && i.LocationId == shipId
+                        && i.Online
+                        && i.Singleton
+                        && i.FlagId >= (int)InventoryFlag.MediumSlot0
+                        && i.FlagId <= (int)InventoryFlag.HighSlot7
+                    )
+        );
     }
 
     private static bool Scrambled(WorldDbContext world, long ship, long now) =>

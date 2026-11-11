@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Combat;
 
-public sealed class LiveSimulationTests
+public sealed partial class LiveSimulationTests
 {
     [Theory]
     [InlineData(false)]
@@ -334,11 +334,11 @@ public sealed class LiveSimulationTests
         using (var cold = SessionPerformance.Begin("cold system reads", _ => { }, force: true)!)
         {
             Advance(1);
-            Assert.Equal(1, cold.TackleReads);
+            Assert.Equal(0, cold.TackleReads);
             Assert.Equal(0, cold.AggressionReads);
             // NPC rows, mining metadata, effects and contributions come from the resident image.
-            Assert.InRange(cold.Commands, 1, 20);
-            Assert.InRange(cold.Connections, 1, 12);
+            Assert.Equal(0, cold.Commands);
+            Assert.Equal(0, cold.Connections);
         }
         Assert.Equal(count, encounters.List(f.Npc.SystemId, f.Clock.Now).Count);
         f.Combat.Acquire([new(pilot.PilotId, pilot.ShipId)], f.Clock.Now);

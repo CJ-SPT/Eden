@@ -75,12 +75,32 @@ internal sealed class CapsuleerGateWatch(WorldDatabase database) : ICapsuleerGat
 
     private long ActiveShip(long pilot)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(world =>
+                world.Pilots.Where(row => row.Id == pilot && row.AccountId > 0).Select(row => row.ActiveShipId).FirstOrDefault()
+            );
+        }
         using WorldDbContext world = new(database.Path) { ReadsDirectionalPositions = true };
         return world.Pilots.Where(p => p.Id == pilot && p.AccountId > 0).Select(p => p.ActiveShipId).FirstOrDefault();
     }
 
     private GateWatcherPosition? Position(long ship)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(world =>
+            {
+                var position = world.Positions.Find(ship);
+                return position is null
+                    ? null
+                    : new GateWatcherPosition(
+                        position.SystemId,
+                        world.Ships.Where(row => row.Id == ship).Select(row => row.StationId).Single(),
+                        new(position.X, position.Y, position.Z)
+                    );
+            });
+        }
         using WorldDbContext world = new(database.Path) { ReadsDirectionalPositions = true };
         return (
             from row in world.Positions

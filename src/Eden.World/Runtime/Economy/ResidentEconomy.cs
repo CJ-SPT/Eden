@@ -253,6 +253,7 @@ internal sealed partial class ResidentEconomy
         _prepared.Clear();
         _openOrders.Clear();
         ClearTimedModules();
+        ClearCombatIndexes();
         _marketHeads.Clear();
         _staleHeads.Clear();
         foreach (var table in _tables.Values)
@@ -275,6 +276,7 @@ internal sealed partial class ResidentEconomy
         {
             _sequences[reader.GetString(0)] = reader.GetInt64(1);
         }
+        ReindexLoadedTimedModules();
         _loaded = true;
     }
 
@@ -291,7 +293,7 @@ internal sealed partial class ResidentEconomy
         return table.Matching(p => p.ActiveShipId == ship).Select(key => (long?)key.Id).SingleOrDefault();
     }
 
-    internal bool IsPilot(long id) => _tables[typeof(Eden.Data.World.Characters.Pilot)].Contains(new(id));
+    internal bool IsPilot(long id) => _pilotIdentities.ContainsKey(id);
 
     internal void TrackPilot(long id)
     {

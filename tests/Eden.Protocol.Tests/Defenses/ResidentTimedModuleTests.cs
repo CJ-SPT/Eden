@@ -11,6 +11,39 @@ namespace Eden.Protocol.Tests.Defenses;
 public sealed partial class SignatureSuppressionOperationTests
 {
     [Fact]
+    public async Task ResidentMonitorRestoredDeadlinesResolveMembershipAfterTheCompleteImageLoads()
+    {
+        using var fixture = Prepare();
+        long module = fixture.Fit(Basic);
+        Space(fixture);
+        long pilot = fixture.PilotId;
+        using LiveWorld live = new(new(fixture.Db.Path), fixture.Clock, _ => { });
+        int system = fixture.Db.Store.FindPilot(1000001)!.SystemId;
+        var paid = Store(fixture).Activate(pilot, module, fixture.Clock.Now);
+        await live.FlushAsync();
+        string copy = Path.Combine(Path.GetDirectoryName(fixture.Db.Path)!, "restored-module-deadlines.sqlite");
+        File.Copy(fixture.Db.Path, copy);
+        // Rehydrate the initialized checkpoint image, without the host's separate disconnect cleanup.
+        using LiveWorld reopened = new(new(copy), fixture.Clock, _ => { });
+        reopened.Economy.Warm();
+        Assert.Equal(paid.Schedule.ExpiresAt, reopened.Economy.NextModuleExpiry(system));
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(paid.Schedule.ExpiresAt - fixture.Clock.Now));
+        using (var context = reopened.UseSystem(system))
+        {
+            reopened.Run(() =>
+            {
+                using var ownership = reopened.Enter();
+            });
+        }
+        Assert.Equal(long.MaxValue, reopened.Economy.NextModuleExpiry(system));
+        using var checkpoint = Assert.IsType<WorldSnapshot>(reopened.CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext saved = new(checkpoint.Database);
+        Assert.Null(saved.Set<ActiveFittedModule>().Find(module));
+        Assert.Equal(paid.Schedule.ReadyAt, saved.Set<ModuleCooldown>().Find(module)!.ReadyAt);
+    }
+
+    [Fact]
     public async Task AnUnrelatedResidentTransactionCannotPublishAnExpiredDefenseToAnotherSystem()
     {
         using var fixture = Prepare();

@@ -32,7 +32,7 @@ using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
 namespace Eden.Protocol.Tests.Combat;
 
-public sealed class PilotMissileTests
+public sealed partial class PilotMissileTests
 {
     [Theory]
     [InlineData(false)]

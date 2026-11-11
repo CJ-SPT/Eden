@@ -24,6 +24,8 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
     public void DroneEligibilityReadsTrainedAndAbsentSkillsInOneQuery()
     {
         using CapsuleerHaulerTests.Fixture fixture = new();
+        // This standalone fixture has no host to retain its warmed catalog generation.
+        using CatalogLifetime lifetime = new(fixture.Database);
         PassiveCatalogFixture.LoadCombatDrones(fixture.Database.CatalogPath);
         var founder = fixture.Founder();
         using WorldDbContext world = new(fixture.Database.Path);

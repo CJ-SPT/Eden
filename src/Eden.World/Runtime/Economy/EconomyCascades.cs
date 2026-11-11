@@ -125,6 +125,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Drones.WorldDroneCombatTriggers>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Fittings.ActiveFittedModule>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Fittings.ShipEnergy>().Where(child => child.ShipId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Propulsion.SpatialNavigationState>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Propulsion.WorldTackle>().Where(child => child.SourceShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.PendingLocalRepair>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteAssistance>().Where(child => child.SourceShipId == removed.Id));

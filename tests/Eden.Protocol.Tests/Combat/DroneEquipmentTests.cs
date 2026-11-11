@@ -405,7 +405,8 @@ public sealed class DroneEquipmentTests
             {
                 return;
             }
-            using var metrics = SessionPerformance.Begin("warm equipped drone frames", _ => { }, force: true);
+            List<string> commands = [];
+            using var metrics = SessionPerformance.Begin("warm equipped drone frames", _ => { }, force: true, command: commands.Add);
             for (int frame = 0; frame < 12; frame++)
             {
                 fixture.Tick();
@@ -416,7 +417,7 @@ public sealed class DroneEquipmentTests
                     Assert.All(fixture.Drones.List(SystemId, fixture.Now), drone => Assert.Equal(tracking, drone.Profile.Tracking, 8));
                 }
             }
-            Assert.Equal(0, metrics!.Commands);
+            Assert.True(metrics!.Commands == 0, string.Join(Environment.NewLine, commands));
             Assert.Equal(0, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }

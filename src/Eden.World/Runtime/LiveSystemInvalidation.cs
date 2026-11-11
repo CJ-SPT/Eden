@@ -93,11 +93,24 @@ internal sealed partial class LiveReadModels
         }
         if (drones.Length > 0)
         {
-            foreach (var row in world.Set<WorldDrone>().Where(d => drones.Contains(d.ItemId)).Select(d => new { d.ItemId, d.SystemId }))
+            if (resident)
             {
-                if (row.SystemId is int system)
+                foreach (long id in drones)
                 {
-                    locations[row.ItemId] = system;
+                    if (owner.Economy.Peek<WorldDrone>(id)?.SystemId is int system)
+                    {
+                        locations[id] = system;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var row in world.Set<WorldDrone>().Where(d => drones.Contains(d.ItemId)).Select(d => new { d.ItemId, d.SystemId }))
+                {
+                    if (row.SystemId is int system)
+                    {
+                        locations[row.ItemId] = system;
+                    }
                 }
             }
         }

@@ -24,6 +24,7 @@ internal sealed partial class LiveCombatRuntime
     private sealed record DronePlayer(
         long PilotId,
         long ShipId,
+        int SystemId,
         bool Capsule,
         bool Alpha,
         ShipSafetyLevel Safety,
@@ -46,6 +47,10 @@ internal sealed partial class LiveCombatRuntime
         {
             value = Loading(() =>
             {
+                if (owner.SqlConnections == 0 && owner.Economy.IsLoaded)
+                {
+                    return owner.Economy.Inspect(world => ReadDronePlayer(world, shipId));
+                }
                 using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
                 var pilot = world
@@ -70,6 +75,7 @@ internal sealed partial class LiveCombatRuntime
                 return new DronePlayer(
                     pilot.Id,
                     shipId,
+                    CrimewatchPersistence.System(catalog, pilot.ActiveShip),
                     catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup,
                     world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
                     pilot.SafetyLevel,
@@ -116,6 +122,10 @@ internal sealed partial class LiveCombatRuntime
 
     private PilotCombatPresence? DronePresence(DronePlayer victim, IPilotCombatPresence presence, int system, long now)
     {
+        if (victim.SystemId != system)
+        {
+            return null;
+        }
         var ship = Ship(victim.PilotId, now);
         if (ship.SystemId != system || ship.Position is null)
         {

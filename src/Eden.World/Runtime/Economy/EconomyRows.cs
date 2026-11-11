@@ -945,6 +945,7 @@ internal sealed partial class ResidentEconomy
                     new("Name", row => row.Name, new EconomyNameComparer()),
                     new("ActiveShipId", row => row.ActiveShipId),
                 ],
+                changed: PilotIdentityChanged,
                 primaryColumn: "Id"
             )
         );

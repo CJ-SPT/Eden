@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident monitoring indexes and cold scene reads](protocol/performance.md#resident-monitoring-indexes-and-cold-scene-reads-november-11-2026)
+records SQL-free missile/effect monitoring, private-view isolation, scene rehydration and restored deadline membership.
+
 [Resident repair, propulsion and timed defenses](protocol/performance.md#resident-repair-propulsion-and-timed-defenses-november-11-2026)
 records atomic module payments, resident expiry, fitting reads and coherent paid-cycle saves.
 

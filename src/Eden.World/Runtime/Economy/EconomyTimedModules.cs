@@ -22,6 +22,15 @@ internal sealed partial class ResidentEconomy
         _timedShips.Clear();
     }
 
+    private void ReindexLoadedTimedModules()
+    {
+        // Bot tables load before hull/position tables. Resolve memberships only after the complete image is present.
+        foreach (var entry in _timedEntries.Values.ToArray())
+        {
+            TimedModuleChanged(entry.State, entry.State);
+        }
+    }
+
     internal long NextModuleExpiry(int? system)
     {
         var deadlines = system is int id ? _moduleSystemDeadlines.GetValueOrDefault(id) : _moduleDeadlines;

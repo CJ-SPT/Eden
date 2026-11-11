@@ -1112,6 +1112,7 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt32(8)
                     ),
                 state => new(state.NpcId, (long)state.Kind),
+                changed: NpcEwarChanged,
                 indexes:
                 [
                     new("NpcId", row => row.NpcId),
@@ -1606,6 +1607,7 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(23)
                     ),
                 state => new(state.Id),
+                changed: MissileChanged,
                 indexes:
                 [
                     new("Id", row => row.Id),
@@ -1654,6 +1656,7 @@ internal sealed partial class ResidentEconomy
                         (Eden.Gameplay.Propulsion.TackleTargetKind)reader.GetInt32(7)
                     ),
                 state => new(state.ModuleId),
+                changed: PlayerEwarChanged,
                 indexes:
                 [
                     new("ModuleId", row => row.ModuleId),
@@ -2579,6 +2582,74 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Propulsion.SpatialNavigationState, EconomySpatialNavigationState>(
+                "WorldSpatialNavigation",
+                row => new(row.ShipId),
+                row =>
+                    new(
+                        row.ShipId,
+                        row.CloakModuleId,
+                        row.CloakReactivationMilliseconds,
+                        row.CloakTargetingMilliseconds,
+                        row.HeadingX,
+                        row.HeadingY,
+                        row.HeadingZ,
+                        row.JumpEndsAt,
+                        row.JumpModuleId,
+                        row.JumpStartedAt,
+                        row.TargetingReadyAt,
+                        row.VelocityX,
+                        row.VelocityY,
+                        row.VelocityZ
+                    ),
+                state => new Eden.Data.World.Propulsion.SpatialNavigationState
+                {
+                    ShipId = state.ShipId,
+                    CloakModuleId = state.CloakModuleId,
+                    CloakReactivationMilliseconds = state.CloakReactivationMilliseconds,
+                    CloakTargetingMilliseconds = state.CloakTargetingMilliseconds,
+                    HeadingX = state.HeadingX,
+                    HeadingY = state.HeadingY,
+                    HeadingZ = state.HeadingZ,
+                    JumpEndsAt = state.JumpEndsAt,
+                    JumpModuleId = state.JumpModuleId,
+                    JumpStartedAt = state.JumpStartedAt,
+                    TargetingReadyAt = state.TargetingReadyAt,
+                    VelocityX = state.VelocityX,
+                    VelocityY = state.VelocityY,
+                    VelocityZ = state.VelocityZ,
+                },
+                ProjectSpatialNavigationState,
+                "ShipId,CloakModuleId,CloakReactivationMilliseconds,CloakTargetingMilliseconds,HeadingX,HeadingY,"
+                    + "HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        reader.GetDouble(3),
+                        reader.GetDouble(4),
+                        reader.GetDouble(5),
+                        reader.GetDouble(6),
+                        reader.GetDouble(7),
+                        reader.GetInt64(8),
+                        reader.GetInt64(9),
+                        reader.GetInt64(10),
+                        reader.GetInt64(11),
+                        reader.GetDouble(12),
+                        reader.GetDouble(13),
+                        reader.GetDouble(14)
+                    ),
+                state => new(state.ShipId),
+                indexes:
+                [
+                    new("ShipId", row => row.ShipId),
+                    new("CloakModuleId", row => row.CloakModuleId),
+                    new("JumpModuleId", row => row.JumpModuleId),
+                ],
+                primaryColumn: "ShipId"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Propulsion.WorldTackle, EconomyWorldTackle>(
                 "WorldTackle",
                 row => new(row.ModuleId),
@@ -2643,6 +2714,7 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(16)
                     ),
                 state => new(state.ModuleId),
+                changed: TackleChanged,
                 indexes:
                 [
                     new("ModuleId", row => row.ModuleId),
@@ -3762,6 +3834,26 @@ internal sealed partial class EconomyTransaction
             if (Set<Eden.Data.World.Combat.Npcs.WorldNpcEncounter>().Find(row.EncounterId) is null)
             {
                 throw new InvalidDataException("Missing resident WorldNpcEncounter reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Propulsion.SpatialNavigationState>())
+        {
+            if (
+                !double.IsFinite(row.CloakReactivationMilliseconds)
+                || !double.IsFinite(row.CloakTargetingMilliseconds)
+                || !double.IsFinite(row.HeadingX)
+                || !double.IsFinite(row.HeadingY)
+                || !double.IsFinite(row.HeadingZ)
+                || !double.IsFinite(row.VelocityX)
+                || !double.IsFinite(row.VelocityY)
+                || !double.IsFinite(row.VelocityZ)
+            )
+            {
+                throw new InvalidDataException("Invalid resident SpatialNavigationState values.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
             }
         }
         foreach (var row in Retained<Eden.Data.World.Propulsion.WorldTackle>())

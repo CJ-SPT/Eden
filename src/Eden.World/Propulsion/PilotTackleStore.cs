@@ -25,7 +25,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Propulsion;
 
 [Injectable]
-internal sealed class PilotTackleStore(WorldDatabase database, TimeProvider clock) : IPilotTackle
+internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvider clock) : IPilotTackle
 {
     public TackleActivation Activate(
         long pilotId,

@@ -22,7 +22,7 @@ using Fixture = Eden.Protocol.Tests.Combat.NpcCombatTests.Fixture;
 
 namespace Eden.Protocol.Tests.Combat;
 
-public sealed class NpcMissileTests
+public sealed partial class NpcMissileTests
 {
     private const int Charge = 212;
 

@@ -413,7 +413,8 @@ internal sealed partial class PilotDroneStore(
     }
 
     public bool HasControlled(long pilotId, long shipId) =>
-        LiveCombatRuntime.Find(database.Path)?.HasControlledDrones(pilotId, shipId) ?? ListControllers().Contains((pilotId, shipId));
+        LiveWorld.Find(database.Path)?.CombatForShip(shipId)?.HasControlledDrones(pilotId, shipId)
+        ?? ListControllers().Contains((pilotId, shipId));
 
     private IReadOnlySet<(long Pilot, long Ship)> ListControllers() =>
         LiveReadModels.Find(database.Path)?.DroneControllers(ReadControllers) ?? ReadControllers();
@@ -431,7 +432,7 @@ internal sealed partial class PilotDroneStore(
     }
 
     public IReadOnlyList<DroneContact> List(int systemId, long now) =>
-        LiveCombatRuntime.Find(database.Path)?.Drones(systemId, now)
+        LiveWorld.Find(database.Path)?.CombatForSystem(systemId)?.Drones(systemId, now)
         ?? LiveReadModels.Find(database.Path)?.Drones(systemId, () => ReadContacts(systemId))
         ?? ReadContacts(systemId);
 
@@ -483,7 +484,7 @@ internal sealed partial class PilotDroneStore(
 
     public DroneUpdate Advance(long pilotId, long now, int stamp) =>
         LiveCombatRuntime
-            .Find(database.Path)
+            .Find(database.Path, pilotId)
             ?.AdvanceDrones(pilotId, now, stamp, presence, damageEvents, fleets, rolls => AdvanceSql(pilotId, now, stamp, rolls))
         ?? AdvanceSql(pilotId, now, stamp);
 

@@ -28,7 +28,7 @@ using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
 namespace Eden.Protocol.Tests.Propulsion;
 
-public sealed class TackleTests
+public sealed partial class TackleTests
 {
     private sealed class Clients : IDisposable
     {

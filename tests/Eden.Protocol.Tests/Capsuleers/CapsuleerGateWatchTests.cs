@@ -23,7 +23,14 @@ public sealed class CapsuleerGateWatchTests(ITestOutputHelper output)
         var gate = host.GetRequiredService<ISystemObjects>().Load(system).First(g => g.DestinationSystemId is not null);
         var watch = host.GetRequiredService<ICapsuleerGateWatch>();
         var activity = new HumanActivitySnapshot(0, 1, [system]) { Pilots = [new(pilot.PilotId, system)] };
-        Assert.Empty(watch.Read(activity));
+        live.Economy.Warm();
+        using (var cold = SessionPerformance.Begin("cold resident gate monitor", output.WriteLine, force: true)!)
+        {
+            Assert.Empty(watch.Read(activity));
+            Assert.Equal(0, cold.Commands);
+            Assert.Equal(0, cold.Connections);
+            Assert.Equal(0, cold.FittingCalculations);
+        }
         var near = gate.Position + new SpacePosition(gate.Radius + 10000, 0, 0);
         world.SetPosition(pilot.ShipId, near, system);
         var expected = new WatchedTrafficGate(system, gate.DestinationSystemId!.Value, gate.Id, gate.DestinationGateId!.Value);

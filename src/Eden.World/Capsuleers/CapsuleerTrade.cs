@@ -8,6 +8,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,11 +17,7 @@ namespace Eden.World.Capsuleers;
 [Injectable]
 internal sealed partial class CapsuleerTrade(WorldDatabase database, PilotMarketStore market, MarketChangeSignal signal)
 {
-    internal bool Enabled()
-    {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<SavedCapsuleerHauler>().Any();
-    }
+    internal bool Enabled() => WorldActionScope.Inspect(database, world => world.Set<SavedCapsuleerHauler>().Any());
 
     internal void ListStock(long pilot, int station, decimal multiplier = 1)
     {

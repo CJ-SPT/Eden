@@ -29,7 +29,7 @@ internal sealed class WorldActionScope : IDisposable
 
     internal static T Inspect<T>(WorldDatabase database, Func<WorldAction, T> read)
     {
-        if (LiveWorld.Find(database.Path) is { } live)
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
         {
             return live.Economy.Inspect(read);
         }

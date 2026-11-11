@@ -14,6 +14,39 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
+    private DronePlayer? ReadDronePlayer(WorldAction world, long shipId)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = world.Pilots.SingleOrDefault(row => row.ActiveShipId == shipId);
+        if (pilot?.ActiveShip.Position is null || world.Set<ShipLoss>().Any(row => row.ShipId == shipId))
+        {
+            return null;
+        }
+        var engagements = world
+            .Set<SavedEngagement>()
+            .Where(row => row.LowerPilotId == pilot.Id || row.HigherPilotId == pilot.Id)
+            .AsEnumerable()
+            .Select(row => new LimitedEngagement(
+                row.LowerPilotId == pilot.Id ? row.HigherPilotId : row.LowerPilotId,
+                row.ActiveUntil,
+                row.ExpiresAt
+            ))
+            .ToArray();
+        var logoff = world.Set<SavedLogoff>().Find(pilot.Id);
+        return new(
+            pilot.Id,
+            shipId,
+            CrimewatchPersistence.System(catalog, pilot.ActiveShip),
+            catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup,
+            world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
+            pilot.SafetyLevel,
+            (world.Set<SavedSecurityStatus>().Find(pilot.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
+            logoff is null ? null : new(logoff.ShipId, logoff.SystemId, logoff.ExpiresAt),
+            engagements,
+            world.Set<SavedCrimewatch>().Find(pilot.Id)?.Timers() ?? CrimewatchTimers.Empty
+        );
+    }
+
     internal static void ProjectDronePlayers(
         WorldAction world,
         IReadOnlyList<DronePilotTimers> timers,

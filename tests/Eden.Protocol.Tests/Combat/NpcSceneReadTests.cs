@@ -20,7 +20,7 @@ public sealed class NpcSceneReadTests
         f.Db.Store.Advance(f.Npc.SystemId, 1, f.Clock.Now, [], []);
         var encounters = f.Db.Services.GetRequiredService<INpcEncounters>();
         var first = encounters.ReadScene(f.Npc.SystemId, f.Npc.Position, f.Clock.Now);
-        var runtime = LiveWorld.Find(f.Db.Path)!.Combat!;
+        var runtime = LiveWorld.Find(f.Db.Path)!.CombatForSystem(f.Npc.SystemId)!;
         Assert.InRange(first.Visible.Count, 1, 34);
         Assert.Equal(first.Visible.Count, runtime.ObserverContactCount(f.Npc.SystemId));
         using var metrics = SessionPerformance.Begin("local native contact preparation", _ => { }, force: true)!;

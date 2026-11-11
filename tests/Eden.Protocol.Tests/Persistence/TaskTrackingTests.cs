@@ -7,6 +7,7 @@ using Eden.Protocol.Flight;
 using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -169,11 +170,13 @@ public sealed class TaskTrackingTests
         Assert.Equal(long.MaxValue, TaskTrackingRules.Increment(long.MaxValue, 1));
     }
 
-    [Fact]
-    public void ActualWarpEntryEarnsHistoryOncePerWarpWhileAlignmentAndCancellationDoNot()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ActualWarpEntryEarnsHistoryOncePerWarpWhileAlignmentAndCancellationDoNot(bool resident)
     {
         TestClock clock = new();
-        using TestWorld db = new(clock: clock);
+        using TestWorld db = new(clock: clock, liveWorld: resident);
         TaskTrackingTestData.Prepare(db);
         var pilot = db.Store.FindPilot(1000001)!;
         db.Store.SetPosition(pilot.ShipId, SpacePosition.Zero);
@@ -208,7 +211,18 @@ public sealed class TaskTrackingTests
         Assert.True(state.HasWarped);
         Assert.Single(state.Completed, task => task.Id == 16);
         Assert.Empty(state.ClientCounters);
-        WorldInitialization.Open(db.Path);
+        if (resident)
+        {
+            using var snapshot = Assert.IsType<WorldSnapshot>(LiveWorld.Find(db.Path)!.CaptureSnapshot());
+            snapshot.Project();
+            using WorldDbContext saved = new(snapshot.Database);
+            Assert.Equal(2, saved.Set<SavedTaskCounter>().Find(PilotId, TaskEvents.Warped)!.Count);
+            Assert.NotNull(saved.Set<SavedCompletedTask>().Find(PilotId, 16L));
+        }
+        else
+        {
+            WorldInitialization.Open(db.Path);
+        }
         Assert.True(tracking.Read(PilotId).HasWarped);
     }
 

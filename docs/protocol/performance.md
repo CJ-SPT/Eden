@@ -3002,3 +3002,111 @@ Not performed; agent client testing is disabled.
 
 After rebuilding, repeat the reported workload and a bot defense cycle; compare world-owner hold time, action
 allocation, SQL commands and connections.
+
+## Resident monitoring indexes and cold scene reads (November 11, 2026)
+
+Missile presence, impact and pending-report guards now read incremental resident indexes rather than rebuilding
+the complete missile table after a change. Snapshot/coordinate-only updates do not rebuild those indexes. NPC
+history cleanup keeps its exact strict boundary, including the one-tick transition after the retention interval.
+Unknown-pilot rejection uses resident identity membership instead of loading character attributes, implants,
+boosters and learning state merely to establish existence.
+
+NPC effects have separate target and source versions; tackle and player effects have target versions. Immutable
+contact lists and absent results survive unrelated changes. Queries materialize only the selected target/source
+rows. Private action reads see their own changes without publishing speculative caches; rollback preserves the
+earlier shared view. Loaded identity and work indexes also follow committed legacy SQL synchronization.
+
+Cold NPC motion membership and tackle inputs now come from resident tables. Warp task progress joins a resident
+action for the named ships before their motion publishes. Founder enrollment, trade availability and gate-watcher
+identity/position lookups use resident inputs. Resident drone arrivals no longer query the saved drone table just
+to invalidate observer membership. A missing runtime ship mapping can also resolve from loaded hull/position data.
+Unscoped drone advancement, control and contact reads resolve the pilot/ship/system owner consistently; a shared
+runtime must not retain updates while crimewatch/health readers consult a different system runtime.
+
+Deadline index hydration now resolves memberships after all tables load: extra bot tables are registered before
+base hull and position tables. Reopening an initialized checkpoint image must not strand an active deadline under
+system zero. Host startup still separately removes connection-owned bonuses; this does not change disconnect or
+restart gameplay policy. Paid cooldowns retain their existing behavior.
+
+Gameplay references: [EVE University electronic warfare](https://wiki.eveuniversity.org/Electronic_warfare) and
+[missile mechanics](https://wiki.eveuniversity.org/Missile_mechanics), reconciled with the existing catalog-backed
+fixtures. This changes storage/observation, not weapon application, effect strength, range or payment rules.
+
+### Automated validation
+
+The exact `ResidentMonitor` selection initially reproduced four SQL-read failures with two existing checks passing.
+Corrected checks cover actual missile launch/impact/report commits, rejected private changes, effect removal,
+unrelated-view retention, unknown identity rejection, the exact history boundary and cold scene reconstruction.
+They assert zero SQL commands, connections and fitting calculations after input hydration. Founder metadata also
+exercises private/rejected/committed removal and reopened checkpoint rows; gate monitoring measures its cold lookup.
+
+An initialized-image deadline hydration check failed on an untouched `94100006` source archive and passed with the
+post-load membership resolution. This case deliberately omits the host's distinct disconnect reconciliation.
+An expanded development selection had 9 passes and one fixture failure: its scene assertion addressed the shared
+runtime rather than the system runtime being advanced. The corrected 10-case selection passed. A further player
+effect check corrected its fixture lookup to the module's single-column key and passed. Motion tests now require
+zero cold tackle queries/SQL/connections rather than requiring the old positive SQL cost; the resident warp case
+also verifies alignment/cancellation, two distinct entries, duplicate reads and checkpointed history.
+
+A broader selection was stopped after **242 passes / 1 failure** and is incomplete. Drone eligibility observed
+53 commands instead of its warmed one-query budget; the exact check passed in isolation on both revisions.
+Its standalone fixture now retains the catalog generation through the same lifetime used by the host. All
+16 focused eligibility/catalog retention checks then passed. The production catalog lifetime was unchanged.
+
+A later selection was stopped after **80 passes / 2 reported failures** and is incomplete. Removing an incidental
+drone observer SQL read exposed split shared/system runtime ownership, including stale crimewatch deadlines.
+The corrected routing passed all four exact drone damage/timer/checkpoint cases, including a warmed zero-SQL
+observer workload and detached snapshot rollback/retry across subsequent advancement.
+
+Two drone-focused selections were stopped and are incomplete: **89 passes / 1 failure**, then **207 passes / 1
+failure**. System departure now rejects/cancels a delegated member before hydrating a ship through the wrong system
+owner, and logoff-deadline observation uses the requested system owner. Cold drone-player metadata also reads
+resident identity, position, engagements and timers. The 20 membership/departure variants and 8 continued-attack/
+logoff variants passed after correction, including exact expiry without resurrecting a late shot.
+
+A subsequent broader selection was stopped after **134 passes / 1 failure** and is incomplete. The equipped-drone
+observer trace identified a cold spatial/cloak status lookup forcing projection of dirty drone rows. Spatial
+navigation now has a resident mapping and status/membership reads resolve the selected ship/module directly.
+Both exact omnidirectional-link variants passed, including zero-SQL warmed bay/space observers and paid-cycle expiry.
+
+Another broad selection was stopped after **737 passes / 2 failures** and is incomplete. Both logistics hull
+availability assertions failed identically on the untouched `94100006` source archive; their catalog admission
+behavior is outside this storage change. Remaining affected classes exclude those two known baseline cases and
+reuse completed results from the unchanged build. One continuation was interrupted for filter review after 16
+passes; it is incomplete and is not counted as a successful closing run. The next continuation stopped after
+**327 passes / 1 failure**: another hull-availability assertion also failed identically on the untouched source
+archive. Its unchanged-state fitting rejection checks were not altered. The remaining selection excludes that
+known baseline method as well and retains passing results from the same unchanged build.
+
+A further continuation stopped after **730 passes / 1 failure** and is incomplete. The scene contact-count
+assertion also failed on the untouched archive: it inspected the shared runtime while contacts belonged to the
+system runtime. The corrected fixture retains all contact identity, bounded preparation and zero-SQL assertions;
+all five scene checks passed in **7.82 seconds**. No production change was needed for this fixture correction.
+
+The reported run and the existing Release executable both identify revision `164186f`; they predate these later
+resident fixes. The running server and its Release output were left untouched. A separate Release build is for
+maintainer acceptance; source validation does not establish the installed-world latency or SQL counts.
+
+Closing coverage totals **2,747 distinct passing affected tests**, retaining completed results from the unchanged
+production build and the corrected scene fixture. The last **996-case continuation passed in 8m02s**; no selected
+case is missing from the combined reports. The three newly confirmed baseline hull cases are excluded in addition
+to the previously documented shopping and mutadaptive catalog-admission cases. Failed/aborted selections above
+remain incomplete; these numbers do not describe a single uninterrupted passing run.
+
+The final solution build passed without warnings in **1.21 seconds**. Tool/solution restore, both Python policy
+suites (8 catalog and 9 formatting checks), formatting verification (1,937 files) and line-width verification
+passed. Production code was unchanged during the later baseline isolation and scene-fixture correction.
+
+Closing filters and reports are recorded under `artifacts/bot-resident-views`. No full .NET suite
+was run. Missile launch/advancement, remote module mutations, loss settlement and burnout still retain SQL paths;
+their monitoring reads are resident here. The installed-world workload has not been replayed and no live latency
+or supported-population increase is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After rebuilding, repeat the captured workload and compare SQL commands, connections, allocation and world-owner
+hold time; separate first-use catalog/validation work from ordinary simulation work.

@@ -21,9 +21,9 @@ internal sealed partial class LiveCombatRuntime
         {
             return null;
         }
-        var player = DronePlayerFor(delegation.ShipId);
-        var memberShip = player is null ? null : Ship(player.PilotId, now);
         var online = presence.FindOnline(ownerShip.SystemId, delegation.ShipId);
+        var player = online is null ? null : DronePlayerFor(delegation.ShipId);
+        var memberShip = player?.SystemId == ownerShip.SystemId ? Ship(player.PilotId, now) : null;
         DroneDelegateMember ownerMember = new(
             ownerShip.PilotId,
             ownerShip.ShipId,

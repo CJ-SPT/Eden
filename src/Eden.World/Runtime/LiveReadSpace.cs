@@ -67,16 +67,22 @@ internal sealed partial class LiveReadModels
             }
         );
 
-    internal bool HasNpcEwar(long ship) => NpcEwar().Any(e => e.TargetShipId == ship);
+    internal bool HasNpcEwar(long ship) => CanReadResident ? ResidentNpcTarget(ship).HasRows : NpcEwar().Any(e => e.TargetShipId == ship);
 
     internal IReadOnlyList<NpcHostileAttempt> NpcEwarAttempts(long ship) =>
-        NpcEwar().Where(e => e.TargetShipId == ship && e.Attempt.StartedAt > 0).Select(e => e.Attempt).ToArray();
+        CanReadResident
+            ? ResidentNpcTarget(ship).Attempts
+            : NpcEwar().Where(e => e.TargetShipId == ship && e.Attempt.StartedAt > 0).Select(e => e.Attempt).ToArray();
 
     internal IReadOnlyList<NpcEwarContact> NpcEwarIncoming(long ship) =>
-        NpcEwar().Where(e => e.TargetShipId == ship).Select(e => e.Contact).OfType<NpcEwarContact>().ToArray();
+        CanReadResident
+            ? ResidentNpcTarget(ship).Contacts
+            : NpcEwar().Where(e => e.TargetShipId == ship).Select(e => e.Contact).OfType<NpcEwarContact>().ToArray();
 
     internal IReadOnlyList<NpcEwarContact> NpcEwarSource(long source) =>
-        NpcEwar().Select(e => e.Contact).OfType<NpcEwarContact>().Where(e => e.SourceId == source).ToArray();
+        CanReadResident
+            ? ResidentNpcSource(source)
+            : NpcEwar().Select(e => e.Contact).OfType<NpcEwarContact>().Where(e => e.SourceId == source).ToArray();
 
     private readonly ResidentSnapshot<int, bool> _activeCores = new("resident.activeCores", "WorldActiveModule", "WorldItemMembership");
 
@@ -113,14 +119,46 @@ internal sealed partial class LiveReadModels
             }
         );
 
-    internal bool HasPilotMissiles(int system) => Missiles().PilotSystems.Contains(system);
+    internal bool HasPilotMissiles(int system) =>
+        CanReadResident
+            ? ReadResidentGuard(
+                () => owner.Economy.HasPilotMissiles(system),
+                world =>
+                    world
+                        .Set<WorldMissile>()
+                        .Any(row =>
+                            row.SourceKind == MissileSourceKind.Pilot && row.SystemId == system && row.Status == MissileFlightStatus.Flying
+                        )
+            )
+            : Missiles().PilotSystems.Contains(system);
 
-    internal bool HasMissileReports(long pilot) => Missiles().Reports.Contains(pilot);
+    internal bool HasMissileReports(long pilot) =>
+        CanReadResident
+            ? ReadResidentGuard(
+                () => owner.Economy.HasMissileReports(pilot),
+                world =>
+                    world
+                        .Set<WorldMissile>()
+                        .Any(row =>
+                            row.SourceKind == MissileSourceKind.Pilot && row.PilotId == pilot && row.Outcome != null && !row.Reported
+                        )
+            )
+            : Missiles().Reports.Contains(pilot);
 
-    internal bool Impacted(long id) => Missiles().Impacts.Contains(id);
+    internal bool Impacted(long id) =>
+        CanReadResident
+            ? ReadResidentGuard(
+                () => owner.Economy.MissileImpacted(id),
+                world => world.Set<WorldMissile>().Find(id)?.Status == MissileFlightStatus.Impact
+            )
+            : Missiles().Impacts.Contains(id);
 
     internal bool HasNpcMissileWork(long pilot, long now, int historySeconds)
     {
+        if (CanReadResident)
+        {
+            return ResidentNpcMissileWork(pilot, now, historySeconds);
+        }
         // Preserve the old unknown-pilot rejection even when the flying set is empty.
         _ = Learning(pilot);
         var index = Missiles();
@@ -151,26 +189,44 @@ internal sealed partial class LiveReadModels
         );
 
     internal IReadOnlyList<TackleEffect> Incoming(long ship) =>
-        Array.AsReadOnly(Tackles().Where(t => t.Target?.Kind == TackleTargetKind.Ship && t.Target.Id == ship).ToArray());
+        CanReadResident
+            ? ResidentTackleTarget(ship)
+            : Array.AsReadOnly(Tackles().Where(t => t.Target?.Kind == TackleTargetKind.Ship && t.Target.Id == ship).ToArray());
 
-    internal bool HasTackleWork() =>
-        Tackles().Count > 0
-        || Read(
-            _activeCores,
-            0,
-            () =>
-            {
-                using WorldDbContext world = new(database.Path);
-                using CatalogDbContext catalog = new(database.CatalogPath);
-                return (
-                    from active in world.Set<ActiveFittedModule>()
-                    join item in world.Set<OwnedItem>() on active.ModuleId equals item.Id
-                    select item.TypeId
-                )
+    internal bool HasTackleWork()
+    {
+        bool tackles = CanReadResident
+            ? ReadResidentGuard(() => owner.Economy.HasTackleRows, world => world.Set<WorldTackle>().Any())
+            : Tackles().Count > 0;
+        return tackles
+            || (owner.HasPersistenceOwnership && owner.Economy.HasActiveAction ? ActiveCores() : Read(_activeCores, 0, ActiveCores));
+    }
+
+    private bool ActiveCores()
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        if (CanReadResident)
+        {
+            return owner.Economy.Inspect(world =>
+                world
+                    .Set<ActiveFittedModule>()
+                    .Select(row => row.ModuleId)
                     .AsEnumerable()
-                    .Any(type => catalog.FittingType(type)?.GroupId == TackleDefinitions.WarpCoreStabilizerGroup);
-            }
-        );
+                    .Any(id =>
+                        world.Set<OwnedItem>().Find(id) is { } item
+                        && catalog.FittingType(item.TypeId)?.GroupId == TackleDefinitions.WarpCoreStabilizerGroup
+                    )
+            );
+        }
+        using WorldDbContext world = new(database.Path);
+        return (
+            from active in world.Set<ActiveFittedModule>()
+            join item in world.Set<OwnedItem>() on active.ModuleId equals item.Id
+            select item.TypeId
+        )
+            .AsEnumerable()
+            .Any(type => catalog.FittingType(type)?.GroupId == TackleDefinitions.WarpCoreStabilizerGroup);
+    }
 
     private readonly ResidentSnapshot<int, IReadOnlyList<ElectronicWarfareContact>> _playerEwar = new(
         "resident.playerEwar",
@@ -197,7 +253,10 @@ internal sealed partial class LiveReadModels
             }
         );
 
-    internal bool HasPlayerEwar() => PlayerEwar().Count > 0;
+    internal bool HasPlayerEwar() =>
+        CanReadResident
+            ? ReadResidentGuard(() => owner.Economy.HasPlayerEwarRows, world => world.Set<WorldPlayerEwar>().Any())
+            : PlayerEwar().Count > 0;
 
     private readonly record struct EwarModuleKey(long Pilot, long Ship, long Module);
 
@@ -262,7 +321,7 @@ internal sealed partial class LiveReadModels
         Read(_capacitorOnline, new(pilot, ship, module), () => load(pilot, ship, module));
 
     internal IReadOnlyList<ElectronicWarfareContact> PlayerEwarIncoming(long targetId) =>
-        Array.AsReadOnly(PlayerEwar().Where(e => e.Target.Id == targetId).ToArray());
+        CanReadResident ? ResidentPlayerEwarTarget(targetId) : Array.AsReadOnly(PlayerEwar().Where(e => e.Target.Id == targetId).ToArray());
 
     private void ObserveSpace(IReadOnlyCollection<CombatRowChange> changes)
     {
@@ -283,6 +342,10 @@ internal sealed partial class LiveReadModels
 
     private void ClearSpace()
     {
+        _residentNpcTargets.Clear();
+        _residentNpcSources.Clear();
+        _residentTackleTargets.Clear();
+        _residentPlayerEwarTargets.Clear();
         _assaultDamageControls.Clear();
         _capacitorOnline.Clear();
         _signatureSuppression.Clear();

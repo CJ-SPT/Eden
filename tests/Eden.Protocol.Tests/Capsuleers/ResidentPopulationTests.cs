@@ -15,6 +15,41 @@ public sealed class ResidentPopulationTests
     private const int Remote = 30000144;
     private const long Human = 90000001;
 
+    [Fact]
+    public void ResidentMonitorFounderMetadataUsesTheCurrentActionAndPreservesRejectedRemovalWithoutSql()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        var community = host.GetRequiredService<ICapsuleerCommunity>();
+        var trade = host.GetRequiredService<CapsuleerTrade>();
+        live.Economy.Warm();
+        Eden.Protocol.Tests.Combat.ResidentMonitorAssertions.WithoutSql(() =>
+        {
+            Assert.Equal(2, community.Pilots().Count);
+            Assert.True(trade.Enabled());
+            using (var rejected = live.Economy.Begin(TransactionParticipants.None))
+            {
+                rejected.Remove(rejected.Set<SavedCapsuleerHauler>().Find(1)!);
+                Assert.False(trade.Enabled());
+                Assert.Single(community.Pilots());
+            }
+            Assert.True(trade.Enabled());
+            Assert.Equal(2, community.Pilots().Count);
+            using (var committed = live.Economy.Begin(TransactionParticipants.None))
+            {
+                committed.Remove(committed.Set<SavedCapsuleerHauler>().Find(1)!);
+                committed.Commit();
+            }
+            Assert.False(trade.Enabled());
+            Assert.Single(community.Pilots());
+        });
+        using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        snapshot.Project();
+        using WorldDbContext saved = new(snapshot.Database);
+        Assert.Empty(saved.Set<SavedCapsuleerHauler>());
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

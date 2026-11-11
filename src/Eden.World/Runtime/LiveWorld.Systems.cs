@@ -21,16 +21,34 @@ internal sealed partial class LiveWorld
         if (!live._shipSystems.TryGetValue(ship, out int system))
         {
             using var persistence = live.EnterPersistence("ship membership");
-            using WorldDbContext world = new(path) { IsResidentProjection = true };
-            var membership = world
-                .Ships.Where(s => s.Id == ship)
-                .Select(s => new { s.StationId, System = s.Position == null ? null : s.Position.SystemId })
-                .SingleOrDefault();
-            if (membership is null)
+            if (live.Economy.IsLoaded)
             {
-                return live.Run(action, operation);
+                var hull = live.Economy.Peek<Eden.Data.World.Inventory.Ship>(ship);
+                if (hull is null)
+                {
+                    return live.Run(action, operation);
+                }
+                system =
+                    live.Economy.Peek<Eden.Data.World.Docking.FlightPosition>(ship)?.SystemId
+                    ?? (
+                        hull.StructureId is long structure
+                            ? live.Economy.StructureSystemId(structure)
+                            : live._database.Catalog.FindStation(hull.StationId)!.SolarSystemId
+                    );
             }
-            system = membership.System ?? live._database.Catalog.FindStation(membership.StationId)!.SolarSystemId;
+            else
+            {
+                using WorldDbContext world = new(path) { IsResidentProjection = true };
+                var membership = world
+                    .Ships.Where(s => s.Id == ship)
+                    .Select(s => new { s.StationId, System = s.Position == null ? null : s.Position.SystemId })
+                    .SingleOrDefault();
+                if (membership is null)
+                {
+                    return live.Run(action, operation);
+                }
+                system = membership.System ?? live._database.Catalog.FindStation(membership.StationId)!.SolarSystemId;
+            }
             live.TrackShip(ship, system);
         }
         using var context = live.UseSystem(system);

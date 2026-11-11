@@ -1,6 +1,7 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Mining;
+using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -137,6 +138,17 @@ internal sealed partial class LiveCombatRuntime
             _ = DroneControllers();
             ids = Loading(() =>
             {
+                if (owner.SqlConnections == 0)
+                {
+                    return owner.Economy.Inspect(world =>
+                        world
+                            .Set<WorldNpc>()
+                            .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
+                            .OrderBy(n => n.Id)
+                            .Select(n => n.Id)
+                            .ToArray()
+                    );
+                }
                 using WorldDbContext world = new(database.Path) { Participants = new(systems: [system]) };
                 return world
                     .Set<WorldNpc>()
@@ -158,18 +170,29 @@ internal sealed partial class LiveCombatRuntime
         {
             Loading(() =>
             {
+                void Apply(ILookup<long, WorldTackle> effects)
+                {
+                    foreach (var npc in missing)
+                    {
+                        _effectiveNpcs[npc.Id] = TackleDefinitions.NpcAttributes(
+                            npc.Attributes,
+                            effects[npc.Id].Select(t => t.Module()).ToArray()
+                        );
+                    }
+                }
+                if (owner.SqlConnections == 0)
+                {
+                    return owner.Economy.Inspect(world =>
+                    {
+                        Apply(PilotTackleStore.NpcTackles(world, missing.Select(n => n.Id).ToArray()));
+                        return true;
+                    });
+                }
                 using WorldDbContext world = new(database.Path)
                 {
                     Participants = new(resources: missing.Select(npc => new SimulationResource(SharedSimulationResource.Npc, npc.Id))),
                 };
-                var effects = PilotTackleStore.NpcTackles(world, missing.Select(n => n.Id).ToArray());
-                foreach (var npc in missing)
-                {
-                    _effectiveNpcs[npc.Id] = TackleDefinitions.NpcAttributes(
-                        npc.Attributes,
-                        effects[npc.Id].Select(t => t.Module()).ToArray()
-                    );
-                }
+                Apply(PilotTackleStore.NpcTackles(world, missing.Select(n => n.Id).ToArray()));
                 return true;
             });
         }
@@ -234,21 +257,23 @@ internal sealed partial class LiveCombatRuntime
             .ToArray();
         if (warping.Length != 0)
         {
-            // Warp task progress retains its transaction, and is paid only on entry.
-            Flush();
-            using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
-            using var transaction = world.Database.BeginTransaction();
-            foreach (var ship in warping)
-            {
-                var pilot = world.Pilots.SingleOrDefault(p => p.ActiveShipId == ship.Ship.Id);
-                if (pilot is not null)
+            owner.Economy.Read(
+                world =>
                 {
-                    PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.Warped);
-                }
-            }
-            world.SaveChanges();
-            transaction.Commit();
+                    foreach (var ship in warping)
+                    {
+                        var pilot = world.Pilots.SingleOrDefault(p => p.ActiveShipId == ship.Ship.Id);
+                        if (pilot is not null)
+                        {
+                            PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.Warped);
+                        }
+                    }
+                    world.SaveChanges();
+                    return true;
+                },
+                new(ships: warping.Select(ship => ship.Ship.Id))
+            );
         }
         if (
             result.Npcs.Any(n => n.Position != _npcs[n.Id].Position || n.Navigation != _npcs[n.Id].Navigation)

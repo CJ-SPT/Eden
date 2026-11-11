@@ -182,7 +182,7 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
         var saved = LiveReadModels.Find(database.Path) is { } resident
             ? resident.LoggedOff(systemId, () => LoggedOffSql(systemId))
             : LoggedOffSql(systemId);
-        var combat = LiveCombatRuntime.Find(database.Path);
+        var combat = LiveWorld.Find(database.Path)?.CombatForSystem(systemId);
         return saved
             .Select(s => s with { ExpiresAt = combat?.DroneLogoffDeadline(s.Pilot.PilotId, s.ExpiresAt) ?? s.ExpiresAt })
             .Where(s => s.ExpiresAt > Now)

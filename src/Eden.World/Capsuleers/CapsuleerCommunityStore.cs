@@ -14,6 +14,7 @@ using Eden.World.Catalog;
 using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Mining;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -286,20 +287,21 @@ internal sealed partial class CapsuleerCommunityStore(WorldDatabase database) : 
         return null;
     }
 
-    public IReadOnlyList<CapsuleerIdentity> Pilots()
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedCapsuleerCommunity>()
-            .Where(c => c.PilotId != null)
-            .Select(c => new CapsuleerIdentity(c.PilotId!.Value, c.Seed, c.SchoolId, c.Career))
-            .AsEnumerable()
-            .Concat(
+    public IReadOnlyList<CapsuleerIdentity> Pilots() =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
                 world
-                    .Set<SavedCapsuleerHauler>()
+                    .Set<SavedCapsuleerCommunity>()
+                    .Where(c => c.PilotId != null)
+                    .Select(c => new CapsuleerIdentity(c.PilotId!.Value, c.Seed, c.SchoolId, c.Career))
                     .AsEnumerable()
-                    .Select(h => new CapsuleerIdentity(h.PilotId, 0, 0, CapsuleerCareer.Hauling))
-            )
-            .ToArray();
-    }
+                    .Concat(
+                        world
+                            .Set<SavedCapsuleerHauler>()
+                            .AsEnumerable()
+                            .Select(h => new CapsuleerIdentity(h.PilotId, 0, 0, CapsuleerCareer.Hauling))
+                    )
+                    .ToArray()
+        );
 }
