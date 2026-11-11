@@ -4,6 +4,9 @@
 
 [Production-driven regional markets](docs/protocol/industry.md#production-driven-market-progression--november-8-2026) start with catalog NPC offers. A player's claimed manufacturing output permanently unlocks that product for the whole world. Real market snapshots price generated buy/sell orders; each eligible region has one high-security hub, with smaller selections at secondary factories. New server worlds use this market by default; existing development saves can select it in local administration.
 
+Every seeded regional hub stocks the [full NPC blueprint assortment](docs/protocol/industry.md#blueprint-supply-at-every-regional-hub-november-11-2026),
+so eligible originals are available across hub regions regardless of the station owner's usual suppliers.
+
 
 
 Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It supports persistent local worlds and multiple pilots using separate Windows clients. Supply the matching EVE installation and resource cache separately.

@@ -2482,6 +2482,12 @@ rename in `TestWorldSeed.Load`, before gameplay assertions. A create/rename/remo
 Reports are preserved under `artifacts/resident-bot-state-20261111` in the primary checkout, including the baseline,
 expanded selection, 88-test close, bookmarking integration attempt and isolated frame retry.
 
+The subsequent main blueprint-supply update `44fc0db6` was also integrated without source conflicts. Its combined
+solution build passed in **7.74 seconds**. The OR filter for `CapsuleerResidentRoutineTests`, the exact
+`CapsuleerCoarseTests.RemoteArrivalsReuseFitsAndAvoidRepeatedMovementMembershipReads` method and `BlueprintMarketTests`
+passed **all 11 tests** in **13.77 seconds** (build 1.62 seconds). The warmed remote movement assertion remains **0/0/0**.
+Both Python policy suites and formatting verification were repeated after this final integration.
+
 Development began with the exact method filter
 `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests.CoarseCursorAndJobsReopenWithoutOfflineProduction`.
 The exact-method baseline for `RemoteArrivalsReuseFitsAndAvoidRepeatedMovementMembershipReads` at
