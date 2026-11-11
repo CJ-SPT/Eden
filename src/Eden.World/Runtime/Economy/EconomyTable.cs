@@ -160,6 +160,8 @@ internal sealed class EconomyTable<TRow, TState>(
     public IReadOnlyList<string> Columns => columns.Split(',');
     internal IEnumerable<EconomyKey> Keys => _rows.Keys;
 
+    internal IReadOnlyCollection<EconomyKey> Indexed(string column, object? value) => _indexes[column].Find(value);
+
     internal EconomyKey Key(TRow row) => key(row);
 
     internal TState Capture(TRow row) => capture(row);
@@ -303,6 +305,10 @@ internal abstract class EconomySet<T> : IQueryable<T>, IEconomySet
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     internal abstract IEnumerable<T> SelectRows(Expression<Func<T, bool>>? predicate);
+
+    internal virtual IEnumerable<TResult> Project<TResult>(Expression<Func<T, TResult>> selector, Expression<Func<T, bool>>? predicate) =>
+        SelectRows(predicate).Select(selector.Compile(preferInterpretation: true));
+
     internal abstract T? Find(EconomyKey id);
     internal abstract IQueryable<T> Where(Expression<Func<T, bool>> predicate);
 
@@ -339,7 +345,7 @@ internal abstract class EconomySet<T> : IQueryable<T>, IEconomySet
     public abstract IReadOnlyCollection<long> Owners { get; }
 }
 
-internal sealed class EconomySet<TRow, TState>(EconomyTable<TRow, TState> table, EconomyTransaction transaction) : EconomySet<TRow>
+internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState> table, EconomyTransaction transaction) : EconomySet<TRow>
     where TRow : class
     where TState : class
 {
@@ -354,6 +360,16 @@ internal sealed class EconomySet<TRow, TState>(EconomyTable<TRow, TState> table,
             foreach (var key in _changes.Keys)
             {
                 changes.Add(new(table.Name, key.Id, Resident: true));
+                changes.AddRange(transaction.FitChanges(table.Read(key), _removed.Contains(key) ? null : _local[key]));
+                if (typeof(TRow) == typeof(Eden.Data.World.Docking.FlightPosition))
+                {
+                    var before = table.Read(key) as Eden.Data.World.Docking.FlightPosition;
+                    var after = _removed.Contains(key) ? null : _local[key] as Eden.Data.World.Docking.FlightPosition;
+                    if ((before is null) != (after is null) || before?.SystemId != after?.SystemId)
+                    {
+                        changes.Add(new("WorldPositionMembership", key.Id, Resident: true));
+                    }
+                }
                 if (typeof(TRow) == typeof(Eden.Data.World.Inventory.OwnedItem))
                 {
                     var before = table.Read(key) as Eden.Data.World.Inventory.OwnedItem;
@@ -444,7 +460,10 @@ internal sealed class EconomySet<TRow, TState>(EconomyTable<TRow, TState> table,
     {
         var id = table.Key(row);
         _local[id] = row;
-        _removed.Add(id);
+        if (_removed.Add(id))
+        {
+            transaction.RemoveDependents(row);
+        }
     }
 
     internal override EntityState State(TRow row) => _removed.Contains(table.Key(row)) ? EntityState.Deleted : EntityState.Unchanged;

@@ -22,7 +22,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Capsuleers;
 
 [Injectable]
-internal sealed class CapsuleerResupply(PilotMarketStore market)
+internal sealed partial class CapsuleerResupply(PilotMarketStore market)
 {
     private sealed record DroneCandidate(DroneProfile Profile, int Count);
 

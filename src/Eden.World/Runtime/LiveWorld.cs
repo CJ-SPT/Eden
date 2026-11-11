@@ -256,6 +256,16 @@ internal sealed partial class LiveWorld : IDisposable
                 }
             }
         }
+        if (resident)
+        {
+            foreach (long ship in changes.Where(c => c.Table is "WorldShip" or "WorldPositionMembership").Select(c => c.Id).Distinct())
+            {
+                if (Economy.ActivePilot(ship) is long pilot)
+                {
+                    Economy.TrackPilot(pilot);
+                }
+            }
+        }
         using (UseShared())
         {
             ObserveState(_shared, changes);

@@ -10,6 +10,7 @@ internal static class EconomyOwnership
         where T : class =>
         row switch
         {
+            Pilot pilot => pilot.Id,
             OwnedItem item => item.OwnerId,
             Ship ship => ship.OwnerId,
             PilotWallet wallet => wallet.PilotId,

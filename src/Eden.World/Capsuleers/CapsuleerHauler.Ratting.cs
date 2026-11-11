@@ -189,7 +189,7 @@ internal sealed partial class CapsuleerHauler
 
     private void StartActivityWarp()
     {
-        var saved = _operation.World.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var saved = _operation.World.Pilots.Single(p => p.Id == pilotId);
         CrimewatchPersistence.CheckTravel(_operation.World, _operation.Catalog, saved, CrimewatchTravel.Warp, Now);
         if (_warpBlocked)
         {
@@ -362,7 +362,12 @@ internal sealed partial class CapsuleerHauler
         }
         var available = _operation
             .World.Set<OwnedItem>()
-            .Where(i => ids.Contains(i.Id) && i.OwnerId == pilotId && i.LocationId == Pilot.ShipId && i.FlagId == (int)InventoryFlag.Cargo)
+            .Where(i =>
+                Enumerable.Contains(ids, i.Id)
+                && i.OwnerId == pilotId
+                && i.LocationId == Pilot.ShipId
+                && i.FlagId == (int)InventoryFlag.Cargo
+            )
             .Select(i => i.Id)
             .ToArray();
         if (available.Length > 0)

@@ -28,7 +28,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Ammunition;
 
 [Injectable]
-internal sealed class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmunition
+internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPilotAmmunition
 {
     // A magazine is a real owned stack located inside its module. The client
     // sees the native (ship, slot, type) sublocation rather than this stack ID.

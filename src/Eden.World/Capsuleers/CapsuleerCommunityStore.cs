@@ -21,7 +21,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Capsuleers;
 
 [Injectable]
-internal sealed class CapsuleerCommunityStore(WorldDatabase database) : ICapsuleerCommunity
+internal sealed partial class CapsuleerCommunityStore(WorldDatabase database) : ICapsuleerCommunity
 {
     internal const long MinerAccountId = -1;
     internal const int VentureType = 32880;

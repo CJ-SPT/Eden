@@ -73,14 +73,14 @@ internal sealed partial class PilotAssetStore
         return PersonalAssetRules.Select(items, stations, query.IncludeContainers);
     }
 
-    private static IQueryable<OwnedItem> AvailableItems(Eden.World.Runtime.Economy.EconomyTransaction world, long pilotId) =>
+    private static IQueryable<OwnedItem> AvailableItems(Eden.World.Runtime.Economy.WorldAction world, long pilotId) =>
         world
             .Set<OwnedItem>()
             .AsNoTracking()
             .Where(i => i.OwnerId == pilotId)
             .Where(i => !world.Set<IndustryJob>().Any(j => j.BlueprintId == i.Id && j.Status == IndustryJobStatus.Installed));
 
-    private static void CheckPilot(Eden.World.Runtime.Economy.EconomyTransaction world, long pilotId)
+    private static void CheckPilot(Eden.World.Runtime.Economy.WorldAction world, long pilotId)
     {
         if (!world.Pilots.Any(p => p.Id == pilotId))
         {
@@ -88,7 +88,7 @@ internal sealed partial class PilotAssetStore
         }
     }
 
-    private static PersonalAssetLocation? Location(Eden.World.Runtime.Economy.EconomyTransaction world, CatalogDbContext catalog, long id)
+    private static PersonalAssetLocation? Location(Eden.World.Runtime.Economy.WorldAction world, CatalogDbContext catalog, long id)
     {
         if (catalog.FindStation(id) is { } station)
         {

@@ -13,14 +13,14 @@ namespace Eden.World.Skills;
 
 internal sealed partial class PilotSkillReader
 {
-    internal static int Level(EconomyTransaction world, CatalogDbContext catalog, long pilotId, int skill)
+    internal static int Level(WorldAction world, CatalogDbContext catalog, long pilotId, int skill)
     {
         long points = world.Set<PilotSkill>().Find(pilotId, skill)?.Points ?? 0;
         double rank = catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1);
         return new TrainedSkill(skill, points, rank).Level;
     }
 
-    internal static IReadOnlyDictionary<int, int> Levels(EconomyTransaction world, CatalogDbContext catalog, long pilotId, int[] skills)
+    internal static IReadOnlyDictionary<int, int> Levels(WorldAction world, CatalogDbContext catalog, long pilotId, int[] skills)
     {
         var points = world
             .Set<PilotSkill>()
@@ -46,7 +46,7 @@ internal sealed partial class PilotSkillReader
         );
     }
 
-    internal static void CheckRequirements(EconomyTransaction world, CatalogDbContext catalog, long pilotId, int typeId)
+    internal static void CheckRequirements(WorldAction world, CatalogDbContext catalog, long pilotId, int typeId)
     {
         var attributes = catalog.FittingAttributes(typeId);
         foreach (var (skillAttribute, levelAttribute) in InventoryDefinitions.RequiredSkills)
@@ -59,7 +59,7 @@ internal sealed partial class PilotSkillReader
         }
     }
 
-    internal static IReadOnlySet<int> UsableTypes(EconomyTransaction world, CatalogDbContext catalog, long pilotId, int[] types)
+    internal static IReadOnlySet<int> UsableTypes(WorldAction world, CatalogDbContext catalog, long pilotId, int[] types)
     {
         var attributes = types.Distinct().ToDictionary(type => type, catalog.FittingAttributes);
         int[] skills = attributes

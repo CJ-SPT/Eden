@@ -85,9 +85,25 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectPilot(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyPilot>> changes)
     {
-        if (changes.Count != 0)
+        foreach (var change in changes)
         {
-            throw new InvalidOperationException("Reference economic rows cannot be projected.");
+            if (change.Value is not { } row)
+            {
+                world.Database.ExecuteSql($"DELETE FROM WorldPilot WHERE Id={change.Key.Id}");
+                continue;
+            }
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldPilot(Id,AccountId,Name,CorporationId,RaceId,BloodlineId,GenderId,AncestryId,SchoolId,
+                    CreatedAt,Appearance,Portrait,ActiveShipId,SafetyLevel)
+                VALUES({row.Id},{row.AccountId},{row.Name},{row.CorporationId},{row.RaceId},{row.BloodlineId},{row.GenderId},
+                    {row.AncestryId},{row.SchoolId},{row.CreatedAt},{row.Appearance},{row.Portrait},{row.ActiveShipId},{row.SafetyLevel})
+                ON CONFLICT(Id) DO UPDATE SET AccountId=excluded.AccountId,Name=excluded.Name,CorporationId=excluded.CorporationId,
+                    RaceId=excluded.RaceId,BloodlineId=excluded.BloodlineId,GenderId=excluded.GenderId,AncestryId=excluded.AncestryId,
+                    SchoolId=excluded.SchoolId,CreatedAt=excluded.CreatedAt,Appearance=excluded.Appearance,Portrait=excluded.Portrait,
+                    ActiveShipId=excluded.ActiveShipId,SafetyLevel=excluded.SafetyLevel
+                """
+            );
         }
     }
 }
@@ -711,9 +727,21 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectPilotSkill(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyPilotSkill>> changes)
     {
-        if (changes.Count != 0)
+        foreach (var change in changes)
         {
-            throw new InvalidOperationException("Reference economic rows cannot be projected.");
+            if (change.Value is { } row)
+            {
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldPilotSkill(PilotId,TypeId,Points) VALUES({row.PilotId},{row.TypeId},{row.Points})
+                    ON CONFLICT(PilotId,TypeId) DO UPDATE SET Points=excluded.Points
+                    """
+                );
+            }
+            else
+            {
+                world.Database.ExecuteSql($"DELETE FROM WorldPilotSkill WHERE PilotId={change.Key.Id} AND TypeId={change.Key.Part}");
+            }
         }
     }
 }
@@ -787,6 +815,7 @@ internal sealed partial class ResidentEconomy
 {
     private void RegisterTables()
     {
+        RegisterBotTables();
         Register(
             new EconomyTable<InventoryOwner, EconomyInventoryOwner>(
                 "WorldInventoryOwner",
@@ -882,12 +911,18 @@ internal sealed partial class ResidentEconomy
                         (ShipSafetyLevel)reader.GetInt32(14)
                     ),
                 state => new(state.Id),
-                readOnly: true,
+                readOnly: false,
                 equal: (left, right) =>
                     left with { Appearance = null, Portrait = null } == right with { Appearance = null, Portrait = null }
                     && (left.Appearance ?? []).SequenceEqual(right.Appearance ?? [])
                     && (left.Portrait ?? []).SequenceEqual(right.Portrait ?? []),
-                indexes: [new("Id", row => row.Id), new("ActiveShipId", row => row.ActiveShipId)],
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("AccountId", row => row.AccountId),
+                    new("Name", row => row.Name, new EconomyNameComparer()),
+                    new("ActiveShipId", row => row.ActiveShipId),
+                ],
                 primaryColumn: "Id"
             )
         );
@@ -956,7 +991,7 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(5)
                     ),
                 state => new(state.ShipId),
-                readOnly: true,
+                readOnly: false,
                 primaryColumn: "ShipId"
             )
         );
@@ -1438,7 +1473,7 @@ internal sealed partial class ResidentEconomy
                 "PilotId,TypeId,Points",
                 reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.GetInt64(3)),
                 state => new(state.PilotId, state.TypeId),
-                readOnly: true,
+                readOnly: false,
                 indexes: [new("PilotId", row => row.PilotId), new("TypeId", row => row.TypeId)],
                 primaryColumn: null
             )
@@ -1590,6 +1625,7 @@ internal sealed partial class EconomyTransaction
     internal void AssignIdentity<TRow>(TRow row)
         where TRow : class
     {
+        AssignBotIdentity(row);
         switch (row)
         {
             case OwnedItem value:

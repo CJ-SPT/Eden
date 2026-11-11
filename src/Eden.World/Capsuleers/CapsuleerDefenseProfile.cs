@@ -24,7 +24,7 @@ internal sealed record CapsuleerDefenseEquipment(
     bool Active
 );
 
-internal sealed record CapsuleerDefenseProfile(bool Combat, CapsuleerDefenseEquipment[] Modules)
+internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDefenseEquipment[] Modules)
 {
     internal RattingWeapon[] RattingWeapons { get; init; } = [];
     internal double TargetRange { get; init; }

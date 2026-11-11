@@ -87,6 +87,11 @@ internal sealed partial class LiveCombatRuntime
 
     private LiveCombatShip LoadShip(long pilotId, long now)
     {
+        if (owner.SqlConnections == 0)
+        {
+            return owner.Economy.Read(world => LoadShipResident(world, pilotId, now), new(pilots: [pilotId]));
+        }
+
         using var phase = SessionPerformance.Phase("combat.hydrate.ship");
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -246,6 +251,11 @@ internal sealed partial class LiveCombatRuntime
 
     private LiveCombatShip ReloadShip(LiveCombatShip ship, long now)
     {
+        if (owner.SqlConnections == 0)
+        {
+            return owner.Economy.Read(world => ReloadShipResident(world, ship, now), new(pilots: [ship.PilotId], ships: [ship.ShipId]));
+        }
+
         using var phase = SessionPerformance.Phase("combat.refresh.ship");
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();

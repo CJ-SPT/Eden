@@ -19,6 +19,7 @@ internal sealed record EconomyCheckpoint(IReadOnlyList<IEconomyProjection> Table
 
     internal void Apply(WorldDbContext world)
     {
+        world.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys=ON");
         foreach (var table in Tables)
         {
             table.Apply(world);
@@ -118,6 +119,7 @@ internal sealed partial class ResidentEconomy
 
     internal IReadOnlyDictionary<Type, IEconomyTable> Mappings => _tables;
     private bool _loaded;
+    internal bool IsLoaded => _loaded;
     private bool _projecting;
     internal bool IsProjecting => _projecting;
 
@@ -125,6 +127,20 @@ internal sealed partial class ResidentEconomy
         where T : class => _tables.TryGetValue(typeof(T), out var table) && table is IEconomyPeek<T> typed ? typed.Peek(new(id)) : null;
 
     private bool _transaction;
+    private EconomyTransaction? _active;
+
+    internal T Read<T>(Func<WorldAction, T> read, TransactionParticipants? participants = null)
+    {
+        using var lease = _owner.EnterShared("resident economic read");
+        if (_active is not null)
+        {
+            return read(_active);
+        }
+        using var action = Begin(participants ?? new TransactionParticipants());
+        var result = read(action);
+        action.Commit();
+        return result;
+    }
 
     internal ResidentEconomy(LiveWorld owner, WorldDatabase database)
     {
@@ -162,13 +178,26 @@ internal sealed partial class ResidentEconomy
                     TrackPilot(pilot);
                 }
             }
+            if (participants is not null)
+            {
+                participants = new(
+                    _owner.ParticipantSystems(participants),
+                    participants.Pilots,
+                    participants.Ships,
+                    participants.Resources
+                );
+            }
             systems = _owner.EnterTransactionSystems(participants);
             _ = _owner.CapsuleerActivity.Read();
             _transaction = true;
-            return new(this, _owner, _database, lease, systems);
+            _active = new(this, _owner, _database, lease, systems, participants);
+            _active.ImportCombat(participants);
+            return _active;
         }
         catch
         {
+            _active = null;
+            _transaction = false;
             systems?.Dispose();
             lease.Dispose();
             throw;
@@ -217,6 +246,13 @@ internal sealed partial class ResidentEconomy
         _loaded = true;
     }
 
+    internal bool ActiveShip(long pilot, long ship)
+    {
+        using var lease = _owner.EnterShared("resident ship membership");
+        EnsureLoaded();
+        return Peek<Eden.Data.World.Characters.Pilot>(pilot)?.ActiveShipId == ship;
+    }
+
     internal long? ActivePilot(long ship)
     {
         var table = (EconomyTable<Eden.Data.World.Characters.Pilot, EconomyPilot>)_tables[typeof(Eden.Data.World.Characters.Pilot)];
@@ -251,9 +287,11 @@ internal sealed partial class ResidentEconomy
     internal void Committed(
         IReadOnlyDictionary<string, long> sequences,
         IReadOnlyCollection<CombatRowChange> changes,
-        TransactionParticipants participants
+        TransactionParticipants? participants,
+        IReadOnlyList<long> pilots
     )
     {
+        InvalidateFits(changes);
         foreach (var sequence in sequences)
         {
             _sequences[sequence.Key] = sequence.Value;
@@ -262,7 +300,7 @@ internal sealed partial class ResidentEconomy
         if (changes.Count != 0 || sequences.Count != 0)
         {
             _owner.ObjectsChanged();
-            foreach (long pilot in participants.Pilots)
+            foreach (long pilot in pilots)
             {
                 TrackPilot(pilot);
                 _owner.CombatForKnownPilot(pilot)?.ObserveEconomicItems(changes, id => Peek<OwnedItem>(id));
@@ -271,7 +309,11 @@ internal sealed partial class ResidentEconomy
         }
     }
 
-    internal void End() => _transaction = false;
+    internal void End()
+    {
+        _active = null;
+        _transaction = false;
+    }
 
     internal bool ReferencesDirty(string sql)
     {
@@ -285,7 +327,7 @@ internal sealed partial class ResidentEconomy
             || sql.TrimStart().StartsWith("ALTER ", StringComparison.OrdinalIgnoreCase);
         return (schema || sql.Contains("sqlite_sequence", StringComparison.Ordinal))
                 && (_dirtySequences.Count != 0 || _tables.Values.Any(table => table.HasChanges))
-            || _tables.Values.Any(table => table.HasChanges && sql.Contains(table.Name, StringComparison.Ordinal));
+            || _tables.Values.Any(table => table.HasChanges && SqlTableReferences.Contains(sql, table.Name));
     }
 
     internal EconomyCheckpoint Capture() =>
@@ -336,6 +378,7 @@ internal sealed partial class ResidentEconomy
 
     internal void Observe(IReadOnlyCollection<CombatRowChange> changes)
     {
+        InvalidateFits(changes);
         if (!_loaded || _projecting)
         {
             return;

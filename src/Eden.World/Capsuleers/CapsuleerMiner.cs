@@ -18,6 +18,7 @@ using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -206,12 +207,7 @@ internal sealed class CapsuleerMiner(
         if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
         {
             _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
-            using WorldDbContext world = new(database.Path)
-            {
-                Participants = new(pilots: [pilotId]),
-                UsesResidentCapsuleerRoutines = Live is not null,
-            };
-            if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == Pilot.ShipId))
+            if (!live.Economy.ActiveShip(pilotId, Pilot.ShipId))
             {
                 Load();
             }
@@ -523,12 +519,8 @@ internal sealed class CapsuleerMiner(
 
     private void Load()
     {
-        using WorldDbContext world = new(database.Path)
-        {
-            Participants = new(pilots: [pilotId]),
-            UsesResidentCapsuleerRoutines = Live is not null,
-        };
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         var row = world.Set<SavedCapsuleerCommunity>().AsNoTracking().SingleOrDefault(c => c.PilotId == pilotId);
         if (row?.PilotId is long id)
         {
@@ -576,6 +568,7 @@ internal sealed class CapsuleerMiner(
             using CatalogDbContext catalog = new(database.CatalogPath);
             _laser = PilotInventoryStore.List(world, catalog, id, Pilot.ShipId).FirstOrDefault(i => i.Id == Work.ModuleId);
             transaction.Commit();
+            transaction.Dispose();
             RefreshObjects();
             _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
         }

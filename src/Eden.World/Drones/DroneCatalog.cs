@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Drones;
 
-internal static class DroneCatalog
+internal static partial class DroneCatalog
 {
     private const int AbyssalMetaGroup = 15;
     private static readonly CatalogDefinition<DroneProfile> s_profile = new(

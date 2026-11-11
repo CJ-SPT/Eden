@@ -3,11 +3,11 @@ using System.Linq.Expressions;
 
 namespace Eden.World.Runtime.Economy;
 
-internal sealed class EconomyIndex<T>(string name, Func<T, object?> value)
+internal sealed class EconomyIndex<T>(string name, Func<T, object?> value, IEqualityComparer<object>? comparer = null)
     where T : class
 {
     private static readonly object NullKey = new();
-    private readonly Dictionary<object, Bucket> _keys = [];
+    private readonly Dictionary<object, Bucket> _keys = new(comparer);
     internal string Name => name;
 
     internal IReadOnlyCollection<EconomyKey> Find(object? key) => _keys.TryGetValue(key ?? NullKey, out var found) ? found : [];

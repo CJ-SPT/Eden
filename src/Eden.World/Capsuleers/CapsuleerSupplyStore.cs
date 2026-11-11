@@ -17,7 +17,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
-internal static class CapsuleerSupplyStore
+internal static partial class CapsuleerSupplyStore
 {
     internal const int SpareMagazines = 5;
 

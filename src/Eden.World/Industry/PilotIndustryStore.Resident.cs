@@ -27,6 +27,6 @@ namespace Eden.World.Industry;
 
 internal sealed partial class PilotIndustryStore
 {
-    internal static bool IsInstalled(EconomyTransaction world, long itemId) =>
+    internal static bool IsInstalled(WorldAction world, long itemId) =>
         world.Set<IndustryJob>().Any(j => j.BlueprintId == itemId && j.Status == IndustryJobStatus.Installed);
 }

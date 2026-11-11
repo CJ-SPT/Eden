@@ -13,7 +13,7 @@ using Eden.World.Storage;
 namespace Eden.World.Combat;
 
 [Injectable]
-internal sealed class PilotHealthStore(WorldDatabase database) : IPilotHealth
+internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotHealth
 {
     public bool WasDestroyed(long shipId)
     {

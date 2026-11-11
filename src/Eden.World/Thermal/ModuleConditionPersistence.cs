@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Thermal;
 
 // Transaction boundary for heat burnout and station/module repair owners.
-internal static class ModuleConditionPersistence
+internal static partial class ModuleConditionPersistence
 {
     internal static ModuleCondition Read(WorldDbContext world, CatalogDbContext catalog, OwnedItem item) =>
         WorldConnections.ModuleCondition(world, item.OwnerId, item.LocationId, item.Id)

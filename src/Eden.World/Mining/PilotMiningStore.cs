@@ -30,7 +30,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Mining;
 
 [Injectable]
-internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider clock) : IPilotMining
+internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvider clock) : IPilotMining
 {
     private sealed record ValidatedMining(
         Pilot Pilot,

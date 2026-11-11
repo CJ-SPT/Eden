@@ -20,10 +20,9 @@ namespace Eden.World.Market;
 
 internal sealed partial class PilotMarketStore
 {
-    private static Pilot Pilot(EconomyTransaction world, long id) =>
-        world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
+    private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 
-    private static CatalogStationDefinition PurchaseStation(EconomyTransaction world, CatalogDbContext catalog, Pilot pilot, int stationId)
+    private static CatalogStationDefinition PurchaseStation(WorldAction world, CatalogDbContext catalog, Pilot pilot, int stationId)
     {
         var station = Station(catalog, stationId);
         int systemId =
@@ -45,7 +44,7 @@ internal sealed partial class PilotMarketStore
     }
 
     private void Seed(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         CatalogStationDefinition station,
         int? typeId = null,
@@ -130,7 +129,7 @@ internal sealed partial class PilotMarketStore
                 .Entity;
     }
 
-    private void Refresh(EconomyTransaction world, IQueryable<NpcMarketOrder> orders)
+    private void Refresh(WorldAction world, IQueryable<NpcMarketOrder> orders)
     {
         if (
             RegionalMarketStore.Enabled(world)
@@ -191,7 +190,7 @@ internal sealed partial class PilotMarketStore
     }
 
     internal static IReadOnlyList<MarketTrade> Transactions(
-        EconomyTransaction world,
+        WorldAction world,
         long pilotId,
         HistoryPeriod? period = null,
         int? limit = null
@@ -210,22 +209,17 @@ internal sealed partial class PilotMarketStore
             .ToArray();
     }
 
-    private static PilotWallet Wallet(EconomyTransaction world, long pilotId) =>
+    private static PilotWallet Wallet(WorldAction world, long pilotId) =>
         world.Set<PilotWallet>().Find(pilotId) ?? world.Add(new PilotWallet { PilotId = pilotId }).Entity;
 
-    private static decimal TaxRate(EconomyTransaction world, CatalogDbContext catalog, long pilotId)
+    private static decimal TaxRate(WorldAction world, CatalogDbContext catalog, long pilotId)
     {
         int skill = (int)MarketSkill.Accounting;
         int level = PilotSkillReader.Level(world, catalog, pilotId, skill);
         return MarketRules.SalesTax(level);
     }
 
-    internal IReadOnlyList<MarketOrder> SupplyOrders(
-        EconomyTransaction world,
-        CatalogDbContext catalog,
-        int stationId,
-        IReadOnlyList<int> types
-    )
+    internal IReadOnlyList<MarketOrder> SupplyOrders(WorldAction world, CatalogDbContext catalog, int stationId, IReadOnlyList<int> types)
     {
         var station = Station(catalog, stationId);
         if (!HasMarket(catalog, station))

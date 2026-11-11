@@ -17,6 +17,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -253,7 +254,12 @@ internal sealed partial class CapsuleerHauler(
             return job;
         }
         var resumed = Resume(job, elapsed);
-        using CapsuleerOperation operation = new(database, resumed, marketSignal);
+        using CapsuleerOperation operation = new(
+            database,
+            resumed,
+            marketSignal,
+            declared: new(systems: [Pilot.SystemId, systemId], pilots: [pilotId], ships: [Pilot.ShipId])
+        );
         try
         {
             var departure = Objects.Where(o => o.DestinationSystemId == systemId).OrderBy(o => o.Id).FirstOrDefault();
@@ -261,7 +267,7 @@ internal sealed partial class CapsuleerHauler(
             {
                 return resumed;
             }
-            var saved = operation.World.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+            var saved = operation.World.Pilots.Single(p => p.Id == pilotId);
             if (saved.ActiveShipId != Work.ShipId)
             {
                 operation.Dispose();
@@ -364,12 +370,7 @@ internal sealed partial class CapsuleerHauler(
         if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
         {
             _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
-            using WorldDbContext world = new(database.Path)
-            {
-                Participants = new(pilots: [pilotId]),
-                UsesResidentCapsuleerRoutines = Live is not null,
-            };
-            if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == Pilot.ShipId))
+            if (!live.Economy.ActiveShip(pilotId, Pilot.ShipId))
             {
                 Load();
             }
@@ -668,12 +669,8 @@ internal sealed partial class CapsuleerHauler(
 
     private void Load()
     {
-        using WorldDbContext world = new(database.Path)
-        {
-            Participants = new(pilots: [pilotId]),
-            UsesResidentCapsuleerRoutines = Live is not null,
-        };
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         _founder = world.Set<SavedCapsuleerHauler>().AsNoTracking().SingleOrDefault(h => h.PilotId == pilotId);
         _loaded = true;
         if (_founder is null)
@@ -742,6 +739,7 @@ internal sealed partial class CapsuleerHauler(
         _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
         LoadInboundDwells(catalog);
         transaction.Commit();
+        transaction.Dispose();
         RefreshObjects();
         _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
     }
@@ -916,7 +914,7 @@ internal sealed partial class CapsuleerHauler(
             DestinationStationId = leg.Direction < 0 ? _route.SourceStationId : _route.DestinationStationId,
         };
         _target = CapsuleerTrafficFlight.Target(_route, Work, Pilot.SystemId, Objects);
-        var saved = _operation.World.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == Pilot.PilotId);
+        var saved = _operation.World.Pilots.Single(p => p.Id == Pilot.PilotId);
         Eden.World.Combat.CrimewatchPersistence.CheckTravel(_operation.World, _operation.Catalog, saved, CrimewatchTravel.Warp, Now);
         if (_warpBlocked)
         {
@@ -997,14 +995,18 @@ internal sealed partial class CapsuleerHauler(
             _work = Work with { Ratting = Work.Ratting with { Phase = RattingPhase.Searching } };
             return;
         }
-        if (_target!.DestinationGateId is not null)
+        if (_target is null)
+        {
+            throw new InvalidOperationException(
+                $"Missing hauling target {Work.TargetId} in system {Pilot.SystemId}, activity {Work.Activity}, "
+                    + $"route index {Work.RouteIndex}, available {string.Join(',', Objects.Select(o => o.Id))}."
+            );
+        }
+        if (_target.DestinationGateId is not null)
         {
             if (GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target))
             {
-                var saved = _operation
-                    .World.Pilots.Include(p => p.ActiveShip)
-                        .ThenInclude(s => s.Position)
-                    .Single(p => p.Id == Pilot.PilotId);
+                var saved = _operation.World.Pilots.Single(p => p.Id == Pilot.PilotId);
                 Eden.World.Combat.CrimewatchPersistence.CheckTravel(
                     _operation.World,
                     _operation.Catalog,

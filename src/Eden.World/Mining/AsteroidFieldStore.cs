@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Mining;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? clock = null) : IAsteroidField
+internal sealed partial class AsteroidFieldStore(WorldDatabase database, TimeProvider? clock = null) : IAsteroidField
 {
     internal sealed record PreparedBelt(int BeltId, long Catalog, string Deposits);
 
@@ -54,6 +54,20 @@ internal sealed class AsteroidFieldStore(WorldDatabase database, TimeProvider? c
 
     private IReadOnlyList<StaticSpaceObject> ListSql(int systemId)
     {
+        if (LiveWorld.Find(database.Path) is { } live)
+        {
+            using CatalogDbContext residentCatalog = new(database.CatalogPath);
+            long now = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            return live.Economy.Read(
+                world =>
+                {
+                    Populate(world, residentCatalog, systemId, now);
+                    return List(world, residentCatalog, systemId);
+                },
+                new(systems: [systemId])
+            );
+        }
+
         using WorldDbContext world = new(database.Path) { Participants = new(systems: [systemId]) };
         using CatalogDbContext catalog = new(database.CatalogPath);
         lock (_gate)

@@ -24,7 +24,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Combat.Npcs;
 
 [Injectable]
-internal sealed class NpcCombatStore(
+internal sealed partial class NpcCombatStore(
     WorldDatabase database,
     SqliteWorld lookup,
     IShipLootRoll lootRoll,

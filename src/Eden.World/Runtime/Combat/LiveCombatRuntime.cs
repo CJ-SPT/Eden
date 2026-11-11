@@ -484,7 +484,7 @@ internal sealed partial class LiveCombatRuntime(
         ];
         if (
             !read
-            || combatTables.Any(table => sql.Contains(table, StringComparison.Ordinal))
+            || combatTables.Any(table => SqlTableReferences.Contains(sql, table))
             || !readsResidentNpcTimer
                 && new[] { "WorldCrimewatch", "WorldPilotHostility", "WorldEngagement", "WorldLogoff" }.Any(table =>
                     sql.Contains(table, StringComparison.Ordinal)
@@ -631,6 +631,11 @@ internal sealed partial class LiveCombatRuntime(
                     _acquisitions.Clear();
                     break;
                 case "WorldPosition":
+                    if (change.Resident)
+                    {
+                        ObserveEconomicPosition(change.Id);
+                        break;
+                    }
                     if (membershipChanged && _shipPilots.TryGetValue(change.Id, out long movedPilot))
                     {
                         _staleShips.Add(movedPilot);
@@ -684,12 +689,12 @@ internal sealed partial class LiveCombatRuntime(
                     _populationDue.Clear();
                     break;
                 case "WorldNpcMiningMember":
-                    ObserveNpcPopulation(change.Id);
+                    ObserveNpcPopulation(change.Id, change.Resident);
                     _contactEpoch++;
                     _staleNpcs.Add(change.Id);
                     break;
                 case "WorldNpc":
-                    ObserveNpcPopulation(change.Id);
+                    ObserveNpcPopulation(change.Id, change.Resident);
                     _effectiveNpcs.Remove(change.Id);
                     _acquisitions.Clear();
                     _contactEpoch++;

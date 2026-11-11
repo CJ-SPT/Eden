@@ -22,7 +22,7 @@ internal sealed record StoredShipManifest(
     ShipHealthState? Health
 );
 
-internal static class ShipStoragePersistence
+internal static partial class ShipStoragePersistence
 {
     internal static ShipStorageLocation Location(Ship ship) =>
         new(

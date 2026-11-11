@@ -26,6 +26,13 @@ public sealed partial class WorldDbContext
             _pendingSnapshots.Clear();
             _fitTransaction = Database.CurrentTransaction.TransactionId;
         }
+        if (
+            Eden.World.Runtime.LiveWorld.Find(WorldPath)?.Economy is { IsLoaded: true } economy
+            && !WorldConnections.HasChanges(this, "WorldFitRevision")
+        )
+        {
+            return economy.FitRevision(pilotId);
+        }
         return Database.SqlQuery<string>($"SELECT Stamp AS Value FROM WorldFitRevision WHERE PilotId={pilotId}").FirstOrDefault()
             ?? "initial";
     }

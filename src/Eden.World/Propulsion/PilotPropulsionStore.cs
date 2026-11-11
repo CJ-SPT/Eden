@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Propulsion;
 
 [Injectable]
-internal sealed class PilotPropulsionStore(WorldDatabase database, IPilotFitting fitting, TimeProvider clock) : IPilotPropulsion
+internal sealed partial class PilotPropulsionStore(WorldDatabase database, IPilotFitting fitting, TimeProvider clock) : IPilotPropulsion
 {
     private static double Bonus(
         WorldDbContext world,

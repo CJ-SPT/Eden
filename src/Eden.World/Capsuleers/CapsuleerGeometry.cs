@@ -14,7 +14,7 @@ namespace Eden.World.Capsuleers;
 // Immutable collision/route geometry and resource rows are job inputs. Loading
 // them does not construct a native system scene or any observer contacts.
 [Injectable]
-internal sealed class CapsuleerGeometry(WorldDatabase database, IAsteroidField asteroids)
+internal sealed partial class CapsuleerGeometry(WorldDatabase database, IAsteroidField asteroids)
 {
     internal IReadOnlyList<StaticSpaceObject> Load(int systemId)
     {

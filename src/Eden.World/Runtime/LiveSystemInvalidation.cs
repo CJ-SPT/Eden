@@ -31,34 +31,64 @@ internal sealed partial class LiveReadModels
             .Distinct()
             .ToArray();
         using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-        if (ships.Length > 0)
+        bool resident = changes.Any(c => c.Resident);
+        if (resident)
         {
-            var rows = world
-                .Ships.Where(s => ships.Contains(s.Id) && s.Position != null)
-                .Select(s => new
+            foreach (long id in ships)
+            {
+                var ship = owner.Economy.Peek<Ship>(id);
+                var position = owner.Economy.Peek<Eden.Data.World.Docking.FlightPosition>(id);
+                if (ship is not null && position is not null)
                 {
-                    s.Id,
-                    s.Position!.SystemId,
-                    s.StationId,
-                })
-                .ToArray();
-            foreach (var row in rows)
+                    locations[id] = position.SystemId ?? database.Catalog.FindStation(ship.StationId)!.SolarSystemId;
+                }
+            }
+            foreach (long id in npcs)
             {
-                locations[row.Id] = row.SystemId ?? database.Catalog.FindStation(row.StationId)!.SolarSystemId;
+                if (owner.Economy.Peek<WorldNpc>(id) is { } row)
+                {
+                    locations[id] = row.SystemId;
+                }
+            }
+            foreach (long id in wrecks)
+            {
+                if (owner.Economy.Peek<WorldWreck>(id) is { } row)
+                {
+                    locations[id] = row.SystemId;
+                }
             }
         }
-        if (npcs.Length > 0)
+        else
         {
-            foreach (var row in world.Set<WorldNpc>().Where(n => npcs.Contains(n.Id)).Select(n => new { n.Id, n.SystemId }))
+            if (ships.Length > 0)
             {
-                locations[row.Id] = row.SystemId;
+                var rows = world
+                    .Ships.Where(s => ships.Contains(s.Id) && s.Position != null)
+                    .Select(s => new
+                    {
+                        s.Id,
+                        s.Position!.SystemId,
+                        s.StationId,
+                    })
+                    .ToArray();
+                foreach (var row in rows)
+                {
+                    locations[row.Id] = row.SystemId ?? database.Catalog.FindStation(row.StationId)!.SolarSystemId;
+                }
             }
-        }
-        if (wrecks.Length > 0)
-        {
-            foreach (var row in world.Set<WorldWreck>().Where(w => wrecks.Contains(w.Id)).Select(w => new { w.Id, w.SystemId }))
+            if (npcs.Length > 0)
             {
-                locations[row.Id] = row.SystemId;
+                foreach (var row in world.Set<WorldNpc>().Where(n => npcs.Contains(n.Id)).Select(n => new { n.Id, n.SystemId }))
+                {
+                    locations[row.Id] = row.SystemId;
+                }
+            }
+            if (wrecks.Length > 0)
+            {
+                foreach (var row in world.Set<WorldWreck>().Where(w => wrecks.Contains(w.Id)).Select(w => new { w.Id, w.SystemId }))
+                {
+                    locations[row.Id] = row.SystemId;
+                }
             }
         }
         if (drones.Length > 0)

@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Resident bot action transactions](protocol/performance.md#resident-bot-action-transactions-november-11-2026)
+records complete resident miner/hauler mutations, atomic pilot-template refresh and coherent checkpoints.
+
 [Resident inventory and market transactions](protocol/performance.md#resident-inventory-and-market-transactions-november-11-2026)
 records atomic resident trades and ordinary cargo, coherent saves and matched economic-frame measurements.
 

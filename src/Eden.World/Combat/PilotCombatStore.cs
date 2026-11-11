@@ -31,7 +31,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Combat;
 
 [Injectable]
-internal sealed class PilotCombatStore(
+internal sealed partial class PilotCombatStore(
     WorldDatabase database,
     SecurityStatusSignal security,
     SqliteWorld lookup,

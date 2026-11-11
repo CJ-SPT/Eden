@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Mining;
 
 [Injectable]
-internal sealed class PersonalMiningLedgerStore(WorldDatabase database, TimeProvider clock) : IPersonalMiningLedger
+internal sealed partial class PersonalMiningLedgerStore(WorldDatabase database, TimeProvider clock) : IPersonalMiningLedger
 {
     public IReadOnlyList<PersonalMiningLog> Read(long pilotId)
     {

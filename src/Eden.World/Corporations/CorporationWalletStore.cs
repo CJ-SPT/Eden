@@ -12,7 +12,7 @@ using Eden.World.Storage;
 namespace Eden.World.Corporations;
 
 [Injectable]
-internal sealed class CorporationWalletStore(WorldDatabase database, TimeProvider clock) : ICorporationWallet
+internal sealed partial class CorporationWalletStore(WorldDatabase database, TimeProvider clock) : ICorporationWallet
 {
     public void CheckMarketHistoryAccess(long actorId, int? key)
     {

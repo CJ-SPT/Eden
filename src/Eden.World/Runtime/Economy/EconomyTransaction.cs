@@ -18,40 +18,48 @@ internal sealed partial class EconomyTransaction(
     LiveWorld owner,
     WorldDatabase database,
     IDisposable lease,
-    IDisposable systems
-) : IDisposable
+    IDisposable systems,
+    TransactionParticipants? participants
+) : WorldAction, IDisposable
 {
     private readonly Dictionary<Type, IEconomySet> _sets = [];
     private readonly Dictionary<string, long> _sequences = new(StringComparer.Ordinal);
     private readonly Dictionary<int, InstitutionalPreparation> _preparations = [];
 
-    internal bool Prepared(InstitutionalPreparation preparation) =>
+    internal override bool Prepared(InstitutionalPreparation preparation) =>
         _preparations.GetValueOrDefault(preparation.StationId) == preparation || store.Prepared(preparation);
 
-    internal void Remember(InstitutionalPreparation preparation) => _preparations[preparation.StationId] = preparation;
+    internal override void Remember(InstitutionalPreparation preparation) => _preparations[preparation.StationId] = preparation;
 
-    internal long NextExpiry => store.NextExpiry;
+    internal override long NextExpiry => store.NextExpiry;
 
-    internal long MarketHead(long pilot) => store.MarketHead(pilot);
+    internal override long MarketHead(long pilot) => store.MarketHead(pilot);
 
-    internal EconomyStructure? Structure(long id) => store.Structure(id);
+    internal override EconomyStructure? Structure(long id) => store.Structure(id);
 
-    internal int StructureSystemId(long id) => store.StructureSystemId(id);
+    internal override int StructureSystemId(long id) => store.StructureSystemId(id);
 
     private readonly Dictionary<long, IReadOnlyDictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double>> _attributes = [];
 
-    internal void SetAttributes(long pilot, IReadOnlyDictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double> attributes) =>
+    internal override void SetAttributes(long pilot, IReadOnlyDictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double> attributes) =>
         _attributes[pilot] = attributes;
 
-    internal IReadOnlyDictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double> Attributes(long pilot) =>
-        _attributes.TryGetValue(pilot, out var attributes)
-            ? attributes
-            : throw new InvalidOperationException("Prepare fitting attributes before opening the economic transaction.");
+    internal override IReadOnlyDictionary<Eden.Gameplay.Dogma.DogmaAttributeId, double> Attributes(long pilot)
+    {
+        if (!PendingFitChanges() && _attributes.TryGetValue(pilot, out var attributes))
+        {
+            return attributes;
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Eden.World.Fittings.PilotFittingStore.ShipAttributes(this, catalog, pilot);
+        _attributes[pilot] = result;
+        return result;
+    }
 
     private bool _completed;
     private bool _disposed;
 
-    internal void RequireUncloaked(long ship)
+    internal override void RequireUncloaked(long ship)
     {
         if (store.Cloaked(ship))
         {
@@ -59,16 +67,12 @@ internal sealed partial class EconomyTransaction(
         }
     }
 
-    internal long ActiveTicks => owner.CapsuleerActivity.Read().ElapsedTicks;
-    internal EconomyTracking ChangeTracker => new(this);
+    internal override long ActiveTicks => owner.CapsuleerActivity.Read().ElapsedTicks;
     internal int Materializations => _sets.Values.Sum(set => set.Materializations);
-    internal WorldSettings Settings => database.Settings;
-    internal string WorldPath => database.Path;
-    internal EconomySet<Pilot> Pilots => Set<Pilot>();
-    internal EconomySet<Ship> Ships => Set<Ship>();
-    internal EconomySet<FlightPosition> Positions => Set<FlightPosition>();
+    internal override WorldSettings Settings => database.Settings;
+    internal override string WorldPath => database.Path;
 
-    internal EconomySet<T> Set<T>()
+    internal override EconomySet<T> Set<T>()
         where T : class
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -84,17 +88,20 @@ internal sealed partial class EconomyTransaction(
         return (EconomySet<T>)rows;
     }
 
-    internal EconomyEntry<T> Add<T>(T row)
+    internal override EconomyEntry<T> Add<T>(T row)
         where T : class
     {
         Set<T>().Add(row);
         return new(row, EntityState.Added);
     }
 
-    internal void Remove<T>(T row)
-        where T : class => Set<T>().Remove(row);
+    internal override void Remove<T>(T row)
+        where T : class
+    {
+        Set<T>().Remove(row);
+    }
 
-    internal void RemoveRange<T>(IEnumerable<T> rows)
+    internal override void RemoveRange<T>(IEnumerable<T> rows)
         where T : class
     {
         foreach (var row in rows.ToArray())
@@ -103,12 +110,18 @@ internal sealed partial class EconomyTransaction(
         }
     }
 
-    internal EconomyEntry<T> Entry<T>(T row)
+    internal override EconomyEntry<T> Entry<T>(T row)
         where T : class => new(row, Set<T>().State(row));
 
     // A save within an action only prepares its private view. Publication belongs
     // to Commit, so a later rejected batch entry cannot leave an earlier fill paid.
-    internal void SaveChanges() { }
+    internal override void SaveChanges()
+    {
+        foreach (var ship in Ships.Local)
+        {
+            ship.Position = Positions.Find(ship.Id);
+        }
+    }
 
     private void Reserve(string name, long id)
     {
@@ -119,7 +132,7 @@ internal sealed partial class EconomyTransaction(
         }
     }
 
-    internal long Next(string name, long minimum = 0)
+    internal override long Next(string name, long minimum = 0)
     {
         long current = _sequences.TryGetValue(name, out long staged) ? staged : store.Sequence(name);
         long next = checked(Math.Max(current, minimum) + 1);
@@ -127,7 +140,7 @@ internal sealed partial class EconomyTransaction(
         return next;
     }
 
-    internal long NextItemId()
+    internal override long NextItemId()
     {
         string[] names = ["WorldItem", "WorldShip", "WorldPilotImplant", "WorldBooster", "WorldStructure"];
         long last = names.Select(name => _sequences.GetValueOrDefault(name, store.Sequence(name))).Max();
@@ -137,6 +150,10 @@ internal sealed partial class EconomyTransaction(
     internal bool Overlay<T>(T row)
         where T : class
     {
+        if (row is FlightPosition position && owner.CombatForShip(position.ShipId)?.InformationPosition(position.ShipId) is { } current)
+        {
+            (position.X, position.Y, position.Z) = (current.X, current.Y, current.Z);
+        }
         if (row is OwnedItem item)
         {
             return owner.CombatForKnownPilot(item.OwnerId)?.OverlayEconomicItem(item) ?? true;
@@ -173,17 +190,6 @@ internal sealed partial class EconomyTransaction(
         else if (row is Ship ship)
         {
             ship.Position = Positions.Find(ship.Id);
-            if (ship.Position is { } position && owner.CombatForShip(ship.Id)?.InformationPosition(ship.Id) is { } current)
-            {
-                ship.Position = new FlightPosition
-                {
-                    ShipId = ship.Id,
-                    SystemId = position.SystemId,
-                    X = current.X,
-                    Y = current.Y,
-                    Z = current.Z,
-                };
-            }
         }
     }
 
@@ -192,6 +198,21 @@ internal sealed partial class EconomyTransaction(
 
     private void Validate()
     {
+        ValidateBotRows();
+        foreach (var pilot in Retained<Pilot>())
+        {
+            var ship = Ships.Find(pilot.ActiveShipId);
+            if (
+                Set<Account>().Find(pilot.AccountId) is null
+                || ship is null
+                || ship.OwnerId != pilot.Id
+                || string.IsNullOrWhiteSpace(pilot.Name)
+                || PilotNameTaken(pilot.Name, pilot.Id)
+            )
+            {
+                throw new InvalidDataException("The resident pilot has an invalid account, active ship or name.");
+            }
+        }
         foreach (var item in Retained<OwnedItem>())
         {
             if (
@@ -311,8 +332,25 @@ internal sealed partial class EconomyTransaction(
         {
             set.Publish();
         }
+        if (_combat is not null)
+        {
+            owner.AcknowledgeEconomicCombat(_combat);
+        }
+        foreach (var heat in _heat)
+        {
+            heat.Owner.AcknowledgeEconomic(heat.Projection);
+        }
+        PublishFits();
         store.Remember(_preparations);
-        store.Committed(_sequences, changes, new(pilots: pilots));
+        var affected = participants is null
+            ? null
+            : new TransactionParticipants(
+                participants.Systems,
+                participants.Pilots.Concat(pilots),
+                participants.Ships,
+                participants.Resources
+            );
+        store.Committed(_sequences, changes, affected, pilots);
         _completed = true;
     }
 
@@ -329,7 +367,7 @@ internal sealed partial class EconomyTransaction(
     }
 }
 
-internal sealed class EconomyTracking(EconomyTransaction transaction)
+internal sealed class EconomyTracking(WorldAction transaction)
 {
     internal IEnumerable<EconomyEntry<T>> Entries<T>()
         where T : class => transaction.Set<T>().Local.Select(row => transaction.Entry(row));

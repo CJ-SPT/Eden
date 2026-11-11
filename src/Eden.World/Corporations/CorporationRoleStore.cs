@@ -9,7 +9,7 @@ using Eden.World.Storage;
 namespace Eden.World.Corporations;
 
 [Injectable]
-internal sealed class CorporationRoleStore(WorldDatabase database, TimeProvider clock) : ICorporationRoles
+internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeProvider clock) : ICorporationRoles
 {
     internal static CorporationMemberAccess Read(WorldDbContext world, long pilotId, int corporationId) =>
         world.Set<SavedCorporationMemberAccess>().Find(pilotId) is { } row && row.CorporationId == corporationId

@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
-internal static class TrafficProvisioning
+internal static partial class TrafficProvisioning
 {
     // A preparation batch owns its reservation view. Live commits refresh it under the world owner;
     // failed communities discard it and retries reload committed identities.

@@ -71,7 +71,7 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
             && new[] { "WorldCrimewatch", "WorldPilotHostility", "WorldEngagement", "WorldLogoff" }.Any(table =>
                 command.CommandText.Contains(table, StringComparison.Ordinal)
             );
-        if (read && !timer && !residentTables.Any(table => command.CommandText.Contains(table, StringComparison.Ordinal)))
+        if (read && !timer && !residentTables.Any(table => SqlTableReferences.Contains(command.CommandText, table)))
         {
             return;
         }
@@ -81,6 +81,7 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
             {
                 WorldConnections.HoldSimulation(context);
             }
+            LiveWorld.Find(path)?.Economy.Flush();
             LiveWorld.Find(path)?.BeforeSystemsSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
             LiveWorld.Find(path)?.BeforeSharedSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
         }
@@ -152,6 +153,7 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
     {
         using var phase = SessionPerformance.Phase(participants is null ? "projection.fallback" : "projection.participants");
         var live = LiveWorld.Find(path);
+        live?.Economy.Flush();
         live?.ProjectSystems(participants);
         live?.ProjectShared(participants);
     }

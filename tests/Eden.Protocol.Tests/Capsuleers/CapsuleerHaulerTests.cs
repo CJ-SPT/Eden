@@ -64,7 +64,10 @@ public sealed class CapsuleerHaulerTests
             f.Clock.Seconds++;
             worker.Tick();
         }
-        Assert.Equal(DestinationSystem, chat.User(hauler)!.SystemId);
+        Assert.True(
+            chat.User(hauler)!.SystemId == DestinationSystem,
+            host.GetRequiredService<CapsuleerScheduler>().Hauler(hauler)?.Work.WaitingReason
+        );
         Assert.DoesNotContain(chat.Members(connection.Id, room), p => p.Id == hauler);
         Assert.Contains(chat.Members(connection.Id, room), p => p.Id == miner);
         var ships = host.GetRequiredService<SqliteWorld>();

@@ -21,7 +21,7 @@ namespace Eden.World.Market;
 internal sealed partial class PilotMarketStore
 {
     private static void Event(
-        EconomyTransaction world,
+        WorldAction world,
         SavedPersonalOrder order,
         MarketOrderChangeKind kind,
         IReadOnlyList<InventoryChange>? changes = null
@@ -36,7 +36,7 @@ internal sealed partial class PilotMarketStore
         );
     }
 
-    private void Payment(EconomyTransaction world, SavedPersonalOrder order, WalletEntryType kind, long amount, long counterparty = 0)
+    private void Payment(WorldAction world, SavedPersonalOrder order, WalletEntryType kind, long amount, long counterparty = 0)
     {
         if (amount == 0)
         {
@@ -63,7 +63,7 @@ internal sealed partial class PilotMarketStore
         );
     }
 
-    private static decimal BrokerRate(EconomyTransaction world, CatalogDbContext catalog, long pilotId, CatalogStationDefinition station)
+    private static decimal BrokerRate(WorldAction world, CatalogDbContext catalog, long pilotId, CatalogStationDefinition station)
     {
         long faction = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId)?.FactionID ?? 0;
         decimal Standing(long owner) => (decimal)(world.Set<SavedNpcStanding>().Find(pilotId, owner)?.Value ?? 0);
@@ -75,7 +75,7 @@ internal sealed partial class PilotMarketStore
     }
 
     private SavedPersonalOrder Incoming(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         CatalogStationDefinition station,
@@ -142,7 +142,7 @@ internal sealed partial class PilotMarketStore
     }
 
     private List<MarketExecution> MatchOrders(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedPersonalOrder incoming,
         List<InventoryChange> changes,
@@ -324,7 +324,7 @@ internal sealed partial class PilotMarketStore
     }
 
     internal MarketResult ExecuteBuy(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         int stationId,
@@ -365,13 +365,7 @@ internal sealed partial class PilotMarketStore
         return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
     }
 
-    internal MarketResult ExecuteSell(
-        EconomyTransaction world,
-        CatalogDbContext catalog,
-        long pilotId,
-        IReadOnlyList<MarketSale> items,
-        int days
-    )
+    internal MarketResult ExecuteSell(WorldAction world, CatalogDbContext catalog, long pilotId, IReadOnlyList<MarketSale> items, int days)
     {
         var pilot = Pilot(world, pilotId);
         var station = TradeStation(catalog, pilot, pilot.ActiveShip.StationId);
@@ -439,7 +433,7 @@ internal sealed partial class PilotMarketStore
         return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
     }
 
-    private SavedPersonalOrder OwnedOrder(EconomyTransaction world, CatalogDbContext catalog, long pilotId, long id)
+    private SavedPersonalOrder OwnedOrder(WorldAction world, CatalogDbContext catalog, long pilotId, long id)
     {
         var order = world.Set<SavedPersonalOrder>().Find(id);
         if (order is null || order.PilotId != pilotId || order.Status != PersonalOrderStatus.Open || order.Expires <= Now)
@@ -450,7 +444,7 @@ internal sealed partial class PilotMarketStore
         return order;
     }
 
-    private void Close(EconomyTransaction world, CatalogDbContext catalog, SavedPersonalOrder order, PersonalOrderStatus status)
+    private void Close(WorldAction world, CatalogDbContext catalog, SavedPersonalOrder order, PersonalOrderStatus status)
     {
         List<InventoryChange> changes = [];
         if (order.Bid)
@@ -476,7 +470,7 @@ internal sealed partial class PilotMarketStore
         Event(world, order, MarketOrderChangeKind.Settled, changes);
     }
 
-    internal int Expire(EconomyTransaction world, CatalogDbContext catalog, int limit = PersonalMarketRules.MaintenanceBatch)
+    internal int Expire(WorldAction world, CatalogDbContext catalog, int limit = PersonalMarketRules.MaintenanceBatch)
     {
         long now = Now;
         var orders = world

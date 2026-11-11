@@ -25,7 +25,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Combat;
 
 [Injectable]
-internal sealed class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls, TimeProvider clock) : IPilotElectronicWarfare
+internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRoll rolls, TimeProvider clock) : IPilotElectronicWarfare
 {
     public bool IsOnline(long pilotId, long shipId, long moduleId) =>
         LiveReadModels.Find(database.Path)?.EwarModuleOnline(pilotId, shipId, moduleId, ReadOnline)

@@ -28,7 +28,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Fittings;
 
 [Injectable]
-internal sealed class PilotFittingStore(WorldDatabase database, TimeProvider clock) : IPilotFitting, IPilotRigRemoval
+internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProvider clock) : IPilotFitting, IPilotRigRemoval
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> Attributes(int typeId)
     {

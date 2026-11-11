@@ -151,7 +151,7 @@ internal sealed partial class CapsuleerHauler
         {
             throw new InvalidDataException("Warp disruption prevents the inbound hauler from escaping.");
         }
-        var saved = _operation.World.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var saved = _operation.World.Pilots.Single(p => p.Id == pilotId);
         if (saved.ActiveShipId != Work.ShipId)
         {
             throw new InvalidDataException("The inbound hauling ship is no longer active.");

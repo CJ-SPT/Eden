@@ -2,6 +2,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Market;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -14,28 +15,31 @@ internal sealed class CapsuleerOperation(
     WorldDatabase database,
     CapsuleerJob expected,
     MarketChangeSignal market,
-    CapsuleerCoarseWork? coarse = null
+    CapsuleerCoarseWork? coarse = null,
+    TransactionParticipants? declared = null
 ) : IDisposable
 {
     private WorldDbContext? _world;
+    private WorldAction? _action;
+    private EconomyTransaction? _resident;
     private CatalogDbContext? _catalog;
     private IDbContextTransaction? _transaction;
     internal bool MarketChanged { get; set; }
     internal bool TravelChanged { get; set; }
-    internal bool HasWorld => _world is not null;
+    internal bool HasWorld => _action is not null;
 
-    internal WorldDbContext World
+    internal WorldAction World
     {
         get
         {
-            if (_world is null)
+            if (_action is null)
             {
                 var live = LiveWorld.Find(database.Path);
                 long ship =
                     live?.MinerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
                     ?? live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
                     ?? 0;
-                TransactionParticipants? participants = new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
+                TransactionParticipants? participants = declared ?? new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
                 var work = live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
                 bool inbound = expected.Action == CapsuleerAction.Arrival && work?.Activity == HaulerActivity.Inbound;
                 if (coarse is not null)
@@ -60,8 +64,15 @@ internal sealed class CapsuleerOperation(
                         participants = null;
                     }
                 }
+                if (live is not null)
+                {
+                    _resident = live.Economy.Begin(participants);
+                    _action = _resident;
+                    return _action;
+                }
                 _world = new(database.Path) { Participants = participants, UsesResidentCapsuleerRoutines = live is not null };
                 _transaction = _world.Database.BeginTransaction();
+                _action = new SqlWorldAction(_world);
                 // Offline tools retain the SQL job contract. Live progress is published
                 // only after this mutation commits, under the same scheduler owner.
                 if (live is null)
@@ -69,7 +80,7 @@ internal sealed class CapsuleerOperation(
                     CapsuleerJobCheckpoint.Apply(_world, expected);
                 }
             }
-            return _world;
+            return _action;
         }
     }
 
@@ -87,9 +98,14 @@ internal sealed class CapsuleerOperation(
         {
             live?.CapsuleerRoutines.Validate(coarse);
         }
-        if (_world is not null || live is null)
+        if (_resident is not null)
         {
-            var world = World;
+            _resident.Commit();
+        }
+        else if (_world is not null || live is null)
+        {
+            _ = World;
+            var world = _world!;
             if (live is null)
             {
                 miner?.Apply(world);
@@ -110,7 +126,6 @@ internal sealed class CapsuleerOperation(
             world.SaveChanges();
             _transaction!.Commit();
         }
-        Dispose();
         if (coarse is not null)
         {
             live?.CapsuleerRoutines.Complete(coarse, expected.PilotId);
@@ -136,10 +151,14 @@ internal sealed class CapsuleerOperation(
         {
             market.Changed();
         }
+        Dispose();
     }
 
     public void Dispose()
     {
+        _resident?.Dispose();
+        _resident = null;
+        _action = null;
         _transaction?.Dispose();
         _transaction = null;
         _world?.Dispose();

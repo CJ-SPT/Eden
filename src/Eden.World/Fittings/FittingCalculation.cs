@@ -39,7 +39,7 @@ internal sealed record FittingLocation(OwnedItem Item, int GroupId, IReadOnlySet
 
 internal sealed record FittingAttributeCatalogEntry(DogmaAttributeId Id, ClientDogmaattributes? Definition);
 
-internal sealed record FittingCalculation(
+internal sealed partial record FittingCalculation(
     DogmaGraph Graph,
     long ShipId,
     long PilotId,

@@ -19,7 +19,7 @@ internal sealed record FittingCheckpoint(
     HullFittingCapacity Capacity
 );
 
-internal static class FittingChanges
+internal static partial class FittingChanges
 {
     internal static FittingCheckpoint Capture(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long now)
     {

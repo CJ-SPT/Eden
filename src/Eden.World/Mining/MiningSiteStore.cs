@@ -14,7 +14,7 @@ namespace Eden.World.Mining;
 internal sealed record MiningSiteView(long Deadline, IReadOnlyList<CombatAnomaly> Sites);
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class MiningSiteStore(WorldDatabase database) : IMiningSites
+internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningSites
 {
     // Keep resource sites apart from combat placements and vary replacement ice fields.
     private const int GasPlacement = 25;

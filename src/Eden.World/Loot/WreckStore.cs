@@ -29,7 +29,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Loot;
 
 [Injectable]
-internal sealed class WreckStore(WorldDatabase database) : IWrecks
+internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
 {
     // Called within the fatal weapon transaction: a failed catalog lookup or
     // bounty debit rolls back the wreck and its contents along with the kill.

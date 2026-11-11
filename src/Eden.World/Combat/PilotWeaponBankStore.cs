@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Combat;
 
 [Injectable]
-internal sealed class PilotWeaponBankStore(WorldDatabase database, TimeProvider clock) : IPilotWeaponBanks
+internal sealed partial class PilotWeaponBankStore(WorldDatabase database, TimeProvider clock) : IPilotWeaponBanks
 {
     internal static IReadOnlyList<WeaponBank> Read(WorldDbContext world, long shipId) =>
         world

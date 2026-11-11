@@ -8,7 +8,7 @@ namespace Eden.World.Market;
 
 internal sealed partial class PilotMarketStore
 {
-    private void SeedInstitutional(EconomyTransaction world, CatalogDbContext catalog, CatalogStationDefinition station)
+    private void SeedInstitutional(WorldAction world, CatalogDbContext catalog, CatalogStationDefinition station)
     {
         int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
         NpcSupplyRules.ValidateStock(stock);

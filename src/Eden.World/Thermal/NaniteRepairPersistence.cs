@@ -18,7 +18,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Thermal;
 
 // Atomic paid repair settlement, including unused material reservations.
-internal static class NaniteRepairPersistence
+internal static partial class NaniteRepairPersistence
 {
     internal static NaniteRepairSchedule Schedule(SavedNaniteRepair row)
     {

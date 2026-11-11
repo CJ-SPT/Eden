@@ -10,12 +10,12 @@ namespace Eden.World.Market;
 
 internal sealed partial class RegionalMarketStore
 {
-    internal static bool Enabled(EconomyTransaction world) =>
+    internal static bool Enabled(WorldAction world) =>
         world.Settings.Economy.ProgressiveMarkets
         ?? world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false };
 
     internal void Advance(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         int region,
         int stationId,
@@ -25,7 +25,7 @@ internal sealed partial class RegionalMarketStore
     ) => AdvanceTypes(world, catalog, region, stationId, now, typeId is { } selected ? [selected] : null, includeDemand);
 
     internal void AdvanceTypes(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         int region,
         int stationId,
@@ -186,7 +186,7 @@ internal sealed partial class RegionalMarketStore
         world.SaveChanges();
     }
 
-    internal static void Requote(EconomyTransaction world, NpcMarketOrder order)
+    internal static void Requote(WorldAction world, NpcMarketOrder order)
     {
         var state = world.Set<SavedRegionalMarketStock>().Find(order.Id)!;
         order.PriceCents = RegionalMarketRules.Quote(state.AnchorCents, order.Bid, order.Remaining, order.Entered);

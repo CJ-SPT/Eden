@@ -176,6 +176,11 @@ internal sealed partial class LiveWorld
             id =>
             {
                 using var ownership = EnterShared("pilot membership");
+                if (Economy.IsLoaded && Economy.Peek<Eden.Data.World.Characters.Pilot>(id) is { } residentPilot)
+                {
+                    Economy.TrackPilot(id);
+                    return _pilotSystems[id];
+                }
                 using WorldDbContext world = new(_path) { IsResidentProjection = true };
                 var row = world
                     .Pilots.Where(p => p.Id == id)
@@ -528,7 +533,7 @@ internal sealed partial class LiveWorld
     internal IDisposable EnterTransactionSystems(TransactionParticipants? participants) =>
         _systems.Enter(ParticipantSystems(participants), "transaction participants");
 
-    private IReadOnlyCollection<int> ParticipantSystems(TransactionParticipants? participants)
+    internal IReadOnlyCollection<int> ParticipantSystems(TransactionParticipants? participants)
     {
         if (participants is null)
         {

@@ -24,6 +24,39 @@ internal sealed class EconomyQueryProvider<T>(EconomySet<T> source) : IQueryProv
     {
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
+            if (
+                node.Method.DeclaringType == typeof(Queryable)
+                && node.Arguments.Count > 0
+                && Predicate(node.Arguments[0], out var projectionFilter)
+            )
+            {
+                LambdaExpression? selector =
+                    node.Method.Name == nameof(Queryable.Select)
+                    && node.Arguments[1] is UnaryExpression { Operand: LambdaExpression selected }
+                    && selected.Parameters.Count == 1
+                        ? selected
+                        : null;
+                bool aggregate =
+                    node.Arguments.Count == 1
+                    && node.Method.Name is nameof(Queryable.Count) or nameof(Queryable.LongCount) or nameof(Queryable.Any);
+                if (selector is not null || aggregate)
+                {
+                    selector ??= (Expression<Func<T, int>>)(_ => 1);
+                    var method = typeof(EconomySet<T>)
+                        .GetMethod(
+                            nameof(EconomySet<T>.Project),
+                            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+                        )!
+                        .MakeGenericMethod(selector.ReturnType);
+                    var projected = Expression.Call(
+                        Expression.Constant(source),
+                        method,
+                        Expression.Constant(selector),
+                        Expression.Constant(projectionFilter, typeof(Expression<Func<T, bool>>))
+                    );
+                    return aggregate ? Expression.Call(typeof(Enumerable), node.Method.Name, [typeof(int)], projected) : projected;
+                }
+            }
             if (Predicate(node, out var predicate))
             {
                 return Expression.Constant(source.SelectRows(predicate), typeof(IEnumerable<T>));

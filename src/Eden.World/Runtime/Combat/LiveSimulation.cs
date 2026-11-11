@@ -35,11 +35,13 @@ internal sealed partial class LiveCombatRuntime
             return;
         }
         var ids = changes.Where(change => change.Table == "WorldAsteroid").Select(change => change.Id).ToArray();
-        var systems = Loading(() =>
-        {
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-            return world.Set<WorldAsteroid>().Where(a => EF.Parameter(ids).Contains(a.Id)).Select(a => a.SystemId).ToArray();
-        });
+        var systems = changes.Any(c => c.Resident)
+            ? ids.Select(id => owner.Economy.Peek<WorldAsteroid>(id)?.SystemId).OfType<int>().ToArray()
+            : Loading(() =>
+            {
+                using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+                return world.Set<WorldAsteroid>().Where(a => EF.Parameter(ids).Contains(a.Id)).Select(a => a.SystemId).ToArray();
+            });
         if (systems.Length != ids.Length)
         {
             // Deleted identities have no remaining location; retain conservative invalidation.
@@ -66,7 +68,7 @@ internal sealed partial class LiveCombatRuntime
         }
     }
 
-    private void ObserveNpcPopulation(long id)
+    private void ObserveNpcPopulation(long id, bool resident = false)
     {
         if (_populationRefreshSystem is { } scoped)
         {
@@ -77,11 +79,13 @@ internal sealed partial class LiveCombatRuntime
         {
             InvalidatePopulation(previous.SystemId);
         }
-        int? current = Loading(() =>
-        {
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-            return world.Set<WorldNpc>().Where(n => n.Id == id).Select(n => (int?)n.SystemId).SingleOrDefault();
-        });
+        int? current = resident
+            ? owner.Economy.Peek<WorldNpc>(id)?.SystemId
+            : Loading(() =>
+            {
+                using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+                return world.Set<WorldNpc>().Where(n => n.Id == id).Select(n => (int?)n.SystemId).SingleOrDefault();
+            });
         if (current is int system)
         {
             InvalidatePopulation(system);
@@ -202,6 +206,15 @@ internal sealed partial class LiveCombatRuntime
         {
             Loading(() =>
             {
+                if (owner.Economy.IsLoaded)
+                {
+                    foreach (long id in missing)
+                    {
+                        var row = owner.Economy.Peek<Eden.Data.World.Docking.FlightPosition>(id);
+                        _savedPositions[id] = row is null ? null : new(row.SystemId, new(row.X, row.Y, row.Z));
+                    }
+                    return true;
+                }
                 using WorldDbContext world = new(database.Path);
                 var rows = world.Positions.AsNoTracking().Where(p => missing.Contains(p.ShipId)).ToDictionary(p => p.ShipId);
                 foreach (long id in missing)

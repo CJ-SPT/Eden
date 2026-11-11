@@ -72,9 +72,8 @@ public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
                     if (before.Action == CapsuleerAction.Arrival && work.Activity == HaulerActivity.Docked)
                     {
                         dockings++;
-                        Assert.InRange(total.Commands, 1, 32);
-                        // Docking projects retained motion before its atomic SQL membership change.
-                        Assert.InRange(total.Connections, 1, 5);
+                        Assert.Equal(0, total.Commands);
+                        Assert.Equal(0, total.Connections);
                     }
                     if (pass == 3)
                     {
@@ -374,7 +373,8 @@ public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
         var refreshed = scheduler.Miner(pilot)!;
         Assert.Equal(pilot, refreshed.Pilot.PilotId);
         Assert.Equal(checkpoint.Work, refreshed.Work);
-        Assert.Contains(commands, IsRoleLoad);
+        Assert.DoesNotContain(commands, IsRoleLoad);
+        Assert.True(metrics.FittingCalculations > 0);
     }
 
     [Fact]

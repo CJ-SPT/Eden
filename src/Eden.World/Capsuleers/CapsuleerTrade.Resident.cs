@@ -16,7 +16,7 @@ namespace Eden.World.Capsuleers;
 internal sealed partial class CapsuleerTrade
 {
     internal static bool ListStock(
-        Eden.World.Runtime.Economy.EconomyTransaction world,
+        Eden.World.Runtime.Economy.WorldAction world,
         CatalogDbContext catalog,
         PilotMarketStore marketStore,
         long pilot,

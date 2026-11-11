@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
-internal static class TrafficCorrection
+internal static partial class TrafficCorrection
 {
     internal static bool Apply(WorldDatabase database, WorldDbContext world, CatalogDbContext catalog, long pilotId, long now)
     {

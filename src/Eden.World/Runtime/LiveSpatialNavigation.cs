@@ -30,7 +30,9 @@ internal sealed partial class LiveReadModels
         if (modules.Length > 0)
         {
             using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-            currentShips = world.Set<ActiveFittedModule>().Where(m => modules.Contains(m.ModuleId)).Select(m => m.ShipId).ToHashSet();
+            currentShips = changes.Any(c => c.Resident)
+                ? modules.Select(id => owner.Economy.Peek<ActiveFittedModule>(id)?.ShipId).OfType<long>().ToHashSet()
+                : world.Set<ActiveFittedModule>().Where(m => modules.Contains(m.ModuleId)).Select(m => m.ShipId).ToHashSet();
         }
         _spatialNavigation.ObserveValues(
             changes,

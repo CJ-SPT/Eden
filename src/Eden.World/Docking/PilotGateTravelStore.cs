@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Docking;
 
 [Injectable]
-internal sealed class PilotGateTravelStore(WorldDatabase database, SqliteWorld ships, TimeProvider clock) : IPilotGateTravel
+internal sealed partial class PilotGateTravelStore(WorldDatabase database, SqliteWorld ships, TimeProvider clock) : IPilotGateTravel
 {
     public DockedPilot Transfer(long pilotId, long shipId, long sourceGateId, long exitGateId)
     {

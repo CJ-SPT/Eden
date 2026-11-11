@@ -25,7 +25,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Repair;
 
 [Injectable]
-internal sealed class PilotRemoteAssistanceStore(WorldDatabase database, TimeProvider clock) : IPilotRemoteAssistance
+internal sealed partial class PilotRemoteAssistanceStore(WorldDatabase database, TimeProvider clock) : IPilotRemoteAssistance
 {
     public RemoteAssistanceActivation Activate(
         long pilotId,

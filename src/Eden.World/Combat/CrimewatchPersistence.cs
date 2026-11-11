@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
 
-internal static class CrimewatchPersistence
+internal static partial class CrimewatchPersistence
 {
     internal static SavedCrimewatch State(WorldDbContext world, long pilotId) =>
         world.Set<SavedCrimewatch>().Find(pilotId) ?? world.Add(new SavedCrimewatch { PilotId = pilotId }).Entity;

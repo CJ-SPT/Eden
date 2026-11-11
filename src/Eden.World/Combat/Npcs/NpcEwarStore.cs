@@ -24,7 +24,7 @@ internal sealed class NpcEwarRoll : INpcEwarRoll
 }
 
 [Injectable]
-internal sealed class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, NpcProfileCatalog profiles) : INpcElectronicWarfare
+internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll rolls, NpcProfileCatalog profiles) : INpcElectronicWarfare
 {
     public IReadOnlyList<NpcEwarContact> Incoming(long shipId) =>
         LiveReadModels.Find(database.Path)?.NpcEwarIncoming(shipId) ?? ReadIncoming(shipId);

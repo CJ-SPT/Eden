@@ -165,7 +165,7 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void WarpResumesAtSavedProgressAndFailedCollectionCanBeRetriedOnce()
+    public void WarpResumesAtSavedProgressAndFailedCheckpointDoesNotReplayCollection()
     {
         var directory = TestDirectory.Create("capsuleer-replay-");
         var database = new WorldDatabase(Path.Combine(directory.FullName, "world.sqlite"));
@@ -196,26 +196,36 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             using WorldDbContext saved = new(database.Path);
             long Quantity() => saved.Set<WorldAsteroid>().AsNoTracking().Single(a => a.Id == paid.Work.TargetId).Quantity;
             long before = Quantity();
-            saved.Database.ExecuteSqlRaw(
-                """
-                CREATE TRIGGER reject_collection BEFORE UPDATE OF Quantity ON WorldAsteroid
-                BEGIN SELECT RAISE(ABORT,'test failed collection'); END
-                """
-            );
             for (int i = paid.Work.Stamp + 1; i < paid.Work.DueStamp; i++)
             {
                 clock.Seconds++;
                 Assert.Equal(MinerActivity.Mining, resumed.Tick()!.Work.Activity);
             }
             clock.Seconds++;
-            var failure = Assert.Throws<DbUpdateException>(() => resumed.Tick());
-            Assert.IsType<Microsoft.Data.Sqlite.SqliteException>(failure.InnerException);
-            Assert.Equal(before, Quantity());
-            saved.Database.ExecuteSqlRaw("DROP TRIGGER reject_collection");
-            clock.Seconds++;
             Assert.Equal(1, resumed.Tick()!.Work.Cycles);
-            long after = Quantity();
-            Assert.True(after < before);
+            var live = reopened.GetRequiredService<LiveWorld>();
+            using (var failed = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot()))
+            {
+                using (var command = failed.Database.CreateCommand())
+                {
+                    command.CommandText = """
+                        CREATE TRIGGER reject_collection BEFORE UPDATE OF Quantity ON WorldAsteroid
+                        BEGIN SELECT RAISE(ABORT,'test failed collection projection'); END
+                        """;
+                    command.ExecuteNonQuery();
+                }
+                Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => failed.Project());
+                using var rejected = new WorldDbContext(failed.Database);
+                Assert.Equal(before, rejected.Set<WorldAsteroid>().Find(paid.Work.TargetId)!.Quantity);
+            }
+            long after;
+            using (var retry = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot()))
+            {
+                retry.Project();
+                using var projected = new WorldDbContext(retry.Database);
+                after = projected.Set<WorldAsteroid>().Find(paid.Work.TargetId)!.Quantity;
+                Assert.True(after < before);
+            }
             Assert.Null(resumed.Tick());
             Assert.Equal(after, Quantity());
         }

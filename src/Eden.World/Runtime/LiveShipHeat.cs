@@ -504,6 +504,14 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
     internal ShipHeatCheckpoint? Capture() =>
         owner.IsSharedHeat(this) && owner.CurrentSystem is null ? owner.CaptureSystemHeat() : CaptureOwn();
 
+    internal void AcknowledgeEconomic(ShipHeatProjection projection)
+    {
+        if (_ships.TryGetValue(projection.ShipId, out var loaded) && loaded.State == projection.State)
+        {
+            _dirty.Remove(projection.ShipId);
+        }
+    }
+
     internal ShipHeatCheckpoint? CaptureOwn() =>
         _dirty.Count == 0
             ? null

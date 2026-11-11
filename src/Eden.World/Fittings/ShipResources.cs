@@ -7,7 +7,7 @@ using Eden.World.Storage;
 
 namespace Eden.World.Fittings;
 
-internal static class ShipResources
+internal static partial class ShipResources
 {
     internal static double Capacitor(WorldDbContext world, long shipId, IReadOnlyDictionary<DogmaAttributeId, double> attributes, long now)
     {

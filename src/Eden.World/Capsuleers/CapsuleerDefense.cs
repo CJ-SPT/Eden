@@ -397,8 +397,12 @@ internal sealed class CapsuleerDefense(
     {
         CapsuleerDefenseProfile Load()
         {
-            using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
+            if (LiveWorld.Find(database.Path) is { } live)
+            {
+                return live.Economy.Read(world => CapsuleerDefenseProfile.Read(world, catalog, pilot), new(pilots: [pilot]));
+            }
+            using WorldDbContext world = new(database.Path);
             return CapsuleerDefenseProfile.Read(world, catalog, pilot);
         }
         return LiveReadModels.Find(database.Path)?.DefenseProfile(pilot, Load) ?? Load();

@@ -2634,3 +2634,76 @@ Not performed; agent client testing is disabled.
 
 Compare a fixed installed-population workload before assigning a larger supported population. Native rendering,
 input and gameplay feel remain unverified.
+
+## Resident bot action transactions (November 11, 2026)
+
+Live miner and hauler actions now stage their inventory, market payments, supply fitting, skill grants, ammunition,
+mining deposits, capacitor costs, paid cooldowns, mining ledger entries and loot transfers in one private resident
+view. Validation precedes publication. A later rejection discards the complete action, including its identity
+reservations and sequence allocations. The scheduler checks the expected job and routine cursor before publishing
+that action and its new progress under the same owner. Offline tools retain an adapter to their existing SQL
+transaction.
+
+These actions use explicit scalar snapshots for their additional saved inputs. Current combat resources and paid
+heat are captured into the private view; their old dirty baselines are acknowledged only after commit. Coordinates
+retain the movement owner's current value, while docking and gate commands own membership. A retained movement
+baseline cannot restore an earlier system after a gate transfer. Both endpoints remain in the publication scope.
+The relational image, economic changes, movement, jobs and routine cursor are captured from the same generation;
+SQL projection and file writing remain outside the owner. Failed projections retain the resident state for retry.
+Legacy SQL reads synchronize the economic image before projecting overlapping combat rows. SQL dependency checks
+match whole table identifiers: reading `WorldNpcEwar` must not project `WorldNpc` and every retained position.
+
+### Template refresh and resident reads
+
+Pilot name changes now commit with the fitted hull, trained skills and traffic identity. Pilot appearance and
+portrait bytes remain private copies and are projected as BLOB values. Invalid account, name or active-hull
+ownership rejects the action. Name and imported-character reservations use resident indexes, including staged
+changes; an unrelated pilot's appearance is not a template-selection input. Roster selection first restricts agents
+to the system and career and then reads only the selected hull identities.
+
+Resident scalar projections and aggregates operate on immutable snapshots when no linked or mutable-array data is
+required. Array and navigation projections retain private materializations, as do item and coordinate reads that
+need combat/movement overlays. The warmed template regression includes 64 unrelated pilots, each with 256 KiB
+appearance and 256 KiB portrait payloads. It asserts that only the refreshed pilot is materialized, no SQL command
+or connection is opened, and the complete refresh allocates less than 8 MiB. Commit and rollback both preserve the
+expected hull, name, identity and original appearance bytes when the captured database is reopened. This is a
+bounded automated workload, not a measured larger-population capacity claim.
+
+The gameplay references remain [Mining](https://wiki.eveuniversity.org/Mining) and
+[Trading](https://wiki.eveuniversity.org/Trading). No gameplay rates, cycle eligibility or Destiny movement formulas
+change in this storage migration.
+
+### Automated validation
+
+Development started with the exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerResidentRoutineTests.StaleResidentCursorRejectsAnEconomicCommitWithoutPublishingProgress`.
+Additional exact checks covered complete miner save/reopen/unload and hauler gate travel. New tests assert SQL-free
+paid collection with unchanged deadlines after rollback, duplicate-collection rejection, coherent captured deposits
+and cooldowns, and template refresh with unrelated portrait payloads. Undock rejection stages a real fit and launch
+before rejecting the transaction; failed checkpoint projection is tested on a detached image and cannot replay a
+committed collection. Existing handoff and remote-arrival tests cover the current coordinate and membership bridge.
+
+Tool and solution restore passed, followed by a solution build with zero warnings/errors in **6.55 s**. The closing
+selection passed **502 tests / 215.27 s** including runner overhead. The exact OR filter is preserved in
+`artifacts/bot-state-migration/closing-filter.txt`; it selects Capsuleers, ResidentEconomyTests, FittingSnapshotTests,
+MiningTests and AmmunitionTests by their complete namespaces and excludes the previously documented unrelated
+`ShoppingChoosesRealAffordableStockAndHonorsThreatMemory` method. No full .NET suite was run.
+
+The warmed portrait-payload fixture allocated **2,740,992 bytes** for commit and **2,595,576 bytes** for rollback,
+with zero SQL commands/connections in both cases. Its SQL image preserved the pilot's original binary appearance
+and portrait. These numbers describe that fixture, not a replay of the installed population in the reported log.
+Catalog policy passed **8 tests / 1.159 s** and formatting policy passed **9 tests / 0.016 s**. Formatting verification
+passed for **1,865 files / 3.488 s** and the 140-column policy; complete style-check elapsed time was not captured.
+Reports are preserved under `artifacts/bot-state-migration`.
+
+This milestone removes SQL from the warm mixed economic/production actions above. Fatal combat settlement,
+community admission and several legacy effect stores still retain their SQL boundaries; it does not claim that
+all simulation paths are SQL-free.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Repeat the installed-save trade workload to measure owner hold time and allocation after loading the new build.

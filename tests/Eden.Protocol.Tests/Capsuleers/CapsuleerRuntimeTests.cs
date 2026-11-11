@@ -1,12 +1,17 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.World.Capsuleers;
+using Eden.World.Docking;
+using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -92,15 +97,25 @@ public sealed class CapsuleerRuntimeTests
         long miner = host.GetRequiredService<ICapsuleerCommunity>().Pilots().Single(p => p.Career == CapsuleerCareer.Mining).PilotId;
         using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
         var expected = scheduler.Jobs().Single(j => j.PilotId == miner);
-        using (WorldDbContext world = new(f.Database.Path))
+        var before = scheduler.Miner(miner)!;
+        using (CapsuleerOperation operation = new(f.Database, expected, host.GetRequiredService<Eden.World.Market.MarketChangeSignal>()))
         {
-            RejectJob(world, miner);
+            var world = operation.World;
+            var pilot = world.Pilots.Single(p => p.Id == miner);
+            var laser = world.Set<OwnedItem>().Single(i => i.OwnerId == miner);
+            PilotFittingStore.Fit(world, operation.Catalog, miner, [laser.Id], SourceStation, (int)InventoryFlag.AutoFit, f.Clock.Now);
+            PilotFittingStore.SetOnline(world, operation.Catalog, miner, pilot.ActiveShipId, laser.Id, true, f.Clock.Now);
+            var fitted = host.GetRequiredService<SqliteWorld>().FindPilot(world, pilot.AccountId, miner)!;
+            var launch = StationUndocking.Launch(fitted.ShipId, fitted.Home, fitted.Flight);
+            SqliteWorld.SetPosition(world, operation.Catalog, fitted.ShipId, launch.Position, SourceSystem, f.Clock.Now);
+            world.Set<PilotWallet>().Find(miner)!.Cents = -1;
+            Assert.Throws<InvalidDataException>(() =>
+                operation.Commit(expected.Next(1, expected.Action), new MinerCheckpoint(miner, before.Work with { Trips = 1 }), null)
+            );
         }
         f.Clock.Seconds++;
-        var failure = Assert.Throws<DbUpdateException>(() => scheduler.Run(1));
-        Assert.IsType<SqliteException>(failure.InnerException);
         Assert.Equal(expected, scheduler.Jobs().Single(j => j.PilotId == miner));
-        var before = scheduler.Miner(miner)!;
+        before = scheduler.Miner(miner)!;
         Assert.Null(before.Pilot.Position);
         Assert.Equal(0, before.Work.Stamp);
         Assert.Equal(0, before.Work.Trips);
@@ -112,7 +127,6 @@ public sealed class CapsuleerRuntimeTests
             Assert.False(laser.Singleton);
             Assert.False(laser.Online);
             Assert.Empty(world.Positions.Where(p => p.ShipId == before.Pilot.ShipId));
-            world.Database.ExecuteSqlRaw("DROP TRIGGER reject_job");
         }
         scheduler.Run(1);
         var committed = scheduler.Miner(miner)!;
@@ -173,18 +187,5 @@ public sealed class CapsuleerRuntimeTests
         Assert.Equal(0, metrics.Commands);
         Assert.Equal(0, metrics.Connections);
         Assert.Equal(0, metrics.FittingCalculations);
-    }
-
-    private static void RejectJob(WorldDbContext world, long pilot)
-    {
-        world.Database.ExecuteSqlRaw(
-            """
-            CREATE TABLE TestRejectedCapsuleerJob(PilotId INTEGER PRIMARY KEY);
-            CREATE TRIGGER reject_job BEFORE INSERT ON WorldPosition
-            WHEN NEW.ShipId IN (SELECT ActiveShipId FROM WorldPilot WHERE Id IN (SELECT PilotId FROM TestRejectedCapsuleerJob))
-            BEGIN SELECT RAISE(ABORT,'test undock failure'); END;
-            """
-        );
-        world.Database.ExecuteSql($"INSERT INTO TestRejectedCapsuleerJob(PilotId) VALUES ({pilot})");
     }
 }

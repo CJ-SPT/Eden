@@ -13,7 +13,7 @@ namespace Eden.World.Market;
 internal sealed partial class PilotMarketStore
 {
     private int SettleRestingSales(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         int stationId,
         int typeId,

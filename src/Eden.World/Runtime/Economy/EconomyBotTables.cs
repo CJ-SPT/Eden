@@ -1,0 +1,2254 @@
+using System.Text.Json;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
+
+namespace Eden.World.Runtime.Economy;
+
+internal sealed partial class ResidentEconomy
+{
+    private void RegisterBotTables()
+    {
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerAgent, EconomySavedCapsuleerAgent>(
+                "WorldCapsuleerAgent",
+                row => new(row.PilotId),
+                row =>
+                    new(
+                        row.PilotId,
+                        row.Career,
+                        row.CommunitySystemId,
+                        row.FounderModuleId,
+                        row.FounderShipId,
+                        row.Slot,
+                        row.StartingCents
+                    ),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerAgent
+                {
+                    PilotId = state.PilotId,
+                    Career = state.Career,
+                    CommunitySystemId = state.CommunitySystemId,
+                    FounderModuleId = state.FounderModuleId,
+                    FounderShipId = state.FounderShipId,
+                    Slot = state.Slot,
+                    StartingCents = state.StartingCents,
+                },
+                ProjectSavedCapsuleerAgent,
+                "PilotId,Career,CommunitySystemId,FounderModuleId,FounderShipId,Slot,StartingCents",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        (Eden.Gameplay.Capsuleers.CapsuleerCareer)reader.GetInt32(2),
+                        reader.GetInt32(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetInt32(6),
+                        reader.GetInt64(7)
+                    ),
+                state => new(state.PilotId),
+                indexes:
+                [
+                    new("PilotId", row => row.PilotId),
+                    new("CommunitySystemId", row => row.CommunitySystemId),
+                    new("FounderModuleId", row => row.FounderModuleId),
+                    new("FounderShipId", row => row.FounderShipId),
+                ],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerCommunity, EconomySavedCapsuleerCommunity>(
+                "WorldCapsuleerCommunity",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.Career,
+                        row.FounderModuleId,
+                        row.FounderShipId,
+                        row.HomeStationId,
+                        row.PilotId,
+                        row.Progress,
+                        row.SchoolId,
+                        row.Seed,
+                        row.StartingCents
+                    ),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerCommunity
+                {
+                    Id = state.Id,
+                    Career = state.Career,
+                    FounderModuleId = state.FounderModuleId,
+                    FounderShipId = state.FounderShipId,
+                    HomeStationId = state.HomeStationId,
+                    PilotId = state.PilotId,
+                    Progress = state.Progress,
+                    SchoolId = state.SchoolId,
+                    Seed = state.Seed,
+                    StartingCents = state.StartingCents,
+                },
+                ProjectSavedCapsuleerCommunity,
+                "Id,Career,FounderModuleId,FounderShipId,HomeStationId,PilotId,Progress,SchoolId,Seed,StartingCents",
+                reader =>
+                    new(
+                        reader.GetInt32(1),
+                        (Eden.Gameplay.Capsuleers.CapsuleerCareer)reader.GetInt32(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt32(5),
+                        reader.IsDBNull(6) ? null : reader.GetInt64(6),
+                        reader.IsDBNull(7) ? null : reader.GetString(7),
+                        reader.GetInt32(8),
+                        reader.GetInt32(9),
+                        reader.GetInt64(10)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("FounderModuleId", row => row.FounderModuleId),
+                    new("FounderShipId", row => row.FounderShipId),
+                    new("HomeStationId", row => row.HomeStationId),
+                    new("PilotId", row => row.PilotId),
+                    new("SchoolId", row => row.SchoolId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerHauler, EconomySavedCapsuleerHauler>(
+                "WorldCapsuleerHauler",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.DestinationStationId,
+                        row.FounderShipId,
+                        row.PilotId,
+                        row.Progress,
+                        row.RouteSystems?.ToArray(),
+                        row.SourceStationId,
+                        row.StartingCents
+                    ),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerHauler
+                {
+                    Id = state.Id,
+                    DestinationStationId = state.DestinationStationId,
+                    FounderShipId = state.FounderShipId,
+                    PilotId = state.PilotId,
+                    Progress = state.Progress,
+                    RouteSystems = state.RouteSystems?.ToArray(),
+                    SourceStationId = state.SourceStationId,
+                    StartingCents = state.StartingCents,
+                },
+                ProjectSavedCapsuleerHauler,
+                "Id,DestinationStationId,FounderShipId,PilotId,Progress,RouteSystems,SourceStationId,StartingCents",
+                reader =>
+                    new(
+                        reader.GetInt32(1),
+                        reader.GetInt32(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.IsDBNull(5) ? null : reader.GetString(5),
+                        reader.IsDBNull(6) ? null : JsonSerializer.Deserialize<int[]>(reader.GetString(6)),
+                        reader.GetInt32(7),
+                        reader.GetInt64(8)
+                    ),
+                state => new(state.Id),
+                equal: (left, right) =>
+                    left with { RouteSystems = null } == right with { RouteSystems = null }
+                    && (left.RouteSystems ?? []).SequenceEqual(right.RouteSystems ?? []),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("DestinationStationId", row => row.DestinationStationId),
+                    new("FounderShipId", row => row.FounderShipId),
+                    new("PilotId", row => row.PilotId),
+                    new("SourceStationId", row => row.SourceStationId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerJob, EconomySavedCapsuleerJob>(
+                "WorldCapsuleerJob",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.Action, row.DueTicks, row.Revision, row.Sequence),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerJob
+                {
+                    PilotId = state.PilotId,
+                    Action = state.Action,
+                    DueTicks = state.DueTicks,
+                    Revision = state.Revision,
+                    Sequence = state.Sequence,
+                },
+                ProjectSavedCapsuleerJob,
+                "PilotId,Action,DueTicks,Revision,Sequence",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        (Eden.Gameplay.Capsuleers.CapsuleerAction)reader.GetInt32(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5)
+                    ),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerPopulation, EconomySavedCapsuleerPopulation>(
+                "WorldCapsuleerPopulation",
+                row => new(row.SystemId),
+                row => new(row.SystemId, row.HomeStationId, row.Seed, row.Version),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerPopulation
+                {
+                    SystemId = state.SystemId,
+                    HomeStationId = state.HomeStationId,
+                    Seed = state.Seed,
+                    Version = state.Version,
+                },
+                ProjectSavedCapsuleerPopulation,
+                "SystemId,HomeStationId,Seed,Version",
+                reader => new(reader.GetInt32(1), reader.GetInt32(2), reader.GetInt64(3), reader.GetInt32(4)),
+                state => new(state.SystemId),
+                indexes: [new("SystemId", row => row.SystemId), new("HomeStationId", row => row.HomeStationId)],
+                primaryColumn: "SystemId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerProvisioning, EconomySavedCapsuleerProvisioning>(
+                "WorldCapsuleerProvisioning",
+                row => new(row.Id),
+                row => new(row.Id, row.WorldSeed),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerProvisioning { Id = state.Id, WorldSeed = state.WorldSeed },
+                ProjectSavedCapsuleerProvisioning,
+                "Id,WorldSeed",
+                reader => new(reader.GetInt32(1), reader.GetInt64(2)),
+                state => new(state.Id),
+                indexes: [new("Id", row => row.Id)],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerSupplies, EconomySavedCapsuleerSupplies>(
+                "WorldCapsuleerSupplies",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.ShipId),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerSupplies { PilotId = state.PilotId, ShipId = state.ShipId },
+                ProjectSavedCapsuleerSupplies,
+                "PilotId,ShipId",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId), new("ShipId", row => row.ShipId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedTrafficCorrection, EconomySavedTrafficCorrection>(
+                "WorldTrafficCorrection",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.OriginalHullTypeId, row.ShipId, row.TemplateKillId),
+                state => new Eden.Data.World.Capsuleers.SavedTrafficCorrection
+                {
+                    PilotId = state.PilotId,
+                    OriginalHullTypeId = state.OriginalHullTypeId,
+                    ShipId = state.ShipId,
+                    TemplateKillId = state.TemplateKillId,
+                },
+                ProjectSavedTrafficCorrection,
+                "PilotId,OriginalHullTypeId,ShipId,TemplateKillId",
+                reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.GetInt64(3), reader.GetInt64(4)),
+                state => new(state.PilotId),
+                indexes:
+                [
+                    new("PilotId", row => row.PilotId),
+                    new("OriginalHullTypeId", row => row.OriginalHullTypeId),
+                    new("ShipId", row => row.ShipId),
+                    new("TemplateKillId", row => row.TemplateKillId),
+                ],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedTrafficIdentity, EconomySavedTrafficIdentity>(
+                "WorldTrafficIdentity",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.CharacterId, row.KillId, row.SnapshotId),
+                state => new Eden.Data.World.Capsuleers.SavedTrafficIdentity
+                {
+                    PilotId = state.PilotId,
+                    CharacterId = state.CharacterId,
+                    KillId = state.KillId,
+                    SnapshotId = state.SnapshotId,
+                },
+                ProjectSavedTrafficIdentity,
+                "PilotId,CharacterId,KillId,SnapshotId",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetString(4)),
+                state => new(state.PilotId),
+                indexes:
+                [
+                    new("PilotId", row => row.PilotId),
+                    new("CharacterId", row => row.CharacterId),
+                    new("KillId", row => row.KillId),
+                    new("SnapshotId", row => row.SnapshotId),
+                ],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Characters.SavedCharacterDeletion, EconomySavedCharacterDeletion>(
+                "WorldCharacterDeletion",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.DeletedAt, row.ReadyAt),
+                state => new Eden.Data.World.Characters.SavedCharacterDeletion
+                {
+                    PilotId = state.PilotId,
+                    DeletedAt = state.DeletedAt,
+                    ReadyAt = state.ReadyAt,
+                },
+                ProjectSavedCharacterDeletion,
+                "PilotId,DeletedAt,ReadyAt",
+                reader => new(reader.GetInt64(1), reader.IsDBNull(2) ? null : reader.GetInt64(2), reader.GetInt64(3)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Characters.SavedCombatDamage, EconomySavedCombatDamage>(
+                "WorldCombatDamage",
+                row => new(row.VictimId, row.AttackerId),
+                row => new(row.VictimId, row.AttackerId, row.Damage, row.PartyJson),
+                state => new Eden.Data.World.Characters.SavedCombatDamage
+                {
+                    VictimId = state.VictimId,
+                    AttackerId = state.AttackerId,
+                    Damage = state.Damage,
+                    PartyJson = state.PartyJson,
+                },
+                ProjectSavedCombatDamage,
+                "VictimId,AttackerId,Damage,PartyJson",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetDouble(3), reader.GetString(4)),
+                state => new(state.VictimId, state.AttackerId),
+                indexes: [new("VictimId", row => row.VictimId), new("AttackerId", row => row.AttackerId)],
+                primaryColumn: null
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.ModuleCooldown, EconomyModuleCooldown>(
+                "WorldWeaponCooldown",
+                row => new(row.ModuleId),
+                row => new(row.ModuleId, row.Kind, row.ReadyAt),
+                state => new Eden.Data.World.Combat.ModuleCooldown
+                {
+                    ModuleId = state.ModuleId,
+                    Kind = state.Kind,
+                    ReadyAt = state.ReadyAt,
+                },
+                ProjectModuleCooldown,
+                "ModuleId,Kind,ReadyAt",
+                reader => new(reader.GetInt64(1), (Eden.Data.World.Combat.ModuleCooldownKind)reader.GetInt32(2), reader.GetInt64(3)),
+                state => new(state.ModuleId),
+                indexes: [new("ModuleId", row => row.ModuleId), new("Kind", row => row.Kind)],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.NpcAggression, EconomyNpcAggression>(
+                "WorldNpcAggression",
+                row => new(row.NpcId),
+                row => new(row.NpcId, row.LastShotAt, row.LastTargetId, row.MissileReadyAt, row.ReadyAt, row.TargetShipId),
+                state => new Eden.Data.World.Combat.NpcAggression
+                {
+                    NpcId = state.NpcId,
+                    LastShotAt = state.LastShotAt,
+                    LastTargetId = state.LastTargetId,
+                    MissileReadyAt = state.MissileReadyAt,
+                    ReadyAt = state.ReadyAt,
+                    TargetShipId = state.TargetShipId,
+                },
+                ProjectNpcAggression,
+                "NpcId,LastShotAt,LastTargetId,MissileReadyAt,ReadyAt,TargetShipId",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.IsDBNull(2) ? null : reader.GetInt64(2),
+                        reader.IsDBNull(3) ? null : reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetInt64(6)
+                    ),
+                state => new(state.NpcId),
+                indexes:
+                [
+                    new("NpcId", row => row.NpcId),
+                    new("LastTargetId", row => row.LastTargetId),
+                    new("TargetShipId", row => row.TargetShipId),
+                ],
+                primaryColumn: "NpcId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.Npcs.WorldNpc, EconomyWorldNpc>(
+                "WorldNpc",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.AcquisitionRange,
+                        row.AnchorKind,
+                        row.ArmorDamage,
+                        row.ArmorRepairAt,
+                        row.BeltId,
+                        row.CorporationId,
+                        row.DestroyedAt,
+                        row.EncounterId,
+                        row.FactionId,
+                        row.HomeX,
+                        row.HomeY,
+                        row.HomeZ,
+                        row.MotionAt,
+                        row.Name,
+                        row.Navigation,
+                        row.RepairRevision,
+                        row.RetiredAt,
+                        row.Role,
+                        row.ShieldCharge,
+                        row.ShieldRepairAt,
+                        row.SpawnSlot,
+                        row.StructureDamage,
+                        row.SystemId,
+                        row.TypeId,
+                        row.UpdatedAt,
+                        row.VelocityX,
+                        row.VelocityY,
+                        row.VelocityZ,
+                        row.X,
+                        row.Y,
+                        row.Z
+                    ),
+                state => new Eden.Data.World.Combat.Npcs.WorldNpc
+                {
+                    Id = state.Id,
+                    AcquisitionRange = state.AcquisitionRange,
+                    AnchorKind = state.AnchorKind,
+                    ArmorDamage = state.ArmorDamage,
+                    ArmorRepairAt = state.ArmorRepairAt,
+                    BeltId = state.BeltId,
+                    CorporationId = state.CorporationId,
+                    DestroyedAt = state.DestroyedAt,
+                    EncounterId = state.EncounterId,
+                    FactionId = state.FactionId,
+                    HomeX = state.HomeX,
+                    HomeY = state.HomeY,
+                    HomeZ = state.HomeZ,
+                    MotionAt = state.MotionAt,
+                    Name = state.Name,
+                    Navigation = state.Navigation,
+                    RepairRevision = state.RepairRevision,
+                    RetiredAt = state.RetiredAt,
+                    Role = state.Role,
+                    ShieldCharge = state.ShieldCharge,
+                    ShieldRepairAt = state.ShieldRepairAt,
+                    SpawnSlot = state.SpawnSlot,
+                    StructureDamage = state.StructureDamage,
+                    SystemId = state.SystemId,
+                    TypeId = state.TypeId,
+                    UpdatedAt = state.UpdatedAt,
+                    VelocityX = state.VelocityX,
+                    VelocityY = state.VelocityY,
+                    VelocityZ = state.VelocityZ,
+                    X = state.X,
+                    Y = state.Y,
+                    Z = state.Z,
+                },
+                ProjectWorldNpc,
+                "Id,AcquisitionRange,AnchorKind,ArmorDamage,ArmorRepairAt,BeltId,CorporationId,DestroyedAt,"
+                    + "EncounterId,FactionId,HomeX,HomeY,HomeZ,MotionAt,Name,Navigation,RepairRevision,RetiredAt,Role,"
+                    + "ShieldCharge,ShieldRepairAt,SpawnSlot,StructureDamage,SystemId,TypeId,UpdatedAt,VelocityX,VelocityY,"
+                    + "VelocityZ,X,Y,Z",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.IsDBNull(2) ? null : reader.GetDouble(2),
+                        (Eden.Gameplay.Combat.NpcAnchorKind)reader.GetInt32(3),
+                        reader.GetDouble(4),
+                        reader.GetInt64(5),
+                        reader.GetInt32(6),
+                        reader.GetInt32(7),
+                        reader.IsDBNull(8) ? null : reader.GetInt64(8),
+                        reader.GetInt64(9),
+                        reader.GetInt32(10),
+                        reader.IsDBNull(11) ? null : reader.GetDouble(11),
+                        reader.IsDBNull(12) ? null : reader.GetDouble(12),
+                        reader.IsDBNull(13) ? null : reader.GetDouble(13),
+                        reader.GetInt64(14),
+                        reader.IsDBNull(15) ? null : reader.GetString(15),
+                        (Eden.Gameplay.Combat.NpcNavigationState)reader.GetInt32(16),
+                        reader.GetInt64(17),
+                        reader.IsDBNull(18) ? null : reader.GetInt64(18),
+                        (Eden.Gameplay.Combat.NpcRole)reader.GetInt32(19),
+                        reader.GetDouble(20),
+                        reader.GetInt64(21),
+                        reader.GetInt32(22),
+                        reader.GetDouble(23),
+                        reader.GetInt32(24),
+                        reader.GetInt32(25),
+                        reader.GetInt64(26),
+                        reader.GetDouble(27),
+                        reader.GetDouble(28),
+                        reader.GetDouble(29),
+                        reader.GetDouble(30),
+                        reader.GetDouble(31),
+                        reader.GetDouble(32)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("AnchorKind", row => row.AnchorKind),
+                    new("BeltId", row => row.BeltId),
+                    new("CorporationId", row => row.CorporationId),
+                    new("EncounterId", row => row.EncounterId),
+                    new("FactionId", row => row.FactionId),
+                    new("SystemId", row => row.SystemId),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.Npcs.WorldNpcEwar, EconomyWorldNpcEwar>(
+                "WorldNpcEwar",
+                row => new(row.NpcId, (long)row.Kind),
+                row => new(row.NpcId, row.Kind, row.AbilityJson, row.AppliedJson, row.ReadyAt, row.StartedAt, row.TargetShipId, row.TypeId),
+                state => new Eden.Data.World.Combat.Npcs.WorldNpcEwar
+                {
+                    NpcId = state.NpcId,
+                    Kind = state.Kind,
+                    AbilityJson = state.AbilityJson,
+                    AppliedJson = state.AppliedJson,
+                    ReadyAt = state.ReadyAt,
+                    StartedAt = state.StartedAt,
+                    TargetShipId = state.TargetShipId,
+                    TypeId = state.TypeId,
+                },
+                ProjectWorldNpcEwar,
+                "NpcId,Kind,AbilityJson,AppliedJson,ReadyAt,StartedAt,TargetShipId,TypeId",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        (Eden.Gameplay.Combat.NpcEwarKind)reader.GetInt32(2),
+                        reader.GetString(3),
+                        reader.IsDBNull(4) ? null : reader.GetString(4),
+                        reader.GetInt64(5),
+                        reader.GetInt64(6),
+                        reader.GetInt64(7),
+                        reader.GetInt32(8)
+                    ),
+                state => new(state.NpcId, (long)state.Kind),
+                indexes:
+                [
+                    new("NpcId", row => row.NpcId),
+                    new("Kind", row => row.Kind),
+                    new("TargetShipId", row => row.TargetShipId),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: null
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.SavedConcordResponse, EconomySavedConcordResponse>(
+                "WorldConcordResponse",
+                row => new(row.ShipId),
+                row =>
+                    new(
+                        row.ShipId,
+                        row.CommanderId,
+                        row.CompletedAt,
+                        row.DestroyAt,
+                        row.FirstCaptainId,
+                        row.PilotId,
+                        row.RespondAt,
+                        row.SecondCaptainId,
+                        row.SystemId
+                    ),
+                state => new Eden.Data.World.Combat.SavedConcordResponse
+                {
+                    ShipId = state.ShipId,
+                    CommanderId = state.CommanderId,
+                    CompletedAt = state.CompletedAt,
+                    DestroyAt = state.DestroyAt,
+                    FirstCaptainId = state.FirstCaptainId,
+                    PilotId = state.PilotId,
+                    RespondAt = state.RespondAt,
+                    SecondCaptainId = state.SecondCaptainId,
+                    SystemId = state.SystemId,
+                },
+                ProjectSavedConcordResponse,
+                "ShipId,CommanderId,CompletedAt,DestroyAt,FirstCaptainId,PilotId,RespondAt,SecondCaptainId,SystemId",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.IsDBNull(2) ? null : reader.GetInt64(2),
+                        reader.IsDBNull(3) ? null : reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.IsDBNull(5) ? null : reader.GetInt64(5),
+                        reader.GetInt64(6),
+                        reader.GetInt64(7),
+                        reader.IsDBNull(8) ? null : reader.GetInt64(8),
+                        reader.GetInt32(9)
+                    ),
+                state => new(state.ShipId),
+                indexes:
+                [
+                    new("ShipId", row => row.ShipId),
+                    new("CommanderId", row => row.CommanderId),
+                    new("FirstCaptainId", row => row.FirstCaptainId),
+                    new("PilotId", row => row.PilotId),
+                    new("SecondCaptainId", row => row.SecondCaptainId),
+                    new("SystemId", row => row.SystemId),
+                ],
+                primaryColumn: "ShipId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.SavedCrimewatch, EconomySavedCrimewatch>(
+                "WorldCrimewatch",
+                row => new(row.PilotId),
+                row =>
+                    new(
+                        row.PilotId,
+                        row.CriminalActive,
+                        row.CriminalUntil,
+                        row.NpcActive,
+                        row.NpcUntil,
+                        row.PvpActive,
+                        row.PvpUntil,
+                        row.SuspectActive,
+                        row.SuspectUntil,
+                        row.SystemId,
+                        row.WeaponsActive,
+                        row.WeaponsUntil
+                    ),
+                state => new Eden.Data.World.Combat.SavedCrimewatch
+                {
+                    PilotId = state.PilotId,
+                    CriminalActive = state.CriminalActive,
+                    CriminalUntil = state.CriminalUntil,
+                    NpcActive = state.NpcActive,
+                    NpcUntil = state.NpcUntil,
+                    PvpActive = state.PvpActive,
+                    PvpUntil = state.PvpUntil,
+                    SuspectActive = state.SuspectActive,
+                    SuspectUntil = state.SuspectUntil,
+                    SystemId = state.SystemId,
+                    WeaponsActive = state.WeaponsActive,
+                    WeaponsUntil = state.WeaponsUntil,
+                },
+                ProjectSavedCrimewatch,
+                "PilotId,CriminalActive,CriminalUntil,NpcActive,NpcUntil,PvpActive,PvpUntil,SuspectActive,"
+                    + "SuspectUntil,SystemId,WeaponsActive,WeaponsUntil",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetInt64(6),
+                        reader.GetInt64(7),
+                        reader.GetInt64(8),
+                        reader.GetInt64(9),
+                        reader.GetInt32(10),
+                        reader.GetInt64(11),
+                        reader.GetInt64(12)
+                    ),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId), new("SystemId", row => row.SystemId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.SavedEngagement, EconomySavedEngagement>(
+                "WorldEngagement",
+                row => new(row.LowerPilotId, row.HigherPilotId),
+                row => new(row.LowerPilotId, row.HigherPilotId, row.ActiveUntil, row.ExpiresAt),
+                state => new Eden.Data.World.Combat.SavedEngagement
+                {
+                    LowerPilotId = state.LowerPilotId,
+                    HigherPilotId = state.HigherPilotId,
+                    ActiveUntil = state.ActiveUntil,
+                    ExpiresAt = state.ExpiresAt,
+                },
+                ProjectSavedEngagement,
+                "LowerPilotId,HigherPilotId,ActiveUntil,ExpiresAt",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetInt64(4)),
+                state => new(state.LowerPilotId, state.HigherPilotId),
+                indexes: [new("LowerPilotId", row => row.LowerPilotId), new("HigherPilotId", row => row.HigherPilotId)],
+                primaryColumn: null
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.SavedLogoff, EconomySavedLogoff>(
+                "WorldLogoff",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.ExpiresAt, row.ShipId, row.SystemId),
+                state => new Eden.Data.World.Combat.SavedLogoff
+                {
+                    PilotId = state.PilotId,
+                    ExpiresAt = state.ExpiresAt,
+                    ShipId = state.ShipId,
+                    SystemId = state.SystemId,
+                },
+                ProjectSavedLogoff,
+                "PilotId,ExpiresAt,ShipId,SystemId",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetInt32(4)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId), new("ShipId", row => row.ShipId), new("SystemId", row => row.SystemId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.SavedPilotHostility, EconomySavedPilotHostility>(
+                "WorldPilotHostility",
+                row => new(row.SourceShipId, row.TargetShipId),
+                row => new(row.SourceShipId, row.TargetShipId, row.ExpiresAt, row.LastAttackAt),
+                state => new Eden.Data.World.Combat.SavedPilotHostility
+                {
+                    SourceShipId = state.SourceShipId,
+                    TargetShipId = state.TargetShipId,
+                    ExpiresAt = state.ExpiresAt,
+                    LastAttackAt = state.LastAttackAt,
+                },
+                ProjectSavedPilotHostility,
+                "SourceShipId,TargetShipId,ExpiresAt,LastAttackAt",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetInt64(4)),
+                state => new(state.SourceShipId, state.TargetShipId),
+                indexes: [new("SourceShipId", row => row.SourceShipId), new("TargetShipId", row => row.TargetShipId)],
+                primaryColumn: null
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.SavedSecurityStatus, EconomySavedSecurityStatus>(
+                "WorldPilotSecurity",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.Value),
+                state => new Eden.Data.World.Combat.SavedSecurityStatus { PilotId = state.PilotId, Value = state.Value },
+                ProjectSavedSecurityStatus,
+                "PilotId,Value",
+                reader => new(reader.GetInt64(1), reader.GetDouble(2)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.SavedWeaponLink, EconomySavedWeaponLink>(
+                "WorldWeaponLink",
+                row => new(row.SlaveId),
+                row => new(row.SlaveId, row.MasterId, row.ShipId),
+                state => new Eden.Data.World.Combat.SavedWeaponLink
+                {
+                    SlaveId = state.SlaveId,
+                    MasterId = state.MasterId,
+                    ShipId = state.ShipId,
+                },
+                ProjectSavedWeaponLink,
+                "SlaveId,MasterId,ShipId",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3)),
+                state => new(state.SlaveId),
+                indexes: [new("SlaveId", row => row.SlaveId), new("MasterId", row => row.MasterId), new("ShipId", row => row.ShipId)],
+                primaryColumn: "SlaveId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.ShipHealthState, EconomyShipHealthState>(
+                "WorldShipHealth",
+                row => new(row.ShipId),
+                row => new(row.ShipId, row.ArmorDamage, row.ShieldCharge, row.StructureDamage, row.UpdatedAt),
+                state => new Eden.Data.World.Combat.ShipHealthState
+                {
+                    ShipId = state.ShipId,
+                    ArmorDamage = state.ArmorDamage,
+                    ShieldCharge = state.ShieldCharge,
+                    StructureDamage = state.StructureDamage,
+                    UpdatedAt = state.UpdatedAt,
+                },
+                ProjectShipHealthState,
+                "ShipId,ArmorDamage,ShieldCharge,StructureDamage,UpdatedAt",
+                reader => new(reader.GetInt64(1), reader.GetDouble(2), reader.GetDouble(3), reader.GetDouble(4), reader.GetInt64(5)),
+                state => new(state.ShipId),
+                indexes: [new("ShipId", row => row.ShipId)],
+                primaryColumn: "ShipId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.ShipLoss, EconomyShipLoss>(
+                "WorldShipLoss",
+                row => new(row.ShipId),
+                row =>
+                    new(
+                        row.ShipId,
+                        row.AttackerPilotId,
+                        row.CapsuleId,
+                        row.DroppedItemIdsJson,
+                        row.ItemsJson,
+                        row.Name,
+                        row.NpcId,
+                        row.PilotId,
+                        row.StoredShipsJson,
+                        row.SystemId,
+                        row.Time,
+                        row.TypeId,
+                        row.X,
+                        row.Y,
+                        row.Z
+                    ),
+                state => new Eden.Data.World.Combat.ShipLoss
+                {
+                    ShipId = state.ShipId,
+                    AttackerPilotId = state.AttackerPilotId,
+                    CapsuleId = state.CapsuleId,
+                    DroppedItemIdsJson = state.DroppedItemIdsJson,
+                    ItemsJson = state.ItemsJson,
+                    Name = state.Name,
+                    NpcId = state.NpcId,
+                    PilotId = state.PilotId,
+                    StoredShipsJson = state.StoredShipsJson,
+                    SystemId = state.SystemId,
+                    Time = state.Time,
+                    TypeId = state.TypeId,
+                    X = state.X,
+                    Y = state.Y,
+                    Z = state.Z,
+                },
+                ProjectShipLoss,
+                "ShipId,AttackerPilotId,CapsuleId,DroppedItemIdsJson,ItemsJson,Name,NpcId,PilotId,StoredShipsJson,"
+                    + "SystemId,Time,TypeId,X,Y,Z",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.IsDBNull(2) ? null : reader.GetInt64(2),
+                        reader.GetInt64(3),
+                        reader.GetString(4),
+                        reader.GetString(5),
+                        reader.GetString(6),
+                        reader.IsDBNull(7) ? null : reader.GetInt64(7),
+                        reader.GetInt64(8),
+                        reader.GetString(9),
+                        reader.GetInt32(10),
+                        reader.GetInt64(11),
+                        reader.GetInt32(12),
+                        reader.GetDouble(13),
+                        reader.GetDouble(14),
+                        reader.GetDouble(15)
+                    ),
+                state => new(state.ShipId),
+                indexes:
+                [
+                    new("ShipId", row => row.ShipId),
+                    new("AttackerPilotId", row => row.AttackerPilotId),
+                    new("CapsuleId", row => row.CapsuleId),
+                    new("NpcId", row => row.NpcId),
+                    new("PilotId", row => row.PilotId),
+                    new("SystemId", row => row.SystemId),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "ShipId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.WorldMissile, EconomyWorldMissile>(
+                "WorldMissile",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.ChargeTypeId,
+                        row.CorporationId,
+                        row.EndedAt,
+                        row.ExpiresAt,
+                        row.GroupId,
+                        row.LaunchStamp,
+                        row.LaunchedAt,
+                        row.LauncherTypeId,
+                        row.ModuleId,
+                        row.Outcome,
+                        row.PilotId,
+                        row.Reported,
+                        row.Snapshot,
+                        row.SourceKind,
+                        row.SourceShipId,
+                        row.SourceTypeId,
+                        row.Status,
+                        row.SystemId,
+                        row.TargetId,
+                        row.TargetKind,
+                        row.TargetRadius,
+                        row.UpdatedAt
+                    ),
+                state => new Eden.Data.World.Combat.WorldMissile
+                {
+                    Id = state.Id,
+                    ChargeTypeId = state.ChargeTypeId,
+                    CorporationId = state.CorporationId,
+                    EndedAt = state.EndedAt,
+                    ExpiresAt = state.ExpiresAt,
+                    GroupId = state.GroupId,
+                    LaunchStamp = state.LaunchStamp,
+                    LaunchedAt = state.LaunchedAt,
+                    LauncherTypeId = state.LauncherTypeId,
+                    ModuleId = state.ModuleId,
+                    Outcome = state.Outcome,
+                    PilotId = state.PilotId,
+                    Reported = state.Reported,
+                    Snapshot = state.Snapshot,
+                    SourceKind = state.SourceKind,
+                    SourceShipId = state.SourceShipId,
+                    SourceTypeId = state.SourceTypeId,
+                    Status = state.Status,
+                    SystemId = state.SystemId,
+                    TargetId = state.TargetId,
+                    TargetKind = state.TargetKind,
+                    TargetRadius = state.TargetRadius,
+                    UpdatedAt = state.UpdatedAt,
+                },
+                ProjectWorldMissile,
+                "Id,ChargeTypeId,CorporationId,EndedAt,ExpiresAt,GroupId,LaunchStamp,LaunchedAt,LauncherTypeId,"
+                    + "ModuleId,Outcome,PilotId,Reported,Snapshot,SourceKind,SourceShipId,SourceTypeId,Status,SystemId,"
+                    + "TargetId,TargetKind,TargetRadius,UpdatedAt",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt32(2),
+                        reader.GetInt32(3),
+                        reader.IsDBNull(4) ? null : reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetInt32(6),
+                        reader.GetInt32(7),
+                        reader.GetInt64(8),
+                        reader.GetInt32(9),
+                        reader.GetInt64(10),
+                        reader.IsDBNull(11) ? null : reader.GetString(11),
+                        reader.GetInt64(12),
+                        reader.GetBoolean(13),
+                        reader.GetString(14),
+                        (Eden.Gameplay.Combat.MissileSourceKind)reader.GetInt32(15),
+                        reader.GetInt64(16),
+                        reader.GetInt32(17),
+                        (Eden.Gameplay.Combat.MissileFlightStatus)reader.GetInt32(18),
+                        reader.GetInt32(19),
+                        reader.GetInt64(20),
+                        (Eden.Gameplay.Combat.MissileTargetKind)reader.GetInt32(21),
+                        reader.GetFloat(22),
+                        reader.GetInt64(23)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("ChargeTypeId", row => row.ChargeTypeId),
+                    new("CorporationId", row => row.CorporationId),
+                    new("GroupId", row => row.GroupId),
+                    new("LauncherTypeId", row => row.LauncherTypeId),
+                    new("ModuleId", row => row.ModuleId),
+                    new("PilotId", row => row.PilotId),
+                    new("SourceKind", row => row.SourceKind),
+                    new("SourceShipId", row => row.SourceShipId),
+                    new("SourceTypeId", row => row.SourceTypeId),
+                    new("Status", row => row.Status),
+                    new("SystemId", row => row.SystemId),
+                    new("TargetId", row => row.TargetId),
+                    new("TargetKind", row => row.TargetKind),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Combat.WorldPlayerEwar, EconomyWorldPlayerEwar>(
+                "WorldPlayerEwar",
+                row => new(row.ModuleId),
+                row => new(row.ModuleId, row.ContactJson, row.PilotId, row.SourceShipId, row.SystemId, row.TargetId, row.TargetKind),
+                state => new Eden.Data.World.Combat.WorldPlayerEwar
+                {
+                    ModuleId = state.ModuleId,
+                    ContactJson = state.ContactJson,
+                    PilotId = state.PilotId,
+                    SourceShipId = state.SourceShipId,
+                    SystemId = state.SystemId,
+                    TargetId = state.TargetId,
+                    TargetKind = state.TargetKind,
+                },
+                ProjectWorldPlayerEwar,
+                "ModuleId,ContactJson,PilotId,SourceShipId,SystemId,TargetId,TargetKind",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetString(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt32(5),
+                        reader.GetInt64(6),
+                        (Eden.Gameplay.Propulsion.TackleTargetKind)reader.GetInt32(7)
+                    ),
+                state => new(state.ModuleId),
+                indexes:
+                [
+                    new("ModuleId", row => row.ModuleId),
+                    new("PilotId", row => row.PilotId),
+                    new("SourceShipId", row => row.SourceShipId),
+                    new("SystemId", row => row.SystemId),
+                    new("TargetId", row => row.TargetId),
+                    new("TargetKind", row => row.TargetKind),
+                ],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Corporations.SavedCorporation, EconomySavedCorporation>(
+                "WorldCorporation",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.BalanceCents,
+                        row.CeoId,
+                        row.CreatedAt,
+                        row.CreatorId,
+                        row.DetailsJson,
+                        row.MemberLimit,
+                        row.Name,
+                        row.StationId,
+                        row.SystemId,
+                        row.Ticker
+                    ),
+                state => new Eden.Data.World.Corporations.SavedCorporation
+                {
+                    Id = state.Id,
+                    BalanceCents = state.BalanceCents,
+                    CeoId = state.CeoId,
+                    CreatedAt = state.CreatedAt,
+                    CreatorId = state.CreatorId,
+                    DetailsJson = state.DetailsJson,
+                    MemberLimit = state.MemberLimit,
+                    Name = state.Name,
+                    StationId = state.StationId,
+                    SystemId = state.SystemId,
+                    Ticker = state.Ticker,
+                },
+                ProjectSavedCorporation,
+                "Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker",
+                reader =>
+                    new(
+                        reader.GetInt32(1),
+                        reader.GetInt64(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetString(6),
+                        reader.GetInt32(7),
+                        reader.GetString(8),
+                        reader.GetInt32(9),
+                        reader.GetInt32(10),
+                        reader.GetString(11)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("CeoId", row => row.CeoId),
+                    new("CreatorId", row => row.CreatorId),
+                    new("StationId", row => row.StationId),
+                    new("SystemId", row => row.SystemId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Corporations.SavedCorporationMemberAccess, EconomySavedCorporationMemberAccess>(
+                "WorldCorporationMemberAccess",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.CorporationId, row.DataJson),
+                state => new Eden.Data.World.Corporations.SavedCorporationMemberAccess
+                {
+                    PilotId = state.PilotId,
+                    CorporationId = state.CorporationId,
+                    DataJson = state.DataJson,
+                },
+                ProjectSavedCorporationMemberAccess,
+                "PilotId,CorporationId,DataJson",
+                reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.GetString(3)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId), new("CorporationId", row => row.CorporationId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Corporations.SavedCorporationTitle, EconomySavedCorporationTitle>(
+                "WorldCorporationTitle",
+                row => new(row.CorporationId, row.TitleId),
+                row => new(row.CorporationId, row.TitleId, row.DataJson),
+                state => new Eden.Data.World.Corporations.SavedCorporationTitle
+                {
+                    CorporationId = state.CorporationId,
+                    TitleId = state.TitleId,
+                    DataJson = state.DataJson,
+                },
+                ProjectSavedCorporationTitle,
+                "CorporationId,TitleId,DataJson",
+                reader => new(reader.GetInt32(1), reader.GetInt64(2), reader.GetString(3)),
+                state => new(state.CorporationId, state.TitleId),
+                indexes: [new("CorporationId", row => row.CorporationId), new("TitleId", row => row.TitleId)],
+                primaryColumn: null
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Corporations.SavedCorporationWalletSelection, EconomySavedCorporationWalletSelection>(
+                "WorldCorporationWalletSelection",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.CorporationId, row.Key),
+                state => new Eden.Data.World.Corporations.SavedCorporationWalletSelection
+                {
+                    PilotId = state.PilotId,
+                    CorporationId = state.CorporationId,
+                    Key = state.Key,
+                },
+                ProjectSavedCorporationWalletSelection,
+                "PilotId,CorporationId,Key",
+                reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.GetInt32(3)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId), new("CorporationId", row => row.CorporationId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Economy.SavedBeltRenewal, EconomySavedBeltRenewal>(
+                "WorldBeltRenewal",
+                row => new(row.BeltId),
+                row => new(row.BeltId, row.NextRenewal, row.SystemId),
+                state => new Eden.Data.World.Economy.SavedBeltRenewal
+                {
+                    BeltId = state.BeltId,
+                    NextRenewal = state.NextRenewal,
+                    SystemId = state.SystemId,
+                },
+                ProjectSavedBeltRenewal,
+                "BeltId,NextRenewal,SystemId",
+                reader => new(reader.GetInt32(1), reader.GetInt64(2), reader.GetInt32(3)),
+                state => new(state.BeltId),
+                indexes: [new("BeltId", row => row.BeltId), new("SystemId", row => row.SystemId)],
+                primaryColumn: "BeltId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Economy.SavedEconomicPolicy, EconomySavedEconomicPolicy>(
+                "WorldEconomicPolicy",
+                row => new(row.Id),
+                row => new(row.Id, row.ChargeServiceCosts, row.DefaultManufacturingIndex, row.RenewBelts, row.RenewalHourUtc),
+                state => new Eden.Data.World.Economy.SavedEconomicPolicy
+                {
+                    Id = state.Id,
+                    ChargeServiceCosts = state.ChargeServiceCosts,
+                    DefaultManufacturingIndex = state.DefaultManufacturingIndex,
+                    RenewBelts = state.RenewBelts,
+                    RenewalHourUtc = state.RenewalHourUtc,
+                },
+                ProjectSavedEconomicPolicy,
+                "Id,ChargeServiceCosts,DefaultManufacturingIndex,RenewBelts,RenewalHourUtc",
+                reader => new(reader.GetInt32(1), reader.GetBoolean(2), reader.GetInt32(3), reader.GetBoolean(4), reader.GetInt32(5)),
+                state => new(state.Id),
+                indexes: [new("Id", row => row.Id)],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Fittings.ActiveFittedModule, EconomyActiveFittedModule>(
+                "WorldActiveModule",
+                row => new(row.ModuleId),
+                row => new(row.ModuleId, row.ExpiresAt, row.ShipId),
+                state => new Eden.Data.World.Fittings.ActiveFittedModule
+                {
+                    ModuleId = state.ModuleId,
+                    ExpiresAt = state.ExpiresAt,
+                    ShipId = state.ShipId,
+                },
+                ProjectActiveFittedModule,
+                "ModuleId,ExpiresAt,ShipId",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3)),
+                state => new(state.ModuleId),
+                indexes: [new("ModuleId", row => row.ModuleId), new("ShipId", row => row.ShipId)],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Fittings.ShipEnergy, EconomyShipEnergy>(
+                "WorldShipEnergy",
+                row => new(row.ShipId),
+                row => new(row.ShipId, row.Charge, row.UpdatedAt),
+                state => new Eden.Data.World.Fittings.ShipEnergy
+                {
+                    ShipId = state.ShipId,
+                    Charge = state.Charge,
+                    UpdatedAt = state.UpdatedAt,
+                },
+                ProjectShipEnergy,
+                "ShipId,Charge,UpdatedAt",
+                reader => new(reader.GetInt64(1), reader.GetDouble(2), reader.GetInt64(3)),
+                state => new(state.ShipId),
+                indexes: [new("ShipId", row => row.ShipId)],
+                primaryColumn: "ShipId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Loot.WorldWreck, EconomyWorldWreck>(
+                "WorldWreck",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.CorporationId,
+                        row.CreatedAt,
+                        row.ExpiresAt,
+                        row.Name,
+                        row.NpcId,
+                        row.OwnerId,
+                        row.SalvageJson,
+                        row.SalvagedAt,
+                        row.ShipId,
+                        row.SystemId,
+                        row.TypeId,
+                        row.X,
+                        row.Y,
+                        row.Z
+                    ),
+                state => new Eden.Data.World.Loot.WorldWreck
+                {
+                    Id = state.Id,
+                    CorporationId = state.CorporationId,
+                    CreatedAt = state.CreatedAt,
+                    ExpiresAt = state.ExpiresAt,
+                    Name = state.Name,
+                    NpcId = state.NpcId,
+                    OwnerId = state.OwnerId,
+                    SalvageJson = state.SalvageJson,
+                    SalvagedAt = state.SalvagedAt,
+                    ShipId = state.ShipId,
+                    SystemId = state.SystemId,
+                    TypeId = state.TypeId,
+                    X = state.X,
+                    Y = state.Y,
+                    Z = state.Z,
+                },
+                ProjectWorldWreck,
+                "Id,CorporationId,CreatedAt,ExpiresAt,Name,NpcId,OwnerId,SalvageJson,SalvagedAt,ShipId,SystemId," + "TypeId,X,Y,Z",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt32(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetString(5),
+                        reader.IsDBNull(6) ? null : reader.GetInt64(6),
+                        reader.GetInt64(7),
+                        reader.IsDBNull(8) ? null : reader.GetString(8),
+                        reader.IsDBNull(9) ? null : reader.GetInt64(9),
+                        reader.IsDBNull(10) ? null : reader.GetInt64(10),
+                        reader.GetInt32(11),
+                        reader.GetInt32(12),
+                        reader.GetDouble(13),
+                        reader.GetDouble(14),
+                        reader.GetDouble(15)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("CorporationId", row => row.CorporationId),
+                    new("NpcId", row => row.NpcId),
+                    new("OwnerId", row => row.OwnerId),
+                    new("ShipId", row => row.ShipId),
+                    new("SystemId", row => row.SystemId),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Mining.SavedMiningDeposit, EconomySavedMiningDeposit>(
+                "WorldMiningDeposit",
+                row => new(row.Id),
+                row => new(row.Id, row.SiteId),
+                state => new Eden.Data.World.Mining.SavedMiningDeposit { Id = state.Id, SiteId = state.SiteId },
+                ProjectSavedMiningDeposit,
+                "Id,SiteId",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2)),
+                state => new(state.Id),
+                indexes: [new("Id", row => row.Id), new("SiteId", row => row.SiteId)],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Mining.SavedMiningSite, EconomySavedMiningSite>(
+                "WorldMiningSite",
+                row => new(row.Id),
+                row => new(row.Id, row.DungeonId, row.ExpiresAt, row.Family, row.ReplaceAt, row.SystemId, row.X, row.Y, row.Z),
+                state => new Eden.Data.World.Mining.SavedMiningSite
+                {
+                    Id = state.Id,
+                    DungeonId = state.DungeonId,
+                    ExpiresAt = state.ExpiresAt,
+                    Family = state.Family,
+                    ReplaceAt = state.ReplaceAt,
+                    SystemId = state.SystemId,
+                    X = state.X,
+                    Y = state.Y,
+                    Z = state.Z,
+                },
+                ProjectSavedMiningSite,
+                "Id,DungeonId,ExpiresAt,Family,ReplaceAt,SystemId,X,Y,Z",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt32(2),
+                        reader.GetInt64(3),
+                        (Eden.Gameplay.Mining.MiningFamily)reader.GetInt32(4),
+                        reader.IsDBNull(5) ? null : reader.GetInt64(5),
+                        reader.GetInt32(6),
+                        reader.GetDouble(7),
+                        reader.GetDouble(8),
+                        reader.GetDouble(9)
+                    ),
+                state => new(state.Id),
+                indexes: [new("Id", row => row.Id), new("DungeonId", row => row.DungeonId), new("SystemId", row => row.SystemId)],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Mining.SavedPersonalMiningLog, EconomySavedPersonalMiningLog>(
+                "WorldPersonalMiningLog",
+                row => new(row.Id),
+                row =>
+                    new(row.Id, row.CorporationId, row.Critical, row.Day, row.PilotId, row.Quantity, row.SystemId, row.TypeId, row.Wasted),
+                state => new Eden.Data.World.Mining.SavedPersonalMiningLog
+                {
+                    Id = state.Id,
+                    CorporationId = state.CorporationId,
+                    Critical = state.Critical,
+                    Day = state.Day,
+                    PilotId = state.PilotId,
+                    Quantity = state.Quantity,
+                    SystemId = state.SystemId,
+                    TypeId = state.TypeId,
+                    Wasted = state.Wasted,
+                },
+                ProjectSavedPersonalMiningLog,
+                "Id,CorporationId,Critical,Day,PilotId,Quantity,SystemId,TypeId,Wasted",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt32(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetInt64(6),
+                        reader.GetInt32(7),
+                        reader.GetInt32(8),
+                        reader.GetInt64(9)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("CorporationId", row => row.CorporationId),
+                    new("Day", row => row.Day),
+                    new("PilotId", row => row.PilotId),
+                    new("SystemId", row => row.SystemId),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Mining.WorldAsteroid, EconomyWorldAsteroid>(
+                "WorldAsteroid",
+                row => new(row.Id),
+                row => new(row.Id, row.BeltId, row.Quantity, row.Radius, row.SystemId, row.TypeId, row.X, row.Y, row.Z),
+                state => new Eden.Data.World.Mining.WorldAsteroid
+                {
+                    Id = state.Id,
+                    BeltId = state.BeltId,
+                    Quantity = state.Quantity,
+                    Radius = state.Radius,
+                    SystemId = state.SystemId,
+                    TypeId = state.TypeId,
+                    X = state.X,
+                    Y = state.Y,
+                    Z = state.Z,
+                },
+                ProjectWorldAsteroid,
+                "Id,BeltId,Quantity,Radius,SystemId,TypeId,X,Y,Z",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt32(2),
+                        reader.GetInt64(3),
+                        reader.GetFloat(4),
+                        reader.GetInt32(5),
+                        reader.GetInt32(6),
+                        reader.GetDouble(7),
+                        reader.GetDouble(8),
+                        reader.GetDouble(9)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("BeltId", row => row.BeltId),
+                    new("SystemId", row => row.SystemId),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Propulsion.WorldTackle, EconomyWorldTackle>(
+                "WorldTackle",
+                row => new(row.ModuleId),
+                row =>
+                    new(
+                        row.ModuleId,
+                        row.CapacitorNeed,
+                        row.DurationMilliseconds,
+                        row.Effect,
+                        row.ExpiresAt,
+                        row.MwdBlock,
+                        row.PilotId,
+                        row.Range,
+                        row.SourceShipId,
+                        row.StartedAt,
+                        row.Strength,
+                        row.SystemId,
+                        row.TargetId,
+                        row.TargetKind,
+                        row.TypeId,
+                        row.WebPercent
+                    ),
+                state => new Eden.Data.World.Propulsion.WorldTackle
+                {
+                    ModuleId = state.ModuleId,
+                    CapacitorNeed = state.CapacitorNeed,
+                    DurationMilliseconds = state.DurationMilliseconds,
+                    Effect = state.Effect,
+                    ExpiresAt = state.ExpiresAt,
+                    MwdBlock = state.MwdBlock,
+                    PilotId = state.PilotId,
+                    Range = state.Range,
+                    SourceShipId = state.SourceShipId,
+                    StartedAt = state.StartedAt,
+                    Strength = state.Strength,
+                    SystemId = state.SystemId,
+                    TargetId = state.TargetId,
+                    TargetKind = state.TargetKind,
+                    TypeId = state.TypeId,
+                    WebPercent = state.WebPercent,
+                },
+                ProjectWorldTackle,
+                "ModuleId,CapacitorNeed,DurationMilliseconds,Effect,ExpiresAt,MwdBlock,PilotId,Range,SourceShipId,"
+                    + "StartedAt,Strength,SystemId,TargetId,TargetKind,TypeId,WebPercent",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetDouble(2),
+                        reader.GetDouble(3),
+                        (Eden.Gameplay.Inventory.DogmaEffect)reader.GetInt32(4),
+                        reader.GetInt64(5),
+                        reader.GetDouble(6),
+                        reader.GetInt64(7),
+                        reader.GetDouble(8),
+                        reader.GetInt64(9),
+                        reader.GetInt64(10),
+                        reader.GetDouble(11),
+                        reader.GetInt32(12),
+                        reader.GetInt64(13),
+                        (Eden.Gameplay.Propulsion.TackleTargetKind)reader.GetInt32(14),
+                        reader.GetInt32(15),
+                        reader.GetDouble(16)
+                    ),
+                state => new(state.ModuleId),
+                indexes:
+                [
+                    new("ModuleId", row => row.ModuleId),
+                    new("PilotId", row => row.PilotId),
+                    new("SourceShipId", row => row.SourceShipId),
+                    new("SystemId", row => row.SystemId),
+                    new("TargetId", row => row.TargetId),
+                    new("TargetKind", row => row.TargetKind),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Repair.PendingLocalRepair, EconomyPendingLocalRepair>(
+                "WorldArmorRepair",
+                row => new(row.ModuleId),
+                row => new(row.ModuleId, row.Amount, row.CompletesAt, row.Layer, row.ShipId, row.StartedAt),
+                state => new Eden.Data.World.Repair.PendingLocalRepair
+                {
+                    ModuleId = state.ModuleId,
+                    Amount = state.Amount,
+                    CompletesAt = state.CompletesAt,
+                    Layer = state.Layer,
+                    ShipId = state.ShipId,
+                    StartedAt = state.StartedAt,
+                },
+                ProjectPendingLocalRepair,
+                "ModuleId,Amount,CompletesAt,Layer,ShipId,StartedAt",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetDouble(2),
+                        reader.GetInt64(3),
+                        (Eden.Gameplay.Repair.RepairLayer)reader.GetInt32(4),
+                        reader.GetInt64(5),
+                        reader.GetInt64(6)
+                    ),
+                state => new(state.ModuleId),
+                indexes: [new("ModuleId", row => row.ModuleId), new("ShipId", row => row.ShipId)],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Repair.WorldRemoteAssistance, EconomyWorldRemoteAssistance>(
+                "WorldRemoteAssistance",
+                row => new(row.ModuleId),
+                row => new(row.ModuleId, row.ContactJson, row.PilotId, row.SourceShipId, row.SystemId, row.TargetId),
+                state => new Eden.Data.World.Repair.WorldRemoteAssistance
+                {
+                    ModuleId = state.ModuleId,
+                    ContactJson = state.ContactJson,
+                    PilotId = state.PilotId,
+                    SourceShipId = state.SourceShipId,
+                    SystemId = state.SystemId,
+                    TargetId = state.TargetId,
+                },
+                ProjectWorldRemoteAssistance,
+                "ModuleId,ContactJson,PilotId,SourceShipId,SystemId,TargetId",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetString(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt32(5),
+                        reader.GetInt64(6)
+                    ),
+                state => new(state.ModuleId),
+                indexes:
+                [
+                    new("ModuleId", row => row.ModuleId),
+                    new("PilotId", row => row.PilotId),
+                    new("SourceShipId", row => row.SourceShipId),
+                    new("SystemId", row => row.SystemId),
+                    new("TargetId", row => row.TargetId),
+                ],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Skills.SavedFreeSkillPoints, EconomySavedFreeSkillPoints>(
+                "WorldFreeSkillPoints",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.Points, row.Revision),
+                state => new Eden.Data.World.Skills.SavedFreeSkillPoints
+                {
+                    PilotId = state.PilotId,
+                    Points = state.Points,
+                    Revision = state.Revision,
+                },
+                ProjectSavedFreeSkillPoints,
+                "PilotId,Points,Revision",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Structures.SavedStructure, EconomySavedStructure>(
+                "WorldStructure",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.CorporationId,
+                        row.DeployedAt,
+                        row.Description,
+                        row.HasCore,
+                        row.LowPowerAt,
+                        row.MoonId,
+                        row.Name,
+                        row.PublicAccess,
+                        row.ReinforceHour,
+                        row.ReinforceWeekday,
+                        row.State,
+                        row.StateEndsAt,
+                        row.StateStartedAt,
+                        row.SystemId,
+                        row.TypeId,
+                        row.UnanchorAt,
+                        row.X,
+                        row.Y,
+                        row.Yaw,
+                        row.Z
+                    ),
+                state => new Eden.Data.World.Structures.SavedStructure
+                {
+                    Id = state.Id,
+                    CorporationId = state.CorporationId,
+                    DeployedAt = state.DeployedAt,
+                    Description = state.Description,
+                    HasCore = state.HasCore,
+                    LowPowerAt = state.LowPowerAt,
+                    MoonId = state.MoonId,
+                    Name = state.Name,
+                    PublicAccess = state.PublicAccess,
+                    ReinforceHour = state.ReinforceHour,
+                    ReinforceWeekday = state.ReinforceWeekday,
+                    State = state.State,
+                    StateEndsAt = state.StateEndsAt,
+                    StateStartedAt = state.StateStartedAt,
+                    SystemId = state.SystemId,
+                    TypeId = state.TypeId,
+                    UnanchorAt = state.UnanchorAt,
+                    X = state.X,
+                    Y = state.Y,
+                    Yaw = state.Yaw,
+                    Z = state.Z,
+                },
+                ProjectSavedStructure,
+                "Id,CorporationId,DeployedAt,Description,HasCore,LowPowerAt,MoonId,Name,PublicAccess,ReinforceHour,"
+                    + "ReinforceWeekday,State,StateEndsAt,StateStartedAt,SystemId,TypeId,UnanchorAt,X,Y,Yaw,Z",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt32(2),
+                        reader.GetInt64(3),
+                        reader.GetString(4),
+                        reader.GetBoolean(5),
+                        reader.IsDBNull(6) ? null : reader.GetInt64(6),
+                        reader.IsDBNull(7) ? null : reader.GetInt32(7),
+                        reader.GetString(8),
+                        reader.GetBoolean(9),
+                        reader.GetInt32(10),
+                        reader.GetInt32(11),
+                        (Eden.Gameplay.Structures.StructureState)reader.GetInt32(12),
+                        reader.IsDBNull(13) ? null : reader.GetInt64(13),
+                        reader.GetInt64(14),
+                        reader.GetInt32(15),
+                        reader.GetInt32(16),
+                        reader.IsDBNull(17) ? null : reader.GetInt64(17),
+                        reader.GetDouble(18),
+                        reader.GetDouble(19),
+                        reader.GetDouble(20),
+                        reader.GetDouble(21)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("CorporationId", row => row.CorporationId),
+                    new("MoonId", row => row.MoonId),
+                    new("SystemId", row => row.SystemId),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Structures.SavedStructureAccess, EconomySavedStructureAccess>(
+                "WorldStructureAccess",
+                row => new(row.StructureId, row.MemberId),
+                row => new(row.StructureId, row.MemberId, row.Allowed),
+                state => new Eden.Data.World.Structures.SavedStructureAccess
+                {
+                    StructureId = state.StructureId,
+                    MemberId = state.MemberId,
+                    Allowed = state.Allowed,
+                },
+                ProjectSavedStructureAccess,
+                "StructureId,MemberId,Allowed",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetBoolean(3)),
+                state => new(state.StructureId, state.MemberId),
+                indexes: [new("StructureId", row => row.StructureId), new("MemberId", row => row.MemberId)],
+                primaryColumn: null
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Thermal.SavedModuleCondition, EconomySavedModuleCondition>(
+                "WorldModuleCondition",
+                row => new(row.ModuleId),
+                row => new(row.ModuleId, row.Damage),
+                state => new Eden.Data.World.Thermal.SavedModuleCondition { ModuleId = state.ModuleId, Damage = state.Damage },
+                ProjectSavedModuleCondition,
+                "ModuleId,Damage",
+                reader => new(reader.GetInt64(1), reader.GetDouble(2)),
+                state => new(state.ModuleId),
+                indexes: [new("ModuleId", row => row.ModuleId)],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Thermal.SavedNaniteRepair, EconomySavedNaniteRepair>(
+                "WorldNaniteRepair",
+                row => new(row.ModuleId),
+                row =>
+                    new(
+                        row.ModuleId,
+                        row.CompletesAt,
+                        row.Generation,
+                        row.InitialDamage,
+                        row.InitialHitPoints,
+                        row.PasteUnits,
+                        row.PasteUnitsPerDamage,
+                        row.PilotId,
+                        row.ShipId,
+                        row.StartedAt
+                    ),
+                state => new Eden.Data.World.Thermal.SavedNaniteRepair
+                {
+                    ModuleId = state.ModuleId,
+                    CompletesAt = state.CompletesAt,
+                    Generation = state.Generation,
+                    InitialDamage = state.InitialDamage,
+                    InitialHitPoints = state.InitialHitPoints,
+                    PasteUnits = state.PasteUnits,
+                    PasteUnitsPerDamage = state.PasteUnitsPerDamage,
+                    PilotId = state.PilotId,
+                    ShipId = state.ShipId,
+                    StartedAt = state.StartedAt,
+                },
+                ProjectSavedNaniteRepair,
+                "ModuleId,CompletesAt,Generation,InitialDamage,InitialHitPoints,PasteUnits,PasteUnitsPerDamage,"
+                    + "PilotId,ShipId,StartedAt",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        reader.GetGuid(3),
+                        reader.GetDouble(4),
+                        reader.GetDouble(5),
+                        reader.GetInt64(6),
+                        reader.GetDouble(7),
+                        reader.GetInt64(8),
+                        reader.GetInt64(9),
+                        reader.GetInt64(10)
+                    ),
+                state => new(state.ModuleId),
+                indexes: [new("ModuleId", row => row.ModuleId), new("PilotId", row => row.PilotId), new("ShipId", row => row.ShipId)],
+                primaryColumn: "ModuleId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Thermal.SavedShipHeat, EconomySavedShipHeat>(
+                "WorldShipHeat",
+                row => new(row.ShipId),
+                row => new(row.ShipId, row.StateJson),
+                state => new Eden.Data.World.Thermal.SavedShipHeat { ShipId = state.ShipId, StateJson = state.StateJson },
+                ProjectSavedShipHeat,
+                "ShipId,StateJson",
+                reader => new(reader.GetInt64(1), reader.GetString(2)),
+                state => new(state.ShipId),
+                indexes: [new("ShipId", row => row.ShipId)],
+                primaryColumn: "ShipId"
+            )
+        );
+    }
+}
+
+internal sealed partial class EconomyTransaction
+{
+    private void AssignBotIdentity<TRow>(TRow row)
+        where TRow : class
+    {
+        switch (row)
+        {
+            case Eden.Data.World.Capsuleers.SavedCapsuleerCommunity value:
+                value.Id = value.Id == 0 ? checked((int)Next("WorldCapsuleerCommunity")) : value.Id;
+                Reserve("WorldCapsuleerCommunity", value.Id);
+                break;
+            case Eden.Data.World.Capsuleers.SavedCapsuleerHauler value:
+                value.Id = value.Id == 0 ? checked((int)Next("WorldCapsuleerHauler")) : value.Id;
+                Reserve("WorldCapsuleerHauler", value.Id);
+                break;
+            case Eden.Data.World.Capsuleers.SavedCapsuleerProvisioning value:
+                value.Id = value.Id == 0 ? checked((int)Next("WorldCapsuleerProvisioning")) : value.Id;
+                Reserve("WorldCapsuleerProvisioning", value.Id);
+                break;
+            case Eden.Data.World.Combat.Npcs.WorldNpc value:
+                value.Id = value.Id == 0 ? Next("WorldNpc") : value.Id;
+                Reserve("WorldNpc", value.Id);
+                break;
+            case Eden.Data.World.Combat.WorldMissile value:
+                value.Id = value.Id == 0 ? Next("WorldMissile") : value.Id;
+                Reserve("WorldMissile", value.Id);
+                break;
+            case Eden.Data.World.Economy.SavedEconomicPolicy value:
+                value.Id = value.Id == 0 ? checked((int)Next("WorldEconomicPolicy")) : value.Id;
+                Reserve("WorldEconomicPolicy", value.Id);
+                break;
+            case Eden.Data.World.Mining.SavedMiningSite value:
+                value.Id = value.Id == 0 ? Next("WorldMiningSite") : value.Id;
+                Reserve("WorldMiningSite", value.Id);
+                break;
+            case Eden.Data.World.Mining.SavedPersonalMiningLog value:
+                value.Id = value.Id == 0 ? Next("WorldPersonalMiningLog") : value.Id;
+                Reserve("WorldPersonalMiningLog", value.Id);
+                break;
+            case Eden.Data.World.Structures.SavedStructure value:
+                value.Id = value.Id == 0 ? Next("WorldStructure") : value.Id;
+                Reserve("WorldStructure", value.Id);
+                break;
+        }
+    }
+
+    private void ValidateBotRows()
+    {
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>())
+        {
+            if (Set<Eden.Data.World.Capsuleers.SavedCapsuleerPopulation>().Find(row.CommunitySystemId) is null)
+            {
+                throw new InvalidDataException("Missing resident SavedCapsuleerPopulation reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerCommunity>())
+        {
+            if (row.PilotId is not null && Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId.Value) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerHauler>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerJob>())
+        {
+            if (Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident SavedCapsuleerAgent reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerPopulation>()) { }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerProvisioning>()) { }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerSupplies>()) { }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedTrafficCorrection>()) { }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedTrafficIdentity>()) { }
+        foreach (var row in Retained<Eden.Data.World.Characters.SavedCharacterDeletion>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Characters.SavedCombatDamage>())
+        {
+            if (!double.IsFinite(row.Damage))
+            {
+                throw new InvalidDataException("Invalid resident SavedCombatDamage values.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.ModuleCooldown>())
+        {
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.NpcAggression>())
+        {
+            if (Set<Eden.Data.World.Combat.Npcs.WorldNpc>().Find(row.NpcId) is null)
+            {
+                throw new InvalidDataException("Missing resident WorldNpc reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.TargetShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.Npcs.WorldNpc>())
+        {
+            if (
+                row.AcquisitionRange is double finiteAcquisitionRange && !double.IsFinite(finiteAcquisitionRange)
+                || !double.IsFinite(row.ArmorDamage)
+                || row.HomeX is double finiteHomeX && !double.IsFinite(finiteHomeX)
+                || row.HomeY is double finiteHomeY && !double.IsFinite(finiteHomeY)
+                || row.HomeZ is double finiteHomeZ && !double.IsFinite(finiteHomeZ)
+                || !double.IsFinite(row.ShieldCharge)
+                || !double.IsFinite(row.StructureDamage)
+                || !double.IsFinite(row.VelocityX)
+                || !double.IsFinite(row.VelocityY)
+                || !double.IsFinite(row.VelocityZ)
+                || !double.IsFinite(row.X)
+                || !double.IsFinite(row.Y)
+                || !double.IsFinite(row.Z)
+                || !(row.ShieldCharge >= 0 && row.ArmorDamage >= 0 && row.StructureDamage >= 0)
+            )
+            {
+                throw new InvalidDataException("Invalid resident WorldNpc values.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.Npcs.WorldNpcEwar>())
+        {
+            if (Set<Eden.Data.World.Combat.NpcAggression>().Find(row.NpcId) is null)
+            {
+                throw new InvalidDataException("Missing resident NpcAggression reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.TargetShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.SavedConcordResponse>()) { }
+        foreach (var row in Retained<Eden.Data.World.Combat.SavedCrimewatch>()) { }
+        foreach (var row in Retained<Eden.Data.World.Combat.SavedEngagement>()) { }
+        foreach (var row in Retained<Eden.Data.World.Combat.SavedLogoff>()) { }
+        foreach (var row in Retained<Eden.Data.World.Combat.SavedPilotHostility>()) { }
+        foreach (var row in Retained<Eden.Data.World.Combat.SavedSecurityStatus>())
+        {
+            if (!double.IsFinite(row.Value))
+            {
+                throw new InvalidDataException("Invalid resident SavedSecurityStatus values.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.SavedWeaponLink>())
+        {
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.MasterId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.SlaveId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.ShipHealthState>())
+        {
+            if (
+                !double.IsFinite(row.ArmorDamage)
+                || !double.IsFinite(row.ShieldCharge)
+                || !double.IsFinite(row.StructureDamage)
+                || !(row.ShieldCharge >= 0 && row.ArmorDamage >= 0 && row.StructureDamage >= 0)
+            )
+            {
+                throw new InvalidDataException("Invalid resident ShipHealthState values.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.ShipLoss>())
+        {
+            if (!double.IsFinite(row.X) || !double.IsFinite(row.Y) || !double.IsFinite(row.Z))
+            {
+                throw new InvalidDataException("Invalid resident ShipLoss values.");
+            }
+            if (row.NpcId is not null && Set<Eden.Data.World.Combat.Npcs.WorldNpc>().Find(row.NpcId.Value) is null)
+            {
+                throw new InvalidDataException("Missing resident WorldNpc reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.WorldMissile>())
+        {
+            if (!float.IsFinite(row.TargetRadius))
+            {
+                throw new InvalidDataException("Invalid resident WorldMissile values.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.WorldPlayerEwar>())
+        {
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.SourceShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Corporations.SavedCorporation>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.CeoId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.CreatorId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Corporations.SavedCorporationMemberAccess>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Corporations.SavedCorporationTitle>())
+        {
+            if (Set<Eden.Data.World.Corporations.SavedCorporation>().Find(row.CorporationId) is null)
+            {
+                throw new InvalidDataException("Missing resident SavedCorporation reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Corporations.SavedCorporationWalletSelection>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Economy.SavedBeltRenewal>()) { }
+        foreach (var row in Retained<Eden.Data.World.Economy.SavedEconomicPolicy>()) { }
+        foreach (var row in Retained<Eden.Data.World.Fittings.ActiveFittedModule>())
+        {
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Fittings.ShipEnergy>())
+        {
+            if (!double.IsFinite(row.Charge) || !(row.Charge >= 0))
+            {
+                throw new InvalidDataException("Invalid resident ShipEnergy values.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Loot.WorldWreck>())
+        {
+            if (
+                !double.IsFinite(row.X)
+                || !double.IsFinite(row.Y)
+                || !double.IsFinite(row.Z)
+                || !((row.NpcId is not null && row.ShipId is null) || (row.NpcId is null && row.ShipId is not null))
+            )
+            {
+                throw new InvalidDataException("Invalid resident WorldWreck values.");
+            }
+            if (row.NpcId is not null && Set<Eden.Data.World.Combat.Npcs.WorldNpc>().Find(row.NpcId.Value) is null)
+            {
+                throw new InvalidDataException("Missing resident WorldNpc reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.OwnerId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (row.ShipId is not null && Set<Eden.Data.World.Combat.ShipLoss>().Find(row.ShipId.Value) is null)
+            {
+                throw new InvalidDataException("Missing resident ShipLoss reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Mining.SavedMiningDeposit>())
+        {
+            if (Set<Eden.Data.World.Mining.WorldAsteroid>().Find(row.Id) is null)
+            {
+                throw new InvalidDataException("Missing resident WorldAsteroid reference.");
+            }
+            if (Set<Eden.Data.World.Mining.SavedMiningSite>().Find(row.SiteId) is null)
+            {
+                throw new InvalidDataException("Missing resident SavedMiningSite reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Mining.SavedMiningSite>())
+        {
+            if (!double.IsFinite(row.X) || !double.IsFinite(row.Y) || !double.IsFinite(row.Z))
+            {
+                throw new InvalidDataException("Invalid resident SavedMiningSite values.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Mining.SavedPersonalMiningLog>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Mining.WorldAsteroid>())
+        {
+            if (
+                !float.IsFinite(row.Radius)
+                || !double.IsFinite(row.X)
+                || !double.IsFinite(row.Y)
+                || !double.IsFinite(row.Z)
+                || !(row.Quantity >= 0)
+            )
+            {
+                throw new InvalidDataException("Invalid resident WorldAsteroid values.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Propulsion.WorldTackle>())
+        {
+            if (
+                !double.IsFinite(row.CapacitorNeed)
+                || !double.IsFinite(row.DurationMilliseconds)
+                || !double.IsFinite(row.MwdBlock)
+                || !double.IsFinite(row.Range)
+                || !double.IsFinite(row.Strength)
+                || !double.IsFinite(row.WebPercent)
+            )
+            {
+                throw new InvalidDataException("Invalid resident WorldTackle values.");
+            }
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.SourceShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Repair.PendingLocalRepair>())
+        {
+            if (!double.IsFinite(row.Amount) || !(row.Amount > 0))
+            {
+                throw new InvalidDataException("Invalid resident PendingLocalRepair values.");
+            }
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Repair.WorldRemoteAssistance>())
+        {
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.SourceShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.TargetId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Skills.SavedFreeSkillPoints>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Structures.SavedStructure>())
+        {
+            if (!double.IsFinite(row.X) || !double.IsFinite(row.Y) || !double.IsFinite(row.Yaw) || !double.IsFinite(row.Z))
+            {
+                throw new InvalidDataException("Invalid resident SavedStructure values.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Structures.SavedStructureAccess>())
+        {
+            if (Set<Eden.Data.World.Structures.SavedStructure>().Find(row.StructureId) is null)
+            {
+                throw new InvalidDataException("Missing resident SavedStructure reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Thermal.SavedModuleCondition>())
+        {
+            if (!double.IsFinite(row.Damage) || !(row.Damage >= 0 && row.Damage <= 1.7976931348623157e308))
+            {
+                throw new InvalidDataException("Invalid resident SavedModuleCondition values.");
+            }
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Thermal.SavedNaniteRepair>())
+        {
+            if (
+                !double.IsFinite(row.InitialDamage)
+                || !double.IsFinite(row.InitialHitPoints)
+                || !double.IsFinite(row.PasteUnitsPerDamage)
+                || !(row.StartedAt >= 0 && row.CompletesAt > row.StartedAt)
+                || !(row.InitialDamage > 0 && row.InitialDamage < row.InitialHitPoints)
+                || !(row.InitialHitPoints <= 1.7976931348623157e308)
+                || !(row.PasteUnits >= 0)
+                || !(row.PasteUnitsPerDamage >= 0 && row.PasteUnitsPerDamage <= 1.7976931348623157e308)
+            )
+            {
+                throw new InvalidDataException("Invalid resident SavedNaniteRepair values.");
+            }
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Thermal.SavedShipHeat>())
+        {
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+    }
+}

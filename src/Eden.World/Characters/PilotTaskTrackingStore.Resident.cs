@@ -11,7 +11,7 @@ namespace Eden.World.Characters;
 
 internal sealed partial class PilotTaskTrackingStore
 {
-    private static void CheckPilot(EconomyTransaction world, long pilotId)
+    private static void CheckPilot(WorldAction world, long pilotId)
     {
         if (!world.Pilots.Any(pilot => pilot.Id == pilotId))
         {
@@ -19,7 +19,7 @@ internal sealed partial class PilotTaskTrackingStore
         }
     }
 
-    private static IReadOnlyList<TaskCounter> Counters(EconomyTransaction world, long pilotId)
+    private static IReadOnlyList<TaskCounter> Counters(WorldAction world, long pilotId)
     {
         // Query tracked rows as well as additions so one operation can record
         // multiple activities before its owning transaction saves anything.
@@ -33,7 +33,7 @@ internal sealed partial class PilotTaskTrackingStore
     }
 
     private static void Complete(
-        EconomyTransaction world,
+        WorldAction world,
         long pilotId,
         long now,
         IReadOnlyList<TaskDefinition> definitions,
@@ -58,7 +58,7 @@ internal sealed partial class PilotTaskTrackingStore
 
     // Called inside the transaction that owns a successful gameplay event.
 
-    internal static void Record(EconomyTransaction world, CatalogDbContext catalog, long pilotId, long now, string name, long count = 1)
+    internal static void Record(WorldAction world, CatalogDbContext catalog, long pilotId, long now, string name, long count = 1)
     {
         var saved =
             world.Set<SavedTaskCounter>().Find(pilotId, name) ?? world.Add(new SavedTaskCounter { PilotId = pilotId, Name = name }).Entity;

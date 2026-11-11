@@ -12,10 +12,10 @@ namespace Eden.World.Inventory;
 
 internal static partial class InventoryPersistence
 {
-    internal static OwnedItem? OwnedStack(EconomyTransaction world, long pilotId, long id) =>
+    internal static OwnedItem? OwnedStack(WorldAction world, long pilotId, long id) =>
         world.Set<OwnedItem>().Find(id) is { } item && item.OwnerId == pilotId ? item : null;
 
-    internal static double UsedVolume(EconomyTransaction world, CatalogDbContext catalog, long pilotId, long location, int flag)
+    internal static double UsedVolume(WorldAction world, CatalogDbContext catalog, long pilotId, long location, int flag)
     {
         var hold = ShipHoldRules.Definition(flag) ?? throw new InvalidDataException("Unknown inventory hold.");
         double items = world
@@ -39,7 +39,7 @@ internal static partial class InventoryPersistence
     }
 
     internal static InventoryChange MergeOutput(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long location,
@@ -85,5 +85,5 @@ internal static partial class InventoryPersistence
         return new(PilotInventoryStore.Read(catalog, stack), previous);
     }
 
-    internal static long NextId(EconomyTransaction world) => world.NextItemId();
+    internal static long NextId(WorldAction world) => world.NextItemId();
 }

@@ -20,7 +20,7 @@ internal sealed record LoadedShipHeat(long PilotId, long ShipId, ShipHeatSnapsho
     internal int? SystemId { get; init; }
 }
 
-internal static class ShipHeatPersistence
+internal static partial class ShipHeatPersistence
 {
     private static readonly JsonSerializerOptions s_savedJson = new() { IgnoreReadOnlyProperties = true };
 

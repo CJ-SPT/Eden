@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
 
-internal static class ConcordPersistence
+internal static partial class ConcordPersistence
 {
     internal static SavedConcordResponse? Schedule(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long now)
     {

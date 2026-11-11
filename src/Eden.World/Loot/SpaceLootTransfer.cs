@@ -8,7 +8,7 @@ using Eden.World.Storage;
 
 namespace Eden.World.Loot;
 
-internal static class SpaceLootTransfer
+internal static partial class SpaceLootTransfer
 {
     internal static IReadOnlyList<InventoryChange> Take(
         WorldDbContext world,

@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
-internal static class TrafficFitting
+internal static partial class TrafficFitting
 {
     private readonly record struct MagazineBatch(int TypeId, int PartialSlot);
 

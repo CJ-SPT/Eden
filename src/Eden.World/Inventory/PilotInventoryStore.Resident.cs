@@ -19,7 +19,7 @@ namespace Eden.World.Inventory;
 
 internal sealed partial class PilotInventoryStore
 {
-    internal static IReadOnlyList<InventoryItem> List(EconomyTransaction world, CatalogDbContext catalog, long pilotId, long locationId)
+    internal static IReadOnlyList<InventoryItem> List(WorldAction world, CatalogDbContext catalog, long pilotId, long locationId)
     {
         var items = world
             .Set<OwnedItem>()
@@ -40,7 +40,7 @@ internal sealed partial class PilotInventoryStore
     }
 
     internal static IReadOnlyList<InventoryChange> Move(
-        EconomyTransaction world,
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long destinationId,
@@ -263,12 +263,7 @@ internal sealed partial class PilotInventoryStore
         return changes;
     }
 
-    private static IReadOnlyList<InventoryChange> SplitInPlace(
-        EconomyTransaction world,
-        CatalogDbContext catalog,
-        OwnedItem stack,
-        int quantity
-    )
+    private static IReadOnlyList<InventoryChange> SplitInPlace(WorldAction world, CatalogDbContext catalog, OwnedItem stack, int quantity)
     {
         var previous = Read(catalog, stack);
         var split = InventoryStackRules.Split(previous, quantity);
@@ -325,7 +320,7 @@ internal sealed partial class PilotInventoryStore
         return result;
     }
 
-    internal static double HoldCapacity(EconomyTransaction world, CatalogDbContext catalog, long pilotId, long shipId, int flagId)
+    internal static double HoldCapacity(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, int flagId)
     {
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
         if (pilot.ActiveShipId != shipId)
