@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[R&D agents and datacores](protocol/agents.md#rd-agents-and-datacores--november-11-2026) records persistent
+research points, native dialogs, paid datacore redemption, eligibility, schema migration, and automated validation.
+
 [Local and station list rebuild races](protocol/social.md#local-and-station-list-rebuild-races-november-11-2026)
 records native row/count divergence, the signed login correction and headless cooperative-tasklet regressions.
 

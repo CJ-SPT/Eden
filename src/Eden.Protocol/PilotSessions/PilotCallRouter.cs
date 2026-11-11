@@ -342,19 +342,24 @@ internal sealed class PilotCallRouter(
                 }
                 // A failed first call is an RPC failure, not a value to embed in
                 // the successful (bound reference, result) tuple.
-                return result is PilotCallResult.Success success
-                    ? new PilotCallResult.Success(
-                        new BoundPilotReply(
-                            context.Reference(
-                                boundService,
-                                service is "charMgr" or "agentMgr" or "planetMgr" or "planetOrbitalRegistryBroker"
-                                    ? PilotBindingLifetime.Pilot
-                                    : PilotBindingLifetime.Location
-                            ),
-                            success.Reply
-                        )
-                    )
-                    : result;
+                if (result is not (PilotCallResult.Success or PilotCallResult.ClientCall))
+                {
+                    return result;
+                }
+                var reference = context.Reference(
+                    boundService,
+                    service is "charMgr" or "agentMgr" or "planetMgr" or "planetOrbitalRegistryBroker"
+                        ? PilotBindingLifetime.Pilot
+                        : PilotBindingLifetime.Location
+                );
+                return result switch
+                {
+                    PilotCallResult.Success success => new PilotCallResult.Success(new BoundPilotReply(reference, success.Reply)),
+                    PilotCallResult.ClientCall client => new PilotCallResult.ClientCall(
+                        new BoundPilotClientDialog(client.Dialog, reference)
+                    ),
+                    _ => result,
+                };
             }
         }
         foreach (var handler in selectedHandlers)

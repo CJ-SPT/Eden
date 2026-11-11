@@ -28,6 +28,10 @@ internal sealed partial class PilotMissionStore
         long now
     )
     {
+        if (!storyline && agent.Type != AgentType.Basic)
+        {
+            throw new InvalidDataException("This special agent does not offer ordinary missions.");
+        }
         if (!storyline && agent.DivisionId is not (MissionRules.SecurityDivision or MissionRules.DistributionDivision))
         {
             throw new InvalidDataException("This agent's mission division is not implemented.");

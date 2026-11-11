@@ -105,6 +105,9 @@ public enum WalletEntryType
 
     // Build 3662168 appConst.refPaymentToLPStore.
     LoyaltyStore = 26,
+
+    // Build 3662168 appConst.refDatacoreFee.
+    DatacorePurchase = 112,
     MarketTransaction = 2,
     MarketEscrow = 42,
     BrokersFee = 46,

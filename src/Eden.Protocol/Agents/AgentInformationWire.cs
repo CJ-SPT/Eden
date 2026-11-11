@@ -6,7 +6,7 @@ namespace Eden.Protocol.Agents;
 internal sealed record AgentServiceDetailsReply(AgentServiceInformation Information) : BlueModel
 {
     // Pinned Info.UpdateDataAgent reads these attributes; ProcessAgentInfoKeyVal
-    // dispatches the service using the literal string "mission", not a numeric ID.
+    // dispatches services using literal names such as "mission" and "research".
     public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
@@ -15,10 +15,45 @@ internal sealed record AgentServiceDetailsReply(AgentServiceInformation Informat
                 ["agentID"] = Information.Agent.Id,
                 ["stationID"] = Information.Agent.StationId,
                 ["level"] = Information.Agent.Level,
-                ["services"] = new BlueList<AgentMissionServiceReply>(
-                    Information.MissionService ? [new AgentMissionServiceReply(Information.MissionAvailable)] : []
+                ["services"] = new BlueList<BlueModel>(
+                    Information.Agent is { Type: AgentType.Research, StationId: not null } ? [new AgentResearchServiceReply(Information)]
+                    : Information.MissionService ? [new AgentMissionServiceReply(Information.MissionAvailable)]
+                    : []
                 ),
                 ["incompatible"] = Information.Incompatible.Length == 0 ? null : new BlueUnicode(Information.Incompatible),
+            }
+        );
+}
+
+internal sealed record AgentResearchServiceReply(AgentServiceInformation Information) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["agentServiceType"] = "research",
+                ["skills"] = Information
+                    .ResearchFields.Select(f =>
+                        (object?)
+                            new object?[]
+                            {
+                                f.SkillId,
+                                new BlueInstance(
+                                    "utillib.KeyVal",
+                                    new Dictionary<string, object?> { ["effectiveSkillLevel"] = Information.Agent.Level }
+                                ),
+                            }
+                    )
+                    .ToList(),
+                ["researchData"] = Information.Research is not { } project
+                    ? null
+                    : new Dictionary<string, object?>
+                    {
+                        ["skillTypeID"] = project.SkillId,
+                        ["points"] = project.Points,
+                        ["pointsPerDay"] = project.PointsPerDay,
+                    },
             }
         );
 }

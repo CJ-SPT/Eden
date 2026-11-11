@@ -14,6 +14,8 @@ internal abstract record PilotCallResult
 
     internal sealed record NamedFailure(string Name, BlueModel Values) : PilotCallResult;
 
+    internal sealed record ClientCall(PilotClientDialog Dialog) : PilotCallResult;
+
     public static PilotCallResult None { get; } = new Success(new NoneReply());
     public static PilotCallResult Unsupported { get; } = new UnsupportedCall();
 

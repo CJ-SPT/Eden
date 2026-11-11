@@ -293,7 +293,7 @@ internal sealed record MissionBookmark(MissionOffer Offer) : BlueModel
         );
 }
 
-internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers) : BlueModel
+internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers, IReadOnlyList<ResearchProject>? Research = null) : BlueModel
 {
     public override object ToBlue() =>
         new object?[]
@@ -320,6 +320,6 @@ internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers) : Blue
                         }
                 )
                 .ToList(),
-            new List<object?>(),
+            (Research ?? []).Select(p => (object?)new ResearchJournalRow(p)).ToList(),
         };
 }

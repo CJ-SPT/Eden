@@ -48,7 +48,6 @@ public sealed class AgentInformationRulesTests
     }
 
     [Theory]
-    [InlineData(AgentType.Research)]
     [InlineData(AgentType.Career)]
     [InlineData(AgentType.EpicArc)]
     [InlineData(AgentType.FactionalWarfare)]
