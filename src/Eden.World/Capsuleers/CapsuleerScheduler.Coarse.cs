@@ -259,7 +259,7 @@ internal sealed partial class CapsuleerScheduler
             pilot == 0
                 ? $"coarse simulation pass system={selected.System}"
                 : $"coarse simulation {Current[pilot].Action} pilot={pilot} system={selected.System}";
-        using var budget = _backgroundBudget.TryEnter(operationName);
+        using var budget = _backgroundBudget.TryEnter(operationName, pilot == 0 ? null : Current[pilot].Action);
         if (budget is null)
         {
             _coarseRetryTicks = checked(activity.ElapsedTicks + CapsuleerCoarseRules.Window.Ticks);
