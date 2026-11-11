@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Remote action budget costs](protocol/performance.md#remote-action-budget-costs-november-11-2026) covers
+remote hauler resource loading, repeated mining validation and measured-cost background admission.
+
 [Beginner market supply](protocol/industry.md#beginner-market-supply--november-11-2026) covers immediately purchasable
 combat frigates, Ventures, basic equipment and prerequisite skillbooks at starting stations and regional hubs.
 

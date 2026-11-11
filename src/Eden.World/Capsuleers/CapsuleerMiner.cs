@@ -873,11 +873,8 @@ internal sealed class CapsuleerMiner(
         }
         var random = new Random(unchecked(_seed + Work.DueStamp));
         MiningRolls rolls = new(random.NextDouble(), random.NextDouble(), random.NextDouble(), random.NextDouble(), random.NextDouble());
-        var result = PilotMiningStore.Collect(world, catalog, Pilot.PilotId, Work.ModuleId, Work.TargetId, new(1, true, rolls), Now);
-        var next = Work with { Activity = MinerActivity.Locking, Cycles = Work.Cycles + 1, Navigation = _navigation.Capture() };
-        if (_coarseThrough is { } through && !result.Depleted && !result.CargoFull)
-        {
-            var extra = PilotMiningStore.CollectCoarse(
+        var remote = _coarseThrough is { } through
+            ? PilotMiningStore.CollectRemote(
                 world,
                 catalog,
                 Pilot.PilotId,
@@ -886,13 +883,17 @@ internal sealed class CapsuleerMiner(
                 Math.Max(0, through - Work.ActiveTicks),
                 rolls,
                 Now
-            );
-            if (extra is not null)
-            {
-                result = extra.Yield;
-                next = next with { Cycles = checked(next.Cycles + extra.Cycles) };
-            }
-        }
+            )
+            : null;
+        var result =
+            remote?.Yield
+            ?? PilotMiningStore.Collect(world, catalog, Pilot.PilotId, Work.ModuleId, Work.TargetId, new(1, true, rolls), Now);
+        var next = Work with
+        {
+            Activity = MinerActivity.Locking,
+            Cycles = checked(Work.Cycles + (remote?.Cycles ?? 1)),
+            Navigation = _navigation.Capture(),
+        };
         if (_coarseThrough is { } settledThrough)
         {
             // Coalesce unprocessed intervals; the next visit cannot replay them.

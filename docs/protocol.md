@@ -12,6 +12,9 @@ records native row/count divergence, the signed login correction and headless co
 [Planetary industry](protocol/planetary.md) records colony construction, extraction and all 68 schematics,
 transactional orbital cargo, saved deadlines, native reply contracts and source-backed limitations.
 
+[Remote action budget costs](protocol/performance.md#remote-action-budget-costs-november-11-2026) records
+remote navigation resource loading, mining SQL reduction and measured-cost admission.
+
 [Compact remote role reuse](protocol/performance.md#reusing-compact-remote-roles-november-11-2026)
 records repeated role-loading removal, committed input invalidation and enriched background-budget warnings.
 

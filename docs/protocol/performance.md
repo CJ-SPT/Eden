@@ -6,6 +6,77 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Remote action budget costs, November 11, 2026
+
+The supplied 03:01:33–03:01:54 warning sample contains remote Trade, Arrival, GateTransfer and Lock actions.
+The largest Lock units issued 181–185 SQL commands and calculated three fits; some travel units opened 28–30
+connections. Many other units started with less than 1 ms of the shared 5 ms allowance remaining.
+
+Remote haulers now load only immutable station/gate/celestial targets while detailed simulation is released.
+Their coarse navigation already excludes collision obstacles; it no longer loads or populates asteroid belts
+just to select a station or gate. Mining still loads authoritative resources, and detailed/pinned haulers retain
+their normal geometry. Cold remote roles select this mode before initial loading.
+
+Mining validation carries the ship attributes it already read into hold-capacity and capacitor calculations.
+Remote paid collection and its optional aggregate of additional paid cycles reuse one validation within the
+same transaction. Cargo, capacitor, cooldowns and finite ore remain authoritative mutable reads; crystal changes
+trigger another validation. Mining skill levels load in one batch instead of individual absent-skill lookups.
+Every new command validates again; the snapshot cannot escape its transaction.
+
+Admission reserves at least 1 ms and, for measured actions, the previous cost capped at the full 5 ms allowance.
+An unmeasured action reserves a full allowance. A unit that cannot fit the remainder waits for replenishment. Larger atomic actions remain eligible
+with a full allowance and repay their debt over subsequent windows. The budget, population and activity settings
+are unchanged, and actual overruns still log warnings.
+
+Matched deterministic fixtures compared the original implementation at `1ecacb81` with these changes:
+
+| Measured work | Original SQL / connections / fits | Updated SQL / connections / fits |
+| --- | --- | --- |
+| Warm paid mining plus additional coarse cycles, inside an already-open transaction | 150 / 0 / 3 | 59 / 0 / 0 |
+| Cold remote hauler turn, using the production catalog-operation scope | 83 / 4 / 2 | 79 / 3 / 2 |
+
+The hauler fixture already has populated belts; its regression additionally rejects any asteroid or renewal-table
+read. It does not reproduce every cold installed-world system. Mining SQL fell by 61% in this fixture. The original
+implementation fails both new cost/resource-loading assertions. Those deliberate baseline failures are recorded in
+`artifacts/feature-tests/results/7b16b78d8412468393676c6f126c8930/tests.trx`; the initial passing comparison is in
+`artifacts/feature-tests/results/798de33b12524672a08f97a4f6e8a5d1/tests.trx`.
+These are work-count measurements, not complete-session latency or checkpoint benchmarks. Installed-world warning
+frequency, frame latency and sustained queue freshness remain unmeasured; indivisible transactions can still exceed 5 ms.
+
+References: [EVE University server ticks](https://wiki.eveuniversity.org/Server_tick),
+[Carbon Destiny Ballpark.cpp at `114e89fa584f0e1a81eb0a679aabf41af8870072`](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp),
+and the local evejs `server/src/space/destiny/simulation/README.md` (Carbon v3.1.1 reference) were consulted for
+simulation ownership and movement boundaries. Eden's coarse scheduling remains its own policy. No movement laws,
+wire formats or reference implementation were copied or changed.
+
+**Automated validation:** tool restore, solution restore and solution build passed with zero warnings/errors
+(final solution build 12.02 seconds). The broader affected run passed **261/261** in **173.02 seconds** including
+runner startup (feature build 8.66 seconds), covering coarse/tier scheduling, handoff, haulers/miners, inbound and
+route travel, supplies, ordinary/crystal/ice/gas mining, rewards and typed rules. Its filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerTierTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHandoffTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHaulerTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerMinerTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerInboundRuntimeTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerTrafficNavigationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerSupplyTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningCrystalTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.IceMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.GasMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningSkillPointRewardTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTierTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningRulesTests
+```
+
+After reserving the full allowance for unmeasured actions and restoring full geometry immediately in observed
+systems, the final affected rerun passed **88/88** in **68.04 seconds** (feature build 3.17 seconds), using:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerTierTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHandoffTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHaulerTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerInboundRuntimeTests
+```
+
+The reports are retained locally at `artifacts/feature-tests/results/400f10e6b15e455db2dd9e5db6464ead/tests.trx`
+and `artifacts/feature-tests/results/397f17dee7e04ba6ae3ff167da1e5b7d/tests.trx`. New regressions assert SQL,
+connection and fitting counts, paid-cycle rejection with unchanged ore, rollback/reopen, resource-free remote
+navigation, exact allowance admission, unmeasured-action reservation and eventual admission after overrun debt.
+Both Python policy suites passed: **8 catalog tests (1.707 seconds)** and **9 formatting tests (0.024 seconds)**.
+Formatting verification and Git whitespace checks passed. The full .NET suite and sustained installed-world replays
+were not run. These tests do not establish complete-session latency or checkpoint cost improvements.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer check:** after restarting the rebuilt server, inspect the remaining enriched overrun warnings.
+
 ## Reusing compact remote roles, November 11, 2026
 
 The reported coarse-simulation warnings included indivisible units taking 15–180 ms against at most 5 ms of remaining
