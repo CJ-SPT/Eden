@@ -4,6 +4,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.World.Docking;
@@ -61,6 +62,14 @@ public sealed class InventoryOwnershipTests
         Assert.DoesNotContain(inventory.List(90000001, 60003760), i => i.Id == CorporateStack);
         Assert.DoesNotContain(world.Services.GetRequiredService<IPilotFleet>().Ships(90000001, 60003760), s => s.Id == CorporateHull);
         Assert.Equal(corporation, Assert.Single(inventory.List(corporation, 60003760)).OwnerId);
+        if (liveWorld)
+        {
+            using var metrics = SessionPerformance.Begin("resident corporate ownership read", _ => { }, force: true)!;
+            Assert.Equal(corporation, Assert.Single(inventory.List(corporation, 60003760)).OwnerId);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
         using (WorldDbContext saved = new(world.Path))
         {
             long activeShip = world.Store.FindPilot(1000001)!.ShipId;

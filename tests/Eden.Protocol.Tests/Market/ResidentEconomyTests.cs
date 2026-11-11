@@ -503,8 +503,10 @@ public sealed class ResidentEconomyTests
         {
             var entity = world.Model.FindEntityType(mapping.Key)!;
             Assert.Equal(entity.GetTableName(), mapping.Value.Name);
-            Assert.Equal(entity.GetProperties().Select(p => p.GetColumnName()).Order(StringComparer.Ordinal),
-                mapping.Value.Columns.Order(StringComparer.Ordinal));
+            Assert.Equal(
+                entity.GetProperties().Select(p => p.GetColumnName()).Order(StringComparer.Ordinal),
+                mapping.Value.Columns.Order(StringComparer.Ordinal)
+            );
         }
     }
 }

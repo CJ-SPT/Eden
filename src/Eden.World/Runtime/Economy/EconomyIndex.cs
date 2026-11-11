@@ -7,35 +7,97 @@ internal sealed class EconomyIndex<T>(string name, Func<T, object?> value)
     where T : class
 {
     private static readonly object NullKey = new();
-    private readonly Dictionary<object, HashSet<EconomyKey>> _keys = [];
+    private readonly Dictionary<object, Bucket> _keys = [];
     internal string Name => name;
 
     internal IReadOnlyCollection<EconomyKey> Find(object? key) => _keys.TryGetValue(key ?? NullKey, out var found) ? found : [];
 
     internal void Clear() => _keys.Clear();
 
-    internal void Add(EconomyKey id, T row)
+    internal void Add(EconomyKey id, T row) => Add(id, value(row) ?? NullKey);
+
+    private void Add(EconomyKey id, object key)
     {
-        object key = value(row) ?? NullKey;
         if (!_keys.TryGetValue(key, out var keys))
         {
-            keys = [];
-            _keys.Add(key, keys);
+            _keys.Add(key, new(id));
+            return;
         }
         keys.Add(id);
     }
 
-    internal void Remove(EconomyKey id, T row)
+    internal void Remove(EconomyKey id, T row) => Remove(id, value(row) ?? NullKey);
+
+    private void Remove(EconomyKey id, object key)
     {
-        object key = value(row) ?? NullKey;
-        if (_keys.TryGetValue(key, out var keys))
+        if (_keys.TryGetValue(key, out var keys) && keys.Remove(id))
         {
-            keys.Remove(id);
-            if (keys.Count == 0)
+            _keys.Remove(key);
+        }
+    }
+
+    internal void Replace(EconomyKey id, T before, T after)
+    {
+        object old = value(before) ?? NullKey;
+        object next = value(after) ?? NullKey;
+        if (!Equals(old, next))
+        {
+            Remove(id, old);
+            Add(id, next);
+        }
+    }
+
+    // Most membership keys are unique. Allocate a set only for genuinely shared
+    // values; a second dictionary of per-row HashSet instances wastes resident memory.
+    private sealed class Bucket(EconomyKey first) : IReadOnlyCollection<EconomyKey>
+    {
+        private EconomyKey _first = first;
+        private HashSet<EconomyKey>? _many;
+        public int Count => _many?.Count ?? 1;
+
+        internal void Add(EconomyKey id)
+        {
+            if (_many is not null)
             {
-                _keys.Remove(key);
+                _many.Add(id);
+            }
+            else if (id != _first)
+            {
+                _many = [_first, id];
             }
         }
+
+        internal bool Remove(EconomyKey id)
+        {
+            if (_many is null)
+            {
+                return _first == id;
+            }
+            _many.Remove(id);
+            if (_many.Count == 1)
+            {
+                _first = _many.Single();
+                _many = null;
+            }
+            return false;
+        }
+
+        public IEnumerator<EconomyKey> GetEnumerator()
+        {
+            if (_many is not null)
+            {
+                foreach (var id in _many)
+                {
+                    yield return id;
+                }
+            }
+            else
+            {
+                yield return _first;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
 

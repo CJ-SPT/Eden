@@ -57,6 +57,7 @@ internal interface IEconomyTable
     string Name { get; }
     IReadOnlyList<string> Columns { get; }
     bool HasChanges { get; }
+    bool Contains(EconomyKey key);
     void Load(WorldDbContext world);
     IEconomyProjection Capture();
     void Projected(WorldDbContext world, IEconomyProjection projection);
@@ -75,7 +76,8 @@ internal sealed class EconomyTable<TRow, TState>(
     bool readOnly = false,
     Func<TState, TState, bool>? equal = null,
     IReadOnlyList<EconomyIndex<TState>>? indexes = null,
-    Action<TState?, TState?>? changed = null
+    Action<TState?, TState?>? changed = null,
+    string? primaryColumn = "Id"
 ) : IEconomyTable<TRow>
     where TRow : class
     where TState : class
@@ -86,11 +88,7 @@ internal sealed class EconomyTable<TRow, TState>(
 
     internal IEnumerable<EconomyKey> Matching(Expression<Func<TRow, bool>> predicate)
     {
-        var candidates = EconomyCandidates.Find(
-            predicate.Body,
-            predicate.Parameters[0],
-            (name, value) => _indexes.TryGetValue(name, out var index) ? index.Find(value) : null
-        );
+        var candidates = EconomyCandidates.Find(predicate.Body, predicate.Parameters[0], (column, value) => Candidates(column, value));
         var state = Expression.Parameter(typeof(TState), "saved");
         Func<TState, bool>? match = null;
         try
@@ -110,22 +108,45 @@ internal sealed class EconomyTable<TRow, TState>(
         return keys.Where(id => _rows.TryGetValue(id, out var row) && (match is null || match(row))).ToArray();
     }
 
+    private IReadOnlyCollection<EconomyKey>? Candidates(string column, object? value)
+    {
+        if (column == primaryColumn)
+        {
+            long? id =
+                value is long wide ? wide
+                : value is int narrow ? narrow
+                : null;
+            return id is long known && _rows.ContainsKey(new(known)) ? [new(known)] : [];
+        }
+        return _indexes.TryGetValue(column, out var index) ? index.Find(value) : null;
+    }
+
     private void Replace(EconomyKey id, TState? state)
     {
         _rows.TryGetValue(id, out var before);
-        if (_rows.Remove(id, out var previous))
+        if (state is null)
         {
-            foreach (var index in _indexes.Values)
+            if (_rows.Remove(id))
             {
-                index.Remove(id, previous);
+                foreach (var index in _indexes.Values)
+                {
+                    index.Remove(id, before!);
+                }
             }
         }
-        if (state is not null)
+        else
         {
             _rows[id] = state;
             foreach (var index in _indexes.Values)
             {
-                index.Add(id, state);
+                if (before is null)
+                {
+                    index.Add(id, state);
+                }
+                else
+                {
+                    index.Replace(id, before, state);
+                }
             }
         }
         changed?.Invoke(before, state);
@@ -144,6 +165,10 @@ internal sealed class EconomyTable<TRow, TState>(
     internal TState Capture(TRow row) => capture(row);
 
     public TRow? Peek(EconomyKey id) => Read(id);
+
+    public bool Contains(EconomyKey id) => _rows.ContainsKey(id);
+
+    internal TState? Snapshot(EconomyKey id) => _rows.GetValueOrDefault(id);
 
     internal TRow? Read(EconomyKey id) => _rows.TryGetValue(id, out var state) ? materialize(state) : null;
 
@@ -405,7 +430,7 @@ internal sealed class EconomySet<TRow, TState>(EconomyTable<TRow, TState> table,
     {
         transaction.AssignIdentity(row);
         var id = table.Key(row);
-        if (!_removed.Contains(id) && (_local.ContainsKey(id) || table.Read(id) is not null))
+        if (!_removed.Contains(id) && (_local.ContainsKey(id) || table.Contains(id)))
         {
             throw new InvalidDataException($"Duplicate resident {table.Name} identity.");
         }

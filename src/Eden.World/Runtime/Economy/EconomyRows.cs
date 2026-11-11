@@ -798,7 +798,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1)),
                 state => new(state.Id),
                 readOnly: false,
-                indexes: [new("Id", row => row.Id)]
+                indexes: [],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -818,7 +819,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetString(1), reader.GetInt64(2), reader.GetInt64(3), (AccountCloneGrade)reader.GetInt32(4)),
                 state => new(state.Id),
                 readOnly: true,
-                indexes: [new("Id", row => row.Id)]
+                indexes: [],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -885,7 +887,8 @@ internal sealed partial class ResidentEconomy
                     left with { Appearance = null, Portrait = null } == right with { Appearance = null, Portrait = null }
                     && (left.Appearance ?? []).SequenceEqual(right.Appearance ?? [])
                     && (left.Portrait ?? []).SequenceEqual(right.Portrait ?? []),
-                indexes: [new("Id", row => row.Id), new("ActiveShipId", row => row.ActiveShipId)]
+                indexes: [new("Id", row => row.Id), new("ActiveShipId", row => row.ActiveShipId)],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -921,12 +924,12 @@ internal sealed partial class ResidentEconomy
                 readOnly: false,
                 indexes:
                 [
-                    new("Id", row => row.Id),
                     new("OwnerId", row => row.OwnerId),
                     new("TypeId", row => row.TypeId),
                     new("StationId", row => row.StationId),
                     new("StoredInId", row => row.StoredInId),
-                ]
+                ],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -953,7 +956,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(5)
                     ),
                 state => new(state.ShipId),
-                readOnly: false
+                readOnly: true,
+                primaryColumn: "ShipId"
             )
         );
         Register(
@@ -1013,13 +1017,8 @@ internal sealed partial class ResidentEconomy
                     ),
                 state => new(state.Id),
                 readOnly: false,
-                indexes:
-                [
-                    new("Id", row => row.Id),
-                    new("OwnerId", row => row.OwnerId),
-                    new("TypeId", row => row.TypeId),
-                    new("LocationId", row => row.LocationId),
-                ]
+                indexes: [new("OwnerId", row => row.OwnerId), new("TypeId", row => row.TypeId), new("LocationId", row => row.LocationId)],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -1033,7 +1032,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt64(2)),
                 state => new(state.PilotId),
                 readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId)]
+                indexes: [],
+                primaryColumn: "PilotId"
             )
         );
         Register(
@@ -1052,7 +1052,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt32(1), reader.GetInt64(2), reader.GetInt32(3)),
                 state => new(state.StationId),
                 readOnly: false,
-                indexes: [new("StationId", row => row.StationId)]
+                indexes: [],
+                primaryColumn: "StationId"
             )
         );
         Register(
@@ -1110,12 +1111,12 @@ internal sealed partial class ResidentEconomy
                 readOnly: false,
                 indexes:
                 [
-                    new("Id", row => row.Id),
                     new("StationId", row => row.StationId),
                     new("RegionId", row => row.RegionId),
                     new("OwnerId", row => row.OwnerId),
                     new("TypeId", row => row.TypeId),
-                ]
+                ],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -1186,14 +1187,14 @@ internal sealed partial class ResidentEconomy
                 readOnly: false,
                 indexes:
                 [
-                    new("Id", row => row.Id),
                     new("PilotId", row => row.PilotId),
                     new("StationId", row => row.StationId),
                     new("RegionId", row => row.RegionId),
                     new("TypeId", row => row.TypeId),
                     new("Status", row => row.Status),
                 ],
-                changed: OrderChanged
+                changed: OrderChanged,
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -1213,7 +1214,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetInt32(4)),
                 state => new(state.OrderId),
                 readOnly: false,
-                indexes: [new("OrderId", row => row.OrderId)]
+                indexes: [],
+                primaryColumn: "OrderId"
             )
         );
         Register(
@@ -1274,12 +1276,12 @@ internal sealed partial class ResidentEconomy
                 readOnly: false,
                 indexes:
                 [
-                    new("Id", row => row.Id),
                     new("PilotId", row => row.PilotId),
                     new("OrderId", row => row.OrderId),
                     new("StationId", row => row.StationId),
                     new("TypeId", row => row.TypeId),
-                ]
+                ],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -1313,7 +1315,8 @@ internal sealed partial class ResidentEconomy
                     ),
                 state => new(state.Id),
                 readOnly: false,
-                indexes: [new("Id", row => row.Id), new("PilotId", row => row.PilotId), new("OrderId", row => row.OrderId)]
+                indexes: [new("Id", row => row.Id), new("PilotId", row => row.PilotId), new("OrderId", row => row.OrderId)],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -1333,7 +1336,8 @@ internal sealed partial class ResidentEconomy
                 state => new(state.Id),
                 readOnly: false,
                 indexes: [new("Id", row => row.Id), new("PilotId", row => row.PilotId)],
-                changed: MarketChangeChanged
+                changed: MarketChangeChanged,
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -1352,7 +1356,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetString(2), reader.GetInt64(3)),
                 state => new(state.PilotId, Name: state.Name),
                 readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId)]
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: null
             )
         );
         Register(
@@ -1371,7 +1376,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3)),
                 state => new(state.PilotId, state.Id),
                 readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId), new("Id", row => row.Id)]
+                indexes: [new("PilotId", row => row.PilotId), new("Id", row => row.Id)],
+                primaryColumn: null
             )
         );
         Register(
@@ -1391,7 +1397,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt32(1), reader.GetBoolean(2), reader.GetBoolean(3), reader.GetInt32(4)),
                 state => new(state.Id),
                 readOnly: true,
-                indexes: [new("Id", row => row.Id)]
+                indexes: [],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -1412,7 +1419,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt32(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetInt64(4), reader.GetInt64(5)),
                 state => new(state.TypeId),
                 readOnly: true,
-                indexes: [new("TypeId", row => row.TypeId), new("PilotId", row => row.PilotId)]
+                indexes: [new("TypeId", row => row.TypeId), new("PilotId", row => row.PilotId)],
+                primaryColumn: "TypeId"
             )
         );
         Register(
@@ -1431,7 +1439,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.GetInt64(3)),
                 state => new(state.PilotId, state.TypeId),
                 readOnly: true,
-                indexes: [new("PilotId", row => row.PilotId), new("TypeId", row => row.TypeId)]
+                indexes: [new("PilotId", row => row.PilotId), new("TypeId", row => row.TypeId)],
+                primaryColumn: null
             )
         );
         Register(
@@ -1450,7 +1459,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetDouble(3)),
                 state => new(state.PilotId, state.SourceId),
                 readOnly: true,
-                indexes: [new("PilotId", row => row.PilotId)]
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: null
             )
         );
         Register(
@@ -1549,12 +1559,12 @@ internal sealed partial class ResidentEconomy
                 readOnly: true,
                 indexes:
                 [
-                    new("Id", row => row.Id),
                     new("PilotId", row => row.PilotId),
                     new("BlueprintId", row => row.BlueprintId),
                     new("StationId", row => row.StationId),
                     new("Status", row => row.Status),
-                ]
+                ],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -1568,7 +1578,8 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt64(2)),
                 state => new(state.ItemId),
                 readOnly: true,
-                indexes: [new("ItemId", row => row.ItemId)]
+                indexes: [],
+                primaryColumn: "ItemId"
             )
         );
     }

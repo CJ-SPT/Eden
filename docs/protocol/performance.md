@@ -2556,7 +2556,8 @@ SQL image, so later compatibility reads and repeated saves remain coherent.
 Queries push complete scalar predicates into explicit snapshot indexes before materializing private entities. Small
 predicates are interpreted instead of compiling fresh IL for each request. Open-order expiration and acknowledged
 market-change heads have resident indexes, so idle polling does not rebuild order/history objects. Tests with 1, 100
-and 1,000 unrelated stacks materialize just the selected row. This is an allocation assertion, not a claim that every
+and 1,000 unrelated stacks materialize just the selected row. Primary-key queries use the main row map, and secondary
+indexes allocate a shared-value set only when a key has multiple rows; unique keys do not create per-row hash sets. This is an allocation assertion, not a claim that every
 unindexed filter has constant CPU cost.
 
 Reference checks: [EVE University trading](https://wiki.eveuniversity.org/Trading) was consulted for orders, escrow,
@@ -2577,11 +2578,11 @@ stress. An initial replay exposed a slower expression-compilation implementation
 
 | Readers per frame | SQL commands, baseline → resident | Connection opens, baseline → resident | Fittings | Mean frame ms, baseline → resident | p95 ms, baseline → resident | Allocated bytes, baseline → resident |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 1,000 → 0 | 240 → 0 | 0 → 0 | 5.383 → 1.551 | 6.166 → 2.243 | 32,933,128 → 11,343,624 |
-| 4 | 1,360 → 0 | 600 → 0 | 0 → 0 | 9.859 → 2.820 | 15.738 → 6.140 | 58,264,192 → 19,321,264 |
+| 1 | 1,000 → 0 | 240 → 0 | 0 → 0 | 5.383 → 1.536 | 6.166 → 2.182 | 32,933,128 → 10,717,832 |
+| 4 | 1,360 → 0 | 600 → 0 | 0 → 0 | 9.859 → 2.575 | 15.738 → 2.658 | 58,264,192 → 18,555,640 |
 
 Checkpoint work is reported separately. In these samples, resident capture/copy/projection/write took respectively
-0.128/0.403/2.223/39.437 ms (one reader) and 5.993/0.464/23.309/44.421 ms (four readers). The matching baseline samples
+0.214/0.534/2.456/72.542 ms (one reader) and 6.196/0.371/24.562/39.764 ms (four readers). The matching baseline samples
 were 0.047/0.374/0.255/63.259 ms and 3.821/0.420/3.762/41.462 ms. Resident detached projection issued 19 commands;
 baseline economic rows had already been written during the frames. First-use projection and file-write variance are
 visible here; no checkpoint throughput improvement is claimed. Both frame and save costs need remeasurement on the
@@ -2597,7 +2598,22 @@ split/merge rollback, committed SQL visibility, old-generation snapshots, failed
 reopened state and sequence high-water marks. A warmed fill/cargo/read workload asserts zero SQL commands, connection
 opens and fitting calculations with one and four readers. Full .NET regression and live-client acceptance are not run.
 
-Closing build, focused selection and policy-check results are recorded when the branch validation completes.
+Closing tool/solution restore passed. The integrated solution build on top of main `7fbf0592` passed in **2.21 s**
+with zero warnings/errors. The affected-class selection passed **239 tests** in **156.66 s** including runner overhead
+(focused build **1.31 s**). Its exact OR filter is preserved in
+`artifacts/resident-economy-20261111/focused-filter.txt`; it selects the resident economy, personal/remote/blueprint/
+industrial/testing/history market classes, inventory moves/merge/split/ownership and personal assets, detached and
+concurrent checkpoint owners, complete session frames, resident combat/fitting observers, capsuleer miner/hauler/
+routine/supply/defense frames, bulk industry delivery and personal mining-ledger integration. Other space-activity
+methods are included; the previously recorded unrelated `ShoppingChoosesRealAffordableStockAndHonorsThreatMemory`
+method is excluded and was not rerun. This does not replace a full regression check.
+
+The catalog policy suite passed **8 tests / 0.871 s** and formatting policy passed **9 tests / 0.015 s**. Formatting
+verification passed, including **1,740 CSharpier files / 2.896 s** and the 140-column policy; total style-check elapsed
+time was not captured. No width exceptions were added. Two final replay cases also passed; their separate benchmark
+build took **7.60 s** and run **6.81 s**. Replay source, targets, summaries and reports are preserved with the focused
+reports under `artifacts/resident-economy-20261111`. Earlier setup, query and null-index failures were corrected before
+these closing runs. The branch remains unmerged while the mixed bot-action migration described above is outstanding.
 
 ### Live acceptance
 

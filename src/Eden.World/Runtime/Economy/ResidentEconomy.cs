@@ -61,6 +61,10 @@ internal sealed partial class ResidentEconomy
 
     private void OrderChanged(EconomySavedPersonalOrder? before, EconomySavedPersonalOrder? after)
     {
+        if (before is not null && after is not null && before.Status == after.Status && before.Expires == after.Expires)
+        {
+            return;
+        }
         if (before is { Status: Eden.Gameplay.Market.PersonalOrderStatus.Open })
         {
             _openOrders.Remove((before.Expires, before.Id));
@@ -152,6 +156,7 @@ internal sealed partial class ResidentEconomy
             EnsureLoaded();
             if (participants is not null)
             {
+                participants = new(participants.Systems, participants.Pilots.Where(IsPilot), participants.Ships, participants.Resources);
                 foreach (long pilot in participants.Pilots)
                 {
                     TrackPilot(pilot);
@@ -218,11 +223,13 @@ internal sealed partial class ResidentEconomy
         return table.Matching(p => p.ActiveShipId == ship).Select(key => (long?)key.Id).SingleOrDefault();
     }
 
-    internal bool IsPilot(long id) => Peek<Eden.Data.World.Characters.Pilot>(id) is not null;
+    internal bool IsPilot(long id) => _tables[typeof(Eden.Data.World.Characters.Pilot)].Contains(new(id));
 
     internal void TrackPilot(long id)
     {
-        if (Peek<Eden.Data.World.Characters.Pilot>(id) is not { } pilot || Peek<Ship>(pilot.ActiveShipId) is not { } ship)
+        var pilots = (EconomyTable<Eden.Data.World.Characters.Pilot, EconomyPilot>)_tables[typeof(Eden.Data.World.Characters.Pilot)];
+        var ships = (EconomyTable<Ship, EconomyShip>)_tables[typeof(Ship)];
+        if (pilots.Snapshot(new(id)) is not { } pilot || ships.Snapshot(new(pilot.ActiveShipId)) is not { } ship)
         {
             return;
         }
@@ -333,7 +340,7 @@ internal sealed partial class ResidentEconomy
         {
             return;
         }
-        if (changes.Any(c => c.Table is "WorldMarketOrder" or "WorldEconomy" or "schema"))
+        if (changes.Any(c => c.Table is "WorldMarketDefinition" or "WorldMarketMembership" or "WorldEconomy" or "schema"))
         {
             _prepared.Clear();
         }
