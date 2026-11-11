@@ -116,8 +116,9 @@ same-timestamp idempotence, atomic rejection, Submit retry, real customs cargo/t
 restart/checkpoint persistence, skill extraction floors, inert wire shapes, temporary ECU quotes and warmed empty
 and populated observer reads with zero SQL commands, connections and fitting calculations.
 
-Final validation incorporates main's `36f4e2e611316c414efd043ba3e3c45389cbf773` coarse-population changes and
-the idempotent migration from schema 138 to 139:
+Validation incorporates main's `36f4e2e611316c414efd043ba3e3c45389cbf773` coarse-population changes, the
+subsequent `aeb1fc357bd5070663a1b1b82889ccce7d8b3045` mining-reward changes, and the idempotent migration
+from schema 138 to 139:
 
 | Automated check | Result | Elapsed |
 | --- | --- | ---: |
@@ -125,6 +126,8 @@ the idempotent migration from schema 138 to 139:
 | Affected .NET tests and immediate dependencies | 190 passed; none failed/skipped | 83.95 s |
 | Final incremental solution build after the customs model-level correction | Passed; zero warnings/errors | 1.16 s |
 | Final planetary/orbital tests after that correction | 50 passed, including all 37 planetary cases and 13 wreck cases | 42.29 s |
+| Latest main integration restore/build | Passed; zero warnings/errors | 23.82 s |
+| Latest main integration: planetary, mining rewards and world tuning | 114 passed; none failed/skipped | 54.77 s |
 | Catalog policy and formatting policy Python suites | 8 + 9 passed | 5.89 s |
 | `tools/Format.ps1 -Check` | Passed, including 140-column verification | 21.59 s |
 | Stock/staged module comparison and `git diff --check` | Passed | — |
@@ -143,6 +146,9 @@ FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests
 
 The final 50-test filter combined the first two prefixes. An exact method run first established the new
 `PlanetaryProtocolTests.CustomsContactSuppliesTheRequiredNativeModelLevelAndOrbitalCategory` regression.
+After the mining-reward merge, the 114-test filter combined `FullyQualifiedName~Eden.Protocol.Tests.Planetary`,
+`FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningSkillPointRewardTests`, and
+`FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldTuningTests` with `|`.
 The catalog policy's initial direct-read rejection was corrected through `FindCelestial`, `RequireSystem` and
 the shared type-group index, retaining the existing policy. The final planetary tests exercised that correction.
 The full .NET suite was not requested and was not run. Automated checks establish protocol values and saved
