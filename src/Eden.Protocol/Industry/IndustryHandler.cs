@@ -105,9 +105,10 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         // Build 3662168 AttachSessionToJob includes the pilot's corporation even for personal jobs.
         // Personal ownership and payment are enforced by the hangar and wallet checks.
         var corporation = values.GetValueOrDefault("corporationID");
+        var activity = (IndustryActivity)Integer(values, "activityID");
         if (
             Number(values, "characterID") != context.Pilot.PilotId
-            || !IndustryDefinitions.Activities.Contains((IndustryActivity)Integer(values, "activityID"))
+            || !IndustryDefinitions.Activities.Contains(activity)
             || corporation is not null && !Equals(corporation, (long)context.Pilot.CorpId)
             || values.GetValueOrDefault("account") is not object?[] { Length: 2 } account
             || !Equals(account[0], context.Pilot.PilotId)
@@ -148,6 +149,12 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                 _ => throw new InvalidDataException("Invalid industry product selection."),
             }
             : throw new InvalidDataException("Missing industry product selection.");
+        // Job.dump includes licensedRuns for every activity; its getter defaults to one.
+        // Only copying uses this field. Other typed requests use zero for no copy output.
+        int licensedRuns =
+            activity == IndustryActivity.Copying && values.GetValueOrDefault("licensedRuns") is not null
+                ? Integer(values, "licensedRuns")
+                : 0;
         var result = industry.Install(
             context.Pilot.PilotId,
             new(
@@ -159,8 +166,8 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                 seconds,
                 materials,
                 new ManufacturingCharge(QuotedCents(values, "cost"), QuotedCents(values, "tax"), 0),
-                (IndustryActivity)Integer(values, "activityID"),
-                values.GetValueOrDefault("licensedRuns") is null ? 0 : Integer(values, "licensedRuns")
+                activity,
+                licensedRuns
             )
         );
         Notify(context, result);

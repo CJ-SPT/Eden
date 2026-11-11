@@ -7,6 +7,41 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Native licensed-run metadata outside copying (November 11, 2026)
+
+The follow-up Miner I screenshots reported `Manufacturing does not accept licensed copy runs.` and
+`The job exceeds the blueprint's research limit.` Both typed guards reject nonzero licensed runs outside copying.
+Offline inspection of
+the original build-3662168 archive identified above confirms that `industry/job.pyj`, `Job._get_licensed_runs`
+lines 543–544, defaults to one and clamps to at least one. `Job.dump` lines 888–905 includes this field for every
+activity. `industry/activities/copying.pyj` consumes it for copy duration, materials, cost and output runs; it is not
+the manufacturing run count or the saved input blueprint's remaining runs.
+
+The installation adapter now forwards `licensedRuns` only for copying and normalizes it to zero for manufacturing,
+ME/TE research and invention. This preserves the existing typed rules, copying limits and authoritative input-copy
+run accounting. It also prevents the same irrelevant native field from rejecting research and invention jobs.
+The local evejs request and activity handling was consulted as a reference; no source was copied and no codec changed.
+Gameplay reference: [UniWiki Manufacturing](https://wiki.eveuniversity.org/Manufacturing) and
+[Blueprints](https://wiki.eveuniversity.org/Blueprint), consulted November 11, 2026.
+
+**Automated validation:** No tests were added or changed, as requested. The initial exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.IndustryTests.NativeJobRequestsValidateLocationsAndRefreshMonitoredMaterials`
+passed 2/2 cases (build 11.45 seconds, tests 10.30 seconds). Tool restore, solution restore and solution build passed
+(build 1.77 seconds, zero warnings/errors). The final affected filter passed 70/70 cases (build 4.37 seconds,
+tests 63.87 seconds):
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ScienceJobTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ManufacturingRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ScienceRulesTests
+```
+
+Both Python policy suites passed (8 catalog setup, 9 formatting); formatting application, verification and diff checks
+passed. Existing native cases cover absent manufacturing metadata and positive copying metadata; the new non-copying
+normalization is supported by offline client inspection and code review. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The screenshot records the reported failure.
+
+**Optional maintainer checks:** Restart the server and retry the personal Miner I manufacturing job.
+
 ## Personal job installation corporation metadata (November 11, 2026)
 
 The supplied Miner I manufacturing screenshot reported `Use personal industry with the current installation quote.`
