@@ -4,6 +4,9 @@
 
 Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP stores.
 
+[Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
+command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
+
 ## Ice harvesting and public ice fields (November 9, 2026)
 
 All **six static ice tools** in build 3662168 now fit and operate: Ice Harvester I/II/ORE

@@ -15,7 +15,9 @@ public sealed record WreckContact(
     double Mass,
     float Radius,
     bool Empty,
-    int GroupId = WreckDefinitions.Group
+    int GroupId = WreckDefinitions.Group,
+    int CategoryId = WreckDefinitions.Category,
+    int? PlanetId = null
 );
 
 public sealed record WreckInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items);

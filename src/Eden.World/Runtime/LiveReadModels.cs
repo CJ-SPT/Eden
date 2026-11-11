@@ -93,7 +93,14 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
 
     private sealed record WreckView(IReadOnlyList<WreckContact> Contacts, long NextExpiry, FrozenSet<long> Items);
 
-    private readonly ResidentSnapshot<int, WreckView> _wrecks = new("resident.wrecks", "WorldWreck", "WorldItemMembership", "WorldShip");
+    private readonly ResidentSnapshot<int, WreckView> _wrecks = new(
+        "resident.wrecks",
+        "WorldWreck",
+        "WorldPlanetaryLaunch",
+        "WorldPlanetaryOffice",
+        "WorldItemMembership",
+        "WorldShip"
+    );
 
     private readonly ResidentSnapshot<int, IReadOnlyList<DroneContact>> _drones = new(
         "resident.drones",
@@ -226,6 +233,13 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                     world.Set<WorldWreck>().Where(w => w.SystemId == system && w.ExpiresAt > now).Min(w => (long?)w.ExpiresAt)
                     ?? long.MaxValue;
                 var ids = contacts.Select(c => c.Id).ToArray();
+                long launchExpiry =
+                    world
+                        .Set<Eden.Data.World.Planetary.SavedPlanetaryLaunch>()
+                        .Where(l => l.SystemId == system && l.ExpiresAt > now)
+                        .Min(l => (long?)l.ExpiresAt)
+                    ?? long.MaxValue;
+                next = Math.Min(next, launchExpiry);
                 var items = world.Set<OwnedItem>().Where(i => ids.Contains(i.LocationId)).Select(i => i.Id).ToArray().ToFrozenSet();
                 return new WreckView(contacts, next, items);
             },

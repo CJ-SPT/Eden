@@ -190,8 +190,23 @@ internal sealed class PilotCallRouter(
                 or "repairSvc"
                 or "charMgr"
                 or "agentMgr"
+                or "planetMgr"
+                or "planetOrbitalRegistryBroker"
         )
         {
+            if (
+                service is "planetMgr" or "planetOrbitalRegistryBroker"
+                && method is "MachoResolveObject" or "MachoBindObject"
+                && (
+                    keywords is { Count: > 0 }
+                    || args.Length != (method == "MachoResolveObject" ? 1 : 2)
+                    || args[0] is not long planetaryId
+                    || planetaryId is <= 0 or > int.MaxValue
+                )
+            )
+            {
+                return new PilotCallResult.Failure("Bind a valid planet or planetary orbital system.");
+            }
             if (
                 service == "agentMgr"
                 && method is "MachoResolveObject" or "MachoBindObject"
@@ -305,6 +320,8 @@ internal sealed class PilotCallRouter(
                 string boundService =
                     service == "charMgr" ? GlobalInventoryHandler.BoundService
                     : service == "agentMgr" ? $"@agent:{args[0]}"
+                    : service == "planetMgr" ? $"@planet:{args[0]}"
+                    : service == "planetOrbitalRegistryBroker" ? $"@planetorbit:{args[0]}"
                     : service;
                 if (args[1] is object?[] { Length: >= 2 } first && first[1] is object?[] innerArgs)
                 {
@@ -330,7 +347,9 @@ internal sealed class PilotCallRouter(
                         new BoundPilotReply(
                             context.Reference(
                                 boundService,
-                                service is "charMgr" or "agentMgr" ? PilotBindingLifetime.Pilot : PilotBindingLifetime.Location
+                                service is "charMgr" or "agentMgr" or "planetMgr" or "planetOrbitalRegistryBroker"
+                                    ? PilotBindingLifetime.Pilot
+                                    : PilotBindingLifetime.Location
                             ),
                             success.Reply
                         )

@@ -94,6 +94,29 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
     private static IReadOnlyList<SkillExtractionFloor> Restrictions(WorldDbContext world, CatalogDbContext catalog, long pilotId)
     {
         List<SkillExtractionFloor> floors = [];
+        var colonies = world
+            .Set<Eden.Data.World.Planetary.SavedPlanetaryColony>()
+            .Where(c => c.PilotId == pilotId)
+            .AsEnumerable()
+            .Select(Eden.World.Planetary.PilotPlanetaryIndustryStore.ReadState)
+            .ToArray();
+        if (colonies.Length > 0)
+        {
+            floors.Add(
+                new(
+                    Eden.Gameplay.Planetary.PlanetaryRules.InterplanetaryConsolidationSkill,
+                    Math.Max(0, colonies.Length - 1),
+                    "That skill level is required by an existing planetary colony."
+                )
+            );
+            floors.Add(
+                new(
+                    Eden.Gameplay.Planetary.PlanetaryRules.CommandCenterUpgradesSkill,
+                    colonies.Max(c => c.Level),
+                    "That skill level is required by an upgraded planetary command center."
+                )
+            );
+        }
         int clones = world.Set<SavedJumpClone>().Count(c => c.PilotId == pilotId && !c.Active);
         const int LevelsPerSkill = 5;
         var cloneSkills = new[] { InfomorphSkill.Psychology, InfomorphSkill.AdvancedPsychology, InfomorphSkill.ElitePsychology };

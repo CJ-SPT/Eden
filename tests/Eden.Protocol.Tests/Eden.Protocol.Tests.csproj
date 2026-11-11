@@ -41,6 +41,7 @@
     <EmbeddedResource Include="Fixtures/MiningCatalog.json" />
     <EmbeddedResource Include="Fixtures/StructureCatalog.json" />
     <EmbeddedResource Include="Fixtures/HackingCatalog.json" />
+    <EmbeddedResource Include="Fixtures/PlanetaryCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />
     <EmbeddedResource Include="../../docs/production-catalog.json" LogicalName="Eden.Protocol.Tests.Fixtures.ProductionCatalog.json" />

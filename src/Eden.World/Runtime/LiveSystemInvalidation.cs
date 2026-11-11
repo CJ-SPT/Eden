@@ -23,6 +23,8 @@ internal sealed partial class LiveReadModels
         var ships = changes.Where(c => c.Table is "WorldShip" or "WorldPosition").Select(c => c.Id).Distinct().ToArray();
         var npcs = changes.Where(c => c.Table == "WorldNpc").Select(c => c.Id).ToArray();
         var wrecks = changes.Where(c => c.Table == "WorldWreck").Select(c => c.Id).ToArray();
+        var launches = changes.Where(c => c.Table == "WorldPlanetaryLaunch").Select(c => c.Id).ToArray();
+        var offices = changes.Where(c => c.Table == "WorldPlanetaryOffice").Select(c => c.Id).ToArray();
         var drones = changes.Where(c => c.Table is "WorldDrone" or "WorldItem").Select(c => c.Id).Distinct().ToArray();
         using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
         if (ships.Length > 0)
@@ -71,6 +73,20 @@ internal sealed partial class LiveReadModels
                 ? world.Set<OwnedItem>().Where(i => inventoryIds.Contains(i.Id)).Select(i => i.LocationId).ToHashSet()
                 : [];
         bool Arrived(int system, CombatRowChange change) => locations.TryGetValue(change.Id, out int current) && current == system;
+        if (launches.Length > 0)
+        {
+            foreach (var launch in world.Set<Eden.Data.World.Planetary.SavedPlanetaryLaunch>().Where(l => launches.Contains(l.Id)))
+            {
+                locations[launch.Id] = launch.SystemId;
+            }
+        }
+        if (offices.Length > 0)
+        {
+            foreach (var office in world.Set<Eden.Data.World.Planetary.SavedPlanetaryOffice>().Where(o => offices.Contains(o.PlanetId)))
+            {
+                locations[office.PlanetId] = office.SystemId;
+            }
+        }
         _directionalContacts.ObserveValues(
             changes,
             (system, entries, change) =>

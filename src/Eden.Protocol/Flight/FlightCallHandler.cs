@@ -1,6 +1,7 @@
 using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Planetary;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Fleets;
 using Eden.Protocol.PilotSessions;
@@ -14,7 +15,8 @@ internal sealed class FlightCallHandler(
     CooperativeFleetHandler fleets,
     ICombatAnomalies anomalies,
     TimeProvider clock,
-    IPilotProbeScanning? scanning = null
+    IPilotProbeScanning? scanning = null,
+    IPilotPlanetaryIndustry? planetary = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -137,6 +139,20 @@ internal sealed class FlightCallHandler(
             {
                 return new PilotCallResult.Failure(error.Message);
             }
+        }
+        if (
+            command is FlightCommand.WarpTo orbitWarp
+            && (PlanetaryRules.IsOffice(orbitWarp.TargetId) || PlanetaryRules.IsLaunch(orbitWarp.TargetId))
+        )
+        {
+            var contact = planetary
+                ?.OrbitContacts(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                .SingleOrDefault(c => c.Id == orbitWarp.TargetId);
+            if (contact is null || PlanetaryRules.IsLaunch(contact.Id) && contact.OwnerId != context.Pilot.PilotId)
+            {
+                return new PilotCallResult.Failure("This orbital destination is unavailable to your pilot.");
+            }
+            command = new FlightCommand.WarpToPoint(contact.Id, contact.Position, orbitWarp.Range);
         }
         if (command is FlightCommand.WarpTo or FlightCommand.WarpToPoint)
         {

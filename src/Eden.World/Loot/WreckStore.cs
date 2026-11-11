@@ -269,6 +269,7 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
                     type.GroupId
                 );
             })
+            .Concat(Eden.World.Planetary.PlanetaryOrbitStore.Contacts(world, catalog, systemId, now))
             .ToArray();
     }
 
@@ -310,6 +311,11 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        if (Eden.Gameplay.Planetary.PlanetaryRules.IsOffice(wreckId) || Eden.Gameplay.Planetary.PlanetaryRules.IsLaunch(wreckId))
+        {
+            var orbit = Eden.World.Planetary.PlanetaryOrbitStore.Read(world, catalog, pilotId, wreckId, now);
+            return new(orbit.Container, orbit.Items);
+        }
         var (_, wreck) = Access(world, catalog, pilotId, wreckId, now);
         return new(
             new(
@@ -358,6 +364,24 @@ internal sealed class WreckStore(WorldDatabase database) : IWrecks
         InventoryFlag destinationFlag = InventoryFlag.Cargo
     )
     {
+        if (Eden.Gameplay.Planetary.PlanetaryRules.IsOffice(wreckId) || Eden.Gameplay.Planetary.PlanetaryRules.IsLaunch(wreckId))
+        {
+            if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == shipId))
+            {
+                throw new InvalidDataException("Transfer orbital cargo into your active ship.");
+            }
+            var orbitChanges = Eden.World.Planetary.PlanetaryOrbitStore.Move(
+                world,
+                catalog,
+                pilotId,
+                wreckId,
+                false,
+                new(itemIds, wreckId, (int)destinationFlag, quantity),
+                now
+            );
+            world.SaveChanges();
+            return orbitChanges;
+        }
         var (pilot, _) = Access(world, catalog, pilotId, wreckId, now);
         var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, wreckId, itemIds, quantity, destinationFlag);
         world.SaveChanges();

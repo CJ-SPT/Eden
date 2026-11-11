@@ -228,7 +228,10 @@ internal sealed class FlightScene(
         context.Pilot.Position is not { } position
             ? []
             : (wrecks?.List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
-                .Where(w => w.SystemId == context.Pilot.SystemId && position.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange)
+                .Where(w =>
+                    w.SystemId == context.Pilot.SystemId
+                    && (w.PlanetId.HasValue || position.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange)
+                )
                 .ToArray();
 
     internal void RefreshWrecks(FlightSceneContext context)

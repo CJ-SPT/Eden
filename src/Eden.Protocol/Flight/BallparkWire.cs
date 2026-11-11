@@ -135,7 +135,15 @@ internal sealed record WreckSlimItem(WreckContact Wreck) : SlimItem
 {
     public override object ToBlue()
     {
-        var fields = Fields(Wreck.Id, Wreck.TypeId, Wreck.OwnerId, Wreck.GroupId, WreckDefinitions.Category);
+        var fields = Fields(Wreck.Id, Wreck.TypeId, Wreck.OwnerId, Wreck.GroupId, Wreck.CategoryId);
+        if (Wreck.PlanetId is int planetId)
+        {
+            fields["planetID"] = planetId;
+            fields["orbitalState"] = Eden.Gameplay.Planetary.PlanetaryRules.OrbitalIdleState;
+            // Pinned CustomsOffice.LoadModel reads this attribute without a default.
+            // None selects the office type's ordinary catalog graphic.
+            fields["level"] = null;
+        }
         fields["name"] = Wreck.Name;
         fields["corpID"] = Wreck.CorporationId;
         fields["charID"] = null;

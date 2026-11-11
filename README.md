@@ -22,6 +22,11 @@ Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It
 
 ## Current status
 
+[Planetary industry](docs/protocol/planetary.md) supports persistent colonies on the eight ordinary planet types,
+extraction, all 68 processing schematics, routing, command-center launches and NPC customs import/export.
+Resource geography uses an Eden simulation. Player-owned customs offices remain unavailable; native presentation
+is unverified. The implementation record describes the scope and source evidence.
+
 [Player Upwell structures](docs/protocol/structures.md) now have a shared foundation for all 20 published hulls:
 deployment, cores, saved timers, service fuel, dockable hangars and supported personal industry/reprocessing.
 The Settings page includes anchoring, onlining and decommissioning speeds. Specialized navigation, moon mining,

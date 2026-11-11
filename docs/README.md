@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Planetary industry](protocol/planetary.md) covers saved colonies, all 68 planetary schematics, extraction,
+routing, orbital cargo, Interbus customs, source evidence and automated validation.
+
 [Traffic ownership and market summaries](protocol/performance.md#traffic-ownership-and-market-summaries-november-10-2026)
 records prepared traffic actions, committed market views, measured invalidation costs and latency acceptance.
 

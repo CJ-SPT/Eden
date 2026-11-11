@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Planetary industry](protocol/planetary.md) records colony construction, extraction and all 68 schematics,
+transactional orbital cargo, saved deadlines, native reply contracts and source-backed limitations.
+
 [Coarse distant populations](protocol/capsuleers.md#coarse-distant-populations--november-10-2026)
 records persistent regional rosters, bounded remote settlements, paid-work preservation and prompt re-entry.
 

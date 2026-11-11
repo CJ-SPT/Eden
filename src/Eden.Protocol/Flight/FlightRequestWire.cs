@@ -49,8 +49,11 @@ internal static class FlightRequestWire
                 when BlueMarshal.Text(arguments[0]) == "bookmark" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long =>
                 new FlightCommand.WarpToBookmark(bookmark, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)),
             ("CmdWarpToStuff", [string or byte[], long target])
-                when BlueMarshal.Text(arguments[0]) == "item" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long =>
-                new FlightCommand.WarpTo(target, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)),
+                when BlueMarshal.Text(arguments[0]) is "item" or "launch"
+                    && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long => new FlightCommand.WarpTo(
+                target,
+                Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)
+            ),
             ("UpdateStateRequest", _) => new FlightCommand.RefreshState(),
             ("CmdGotoDirection", [double x, double y, double z]) => new FlightCommand.Heading(x, y, z),
             ("CmdFollowBall" or "CmdOrbit", [long target, var distance]) when distance is double or long => new FlightCommand.Follow(
