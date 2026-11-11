@@ -34,7 +34,7 @@ using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Mining;
 
-public sealed class MiningTests
+public sealed partial class MiningTests
 {
     [Theory]
     [InlineData(false)]
@@ -335,9 +335,9 @@ public sealed class MiningTests
         public const long Asteroid = AsteroidDefinitions.FirstAsteroidId;
         private readonly List<(PilotCallContext Context, TargetingHandler Targeting)> _clients = [];
 
-        public Fixture(bool liveWorld = true)
+        public Fixture(bool liveWorld = true, bool useTestClock = false)
         {
-            Db = new(liveWorld: liveWorld);
+            Db = new(liveWorld: liveWorld, clock: useTestClock ? Clock : null);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
                 catalog.Database.ExecuteSqlRaw(
@@ -874,6 +874,10 @@ public sealed class MiningTests
         fixture.Clock.Milliseconds += 10000;
         mining.Advance(pilot);
         Assert.Equal(9937, fixture.Remaining());
+        Assert.Equal(
+            new(189, 126, 0),
+            Assert.Single(fixture.Db.Services.GetRequiredService<IPersonalMiningLedger>().Read(pilot.Pilot.PilotId)).Quantity
+        );
         Assert.Equal(189, fixture.Inventory.List(pilot.Pilot.PilotId, pilot.Pilot.ShipId).Single(i => i.TypeId == 1230).Quantity);
         wing.Flight.Updates.Clear();
         wing.Flight.RefreshPeers();

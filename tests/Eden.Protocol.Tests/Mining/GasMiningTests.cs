@@ -32,6 +32,7 @@ public sealed class GasMiningTests
         Assert.Equal(40, start.Laser.Volume);
         var result = mining.Collect(f.PilotId, module, Cloud, new(1, true, Rolls));
         Assert.Equal(4, result.Extracted);
+        Assert.Equal(4, Assert.Single(f.Db.Services.GetRequiredService<IPersonalMiningLedger>().Read(f.PilotId)).Quantity.Collected);
         Assert.Equal(0, result.CriticalBonus);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(96, saved.Set<WorldAsteroid>().Find(Cloud)!.Quantity);

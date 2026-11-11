@@ -401,6 +401,7 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Mined);
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.TotalMined, extracted + bonus);
         }
+        PersonalMiningLedgerStore.Record(world, pilot, asteroid, now, new(checked((long)extracted + bonus), bonus, collected.Residue));
         world.Set<ModuleCooldown>().Where(c => c.ModuleId == moduleId && c.Kind == ModuleCooldownKind.Cycle).ExecuteDelete();
         foreach (var tracked in world.ChangeTracker.Entries<ModuleCooldown>().Where(e => e.Entity.ModuleId == moduleId).ToArray())
         {

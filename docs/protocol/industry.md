@@ -7,6 +7,64 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Personal mining ledger — November 11, 2026
+
+Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of
+`utillib.KeyVal` daily entries with native FILETIME `eventDate`, `characterID`, historical `corporationID`, `typeID`,
+`quantity`, `quantityWasted`, and both `solarsystemID` (native ledger entries) and `solarSystemID` (discovery spelling).
+Stable `entryID` and the critical subset `quantityCritical` are also included. Caller-supplied owners, date arguments
+and keywords reject; another pilot's ledger is never part of the reply.
+
+Ore, ice and gas collection update the ledger inside the existing paid-cycle transaction. Successful quantity includes
+critical bonus **once**; waste remains separate and never becomes cargo. Partial ore/gas collection, completed ice,
+critical cycles, waste-only depletion and coarse multi-cycle collection use the same boundary. Empty/failed collections
+produce no history. If the ledger write fails, resource quantity, cargo, skill rewards and the paid-cycle marker roll back
+with it; a retry records only the subsequently committed yield.
+
+Typed Gameplay rules validate nonnegative totals, the critical subset and checked 64-bit sums. Schema **143** adds
+`WorldPersonalMiningLog`, with one indexed bucket per pilot, UTC date, corporation-at-mining-time, system and resource.
+Daily aggregation follows CCP's documented ledger design and bounds repeated-cycle storage. Reads show **90 UTC dates,
+including today**, exclude future-dated rows and make no changes. Creating a new bucket prunes that pilot's older buckets;
+dormant expired rows remain private and invisible until that pilot mines again. No monitor polls this table. New worlds
+and upgrades begin with an empty ledger: existing inventory cannot establish past mining activity. Reopen/checkpoint
+persistence uses the ordinary saved-world database, without adding transient history or per-cycle queues.
+
+The server exposes committed data immediately on a native read. The pinned client owns its ledger-service memoization
+and graph/table refresh. Corporation observer ledgers and moon-mining observers remain outside this personal-ledger
+milestone.
+
+References: [EVE University mining guide](https://wiki.eveuniversity.org/Mining) covers collection into ship holds and the
+ledger entry point. CCP's [ledger guide](https://support.eveonline.com/hc/en-us/articles/115005402265-Mining-Ledger)
+defines personal 90-day history. [Introducing the Mining Ledger](https://www.eveonline.com/news/view/introducing-the-mining-ledger-new-tools-for-miners-in-eve-online)
+and [Mining Ledgers in ESI](https://developers.eveonline.com/blog/mining-ledgers-in-esi) describe daily aggregation by
+resource and system. Historical corporation identity is retained for the pinned client's corporation filter.
+
+Inert build **3662168** inspection covered `ledgerSvc.GetPersonalData`, `ledgerUtil.NUM_DAYS_BACK` and minimap grouping,
+`ledgerPanel.IsFilteredOut`, and `ledgerEntry.GetLedgerEntriesPersonal`; no client code was executed. The unchanged
+archive SHA-256 is `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Existing native Blue list/KeyVal
+adapters suffice; codec and transport are unchanged. EveJs installed source **261108.1**, without Git metadata, was
+used as a behavioral reference and independently reconciled with these sources. SHA-256 source identifiers:
+
+- `services/mining/characterMiningLedgerService.js`: `22B971613967BE014AFE1433FD40B8CE8268987E54ED48CAE2E7909B9E2C5E88`
+- `services/mining/miningLedgerState.js`: `48029829136CF9C0983D3DE72BAB4FC10EC1CAD514A8D1D6049C0BB5C31CF440`
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors. Final filter
+`FullyQualifiedName~Eden.Protocol.Tests.Mining|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~CapsuleerCoarseTests|FullyQualifiedName~CapsuleerResidentRoutineTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~CharacterDeletionTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`
+passed **387 cases**, zero failed/skipped, in **130.23 seconds** with four test workers. Both Python policy suites passed
+(**8 catalog**, **9 formatting**), formatting verification checked **1,706 files**, and documentation text/link/anchor
+and whitespace checks passed. Required checks took **153.18 seconds** on base `8eafac1d` plus this milestone. Coverage
+includes disk/resident native reads, actual ore/ice/gas collection, critical bonus, crystal waste/waste-only depletion,
+coarse multi-cycle mining, rollback/retry, UTC boundaries, privacy/owner rejection, corporation-at-mining-time, 64-bit
+wire totals, retention, empty version-142 upgrades and reopen/checkpoint persistence. Development exact filters began
+with the native read method (2 cases), followed by aggregation/waste and coarse/large-total methods. Early fixture errors
+were corrected; final affected checks cover the resulting tree. The installed-save opt-in replay was not enabled, and
+no capacity benchmark or full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Mine a small amount, open/refresh the personal ledger and compare the day's quantity,
+waste, system and graph. Native rendering and memoized refresh timing remain unverified.
+
 ## Bulk industry-job delivery — November 11, 2026
 
 The native Industry window can now deliver multiple selected personal jobs through
