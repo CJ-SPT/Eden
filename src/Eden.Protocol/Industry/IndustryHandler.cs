@@ -189,6 +189,27 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         InventoryChangesWire.NotifyBlueprintsUpdated(context, job.PilotId);
     }
 
+    private static IReadOnlyList<IndustryDelivery> DeliveryBatch(object? value)
+    {
+        // Build 3662168 IndustryService.CompleteJobs sends one list of (jobID, solarSystemID) tuples.
+        if (value is not List<object?> rows || rows.Count > IndustryDefinitions.MaximumDeliveryBatch)
+        {
+            throw new InvalidDataException("Deliver a list of job and solar-system pairs.");
+        }
+        var deliveries = rows.Select(row =>
+                row is object?[] { Length: 2 } pair
+                && pair[0] is long job
+                && job > 0
+                && pair[1] is long system
+                && system is > 0 and <= int.MaxValue
+                    ? new IndustryDelivery(job, (int)system)
+                    : throw new InvalidDataException("Each delivery needs a job ID and its solar-system ID.")
+            )
+            .ToArray();
+        IndustryDeliveryRules.Validate(deliveries);
+        return deliveries;
+    }
+
     private static long QuotedCents(Dictionary<string, object?> values, string name)
     {
         double isk = values.GetValueOrDefault(name) switch
@@ -265,6 +286,21 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                     );
                 case ("industryManager", "InstallJob") when args is [var request]:
                     return Install(context, request);
+                case ("industryManager", "CompleteManyJobs"):
+                    if (keywords is { Count: > 0 })
+                    {
+                        throw new InvalidDataException("Bulk delivery does not accept keyword arguments.");
+                    }
+                    if (args.Length != 1)
+                    {
+                        throw new InvalidDataException("Deliver one list of job and solar-system pairs.");
+                    }
+                    var batchResults = industry.DeliverMany(pilotId, DeliveryBatch(args[0]));
+                    foreach (var completion in batchResults)
+                    {
+                        Notify(context, completion);
+                    }
+                    return PilotCallResult.None;
                 case ("industryManager", "CompleteJob" or "CancelJob") when args is [long job, long system]:
                     var result =
                         method == "CompleteJob"

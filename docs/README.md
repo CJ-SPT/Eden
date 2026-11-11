@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026) covers native multi-job completion and atomic rollback.
+
 [Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026) covers asteroid/object bookmarks and resolved scan results.
 
 [Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) covers mission-panel goals and updates.

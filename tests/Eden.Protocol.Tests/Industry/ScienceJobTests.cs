@@ -27,7 +27,7 @@ using Fixture = Eden.Protocol.Tests.Industry.IndustryTests.Fixture;
 
 namespace Eden.Protocol.Tests.Industry;
 
-public sealed class ScienceJobTests
+public sealed partial class ScienceJobTests
 {
     private sealed class FixedRandom(double value) : IIndustryRandom
     {
