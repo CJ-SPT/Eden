@@ -2613,7 +2613,18 @@ verification passed, including **1,740 CSharpier files / 2.896 s** and the 140-c
 time was not captured. No width exceptions were added. Two final replay cases also passed; their separate benchmark
 build took **7.60 s** and run **6.81 s**. Replay source, targets, summaries and reports are preserved with the focused
 reports under `artifacts/resident-economy-20261111`. Earlier setup, query and null-index failures were corrected before
-these closing runs. The branch remains unmerged while the mixed bot-action migration described above is outstanding.
+these closing runs. The shared transaction slice is merged separately from the outstanding mixed bot-action migration described above.
+
+The merge integration includes main `d45c1d7d` (shared bookmarks/access lists and structure compression). Only the
+protocol/documentation indexes conflicted; both records were retained. Tool and solution restore passed, and the
+integrated solution build passed in **47.54 s** with zero warnings/errors. The OR filter for `ResidentEconomyTests`,
+`PersonalMarketTests`, `PilotInventoryTests`, `InventoryOwnershipTests`, `PersonalAssetServiceTests`,
+`DetachedCheckpointTests`, `SessionPerformanceTests`, `StructureCompressionTests`, `SharedBookmarksTests` and
+`SharedBookmarkServiceTests`, using their complete namespaces, passed **105 tests / 57.77 s** (focused build **1.86 s**).
+Catalog policy passed **8 tests / 0.944 s**, formatting policy passed **9 tests / 0.110 s**, and formatting verification
+passed for **1,758 files** with no width exceptions. Combined policy/formatting elapsed time was **25.13 s**.
+The integration report is preserved as `artifacts/resident-economy-20261111/merge-integration.trx` in the primary checkout.
+No full .NET regression or installed-save stress run was performed for this merge.
 
 ### Live acceptance
 
