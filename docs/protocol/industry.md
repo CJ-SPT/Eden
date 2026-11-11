@@ -7,6 +7,46 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Personal job installation corporation metadata (November 11, 2026)
+
+The supplied Miner I manufacturing screenshot reported `Use personal industry with the current installation quote.`
+The installation adapter incorrectly required `corporationID` to be absent or None. Offline inspection of the original
+build-3662168 archive (`code.ccp` SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`) confirms that
+`eve/common/script/util/industryCommon.pyj`, `AttachSessionToJob` lines 289–294, always copies `session.corpid` to
+the job, including personal jobs. `industry/job.pyj`, `Job.dump` lines 888–905, includes that value in `InstallJob`.
+The adapter now accepts the selected pilot's current corporation ID and retains compatibility with absent/None
+metadata. A different corporation still rejects. Personal input/output ownership and the personal cash wallet remain
+mandatory, and authoritative blueprint, material, skill, duration and price validation is unchanged.
+
+Gameplay reference: [UniWiki Manufacturing](https://wiki.eveuniversity.org/Manufacturing), consulted November 11, 2026,
+describes installation from the blueprint, material and output locations. The local evejs reference's
+`server/src/services/industry/industryPayloads.js`, `parseIndustryRequest`, was inspected; it parses corporation metadata
+separately from wallet ownership. That checkout has no Git metadata, so no source revision can be recorded. No source
+was copied, and Blue serialization is unchanged.
+
+**Automated validation:** No test was added, as requested. The existing exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.IndustryTests.NativeJobRequestsValidateLocationsAndRefreshMonitoredMaterials`
+passed both cases (build 3.10 seconds, tests 6.20 seconds). These existing cases cover location rejection, installation,
+notifications, material monitoring and minimum duration; their requests omit corporation metadata. The new metadata
+condition is supported by offline client inspection and code review. Final validation used an isolated checkout of
+`9d930647` plus this fix because concurrent market edits in the primary checkout produced a nullable dictionary-key
+build error in `RegionalMarketCatalog.cs`. The isolated tool restore, solution restore and solution build passed
+(build 9.23 seconds, zero warnings/errors). The affected filter passed **70/70 cases** (build 1.61 seconds, tests
+38.75 seconds):
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ScienceJobTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ManufacturingRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.ScienceRulesTests
+```
+
+Both Python policy suites passed (8 catalog setup, 9 formatting), formatting application and verification passed,
+and the final diff/whitespace checks passed. No full .NET suite or interactive server session was run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The supplied screenshot is the reported failure,
+not verification of the fix.
+
+**Optional maintainer checks:** After restarting the server, retry the personal Miner I job shown in the screenshot.
+
 ## Immediate regional purchases (November 11, 2026)
 
 Immediate personal purchases now accept any market station in the pilot's current region, while docked or in space.

@@ -102,10 +102,13 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
         var values = Values(request);
         long station = CheckLocation(context, values, "inputLocation");
         _ = CheckLocation(context, values, "outputLocation");
+        // Build 3662168 AttachSessionToJob includes the pilot's corporation even for personal jobs.
+        // Personal ownership and payment are enforced by the hangar and wallet checks.
+        var corporation = values.GetValueOrDefault("corporationID");
         if (
             Number(values, "characterID") != context.Pilot.PilotId
             || !IndustryDefinitions.Activities.Contains((IndustryActivity)Integer(values, "activityID"))
-            || values.GetValueOrDefault("corporationID") is not null
+            || corporation is not null && !Equals(corporation, (long)context.Pilot.CorpId)
             || values.GetValueOrDefault("account") is not object?[] { Length: 2 } account
             || !Equals(account[0], context.Pilot.PilotId)
             || !Equals(account[1], (long)WalletAccountKey.Cash)
