@@ -462,7 +462,6 @@ public sealed class MarketTests
         Assert.Throws<InvalidDataException>(() => f.Sell());
         f.Db.Store.SetPosition(f.Pilot.ShipId, SpacePosition.Zero);
         Assert.Throws<InvalidDataException>(() => f.Sell());
-        Assert.Throws<InvalidDataException>(() => f.Buy());
         Assert.Equal(0, f.Store.Balance(f.Pilot.PilotId));
     }
 

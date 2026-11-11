@@ -38,7 +38,13 @@ public sealed record MarketTrade(
     long? WalletAmountCents = null
 );
 
-public sealed record MarketResult(long BalanceCents, IReadOnlyList<MarketTrade> Trades, IReadOnlyList<InventoryChange> Changes);
+public sealed record MarketResult(
+    long BalanceCents,
+    IReadOnlyList<MarketTrade> Trades,
+    IReadOnlyList<InventoryChange> Changes,
+    int SystemId,
+    int RegionId
+);
 
 public sealed record WalletEntryDefinition(int Id, long NameId, string Name, string Description);
 

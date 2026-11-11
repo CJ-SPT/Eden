@@ -457,7 +457,8 @@ internal sealed partial class PilotMarketStore
     )
     {
         var pilot = Pilot(world, pilotId);
-        var station = TradeStation(catalog, pilot, stationId);
+        // Immediate purchases need no remote-order skill; goods stay at the selling station.
+        var station = days == 0 ? PurchaseStation(world, catalog, pilot, stationId) : TradeStation(catalog, pilot, stationId);
         if (items.Count == 0 || items.Select(i => i.TypeId).Distinct().Count() != items.Count)
         {
             throw new InvalidDataException("Select distinct market types.");
@@ -485,7 +486,7 @@ internal sealed partial class PilotMarketStore
         }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Bought, trades.Count);
         world.SaveChanges();
-        return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes);
+        return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
     }
 
     private MarketResult ExecuteSell(long pilotId, IReadOnlyList<MarketSale> items, int days)
@@ -571,7 +572,7 @@ internal sealed partial class PilotMarketStore
         }
         PilotTaskTrackingStore.Record(world, catalog, pilotId, Now, TaskEvents.Sold, trades.Count);
         world.SaveChanges();
-        return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes);
+        return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
     }
 
     private SavedPersonalOrder OwnedOrder(WorldDbContext world, CatalogDbContext catalog, long pilotId, long id)

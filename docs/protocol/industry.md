@@ -7,6 +7,48 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Immediate regional purchases (November 11, 2026)
+
+Immediate personal purchases now accept any market station in the pilot's current region, while docked or in space.
+The purchase destination is the selling station: goods enter that station's personal hangar and require pickup.
+The current station need not offer a market. Region validation uses the ship's current system in space or its docked
+structure's system rather than its last NPC station, and rejects cross-region requests before seeding or matching orders.
+Both `marketProxy.PlaceBuyOrder` with zero duration and `BuyMultipleItems` use this path. Persistent orders,
+selling and order management retain their existing station restrictions. This change does not add remote-order skills.
+
+NPC development, institutional and progressive supply and personal sell listings share the existing atomic matching,
+wallet and inventory operations. Immediate execution notifications now use the destination's system and region;
+item notifications identify the destination hangar. Failed multibuy transactions roll back their earlier fills.
+
+References: [EVE University trade skills](https://wiki.eveuniversity.org/Skills:Trade) distinguishes skill-free direct
+remote purchases from Procurement's persistent buy orders. Offline inspection of build 3662168's
+`eve/client/script/ui/services/marketsvc.pyj` confirmed `MarketQuote.BuyStuff` forwards nine positional arguments,
+including the requested station and duration, to `PlaceBuyOrder`; `BuyMulti` forwards station, item list and
+corporation flag to `BuyMultipleItems` and returns its created order rows.
+The local evejs reference (`package.json` version `261108.1`) was consulted for these service entry points;
+its checkout has no Git metadata. The inspected `server/src/services/market/marketProxyService.js` SHA-256 was
+`f457cb1b181ceb570a5fa346c718d71a7ce7b84b8734c88cee7f2546a8ce175b`. No reference implementation was copied.
+
+Automated validation: tool restore and solution restore passed. The final solution build completed with zero warnings
+and errors (5.35 seconds); 104 focused .NET cases passed (33 seconds). Both Python policy suites passed (8 catalog
+setup and 9 formatting cases), and `tools/Format.ps1 -Check` passed for 1,667 files with the 140-character limit.
+The final formatting/build/test/policy/verification sequence took 106.09 seconds. The full .NET suite was not run.
+The final filter OR-combined `FullyQualifiedName~Eden.Protocol.Tests.Market.` with each of these class suffixes:
+`RemoteMarketTests`, `MarketTests`, `PersonalMarketTests`, `PersonalMarketRulesTests`, `RegionalMarketTests`,
+`TestingMarketTests`, `MarketReadCompatibilityTests` and `NpcSupplyTests`.
+Development started with the exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Market.RemoteMarketTests.RegionalPurchasesDeliverToSellingStationAndNotifyItsLocation`
+(8 cases), then the exact `DockedStructureUsesItsRegionInsteadOfLastStation` method (1 case).
+An initial delivery assertion counted an existing starter stack; the isolated fixture now clears that type first.
+The final 104-case run covers the corrected fixture and the later docked-structure region check.
+
+Live acceptance: Not performed; agent client testing is disabled. The user-provided screenshot showed the prior
+"Trade from your current station while docked" rejection when buying a regional Miner I Blueprint listing;
+that observation identifies the original guard and does not establish acceptance of the correction.
+
+Optional maintainer checks: After restarting with the update, buy a distant regional listing while docked and in space,
+then confirm its station in Personal Assets and collect it at the selling station.
+
 ## Ice harvesting and public ice fields (November 9, 2026)
 
 All **six static ice tools** in build 3662168 now fit and operate: Ice Harvester I/II/ORE

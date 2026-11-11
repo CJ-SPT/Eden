@@ -495,6 +495,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Mining, industry and markets
 
+- [Immediate regional purchases (November 11, 2026)](protocol/industry.md#immediate-regional-purchases-november-11-2026)
+
 - [Inventory estimates and reference market history (November 9, 2026)](protocol/industry.md#inventory-estimates-and-reference-market-history--november-9-2026)
 
 - [NPC purchases from resting sell orders (November 9, 2026)](protocol/industry.md#npc-purchases-from-resting-sell-orders--november-9-2026)

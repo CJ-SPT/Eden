@@ -98,6 +98,53 @@ public sealed class PersonalMarketTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public void RemoteBuyerFillsPlayerListingAndGoodsRemainAtSellerStation(bool inSpace)
+    {
+        using Fixture f = new();
+        f.List();
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO Station(Id,TypeId,OwnerId,SolarSystemId,OperationId,OrbitId,X,Y,Z)
+                    SELECT 60003761,TypeId,OwnerId,30000144,OperationId,OrbitId,X,Y,Z FROM Station WHERE Id=60003760;
+                """
+            );
+        }
+        long shipId;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var ship = world.Ships.Single(s => s.OwnerId == Buyer);
+            shipId = ship.Id;
+            ship.StationId = 60003761;
+            world.SaveChanges();
+        }
+        if (inSpace)
+        {
+            f.Db.Store.SetPosition(shipId, Eden.Gameplay.Flight.SpacePosition.Zero, 30000144);
+        }
+        long sellerBefore = f.Market.Balance(Seller);
+        var purchase = f.Buy(40);
+        Assert.Equal(Budget - 40000, purchase.BalanceCents);
+        Assert.Equal(sellerBefore + 37000, f.Market.Balance(Seller));
+        Assert.Equal(60, f.Order().Remaining);
+        Assert.Equal(f.Pilot.StationId, Assert.Single(purchase.Changes).Item.LocationId);
+        Assert.Equal(40, Assert.Single(purchase.Changes).Item.Quantity);
+        _ = WorldInitialization.Open(f.Db.Path);
+        using WorldDbContext saved = new(f.Db.Path);
+        var goods = Assert.Single(saved.Set<OwnedItem>(), i => i.OwnerId == Buyer && i.TypeId == Ammo);
+        Assert.Equal(f.Pilot.StationId, goods.LocationId);
+        Assert.Equal((int)InventoryFlag.Hangar, goods.FlagId);
+        Assert.Equal(40, goods.Quantity);
+        Assert.Equal(60, f.Order().Remaining);
+        Assert.Equal(Budget - 40000, f.Market.Balance(Buyer));
+        Assert.Single(f.Market.Transactions(Buyer));
+        Assert.Single(f.Market.Transactions(Seller));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task OfflineSellerReceivesPartialFillsAndHistoryCountsEachTradeOnceAcrossCheckpoint(bool live)
     {
         using Fixture f = new(live);

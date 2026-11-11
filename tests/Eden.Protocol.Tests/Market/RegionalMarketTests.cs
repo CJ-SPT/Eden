@@ -24,6 +24,28 @@ public sealed class RegionalMarketTests
     private const int Merlin = 603; // Audited starter production cohort.
 
     [Fact]
+    public void RemoteHubPurchaseConsumesFiniteStockAndLeavesGoodsForPickup()
+    {
+        using CapsuleerHaulerTests.Fixture f = UnlockedFixture();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+        Assert.NotEqual(HubStation, pilot.StationId);
+        var market = host.GetRequiredService<IPilotMarket>();
+        var quote = market.Orders(pilot.PilotId, Ammunition).Single(o => o.StationId == HubStation && !o.Bid);
+        Fund(f.Database, pilot.PilotId, quote.PriceCents * 100);
+        long before = market.Balance(pilot.PilotId);
+        var purchase = market.Buy(pilot.PilotId, HubStation, [new(Ammunition, quote.PriceCents, 10)]);
+        Assert.Equal(before - quote.PriceCents * 10, purchase.BalanceCents);
+        Assert.Equal(HubStation, Assert.Single(purchase.Changes).Item.LocationId);
+        Assert.Equal(10, Assert.Single(purchase.Trades).Quantity);
+        using WorldDbContext saved = new(f.Database.Path);
+        Assert.Equal(quote.Remaining - 10, saved.Set<NpcMarketOrder>().Single(o => o.Id == quote.Id).Remaining);
+        var goods = Assert.Single(saved.Set<OwnedItem>(), i => i.OwnerId == pilot.PilotId && i.TypeId == Ammunition);
+        Assert.Equal(HubStation, goods.LocationId);
+        Assert.Equal(10, goods.Quantity);
+    }
+
+    [Fact]
     public void HubsUseOnlyHighSecurityAndGeneratedStockNeverAppearsInLowSecurity()
     {
         using CapsuleerHaulerTests.Fixture f = UnlockedFixture();

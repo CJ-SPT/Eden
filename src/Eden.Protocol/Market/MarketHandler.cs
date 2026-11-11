@@ -47,8 +47,8 @@ internal sealed class MarketHandler(
                     new(
                         MarketDefinitions.FirstExecutionOrderId + trade.Id,
                         trade.StationId,
-                        context.Pilot.SystemId,
-                        context.Pilot.RegionId,
+                        result.SystemId,
+                        result.RegionId,
                         context.Pilot.PilotId,
                         trade.TypeId,
                         trade.IsBuy,

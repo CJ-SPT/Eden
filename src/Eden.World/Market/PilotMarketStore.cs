@@ -12,6 +12,7 @@ using Eden.World.Docking;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Structures;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Market;
@@ -54,6 +55,27 @@ internal sealed partial class PilotMarketStore(
             throw new InvalidDataException("Trade from your current station while docked.");
         }
         var station = Station(catalog, stationId);
+        if (!HasMarket(catalog, station))
+        {
+            throw new InvalidDataException("This station does not provide a market.");
+        }
+        return station;
+    }
+
+    private static CatalogStationDefinition PurchaseStation(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int stationId)
+    {
+        var station = Station(catalog, stationId);
+        int systemId =
+            pilot.ActiveShip.Position?.SystemId
+            ?? (
+                pilot.ActiveShip.StructureId is long structureId
+                    ? PilotStructureStore.Require(world, structureId).SystemId
+                    : Station(catalog, pilot.ActiveShip.StationId).SolarSystemId
+            );
+        if (catalog.RequireSystem(systemId).RegionId != station.RegionId)
+        {
+            throw new InvalidDataException("Buy from a station in your current region.");
+        }
         if (!HasMarket(catalog, station))
         {
             throw new InvalidDataException("This station does not provide a market.");
