@@ -6,6 +6,56 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Reusing compact remote roles, November 11, 2026
+
+The reported coarse-simulation warnings included indivisible units taking 15–180 ms against at most 5 ms of remaining
+allowance. The allowance is a soft admission budget: a bot's transaction must finish or roll back before ownership can
+yield. Postponing subsequent units repays the debt but cannot preempt the current action. Units that begin near the end
+of the allowance can also exceed its smaller remainder without exceeding 5 ms themselves.
+
+One avoidable cost was discarding each role object after every remote settlement. Its next action repeated pilot,
+inventory, route and geometry loading even when the inputs were unchanged. Successful demotion now clears the role's
+geometry and obstacle arrays and detaches it from the detailed system runtime, while keeping compact pilot, navigation,
+target and role state in the scheduler. A returning miner loads geometry on demand before locating its home station.
+The bounded shared fitting cache retains its existing limits; observer scenes and combat contacts are still released.
+
+Committed pilot/fitting, agent membership and known-ship/position changes invalidate compact inputs by identity. Skill changes use the
+existing fitting-revision triggers. Catalog generations and schema/settings resets also invalidate them. Validation
+runs before remote settlement, explicit role reads and promotion back to detailed scheduling. Rolled-back writes do
+not publish revisions. Successful settlements capture their own committed revisions, preventing self-invalidation.
+Durable cursors, job revisions, resource/payment transactions, budget size and population settings are unchanged.
+
+Overrun warnings now identify the action, pilot and system (or completed system pass), together with SQL commands,
+connections and fitting calculations. This distinguishes future cold loads or expensive atomic boundaries from small
+units admitted with little remaining allowance. The change does not establish that every atomic action fits in 5 ms.
+
+References: [EVE University server ticks](https://wiki.eveuniversity.org/Server_tick) and
+[Carbon Destiny Ballpark.cpp at `114e89fa584f0e1a81eb0a679aabf41af8870072`](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp).
+The local evejs simulation README (configuration version `261108.1`) was also consulted for the boundary between
+one-second Destiny motion and gameplay eligibility. These references do not define Eden's remote population policy;
+movement laws and wire formats are unchanged, and no reference implementation was copied.
+
+**Automated validation:** tool restore, solution restore and solution build passed (zero warnings/errors; final solution
+build 1.11 seconds). The final affected run passed **73/73** in **60.02 seconds** including runner startup; its feature
+build took 2.28 seconds. Exact regressions cover warm role reuse without founder reloads, repeated committed pilot changes,
+ship/position changes, fitting/catalog invalidation, rollback and lazy return geometry. The earlier affected run exposed
+a paid-cycle return-deadline regression; the final result includes explicit re-anchoring when a retained role resumes.
+The final filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerCoarseTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerTierTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHandoffTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHaulerTests|FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerInboundRuntimeTests.StationlessLaneContinuesToItsSavedRemoteStationAndPersistsCursor|FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerInboundRuntimeTests.FailedInboundTransitionPreservesResidentAndSavedProgress
+```
+
+The report is retained locally at `artifacts/feature-tests/results/f02d8689d7854bd4a2df9b44d88cf9e6/tests.trx`.
+Both Python policy suites passed: **8 catalog tests (2.979 seconds)** and **9 formatting tests (0.035 seconds)**.
+Formatting verification and Git whitespace checks passed. The full .NET suite was not run.
+Final validation uses affected-area automated tests; long-running simulation replays were not run. Runtime latency
+and the frequency of budget overruns on the installed world remain unmeasured for the final revision.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer check:** after deploying the rebuilt server, inspect any remaining enriched overrun warnings.
+
 ## Coarse distant populations, November 10, 2026
 
 Regional population settings and creation remain unchanged. Detailed jobs now follow selected humans, watched arrivals and

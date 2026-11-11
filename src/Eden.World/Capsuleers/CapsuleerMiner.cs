@@ -260,7 +260,12 @@ internal sealed class CapsuleerMiner(
         _operation = new(database, job, marketSignal, coarse);
         try
         {
-            if (_resumeCount != resumes && Work.Activity == MinerActivity.Mining && Work.PaidUntil != 0 && Work.DueTicks > activeNow)
+            if (
+                (_resumeCount != resumes || resume is not null)
+                && Work.Activity == MinerActivity.Mining
+                && Work.PaidUntil != 0
+                && Work.DueTicks > activeNow
+            )
             {
                 if (
                     !_operation
@@ -916,6 +921,10 @@ internal sealed class CapsuleerMiner(
         {
             PilotMiningStore.Stop(_operation.World, Pilot.PilotId, Work.ModuleId, Work.PaidUntil);
             _work = Work with { PaidUntil = 0 };
+        }
+        if (_objects.Count == 0)
+        {
+            RefreshObjects();
         }
         StartCourse(_objects.Single(o => o.Id == Pilot.StationId), MinerActivity.Returning);
     }

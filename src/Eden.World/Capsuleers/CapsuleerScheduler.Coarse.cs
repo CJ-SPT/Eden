@@ -17,6 +17,7 @@ internal sealed partial class CapsuleerScheduler
     private readonly Dictionary<long, long> _coarseSettled = [];
     private readonly HashSet<long> _pendingArrivals = [];
     private readonly HashSet<long> _admittedTravelers = [];
+    private readonly Dictionary<long, CoarseRoleInputs> _coarseInputs = [];
     private long _coarseOrder;
     private int _coarseAgentCount;
     private long _coarseRetryTicks;
@@ -24,6 +25,41 @@ internal sealed partial class CapsuleerScheduler
     private const int RecentReturnLimit = 32;
     private readonly Dictionary<int, CapsuleerReturnProgress> _returnProgress = [];
     private IReadOnlyList<CapsuleerReturnProgress> _recentReturns = [];
+
+    private readonly record struct CoarseRoleInputs(
+        long PilotRevision,
+        long ShipRevision,
+        long AgentRevision,
+        long ResetRevision,
+        long CatalogGeneration
+    );
+
+    private CoarseRoleInputs ReadCoarseInputs(long pilot) =>
+        new(
+            Live!.CapsuleerInputRevisions.GetValueOrDefault(pilot),
+            Live.CapsuleerShipRevisions.GetValueOrDefault(_pilotShips[pilot]),
+            Live.CapsuleerAgentRevisions.GetValueOrDefault(pilot),
+            Live.CapsuleerInputReset,
+            database.Catalog.Identity.Generation
+        );
+
+    private void RefreshCoarseRole(long pilot)
+    {
+        if (!_coarseInputs.TryGetValue(pilot, out var previous) || previous == ReadCoarseInputs(pilot))
+        {
+            return;
+        }
+        if (_miners.ContainsKey(pilot))
+        {
+            _miners[pilot] = miners.Create(pilot);
+        }
+        else
+        {
+            _haulers[pilot] = haulers.Create(pilot);
+        }
+        Live!.AssignCapsuleer(pilot, null, _locations[pilot], null, null);
+        _coarseInputs[pilot] = ReadCoarseInputs(pilot);
+    }
 
     private void RecordDemotions(IReadOnlyList<long> pilots, long elapsed)
     {
@@ -213,18 +249,22 @@ internal sealed partial class CapsuleerScheduler
         {
             return false;
         }
-        using var budget = _backgroundBudget.TryEnter();
-        if (budget is null)
-        {
-            _coarseRetryTicks = checked(activity.ElapsedTicks + CapsuleerCoarseRules.Window.Ticks);
-            return false;
-        }
         var selected = _coarseQueue.Min;
         var work = _coarseWork[selected.System];
         var members = _coarseMembers[selected.System];
         // Only a bounded page is materialized. One bot settlement yields ownership
         // before another bot; the durable cursor advances in that same transaction.
         long pilot = members.GetViewBetween(checked(work.Cursor + 1), long.MaxValue).Take(CapsuleerCoarseRules.PageSize).FirstOrDefault();
+        string operationName =
+            pilot == 0
+                ? $"coarse simulation pass system={selected.System}"
+                : $"coarse simulation {Current[pilot].Action} pilot={pilot} system={selected.System}";
+        using var budget = _backgroundBudget.TryEnter(operationName);
+        if (budget is null)
+        {
+            _coarseRetryTicks = checked(activity.ElapsedTicks + CapsuleerCoarseRules.Window.Ticks);
+            return false;
+        }
         if (pilot == 0)
         {
             var next = work with
@@ -255,6 +295,7 @@ internal sealed partial class CapsuleerScheduler
             return true;
         }
         var job = Current[pilot];
+        RefreshCoarseRole(pilot);
         var input = work with
         {
             ThroughTicks = activity.ElapsedTicks,
@@ -286,6 +327,11 @@ internal sealed partial class CapsuleerScheduler
             IndexJourney(pilot, hauler);
             IndexLocation(pilot, hauler.SystemId);
         }
+        var loadedPilot = miner?.PreparationPilot ?? _haulers.GetValueOrDefault(pilot)?.PreparationPilot;
+        if (loadedPilot is not null)
+        {
+            RegisterShip(pilot, loadedPilot.ShipId);
+        }
         Current[pilot] = settled;
         _coarseSettled[pilot] = activity.ElapsedTicks;
         CapsuleerCoarseResult result = new(settled, input with { Cursor = pilot, Generation = checked(work.Generation + 1) });
@@ -307,14 +353,11 @@ internal sealed partial class CapsuleerScheduler
         }
         if (released)
         {
-            if (miner is not null)
-            {
-                _miners[pilot] = miners.Create(pilot);
-            }
-            else
-            {
-                _haulers[pilot] = haulers.Create(pilot);
-            }
+            // SetDetailed(false) releases geometry/contacts while preserving the compact
+            // pilot, navigation and role inputs. Rebuilding the role here forced a cold
+            // pilot/fitting/route load for every remote action. Committed input revisions
+            // invalidate this snapshot before either its next settlement or activation.
+            _coarseInputs[pilot] = ReadCoarseInputs(pilot);
             Live.AssignCapsuleer(pilot, null, _locations[pilot], null, null);
         }
         var hauling = Live.HaulerCheckpoints.GetValueOrDefault(pilot)?.Work;

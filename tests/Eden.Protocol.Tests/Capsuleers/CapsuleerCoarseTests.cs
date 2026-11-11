@@ -8,6 +8,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Docking;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -20,6 +21,214 @@ public sealed class CapsuleerCoarseTests
 {
     private const int Home = 30000141;
     private const int Elsewhere = 30000144;
+
+    [Fact]
+    public void WarmRemoteSettlementsReuseRoleInputsWithoutReloadingFounders()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
+        human.Transfer(Elsewhere);
+        scheduler.Run(0);
+        for (int pass = 0; pass < 2; pass++)
+        {
+            fixture.Clock.Seconds += 70;
+            List<string> commands = [];
+            using var metrics = SessionPerformance.Begin("remote role inputs", _ => { }, force: true, command: commands.Add)!;
+            for (int turn = 0; turn < 3; turn++)
+            {
+                scheduler.Run(checked((int)fixture.Clock.Seconds));
+                fixture.Clock.Milliseconds += 50;
+            }
+            if (pass == 1)
+            {
+                Assert.DoesNotContain(commands, IsRoleLoad);
+                Assert.InRange(metrics.Connections, 1, 20);
+                Assert.InRange(metrics.Commands, 1, 180);
+                Assert.InRange(metrics.FittingCalculations, 0, 4);
+            }
+        }
+        Assert.Equal(0, scheduler.Read().Failures);
+        Assert.True(scheduler.Read().CompletedActions >= 4);
+    }
+
+    private static bool IsRoleLoad(string sql) =>
+        sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase)
+        && (
+            sql.Contains("FROM \"WorldCapsuleerCommunity\"", StringComparison.Ordinal)
+            || sql.Contains("FROM \"WorldCapsuleerHauler\"", StringComparison.Ordinal)
+        );
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CommittedPilotChangesRefreshCompactRemoteRoles(bool returnToSystem)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
+        human.Transfer(Elsewhere);
+        scheduler.Run(0);
+        fixture.Clock.Seconds += 70;
+        scheduler.Run(70);
+        var live = host.GetRequiredService<LiveWorld>();
+        long pilot = Assert.Single(live.MinerCheckpoints.Keys);
+        for (int revision = 0; revision < 2; revision++)
+        {
+            string renamed = $"Updated remote pilot {revision}";
+            using (WorldDbContext world = new(fixture.Database.Path) { Participants = TransactionParticipants.None })
+            {
+                world.Pilots.Find(pilot)!.Name = renamed;
+                world.SaveChanges();
+            }
+            if (returnToSystem && revision == 1)
+            {
+                human.Transfer(Home);
+            }
+            Assert.Equal(renamed, scheduler.Miner(pilot)!.Pilot.Name);
+        }
+        Assert.Equal(0, scheduler.Read().Failures);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RemoteShipInputInvalidationPublishesOnlyCommittedChanges(bool commit)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
+        human.Transfer(Elsewhere);
+        scheduler.Run(0);
+        fixture.Clock.Seconds += 70;
+        scheduler.Run(70);
+        long pilot = Assert.Single(host.GetRequiredService<LiveWorld>().MinerCheckpoints.Keys);
+        var before = scheduler.Miner(pilot)!;
+        const string renamed = "Updated remote ship";
+        using (WorldDbContext world = new(fixture.Database.Path) { Participants = TransactionParticipants.None })
+        {
+            using var transaction = world.Database.BeginTransaction();
+            world.Ships.Find(before.Pilot.ShipId)!.Name = renamed;
+            world.SaveChanges();
+            if (commit)
+            {
+                transaction.Commit();
+            }
+        }
+        List<string> commands = [];
+        using var metrics = SessionPerformance.Begin("remote ship inputs", _ => { }, force: true, command: commands.Add)!;
+        var after = scheduler.Miner(pilot)!;
+        Assert.Equal(commit ? renamed : before.Pilot.ShipName, after.Pilot.ShipName);
+        if (!commit)
+        {
+            Assert.DoesNotContain(commands, IsRoleLoad);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FittingAndCatalogChangesRefreshCompactRemoteInputs(bool catalogChange)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
+        human.Transfer(Elsewhere);
+        scheduler.Run(0);
+        fixture.Clock.Seconds += 70;
+        scheduler.Run(70);
+        var live = host.GetRequiredService<LiveWorld>();
+        long pilot = Assert.Single(live.MinerCheckpoints.Keys);
+        var checkpoint = live.MinerCheckpoints[pilot];
+        if (catalogChange)
+        {
+            // Disposing a writable catalog publishes a new generation, including
+            // revisions whose changes do not affect this pilot's particular hull.
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true);
+        }
+        else
+        {
+            using WorldDbContext world = new(fixture.Database.Path) { Participants = TransactionParticipants.None };
+            // Skill and fitting triggers publish through this same dependency row.
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldFitRevision(PilotId,Stamp) VALUES({pilot},'changed-inputs')
+                ON CONFLICT(PilotId) DO UPDATE SET Stamp=excluded.Stamp
+                """
+            );
+        }
+        List<string> commands = [];
+        using var metrics = SessionPerformance.Begin("changed remote inputs", _ => { }, force: true, command: commands.Add)!;
+        var refreshed = scheduler.Miner(pilot)!;
+        Assert.Equal(pilot, refreshed.Pilot.PilotId);
+        Assert.Equal(checkpoint.Work, refreshed.Work);
+        Assert.Contains(commands, IsRoleLoad);
+    }
+
+    [Fact]
+    public void CommittedPositionChangesRefreshCompactRemoteLocations()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
+        human.Transfer(Elsewhere);
+        scheduler.Run(0);
+        fixture.Clock.Seconds += 70;
+        scheduler.Run(70);
+        long pilot = Assert.Single(host.GetRequiredService<LiveWorld>().MinerCheckpoints.Keys);
+        var before = scheduler.Miner(pilot)!;
+        SpacePosition moved = new(1000, 2000, 3000);
+        using (WorldDbContext world = new(fixture.Database.Path) { Participants = TransactionParticipants.None })
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath))
+        {
+            SqliteWorld.SetPosition(world, catalog, before.Pilot.ShipId, moved, Home, fixture.Clock.Now);
+            world.SaveChanges();
+        }
+        Assert.Equal(moved, scheduler.Miner(pilot)!.Pilot.Position);
+    }
+
+    [Fact]
+    public void CompactMinerReloadsGeometryWhenStartingItsReturn()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
+        MinerObservation? paid = null;
+        for (int action = 0; action < 1000; action++)
+        {
+            paid = CapsuleerTestDriver.Miner(host, fixture.Clock);
+            if (paid.Work.Activity == MinerActivity.Mining)
+            {
+                break;
+            }
+        }
+        Assert.Equal(MinerActivity.Mining, paid!.Work.Activity);
+        long pilot = paid.Pilot.PilotId;
+        host.GetRequiredService<LiveWorld>().MinerCheckpoints[pilot] = new(
+            pilot,
+            paid.Work with
+            {
+                Activity = MinerActivity.ReadyToReturn,
+            }
+        );
+        var miner = host.GetRequiredService<CapsuleerMinerFactory>().Create(pilot);
+        miner.Read(includeHealth: false);
+        miner.SetDetailed(false);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        var job = scheduler.Jobs().Single(j => j.PilotId == pilot);
+        var activity = host.GetRequiredService<CapsuleerActivitySource>().Read();
+        miner.Execute(job, checked((int)fixture.Clock.Seconds), activity.ElapsedTicks, activity.Resumes, background: true);
+        var returning = miner.Read(includeHealth: false)!;
+        Assert.Equal(MinerActivity.Returning, returning.Work.Activity);
+        Assert.Equal(paid.Pilot.StationId, returning.Work.TargetId);
+        Assert.Equal(0, returning.Work.PaidUntil);
+    }
 
     [Theory]
     [InlineData(1, 12)]
