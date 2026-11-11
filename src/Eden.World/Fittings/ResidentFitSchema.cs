@@ -6,6 +6,30 @@ namespace Eden.World.Fittings;
 
 internal static class ResidentFitSchema
 {
+    internal static void UpgradeShipChanges(WorldDbContext world)
+    {
+        // Station, storage and name changes do not alter the fitted graph. Keep both
+        // owners invalidated when the hull identity, type or ownership changes.
+        world.Database.ExecuteSqlRaw(
+            """
+            DROP TRIGGER IF EXISTS Fit_WorldShip_UPDATE_old;
+            DROP TRIGGER IF EXISTS Fit_WorldShip_UPDATE_new;
+            CREATE TRIGGER Fit_WorldShip_UPDATE_old AFTER UPDATE OF Id,TypeId,OwnerId ON WorldShip
+            WHEN OLD.Id IS NOT NEW.Id OR OLD.TypeId IS NOT NEW.TypeId OR OLD.OwnerId IS NOT NEW.OwnerId
+            BEGIN
+                INSERT INTO WorldFitRevision(PilotId,Stamp) VALUES(OLD.OwnerId,hex(randomblob(16)))
+                ON CONFLICT(PilotId) DO UPDATE SET Stamp=excluded.Stamp;
+            END;
+            CREATE TRIGGER Fit_WorldShip_UPDATE_new AFTER UPDATE OF Id,TypeId,OwnerId ON WorldShip
+            WHEN OLD.Id IS NOT NEW.Id OR OLD.TypeId IS NOT NEW.TypeId OR OLD.OwnerId IS NOT NEW.OwnerId
+            BEGIN
+                INSERT INTO WorldFitRevision(PilotId,Stamp) VALUES(NEW.OwnerId,hex(randomblob(16)))
+                ON CONFLICT(PilotId) DO UPDATE SET Stamp=excluded.Stamp;
+            END;
+            """
+        );
+    }
+
     internal static void Create(WorldDbContext world)
     {
         int lowSlot = (int)InventoryFlag.LowSlot0;

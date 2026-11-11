@@ -19,6 +19,52 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed class ResidentFitTests
 {
     [Fact]
+    public void ShipTravelAndNamesReuseFitsButHullAndOwnershipChangesInvalidateBothOwners()
+    {
+        using PilotCombatTests.Fixture f = new();
+        using ResidentFitCache cache = new(new(f.Db.Path));
+        var expected = f.Fitting.ShipAttributes(90000001);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                UPDATE WorldShip SET StationId=60003760,Name='Renamed ship',StorageFlagId=4,StoredInId=NULL,StructureId=NULL
+                WHERE Id=1000000000001;
+                UPDATE WorldShip SET TypeId=TypeId,OwnerId=OwnerId WHERE Id=1000000000001;
+                """
+            );
+        }
+        using (var metrics = SessionPerformance.Begin("unchanged fit after travel", _ => { }, force: true)!)
+        {
+            Assert.Equal(expected.OrderBy(p => p.Key), f.Fitting.ShipAttributes(90000001).OrderBy(p => p.Key));
+            Assert.Equal(0, metrics.FittingCalculations);
+            Assert.InRange(metrics.Commands, 1, 8);
+            Assert.Equal(1, metrics.Connections);
+        }
+        using WorldDbContext changed = new(f.Db.Path);
+        using var transaction = changed.Database.BeginTransaction();
+        string? original = changed.FitRevision(90000001);
+        changed.Database.ExecuteSqlRaw("UPDATE WorldShip SET TypeId=TypeId+1 WHERE Id=1000000000001");
+        Assert.NotEqual(original, changed.FitRevision(90000001));
+        string? nextOwner = changed.FitRevision(90000002);
+        // Use an inactive hull so transferring ownership preserves active-ship foreign keys.
+        changed.Database.ExecuteSqlRaw(
+            """
+            INSERT INTO WorldShip(Id,OwnerId,TypeId,Name,StationId)
+            VALUES(1000000000999,90000001,601,'Spare',60003760);
+            """
+        );
+        string? previousOwner = changed.FitRevision(90000001);
+        changed.Database.ExecuteSqlRaw("UPDATE WorldShip SET OwnerId=90000002 WHERE Id=1000000000999");
+        Assert.NotEqual(previousOwner, changed.FitRevision(90000001));
+        Assert.NotEqual(nextOwner, changed.FitRevision(90000002));
+        transaction.Rollback();
+        using var rollback = SessionPerformance.Begin("rolled back hull change", _ => { }, force: true)!;
+        Assert.Equal(expected.OrderBy(p => p.Key), f.Fitting.ShipAttributes(90000001).OrderBy(p => p.Key));
+        Assert.Equal(0, rollback.FittingCalculations);
+    }
+
+    [Fact]
     public void ActiveEffectMembershipInvalidatesAtBothBoundaries()
     {
         using PilotCombatTests.Fixture f = new();

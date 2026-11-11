@@ -1,12 +1,46 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.World.Fittings;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldMigrationTests
 {
+    [Fact]
+    public void Version140ShipFitTriggersUpgradeAndRemainEffectiveAfterReopen()
+    {
+        using TestWorld fixture = new(freshInitialization: true);
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                DROP TRIGGER Fit_WorldShip_UPDATE_old;
+                DROP TRIGGER Fit_WorldShip_UPDATE_new;
+                PRAGMA user_version=140;
+                """
+            );
+            ResidentFitSchema.Create(world);
+        }
+        for (int reopen = 0; reopen < 2; reopen++)
+        {
+            WorldInitialization.Initialize(new(fixture.Path));
+            using ResidentFitCache cache = new(new(fixture.Path));
+            using WorldDbContext world = new(fixture.Path);
+            using var transaction = world.Database.BeginTransaction();
+            Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+            string? before = world.FitRevision(90000001);
+            world.Database.ExecuteSql($"UPDATE WorldShip SET Name={"Reopened " + reopen},StationId=60003760 WHERE Id=1000000000001");
+            Assert.Equal(before, world.FitRevision(90000001));
+            world.Database.ExecuteSqlRaw("UPDATE WorldShip SET TypeId=TypeId+1 WHERE Id=1000000000001");
+            Assert.NotEqual(before, world.FitRevision(90000001));
+            transaction.Rollback();
+        }
+        Assert.Equal(601, fixture.Store.FindPilot(1000001)!.ShipTypeId);
+    }
+
     [Theory]
     [InlineData(-1)]
     [InlineData(WorldMigration.CurrentVersion + 1)]

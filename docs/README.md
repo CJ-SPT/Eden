@@ -3,6 +3,9 @@
 [Neocom skill startup](protocol/characters.md#neocom-skill-startup-november-11-2026) records the built-in service-manager
 lookup correction and automated native skill-button startup regression.
 
+[Arrival movement and fitting costs](protocol/performance.md#arrival-movement-and-fitting-costs-november-11-2026)
+covers repeated movement reads, docking fit reuse, schema-141 invalidation and matched remote-action work counts.
+
 [Remote action budget costs](protocol/performance.md#remote-action-budget-costs-november-11-2026) covers
 remote hauler resource loading, repeated mining validation and measured-cost background admission.
 

@@ -25,6 +25,74 @@ public sealed class CapsuleerCoarseTests(ITestOutputHelper output)
     private const int Home = 30000141;
     private const int Elsewhere = 30000144;
 
+    [Fact]
+    public void RemoteArrivalsReuseFitsAndAvoidRepeatedMovementMembershipReads()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, Home);
+        human.Transfer(Elsewhere);
+        scheduler.Run(0);
+        long pilot = fixture.Founder().PilotId;
+        int dockings = 0;
+        int movements = 0;
+        for (int pass = 0; pass < 16; pass++)
+        {
+            fixture.Clock.Seconds += 70;
+            for (int turn = 0; turn < 4; turn++)
+            {
+                var before = scheduler.Jobs().Single(j => j.PilotId == pilot);
+                List<string> commands = [];
+                PerformanceSample total = default;
+                using var operation = host.GetRequiredService<IPilotOperationScope>().Begin();
+                using (SessionPerformance.Begin("remote action", _ => { }, force: true, command: commands.Add))
+                using (SessionPerformance.Capture("remote action", sample => total = sample))
+                {
+                    scheduler.Run(checked((int)fixture.Clock.Seconds));
+                }
+                if (scheduler.Jobs().Single(j => j.PilotId == pilot).Revision > before.Revision)
+                {
+                    output.WriteLine(
+                        $"{pass} {before.Action} SQL={total.Commands}, connections={total.Connections}, fits={total.Fittings}"
+                    );
+                    var work = host.GetRequiredService<LiveWorld>().HaulerCheckpoints[pilot].Work;
+                    if (pass == 0)
+                    {
+                        Assert.Equal(CapsuleerAction.Trade, before.Action);
+                        // Cold catalog query counts vary with shared definition warming.
+                        Assert.InRange(total.Commands, 1, 76);
+                        Assert.InRange(total.Connections, 1, 3);
+                        Assert.Equal(1, total.Fittings);
+                    }
+                    else
+                    {
+                        Assert.Equal(0, total.Fittings);
+                    }
+                    if (before.Action == CapsuleerAction.Arrival && work.Activity == HaulerActivity.Docked)
+                    {
+                        dockings++;
+                        Assert.InRange(total.Commands, 1, 32);
+                        Assert.Equal(1, total.Connections);
+                    }
+                    if (pass == 3)
+                    {
+                        movements++;
+                        Assert.Equal(HaulerActivity.Flying, work.Activity);
+                        Assert.InRange(total.Commands, 1, 12);
+                        Assert.Equal(1, total.Connections);
+                        Assert.DoesNotContain(commands, sql => sql.Contains("FROM \"WorldPilot\"", StringComparison.Ordinal));
+                        Assert.DoesNotContain(commands, sql => sql.Contains("FROM \"WorldCrimewatch\"", StringComparison.Ordinal));
+                    }
+                }
+                fixture.Clock.Milliseconds += 50;
+            }
+        }
+        Assert.True(dockings >= 2);
+        Assert.Equal(1, movements);
+        Assert.Equal(0, scheduler.Read().Failures);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(180)]

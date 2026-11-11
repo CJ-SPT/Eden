@@ -43,10 +43,11 @@ internal static class CapsuleerSupplyStore
         {
             return;
         }
-        // The owning provisioning/departure transaction commits inventory and this permanent marker together.
-        world.Add(new SavedCapsuleerSupplies { PilotId = pilotId, ShipId = founderShip });
         var inventory = world.Set<OwnedItem>().Where(item => item.OwnerId == pilotId && item.LocationId == ship.Id).ToArray();
         var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        // Read the unchanged fit before adding the marker: pending tracked writes
+        // deliberately disable fitting-cache reuse. All writes still commit together.
+        world.Add(new SavedCapsuleerSupplies { PilotId = pilotId, ShipId = founderShip });
         double free = Math.Max(
             0,
             attributes.GetValueOrDefault(DogmaAttributeId.CargoCapacity)
