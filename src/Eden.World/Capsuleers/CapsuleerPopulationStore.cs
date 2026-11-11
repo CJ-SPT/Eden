@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Capsuleers;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsuleerPopulation
+internal sealed partial class CapsuleerPopulationStore(WorldDatabase database) : ICapsuleerPopulation
 {
     private readonly Lock _gate = new();
     private Metadata? _metadata;

@@ -57,9 +57,19 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectAccount(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyAccount>> changes)
     {
-        if (changes.Count != 0)
+        foreach (var change in changes)
         {
-            throw new InvalidOperationException("Reference economic rows cannot be projected.");
+            if (change.Value is not { } row)
+            {
+                world.Database.ExecuteSql($"DELETE FROM WorldAccount WHERE Id={change.Key.Id}");
+                continue;
+            }
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldAccount(Id,UserName,CreatedAt,CloneGrade) VALUES({row.Id},{row.UserName},{row.CreatedAt},{row.CloneGrade})
+                ON CONFLICT(Id) DO UPDATE SET UserName=excluded.UserName,CreatedAt=excluded.CreatedAt,CloneGrade=excluded.CloneGrade
+                """
+            );
         }
     }
 }
@@ -859,8 +869,8 @@ internal sealed partial class ResidentEconomy
                 "UserName,CreatedAt,Id,CloneGrade",
                 reader => new(reader.GetString(1), reader.GetInt64(2), reader.GetInt64(3), (AccountCloneGrade)reader.GetInt32(4)),
                 state => new(state.Id),
-                readOnly: true,
-                indexes: [],
+                readOnly: false,
+                indexes: [new("UserName", row => row.UserName, new EconomyNameComparer())],
                 primaryColumn: "Id"
             )
         );

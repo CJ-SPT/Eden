@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident population admission and owned blueprints](protocol/performance.md#resident-population-admission-and-owned-blueprints-november-11-2026)
+records atomic resident founders and gate visitors, copied fits, rollback and coherent saves.
+
 [Resident scheduler metadata and remote preparation](protocol/performance.md#resident-scheduler-metadata-and-remote-preparation-november-11-2026)
 records resident enrollment, preserved pending cursors and remote preparation outside world ownership.
 

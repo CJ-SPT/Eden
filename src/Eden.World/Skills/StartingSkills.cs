@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Skills;
 
-internal static class StartingSkills
+internal static partial class StartingSkills
 {
     internal static void Grant(WorldDbContext world, CatalogDbContext catalog, long pilotId, int raceId)
     {

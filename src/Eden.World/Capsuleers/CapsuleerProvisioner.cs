@@ -17,6 +17,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Mining;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -120,11 +121,18 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
     private CapsuleerProvisioningTurn Provision(int systemId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
+        if (LiveWorld.Find(database.Path) is not null)
+        {
+            using WorldActionScope action = new(database, new(systems: [systemId]));
+            var result = Provision(systemId, catalog, action.World);
+            action.Commit();
+            return result;
+        }
         using WorldDbContext world = new(database.Path);
         return Provision(systemId, catalog, world);
     }
 
-    private CapsuleerProvisioningTurn Provision(
+    internal CapsuleerProvisioningTurn Provision(
         int systemId,
         CatalogDbContext catalog,
         WorldDbContext world,

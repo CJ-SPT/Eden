@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
-internal sealed record MinerCheckpoint(long PilotId, MinerProgress Work)
+internal sealed partial record MinerCheckpoint(long PilotId, MinerProgress Work)
 {
     private static readonly JsonSerializerOptions Options = new() { IgnoreReadOnlyProperties = true };
 

@@ -707,6 +707,20 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Characters.SavedHomeStation, EconomySavedHomeStation>(
+                "WorldHomeStation",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.StationId),
+                state => new Eden.Data.World.Characters.SavedHomeStation { PilotId = state.PilotId, StationId = state.StationId },
+                ProjectSavedHomeStation,
+                "PilotId,StationId",
+                reader => new(reader.GetInt64(1), reader.GetInt32(2)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId), new("StationId", row => row.StationId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Characters.SavedStandingTransaction, EconomySavedStandingTransaction>(
                 "WorldStandingTransaction",
                 row => new(row.Id),
@@ -3179,6 +3193,13 @@ internal sealed partial class EconomyTransaction
             )
             {
                 throw new InvalidDataException("Duplicate resident SavedCombatReport unique value.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Characters.SavedHomeStation>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
             }
         }
         foreach (var row in Retained<Eden.Data.World.Characters.SavedStandingTransaction>())

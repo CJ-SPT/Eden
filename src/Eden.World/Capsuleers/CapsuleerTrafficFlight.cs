@@ -8,7 +8,7 @@ using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
 
-internal static class CapsuleerTrafficFlight
+internal static partial class CapsuleerTrafficFlight
 {
     internal const double ApproachRange = 500;
     private const double OpeningApproachClearance = 12000;

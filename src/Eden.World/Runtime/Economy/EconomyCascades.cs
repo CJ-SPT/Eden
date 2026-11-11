@@ -50,6 +50,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCharacterDeletion>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCombatReport>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCompletedTask>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Characters.SavedHomeStation>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedNpcStanding>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedStandingTransaction>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedTaskCounter>().Where(child => child.PilotId == removed.Id));

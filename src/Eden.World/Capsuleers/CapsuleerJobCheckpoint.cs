@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
-internal sealed record CapsuleerJobCheckpoint(IReadOnlyList<CapsuleerJob> Jobs)
+internal sealed partial record CapsuleerJobCheckpoint(IReadOnlyList<CapsuleerJob> Jobs)
 {
     internal void Apply(WorldDbContext world)
     {

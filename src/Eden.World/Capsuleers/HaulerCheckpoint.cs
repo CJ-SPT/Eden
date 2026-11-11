@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
-internal sealed record HaulerCheckpoint(long PilotId, HaulerProgress Work)
+internal sealed partial record HaulerCheckpoint(long PilotId, HaulerProgress Work)
 {
     private static readonly JsonSerializerOptions Options = new() { IgnoreReadOnlyProperties = true };
 

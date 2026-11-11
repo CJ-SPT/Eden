@@ -59,8 +59,12 @@ public sealed class CapsuleerBackgroundPreparationTests
             WHEN NEW.Career=2 BEGIN SELECT RAISE(ABORT,'next founder rejected'); END;
             """
         );
-        var failed = preparation.PrepareNext();
-        Assert.NotNull(failed.Failure);
+        // SQL trigger rejection belongs to the SQL adapter. Resident rejection is covered by ResidentAdmissionTests.
+        using (CapsuleerProvisioner sql = new(f.Database, f.Clock))
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath))
+        {
+            Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => sql.Provision(Source, catalog, saved, maximumFounders: 1));
+        }
         Assert.Equal(miner.PilotId, Assert.Single(saved.Set<SavedCapsuleerAgent>()).PilotId);
         Assert.Single(saved.Set<SavedCapsuleerJob>());
         saved.Database.ExecuteSqlRaw("DROP TRIGGER reject_next_founder");
@@ -357,7 +361,8 @@ public sealed class CapsuleerBackgroundPreparationTests
         CapsuleerProvisioningTests.AddSystem(f.Database, Third);
         PrepareStartup(f);
         long[] retained;
-        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        // Exercise SQL trigger rollback, then resume that saved population through the resident adapter below.
+        using (var host = ServerServices.Build(f.Database, f.Clock))
         {
             host.GetRequiredService<CapsuleerActivitySource>().Update(Guid.NewGuid(), Source);
             using (WorldDbContext setup = new(f.Database.Path))
@@ -456,7 +461,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         Assert.Equal(18, preparation.Calls);
     }
 
-    private static void PrepareStartup(CapsuleerHaulerTests.Fixture f)
+    internal static void PrepareStartup(CapsuleerHaulerTests.Fixture f)
     {
         var settings = new WorldConfigurationStore(f.Database, f.Clock);
         var state = settings.Read();

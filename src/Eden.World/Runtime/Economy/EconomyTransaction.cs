@@ -91,7 +91,14 @@ internal sealed partial class EconomyTransaction(
     internal override EconomyEntry<T> Add<T>(T row)
         where T : class
     {
+        var position = (row as Ship)?.Position;
         Set<T>().Add(row);
+        if (row is Ship ship && position is not null)
+        {
+            position.ShipId = ship.Id;
+            Positions.Add(position);
+            ship.Position = position;
+        }
         return new(row, EntityState.Added);
     }
 
@@ -178,14 +185,6 @@ internal sealed partial class EconomyTransaction(
         {
             pilot.ActiveShip = Ships.Find(pilot.ActiveShipId)!;
             pilot.Account = Set<Account>().Find(pilot.AccountId)!;
-            if (pilot.ActiveShip is { } ship)
-            {
-                int system = ship.Position?.SystemId ?? database.Catalog.FindStation(ship.StationId)?.SolarSystemId ?? 0;
-                if (system > 0)
-                {
-                    owner.TrackShip(ship.Id, system, pilot.Id);
-                }
-            }
         }
         else if (row is Ship ship)
         {
@@ -199,6 +198,21 @@ internal sealed partial class EconomyTransaction(
     private void Validate()
     {
         ValidateBotRows();
+        foreach (var account in Retained<Account>())
+        {
+            if (
+                string.IsNullOrWhiteSpace(account.UserName)
+                || account.CloneGrade
+                    is not (Eden.Gameplay.Docking.AccountCloneGrade.Alpha or Eden.Gameplay.Docking.AccountCloneGrade.Omega)
+                || Set<Account>()
+                    .Any(other =>
+                        other.Id != account.Id && string.Equals(other.UserName, account.UserName, StringComparison.OrdinalIgnoreCase)
+                    )
+            )
+            {
+                throw new InvalidDataException("Invalid resident account identity or clone grade.");
+            }
+        }
         foreach (var pilot in Retained<Pilot>())
         {
             var ship = Ships.Find(pilot.ActiveShipId);
@@ -251,7 +265,7 @@ internal sealed partial class EconomyTransaction(
         }
         foreach (var wallet in Retained<PilotWallet>())
         {
-            if (wallet.Cents < 0 || !store.IsPilot(wallet.PilotId))
+            if (wallet.Cents < 0 || Pilots.Find(wallet.PilotId) is null)
             {
                 throw new InvalidDataException("The resident wallet has an invalid balance or pilot.");
             }
@@ -264,7 +278,7 @@ internal sealed partial class EconomyTransaction(
                 || order.Remaining > order.Entered
                 || order.PriceCents <= 0
                 || order.EscrowCents < 0
-                || !store.IsPilot(order.PilotId)
+                || Pilots.Find(order.PilotId) is null
             )
             {
                 throw new InvalidDataException("The resident market order is invalid.");
@@ -295,7 +309,7 @@ internal sealed partial class EconomyTransaction(
         foreach (var trade in Retained<MarketExecution>())
         {
             if (
-                !store.IsPilot(trade.PilotId)
+                Pilots.Find(trade.PilotId) is null
                 || trade.PriceCents <= 0
                 || trade.Quantity <= 0
                 || trade.TaxCents < 0
@@ -327,11 +341,12 @@ internal sealed partial class EconomyTransaction(
             set.Prepare();
         }
         var changes = sets.SelectMany(set => set.Changes).ToArray();
-        long[] pilots = sets.SelectMany(set => set.Owners).Where(store.IsPilot).Distinct().ToArray();
+        long[] candidates = sets.SelectMany(set => set.Owners).Distinct().ToArray();
         foreach (var set in sets)
         {
             set.Publish();
         }
+        long[] pilots = candidates.Where(store.IsPilot).ToArray();
         if (_combat is not null)
         {
             owner.AcknowledgeEconomicCombat(_combat);

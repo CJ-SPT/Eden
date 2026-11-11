@@ -2872,3 +2872,56 @@ Not performed; agent client testing is disabled.
 
 Repeat the reported remote trade/collection workload after rebuilding this revision; compare action allocations,
 SQL/connection counts and world-owner hold time.
+
+## Resident population admission and owned blueprints (November 11, 2026)
+
+Live community and gate-visitor admission now stage pilots, accounts, inventory owners, hulls, skills, owned items,
+wallets, home stations, role progress and scheduled jobs in one resident action. The existing world owner serializes
+the action; validation precedes publication. Failed actions discard identity reservations and do not register a
+speculative ship in the runtime membership maps. New pilot membership is registered after its canonical rows
+publish. New hull graphs retain their supplied flight-position child in the same action.
+
+Background preparation captures selected community members and scalar identities from resident state. Candidate
+selection uses the captured reservation/roster view outside ownership, then refreshes reservations before commit.
+Prepared blueprints copy immutable validated skills, cargo, modules, cooldowns, health and capacitor through typed
+rows without world SQL. Stopped-world provisioning keeps its SQL adapter. Account username uniqueness and clone
+grade checks are enforced before resident publication; host authentication behavior is unchanged.
+
+The existing encounter openings and inbound gate-transfer behavior are preserved. Background preparation warms
+the task and security catalog dependencies of the community's routes before admitting a founder, so an immediate
+in-space opening does not load those catalog records while holding the world owner.
+
+### Automated validation
+
+Development began with the exact receiving-only inbound-transfer method, including pending-transfer restart.
+Resident tests cover SQL-free blueprint copying and complete warmed background batches, including zero connection
+opens and fit calculations. They assert private graph visibility, unchanged runtime membership before commit,
+rejection and ID reuse, single grants on retry, original encounter openings, and reopened checkpoint contents.
+A failed detached founder projection rolls back the complete saved image and a later capture retries both pilots.
+
+The focused 14-case admission/background selection and the additional failed-projection case passed. Initial
+development checks exposed the missing home-station mapping and cold movement-catalog inputs. SQL-trigger fault
+injection remains on the SQL adapter; resident rejection is exercised against private actions and detached saves.
+The closing filter is recorded in `artifacts/bot-resident-admission/closing-filter.txt`, with reports under
+`artifacts/bot-resident-admission/corrected`. Tool and solution restore passed. The final solution build passed with
+zero warnings/errors in **2.78 s**. Closing validation passed **875 affected tests / 406.35 s**, including runner
+overhead. Catalog policy passed **8 tests / 0.984 s** and formatting policy passed **9 tests / 0.029 s**. Formatting
+verification checks the pinned formatter and 140-column limit. No full .NET suite was run.
+
+An earlier affected selection was deliberately stopped after **415 passes and one failure** and is incomplete.
+A changed opening delayed early station contacts in the fresh-traffic fixture. The original opening behavior was
+restored, movement catalog preparation was moved outside ownership, and all five targeted traffic/admission cases
+passed before the closing selection.
+
+Initial catalog reads and the isolated static blueprint-validation image can still use SQL outside the world owner.
+They are separate from live saved-world mutation. Initial combat/effect/destruction boundaries also retain SQL
+paths; this record does not claim the entire migration is complete or an installed-world latency improvement.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Repeat the reported installed-save workload after rebuilding; compare warmed admission and trade allocations,
+world-owner hold time, SQL commands and connections.

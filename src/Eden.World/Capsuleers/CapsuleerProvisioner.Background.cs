@@ -5,6 +5,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,18 +17,6 @@ internal sealed partial class CapsuleerProvisioner
 
     private TrafficProvisioning.Reservations? _backgroundReservations;
     private long _backgroundIdentityRevision = -1;
-
-    private TrafficProvisioning.Reservations BackgroundReservations(WorldDbContext world)
-    {
-        long revision = LiveWorld.Find(database.Path)?.PopulationIdentityRevision ?? -1;
-        if (_backgroundReservations is null || revision < 0 || revision != _backgroundIdentityRevision)
-        {
-            using var phase = SessionPerformance.Phase("population.identitySnapshot");
-            _backgroundReservations = TrafficProvisioning.Reservations.Load(world);
-            _backgroundIdentityRevision = revision;
-        }
-        return _backgroundReservations;
-    }
 
     internal CapsuleerProvisioningTurn PrepareBackgroundSystem(
         int system,
@@ -41,21 +30,24 @@ internal sealed partial class CapsuleerProvisioner
         long seed;
         BackgroundSlot[] slots;
         using (synchronization.Enter("population preparation snapshot"))
-        using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
         {
-            seed = world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed;
-            string fingerprint = Fingerprint(database, catalog, seed, world.Settings.Capsuleers);
-            var saved = world.Set<SavedCapsuleerSystem>().AsNoTracking().SingleOrDefault(row => row.SystemId == system);
-            if (saved?.PolicyVersion == CapsuleerProvisioningRules.Version && saved.CatalogFingerprint == fingerprint)
+            var snapshot = WorldActionScope.Inspect(
+                database,
+                world =>
+                {
+                    long worldSeed = world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed;
+                    string fingerprint = Fingerprint(database, catalog, worldSeed, world.Settings.Capsuleers);
+                    var saved = world.Set<SavedCapsuleerSystem>().Find(system);
+                    bool current = saved?.PolicyVersion == CapsuleerProvisioningRules.Version && saved.CatalogFingerprint == fingerprint;
+                    return new BackgroundPreparation(worldSeed, current ? [] : BackgroundSlots(world, system), current);
+                }
+            );
+            if (snapshot.Current)
             {
                 return new(1, 0, 0);
             }
-            slots = (
-                from agent in world.Set<SavedCapsuleerAgent>()
-                join pilot in world.Pilots on agent.PilotId equals pilot.Id
-                where agent.CommunitySystemId == system
-                select new BackgroundSlot(agent.Career, agent.Slot, pilot.ActiveShip.TypeId)
-            ).ToArray();
+            seed = snapshot.Seed;
+            slots = snapshot.Slots;
         }
         cancellationToken.ThrowIfCancellationRequested();
         var traffic = CapsuleerTrafficRoutes.Read(catalog, system);
@@ -82,15 +74,14 @@ internal sealed partial class CapsuleerProvisioner
         TrafficProvisioning.Reservations? planning = null;
         if (needsShips || needsMiner)
         {
+            PrepareMovementCatalog(catalog, traffic.Routes.SelectMany(route => route.Systems).Append(system));
             using var owner = synchronization.Enter("population identity snapshot");
-            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-            planning = BackgroundReservations(world);
+            planning = WorldActionScope.Inspect(database, BackgroundReservations);
         }
         var roster = slots.Where(slot => slot.Career == CapsuleerCareer.Hauling).Select(slot => slot.Hull).ToList();
         int offset = (int)(
             CapsuleerProvisioningRules.Seed(seed, system, CapsuleerCareer.Hauling) % (ulong)Math.Max(1, traffic.Routes.Length)
         );
-        using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
         {
             for (int slot = 0; slot < count && origins.Length > 0; slot++)
             {
@@ -101,16 +92,15 @@ internal sealed partial class CapsuleerProvisioner
                 }
                 var opening = CapsuleerEncounterRules.TrafficOpening(seed, system, slot, count);
                 var route = SelectRoute(catalog, traffic, system, slot, opening, offset);
-                var profile = TrafficProvisioning.Select(
+                var profile = TrafficProvisioning.SelectPrepared(
                     database,
-                    world,
                     catalog,
                     seed,
                     system,
                     slot,
                     route,
-                    reservations: planning,
-                    rosterTypes: roster
+                    reservations: planning!,
+                    roster: roster
                 );
                 if (profile is null && !TrafficProvisioning.HasFallback(catalog))
                 {
@@ -134,21 +124,15 @@ internal sealed partial class CapsuleerProvisioner
                 // Re-read reservations after validation: sessions and gate visitors may have committed meanwhile.
                 if (needsShips || needsMiner)
                 {
-                    using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
-                    _startupReservations = BackgroundReservations(world);
+                    _startupReservations = WorldActionScope.Inspect(database, BackgroundReservations);
                 }
                 _requirePreparedBlueprints = true;
                 CapsuleerProvisioningTurn result;
                 using (database.EnterMovement())
                 {
-                    using WorldDbContext world = new(database.Path)
-                    {
-                        Participants = TransactionParticipants.None,
-                        CommittedSystems = System.Collections.Immutable.ImmutableHashSet.Create(system),
-                    };
-                    result = Provision(system, catalog, world, globalStartup: true, maximumFounders: 1);
+                    result = ProvisionPrepared(system, catalog);
                 }
-                // Connection close has published the committed identity revision. The
+                // Commit has published the identity revision. The
                 // reservation view already contains this batch's new identity/name.
                 if (_startupReservations is null)
                 {

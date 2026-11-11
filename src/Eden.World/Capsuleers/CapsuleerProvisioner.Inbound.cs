@@ -5,6 +5,7 @@ using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Operations;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,25 +43,38 @@ internal sealed partial class CapsuleerProvisioner
         int[] roster;
         TrafficProvisioning.Reservations reservations;
         using (synchronization.Enter("inbound preparation snapshot"))
-        using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
         {
-            var existing = world
-                .Set<SavedCapsuleerAgent>()
-                .Where(a => a.CommunitySystemId == community && a.Career == CapsuleerCareer.Hauling && a.Slot == slot)
-                .Select(a => (long?)a.PilotId)
-                .SingleOrDefault();
-            if (existing is not null)
+            var snapshot = WorldActionScope.Inspect(
+                database,
+                world =>
+                {
+                    var existing = world
+                        .Set<SavedCapsuleerAgent>()
+                        .Where(agent =>
+                            agent.CommunitySystemId == community && agent.Career == CapsuleerCareer.Hauling && agent.Slot == slot
+                        )
+                        .Select(agent => (long?)agent.PilotId)
+                        .SingleOrDefault();
+                    return existing is not null
+                        ? new InboundSnapshot(existing, 0, [], null)
+                        : new InboundSnapshot(
+                            null,
+                            world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed,
+                            BackgroundSlots(world, community)
+                                .Where(value => value.Career == CapsuleerCareer.Hauling)
+                                .Select(value => value.Hull)
+                                .ToArray(),
+                            BackgroundReservations(world)
+                        );
+                }
+            );
+            if (snapshot.Existing is not null)
             {
-                return existing;
+                return snapshot.Existing;
             }
-            seed = world.Set<SavedCapsuleerProvisioning>().Single().WorldSeed;
-            reservations = BackgroundReservations(world);
-            roster = (
-                from agent in world.Set<SavedCapsuleerAgent>()
-                join pilot in world.Pilots on agent.PilotId equals pilot.Id
-                where agent.CommunitySystemId == community && agent.Career == CapsuleerCareer.Hauling
-                select pilot.ActiveShip.TypeId
-            ).ToArray();
+            seed = snapshot.Seed;
+            reservations = snapshot.Reservations!;
+            roster = snapshot.Roster;
         }
         cancellationToken.ThrowIfCancellationRequested();
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
@@ -68,18 +82,17 @@ internal sealed partial class CapsuleerProvisioner
         {
             return null;
         }
-        using (WorldDbContext planning = new(database.Path))
+        PrepareMovementCatalog(catalog, route.Systems);
         {
-            var profile = TrafficProvisioning.Select(
+            var profile = TrafficProvisioning.SelectPrepared(
                 database,
-                planning,
                 catalog,
                 seed,
                 community,
                 slot,
                 route,
                 reservations: reservations,
-                rosterTypes: roster
+                roster: roster
             );
             int hull = profile?.HullTypeId ?? HaulingRules.BadgerType;
             if (profile is null && !TrafficProvisioning.HasFallback(catalog))
@@ -94,10 +107,7 @@ internal sealed partial class CapsuleerProvisioner
         using var owner = synchronization.Enter("inbound prepared founder");
         try
         {
-            using (WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None })
-            {
-                _startupReservations = BackgroundReservations(world);
-            }
+            _startupReservations = WorldActionScope.Inspect(database, BackgroundReservations);
             _requirePreparedBlueprints = true;
             long? pilot = EnsureInbound(gate, request.BothObserved, request.Visitor);
             _backgroundIdentityRevision = LiveWorld.Find(database.Path)?.PopulationIdentityRevision ?? -1;
@@ -132,6 +142,13 @@ internal sealed partial class CapsuleerProvisioner
             }
             // Reciprocal observers share one durable lane identity. High gate
             // IDs occupy slots disjoint from the small ordinary home roster.
+            if (LiveWorld.Find(database.Path) is not null)
+            {
+                using WorldActionScope action = new(database, new(systems: [gate.SourceSystemId, gate.ObserverSystemId]));
+                var result = EnsureInbound(action.World, catalog, gate, route, sourceObserved, visitor);
+                action.Commit();
+                return result;
+            }
             int gateSlot = checked((int)Math.Min(gate.ArrivalGateId, gate.DepartureGateId));
             int slot = visitor == 0 ? gateSlot : checked(gateSlot + visitor * TrafficJourneyRules.VisitorSlotStride);
             int community = gate.ArrivalGateId == gateSlot ? gate.ObserverSystemId : gate.SourceSystemId;

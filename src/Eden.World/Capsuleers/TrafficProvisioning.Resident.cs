@@ -34,14 +34,6 @@ internal static partial class TrafficProvisioning
         {
             return null;
         }
-        int region = catalog.RequireSystem(system).RegionId;
-        var security = catalog.Definitions.SystemSecurity;
-        var band = TrafficRules.SecurityBand(security.GetValueOrDefault(system));
-        bool visitsHighSecurity = route.Systems.Any(id =>
-            TrafficRules.SecurityBand(security.GetValueOrDefault(id)) == TrafficSecurityBand.High
-        );
-        bool ReservedCharacter(long character) => reservations?.Characters.Contains(character) ?? world.TrafficCharacterTaken(character);
-        bool ReservedName(string name) => reservations?.Names.Contains(name) ?? world.HasPilotName(name);
         var roster =
             rosterTypes
             ?? world
@@ -51,6 +43,69 @@ internal static partial class TrafficProvisioning
                 .Select(agent => world.Pilots.Where(p => p.Id == agent.PilotId).Select(p => p.ActiveShipId).Single())
                 .Select(ship => world.Ships.Where(s => s.Id == ship).Select(s => s.TypeId).Single())
                 .ToArray();
+        return SelectCore(
+            database,
+            catalog,
+            seed,
+            system,
+            slot,
+            route,
+            cargoVolume,
+            reservations,
+            roster,
+            character => reservations?.Characters.Contains(character) ?? world.TrafficCharacterTaken(character),
+            name => reservations?.Names.Contains(name) ?? world.HasPilotName(name)
+        );
+    }
+
+    internal static TrafficProfile? SelectPrepared(
+        WorldDatabase database,
+        CatalogDbContext catalog,
+        long seed,
+        int system,
+        int slot,
+        CapsuleerTrafficRoute route,
+        Reservations reservations,
+        IReadOnlyList<int> roster
+    ) =>
+        SelectCore(
+            database,
+            catalog,
+            seed,
+            system,
+            slot,
+            route,
+            0,
+            reservations,
+            roster,
+            reservations.Characters.Contains,
+            reservations.Names.Contains
+        );
+
+    private static TrafficProfile? SelectCore(
+        WorldDatabase database,
+        CatalogDbContext catalog,
+        long seed,
+        int system,
+        int slot,
+        CapsuleerTrafficRoute route,
+        double cargoVolume,
+        Reservations? reservations,
+        IReadOnlyList<int> roster,
+        Func<long, bool> reservedCharacter,
+        Func<string, bool> reservedName
+    )
+    {
+        if (database.Traffic.Profiles.Count == 0)
+        {
+            return null;
+        }
+        int region = catalog.RequireSystem(system).RegionId;
+        var security = catalog.Definitions.SystemSecurity;
+        var band = TrafficRules.SecurityBand(security.GetValueOrDefault(system));
+        bool visitsHighSecurity = route.Systems.Any(id =>
+            TrafficRules.SecurityBand(security.GetValueOrDefault(id)) == TrafficSecurityBand.High
+        );
         bool lightAllowed =
             (roster.Count(type => TrafficRules.LightHull((HullClass)catalog.RequireItem(type).GroupId)) + 1) * 10 <= roster.Count + 1;
         bool Compatible(TrafficProfile profile)
@@ -65,7 +120,7 @@ internal static partial class TrafficProvisioning
         if (reservations is null || cargoVolume != 0)
         {
             var candidates = CandidatePools(database, catalog, system, route, cargoVolume, roster).Candidates(seed, system, slot);
-            return candidates.FirstOrDefault(profile => !ReservedCharacter(profile.CharacterId) && !ReservedName(profile.Name));
+            return candidates.FirstOrDefault(profile => !reservedCharacter(profile.CharacterId) && !reservedName(profile.Name));
         }
         Reservations.PoolKey key = new(region, band, visitsHighSecurity, lightAllowed);
         if (!reservations.Pools.TryGetValue(key, out var prepared))
@@ -79,7 +134,7 @@ internal static partial class TrafficProvisioning
         }
         var selected = prepared
             .Candidates.Candidates(seed, system, slot)
-            .FirstOrDefault(profile => !ReservedCharacter(profile.CharacterId) && !ReservedName(profile.Name));
+            .FirstOrDefault(profile => !reservedCharacter(profile.CharacterId) && !reservedName(profile.Name));
         // Reservations only grow during stopped-world preparation; an exhausted pool stays exhausted.
         prepared.Exhausted = selected is null;
         return selected;

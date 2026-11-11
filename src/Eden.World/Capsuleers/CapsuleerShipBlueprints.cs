@@ -22,7 +22,7 @@ namespace Eden.World.Capsuleers;
 
 // New pilots use these blueprints. Background validation runs outside the live world owner.
 // Existing pilots never receive copied assets or skills.
-internal sealed class CapsuleerShipBlueprints : IDisposable
+internal sealed partial class CapsuleerShipBlueprints : IDisposable
 {
     private const int MaximumBlueprints = 128;
     private const long TemplatePilot = 90000001;
