@@ -2,6 +2,34 @@
 
 [Protocol index](../protocol.md)
 
+## Coarse distant populations — November 10, 2026
+
+Regional preparation still fills the existing saved rosters. It does not enroll untouched home communities simply because
+their saved travelers already have journey descriptions. Visited communities and explicitly admitted gate visitors remain
+eligible for remote work; schema 138 retains visitor admission separately from population preparation and restores existing
+saved gate lanes. Identities and possessions are not replaced. This extends the earlier tiered simulation record and
+supersedes the old per-pilot remote queue and startup-only activation descriptions below.
+
+Unobserved eligible pilots share one due entry per physical system and a durable pilot cursor. Each transaction settles one
+pilot and advances that cursor with its canonical job revision. Cursor conflicts reload committed state; failed settlements
+retain their cursor and yield to other systems. Systems rotate between settlements, without accumulating historical jobs.
+Regional preparation and coarse work share a soft 5 ms allowance per 50 ms, checked between complete settlements.
+The saved detailed cutoff and per-pilot remote settlement time preserve a partially completed paid cycle across re-entry.
+
+Remote mining collects existing paid work once and batches affordable subsequent cycles against the current rock and hold.
+Crystal cycles remain individually accounted; no batch can exceed available capacitor, resources or cargo space. Travel
+samples analytic boundaries, with authoritative route, gate and docking checks in the same transaction. Economic boundaries
+use current stock, prices and payments. No remote bounty or combat result is invented. Existing ratting trips, combat,
+missiles and drones retain the required detail until their interaction can finish; new autonomous ratting does not start
+remotely. Optional legacy traffic template/cosmetic correction waits for detailed execution.
+
+Re-entry prioritizes bounded current-time resumption and forgoes unprocessed remote time. Already paid cycles and committed
+transfers survive. A second observer does not demote a system while another remains. Human-online time still excludes an
+empty or stopped server. The Population page separates saved, detailed/urgent, coarse, pending and pinned work, including
+remote age, budget overruns and system-specific return details with the longest skipped interval for that visit.
+See the [performance record](performance.md#coarse-distant-populations-november-10-2026)
+for measurements and acceptance limitations.
+
 ## Batched population startup — November 10, 2026
 
 Normal startup no longer loads NPC jobs or creates missing rosters throughout the galaxy. Regions activate on player entry:

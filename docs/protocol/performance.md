@@ -6,6 +6,89 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Coarse distant populations, November 10, 2026
+
+Regional population settings and creation remain unchanged. Detailed jobs now follow selected humans, watched arrivals and
+unfinished interactions. Eligible distant pilots share one scheduled entry per physical system, a deterministic initial
+stagger and a durable cursor. Settlements rotate between systems and target a minute between complete passes. Congestion
+postpones work without creating historical action entries. See [population behavior](capsuleers.md#coarse-distant-populations--november-10-2026).
+
+Schema 138 adds system cursors, explicit traveler admission and each pilot's last committed remote settlement time. The
+canonical job, resource/payment changes, pilot settlement time and cursor advancement share one transaction. A rejected
+cursor write rolls everything back. On return, bounded maintenance samples committed state at the current human-online
+clock, preserves the paid remainder and forgoes unsettled remote time. No stopped-server production is introduced.
+Demotion records the detailed cutoff, so time already spent near a player cannot extend a future paid deadline. Restored
+defense/ratting state pins detail before the first remote visit. Expired gate-arrival presentation never becomes a new
+arrival after restart; its committed transfer identity is retained.
+
+Coarse settlement and regional creation share a soft 5 ms per 50 ms allowance. Atomic overruns borrow subsequent windows;
+unused idle time never funds a burst. Immutable route geometry and traffic template calculations prepare outside ownership.
+Demotion releases loaded roles, contacts and fitting references while retaining compact identity, route and scheduling metadata.
+Each allowance overrun logs its work type, unit duration and remaining allowance.
+
+The Performance page now distinguishes saved population, detailed/urgent pilots, coarse pilots/systems, pending preparation
+and pinned systems. The old background count incorrectly subtracted observed systems from every known system. Simulation
+and preparation timing now subtracts scene/Local publication from the entire maintenance pass; it previously displayed only
+the final scheduler turn. These are elapsed wall times, including waits, rather than frame latency. Background preparation
+runs separately. Remote age reports the oldest incomplete full-system pass. Budget overruns are cumulative. Return details
+on the Population page identify the system, affected bots and longest skipped interval for that visit. A global sum across
+unrelated systems is deliberately omitted from the page because it obscures the amount skipped on an individual return.
+
+Reference: [EVE University, Server tick](https://wiki.eveuniversity.org/Server_tick) describes one-second visible ticks and
+separate heavy work. [Carbon Destiny, Ballpark.cpp](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp)
+was consulted at pinned revision `114e89fa584f0e1a81eb0a679aabf41af8870072` for simulation ownership and movement boundaries.
+The minute-scale economy policy is Eden's approximation; these references do not establish native EVE remote-bot behavior.
+
+Optional replays use frozen saved inputs, identical independently arriving local frame/market requests and periodic checkpoints.
+`tools/Measure-CoarseSimulation.ps1` selects 1/2/4 observers with 45/225/450 remote communities (1×/5×/10×), ongoing
+regional preparation, a 70-second backlog and 900-community stress. `tools/Summarize-CoarseSimulation.py` reports each
+workload separately, including SQL/connections/fitting counts, allocations, freshness, ownership and checkpoint stages.
+The comparison engine was prepared from `efbf03739a06ee19410c20ff118d27630cf627c3`. The matched ten-minute matrix was
+not run: on November 11 the maintainer requested that agent performance testing stop and retained real-world measurement.
+Performance thresholds and sustained freshness remain unverified. The tools retain every scheduled checkpoint report,
+separately from complete frames and market calls. Optional `EDEN_BOT_REPLAY_ENTRY_TRACE=1` captures the largest cold-entry
+phases; it is disabled during ordinary timing runs.
+
+The completed 60-second `probe-boundaries` diagnostic measured one observer and 450 visited communities with preparation.
+After its 30-second warmup, 20 frames had p95 **21.79 ms**, p99 **28.17 ms**; 10 market requests had p95/p99 **188.37 ms**.
+Twelve cold traffic handoff holds exceeded 250 ms. A slow market request waited behind checkpoint capture. These are
+diagnostic results from before the final compact-entry changes, not acceptance of the delivered revision. They led to
+removing legacy traveler fit/health hydration from membership reconciliation and keeping population metadata reads out of
+resident projection. The subsequent `probe-compact-entry` was interrupted at the maintainer's request and supplies no
+completed latency result. The runner's other three theory rows were unselected, not additional measured workloads.
+
+The separate one-second `entry-trace` run profiles setup only and establishes no warmed latency result. Earlier probes
+and interrupted regression runs were used to diagnose cursor, deadline, arrival and loading behavior; their intermediate
+results do not establish final performance acceptance.
+
+**Automated validation, November 11, 2026:** tool restore, solution restore and solution build passed with zero warnings
+and errors. The final solution build took 3.94 seconds. Exact new regressions ran before their affected classes, including
+paid-cycle remainder, cursor rollback/retry, schema migration, restored interaction retention, expired arrivals and cold
+membership/metadata reads. The final two cold-entry regressions passed in 7.02 seconds including runner startup.
+
+The wider **686/686** run took **378.60 seconds** and included immediate mining, migration, transaction, checkpoint,
+system-isolation, ownership and hosting dependencies. It preceded the final compact-entry adjustment. Its filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Mining|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~TransactionParticipantTests|FullyQualifiedName~CheckpointOwnershipTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~SystemRuntimeIsolationTests|FullyQualifiedName~OwnershipTimingTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests
+```
+
+After that adjustment, the final affected run passed **422/422** in **282.01 seconds**; its feature build took **1.70 seconds**:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.SustainedPercentilesSortArrivalOrder
+```
+
+Reports are retained locally as `artifacts/feature-tests/results/834205708c8f428081def36e5c91e83a/tests.trx` and
+`artifacts/feature-tests/results/8392a30b2bcf4be89df886a1cce01427/tests.trx`. Both Python policy suites passed: **8 catalog
+tests (1.999 seconds)** and **9 formatting tests (0.317 seconds)**. Formatting verification checked **1,645 files**, and the
+140-column check and Git whitespace verification passed. The full .NET suite was not run. Opt-in saved-world replay cases
+without configured inputs do not establish measured acceptance.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer check:** revisit a populated region to assess native arrivals and gameplay feel.
+
 ## World-loading and ammunition lookup hotspots, November 10, 2026
 
 The reported Rider DPA screenshot identified `PilotAmmunitionStore.Contents` taking 53 seconds in the captured run.

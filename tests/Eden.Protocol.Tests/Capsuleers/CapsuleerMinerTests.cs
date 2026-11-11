@@ -107,10 +107,11 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 clock.Seconds++;
                 using (var metrics = SessionPerformance.Begin("paid miner waiting", output.WriteLine, force: true)!)
                 {
-                    var remote = Assert.IsType<MinerObservation>(worker.Tick());
-                    Assert.Equal(work.Work.Cycles, remote.Work.Cycles);
-                    Assert.Equal(deposit, remote.Work.TargetId);
-                    stamp = remote.Work.Stamp;
+                    Assert.Null(worker.Tick());
+                    var remote = host.GetRequiredService<LiveWorld>().MinerCheckpoints[actor].Work;
+                    Assert.Equal(work.Work.Cycles, remote.Cycles);
+                    Assert.Equal(deposit, remote.TargetId);
+                    stamp = remote.Stamp;
                     Assert.Equal(0, metrics.FittingCalculations);
                 }
                 UpdateSelection(host, Second, null);

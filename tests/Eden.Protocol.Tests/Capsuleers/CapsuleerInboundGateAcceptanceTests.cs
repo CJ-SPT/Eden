@@ -38,12 +38,9 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
     public async Task ReceivingOnlyObserversSeeRealInboundTransfersAndRepeatedArrivalAtTheWatchedGate(bool restartPending)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
-        if (restartPending)
-        {
-            await RestartPendingInbound(f.Database, f.Clock);
-        }
+        int retainedWait = restartPending ? await RestartPendingInbound(f.Database, f.Clock) : 0;
         string label = restartPending ? "fresh fixture after pending-wait restart" : "fresh fixture";
-        await ObserveGate(f.Database, f.Clock, FreshReceivingSystem, FreshReceivingGate, label);
+        await ObserveGate(f.Database, f.Clock, FreshReceivingSystem, FreshReceivingGate, label, retainedWait);
     }
 
     [Fact]
@@ -96,7 +93,14 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         }
     }
 
-    private async Task ObserveGate(WorldDatabase database, TestClock clock, int receivingSystem, long gateId, string label)
+    private async Task ObserveGate(
+        WorldDatabase database,
+        TestClock clock,
+        int receivingSystem,
+        long gateId,
+        string label,
+        int retainedWaitSeconds = 0
+    )
     {
         var (humans, gate) = PositionObservers(database, clock, receivingSystem, gateId);
         int sourceSystem = gate.DestinationSystemId!.Value;
@@ -180,6 +184,19 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
                 )
                 .ToArray();
             int expectedActivations = newArrivals.Length + newDepartures.Length;
+            Assert.True(
+                firstUpdates.OfType<DestinyCommand.GateActivity>().Count() == expectedActivations,
+                $"Second {seconds}; arrivals "
+                    + string.Join(
+                        ",",
+                        newArrivals.Select(c =>
+                        {
+                            var work = scheduler.Hauler(c.Pilot.PilotId)!.Work;
+                            return $"{c.Pilot.PilotId}: {work.Activity}, stamp={work.Stamp}, arrivalUntil={work.ArrivalUntil}, "
+                                + $"gate={work.ArrivalGateId}, at={work.ArrivalAt}, ticks={work.ActiveTicks}";
+                        })
+                    )
+            );
             CheckGateActivations(firstUpdates, gateId, newArrivals.Length, newDepartures.Length);
             CheckGateActivations(secondUpdates, gateId, newArrivals.Length, newDepartures.Length);
             gateActivations += expectedActivations;
@@ -302,6 +319,9 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         // A restarted opening may already have delivered the first visitor onto the login grid.
         // Its next new arrival includes a station departure and the following staggered slot.
         int arrivalBudget = loginShips.Count > 1 ? FirstArrivalSeconds * 2 : FirstArrivalSeconds;
+        // Untouched regional residents stay dormant. The next admitted visitor
+        // must retain its saved station wait rather than borrowing their arrival.
+        arrivalBudget += retainedWaitSeconds;
         Assert.InRange(arrivals[0].Seconds, 1, arrivalBudget);
         Assert.NotNull(departure);
         Assert.True(arrivals.Select(arrival => arrival.PilotId).Distinct().Count() >= 2);
@@ -357,11 +377,12 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         return (humans, gate);
     }
 
-    private async Task RestartPendingInbound(WorldDatabase database, TestClock clock)
+    private async Task<int> RestartPendingInbound(WorldDatabase database, TestClock clock)
     {
         var (humans, gate) = PositionObservers(database, clock, FreshReceivingSystem, FreshReceivingGate);
         long pilot;
         long ship;
+        int remainingWait;
         using (var host = ServerServices.Build(database, clock, liveWorld: true))
         {
             var factory = host.GetRequiredService<FlightSessionFactory>();
@@ -382,6 +403,13 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
             Assert.Equal(HaulerActivity.Docked, observation.Work.Activity);
             Assert.Equal(gate.DestinationSystemId, observation.Pilot.SystemId);
             Assert.Equal(ship, observation.Pilot.ShipId);
+            remainingWait = checked(
+                (int)
+                    Math.Ceiling(
+                        Math.Max(0, observation.Work.DueTicks - host.GetRequiredService<IHumanPresence>().Read().ElapsedTicks)
+                            / (double)TimeSpan.TicksPerSecond
+                    )
+            );
             await host.GetRequiredService<LiveWorld>().FlushAsync();
         }
         clock.Seconds += 600;
@@ -391,6 +419,7 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         Assert.Equal(ship, saved.FounderShipId);
         Assert.Equal(ship, reopened.Pilots.Where(p => p.Id == pilot).Select(p => p.ActiveShipId).Single());
         output.WriteLine($"Pending source-side actor {pilot}, ship {ship}, retained through restart and 600 offline seconds.");
+        return remainingWait;
     }
 
     private static void CheckGateActivations(IReadOnlyList<DestinyCommand> updates, long gateId, int arrivals, int departures)

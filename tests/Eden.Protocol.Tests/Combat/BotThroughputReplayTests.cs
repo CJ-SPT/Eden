@@ -16,6 +16,7 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed partial class ServerPerformanceReplayTests
 {
     private const int LatencyWarmupSeconds = 30;
+    private const int MaximumVisitPhases = 64;
 
     // Pilots identified in the maintainer's November 10 traffic-owner capture.
     private static readonly long[] LatencyReportedPilots =
@@ -38,6 +39,8 @@ public sealed partial class ServerPerformanceReplayTests
     ];
 
     private sealed record ThroughputRequest(int ArrivalSecond, double Queue, double Total, ReplaySample Result);
+
+    private sealed record ThroughputVisit(int System, PerformanceSample Total, IReadOnlyList<PerformanceSample> Phases);
 
     private static double ThroughputPercentile(IEnumerable<double> values, double fraction)
     {
@@ -82,12 +85,14 @@ public sealed partial class ServerPerformanceReplayTests
         {
             return;
         }
+        systems = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_SYSTEMS") ?? systems.ToString());
+        int observers = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_OBSERVERS") ?? "1");
         int seconds = int.Parse(Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_SECONDS") ?? "600");
         string destination =
             Environment.GetEnvironmentVariable("EDEN_PERFORMANCE_OUTPUT")
             ?? throw new InvalidOperationException("Set EDEN_PERFORMANCE_OUTPUT to retain throughput results.");
         Directory.CreateDirectory(destination);
-        string name = $"throughput-{systems}-{backlog}";
+        string name = $"throughput-{systems}-{backlog}-{observers}";
         string progress = Path.Combine(destination, name + ".progress");
         File.WriteAllText(progress, "Copying frozen source.\n");
         Stopwatch setup = Stopwatch.StartNew();
@@ -156,6 +161,8 @@ public sealed partial class ServerPerformanceReplayTests
             }
             using var host = ServerServices.Build(database, clock, liveWorld: true);
             using var player = new ReplayPlayer(host, clock, 90000006, 1000003, reports);
+            using var additional = new ThroughputObservers(host, clock, observers - 1, player.Context.Pilot.SystemId, reports);
+            ReplayPlayer[] players = [player, .. additional.Players];
             var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
             var diagnostics = host.GetRequiredService<ICapsuleerDiagnostics>();
             var live = host.GetRequiredService<LiveWorld>();
@@ -167,15 +174,59 @@ public sealed partial class ServerPerformanceReplayTests
                     ownership.Enqueue(timing);
                 }
             });
+            List<ThroughputVisit> visits = [];
             using (var explorer = host.GetRequiredService<IHumanPresence>().Select(90000001, communities[0]))
             {
                 foreach (int system in communities)
                 {
+                    PriorityQueue<PerformanceSample, long> phases = new();
+                    using var visit =
+                        Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_ENTRY_TRACE") != "1"
+                            ? null
+                            : SessionPerformance.Capture(
+                                "exploration visit",
+                                sample =>
+                                {
+                                    if (sample.Name == "exploration visit")
+                                    {
+                                        if (sample.Elapsed.TotalMilliseconds >= 100)
+                                        {
+                                            visits.Add(
+                                                new(
+                                                    system,
+                                                    sample,
+                                                    phases
+                                                        .UnorderedItems.Select(item => item.Element)
+                                                        .OrderByDescending(p => p.Elapsed)
+                                                        .ToArray()
+                                                )
+                                            );
+                                        }
+                                    }
+                                    else if (phases.Count < MaximumVisitPhases)
+                                    {
+                                        phases.Enqueue(sample, sample.Elapsed.Ticks);
+                                    }
+                                    else
+                                    {
+                                        phases.EnqueueDequeue(sample, sample.Elapsed.Ticks);
+                                    }
+                                }
+                            );
                     explorer.Transfer(system);
+                    if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_PREPARATION") == "1")
+                    {
+                        host.GetRequiredService<ICapsuleerBackgroundPreparation>().PrepareNext();
+                    }
                     File.AppendAllText(progress, $"Activated {system}.\n");
                 }
             }
             ReplaySample[] cold = [await player.Frame(), await player.Call("marketProxy", "GetRegionBest")];
+            foreach (var observer in additional.Players)
+            {
+                await observer.Frame();
+                await observer.Call("marketProxy", "GetRegionBest");
+            }
             setup.Stop();
             if (backlog)
             {
@@ -190,11 +241,18 @@ public sealed partial class ServerPerformanceReplayTests
                     : null
             );
             maintenance.Start();
+            var populationMaintenance = host.GetRequiredService<CapsuleerPopulationMaintenance>();
+            if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_PREPARATION") == "1")
+            {
+                populationMaintenance.Start();
+            }
+            TimeSpan startedCpu = Process.GetCurrentProcess().TotalProcessorTime;
+            long startedAllocations = GC.GetTotalAllocatedBytes();
             long arrivalsStarted = Stopwatch.GetTimestamp();
             Stopwatch elapsed = Stopwatch.StartNew();
             ConcurrentQueue<ThroughputRequest> requests = new();
             List<Task> pendingRequests = [];
-            using SemaphoreSlim session = new(1);
+            SemaphoreSlim[] sessions = players.Select(_ => new SemaphoreSlim(1)).ToArray();
             var arrivals = Task.Run(async () =>
             {
                 for (int second = 1; second <= seconds; second++)
@@ -208,25 +266,31 @@ public sealed partial class ServerPerformanceReplayTests
                     // Include producer/thread-pool lateness as well as the session's own queue.
                     long arrived = arrivalsStarted + (long)second * Stopwatch.Frequency;
                     bool market = second % 3 == 0;
-                    pendingRequests.Add(
-                        Task.Run(async () =>
-                        {
-                            await session.WaitAsync();
-                            double queue = Stopwatch.GetElapsedTime(arrived).TotalMilliseconds;
-                            try
+                    foreach (var (observer, session) in players.Zip(sessions))
+                    {
+                        pendingRequests.Add(
+                            Task.Run(async () =>
                             {
-                                var result = market ? await player.Call("marketProxy", "GetRegionBest") : await player.Frame();
-                                requests.Enqueue(new(arrivalSecond, queue, Stopwatch.GetElapsedTime(arrived).TotalMilliseconds, result));
-                            }
-                            finally
-                            {
-                                session.Release();
-                            }
-                        })
-                    );
+                                await session.WaitAsync();
+                                double queue = Stopwatch.GetElapsedTime(arrived).TotalMilliseconds;
+                                try
+                                {
+                                    var result = market ? await observer.Call("marketProxy", "GetRegionBest") : await observer.Frame();
+                                    requests.Enqueue(
+                                        new(arrivalSecond, queue, Stopwatch.GetElapsedTime(arrived).TotalMilliseconds, result)
+                                    );
+                                }
+                                finally
+                                {
+                                    session.Release();
+                                }
+                            })
+                        );
+                    }
                 }
                 await Task.WhenAll(pendingRequests);
             });
+            ConcurrentQueue<WorldCheckpoint> checkpointReports = [];
             var checkpoints = Task.Run(async () =>
             {
                 for (int second = 15; second <= seconds; second += 15)
@@ -237,6 +301,10 @@ public sealed partial class ServerPerformanceReplayTests
                         await Task.Delay(TimeSpan.FromMilliseconds(delay));
                     }
                     await live.FlushAsync();
+                    if (live.LastCheckpoint is { } checkpoint)
+                    {
+                        checkpointReports.Enqueue(checkpoint);
+                    }
                 }
             });
             double? recovered = null;
@@ -271,6 +339,7 @@ public sealed partial class ServerPerformanceReplayTests
                         EstimatedDueArrivalsPerSecond = (state.CompletedActions - previousCompleted + state.DueJobs - previousDue)
                             / Math.Max(0.001, elapsed.Elapsed.TotalSeconds - previousSeconds),
                         state.Failures,
+                        Runtime = state,
                     }
                 );
                 previousCompleted = state.CompletedActions;
@@ -284,9 +353,17 @@ public sealed partial class ServerPerformanceReplayTests
                 Assert.Equal(0, state.Failures);
             }
             await arrivals;
+            foreach (var session in sessions)
+            {
+                session.Dispose();
+            }
             await checkpoints;
             maintenance.Dispose();
             await live.FlushAsync();
+            if (live.LastCheckpoint is { } finalCheckpoint)
+            {
+                checkpointReports.Enqueue(finalCheckpoint);
+            }
 
             File.WriteAllText(
                 Path.Combine(destination, name + ".json"),
@@ -294,18 +371,22 @@ public sealed partial class ServerPerformanceReplayTests
                     new
                     {
                         systems,
+                        observers,
                         backlog,
                         seconds,
                         RecoveredSeconds = recovered,
                         SetupMilliseconds = setup.Elapsed.TotalMilliseconds,
                         ColdSamples = cold,
-                        Checkpoints = live.RecentCheckpoints,
+                        Visits = visits,
+                        Checkpoints = checkpointReports.DistinctBy(checkpoint => checkpoint.CompletedAt).ToArray(),
                         Samples = samples,
                         Requests = requests,
                         Ownership = ownership,
                         WarmupSeconds = LatencyWarmupSeconds,
                         ReportedPilots = LatencyReportedPilots,
                         Communities = communities,
+                        CpuMilliseconds = (Process.GetCurrentProcess().TotalProcessorTime - startedCpu).TotalMilliseconds,
+                        AllocatedBytes = GC.GetTotalAllocatedBytes() - startedAllocations,
                     }
                 )
             );
@@ -326,7 +407,7 @@ public sealed partial class ServerPerformanceReplayTests
             );
             File.Copy(Path.Combine(source, "manifest.json"), Path.Combine(destination, name + ".manifest.json"), overwrite: true);
             output.WriteLine($"Systems={systems} backlog={backlog} recovered={recovered} scheduled={diagnostics.Read().ScheduledAgents}");
-            if (systems == 450 && seconds >= 600 && Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_BASELINE") != "1")
+            if (seconds >= 600 && Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_BASELINE") != "1")
             {
                 Assert.NotNull(recovered);
                 Assert.True(recovered <= 120);
@@ -342,13 +423,44 @@ public sealed partial class ServerPerformanceReplayTests
                 }
                 Assert.DoesNotContain(
                     ownership,
-                    timing => timing.Operation == "traffic maintenance" && timing.Hold.TotalMilliseconds >= 250
+                    timing =>
+                        (
+                            timing.Operation.Contains("traffic", StringComparison.Ordinal)
+                            || timing.Operation.Contains("population", StringComparison.Ordinal)
+                        )
+                        && timing.Hold.TotalMilliseconds >= 250
                 );
             }
         }
         finally
         {
             Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private sealed class ThroughputObservers : IDisposable
+    {
+        internal List<ReplayPlayer> Players { get; } = [];
+
+        internal ThroughputObservers(ServiceProvider host, TimeProvider clock, int count, int system, ConcurrentQueue<string> reports)
+        {
+            (long Pilot, long Account)[] identities = [(90000001, 1000001), (90000002, 1000002), (90000004, 1000004)];
+            var ships = host.GetRequiredService<Eden.World.Docking.SqliteWorld>();
+            foreach (var identity in identities.Take(count))
+            {
+                var pilot = ships.FindPilot(identity.Account, identity.Pilot)!;
+                var reference = ships.FindPilot(1000003, 90000006)!;
+                ships.SetPosition(pilot.ShipId, new(reference.X + 2000000 + Players.Count * 100000, reference.Y, reference.Z), system);
+                Players.Add(new(host, clock, identity.Pilot, identity.Account, reports));
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var player in Players)
+            {
+                player.Dispose();
+            }
         }
     }
 }

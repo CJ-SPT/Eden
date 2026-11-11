@@ -25,7 +25,15 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
     private readonly Lock _runtimePoolGate = new();
     private readonly Dictionary<(long Catalog, ReservationsKey Policy), TrafficCandidatePools> _runtimePools = [];
 
-    private readonly record struct ReservationsKey(int Region, TrafficSecurityBand Band, bool HighSecurity, bool LightAllowed);
+    private readonly record struct ReservationsKey(
+        int Region,
+        TrafficSecurityBand Band,
+        bool HighSecurity,
+        bool LightAllowed,
+        double CargoVolume,
+        double DroneVolume,
+        bool Correction
+    );
 
     internal TrafficCandidatePools RuntimeCandidates(
         long catalogGeneration,
@@ -34,22 +42,32 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         bool highSecurity,
         bool lightAllowed,
         Func<TrafficProfile, bool> compatible,
-        Func<TrafficProfile, int> hullGroup
+        Func<TrafficProfile, int> hullGroup,
+        double cargoVolume = 0,
+        double droneVolume = 0,
+        bool correction = false
     )
     {
-        var key = (catalogGeneration, new ReservationsKey(region, band, highSecurity, lightAllowed));
+        var key = (catalogGeneration, new ReservationsKey(region, band, highSecurity, lightAllowed, cargoVolume, droneVolume, correction));
         lock (_runtimePoolGate)
         {
             if (_runtimePools.TryGetValue(key, out var existing))
             {
                 return existing;
             }
-            var prepared = PrepareCandidates(region, band, compatible, hullGroup);
-            // Materialize while the caller's catalog is alive. Completed Lazy factories release
-            // their captures, leaving only immutable snapshot profiles and stable selection order.
-            foreach (var tier in prepared.Tiers)
+        }
+        var prepared = PrepareCandidates(region, band, compatible, hullGroup);
+        // Materialize while the caller's catalog is alive. Completed Lazy factories release
+        // their captures, leaving only immutable snapshot profiles and stable selection order.
+        foreach (var tier in prepared.Tiers)
+        {
+            _ = tier.Value;
+        }
+        lock (_runtimePoolGate)
+        {
+            if (_runtimePools.TryGetValue(key, out var existing))
             {
-                _ = tier.Value;
+                return existing;
             }
             if (_runtimePools.Count >= MaximumRuntimePools)
             {

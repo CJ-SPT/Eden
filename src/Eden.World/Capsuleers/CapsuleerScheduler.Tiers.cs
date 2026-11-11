@@ -103,7 +103,7 @@ internal sealed partial class CapsuleerScheduler
             }
             else
             {
-                _combatPinnedSystems.Remove(system);
+                _membershipDirty |= _combatPinnedSystems.Remove(system);
             }
             _systems.Pin(system, holds);
             if (!holds)

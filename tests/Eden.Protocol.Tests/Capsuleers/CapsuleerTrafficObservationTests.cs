@@ -63,6 +63,15 @@ public sealed class CapsuleerTrafficObservationTests(ITestOutputHelper output)
         output.WriteLine(
             $"One-hour quiet={quiet}: distinct local pilots={pilots.Length}, home visits={homeVisits}, crossings={crossings}."
         );
+        foreach (long pilot in pilots)
+        {
+            var final = scheduler.Hauler(pilot)!;
+            output.WriteLine(
+                $"Pilot {pilot}: system={final.Pilot.SystemId}, activity={final.Work.Activity}, "
+                    + $"target={final.Work.TargetId}, active={final.Work.ActiveTicks}, due={final.Work.DueTicks}, "
+                    + $"ratting={final.Work.Ratting?.Phase}, route={final.Work.RouteIndex}/{final.Work.RouteDirection}"
+            );
+        }
         if (quiet)
         {
             Assert.Empty(pilots);

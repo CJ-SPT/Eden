@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Coarse distant populations](protocol/capsuleers.md#coarse-distant-populations--november-10-2026)
+records persistent regional rosters, bounded remote settlements, paid-work preservation and prompt re-entry.
+
 [Traffic ownership and market summaries](protocol/performance.md#traffic-ownership-and-market-summaries-november-10-2026)
 records prepared traffic actions, committed market views, measured invalidation costs and latency acceptance.
 

@@ -10,7 +10,12 @@ namespace Eden.World.Capsuleers;
 
 // A role action opens SQL only when it crosses an inventory, ownership or payment
 // boundary. Navigation and nonfatal simulation keep their existing resident path.
-internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob expected, MarketChangeSignal market) : IDisposable
+internal sealed class CapsuleerOperation(
+    WorldDatabase database,
+    CapsuleerJob expected,
+    MarketChangeSignal market,
+    CapsuleerCoarseWork? coarse = null
+) : IDisposable
 {
     private WorldDbContext? _world;
     private CatalogDbContext? _catalog;
@@ -33,7 +38,11 @@ internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob ex
                 TransactionParticipants? participants = new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
                 var work = live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
                 bool inbound = expected.Action == CapsuleerAction.Arrival && work?.Activity == HaulerActivity.Inbound;
-                if (expected.Action == CapsuleerAction.GateTransfer || inbound)
+                if (coarse is not null)
+                {
+                    participants = new(systems: coarse.Systems, pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
+                }
+                else if (expected.Action == CapsuleerAction.GateTransfer || inbound)
                 {
                     long? sourceGate = inbound ? work?.TrafficLane?.DepartureGateId : work?.TargetId;
                     if (sourceGate is > 0 and <= int.MaxValue && database.Catalog.Gates.TryGetValue((int)sourceGate, out var gate))
@@ -67,7 +76,7 @@ internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob ex
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.commitPublication");
         var live = LiveWorld.Find(database.Path);
-        if (_world is not null || live is null)
+        if (_world is not null || live is null || coarse is not null)
         {
             var world = World;
             miner?.Apply(world);
@@ -83,6 +92,25 @@ internal sealed class CapsuleerOperation(WorldDatabase database, CapsuleerJob ex
             if (changed != 1)
             {
                 throw new InvalidOperationException("The capsuleer job changed before settlement.");
+            }
+            if (coarse is not null)
+            {
+                int advanced = world.Database.ExecuteSql(
+                    $"""
+                    UPDATE WorldCapsuleerCoarseWork SET Cursor={expected.PilotId},Generation=Generation+1
+                    WHERE SystemId={coarse.SystemId} AND Generation={coarse.Generation} AND Cursor={coarse.Cursor}
+                    """
+                );
+                if (advanced != 1)
+                {
+                    throw new CapsuleerCoarseConflictException(coarse.SystemId);
+                }
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldCapsuleerCoarsePilot(PilotId,SettledTicks) VALUES({expected.PilotId},{coarse.ThroughTicks})
+                    ON CONFLICT(PilotId) DO UPDATE SET SettledTicks=excluded.SettledTicks
+                    """
+                );
             }
             world.SaveChanges();
             _transaction!.Commit();

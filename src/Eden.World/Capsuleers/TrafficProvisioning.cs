@@ -86,20 +86,7 @@ internal static class TrafficProvisioning
         int Group(TrafficProfile profile) => catalog.RequireItem(profile.HullTypeId).GroupId;
         if (reservations is null || cargoVolume != 0)
         {
-            var candidates =
-                cargoVolume == 0
-                    ? database
-                        .Traffic.RuntimeCandidates(
-                            catalog.Definitions.Identity.Generation,
-                            region,
-                            band,
-                            visitsHighSecurity,
-                            lightAllowed,
-                            Compatible,
-                            Group
-                        )
-                        .Candidates(seed, system, slot)
-                    : database.Traffic.Candidates(seed, system, slot, region, band, Compatible, Group);
+            var candidates = CandidatePools(database, catalog, system, route, cargoVolume, roster).Candidates(seed, system, slot);
             return candidates.FirstOrDefault(profile => !reserved.Contains(profile.CharacterId) && !names.Contains(profile.Name));
         }
         Reservations.PoolKey key = new(region, band, visitsHighSecurity, lightAllowed);
@@ -118,6 +105,37 @@ internal static class TrafficProvisioning
         // Reservations only grow during stopped-world preparation; an exhausted pool stays exhausted.
         prepared.Exhausted = selected is null;
         return selected;
+    }
+
+    internal static TrafficSnapshot.TrafficCandidatePools CandidatePools(
+        WorldDatabase database,
+        CatalogDbContext catalog,
+        int system,
+        CapsuleerTrafficRoute route,
+        double cargoVolume,
+        IReadOnlyList<int> roster
+    )
+    {
+        int region = catalog.RequireSystem(system).RegionId;
+        var security = catalog.Definitions.SystemSecurity;
+        var band = TrafficRules.SecurityBand(security.GetValueOrDefault(system));
+        bool high = route.Systems.Any(id => TrafficRules.SecurityBand(security.GetValueOrDefault(id)) == TrafficSecurityBand.High);
+        bool light =
+            (roster.Count(type => TrafficRules.LightHull((HullClass)catalog.RequireItem(type).GroupId)) + 1) * 10 <= roster.Count + 1;
+        return database.Traffic.RuntimeCandidates(
+            catalog.Definitions.Identity.Generation,
+            region,
+            band,
+            high,
+            light,
+            profile =>
+                catalog.FittingType(profile.HullTypeId) is { } hull
+                && TrafficRules.RouteAllows((HullClass)hull.GroupId, high)
+                && (light || !TrafficRules.LightHull((HullClass)hull.GroupId))
+                && (cargoVolume == 0 || (hull.Capacity ?? 0) >= cargoVolume),
+            profile => catalog.RequireItem(profile.HullTypeId).GroupId,
+            cargoVolume
+        );
     }
 
     internal static void Record(WorldDatabase database, WorldDbContext world, long pilot, TrafficProfile profile)

@@ -245,7 +245,7 @@ internal sealed partial class CapsuleerHauler
             case RattingPhase.Searching:
             case RattingPhase.Fighting:
                 var enemies = ratting.Pirates(Pilot, activity.Belts[activity.BeltIndex], Now);
-                if (enemies.Length > 0 && ratting.Assess(Pilot, enemies, Now).Capable)
+                if (enemies.Length > 0 && !_background && ratting.Assess(Pilot, enemies, Now).Capable)
                 {
                     _work = Work with { Ratting = activity with { Phase = RattingPhase.Fighting, TargetId = enemies[0].Id } };
                 }

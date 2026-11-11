@@ -3,6 +3,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.Server.Capsuleers;
+using Eden.World.Capsuleers;
 
 namespace Eden.Server.Maintenance;
 
@@ -10,12 +11,13 @@ namespace Eden.Server.Maintenance;
 internal sealed class CapsuleerPopulationMaintenance(
     ICapsuleerBackgroundPreparation preparation,
     TimeProvider clock,
-    IPilotOperationScope operations
+    IPilotOperationScope operations,
+    CapsuleerBackgroundBudget? budget = null
 ) : IDisposable
 {
     private const int MaximumStepsPerTurn = 16;
     private static readonly TimeSpan ExecutionBudget = TimeSpan.FromMilliseconds(25);
-    private static readonly TimeSpan YieldInterval = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan YieldInterval = CapsuleerCoarseRules.Window;
     private readonly PopulationStartupProgress _progress = new(ServerLog.Console.Information, clock);
     private CancellationTokenSource? _cancellation;
     private Task _loop = Task.CompletedTask;
@@ -39,8 +41,17 @@ internal sealed class CapsuleerPopulationMaintenance(
         long started = clock.GetTimestamp();
         for (int step = 0; step < MaximumStepsPerTurn; step++)
         {
+            using var allowance = budget?.TryEnter("regional preparation");
+            if (budget is not null && allowance is null)
+            {
+                return false;
+            }
             cancellationToken.ThrowIfCancellationRequested();
             var turn = preparation.PrepareNext(cancellationToken);
+            if (budget is not null)
+            {
+                budget.PendingSystems = turn.Progress.TotalSystems - turn.Progress.CompletedSystems;
+            }
             if (turn.Progress.TotalSystems > 0)
             {
                 _progress.Report(turn.Progress);
@@ -94,8 +105,9 @@ internal sealed class CapsuleerPopulationMaintenance(
     public void Dispose()
     {
         _disposed = true;
-        _cancellation?.Cancel();
+        var cancellation = Interlocked.Exchange(ref _cancellation, null);
+        cancellation?.Cancel();
         _loop.GetAwaiter().GetResult();
-        _cancellation?.Dispose();
+        cancellation?.Dispose();
     }
 }

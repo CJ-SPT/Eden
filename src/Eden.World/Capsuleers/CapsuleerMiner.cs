@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
@@ -83,6 +84,7 @@ internal sealed class CapsuleerMiner(
     private bool _loaded;
     private bool _background;
     private bool _detailed = true;
+    private long? _coarseThrough;
 
     internal bool RequiresDetail =>
         WorkOrNull?.Defense is not null || _incoming.Length != 0 || _warpBlocked || Volatile.Read(ref _threatenedShip) != 0;
@@ -183,7 +185,15 @@ internal sealed class CapsuleerMiner(
         return next;
     }
 
-    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes, bool background = false)
+    internal CapsuleerJob Execute(
+        CapsuleerJob job,
+        int destinyStamp,
+        long activeNow,
+        long resumes,
+        bool background = false,
+        CapsuleerCoarseWork? coarse = null,
+        CapsuleerResumeWork? resume = null
+    )
     {
         if (!_loaded)
         {
@@ -203,6 +213,11 @@ internal sealed class CapsuleerMiner(
             }
         }
         _background = background && !RequiresDetail;
+        _coarseThrough = _background ? coarse?.ThroughTicks : null;
+        if (_coarseThrough is not null)
+        {
+            _obstacles = [];
+        }
         if (!_background)
         {
             ObserveDanger(destinyStamp);
@@ -236,8 +251,13 @@ internal sealed class CapsuleerMiner(
         var beforeTarget = _target;
         var beforeObjects = _objects;
         var beforeObstacles = _obstacles;
-        _work = Work with { ActiveTicks = job.DueTicks, Stamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks) };
-        _operation = new(database, job, marketSignal);
+        long stepTicks = resume is null ? job.DueTicks : Math.Max(job.DueTicks, activeNow);
+        if (resume is not null)
+        {
+            _work = CapsuleerPauseRules.Resume(Work, Math.Max(0, resume.EntryTicks - Math.Max(Work.ActiveTicks, resume.SettledTicks)));
+        }
+        _work = Work with { ActiveTicks = stepTicks, Stamp = CapsuleerScheduleRules.Stamp(stepTicks, Work.ClockOffsetTicks) };
+        _operation = new(database, job, marketSignal, coarse);
         try
         {
             if (_resumeCount != resumes && Work.Activity == MinerActivity.Mining && Work.PaidUntil != 0 && Work.DueTicks > activeNow)
@@ -265,6 +285,10 @@ internal sealed class CapsuleerMiner(
             if (!defended.HoldsNavigation)
             {
                 Step();
+                if (_coarseThrough is { } through)
+                {
+                    AdvanceCoarse(through);
+                }
             }
             var next = Commit(job);
             _resumeCount = resumes;
@@ -281,15 +305,16 @@ internal sealed class CapsuleerMiner(
             _obstacles = beforeObstacles;
             RestorePosition(beforePilot);
             _laser = beforeLaser;
-            _operation = new(database, job, marketSignal);
+            _operation = new(database, job, marketSignal, coarse);
             _navigation.AdoptHull();
+            long failureTicks = coarse?.ThroughTicks ?? stepTicks;
             _work = Work with
             {
-                ActiveTicks = job.DueTicks,
-                Stamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks),
+                ActiveTicks = failureTicks,
+                Stamp = CapsuleerScheduleRules.Stamp(failureTicks, Work.ClockOffsetTicks),
                 Activity = MinerActivity.Waiting,
-                DueStamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks) + RetrySeconds,
-                DueTicks = checked(job.DueTicks + TimeSpan.FromSeconds(RetrySeconds).Ticks),
+                DueStamp = CapsuleerScheduleRules.Stamp(failureTicks, Work.ClockOffsetTicks) + RetrySeconds,
+                DueTicks = checked(failureTicks + TimeSpan.FromSeconds(RetrySeconds).Ticks),
                 WaitingReason = error.Message,
             };
             try
@@ -337,7 +362,27 @@ internal sealed class CapsuleerMiner(
 
     private CapsuleerJob Commit(CapsuleerJob job)
     {
+        if (_coarseThrough is { } through && Work.Activity == MinerActivity.Mining && Work.DueTicks > through)
+        {
+            // A coarse boundary may start a cycle at an earlier logical time.
+            // Its native cooldown retains only the uncompleted paid remainder.
+            var cooldown = _operation.World.Set<ModuleCooldown>().Find(Work.ModuleId);
+            if (cooldown is { Kind: ModuleCooldownKind.Cycle })
+            {
+                long completes = checked(Now + Work.DueTicks - through);
+                cooldown.ReadyAt = completes;
+                _work = Work with { PaidUntil = completes };
+            }
+        }
         _work = Work with { Navigation = _navigation.Capture() };
+        var schedule = Schedule();
+        var next = job.Next(schedule.DueTicks, schedule.Action);
+        _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
+        return next;
+    }
+
+    private CapsuleerSchedule Schedule()
+    {
         var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null, _background);
         if (
             _background
@@ -367,9 +412,32 @@ internal sealed class CapsuleerMiner(
             };
         }
         schedule = schedule with { DueTicks = CapsuleerDefenseRules.NextDeadline(Work.Defense, Now, Work.ActiveTicks, schedule.DueTicks) };
-        var next = job.Next(schedule.DueTicks, schedule.Action);
-        _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
-        return next;
+        return schedule;
+    }
+
+    private void AdvanceCoarse(long through)
+    {
+        // End at one extraction or a dock/equipment boundary. Never replay trips.
+        for (int transition = 0; transition < CapsuleerCoarseRules.MaximumTransitions; transition++)
+        {
+            if (Work.Activity is MinerActivity.Docked or MinerActivity.ReadyToReturn or MinerActivity.Waiting)
+            {
+                return;
+            }
+            _work = Work with { Navigation = _navigation.Capture() };
+            var next = Schedule();
+            if (next.DueTicks > through)
+            {
+                return;
+            }
+            bool collection = Work.Activity == MinerActivity.Mining;
+            _work = Work with { ActiveTicks = next.DueTicks, Stamp = CapsuleerScheduleRules.Stamp(next.DueTicks, Work.ClockOffsetTicks) };
+            Step();
+            if (collection)
+            {
+                return;
+            }
+        }
     }
 
     internal bool Sample(long throughTicks)
@@ -682,7 +750,11 @@ internal sealed class CapsuleerMiner(
         {
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
         }
-        if (Live?.Combat is { } residentCombat)
+        if (_coarseThrough is not null)
+        {
+            SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, tick.Position, Pilot.SystemId, Now);
+        }
+        else if (Live?.Combat is { } residentCombat)
         {
             residentCombat.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
         }
@@ -715,8 +787,11 @@ internal sealed class CapsuleerMiner(
             }
             return;
         }
+        var available = _operation.HasWorld
+            ? AsteroidFieldStore.List(_operation.World, _operation.Catalog, Pilot.SystemId)
+            : belts.List(Pilot.SystemId);
         var rock =
-            belts.List(Pilot.SystemId).Where(o => Distance(o) <= AsteroidDefinitions.VisibilityRange).MinBy(o => Distance(o))
+            available.Where(o => Distance(o) <= AsteroidDefinitions.VisibilityRange).MinBy(o => Distance(o))
             ?? throw new InvalidDataException("No ore is visible at this belt.");
         _target = rock;
         Follow(rock);
@@ -795,6 +870,35 @@ internal sealed class CapsuleerMiner(
         MiningRolls rolls = new(random.NextDouble(), random.NextDouble(), random.NextDouble(), random.NextDouble(), random.NextDouble());
         var result = PilotMiningStore.Collect(world, catalog, Pilot.PilotId, Work.ModuleId, Work.TargetId, new(1, true, rolls), Now);
         var next = Work with { Activity = MinerActivity.Locking, Cycles = Work.Cycles + 1, Navigation = _navigation.Capture() };
+        if (_coarseThrough is { } through && !result.Depleted && !result.CargoFull)
+        {
+            var extra = PilotMiningStore.CollectCoarse(
+                world,
+                catalog,
+                Pilot.PilotId,
+                Work.ModuleId,
+                Work.TargetId,
+                Math.Max(0, through - Work.ActiveTicks),
+                rolls,
+                Now
+            );
+            if (extra is not null)
+            {
+                result = extra.Yield;
+                next = next with { Cycles = checked(next.Cycles + extra.Cycles) };
+            }
+        }
+        if (_coarseThrough is { } settledThrough)
+        {
+            // Coalesce unprocessed intervals; the next visit cannot replay them.
+            next = next with
+            {
+                ActiveTicks = settledThrough,
+                Stamp = CapsuleerScheduleRules.Stamp(settledThrough, Work.ClockOffsetTicks),
+                DueTicks = settledThrough,
+                PaidUntil = 0,
+            };
+        }
         if (result.CargoFull)
         {
             next = next with { Activity = MinerActivity.ReadyToReturn };

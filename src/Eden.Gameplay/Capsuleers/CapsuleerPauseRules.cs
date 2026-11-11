@@ -1,3 +1,5 @@
+using Eden.Gameplay.Flight;
+
 namespace Eden.Gameplay.Capsuleers;
 
 public static class CapsuleerPauseRules
@@ -12,6 +14,7 @@ public static class CapsuleerPauseRules
 
     public static HaulerProgress Resume(HaulerProgress work, long delay, long now)
     {
+        work = ExpireArrival(work, now);
         long wallDelay = work.Ratting is { LastObservedAt: > 0 } activity ? Math.Max(0, now - activity.LastObservedAt) : 0;
         var defense = work.Defense;
         if (wallDelay > 0 && defense is not null)
@@ -40,4 +43,15 @@ public static class CapsuleerPauseRules
             DueTicks = work.DueTicks == 0 ? 0 : checked(work.DueTicks + delay),
         };
     }
+
+    // Preserve the transfer identity without replaying its expired presentation.
+    public static HaulerProgress ExpireArrival(HaulerProgress work, long now) =>
+        work.ArrivalUntil > work.Stamp
+        && work.ArrivalAt is { } arrived
+        && now - arrived >= TimeSpan.FromSeconds(GateTravelRules.ArrivalTicks).Ticks
+            ? work with
+            {
+                ArrivalUntil = work.Stamp,
+            }
+            : work;
 }

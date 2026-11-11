@@ -21,6 +21,11 @@ each system's geography-based traffic roster; miners use their separate enable s
 system. New gate visitors are prepared when a gate is watched. Startup reuses saved slots and opens logins without waiting for
 expansion. The entered system activates first, followed by its region in background batches. Untouched regions stay dormant.
 Saved NPCs in dormant regions are retained without loading their simulation jobs. Unchanged completed rosters are reused.
+Regional preparation creates residents without continuously scheduling every resident. Previously visited systems and
+explicit gate visitors keep progressing remotely in roughly minute-scale batches. Selected human systems and unfinished
+interactions retain detailed simulation. Remote updates may lag under load; returning uses committed state and skips
+unprocessed time rather than replaying a history of actions. Existing paid work, ships, cargo and wallets are retained.
+The simulation clock still pauses when no humans are selected and while the server is stopped.
 A failed community expansion rolls back that community while others continue. Completed communities survive and are reused on restart.
 
 New traffic ships are prepared in a separate memory workspace and written in bounded community batches.

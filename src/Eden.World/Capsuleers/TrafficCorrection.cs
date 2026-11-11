@@ -77,35 +77,8 @@ internal static class TrafficCorrection
         }
         double cargo = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, (int)InventoryFlag.Cargo);
         double drones = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, (int)InventoryFlag.DroneBay);
-        var template = database
-            .Traffic.Candidates(
-                0,
-                agent.CommunitySystemId,
-                agent.Slot,
-                catalog.RequireSystem(agent.CommunitySystemId).RegionId,
-                TrafficRules.SecurityBand(catalog.Definitions.SystemSecurity.GetValueOrDefault(agent.CommunitySystemId)),
-                profile =>
-                {
-                    var hull = catalog.RequireItem(profile.HullTypeId);
-                    var fit = catalog.FittingAttributes(profile.HullTypeId);
-                    return !TrafficRules.LightHull((HullClass)hull.GroupId)
-                        && CapsuleerDefenseRules.CombatShip(
-                            (HullClass)hull.GroupId,
-                            (int)fit.GetValueOrDefault(DogmaAttributeId.TechLevel, 1),
-                            true
-                        )
-                        && TrafficRules.RouteAllows((HullClass)hull.GroupId, true)
-                        && (hull.Capacity ?? 0) >= cargo
-                        && fit.GetValueOrDefault(DogmaAttributeId.DroneCapacity) >= drones
-                        && profile.Equipment.Any(e =>
-                            FittingCatalog.DefaultEffect(catalog, e.TypeId)
-                                is DogmaEffect.LaserFired
-                                    or DogmaEffect.ProjectileFired
-                                    or DogmaEffect.UseMissiles
-                        );
-                },
-                profile => catalog.RequireItem(profile.HullTypeId).GroupId
-            )
+        var template = CandidatePools(database, catalog, agent.CommunitySystemId, cargo, drones)
+            .Candidates(0, agent.CommunitySystemId, agent.Slot)
             .FirstOrDefault();
         if (template is null)
         {
@@ -131,4 +104,43 @@ internal static class TrafficCorrection
         world.SaveChanges();
         return true;
     }
+
+    internal static TrafficSnapshot.TrafficCandidatePools CandidatePools(
+        WorldDatabase database,
+        CatalogDbContext catalog,
+        int system,
+        double cargo,
+        double drones
+    ) =>
+        database.Traffic.RuntimeCandidates(
+            catalog.Definitions.Identity.Generation,
+            catalog.RequireSystem(system).RegionId,
+            TrafficRules.SecurityBand(catalog.Definitions.SystemSecurity.GetValueOrDefault(system)),
+            true,
+            false,
+            profile =>
+            {
+                var hull = catalog.RequireItem(profile.HullTypeId);
+                var fit = catalog.FittingAttributes(profile.HullTypeId);
+                return !TrafficRules.LightHull((HullClass)hull.GroupId)
+                    && CapsuleerDefenseRules.CombatShip(
+                        (HullClass)hull.GroupId,
+                        (int)fit.GetValueOrDefault(DogmaAttributeId.TechLevel, 1),
+                        true
+                    )
+                    && TrafficRules.RouteAllows((HullClass)hull.GroupId, true)
+                    && (hull.Capacity ?? 0) >= cargo
+                    && fit.GetValueOrDefault(DogmaAttributeId.DroneCapacity) >= drones
+                    && profile.Equipment.Any(e =>
+                        FittingCatalog.DefaultEffect(catalog, e.TypeId)
+                            is DogmaEffect.LaserFired
+                                or DogmaEffect.ProjectileFired
+                                or DogmaEffect.UseMissiles
+                    );
+            },
+            profile => catalog.RequireItem(profile.HullTypeId).GroupId,
+            cargo,
+            drones,
+            correction: true
+        );
 }

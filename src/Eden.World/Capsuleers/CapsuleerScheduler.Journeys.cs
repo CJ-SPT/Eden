@@ -18,7 +18,7 @@ internal sealed partial class CapsuleerScheduler
         {
             return;
         }
-        _membershipDirty |= !_remoteSystems.Contains(_communities.GetValueOrDefault(pilot));
+        _membershipDirty = true;
         if (previous is not null)
         {
             foreach (int system in previous)

@@ -210,6 +210,8 @@ internal sealed partial class LiveWorld
         }
         var entry = _systems.Get(system);
         using var arrival = entry.Enter("capsuleer admission");
+        entry.State.Miners.Remove(pilot);
+        entry.State.Haulers.Remove(pilot);
         if (miner is not null)
         {
             entry.State.Miners[pilot] = miner;

@@ -103,6 +103,19 @@ public sealed class CapsuleerTierTests
     }
 
     [Fact]
+    public void FinishedCombatReleasesItsDetailedWorkingSet()
+    {
+        using Combat.NpcCombatTests.Fixture fixture = new(liveWorld: true, useTestClock: true);
+        fixture.Aggress();
+        var live = LiveWorld.Find(fixture.Db.Path)!;
+        Assert.False(live.ReleaseSystemDetails(fixture.Npc.SystemId));
+        fixture.Combat.Disengage(Combat.NpcCombatTests.Fixture.ShipId);
+        fixture.Clock.Seconds += (long)TimeSpan.FromMinutes(20).TotalSeconds;
+        Assert.True(live.ReleaseSystemDetails(fixture.Npc.SystemId));
+        Assert.Equal(0, live.CombatForSystem(fixture.Npc.SystemId)!.DetailedEntries);
+    }
+
+    [Fact]
     public async Task PaidMiningContinuesRemotelyAndReopensWithoutOfflineProduction()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
@@ -127,23 +140,21 @@ public sealed class CapsuleerTierTests
             cycles = paid.Work.Cycles;
             var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
             human.Transfer(Elsewhere);
-            var presence = host.GetRequiredService<IHumanPresence>();
-            var job = scheduler.Jobs().Single(j => j.PilotId == pilot);
-            fixture.Clock.Milliseconds += (long)
-                Math.Ceiling((job.DueTicks - presence.Read().ElapsedTicks) / (double)TimeSpan.TicksPerMillisecond);
-            scheduler.Run(checked((int)fixture.Clock.Seconds));
-            var next = scheduler.Jobs().Single(j => j.PilotId == pilot);
-            Assert.Equal(paid.Work.DueTicks, next.DueTicks);
-            Assert.True(next.DueTicks - presence.Read().ElapsedTicks > TimeSpan.TicksPerSecond);
-            fixture.Clock.Milliseconds += (long)
-                Math.Ceiling((next.DueTicks - presence.Read().ElapsedTicks) / (double)TimeSpan.TicksPerMillisecond);
-            for (int turn = 0; turn < 10 && host.GetRequiredService<LiveWorld>().MinerCheckpoints[pilot].Work.Cycles == cycles; turn++)
+            fixture.Clock.Seconds += 180;
+            for (int turn = 0; turn < 20 && host.GetRequiredService<LiveWorld>().MinerCheckpoints[pilot].Work.Cycles == cycles; turn++)
             {
                 scheduler.Run(checked((int)fixture.Clock.Seconds));
+                fixture.Clock.Milliseconds += 50;
             }
             savedWork = host.GetRequiredService<LiveWorld>().MinerCheckpoints[pilot].Work;
-            Assert.Equal(cycles + 1, savedWork.Cycles);
+            Assert.True(savedWork.Cycles > cycles);
             savedJob = scheduler.Jobs().Single(j => j.PilotId == pilot);
+            for (int turn = 0; turn < 10; turn++)
+            {
+                scheduler.Run(checked((int)fixture.Clock.Seconds));
+                fixture.Clock.Milliseconds += 50;
+            }
+            Assert.Equal(savedWork.Cycles, host.GetRequiredService<LiveWorld>().MinerCheckpoints[pilot].Work.Cycles);
             await host.GetRequiredService<LiveWorld>().FlushAsync();
         }
         fixture.Clock.Seconds += 86400;
@@ -174,5 +185,7 @@ public sealed class CapsuleerTierTests
         Assert.Equal(SystemSimulationTier.Detailed, registry.Get(Home).Tier);
         registry.Pin(Home, false);
         Assert.Equal(SystemSimulationTier.RemoteScheduled, registry.Get(Home).Tier);
+        registry.SetCoarse(Home, true);
+        Assert.Equal(SystemSimulationTier.Coarse, registry.Get(Home).Tier);
     }
 }

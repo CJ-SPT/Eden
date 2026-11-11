@@ -81,6 +81,7 @@ internal sealed partial class CapsuleerHauler(
     private SavedCapsuleerHauler? _founder;
     private DockedPilot? _pilot;
     internal DockedPilot? PreparationPilot => _pilot;
+    internal CapsuleerTrafficRoute? PreparationRoute => _loaded ? _route : null;
     private HaulerProgress? _work;
     private NavigationState _navigation = new();
     private IReadOnlyList<StaticSpaceObject> _objects = [];
@@ -105,11 +106,10 @@ internal sealed partial class CapsuleerHauler(
     private bool _loaded;
     private bool _background;
     private bool _detailed = true;
+    private bool _coarse;
 
     internal bool RequiresDetail =>
-        (_work ?? Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work)
-            is { Defense: not null }
-                or { Ratting.Phase: RattingPhase.Fighting }
+        (_work ?? Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work) is { Defense: not null } or { Ratting: not null }
         || _incoming.Length != 0
         || _warpBlocked
         || Volatile.Read(ref _threatenedShip) != 0;
@@ -339,7 +339,14 @@ internal sealed partial class CapsuleerHauler(
         }
     }
 
-    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, bool background = false, PreparedJourney? preparedJourney = null)
+    internal CapsuleerJob Execute(
+        CapsuleerJob job,
+        int destinyStamp,
+        bool background = false,
+        PreparedJourney? preparedJourney = null,
+        CapsuleerCoarseWork? coarse = null,
+        CapsuleerResumeWork? resume = null
+    )
     {
         _preparedJourney = preparedJourney;
         if (!_loaded)
@@ -360,6 +367,11 @@ internal sealed partial class CapsuleerHauler(
             }
         }
         _background = background && !RequiresDetail;
+        _coarse = coarse is not null;
+        if (_coarse && _background)
+        {
+            _obstacles = [];
+        }
         if (!_background && Work.Activity != HaulerActivity.Inbound)
         {
             ObserveDanger(destinyStamp);
@@ -421,8 +433,15 @@ internal sealed partial class CapsuleerHauler(
         var beforeTarget = _target;
         var beforeObjects = _objects;
         var beforeObstacles = _obstacles;
-        _work = Work with { ActiveTicks = job.DueTicks, Stamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks) };
-        _operation = new(database, job, marketSignal);
+        long stepTicks = resume is null
+            ? job.DueTicks
+            : Math.Max(job.DueTicks, Live?.CapsuleerActivity.Read().ElapsedTicks ?? resume.EntryTicks);
+        if (resume is not null)
+        {
+            _work = CapsuleerPauseRules.Resume(Work, Math.Max(0, resume.EntryTicks - Math.Max(Work.ActiveTicks, resume.SettledTicks)), Now);
+        }
+        _work = Work with { ActiveTicks = stepTicks, Stamp = CapsuleerScheduleRules.Stamp(stepTicks, Work.ClockOffsetTicks) };
+        _operation = new(database, job, marketSignal, coarse);
         try
         {
             if (Pilot.Position is not null && _warpBlocked && _navigation.Warp is null && _navigation.WarpDestination is not null)
@@ -465,6 +484,10 @@ internal sealed partial class CapsuleerHauler(
                     BeginTravel();
                 }
                 Step();
+                if (coarse is not null && _background && before.Activity != HaulerActivity.Docked)
+                {
+                    AdvanceCoarse(coarse.ThroughTicks);
+                }
             }
             return Commit(job);
         }
@@ -480,15 +503,16 @@ internal sealed partial class CapsuleerHauler(
             _objects = beforeObjects;
             _obstacles = beforeObstacles;
             RestorePosition(beforePilot);
-            _operation = new(database, job, marketSignal);
+            _operation = new(database, job, marketSignal, coarse);
             _navigation.AdoptHull();
+            long failureTicks = coarse?.ThroughTicks ?? stepTicks;
             _work = Work with
             {
-                ActiveTicks = job.DueTicks,
-                Stamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks),
+                ActiveTicks = failureTicks,
+                Stamp = CapsuleerScheduleRules.Stamp(failureTicks, Work.ClockOffsetTicks),
                 Activity = HaulerActivity.Waiting,
-                DueStamp = CapsuleerScheduleRules.Stamp(job.DueTicks, Work.ClockOffsetTicks) + HaulingRules.PollSeconds,
-                DueTicks = checked(job.DueTicks + TimeSpan.FromSeconds(HaulingRules.PollSeconds).Ticks),
+                DueStamp = CapsuleerScheduleRules.Stamp(failureTicks, Work.ClockOffsetTicks) + HaulingRules.PollSeconds,
+                DueTicks = checked(failureTicks + TimeSpan.FromSeconds(HaulingRules.PollSeconds).Ticks),
                 WaitingReason = error.Message,
             };
             try
@@ -538,6 +562,15 @@ internal sealed partial class CapsuleerHauler(
     private CapsuleerJob Commit(CapsuleerJob job)
     {
         _work = Work with { Navigation = _navigation.Capture() };
+        var schedule = Schedule();
+        var next = job.Next(schedule.DueTicks, schedule.Action);
+        _operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
+        Interlocked.CompareExchange(ref _threatenedShip, 0, Pilot.ShipId);
+        return next;
+    }
+
+    private CapsuleerSchedule Schedule()
+    {
         var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null, _background);
         if (
             _background
@@ -565,10 +598,34 @@ internal sealed partial class CapsuleerHauler(
             schedule = schedule with { DueTicks = Work.DueTicks };
         }
         schedule = schedule with { DueTicks = CapsuleerDefenseRules.NextDeadline(Work.Defense, Now, Work.ActiveTicks, schedule.DueTicks) };
-        var next = job.Next(schedule.DueTicks, schedule.Action);
-        _operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
-        Interlocked.CompareExchange(ref _threatenedShip, 0, Pilot.ShipId);
-        return next;
+        return schedule;
+    }
+
+    private void AdvanceCoarse(long through)
+    {
+        for (int transition = 0; transition < CapsuleerCoarseRules.MaximumTransitions && _background; transition++)
+        {
+            if (Work.Activity is HaulerActivity.Docked or HaulerActivity.Waiting || RequiresDetail)
+            {
+                return;
+            }
+            _work = Work with { Navigation = _navigation.Capture() };
+            var next = Schedule();
+            if (next.DueTicks > through)
+            {
+                return;
+            }
+            if (
+                Work.Activity == HaulerActivity.Jumping
+                && _target?.DestinationSystemId is { } destination
+                && Live?.CapsuleerActivity.Read().ActiveSystems.Contains(destination) == true
+            )
+            {
+                return;
+            }
+            _work = Work with { ActiveTicks = next.DueTicks, Stamp = CapsuleerScheduleRules.Stamp(next.DueTicks, Work.ClockOffsetTicks) };
+            Step();
+        }
     }
 
     internal bool Sample(long throughTicks)
@@ -663,6 +720,7 @@ internal sealed partial class CapsuleerHauler(
                 RouteDirection = Work.DestinationStationId == _route.SourceStationId ? -1 : 1,
             };
         }
+        _work = CapsuleerPauseRules.ExpireArrival(Work, Now);
         _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
         LoadInboundDwells(catalog);
         transaction.Commit();
@@ -758,7 +816,7 @@ internal sealed partial class CapsuleerHauler(
         {
             throw new InvalidDataException("Waiting for a replacement hauling ship.");
         }
-        if (!_trafficRefreshChecked && database.Traffic.Profiles.Count > 0)
+        if (!_coarse && !_trafficRefreshChecked && database.Traffic.Profiles.Count > 0)
         {
             if (TrafficProvisioning.Refresh(database, _operation.World, _operation.Catalog, pilotId, _route, Now))
             {
@@ -768,7 +826,7 @@ internal sealed partial class CapsuleerHauler(
             }
             _trafficRefreshChecked = true;
         }
-        if (TrafficCorrection.Apply(database, _operation.World, _operation.Catalog, pilotId, Now))
+        if (!_coarse && TrafficCorrection.Apply(database, _operation.World, _operation.Catalog, pilotId, Now))
         {
             long account = _operation.World.Pilots.Where(p => p.Id == pilotId).Select(p => p.AccountId).Single();
             _pilot = ReadPilot(_operation.World, account);
@@ -877,7 +935,13 @@ internal sealed partial class CapsuleerHauler(
             _obstacles
         );
         _pilot = Pilot with { Position = tick.Position };
-        if (Live?.Combat is { } resident)
+        if (_coarse)
+        {
+            // Several analytic boundaries share this transaction. Subsequent
+            // docking/jump validation must see its own latest position in SQL.
+            SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, tick.Position, Pilot.SystemId, Now);
+        }
+        else if (Live?.Combat is { } resident)
         {
             resident.PublishPilotPosition(Pilot.ShipId, Pilot.SystemId, tick.Position);
         }

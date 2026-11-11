@@ -28,6 +28,7 @@ internal sealed partial class CapsuleerScheduler
         if (pilot is long committed)
         {
             Load(preparedPilot: committed);
+            AdmitTraveler(committed);
             _travelers.Add(committed);
         }
         if (pilot is not null && request.Visitor + 1 < _populationSettings.Settings.Capsuleers.GateVisitors)
@@ -93,7 +94,16 @@ internal sealed partial class CapsuleerScheduler
         // direction and deadlines independently of which side is subsequently watched.
         return _travelers
             .Where(pilot =>
-                !_suspended.Contains(pilot) && (!_haulers[pilot].IsRatting || activity.ActiveSystems.Contains(_locations[pilot]))
+                !_suspended.Contains(pilot)
+                && (
+                    activity.ActiveSystems.Contains(_locations[pilot])
+                    || (_admittedTravelers.Contains(pilot) || _remoteSystems.Contains(_communities.GetValueOrDefault(pilot)))
+                        && gates.Any(gate =>
+                            gate.SourceSystemId == _locations[pilot]
+                            && _routes.GetValueOrDefault(pilot)?.Contains(gate.ObserverSystemId) == true
+                        )
+                    || _haulers[pilot].RequiresDetail
+                )
             )
             .ToHashSet();
     }

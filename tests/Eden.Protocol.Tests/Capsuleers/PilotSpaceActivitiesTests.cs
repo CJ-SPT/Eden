@@ -468,10 +468,14 @@ public sealed class PilotSpaceActivitiesTests
         long remaining = scheduler.Hauler(pilot)!.Work.Ratting!.RemainingTicks;
         long due = scheduler.Jobs().Single(j => j.PilotId == pilot).DueTicks;
         f.Clock.Milliseconds += Math.Max(
-            1,
+            (long)CapsuleerCoarseRules.Interval.TotalMilliseconds,
             (long)Math.Ceiling((due - presence.Read().ElapsedTicks) / (double)TimeSpan.TicksPerMillisecond)
         );
-        maintenance.Tick();
+        for (int turn = 0; turn < CapsuleerCoarseRules.PageSize; turn++)
+        {
+            maintenance.Tick();
+            f.Clock.Milliseconds += 50;
+        }
         var remote = scheduler.Hauler(pilot)!;
         Assert.True(remote.Work.Ratting is null || remote.Work.Ratting.RemainingTicks < remaining);
         presence.Update(observer, SystemId);

@@ -307,7 +307,7 @@ public sealed class CapsuleerGlobalPopulationTests
     }
 
     [Fact]
-    public void NewlyPreparedGlobalTrafficMovesWhileOnlyAnUnrelatedSystemIsObserved()
+    public void NewlyPreparedGlobalTrafficWaitsForItsCommunityVisitThenProgressesRemotely()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         Restart(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0));
@@ -322,8 +322,16 @@ public sealed class CapsuleerGlobalPopulationTests
             f.Clock.Seconds++;
             host.GetRequiredService<CapsuleerMaintenance>().Tick();
         }
-        Assert.Contains(scheduler.Jobs(), job => job.Sequence > before[job.PilotId].Sequence);
+        Assert.All(scheduler.Jobs(), job => Assert.Equal(before[job.PilotId], job));
         Assert.Equal(0, host.GetRequiredService<CapsuleerScene>().MaterializedPilots);
+        observer.Transfer(30000141);
+        observer.Transfer(30000144);
+        for (int i = 0; i < 70; i++)
+        {
+            f.Clock.Seconds++;
+            host.GetRequiredService<CapsuleerMaintenance>().Tick();
+        }
+        Assert.Contains(scheduler.Jobs(), job => job.Sequence > before[job.PilotId].Sequence);
     }
 
     [Theory]

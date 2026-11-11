@@ -219,6 +219,8 @@ public sealed class AdministrationTests
         Assert.Contains("href=\"/population\"", html);
         Assert.Contains("Active population settings", html);
         Assert.Contains("Saved pilots", html);
+        Assert.Contains("Recent system returns", html);
+        Assert.DoesNotContain("Forgone remote seconds on return", html);
         Assert.Contains("Paused pilots", html);
         Assert.Contains("Enabled pilots", html);
         Assert.Contains("Scheduled pilots", html);
@@ -239,6 +241,9 @@ public sealed class AdministrationTests
         using var pageDenied = await fixture.Client.GetAsync("/performance");
         Assert.Equal(HttpStatusCode.Redirect, pageDenied.StatusCode);
         await fixture.SignIn();
+        fixture
+            .World.Services.GetRequiredService<ICapsuleerUpdateDiagnostics>()
+            .RecordUpdate(new(TimeSpan.FromMilliseconds(15), TimeSpan.FromMilliseconds(4)));
         using var response = await fixture.Client.GetAsync("/api/admin/performance");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.True(response.Headers.CacheControl!.NoStore);
@@ -250,10 +255,19 @@ public sealed class AdministrationTests
         Assert.Equal(0, snapshot.ActiveSessions);
         Assert.False(snapshot.ResidentWorld);
         Assert.Null(snapshot.LastCheckpoint);
+        Assert.Equal(TimeSpan.FromMilliseconds(11), snapshot.Capsuleers!.Runtime.LastSimulation);
         string html = await fixture.Client.GetStringAsync("/performance");
         Assert.Contains("Server performance", html);
         Assert.Contains("Memory in RAM", html);
-        Assert.Contains("Last complete traffic update", html);
+        Assert.Contains("Last traffic maintenance pass", html);
+        Assert.Contains("Saved communities / pilots", html);
+        Assert.Contains("Detailed / coarse pilots", html);
+        Assert.Contains("Observed / coarse systems", html);
+        Assert.Contains("Oldest remote update age", html);
+        Assert.Contains("Background budget overruns", html);
+        Assert.DoesNotContain("Remote time forgone on return", html);
+        Assert.Contains("Return diagnostics on the population page", html);
+        Assert.DoesNotContain("Observed / background systems", html);
         Assert.Contains("Simulation and preparation", html);
         Assert.Contains("Scene and Local updates", html);
         Assert.Contains("color-scheme: dark", html);

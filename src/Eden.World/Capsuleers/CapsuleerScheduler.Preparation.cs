@@ -22,7 +22,8 @@ internal sealed partial class CapsuleerScheduler
         IReadOnlyList<int> Systems,
         IReadOnlyList<int> MissingBelts,
         IReadOnlyList<CapsuleerGeometry.ResourcePreparation> Geometry,
-        CapsuleerHauler.JourneyInput? Journey
+        CapsuleerHauler.JourneyInput? Journey,
+        TrafficTemplateInput? Template
     );
 
     internal PreparationInput? CapturePreparation()
@@ -87,7 +88,18 @@ internal sealed partial class CapsuleerScheduler
             Array.AsReadOnly(systems.Order().ToArray()),
             Array.AsReadOnly(missing),
             Array.AsReadOnly(geometry),
-            _haulers.GetValueOrDefault(job.PilotId)?.CaptureJourney(world, job)
+            _haulers.GetValueOrDefault(job.PilotId)?.CaptureJourney(world, job),
+            job.Action == CapsuleerAction.Trade && stationId != 0
+                ? TrafficTemplatePreparation.Capture(
+                    database,
+                    world,
+                    catalog,
+                    job.PilotId,
+                    shipId,
+                    _communities.GetValueOrDefault(job.PilotId, system),
+                    _haulers.GetValueOrDefault(job.PilotId)?.PreparationRoute
+                )
+                : null
         );
     }
 
@@ -97,6 +109,7 @@ internal sealed partial class CapsuleerScheduler
         && _locations.GetValueOrDefault(input.Job.PilotId) == input.SystemId
         && (Live?.PreparationRevision ?? 0) == input.Revision
         && (Live?.TrafficGeometry.Revision ?? 0) == input.Resources
+        && (input.Template is null || input.Template.Revision == (Live?.TrafficTemplateRevision ?? 0))
         && database.Catalog.Identity.Generation == input.Catalog;
 
     private CapsuleerBatch RunPrepared(int destinyStamp, int maximumActions)
@@ -110,6 +123,10 @@ internal sealed partial class CapsuleerScheduler
             return RunCore(destinyStamp, maximumActions);
         }
         long started = clock.GetTimestamp();
+        if (RunCoarse(destinyStamp))
+        {
+            return IncludeCoarseDue(new(new(1, Current.Count, null, false), [], []));
+        }
         var input = CapturePreparation();
         using var measurement = input is null
             ? null
@@ -123,6 +140,10 @@ internal sealed partial class CapsuleerScheduler
             {
                 using var phase = SessionPerformance.Phase("traffic.preparation");
                 using CatalogDbContext catalog = new(database.CatalogPath);
+                if (input.Template is not null)
+                {
+                    TrafficTemplatePreparation.Prepare(database, catalog, input.Template);
+                }
                 foreach (int system in input.Systems)
                 {
                     var objects = SystemObjects.Geometry(catalog, system);
@@ -171,6 +192,8 @@ internal sealed partial class CapsuleerScheduler
             }
         }
         using var prepared = AsteroidFieldStore.UsePrepared(belts);
-        return RunCore(destinyStamp, maximumActions, preparedJourney: journey, measured: input is not null, turnStarted: started);
+        return IncludeCoarseDue(
+            RunCore(destinyStamp, maximumActions, preparedJourney: journey, measured: input is not null, turnStarted: started)
+        );
     }
 }

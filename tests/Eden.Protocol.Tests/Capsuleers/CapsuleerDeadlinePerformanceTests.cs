@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
@@ -44,7 +45,11 @@ public sealed class CapsuleerDeadlinePerformanceTests(ITestOutputHelper output)
         double CaptureMilliseconds,
         double ProjectionMilliseconds,
         double WriteMilliseconds
-    );
+    )
+    {
+        [JsonIgnore]
+        public IReadOnlyList<string> Statements { get; init; } = [];
+    }
 
     private sealed record Comparison(bool Occupied, int Observers, Replay Polling, Replay Deadlines);
 
@@ -72,6 +77,17 @@ public sealed class CapsuleerDeadlinePerformanceTests(ITestOutputHelper output)
         Assert.True(deadlines.Turns < polling.Turns / 2);
         Assert.Equal(polling.Fits, deadlines.Fits);
         Assert.Equal(polling.EncodedBytes, deadlines.EncodedBytes);
+        if (deadlines.Commands > polling.Commands)
+        {
+            foreach (var group in deadlines.Statements.GroupBy(sql => sql))
+            {
+                int extra = group.Count() - polling.Statements.Count(sql => sql == group.Key);
+                if (extra > 0)
+                {
+                    output.WriteLine($"Extra {extra} commands: {group.Key}");
+                }
+            }
+        }
         Assert.True(deadlines.Commands <= polling.Commands);
         Assert.True(deadlines.Connections <= polling.Connections);
     }
@@ -146,6 +162,9 @@ public sealed class CapsuleerDeadlinePerformanceTests(ITestOutputHelper output)
             {
                 await client.Tick.AdvanceAsync(client.Context, client.Output, _ => { }, client.Context.AccountId, client.Context.AccountId);
             }
+            var warmedJobs = scheduler.Jobs().ToArray();
+            worker.Tick();
+            Assert.Equal(warmedJobs, scheduler.Jobs());
             encodedBytes = 0;
             const int frames = 200;
             int turns = 0;
@@ -155,7 +174,18 @@ public sealed class CapsuleerDeadlinePerformanceTests(ITestOutputHelper output)
             int commands;
             int connections;
             int fits;
-            using (var metrics = SessionPerformance.Begin("matched maintenance frames", _ => { }, force: true)!)
+            List<string> statements = [];
+            using (
+                var metrics = SessionPerformance.Begin(
+                    "matched maintenance frames",
+                    _ => { },
+                    force: true,
+                    command: sql =>
+                    {
+                        statements.Add(sql);
+                    }
+                )!
+            )
             {
                 long startingAllocation = GC.GetAllocatedBytesForCurrentThread();
                 long started = Stopwatch.GetTimestamp();
@@ -222,7 +252,7 @@ public sealed class CapsuleerDeadlinePerformanceTests(ITestOutputHelper output)
             live.MeasureCheckpoints = true;
             await live.FlushAsync();
             var checkpoint = Assert.IsType<WorldCheckpoint>(live.LastCheckpoint);
-            return new(
+            return new Replay(
                 turns,
                 milliseconds,
                 allocated,
@@ -236,7 +266,10 @@ public sealed class CapsuleerDeadlinePerformanceTests(ITestOutputHelper output)
                 checkpoint.Capture.TotalMilliseconds,
                 checkpoint.Projection.TotalMilliseconds,
                 checkpoint.Write.TotalMilliseconds
-            );
+            )
+            {
+                Statements = statements,
+            };
         }
         finally
         {

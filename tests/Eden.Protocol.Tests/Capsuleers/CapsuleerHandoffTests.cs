@@ -182,9 +182,11 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         }
         Assert.Equal(0, reopened.GetRequiredService<CapsuleerScene>().MaterializedPilots);
         using var selected = reopened.GetRequiredService<IHumanPresence>().Select(Human, Source);
+        reopened.GetRequiredService<CapsuleerMaintenance>().Tick();
         reopened.GetRequiredService<ICapsuleerPresentation>().Refresh();
         Assert.Equal(jobs.Select(j => j.PilotId).Order(), scheduler.Jobs().Select(j => j.PilotId).Order());
-        Assert.All(scheduler.Jobs(), j => Assert.True(j.DueTicks > reopened.GetRequiredService<IHumanPresence>().Read().ElapsedTicks));
+        long elapsed = reopened.GetRequiredService<IHumanPresence>().Read().ElapsedTicks;
+        Assert.True(scheduler.Jobs().Single(j => j.PilotId == paid.Pilot.PilotId).DueTicks > elapsed);
         var peer = Assert.Single(Peers(reopened, paid.Pilot), p => p.Pilot.PilotId == paid.Pilot.PilotId);
         Assert.Single(peer.Mining!);
         Assert.Equal(paid.Work.Cycles, scheduler.Miner(paid.Pilot.PilotId)!.Work.Cycles);

@@ -1,6 +1,6 @@
 # Eden
 
-[Capsuleer encounters](docs/capsuleer-population.md) bring persistent ships to stations and gates across New Eden. A busy hub can support five or six home travelers, while a quiet branch can have none. An optional local zKill snapshot supplies real pilot names, varied supported hulls and complete victim fits. Travelers use real station and gate routes, including stationless transit systems. High-security miners work real deposits. Observers share ship identities, movement, damage and losses. Career jobs sleep when the system empties. Regional markets develop independently.
+[Capsuleer encounters](docs/capsuleer-population.md) bring persistent ships to stations and gates across New Eden. A busy hub can support five or six home travelers, while a quiet branch can have none. An optional local zKill snapshot supplies real pilot names, varied supported hulls and complete victim fits. Travelers use real station and gate routes, including stationless transit systems. High-security miners work real deposits. Observers share ship identities, movement, damage and losses. Eligible distant residents share minute-scale updates, while detailed simulation follows players and unfinished interactions. Regional markets develop independently.
 
 [Production-driven regional markets](docs/protocol/industry.md#production-driven-market-progression--november-8-2026) start with catalog NPC offers. A player's claimed manufacturing output permanently unlocks that product for the whole world. Real market snapshots price generated buy/sell orders; each eligible region has one high-security hub, with smaller selections at secondary factories. New server worlds use this market by default; existing development saves can select it in local administration.
 
@@ -84,6 +84,10 @@ Bounty SP gains are silent; refresh the skill window to read the updated total.
 [Simulation scaling milestones 3–5](docs/protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
 separate system simulation from persistence, keep activated populations progressing remotely, evict cold detail and
 release system owners before checkpoint copying. The save interval remains 15 seconds.
+
+[Coarse distant populations](docs/protocol/capsuleers.md#coarse-distant-populations--november-10-2026) separate saved
+population from continuous execution. Remote pilots share durable system cursors and a preparation budget. The performance
+page distinguishes saved, detailed and coarse populations and measures the entire maintenance pass.
 
 ## Local game data
 
@@ -215,7 +219,9 @@ Compare NPC and connected-player populations with `.\tools\Measure-NpcCapacity.p
 Use `EDEN_TRACE_PERFORMANCE=1` for targeted timings and database counters. See [diagnostic settings](docs/architecture.md#session-performance-diagnostics) and [performance records](docs/protocol/performance.md) for replay evidence.
 
 [Shared-owner stall relief](docs/protocol/performance.md#shared-owner-stall-relief-november-10-2026) adds ordered
-admission, grouped frame updates and a frozen two-player traffic replay. Independent solar-system owners remain pending.
+admission, grouped frame updates and a frozen two-player traffic replay. Later
+[system ownership changes](docs/protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
+separate simulation owners and move checkpoint copies outside their holds.
 
 The live host loads the immutable NPC/agent directory before admitting clients. Its name lookup uses one collection parameter so catalog initialization does not bind thousands of individual SQLite parameters; see the [agent directory latency record](docs/protocol/performance.md#agent-directory-first-request-latency-november-6-2026).
 

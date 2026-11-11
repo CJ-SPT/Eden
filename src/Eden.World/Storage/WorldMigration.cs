@@ -16,7 +16,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 137;
+    internal const int CurrentVersion = 138;
 
     public static void Open(
         WorldDbContext world,
@@ -140,7 +140,17 @@ internal static class WorldMigration
         Eden.World.Mining.MiningSiteSchema.Upgrade(world);
         Eden.World.Propulsion.SpatialNavigationSchema.Upgrade(world);
         InventoryLookupSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=137");
+        if (version < 138)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO WorldCapsuleerAdmission(PilotId)
+                SELECT PilotId FROM WorldCapsuleerHauler
+                WHERE json_valid(Progress) AND json_type(Progress,'$.TrafficLane')='object';
+                """
+            );
+        }
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=138");
         history.Commit();
     }
 }

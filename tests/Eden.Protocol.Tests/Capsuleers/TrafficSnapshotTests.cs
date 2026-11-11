@@ -47,6 +47,91 @@ public sealed class TrafficSnapshotTests
     }
 
     [Fact]
+    public void RuntimePoolsSeparateCargoDroneAndCorrectionConstraints()
+    {
+        var small = Profile();
+        var large = small with { CharacterId = small.CharacterId + 1, KillId = small.KillId + 1 };
+        TrafficSnapshot snapshot = new(null, [small, large]);
+        int Group(TrafficProfile value) => value.HullTypeId;
+        var cargo = snapshot.RuntimeCandidates(
+            1,
+            small.RegionId,
+            small.SecurityBand,
+            true,
+            false,
+            value => value == large,
+            Group,
+            cargoVolume: 100
+        );
+        var drones = snapshot.RuntimeCandidates(
+            1,
+            small.RegionId,
+            small.SecurityBand,
+            true,
+            false,
+            value => value == small,
+            Group,
+            cargoVolume: 100,
+            droneVolume: 10
+        );
+        var correction = snapshot.RuntimeCandidates(
+            1,
+            small.RegionId,
+            small.SecurityBand,
+            true,
+            false,
+            _ => false,
+            Group,
+            cargoVolume: 100,
+            correction: true
+        );
+        Assert.Equal(large, Assert.Single(cargo.Candidates(0, Source, 0)));
+        Assert.Equal(small, Assert.Single(drones.Candidates(0, Source, 0)));
+        Assert.Empty(correction.Candidates(0, Source, 0));
+    }
+
+    [Fact]
+    public async Task BuildingAColdPoolDoesNotBlockAWarmedPool()
+    {
+        var profile = Profile();
+        TrafficSnapshot snapshot = new(null, [profile]);
+        int Group(TrafficProfile value) => value.HullTypeId;
+        var warm = snapshot.RuntimeCandidates(1, profile.RegionId, profile.SecurityBand, true, false, _ => true, Group);
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var building = Task.Run(() =>
+            snapshot.RuntimeCandidates(
+                2,
+                profile.RegionId,
+                profile.SecurityBand,
+                true,
+                false,
+                _ =>
+                {
+                    entered.Set();
+                    release.Wait();
+                    return true;
+                },
+                Group
+            )
+        );
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            var retained = await Task.Run(() =>
+                    snapshot.RuntimeCandidates(1, profile.RegionId, profile.SecurityBand, true, false, _ => true, Group)
+                )
+                .WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Same(warm, retained);
+        }
+        finally
+        {
+            release.Set();
+            await building.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [Fact]
     public void OptInInstalledSnapshotMatchesManifestAndSupportedHullCatalog()
     {
         string? path = Environment.GetEnvironmentVariable("EDEN_TRAFFIC_SNAPSHOT");

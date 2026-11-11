@@ -4,6 +4,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Ammunition;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
@@ -299,9 +300,25 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
         long asteroidId,
         MiningCollection collection,
         long now
+    ) => CollectPaid(world, catalog, pilotId, moduleId, asteroidId, collection, now, 1);
+
+    private static MiningYield CollectPaid(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        long asteroidId,
+        MiningCollection collection,
+        long now,
+        int cycles
     )
     {
         var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        if (cycles < 1 || cycles > 1 && PilotAmmunitionStore.Contents(world, moduleId) is not null)
+        {
+            throw new InvalidDataException("Crystal cycles must settle individually.");
+        }
+        laser = laser with { Volume = laser.Volume * cycles };
         if (world.Set<ModuleCooldown>().Find(moduleId) is not { Kind: ModuleCooldownKind.Cycle })
         {
             throw new InvalidDataException("There is no paid mining cycle to collect.");
@@ -355,6 +372,10 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.TotalMined, extracted + bonus);
         }
         world.Set<ModuleCooldown>().Where(c => c.ModuleId == moduleId && c.Kind == ModuleCooldownKind.Cycle).ExecuteDelete();
+        foreach (var tracked in world.ChangeTracker.Entries<ModuleCooldown>().Where(e => e.Entity.ModuleId == moduleId).ToArray())
+        {
+            tracked.State = EntityState.Detached;
+        }
         world.SaveChanges();
         bool depleted = asteroid.Quantity == 0;
         if (depleted)
@@ -363,6 +384,48 @@ internal sealed class PilotMiningStore(WorldDatabase database, TimeProvider cloc
             world.SaveChanges();
         }
         return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, depleted, collected.CargoFull, crystalState);
+    }
+
+    internal sealed record CoarseCollection(MiningYield Yield, int Cycles);
+
+    internal static CoarseCollection? CollectCoarse(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        long asteroidId,
+        long availableTicks,
+        MiningRolls rolls,
+        long now
+    )
+    {
+        var (pilot, asteroid, laser) = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
+        var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
+        var hold = OreHold(catalog, pilot.ActiveShip.TypeId, laser.Family);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)hold);
+        double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
+        int cycles = CapsuleerCoarseRules.MiningCycles(
+            new(
+                availableTicks,
+                laser,
+                ShipResources.Capacitor(world, pilot.ActiveShipId, attributes, now),
+                available,
+                asteroid.Quantity,
+                volume,
+                PilotAmmunitionStore.Contents(world, moduleId) is not null
+            )
+        );
+        if (cycles <= 0)
+        {
+            return null;
+        }
+        Begin(world, catalog, pilotId, moduleId, asteroidId, now);
+        if (cycles > 1)
+        {
+            ShipResources.SpendCapacitor(world, pilot.ActiveShipId, attributes, (cycles - 1) * laser.CapacitorNeed, now);
+        }
+        return new(CollectPaid(world, catalog, pilotId, moduleId, asteroidId, new(1, true, rolls), now, cycles), cycles);
     }
 
     public void Stop(long pilotId, long moduleId, long expectedCompletesAt)

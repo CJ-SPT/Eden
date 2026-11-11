@@ -1,0 +1,334 @@
+using System.Text.Json;
+using Eden.Data.World.Capsuleers;
+using Eden.Gameplay.Capsuleers;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
+
+namespace Eden.World.Capsuleers;
+
+internal sealed partial class CapsuleerScheduler
+{
+    private readonly CapsuleerBackgroundBudget _backgroundBudget = backgroundBudget ?? new(clock);
+    private readonly Dictionary<int, CapsuleerCoarseWork> _coarseWork = [];
+    private readonly Dictionary<int, SortedSet<long>> _coarseMembers = [];
+    private readonly SortedSet<(long Due, long Order, int System)> _coarseQueue = [];
+    private readonly SortedSet<(long Settled, int System)> _coarseFreshness = [];
+    private readonly Dictionary<long, CapsuleerResumeWork> _resumePilots = [];
+    private readonly Dictionary<long, long> _coarseSettled = [];
+    private readonly HashSet<long> _pendingArrivals = [];
+    private readonly HashSet<long> _admittedTravelers = [];
+    private long _coarseOrder;
+    private int _coarseAgentCount;
+    private long _coarseRetryTicks;
+    private long _skippedRemoteTicks;
+    private const int RecentReturnLimit = 32;
+    private readonly Dictionary<int, CapsuleerReturnProgress> _returnProgress = [];
+    private IReadOnlyList<CapsuleerReturnProgress> _recentReturns = [];
+
+    private void RecordDemotions(IReadOnlyList<long> pilots, long elapsed)
+    {
+        if (Live is null || pilots.Count == 0)
+        {
+            return;
+        }
+        using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+        using var transaction = world.Database.BeginTransaction();
+        foreach (var page in pilots.Chunk(CapsuleerCoarseRules.PageSize))
+        {
+            string ids = JsonSerializer.Serialize(page);
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldCapsuleerCoarsePilot(PilotId,SettledTicks)
+                SELECT value,{elapsed} FROM json_each({ids}) WHERE true
+                ON CONFLICT(PilotId) DO UPDATE SET SettledTicks=MAX(SettledTicks,excluded.SettledTicks)
+                """
+            );
+        }
+        transaction.Commit();
+        foreach (long pilot in pilots)
+        {
+            _coarseSettled[pilot] = Math.Max(_coarseSettled.GetValueOrDefault(pilot), elapsed);
+        }
+    }
+
+    private void RecordReturn(CapsuleerResumeWork resumed)
+    {
+        long skipped = Math.Max(0, resumed.EntryTicks - Math.Max(resumed.SettledTicks, resumed.PreviousDueTicks));
+        _skippedRemoteTicks += skipped;
+        if (skipped == 0)
+        {
+            return;
+        }
+        var previous = _returnProgress.GetValueOrDefault(resumed.SystemId);
+        if (previous?.EntryTicks != resumed.EntryTicks)
+        {
+            previous = new(resumed.SystemId, resumed.EntryTicks, clock.GetUtcNow(), 0, 0);
+        }
+        _returnProgress[resumed.SystemId] = previous with
+        {
+            Bots = previous.Bots + 1,
+            MaximumSkippedTicks = Math.Max(previous.MaximumSkippedTicks, skipped),
+        };
+        var ordered = _returnProgress.Values.OrderByDescending(r => r.EntryTicks).ThenBy(r => r.SystemId).ToArray();
+        foreach (var expired in ordered.Skip(RecentReturnLimit))
+        {
+            _returnProgress.Remove(expired.SystemId);
+        }
+        _recentReturns = Array.AsReadOnly(ordered.Take(RecentReturnLimit).ToArray());
+    }
+
+    private void ReconcileCoarse(HumanActivitySnapshot activity)
+    {
+        if (Live is null)
+        {
+            return;
+        }
+        foreach (int system in _coarseMembers.Keys)
+        {
+            _systems.SetCoarse(system, false);
+        }
+        _coarseMembers.Clear();
+        foreach (var location in _locations)
+        {
+            long pilot = location.Key;
+            if (
+                _running.Contains(pilot)
+                || _suspended.Contains(pilot)
+                || (!_remoteSystems.Contains(_communities.GetValueOrDefault(pilot)) && !_admittedTravelers.Contains(pilot))
+            )
+            {
+                continue;
+            }
+            if (!_coarseMembers.TryGetValue(location.Value, out var members))
+            {
+                members = [];
+                _coarseMembers.Add(location.Value, members);
+            }
+            members.Add(pilot);
+        }
+        _coarseQueue.Clear();
+        _coarseFreshness.Clear();
+        _coarseAgentCount = _coarseMembers.Values.Sum(m => m.Count);
+        foreach (int system in _coarseMembers.Keys)
+        {
+            if (!_coarseWork.TryGetValue(system, out var work))
+            {
+                long due = CapsuleerCoarseRules.FirstDue(system, activity.ElapsedTicks);
+                using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT OR IGNORE INTO WorldCapsuleerCoarseWork(SystemId,Generation,Cursor,SettledTicks,NextTicks)
+                    VALUES({system},0,0,{activity.ElapsedTicks},{due})
+                    """
+                );
+                work = new(system, 0, 0, activity.ElapsedTicks, due);
+                _coarseWork.Add(system, work);
+            }
+            _systems.SetCoarse(system, true);
+            _coarseQueue.Add((work.NextTicks, ++_coarseOrder, system));
+            _coarseFreshness.Add((work.SettledTicks, system));
+        }
+        foreach (int system in activity.ActiveSystems)
+        {
+            _systems.SetCoarse(system, false);
+        }
+    }
+
+    private void AdmitTraveler(long pilot)
+    {
+        if (Live is null || !_admittedTravelers.Add(pilot))
+        {
+            return;
+        }
+        try
+        {
+            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+            world.Database.ExecuteSql($"INSERT OR IGNORE INTO WorldCapsuleerAdmission(PilotId) VALUES({pilot})");
+        }
+        catch
+        {
+            _admittedTravelers.Remove(pilot);
+            throw;
+        }
+    }
+
+    private long? NextCoarseDue(HumanActivitySnapshot activity) =>
+        !activity.Active || _coarseQueue.Count == 0 ? null : Math.Max(_coarseQueue.Min.Due, _coarseRetryTicks);
+
+    private CapsuleerBatch IncludeCoarseDue(CapsuleerBatch batch)
+    {
+        using var owner = synchronization.Enter("coarse wake publication");
+        var activity = presence.Read();
+        if (batch.Turn.OldestDueTicks is null && NextCoarseDue(activity) is { } due && due <= activity.ElapsedTicks)
+        {
+            return batch with { Turn = batch.Turn with { OldestDueTicks = due } };
+        }
+        return batch;
+    }
+
+    private bool RunCoarse(int stamp)
+    {
+        try
+        {
+            return RunCoarseCore(stamp);
+        }
+        catch (CapsuleerCoarseConflictException conflict)
+        {
+            using var owner = synchronization.Enter("coarse cursor refresh");
+            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+            var saved = world.Set<SavedCapsuleerCoarseWork>().AsNoTracking().Single(s => s.SystemId == conflict.SystemId);
+            _coarseWork[saved.SystemId] = new(saved.SystemId, saved.Generation, saved.Cursor, saved.SettledTicks, saved.NextTicks);
+            _membershipDirty = true;
+            return false;
+        }
+        catch (Exception error)
+        {
+            using var owner = synchronization.Enter("coarse failure publication");
+            _failures++;
+            _lastFailure = error.Message;
+            var activity = presence.Read();
+            if (_coarseQueue.Count > 0)
+            {
+                var failed = _coarseQueue.Min;
+                _coarseQueue.Remove(failed);
+                _coarseQueue.Add((checked(activity.ElapsedTicks + TimeSpan.TicksPerSecond), ++_coarseOrder, failed.System));
+            }
+            PublishDiagnostics(activity, clock.GetTimestamp());
+            throw;
+        }
+    }
+
+    private bool RunCoarseCore(int stamp)
+    {
+        using var owner = synchronization.Enter("coarse traffic selection");
+        Load();
+        var activity = presence.Read();
+        Reconcile(activity);
+        if (
+            !activity.Active
+            || _queue.NextDueTicks <= activity.ElapsedTicks
+            || NextCoarseDue(activity) is not { } due
+            || due > activity.ElapsedTicks
+        )
+        {
+            return false;
+        }
+        using var budget = _backgroundBudget.TryEnter();
+        if (budget is null)
+        {
+            _coarseRetryTicks = checked(activity.ElapsedTicks + CapsuleerCoarseRules.Window.Ticks);
+            return false;
+        }
+        var selected = _coarseQueue.Min;
+        var work = _coarseWork[selected.System];
+        var members = _coarseMembers[selected.System];
+        // Only a bounded page is materialized. One bot settlement yields ownership
+        // before another bot; the durable cursor advances in that same transaction.
+        long pilot = members.GetViewBetween(checked(work.Cursor + 1), long.MaxValue).Take(CapsuleerCoarseRules.PageSize).FirstOrDefault();
+        if (pilot == 0)
+        {
+            var next = work with
+            {
+                Generation = checked(work.Generation + 1),
+                Cursor = 0,
+                ThroughTicks = activity.ElapsedTicks,
+                SettledTicks = activity.ElapsedTicks,
+                NextTicks = CapsuleerCoarseRules.NextDue(activity.ElapsedTicks),
+            };
+            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+            int changed = world.Database.ExecuteSql(
+                $"""
+                UPDATE WorldCapsuleerCoarseWork SET Generation={next.Generation},Cursor=0,
+                    SettledTicks={next.ThroughTicks},NextTicks={next.NextTicks}
+                WHERE SystemId={work.SystemId} AND Generation={work.Generation} AND Cursor={work.Cursor}
+                """
+            );
+            if (changed != 1)
+            {
+                throw new CapsuleerCoarseConflictException(work.SystemId);
+            }
+            _coarseQueue.Remove(selected);
+            _coarseQueue.Add((next.NextTicks, ++_coarseOrder, next.SystemId));
+            _coarseWork[next.SystemId] = next;
+            _coarseFreshness.Remove((work.SettledTicks, work.SystemId));
+            _coarseFreshness.Add((next.SettledTicks, next.SystemId));
+            return true;
+        }
+        var job = Current[pilot];
+        var input = work with
+        {
+            ThroughTicks = activity.ElapsedTicks,
+            Systems = (_routes.GetValueOrDefault(pilot) ?? []).Append(_locations[pilot]).Distinct().Order().ToArray(),
+        };
+        using var context = Live!.UseSystem(_locations[pilot]);
+        using var measurement = Live.TrafficActions.Measure(
+            job,
+            [_locations[pilot]],
+            () => (Live.CheckpointCopies, Live.CheckpointCopying)
+        );
+        CapsuleerJob settled;
+        _miners.TryGetValue(pilot, out var miner);
+        if (job.DueTicks > activity.ElapsedTicks)
+        {
+            settled = job.Next(job.DueTicks, job.Action);
+            using CapsuleerOperation operation = new(database, job, marketSignal, input);
+            operation.Commit(settled, null, null);
+        }
+        else if (miner is not null)
+        {
+            settled = miner.Execute(job, stamp, activity.ElapsedTicks, activity.Resumes, background: true, coarse: input);
+            IndexLocation(pilot, miner.SystemId);
+        }
+        else
+        {
+            var hauler = _haulers[pilot];
+            settled = hauler.Execute(job, stamp, background: true, coarse: input);
+            IndexJourney(pilot, hauler);
+            IndexLocation(pilot, hauler.SystemId);
+        }
+        Current[pilot] = settled;
+        _coarseSettled[pilot] = activity.ElapsedTicks;
+        CapsuleerCoarseResult result = new(settled, input with { Cursor = pilot, Generation = checked(work.Generation + 1) });
+        _coarseWork[work.SystemId] = result.Work;
+        _coarseQueue.Remove(selected);
+        _coarseQueue.Add((activity.ElapsedTicks, ++_coarseOrder, selected.System));
+        _completed++;
+        // The immutable checkpoints retain all paid work, not a hydrated scene.
+        int location = _locations[pilot];
+        _detailedSystems.Add(selected.System);
+        bool detailed = Detailed(pilot, activity);
+        _miners.GetValueOrDefault(pilot)?.SetDetailed(detailed);
+        _haulers.GetValueOrDefault(pilot)?.SetDetailed(detailed);
+        bool released = !detailed && Live.ReleaseSystemDetails(location);
+        if (!detailed && !released)
+        {
+            _combatPinnedSystems.Add(location);
+            _systems.Pin(location, true);
+        }
+        if (released)
+        {
+            if (miner is not null)
+            {
+                _miners[pilot] = miners.Create(pilot);
+            }
+            else
+            {
+                _haulers[pilot] = haulers.Create(pilot);
+            }
+            Live.AssignCapsuleer(pilot, null, _locations[pilot], null, null);
+        }
+        var hauling = Live.HaulerCheckpoints.GetValueOrDefault(pilot)?.Work;
+        if (
+            settled.Action == CapsuleerAction.GateTransfer
+            && hauling?.TargetId is > 0 and <= int.MaxValue
+            && database.Catalog.Gates.TryGetValue((int)hauling.TargetId, out var gate)
+            && activity.ActiveSystems.Contains(gate.DestinationSystemId)
+        )
+        {
+            _pendingArrivals.Add(pilot);
+        }
+        _membershipDirty |= detailed || !released || location != selected.System || _pendingArrivals.Contains(pilot);
+        PublishDiagnostics(activity, clock.GetTimestamp());
+        return true;
+    }
+}

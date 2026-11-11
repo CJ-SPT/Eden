@@ -374,7 +374,8 @@ public sealed class CapsuleerTrafficNavigationTests
             var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
             if (scheduled)
             {
-                human = host.GetRequiredService<IHumanPresence>().Select(90000001, route[^1]);
+                human = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+                human.Transfer(route[^1]);
             }
             var job = scheduler.Jobs().Single(j => j.PilotId == founder.PilotId);
             HaulerObservation Current() => scheduled ? scheduler.Hauler(founder.PilotId)! : hauler.Read()!;
@@ -398,7 +399,7 @@ public sealed class CapsuleerTrafficNavigationTests
                 {
                     visited.Add(observation.Pilot.SystemId);
                 }
-                if (!restarted && visited.Count == 5)
+                if (!restarted && observation.Work.RouteIndex >= jumps / 2)
                 {
                     await host.GetRequiredService<LiveWorld>().FlushAsync();
                     human?.Dispose();
@@ -415,7 +416,19 @@ public sealed class CapsuleerTrafficNavigationTests
                 }
             }
             Assert.True(restarted);
-            Assert.Equal(route, visited);
+            if (scheduled)
+            {
+                Assert.Equal(Source, visited[0]);
+                Assert.Equal(route[^1], visited[^1]);
+                Assert.All(
+                    visited.Zip(visited.Skip(1)),
+                    leg => Assert.True(Array.IndexOf(route, leg.First) < Array.IndexOf(route, leg.Second))
+                );
+            }
+            else
+            {
+                Assert.Equal(route, visited);
+            }
             Assert.Equal(DestinationStation, Current().Pilot.StationId);
             Assert.Null(Current().Pilot.Position);
             Assert.Equal(jumps, Current().Work.RouteIndex);

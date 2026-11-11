@@ -11,6 +11,9 @@ internal static class CapsuleerProvisioningSchema
         model.Entity<SavedCapsuleerProvisioning>().ToTable("WorldCapsuleerProvisioning").HasKey(p => p.Id);
         model.Entity<SavedCapsuleerSystem>().ToTable("WorldCapsuleerSystem").HasKey(s => s.SystemId);
         model.Entity<SavedCapsuleerSimulation>().ToTable("WorldCapsuleerSimulation").HasKey(s => s.SystemId);
+        model.Entity<SavedCapsuleerCoarseWork>().ToTable("WorldCapsuleerCoarseWork").HasKey(s => s.SystemId);
+        model.Entity<SavedCapsuleerAdmission>().ToTable("WorldCapsuleerAdmission").HasKey(a => a.PilotId);
+        model.Entity<SavedCapsuleerCoarsePilot>().ToTable("WorldCapsuleerCoarsePilot").HasKey(p => p.PilotId);
         model.Entity<SavedCapsuleerCommunity>().HasIndex(c => c.PilotId).IsUnique();
         model.Entity<SavedCapsuleerHauler>().HasIndex(h => h.PilotId).IsUnique();
         model.Entity<SavedCapsuleerHauler>().PrimitiveCollection(h => h.RouteSystems);
@@ -61,6 +64,15 @@ internal static class CapsuleerProvisioningSchema
                 Id INTEGER PRIMARY KEY CHECK(Id=1), WorldSeed INTEGER NOT NULL CHECK(WorldSeed>=0));
             CREATE TABLE IF NOT EXISTS WorldCapsuleerSimulation(
                 SystemId INTEGER PRIMARY KEY, StartedTicks INTEGER NOT NULL CHECK(StartedTicks>=0));
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerCoarseWork(
+                SystemId INTEGER PRIMARY KEY, Generation INTEGER NOT NULL CHECK(Generation>=0),
+                Cursor INTEGER NOT NULL CHECK(Cursor>=0), SettledTicks INTEGER NOT NULL CHECK(SettledTicks>=0),
+                NextTicks INTEGER NOT NULL CHECK(NextTicks>=0));
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerAdmission(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE);
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerCoarsePilot(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                SettledTicks INTEGER NOT NULL CHECK(SettledTicks>=0));
             CREATE TABLE IF NOT EXISTS WorldCapsuleerSystem(
                 SystemId INTEGER PRIMARY KEY, Eligibility INTEGER NOT NULL CHECK(Eligibility BETWEEN 0 AND 8),
                 HomeStationId INTEGER, DestinationStationId INTEGER, CatalogFingerprint TEXT NOT NULL,

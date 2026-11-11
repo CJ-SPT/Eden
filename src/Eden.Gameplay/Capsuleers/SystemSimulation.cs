@@ -13,14 +13,17 @@ public enum SystemSimulationTier
     Uncreated,
     RemoteScheduled,
     Detailed,
+    Coarse,
 }
 
 public sealed record SystemSimulationState(int SystemId, SystemSimulationMode Mode, long Generation, long SettledTicks)
 {
     public bool Scheduled { get; init; } = true;
     public bool Pinned { get; init; }
+    public bool Coarse { get; init; }
     public SystemSimulationTier Tier =>
         Pinned || Mode is SystemSimulationMode.Active or SystemSimulationMode.Activating ? SystemSimulationTier.Detailed
+        : Coarse ? SystemSimulationTier.Coarse
         : Scheduled ? SystemSimulationTier.RemoteScheduled
         : SystemSimulationTier.Uncreated;
 }
@@ -93,6 +96,11 @@ public sealed class SystemSimulationRegistry
     {
         var state = Get(systemId);
         _systems[systemId] = state with { Pinned = pinned };
+    }
+
+    public void SetCoarse(int systemId, bool coarse)
+    {
+        _systems[systemId] = Get(systemId) with { Coarse = coarse };
     }
 
     public void Settle(int systemId, long throughTicks)

@@ -218,7 +218,7 @@ internal sealed class CapsuleerPopulationStore(WorldDatabase database) : ICapsul
             {
                 return _metadata;
             }
-            using WorldDbContext world = new(database.Path);
+            using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
             bool incremental = live is not null && _metadata is not null && _metadata.Revision >= live.CapsuleerMetadataReset;
             int[] changedSystems = incremental
                 ? live!.CapsuleerSystemRevisions.Where(p => p.Value > _metadata!.Revision).Select(p => p.Key).ToArray()

@@ -79,6 +79,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal LiveMarketSummaries MarketSummaries { get; } = new();
     internal LiveTrafficGeometry TrafficGeometry { get; } = new();
     internal long PreparationRevision { get; private set; }
+    internal long TrafficTemplateRevision { get; private set; }
     internal TrafficActionDiagnostics TrafficActions { get; } = new();
     internal Dictionary<int, Eden.World.Market.InstitutionalPreparation> InstitutionalSupply { get; } = [];
     internal long CheckpointCopies => Interlocked.Read(ref _checkpointCopies);
@@ -120,6 +121,10 @@ internal sealed partial class LiveWorld : IDisposable
             }
         }
         TrafficGeometry.Observe(changes);
+        if (changes.Any(c => c.Table is "WorldItem" or "WorldCapsuleerAgent" or "schema"))
+        {
+            TrafficTemplateRevision++;
+        }
         if (
             changes.Any(c =>
                 c.Table
@@ -180,6 +185,10 @@ internal sealed partial class LiveWorld : IDisposable
             foreach (var change in changes.Where(c => c.Table is "WorldCapsuleerSystem" or "WorldCapsuleerPopulation"))
             {
                 CapsuleerSystemRevisions[checked((int)change.Id)] = CapsuleerRevision;
+            }
+            foreach (var change in changes.Where(c => c.Table is "WorldCapsuleerAgent" or "WorldCapsuleerSuspension"))
+            {
+                CapsuleerAgentRevisions[change.Id] = CapsuleerRevision;
             }
             if (changes.Any(c => c.Table is "WorldCapsuleerProvisioning" or "schema"))
             {
@@ -245,6 +254,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal long CapsuleerRevision { get; private set; }
     internal long CapsuleerMetadataReset { get; private set; }
     internal Dictionary<int, long> CapsuleerSystemRevisions { get; } = [];
+    internal Dictionary<long, long> CapsuleerAgentRevisions { get; } = [];
     internal long PopulationIdentityRevision { get; private set; }
     internal long HostilityRevision { get; private set; }
     internal Dictionary<long, long> CapsuleerHullRevisions { get; } = [];

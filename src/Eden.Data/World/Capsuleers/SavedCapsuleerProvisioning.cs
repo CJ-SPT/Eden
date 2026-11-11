@@ -8,6 +8,26 @@ public sealed class SavedCapsuleerSimulation
     public long StartedTicks { get; set; }
 }
 
+public sealed class SavedCapsuleerCoarseWork
+{
+    public int SystemId { get; set; }
+    public long Generation { get; set; }
+    public long Cursor { get; set; }
+    public long SettledTicks { get; set; }
+    public long NextTicks { get; set; }
+}
+
+public sealed class SavedCapsuleerAdmission
+{
+    public long PilotId { get; set; }
+}
+
+public sealed class SavedCapsuleerCoarsePilot
+{
+    public long PilotId { get; set; }
+    public long SettledTicks { get; set; }
+}
+
 public sealed class SavedCapsuleerProvisioning
 {
     public int Id { get; set; }
