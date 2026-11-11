@@ -42,10 +42,12 @@ public sealed class PilotInventoryTests
         );
     }
 
-    [Fact]
-    public void RejectsForeignItemsBadQuantitiesRemoteHangarsAndSpaceTransfers()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RejectsForeignItemsBadQuantitiesRemoteHangarsAndSpaceTransfers(bool live)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: live);
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
         var pilot = db.Store.FindPilot(1000001)!;
         var item = Assert.Single(inventory.List(pilot.PilotId, pilot.StationId), i => i.TypeId == InventoryDefinitions.CivilianMinerType);
@@ -67,10 +69,12 @@ public sealed class PilotInventoryTests
         );
     }
 
-    [Fact]
-    public void CapacityValidationIsAtomicAndPartialMovesConserveQuantity()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CapacityValidationIsAtomicAndPartialMovesConserveQuantity(bool live)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: live);
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
         var pilot = db.Store.FindPilot(1000001)!;
         using (WorldDbContext world = new(db.Path))
@@ -103,10 +107,12 @@ public sealed class PilotInventoryTests
         );
     }
 
-    [Fact]
-    public void ZeroCargoCapacityReportsTheActualCapacityAndNeverUsesAnUnavailableSpecializedHold()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ZeroCargoCapacityReportsTheActualCapacityAndNeverUsesAnUnavailableSpecializedHold(bool live)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: live);
         var inventory = db.Services.GetRequiredService<IPilotInventory>();
         var pilot = db.Store.FindPilot(1000001)!;
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))

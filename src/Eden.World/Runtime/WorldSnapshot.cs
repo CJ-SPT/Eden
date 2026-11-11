@@ -21,7 +21,8 @@ internal sealed class WorldSnapshot(
     long captureAllocatedBytes = 0,
     long copyAllocatedBytes = 0,
     long copyBytes = 0,
-    Eden.World.Capsuleers.CapsuleerRoutineCheckpoint? routines = null
+    Eden.World.Capsuleers.CapsuleerRoutineCheckpoint? routines = null,
+    Eden.World.Runtime.Economy.EconomyCheckpoint? economy = null
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -49,10 +50,12 @@ internal sealed class WorldSnapshot(
                 || activity is not null
                 || jobs is not null
                 || routines is not null
+                || economy is not null
             )
             {
                 using WorldDbContext world = new(database);
                 using var transaction = world.Database.BeginTransaction();
+                economy?.Apply(world);
                 combat?.Apply(world);
                 heat?.Apply(world);
                 tractors?.Apply(world);

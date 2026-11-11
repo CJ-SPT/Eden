@@ -18,10 +18,12 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PersonalAssetServiceTests
 {
-    [Fact]
-    public void NativePersonalAssetsListLocationsAndExpandRemoteStations()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void NativePersonalAssetsListLocationsAndExpandRemoteStations(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         ContractAssetTestData.AddRemoteStation(f.Db);
         long remote = ContractAssetTestData.Stack(f.Db, 100, ContractAssetTestData.RemoteStation);
         long hull = ContractAssetTestData.Hull(f.Db);
@@ -77,10 +79,12 @@ public sealed class PersonalAssetServiceTests
         Assert.Empty(f.Context.Notifications);
     }
 
-    [Fact]
-    public void EscrowRemovalDisappearsFromListsAndStationDirectoryImmediately()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EscrowRemovalDisappearsFromListsAndStationDirectoryImmediately(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         ContractAssetTestData.AddRemoteStation(f.Db);
         long item = ContractAssetTestData.Stack(f.Db, location: ContractAssetTestData.RemoteStation);
         ContractTests.Fund(f.Db, ContractAssetTestData.Pilot);
@@ -105,10 +109,12 @@ public sealed class PersonalAssetServiceTests
         Assert.Throws<InvalidDataException>(() => f.Db.Services.GetRequiredService<IPilotAssets>().Items(long.MaxValue, new()));
     }
 
-    [Fact]
-    public void SearchIncludesStationContainersAndExcludesShipContentsAcrossReopen()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SearchIncludesStationContainersAndExcludesShipContentsAcrossReopen(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         AddContainerType(f.Db);
         long container = ContractAssetTestData.Stack(f.Db);
         long content = ContractAssetTestData.Stack(f.Db, 42, container, flag: (int)InventoryFlag.Unlocked);
@@ -132,16 +138,19 @@ public sealed class PersonalAssetServiceTests
         Assert.DoesNotContain(search, r => new[] { foreign, cargo, orphan }.Contains(Assert.IsType<long>(r[0])));
         Assert.DoesNotContain(f.Rows("List", []), r => Equals(r[0], content));
         var before = f.Db.Services.GetRequiredService<IPilotAssets>().Items(ContractAssetTestData.Pilot, new(IncludeContainers: true));
+        f.Db.Services.Dispose();
         WorldInitialization.Open(f.Db.Path);
         using var reopened = ServerServices.Build(new(f.Db.Path));
         Assert.Equal(before, reopened.GetRequiredService<IPilotAssets>().Items(ContractAssetTestData.Pilot, new(IncludeContainers: true)));
         Assert.Empty(f.Context.Notifications);
     }
 
-    [Fact]
-    public void SpaceReadsAndRepeatedReadsReflectCommittedAssetsWithoutLocationRebinding()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SpaceReadsAndRepeatedReadsReflectCommittedAssetsWithoutLocationRebinding(bool live)
     {
-        using Fixture f = new();
+        using Fixture f = new(live);
         ContractAssetTestData.AddRemoteStation(f.Db);
         long ship = f.Db.Store.FindPilot(1000001)!.ShipId;
         f.Db.Store.SetPosition(ship, SpacePosition.Zero);
@@ -213,13 +222,14 @@ public sealed class PersonalAssetServiceTests
 
     private sealed class Fixture : IDisposable
     {
-        public TestWorld Db { get; } = new();
+        public TestWorld Db { get; }
         public IServiceScope Scope { get; }
         public PilotCallContext Context { get; }
         private string Service { get; set; } = "charMgr";
 
-        public Fixture()
+        public Fixture(bool live = false)
         {
+            Db = new(liveWorld: live);
             Scope = Db.Services.CreateScope();
             var pilot = Db.Store.FindPilot(1000001)!;
             Context = new(

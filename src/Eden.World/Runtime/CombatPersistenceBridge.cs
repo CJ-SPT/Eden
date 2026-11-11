@@ -21,6 +21,14 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
             return;
         }
         if (
+            data.Context?.Database.CurrentTransaction is null
+            && LiveWorld.Find(path) is { } economicOwner
+            && economicOwner.Economy.ReferencesDirty(command.CommandText)
+        )
+        {
+            economicOwner.Economy.Flush();
+        }
+        if (
             data.Context is not WorldDbContext { UsesResidentCapsuleerRoutines: true }
             && command.CommandText.Contains("WorldCapsuleer", StringComparison.Ordinal)
             && data.Context?.Database.CurrentTransaction is null
@@ -165,6 +173,7 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
             {
                 LiveWorld.Find(path)?.CapsuleerRoutines.Flush((eventData.Context as WorldDbContext)?.Participants);
             }
+            LiveWorld.Find(path)?.Economy.Flush();
             Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return result;
@@ -188,6 +197,7 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
             {
                 LiveWorld.Find(path)?.CapsuleerRoutines.Flush((eventData.Context as WorldDbContext)?.Participants);
             }
+            LiveWorld.Find(path)?.Economy.Flush();
             Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return ValueTask.FromResult(result);

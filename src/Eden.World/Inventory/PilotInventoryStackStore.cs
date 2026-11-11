@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Inventory;
 
 [Injectable]
-internal sealed class PilotInventoryStackStore(WorldDatabase database, TimeProvider clock) : IPilotInventoryStacks
+internal sealed partial class PilotInventoryStackStore(WorldDatabase database, TimeProvider clock) : IPilotInventoryStacks
 {
     private sealed record StackIdentity(int TypeId, double? VolumeOverride, double CrystalDamage);
 
@@ -22,6 +22,10 @@ internal sealed class PilotInventoryStackStore(WorldDatabase database, TimeProvi
         IReadOnlyList<InventoryStackMerge> operations
     )
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentMerge(live, pilotId, sourceLocationId, destinationLocationId, operations);
+        }
         InventoryStackRules.CheckMergeSelection(operations);
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
@@ -108,6 +112,10 @@ internal sealed class PilotInventoryStackStore(WorldDatabase database, TimeProvi
 
     public IReadOnlyList<InventoryChange> StackAll(long pilotId, long locationId, int flagId)
     {
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            return ResidentStackAll(live, pilotId, locationId, flagId);
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);

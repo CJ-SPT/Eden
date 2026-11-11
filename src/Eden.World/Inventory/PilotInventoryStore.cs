@@ -17,12 +17,17 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Inventory;
 
 [Injectable]
-internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider clock) : IPilotInventory
+internal sealed partial class PilotInventoryStore(WorldDatabase database, TimeProvider clock) : IPilotInventory
 {
     public IReadOnlyList<InventoryItem> List(long pilotId, long locationId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
+        {
+            using var resident = live.Economy.Begin(new(pilots: [pilotId]));
+            return List(resident, catalog, pilotId, locationId);
+        }
+        using WorldDbContext world = new(database.Path);
         return List(world, catalog, pilotId, locationId);
     }
 
@@ -48,6 +53,13 @@ internal sealed class PilotInventoryStore(WorldDatabase database, TimeProvider c
 
     public IReadOnlyList<InventoryChange> Move(long pilotId, long destinationId, InventoryMoveRequest request)
     {
+        if (
+            Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live
+            && TryResidentMove(live, pilotId, destinationId, request) is { } changes
+        )
+        {
+            return changes;
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);

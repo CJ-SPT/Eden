@@ -25,7 +25,11 @@ internal sealed partial class LiveReadModels
         var wrecks = changes.Where(c => c.Table == "WorldWreck").Select(c => c.Id).ToArray();
         var launches = changes.Where(c => c.Table == "WorldPlanetaryLaunch").Select(c => c.Id).ToArray();
         var offices = changes.Where(c => c.Table == "WorldPlanetaryOffice").Select(c => c.Id).ToArray();
-        var drones = changes.Where(c => c.Table is "WorldDrone" or "WorldItem").Select(c => c.Id).Distinct().ToArray();
+        var drones = changes
+            .Where(c => c.Table == "WorldDrone" || c.Table == "WorldItem" && !c.Resident)
+            .Select(c => c.Id)
+            .Distinct()
+            .ToArray();
         using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
         if (ships.Length > 0)
         {
@@ -70,7 +74,9 @@ internal sealed partial class LiveReadModels
         var inventoryIds = changes.Where(c => c.Table == "WorldItemMembership").Select(c => c.Id).ToArray();
         var inventoryLocations =
             _wrecks.HasEntries && inventoryIds.Length > 0
-                ? world.Set<OwnedItem>().Where(i => inventoryIds.Contains(i.Id)).Select(i => i.LocationId).ToHashSet()
+                ? changes.Any(c => c.Resident)
+                    ? inventoryIds.Select(id => owner.Economy.Peek<OwnedItem>(id)?.LocationId).OfType<long>().ToHashSet()
+                    : world.Set<OwnedItem>().Where(i => inventoryIds.Contains(i.Id)).Select(i => i.LocationId).ToHashSet()
                 : [];
         bool Arrived(int system, CombatRowChange change) => locations.TryGetValue(change.Id, out int current) && current == system;
         if (launches.Length > 0)

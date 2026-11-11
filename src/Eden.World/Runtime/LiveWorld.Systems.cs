@@ -68,6 +68,9 @@ internal sealed partial class LiveWorld
         return _systems.Get(PilotSystem(pilot)).State.Combat;
     }
 
+    internal LiveCombatRuntime? CombatForKnownPilot(long pilot) =>
+        _pilotSystems.TryGetValue(pilot, out int system) ? _systems.Get(system).State.Combat : _shared.Combat;
+
     internal LiveCombatRuntime? CombatForSystem(int system) => _systems.Get(system).State.Combat;
 
     internal LiveShipHeat HeatForKnownShip(long ship) =>

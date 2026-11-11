@@ -2521,3 +2521,116 @@ moves, market fills, fitting, docking and gate membership. They must move to one
 owner, rather than a separate bot-only copy, with atomic wallet/order/escrow/item changes, rejection without partial
 publication, coherent human/bot reads, destruction/transfer invalidation and reopened checkpoint coverage. Cold catalog
 hydration remains separately measurable. The overall goal of eliminating every bot SQL call is not complete here.
+
+
+## Resident inventory and market transactions (November 11, 2026)
+
+This migration adds the shared resident economic transaction needed after the remote-routine work above.
+Live public market commands, ordinary cargo/hangar moves and splits, stack merges, personal asset reads, wallet balance
+reads and standalone capsuleer stock listings now use typed resident rows. It does **not** finish removal of every bot
+SQL call: mixed role actions still use their SQL overloads for paid resupply/reloading, mining, fitting and travel.
+Those actions must migrate as complete transactions; publishing a purchase before a later undock rejection would
+change the established rollback behavior. The resident owner explicitly rejects opening an economic view inside an
+existing SQL transaction. This is a validated shared-transaction milestone, not completion of that broader goal.
+
+Each economic action owns private mutable materializations of immutable scalar snapshots. Related wallets, buy-order
+escrow, listed stock, inventory ownership/quantities, tax and payment ledgers, execution history, task counters and
+notification records publish only after every staged table validates. Rejected batches discard the entire view,
+including staged identities. The inventory-owner registry and active-pilot/hull ownership constraints are checked before
+publication; contract escrow stays excluded. Persistent high-water marks include inventory, ships, implants, boosters
+and structures, including deleted newest rows and temporary split/merge identities.
+
+The relational image remains a compatibility and checkpoint boundary. SQL transactions project earlier committed
+resident changes before using them, then refresh only committed row identities; rollback never publishes speculative
+SQL changes. Unrelated read-only SQL queries do not force economic projection. Resident commits publish membership
+invalidations without querying SQL. Current combat magazine quantities overlay private reads, and economic scalar
+changes preserve unrelated dirty combat health, energy and deadlines. Fitting transitions retain their complete SQL
+boundary rather than partially applying the ordinary cargo implementation.
+
+A captured economic image and sequence array share the same generation as the relational copy, remote routines and
+combat state. Economic projection, followed by newer combat deltas, runs in the detached checkpoint transaction outside
+the world owner. A failed projection rolls back its complete image. A failed file save retains dirty state and a later
+save captures the newest committed generation. Successful file saves do not acknowledge changes absent from the live
+SQL image, so later compatibility reads and repeated saves remain coherent.
+
+Queries push complete scalar predicates into explicit snapshot indexes before materializing private entities. Small
+predicates are interpreted instead of compiling fresh IL for each request. Open-order expiration and acknowledged
+market-change heads have resident indexes, so idle polling does not rebuild order/history objects. Tests with 1, 100
+and 1,000 unrelated stacks materialize just the selected row. Primary-key queries use the main row map, and secondary
+indexes allocate a shared-value set only when a key has multiple rows; unique keys do not create per-row hash sets. This is an allocation assertion, not a claim that every
+unindexed filter has constant CPU cost.
+
+Reference checks: [EVE University trading](https://wiki.eveuniversity.org/Trading) was consulted for orders, escrow,
+broker fees, cancellation and fills. Eden's existing typed rules and build-3662168 wire behavior remain authoritative;
+this migration changes no rates or eligibility. The local evejs reference reports version `261108.1`; its
+`server/src/services/market/marketRuntimeState.js` stores runtime cursors through its game store and does not define
+Eden's owner/checkpoint contract. Its inspected SHA-256 is
+`A848B21E2E2BF4FF8B6CF9846AB05BB09ACC606062F3FC15958A463AA9BBDD36`. No reference source was copied.
+
+### Matched warmed economic replay
+
+The baseline is unchanged `0d778f76c0eedd3b8e48223b7147fc0fb8bcb765`. Both versions use the same injected test source,
+fixture, clock, resident SQLite world, listing, buyer budget and 40 one-unit purchases. Each complete economic frame
+includes the trade and one or four inventory, balance and personal-order reads. Both finish with 41 purchased rounds
+and 59 listed rounds. Builds are separate from timing; the final comparison executes the versions sequentially.
+This small deterministic workload measures shared economic commands, not whole-server bot capacity or installed-save
+stress. An initial replay exposed a slower expression-compilation implementation; it was corrected before acceptance.
+
+| Readers per frame | SQL commands, baseline → resident | Connection opens, baseline → resident | Fittings | Mean frame ms, baseline → resident | p95 ms, baseline → resident | Allocated bytes, baseline → resident |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 1,000 → 0 | 240 → 0 | 0 → 0 | 5.383 → 1.536 | 6.166 → 2.182 | 32,933,128 → 10,717,832 |
+| 4 | 1,360 → 0 | 600 → 0 | 0 → 0 | 9.859 → 2.575 | 15.738 → 2.658 | 58,264,192 → 18,555,640 |
+
+Checkpoint work is reported separately. In these samples, resident capture/copy/projection/write took respectively
+0.214/0.534/2.456/72.542 ms (one reader) and 6.196/0.371/24.562/39.764 ms (four readers). The matching baseline samples
+were 0.047/0.374/0.255/63.259 ms and 3.821/0.420/3.762/41.462 ms. Resident detached projection issued 19 commands;
+baseline economic rows had already been written during the frames. First-use projection and file-write variance are
+visible here; no checkpoint throughput improvement is claimed. Both frame and save costs need remeasurement on the
+installed population before assigning a supported larger bot count.
+
+### Automated validation
+
+Development began with the exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Market.ResidentEconomyTests.RejectedPaymentDiscardsEveryStagedInventoryAndWalletChange`.
+Focused regressions cover rejection without partial payment or stock, competing buyers, escrow price improvements,
+order modification/cancellation/expiration, remote stock and blueprints, ownership rejection, cargo capacity,
+split/merge rollback, committed SQL visibility, old-generation snapshots, failed projection/file-save retries,
+reopened state and sequence high-water marks. A warmed fill/cargo/read workload asserts zero SQL commands, connection
+opens and fitting calculations with one and four readers. Full .NET regression and live-client acceptance are not run.
+
+Closing tool/solution restore passed. The integrated solution build on top of main `7fbf0592` passed in **2.21 s**
+with zero warnings/errors. The affected-class selection passed **239 tests** in **156.66 s** including runner overhead
+(focused build **1.31 s**). Its exact OR filter is preserved in
+`artifacts/resident-economy-20261111/focused-filter.txt`; it selects the resident economy, personal/remote/blueprint/
+industrial/testing/history market classes, inventory moves/merge/split/ownership and personal assets, detached and
+concurrent checkpoint owners, complete session frames, resident combat/fitting observers, capsuleer miner/hauler/
+routine/supply/defense frames, bulk industry delivery and personal mining-ledger integration. Other space-activity
+methods are included; the previously recorded unrelated `ShoppingChoosesRealAffordableStockAndHonorsThreatMemory`
+method is excluded and was not rerun. This does not replace a full regression check.
+
+The catalog policy suite passed **8 tests / 0.871 s** and formatting policy passed **9 tests / 0.015 s**. Formatting
+verification passed, including **1,740 CSharpier files / 2.896 s** and the 140-column policy; total style-check elapsed
+time was not captured. No width exceptions were added. Two final replay cases also passed; their separate benchmark
+build took **7.60 s** and run **6.81 s**. Replay source, targets, summaries and reports are preserved with the focused
+reports under `artifacts/resident-economy-20261111`. Earlier setup, query and null-index failures were corrected before
+these closing runs. The shared transaction slice is merged separately from the outstanding mixed bot-action migration described above.
+
+The merge integration includes main `d45c1d7d` (shared bookmarks/access lists and structure compression). Only the
+protocol/documentation indexes conflicted; both records were retained. Tool and solution restore passed, and the
+integrated solution build passed in **47.54 s** with zero warnings/errors. The OR filter for `ResidentEconomyTests`,
+`PersonalMarketTests`, `PilotInventoryTests`, `InventoryOwnershipTests`, `PersonalAssetServiceTests`,
+`DetachedCheckpointTests`, `SessionPerformanceTests`, `StructureCompressionTests`, `SharedBookmarksTests` and
+`SharedBookmarkServiceTests`, using their complete namespaces, passed **105 tests / 57.77 s** (focused build **1.86 s**).
+Catalog policy passed **8 tests / 0.944 s**, formatting policy passed **9 tests / 0.110 s**, and formatting verification
+passed for **1,758 files** with no width exceptions. Combined policy/formatting elapsed time was **25.13 s**.
+The integration report is preserved as `artifacts/resident-economy-20261111/merge-integration.trx` in the primary checkout.
+No full .NET regression or installed-save stress run was performed for this merge.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare a fixed installed-population workload before assigning a larger supported population. Native rendering,
+input and gameplay feel remain unverified.

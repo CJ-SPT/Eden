@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident inventory and market transactions](protocol/performance.md#resident-inventory-and-market-transactions-november-11-2026)
+records atomic resident trades and ordinary cargo, coherent saves and matched economic-frame measurements.
+
 [Shared bookmark folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026) covers shared locations, permissions, subscriptions and native updates.
 
 [Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026) covers native multi-job completion and atomic rollback.

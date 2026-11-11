@@ -11,7 +11,7 @@ using Eden.World.Storage;
 namespace Eden.World.Skills;
 
 [Injectable]
-internal sealed class PilotSkillReader(WorldDatabase database) : IPilotSkillReader
+internal sealed partial class PilotSkillReader(WorldDatabase database) : IPilotSkillReader
 {
     internal static int Level(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill)
     {

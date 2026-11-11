@@ -17,15 +17,26 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class InventoryStackMergeTests
 {
     [Theory]
-    [InlineData(InventoryFlag.Hangar, false, false)]
-    [InlineData(InventoryFlag.Hangar, true, false)]
-    [InlineData(InventoryFlag.Cargo, false, false)]
-    [InlineData(InventoryFlag.Cargo, true, false)]
-    [InlineData(InventoryFlag.Cargo, false, true)]
-    [InlineData(InventoryFlag.Cargo, true, true)]
-    public void NativeMultiMergeRetainsChosenTargetAndPublishesPersistentQuantities(InventoryFlag flag, bool partial, bool inSpace)
+    [InlineData(InventoryFlag.Hangar, false, false, false)]
+    [InlineData(InventoryFlag.Hangar, false, false, true)]
+    [InlineData(InventoryFlag.Hangar, true, false, false)]
+    [InlineData(InventoryFlag.Hangar, true, false, true)]
+    [InlineData(InventoryFlag.Cargo, false, false, false)]
+    [InlineData(InventoryFlag.Cargo, false, false, true)]
+    [InlineData(InventoryFlag.Cargo, true, false, false)]
+    [InlineData(InventoryFlag.Cargo, true, false, true)]
+    [InlineData(InventoryFlag.Cargo, false, true, false)]
+    [InlineData(InventoryFlag.Cargo, false, true, true)]
+    [InlineData(InventoryFlag.Cargo, true, true, false)]
+    [InlineData(InventoryFlag.Cargo, true, true, true)]
+    public void NativeMultiMergeRetainsChosenTargetAndPublishesPersistentQuantities(
+        InventoryFlag flag,
+        bool partial,
+        bool inSpace,
+        bool live
+    )
     {
-        using Fixture f = new(flag, inSpace);
+        using Fixture f = new(flag, inSpace, live);
         int quantity = partial ? 30 : 80;
         Assert.IsType<PilotCallResult.Success>(f.Merge(quantity));
         var changes = f.Context.Notifications.OfType<ItemChanged>().ToArray();
@@ -37,6 +48,7 @@ public sealed class InventoryStackMergeTests
         Assert.Equal(partial ? f.Location : (long)InventoryLocation.Graveyard, source.Item.LocationId);
         Assert.Equal(partial ? 50 : 80, source.Item.Quantity);
         Assert.Equal(partial ? 80 : f.Location, source.Previous[partial ? InventoryColumn.Quantity : InventoryColumn.Location]);
+        f.Db.Services.Dispose();
         _ = WorldInitialization.Open(f.Db.Path);
         var saved = f.Snapshot();
         Assert.Equal(560 + quantity, saved.Single(item => item.Id == f.Target).Quantity);
@@ -57,11 +69,13 @@ public sealed class InventoryStackMergeTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void BatchMergeMovesDockedStacksAtomicallyAndSuppressesIntermediateRows(bool partial)
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void BatchMergeMovesDockedStacksAtomicallyAndSuppressesIntermediateRows(bool partial, bool live)
     {
-        using Fixture f = new(InventoryFlag.Cargo);
+        using Fixture f = new(InventoryFlag.Cargo, live: live);
         f.Edit(
             f.Source,
             item =>
@@ -86,6 +100,7 @@ public sealed class InventoryStackMergeTests
             f.Context.Notifications.OfType<ItemChanged>(),
             change => Assert.Contains(change.Item.Id, new[] { f.Source, second, f.Target })
         );
+        f.Db.Services.Dispose();
         _ = WorldInitialization.Open(f.Db.Path);
         var saved = f.Snapshot();
         Assert.Equal(565 + quantity, saved.Single(item => item.Id == f.Target).Quantity);
@@ -187,11 +202,13 @@ public sealed class InventoryStackMergeTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void LaterOverflowRollsBackTheWholeMergeBatchIncludingEarlierTransfers(bool transfer)
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void LaterOverflowRollsBackTheWholeMergeBatchIncludingEarlierTransfers(bool transfer, bool live)
     {
-        using Fixture f = new(InventoryFlag.Cargo);
+        using Fixture f = new(InventoryFlag.Cargo, live: live);
         long sourceLocation = transfer ? f.Station : f.Location;
         InventoryFlag sourceFlag = transfer ? InventoryFlag.Hangar : InventoryFlag.Cargo;
         f.Edit(
@@ -317,7 +334,7 @@ public sealed class InventoryStackMergeTests
         internal const long Owner = 90000001;
         internal const double UnitVolume = 0.0025;
         internal const double Wear = 0.125;
-        internal TestWorld Db { get; } = new();
+        internal TestWorld Db { get; }
         internal long Location { get; }
         internal long Station { get; }
         internal long Source { get; }
@@ -327,8 +344,9 @@ public sealed class InventoryStackMergeTests
         internal PilotCallContext Context { get; }
         private readonly IServiceScope _scope;
 
-        internal Fixture(InventoryFlag flag, bool inSpace = false)
+        internal Fixture(InventoryFlag flag, bool inSpace = false, bool live = false)
         {
+            Db = new(liveWorld: live);
             var pilot = Db.Store.FindPilot(1000001)!;
             Location = flag == InventoryFlag.Hangar ? pilot.StationId : pilot.ShipId;
             Station = pilot.StationId;
