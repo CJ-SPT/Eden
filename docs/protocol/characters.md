@@ -660,3 +660,65 @@ Reference comparison: local evejs release **261108.1**, targeting older client *
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Search for a station in map search and an NPC corporation in the main search window; open their results. Map routing dependencies are handled in the following navigation milestone.
+
+
+## Free-point preview and silent activity refresh — November 11, 2026
+
+The supplied Apply Skill Points screenshot showed `Est. None saved` and a predicted bar behind the current bar.
+Static inspection of pinned build **3662168** identifies two different baselines: `skillQueueSvc` adds the
+server's allocated points to cached `MySkillPoints`, while the active row reads elapsed training through
+`GetEstimatedSkillPointsTrained`. The native saved-time calculation subtracts the latter progress from the
+former prediction, producing a negative duration once elapsed training exceeds the award. Paused partially
+trained rows also report zero existing progress in the native window.
+
+The existing signed login expression now installs `Skills/free_points_client.py`. Predictions and current
+rows both use estimated SP for the active training skill and saved SP for other skills. Row progress is
+clamped to its own level's thresholds, including paused, completed and future levels. Saved-time estimates
+compare the prediction with the native row's construction baseline (`_progress`), preserving the award's
+time value while passive training continues after opening. The native training calculator still owns
+attribute, clone-grade and accelerator timing; server allocation, spending, queue persistence and balances
+are unchanged. Reconnecting installs the adapter; no launcher archive rebuild or local client-file edit is required.
+
+Mining and NPC bounty awards already use `CreditSilentFreePoints` and retain the pool revision, omitting
+`OnFreeSkillPointsChanged`. However, native `SetFreeSkillPoints` also shows a reward toast when a later queue
+snapshot reveals an increase. The adapter distinguishes that passive refresh from the explicit server event:
+passive increases update the cached balance and scatter `OnFreeSkillPointsChanged_Local` without a toast or
+pointer, while explicit reward events retain the native notification behavior. Decreases and unchanged
+balances retain native handling. This keeps both activity rewards silent without hiding their earned points.
+
+References: [EVE University skills and learning](https://wiki.eveuniversity.org/Skills_and_learning) describes
+attribute-dependent SP/minute; pinned catalog/native functions supply this build's rank thresholds and rates.
+Client archive SHA-256: `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+Inspected code objects in `applySkillPointsWindow.pyj`, `skillQueueSvc.pyj`, `skillsvc.pyj`,
+`characterskills/util.pyj` and `characterskills/skill_training.pyj` inertly, without importing game modules.
+Consulted local evejs `server/src/services/skills/training/skillQueueRuntime.js`, especially its
+`previewFreeSkillPointsApplication` baseline discussion (SHA-256
+`A78228E3EA5FC029D786506A13C3517DE688AFE0B888B403386B718C746AABA4`); that reference snapshot has no Git metadata.
+No reference implementation was copied; no Blue codec, transport or Destiny behavior changed.
+
+**Automated validation.** Exact development filter:
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.FreePointClientTests.NativeFreePointPreviewUsesCurrentProgressAndPassiveRewardsStaySilent`.
+The initial headless fixture lacked Python builtins in the isolated native-function scope; after correcting
+the fixture, the regression passed (13.20 seconds build, 13.25 seconds test command). It reproduces the old
+negative prediction and passive-refresh toast, then exercises active/paused skills, ranks 1/2/5, one-point
+and 352-point awards, exact level completion, multi-level awards, future rows, Alpha/Omega/boosted rates,
+continued passive training, empty previews, initial/unchanged balances, repeated installation and explicit
+reward notifications. Only isolated native functions and authored adapters execute in the pinned Python 2
+runtime; no game session or UI starts. The first neighboring run was deliberately interrupted after 131 passing tests when review found a malformed
+module-stub key in the shared-login headless fixture; it is incomplete, not a validation pass. After repairing
+the fixture, `FullyQualifiedName~FreePointClientTests|FullyQualifiedName~ConcordOverviewTests` passed all
+three tests (1.95 seconds build, 2.52 seconds test command).
+
+Final filter:
+`FullyQualifiedName~FreePointClientTests|FullyQualifiedName~FreeSkillPoint|FullyQualifiedName~NpcSkillPointRewardTests|FullyQualifiedName~MiningSkillPointRewardTests|FullyQualifiedName~Training|FullyQualifiedName~Booster|FullyQualifiedName~ConcordOverviewTests|FullyQualifiedName~CharacterPortraitTests|FullyQualifiedName~PresenceListTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`,
+with `EDEN_TEST_CLIENT_ROOT=E:\EdenDev\3662168` and `xUnit.MaxParallelThreads=4`: **435 passed**, zero skipped,
+**3 minutes 34 seconds** runner duration. Tool/solution restores, solution build (zero warnings/errors),
+both Python suites (**8 catalog**, **9 formatting**), formatting verification (**1,678 files**),
+140-character coverage, documentation link/anchor verification and diff checks passed. The complete required
+sequence took **252.14 seconds**. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Reconnect and inspect the saved-time estimate for active and paused skills;
+collect a mining reward and an NPC bounty, then reopen the skill queue to confirm balances refresh silently.
+Native rendering, input and gameplay feel remain unverified.
