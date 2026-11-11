@@ -3,6 +3,8 @@
 [Resident inventory and market transactions](protocol/performance.md#resident-inventory-and-market-transactions-november-11-2026)
 records atomic resident trades and ordinary cargo, coherent saves and matched economic-frame measurements.
 
+[Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026) covers native multi-job completion and atomic rollback.
+
 [Blueprint supply at every regional hub](protocol/industry.md#blueprint-supply-at-every-regional-hub-november-11-2026)
 records global NPC-original coverage, retained eligibility rules and existing-save backfill.
 
@@ -477,6 +479,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Corporations
 
+- [Corporation contacts and standings, November 11, 2026](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026)
+
 - <a id="corporation-share-holdings-and-native-wallet-panels"></a>[Corporation share holdings and native wallet panels](protocol/corporations.md#corporation-share-holdings-and-native-wallet-panels)
 - <a id="corporation-bills-and-market-transactions-panel-calls"></a>[Corporation Bills and Market Transactions panel calls](protocol/corporations.md#corporation-bills-and-market-transactions-panel-calls)
 - <a id="corporation-isk-header-permission-correction"></a>[Corporation ISK header permission correction](protocol/corporations.md#corporation-isk-header-permission-correction)
@@ -523,6 +527,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="inventory-refresh-during-capsule-adoption-november-2-2026"></a>[Inventory refresh during capsule adoption, November 2, 2026](protocol/inventory.md#inventory-refresh-during-capsule-adoption-november-2-2026)
 
 ### Mining, industry and markets
+
+- [Personal mining ledger, November 11, 2026](protocol/industry.md#personal-mining-ledger--november-11-2026)
 
 - [Immediate regional purchases (November 11, 2026)](protocol/industry.md#immediate-regional-purchases-november-11-2026)
 
@@ -583,6 +589,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Fitting and module families
 
+- [Bulk and corporation saved fittings, November 11, 2026](protocol/fitting.md#bulk-and-corporation-saved-fittings--november-11-2026)
 - <a id="personal-saved-fitting-plans-november-6-2026"></a>[Personal saved fitting plans (November 6, 2026)](protocol/fitting.md#personal-saved-fitting-plans-november-6-2026)
 - <a id="persistent-weapon-grouping"></a>[Persistent weapon grouping](protocol/fitting.md#persistent-weapon-grouping)
 - <a id="shield-boosters-and-physical-skillbooks-november-2-2026"></a>[Shield boosters and physical skillbooks, November 2, 2026](protocol/fitting.md#shield-boosters-and-physical-skillbooks-november-2-2026)

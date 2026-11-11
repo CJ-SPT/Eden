@@ -36,6 +36,7 @@ public sealed class IceMiningTests
         mining.Begin(f.PilotId, module, Rock, f.Clock.Now);
         var result = mining.Collect(f.PilotId, module, Rock, new(1, true, Rolls));
         Assert.Equal(3, result.Extracted);
+        Assert.Equal(3, Assert.Single(f.Db.Services.GetRequiredService<IPersonalMiningLedger>().Read(f.PilotId)).Quantity.Collected);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(97, saved.Set<WorldAsteroid>().Find(Rock)!.Quantity);
     }

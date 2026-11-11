@@ -89,3 +89,18 @@ public sealed class WorldNpcMiningOperation
     public double AlertY { get; set; }
     public double AlertZ { get; set; }
 }
+
+public sealed class SavedPersonalMiningLog
+{
+    public long Id { get; set; }
+    public long PilotId { get; set; }
+    public long Day { get; set; }
+    public int CorporationId { get; set; }
+    public int SystemId { get; set; }
+    public int TypeId { get; set; }
+    public long Quantity { get; set; }
+    public long Critical { get; set; }
+    public long Wasted { get; set; }
+
+    public PersonalMiningLog Snapshot() => new(Id, PilotId, Day, CorporationId, SystemId, TypeId, new(Quantity, Critical, Wasted));
+}

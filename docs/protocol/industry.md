@@ -7,6 +7,109 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Personal mining ledger — November 11, 2026
+
+Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of
+`utillib.KeyVal` daily entries with native FILETIME `eventDate`, `characterID`, historical `corporationID`, `typeID`,
+`quantity`, `quantityWasted`, and both `solarsystemID` (native ledger entries) and `solarSystemID` (discovery spelling).
+Stable `entryID` and the critical subset `quantityCritical` are also included. Caller-supplied owners, date arguments
+and keywords reject; another pilot's ledger is never part of the reply.
+
+Ore, ice and gas collection update the ledger inside the existing paid-cycle transaction. Successful quantity includes
+critical bonus **once**; waste remains separate and never becomes cargo. Partial ore/gas collection, completed ice,
+critical cycles, waste-only depletion and coarse multi-cycle collection use the same boundary. Empty/failed collections
+produce no history. If the ledger write fails, resource quantity, cargo, skill rewards and the paid-cycle marker roll back
+with it; a retry records only the subsequently committed yield.
+
+Typed Gameplay rules validate nonnegative totals, the critical subset and checked 64-bit sums. Schema **143** adds
+`WorldPersonalMiningLog`, with one indexed bucket per pilot, UTC date, corporation-at-mining-time, system and resource.
+Daily aggregation follows CCP's documented ledger design and bounds repeated-cycle storage. Reads show **90 UTC dates,
+including today**, exclude future-dated rows and make no changes. Creating a new bucket prunes that pilot's older buckets;
+dormant expired rows remain private and invisible until that pilot mines again. No monitor polls this table. New worlds
+and upgrades begin with an empty ledger: existing inventory cannot establish past mining activity. Reopen/checkpoint
+persistence uses the ordinary saved-world database, without adding transient history or per-cycle queues.
+
+The server exposes committed data immediately on a native read. The pinned client owns its ledger-service memoization
+and graph/table refresh. Corporation observer ledgers and moon-mining observers remain outside this personal-ledger
+milestone.
+
+References: [EVE University mining guide](https://wiki.eveuniversity.org/Mining) covers collection into ship holds and the
+ledger entry point. CCP's [ledger guide](https://support.eveonline.com/hc/en-us/articles/115005402265-Mining-Ledger)
+defines personal 90-day history. [Introducing the Mining Ledger](https://www.eveonline.com/news/view/introducing-the-mining-ledger-new-tools-for-miners-in-eve-online)
+and [Mining Ledgers in ESI](https://developers.eveonline.com/blog/mining-ledgers-in-esi) describe daily aggregation by
+resource and system. Historical corporation identity is retained for the pinned client's corporation filter.
+
+Inert build **3662168** inspection covered `ledgerSvc.GetPersonalData`, `ledgerUtil.NUM_DAYS_BACK` and minimap grouping,
+`ledgerPanel.IsFilteredOut`, and `ledgerEntry.GetLedgerEntriesPersonal`; no client code was executed. The unchanged
+archive SHA-256 is `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Existing native Blue list/KeyVal
+adapters suffice; codec and transport are unchanged. EveJs installed source **261108.1**, without Git metadata, was
+used as a behavioral reference and independently reconciled with these sources. SHA-256 source identifiers:
+
+- `services/mining/characterMiningLedgerService.js`: `22B971613967BE014AFE1433FD40B8CE8268987E54ED48CAE2E7909B9E2C5E88`
+- `services/mining/miningLedgerState.js`: `48029829136CF9C0983D3DE72BAB4FC10EC1CAD514A8D1D6049C0BB5C31CF440`
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors. Final filter
+`FullyQualifiedName~Eden.Protocol.Tests.Mining|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~CapsuleerCoarseTests|FullyQualifiedName~CapsuleerResidentRoutineTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~CharacterDeletionTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`
+passed **387 cases**, zero failed/skipped, in **130.23 seconds** with four test workers. Both Python policy suites passed
+(**8 catalog**, **9 formatting**), formatting verification checked **1,706 files**, and documentation text/link/anchor
+and whitespace checks passed. Required checks took **153.18 seconds** on base `8eafac1d` plus this milestone. Coverage
+includes disk/resident native reads, actual ore/ice/gas collection, critical bonus, crystal waste/waste-only depletion,
+coarse multi-cycle mining, rollback/retry, UTC boundaries, privacy/owner rejection, corporation-at-mining-time, 64-bit
+wire totals, retention, empty version-142 upgrades and reopen/checkpoint persistence. Development exact filters began
+with the native read method (2 cases), followed by aggregation/waste and coarse/large-total methods. Early fixture errors
+were corrected; final affected checks cover the resulting tree. The installed-save opt-in replay was not enabled, and
+no capacity benchmark or full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Mine a small amount, open/refresh the personal ledger and compare the day's quantity,
+waste, system and graph. Native rendering and memoized refresh timing remain unverified.
+
+## Bulk industry-job delivery — November 11, 2026
+
+The native Industry window can now deliver multiple selected personal jobs through
+`industryManager.CompleteManyJobs([(jobID, solarSystemID), ...])`. The method accepts one Python list of two-value
+tuples, returns None, and emits the same `OnIndustryJob`, inventory and blueprint-cache updates as individual delivery.
+Empty batches succeed without changes. Duplicate jobs, malformed pairs, unexpected keywords, nonpositive/out-of-range
+identities and batches above Eden's **1,000-job** bound reject before mutation.
+
+Gameplay exposes named `IndustryDelivery` requests, pure batch validation and `IPilotIndustry.DeliverMany`.
+World reuses the existing manufacturing/science completion path under one transaction for the entire batch.
+Every job retains the individual call's owner, docked-facility, solar-system, ready-time, suspension and status checks.
+If a later entry fails, earlier outputs, blueprint releases, progression claims and statuses roll back together;
+Protocol queues notifications only after the batch commits. Retrying already delivered jobs cannot duplicate output,
+blueprint copies or progression. This does not add remote or corporation job access, and needs no schema migration.
+
+Reference: installed EveJs **261108.1**, `industry/industryManagerService.js` SHA-256
+`07f55314ec86f3005b9ac2cbffd76ddb65f416ddf69f36e558ce0e9c3f135fe5` (the installation has no Git metadata).
+EveJs supplies the multi-job completion reference; Eden retains the system identifier and makes the batch atomic.
+Inert inspection of pinned build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, checked
+`eve/client/script/industry/industrySvc.pyj`, `IndustryService.CompleteJobs`: it builds a list of job/system tuples
+and ignores the remote return. [EVE University manufacturing](https://wiki.eveuniversity.org/Manufacturing) and
+[research](https://wiki.eveuniversity.org/Research) describe job completion and output delivery.
+Existing Blue tuple/list handling is reused without codec or Destiny changes.
+
+**Automated validation:** Tool/solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog and 9 formatting cases), formatting verification (1,695 files and the 140-column check),
+UTF-8/newline/trailing-whitespace checks, new documentation links/anchors and diff checks passed.
+On base `44fc0db6`, filter `FullyQualifiedName~Eden.Protocol.Tests.Industry|FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`
+passed **399 cases in 811.99 seconds**; the complete sequence took **868.62 seconds**.
+After integrating current main `0d778f76`, final filter
+`FullyQualifiedName~BulkIndustryDeliveryTests|FullyQualifiedName~ScienceJobTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~StructureTests.ManufacturingUsesEngineeringBonusesAndPausesAtTheExactFuelDeadlineAcrossReopen|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`
+passed **125 cases in 51.39 seconds**; its complete sequence took **110.78 seconds**.
+Both runs used `xUnit.MaxParallelThreads=4`. The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.BulkIndustryDeliveryTests.NativeBulkDeliveryMergesOutputsNotifiesEachJobAndCannotReplayAcrossReopen`
+passed two disk/resident cases. The combined bulk/mixed-science filter passed **16 cases in 18.90 seconds** after
+adding the new method's keyword-argument rejection. Coverage includes disk/resident rollback, malformed/duplicate
+requests, unfinished/cancelled/foreign jobs, wrong systems, a later SQL failure, retry/reopen, mixed manufacturing/copying,
+production progression, ordinary completion/cancellation and structure fuel deadlines.
+No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Select two ready jobs in the native Industry window and deliver them together.
+
 ## Blueprint supply at every regional hub (November 11, 2026)
 
 Every seeded regional hub now sells the combined assortment of blueprint originals offered for sale by NPC corporations

@@ -7,6 +7,31 @@ namespace Eden.Protocol.Fittings;
 
 internal static class SavedFittingWire
 {
+    internal static IReadOnlyList<FittingImport> ReadMany(object? value, long owner)
+    {
+        if (value is Dictionary<string, object?> { Count: 0 })
+        {
+            return [];
+        }
+        if (value is not Dictionary<long, object?> plans || plans.Count > SavedFittingRules.MaximumCorporationFittings)
+        {
+            throw new InvalidDataException("Expected a fitting dictionary indexed by temporary IDs.");
+        }
+        SavedFittingRules.CheckBatch(plans.Keys.ToArray(), true);
+        return plans.Select(pair => new FittingImport(pair.Key, Read(pair.Value, owner))).ToArray();
+    }
+
+    internal static IReadOnlyList<long> ReadIds(object? value)
+    {
+        if (value is not List<object?> ids || ids.Count > SavedFittingRules.MaximumCorporationFittings || ids.Any(id => id is not long))
+        {
+            throw new InvalidDataException("Expected a list of fitting IDs.");
+        }
+        var result = ids.Cast<long>().ToArray();
+        SavedFittingRules.CheckBatch(result, false);
+        return result;
+    }
+
     internal static FittingPlan Read(object? value, long owner)
     {
         if (value is not BlueInstance { Name: "utillib.KeyVal", State: Dictionary<string, object?> fields })
@@ -15,7 +40,7 @@ internal static class SavedFittingWire
         }
         if (fields.TryGetValue("ownerID", out var suppliedOwner) && !Equals(suppliedOwner, owner))
         {
-            throw new InvalidDataException("Save fittings for the selected pilot only.");
+            throw new InvalidDataException("Save fittings for the requested owner only.");
         }
         if (
             fields.GetValueOrDefault("shipTypeID") is not long type
@@ -78,4 +103,30 @@ internal sealed record SavedFittingItemReply(SavedFittingItem Item) : BlueModel
 internal sealed record FittingAddedNotification(long OwnerId, long FittingId) : PilotNotification("OnFittingAdded")
 {
     public override object?[] Arguments => [OwnerId, FittingId];
+}
+
+internal sealed record FittingImportReply(FittingImportResult Result) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?> { ["tempFittingID"] = Result.TemporaryId, ["realFittingID"] = Result.FittingId }
+        );
+}
+
+internal sealed record FittingsUpdatedNotification(long OwnerId, IReadOnlyList<long> FittingIds) : PilotNotification("OnFittingAdded")
+{
+    // Native list handling invalidates existing entries; an integer only invalidates a new entry.
+    public override object?[] Arguments => [OwnerId, new BlueList<long>(FittingIds)];
+}
+
+internal sealed record FittingDeletedNotification(long OwnerId, long FittingId) : PilotNotification("OnFittingDeleted")
+{
+    public override object?[] Arguments => [OwnerId, FittingId];
+}
+
+internal sealed record FittingsDeletedNotification(long OwnerId, IReadOnlyList<long> FittingIds)
+    : PilotNotification("OnManyFittingsDeleted")
+{
+    public override object?[] Arguments => [OwnerId, new BlueList<long>(FittingIds)];
 }

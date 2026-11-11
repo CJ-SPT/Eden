@@ -97,6 +97,8 @@ public sealed record IndustryJobDetails(
     long? SuspendedAt = null
 );
 
+public sealed record IndustryDelivery(long JobId, int SystemId);
+
 public sealed record IndustryResult(IndustryJobDetails Job, IReadOnlyList<InventoryChange> Changes, long? BalanceCents = null);
 
 public interface IIndustryRandom
@@ -124,11 +126,13 @@ public interface IPilotIndustry : IPilotIndustrySkills
     IndustryJobDetails Job(long pilotId, long jobId);
     IndustryResult Install(long pilotId, IndustryRequest request);
     IndustryResult Deliver(long pilotId, long jobId, int systemId);
+    IReadOnlyList<IndustryResult> DeliverMany(long pilotId, IReadOnlyList<IndustryDelivery> deliveries);
     IndustryResult Cancel(long pilotId, long jobId, int systemId);
 }
 
 public static class IndustryDefinitions
 {
+    public const int MaximumDeliveryBatch = 1000;
     public const int MinimumJobSeconds = 1;
     public const int BaseManufacturingSlots = 1;
     public const int BaseLaboratorySlots = 1;
@@ -144,4 +148,19 @@ public static class IndustryDefinitions
     public const int ManufacturingTimePrecision = 0;
     public const long MaximumJobSeconds = 30 * 24 * 60 * 60;
     public const int MaximumJobRuns = 1_000_000;
+}
+
+public static class IndustryDeliveryRules
+{
+    public static void Validate(IReadOnlyList<IndustryDelivery> deliveries)
+    {
+        if (
+            deliveries.Count > IndustryDefinitions.MaximumDeliveryBatch
+            || deliveries.Any(delivery => delivery.JobId <= 0 || delivery.SystemId <= 0)
+            || deliveries.Select(delivery => delivery.JobId).Distinct().Count() != deliveries.Count
+        )
+        {
+            throw new InvalidDataException("Choose a bounded list of distinct jobs and valid solar systems.");
+        }
+    }
 }

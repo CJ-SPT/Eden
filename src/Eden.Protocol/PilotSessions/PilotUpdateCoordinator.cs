@@ -12,6 +12,7 @@ using Eden.Protocol.Corporations;
 using Eden.Protocol.Defenses;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Drones;
+using Eden.Protocol.Fittings;
 using Eden.Protocol.Fleets;
 using Eden.Protocol.Industry;
 using Eden.Protocol.Information;
@@ -79,6 +80,8 @@ internal sealed class PilotUpdateCoordinator(
     OverloadHandler overload,
     InformationHandler information,
     MissionTrackerHandler missionTracker,
+    SavedFittingMonitor savedFittings,
+    CorporationContactsMonitor corporationContacts,
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null
 )
@@ -89,6 +92,8 @@ internal sealed class PilotUpdateCoordinator(
         || overload.IsMonitoring
         || corporations.IsMonitoring
         || fleets.IsMonitoring
+        || corporationContacts.IsMonitoring
+        || savedFittings.IsMonitoring
         || missionTracker.IsMonitoring
         || industry.IsMonitoring
         || guests.IsDocked
@@ -143,6 +148,8 @@ internal sealed class PilotUpdateCoordinator(
         ApplyPlayerDamage(context);
         context.ActiveFlight?.Checkpoint();
         context.ActiveFlight?.PrepareDisconnect();
+        savedFittings.Reset();
+        corporationContacts.Reset();
         chat.Dispose();
         fleets.Dispose();
         PrepareTranslocation(context);
@@ -267,6 +274,8 @@ internal sealed class PilotUpdateCoordinator(
         {
             corporations.Advance(context);
             corporationWallet.Advance(context);
+            savedFittings.Advance(context);
+            corporationContacts.Advance(context);
             fleets.Advance(context);
             chat.Advance(context);
             guests.Advance(context);

@@ -137,8 +137,9 @@ public sealed partial class WorldDbContext(string path) : DbContext
         HistorySchema.Configure(model);
         ConfigureInteractionHistory(model);
         ConfigureCorporations(model);
+        Eden.World.Corporations.CorporationContactSchema.Configure(model);
         model.Entity<SavedFittingRecord>().ToTable("WorldSavedFitting").HasKey(f => f.Id);
-        model.Entity<SavedFittingRecord>().HasOne<Pilot>().WithMany().HasForeignKey(f => f.OwnerId);
+        model.Entity<SavedFittingRecord>().HasOne<InventoryOwner>().WithMany().HasForeignKey(f => f.OwnerId);
         model.Entity<SavedFittingRecord>().HasIndex(f => f.OwnerId);
         model.Entity<InventoryOwner>().ToTable("WorldInventoryOwner").HasKey(o => o.Id);
         model.Entity<InventoryOwner>().Property(o => o.Id).ValueGeneratedNever();
@@ -544,6 +545,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<WorldAsteroid>().HasIndex(a => a.SystemId);
         model.Entity<WorldAsteroid>().HasIndex(a => a.BeltId);
         Eden.World.Mining.MiningSiteSchema.Configure(model);
+        Eden.World.Mining.MiningLedgerSchema.Configure(model);
         model.Entity<OwnedItem>().ToTable("WorldItem", t => t.HasCheckConstraint("CK_Item_Quantity", "Quantity > 0"));
         model.Entity<OwnedItem>().Property(i => i.CrystalDamage).HasDefaultValue(0d);
         model.Entity<OwnedItem>().Property(i => i.MaterialEfficiency).HasDefaultValue(0);

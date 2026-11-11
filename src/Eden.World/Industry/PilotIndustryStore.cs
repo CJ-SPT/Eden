@@ -577,6 +577,32 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Finish(world, catalog, pilotId, jobId, systemId, cancel);
+        transaction.Commit();
+        return result;
+    }
+
+    public IReadOnlyList<IndustryResult> DeliverMany(long pilotId, IReadOnlyList<IndustryDelivery> deliveries)
+    {
+        IndustryDeliveryRules.Validate(deliveries);
+        if (deliveries.Count == 0)
+        {
+            return Array.Empty<IndustryResult>();
+        }
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        List<IndustryResult> results = [];
+        foreach (var delivery in deliveries)
+        {
+            results.Add(Finish(world, catalog, pilotId, delivery.JobId, delivery.SystemId, cancel: false));
+        }
+        transaction.Commit();
+        return results.AsReadOnly();
+    }
+
+    private IndustryResult Finish(WorldDbContext world, CatalogDbContext catalog, long pilotId, long jobId, int systemId, bool cancel)
+    {
         var job = OwnedJob(world, pilotId, jobId);
         Eden.World.Structures.PilotStructureStore.Advance(world, catalog, Now);
         var station = CurrentStation(world, catalog, pilotId, job.StationId, null);
@@ -652,7 +678,6 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             PilotTaskTrackingStore.Record(world, catalog, pilotId, job.CompletedAt.Value, TaskEvents.IndustryDelivered);
         }
         world.SaveChanges();
-        transaction.Commit();
         return new(ReadJob(world, catalog, job), changes);
     }
 }

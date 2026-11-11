@@ -3,6 +3,14 @@
 [Resident inventory and market transactions](protocol/performance.md#resident-inventory-and-market-transactions-november-11-2026)
 records atomic resident trades and ordinary cargo, coherent saves and matched economic-frame measurements.
 
+[Corporation contacts and standings](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026) covers shared contacts, labels, roles and native updates.
+
+[Personal mining ledger](protocol/industry.md#personal-mining-ledger--november-11-2026) covers committed daily mining totals and waste.
+
+[Bulk and corporation saved fittings](protocol/fitting.md#bulk-and-corporation-saved-fittings--november-11-2026) covers atomic fitting imports/deletes and corporation access.
+
+[Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026) covers native multi-job completion and atomic rollback.
+
 [Dynamic and scan-result bookmarks](protocol/navigation.md#dynamic-and-scan-result-bookmarks--november-11-2026) covers asteroid/object bookmarks and resolved scan results.
 
 [Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) covers mission-panel goals and updates.

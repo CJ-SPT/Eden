@@ -16,7 +16,7 @@ using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
 namespace Eden.Protocol.Tests.Mining;
 
-public sealed class MiningCrystalTests
+public sealed partial class MiningCrystalTests
 {
     private const int ModulatedMiner = 18068;
     private const int SimpleCrystal = 60276;

@@ -364,7 +364,7 @@ internal sealed class InventoryHandler(
             ("invbroker", "SplitStack") => SplitFromWire(context, args, keywords),
             ("corpStationMgr", "DoStandingCheckForStationService") when pilot.Position is null && args is [(long)StationService.Fitting] =>
                 PilotCallResult.None,
-            ("corpFittingMgr", "GetCommunityFittings" or "GetFittings") => BlueEmpty.IndexedDictionary,
+            ("corpFittingMgr", "GetCommunityFittings") => BlueEmpty.IndexedDictionary,
             ("itemLocking", "GetItemsByLocation") when args is [long location] && location == pilot.LocationId =>
                 BlueEmpty.IndexedDictionary,
             ("invbroker", "GetInventory") when pilot.Position is null && args is [10004L, ..] => context.Reference(
