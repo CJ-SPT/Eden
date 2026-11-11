@@ -12,7 +12,9 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -37,21 +39,21 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         LiveReadModels.Find(database.Path)?.CapacitorModuleOnline(pilotId, shipId, moduleId, ReadOnline)
         ?? ReadOnline(pilotId, shipId, moduleId);
 
-    private bool ReadOnline(long pilot, long ship, long module)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<OwnedItem>()
-            .Any(i =>
-                i.Id == module
-                && i.OwnerId == pilot
-                && i.LocationId == ship
-                && i.Singleton
-                && i.Online
-                && i.FlagId >= (int)InventoryFlag.HighSlot0
-                && i.FlagId <= (int)InventoryFlag.HighSlot7
-            );
-    }
+    private bool ReadOnline(long pilot, long ship, long module) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Set<OwnedItem>()
+                    .Any(item =>
+                        item.Id == module
+                        && item.OwnerId == pilot
+                        && item.LocationId == ship
+                        && item.Singleton
+                        && item.Online
+                        && InventoryDefinitions.IsHighSlot(item.FlagId)
+                    )
+        );
 
     public CapacitorActivation Activate(
         long pilotId,
@@ -82,8 +84,8 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         bool overloaded
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => CapacitorParticipants(world, pilotId, moduleId, targetId));
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var source = Pilot(world, pilotId);
@@ -111,13 +113,16 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         var target = ReadTarget(world, catalog, targetId, system, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
-        var calculation = FittingCalculation.Read(
-            world,
-            catalog,
-            source,
-            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+        bool cached = !overloaded && world.CachedFittingSnapshot(pilotId, source.ActiveShipId, world.FitRevision(pilotId)) is not null;
+        var calculation = cached
+            ? null
+            : FittingCalculation.Read(world, catalog, source, overloadedModules: overloaded ? new HashSet<long> { moduleId } : null);
+        var module = CapacitorWarfareRules.Define(
+            item.Id,
+            item.TypeId,
+            effect,
+            PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, item), calculation)
         );
-        var module = CapacitorWarfareRules.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
         var sourceAttributes = PilotFittingStore.ShipAttributes(world, catalog, source, calculation: calculation);
         var targetAttributes = target.Attributes;
         CheckAlive(source, sourceAttributes);
@@ -212,7 +217,7 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         {
             world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = source.ActiveShipId });
         }
-        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end) : null;
+        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation!, moduleId, now, end) : null;
         world.SaveChanges();
         transaction.Commit();
         if (heat is not null)
@@ -249,12 +254,11 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
         }
     }
 
-    private static Pilot Pilot(WorldDbContext world, long id) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == id);
+    private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Single(p => p.Id == id);
 
-    private Target ReadTarget(WorldDbContext world, CatalogDbContext catalog, long id, int system, long now)
+    private Target ReadTarget(WorldAction world, CatalogDbContext catalog, long id, int system, long now)
     {
-        var player = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == id);
+        var player = world.Pilots.SingleOrDefault(p => p.ActiveShipId == id);
         if (player is not null)
         {
             var position = player.ActiveShip.Position;
@@ -295,8 +299,8 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
 
     public void Stop(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         if (world.Set<OwnedItem>().Any(i => i.Id == moduleId && i.OwnerId == pilotId && i.LocationId == shipId))
         {
             ShipHeatPersistence.CancelSource(world, pilotId, shipId, moduleId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
@@ -307,5 +311,17 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
             world.SaveChanges();
         }
         transaction.Commit();
+    }
+
+    private static TransactionParticipants CapacitorParticipants(WorldAction world, long pilot, long module, long target)
+    {
+        long source = world.Pilots.Where(row => row.Id == pilot).Select(row => row.ActiveShipId).SingleOrDefault();
+        long recipient = world.Pilots.Where(row => row.ActiveShipId == target).Select(row => row.Id).SingleOrDefault();
+        long previous = world.Set<ActiveFittedModule>().Where(row => row.ModuleId == module).Select(row => row.ShipId).SingleOrDefault();
+        return new(
+            pilots: recipient == 0 ? [pilot] : [pilot, recipient],
+            ships: new[] { source, previous, recipient == 0 ? 0 : target }.Where(id => id != 0),
+            resources: recipient == 0 ? [new(SharedSimulationResource.Npc, target)] : []
+        );
     }
 }

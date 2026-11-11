@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
 
-internal static class AssistancePersistence
+internal static partial class AssistancePersistence
 {
     internal static void Apply(WorldDbContext world, CatalogDbContext catalog, Pilot source, Pilot target, long now, long end)
     {

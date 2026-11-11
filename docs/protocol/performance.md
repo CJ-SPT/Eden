@@ -3178,3 +3178,70 @@ Not performed; agent client testing is disabled.
 
 After rebuilding, repeat the reported workload with an NPC effect cycle and compare SQL commands, allocation and
 world-owner hold time separately from cold catalog preparation and checkpoint capture.
+
+## Resident capacitor transactions and resource reads (November 11, 2026)
+
+Capacitor warfare now reads and mutates a resident action for the actor and actual player/NPC endpoint. Both energy
+pools, cooldown, active marker, hostility/crimewatch and assistance state commit together. Stop and cold online
+membership also use resident inputs. NPC energy has a typed snapshot, finite/reference guards, mapped cascade and
+checkpoint projection. Offline worlds retain the SQL action adapter.
+
+Normal activation reuses committed module/ship fitting views. A cold or overloaded activation builds one source
+calculation and shares it with both readers; cache-disabled operation retains that single-source fallback. Heat
+and capacitor notifications remain after commit. Participant discovery includes the source, recipient and any
+previous active-marker hull before importing physical state.
+
+Reference: [EVE University capacitor warfare](https://wiki.eveuniversity.org/Capacitor_warfare), reconciled with the
+pinned rules/catalog fixtures. This storage change preserves the existing native NOS absolute-GJ gate, module
+payment, range, application, legality and cycle timing.
+
+### Automated validation
+
+The initial paired-pool checks failed against `c995b037` on SQL commands. A preserved file-copy timestamp left the
+first post-change run on the older test assembly; that run did not validate the conversion. After rebuilding,
+development checks added the missing typed assistance helper and NPC-energy mapping. A traced remaining query was
+the fixture's ship-ID getter inside the measured block; it now reads that input before measurement. The fixture
+also retains the fitting cache used by the host, so its warmed budget measures the production configuration.
+
+Both initial cases then passed in **8.38 seconds** with zero commands, connections and fitting calculations across
+payment, rejected immediate repeat and stop. The expanded matrix had 4 passes / 1 fixture failure: the NPC NOS case
+correctly transfers zero against the smaller absolute pool. The check now asserts that exact gate instead of
+requiring positive transfer. All **five corrected player/NPC neutralizer, NOS and player-transfer cases passed in
+11.11 seconds**, including the reopened source/target balances, cooldown and absent stopped marker.
+
+The first broader selection stopped after **225 passes / 2 failures** and is incomplete. Its SQL heat-insertion
+and stop triggers now belong to checkpoint projection for resident capacitor commands. Those two existing
+rollback methods retain their capacitor cases through the offline SQL adapter; their original rejection and
+unchanged-state assertions remain. New resident cases inject failure only into the detached save image, verify
+that its previous balances/heat/marker roll back together, keep the committed live generation and retry without
+republishing events. A draft fixture incorrectly installed trigger DDL on the dirty live image and was rejected
+by the schema guard; it now targets the detached image.
+
+The next fixture run had **6 passes / 2 failures**: public resource getters were still opening SQL transactions,
+which also projected pending state before capture. `IPilotShipResources` resource and capacitor reads now use
+named resident actions and preserve paid-repair settlement. All **13 boundary/payment cases passed in 16.46
+seconds** after correction. A further observer check passed in **6.59 seconds**, requiring zero commands,
+connections and fitting calculations for 32 repeated full/scalar reads and exact one-tick recharge.
+
+A later selection stopped after **245 passes / 1 known baseline failure** and is incomplete: the previously
+recorded mutadaptive hull-admission expectation is unchanged by this milestone. The remaining **678 cases passed
+in 4m58s**. Combined closing coverage contains **915 distinct passing affected tests**, with no selected case
+missing after that known exclusion; this is not a single uninterrupted passing run. The solution build passed
+without warnings in **5.94 seconds**.
+
+Tool/solution restore, both Python policy suites (8 catalog and 9 formatting checks), formatting verification
+(1,942 files) and line-width verification passed.
+
+Closing filters/results are recorded under `artifacts/bot-resident-player-effects`. No full .NET
+suite was run. Player/remote-effect mutations, missile launch/advancement, pilot-loss settlement, heat burnout and
+NPC population maintenance still retain SQL paths. The installed-world workload has not been replayed and no live
+latency or supported-population gain is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After rebuilding, repeat the reported workload and compare SQL commands, connections, fitting calculations,
+allocation and owner hold time; separate cold preparation and checkpoint capture.

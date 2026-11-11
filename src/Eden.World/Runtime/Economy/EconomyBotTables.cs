@@ -1083,6 +1083,25 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Combat.Npcs.WorldNpcEnergy, EconomyWorldNpcEnergy>(
+                "WorldNpcEnergy",
+                row => new(row.NpcId),
+                row => new(row.NpcId, row.Charge, row.UpdatedAt),
+                state => new Eden.Data.World.Combat.Npcs.WorldNpcEnergy
+                {
+                    NpcId = state.NpcId,
+                    Charge = state.Charge,
+                    UpdatedAt = state.UpdatedAt,
+                },
+                ProjectWorldNpcEnergy,
+                "NpcId,Charge,UpdatedAt",
+                reader => new(reader.GetInt64(1), reader.GetDouble(2), reader.GetInt64(3)),
+                state => new(state.NpcId),
+                indexes: [new("NpcId", row => row.NpcId)],
+                primaryColumn: "NpcId"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Combat.Npcs.WorldNpcEwar, EconomyWorldNpcEwar>(
                 "WorldNpcEwar",
                 row => new(row.NpcId, (long)row.Kind),
@@ -3458,6 +3477,17 @@ internal sealed partial class EconomyTransaction
             if (!double.IsFinite(row.HomeX) || !double.IsFinite(row.HomeY) || !double.IsFinite(row.HomeZ))
             {
                 throw new InvalidDataException("Invalid resident WorldNpcEncounter values.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Combat.Npcs.WorldNpcEnergy>())
+        {
+            if (!double.IsFinite(row.Charge) || !(row.Charge >= 0))
+            {
+                throw new InvalidDataException("Invalid resident WorldNpcEnergy values.");
+            }
+            if (Set<Eden.Data.World.Combat.Npcs.WorldNpc>().Find(row.NpcId) is null)
+            {
+                throw new InvalidDataException("Missing resident WorldNpc reference.");
             }
         }
         foreach (var row in Retained<Eden.Data.World.Combat.Npcs.WorldNpcEwar>())

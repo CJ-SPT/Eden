@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident capacitor transactions and resource reads](protocol/performance.md#resident-capacitor-transactions-and-resource-reads-november-11-2026)
+records paired player/NPC energy payment, rejected repeats, cached fits and coherent saves.
+
 [Resident NPC electronic-warfare cycles](protocol/performance.md#resident-npc-electronic-warfare-cycles-november-11-2026)
 records SQL-free paid cycles, exact deadlines, rejected drain and coherent checkpoint saves.
 

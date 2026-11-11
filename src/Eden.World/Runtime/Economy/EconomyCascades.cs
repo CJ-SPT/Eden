@@ -147,6 +147,7 @@ internal sealed partial class EconomyTransaction
             case Eden.Data.World.Combat.Npcs.WorldNpc removed:
                 RemoveRange(Set<Eden.Data.World.Combat.NpcAggression>().Where(child => child.NpcId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.NpcBounty>().Where(child => child.NpcId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Combat.Npcs.WorldNpcEnergy>().Where(child => child.NpcId == removed.Id));
                 if (Set<Eden.Data.World.Combat.ShipLoss>().Any(child => child.NpcId == removed.Id))
                 {
                     throw new InvalidDataException("The resident WorldNpc still has ShipLoss references.");

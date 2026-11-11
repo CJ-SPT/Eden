@@ -30,7 +30,7 @@ using FittingFixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixtu
 
 namespace Eden.Protocol.Tests.Thermal;
 
-public sealed class ElectronicSupportHeatTests
+public sealed partial class ElectronicSupportHeatTests
 {
     private const int Ibis = 601;
     private const int System = 30000142;
@@ -481,6 +481,11 @@ public sealed class ElectronicSupportHeatTests
     public void HeatInsertionFailureRollsBackBothPoolsEffectsCooldownsAndPublishedEvents(int type)
     {
         using Fixture f = new(type);
+        if (f.Kind == Family.Capacitor)
+        {
+            // Preserve rejection coverage at the offline SQL adapter boundary.
+            f.Live.Dispose();
+        }
         double source = f.SourceCharge;
         double target = f.TargetCharge;
         using (WorldDbContext world = new(f.Fit.Db.Path))
@@ -514,6 +519,11 @@ public sealed class ElectronicSupportHeatTests
     public void FailedStopKeepsTheStoredEffectAndHeatFromTheSamePaidGeneration(int type)
     {
         using Fixture f = new(type);
+        if (f.Kind == Family.Capacitor)
+        {
+            // Preserve rejection coverage at the offline SQL adapter boundary.
+            f.Live.Dispose();
+        }
         f.Pay();
         var cycle = Assert.Single(f.Read().Cycles);
         f.At(cycle.StartedAt + (cycle.CompletesAt - cycle.StartedAt) / 2);
