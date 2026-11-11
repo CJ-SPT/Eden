@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Native mission objective tracker](protocol/agents.md#native-mission-objective-tracker--november-11-2026) connects existing mission progress to the native tracker.
+
 [Arrival movement and fitting costs](protocol/performance.md#arrival-movement-and-fitting-costs-november-11-2026)
 records coordinate-only updates, fitting invalidation boundaries, finite supplies and matched remote-action work counts.
 

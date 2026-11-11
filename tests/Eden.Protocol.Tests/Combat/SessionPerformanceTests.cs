@@ -171,7 +171,9 @@ public sealed class SessionPerformanceTests
             Assert.Equal(1, outer.Connections);
         }
         Assert.False(SessionPerformance.IsActive);
-        Assert.Equal(2, reports.Count);
+        // Storage can emit its own nested phases; each scope owned by this test must report exactly once.
+        Assert.Single(reports, report => report.StartsWith("Performance read: ", StringComparison.Ordinal));
+        Assert.Single(reports, report => report.StartsWith("Performance test: ", StringComparison.Ordinal));
         Assert.All(reports, report => Assert.Contains("sql=", report));
         Assert.All(reports, report => Assert.Contains("commit=", report));
         Assert.All(reports, report => Assert.Contains("begin=", report));

@@ -1,6 +1,7 @@
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Agents;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Calendar;
 using Eden.Protocol.Characters;
@@ -77,6 +78,7 @@ internal sealed class PilotUpdateCoordinator(
     ModuleBurnoutMonitor burnout,
     OverloadHandler overload,
     InformationHandler information,
+    MissionTrackerHandler missionTracker,
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null
 )
@@ -87,6 +89,7 @@ internal sealed class PilotUpdateCoordinator(
         || overload.IsMonitoring
         || corporations.IsMonitoring
         || fleets.IsMonitoring
+        || missionTracker.IsMonitoring
         || industry.IsMonitoring
         || guests.IsDocked
         || calendar.IsMonitoring
@@ -132,6 +135,7 @@ internal sealed class PilotUpdateCoordinator(
         personalMarket.Enter(context);
         repairs.Enter(context);
         npcCombat.Enter(context);
+        missionTracker.Advance(context);
     }
 
     public void Leave(PilotCallContext context)
@@ -163,6 +167,7 @@ internal sealed class PilotUpdateCoordinator(
         mail.Reset();
         contracts.Reset();
         security.Reset();
+        missionTracker.Reset();
         freePoints.Reset();
         injectors.Reset();
         extraction.Reset();
@@ -253,6 +258,7 @@ internal sealed class PilotUpdateCoordinator(
         {
             npcCombat.Advance(context);
         }
+        missionTracker.Advance(context);
         using (SessionPerformance.Phase("update.targeting"))
         {
             targeting.Advance(context);

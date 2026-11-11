@@ -2,6 +2,55 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Native mission objective tracker — November 11, 2026
+
+The native `missionTrackerMgr` now reads accepted Eden missions instead of compatibility placeholders.
+`GetMissionInfoItems` returns the current objective; `GetAllMissionObjectives` returns the available sequence;
+`IsInActiveDungeonID` checks the selected pilot's system and actual mission-room positions, excluding warp.
+`UpdateAllMissions` emits `OnMissionsUpdated` for the requested agents, including None for absent missions.
+The scoped session monitor publishes changed goals and clears closed/expired missions without repeating unchanged updates.
+
+Courier goals distinguish missing cargo, cargo ready for delivery, and completion at the destination station.
+Combat goals cover travel, required enemies/structures, specific completion targets, retrieval cargo, and return to agent.
+Typed Gameplay rules consume immutable World snapshots; Protocol owns objective tokens and text/numeric conversion.
+The existing authoritative turn-in operation still decides rewards and consumes cargo. Tracking never grants rewards.
+
+Resident snapshots depend on mission, room, structure, member, inventory, pilot, hull and position-membership changes,
+with expiry at the earliest accepted mission deadline. Coordinate-only movement uses current resident pilot positions;
+unchanged and absent views reuse the cached snapshot. No saved-world migration is required.
+
+References: installed EveJs **261108.1**, `agent/missionTrackerMgrService.js` SHA-256
+`667d5da427dd6b44d390ce52711df8b16fc0aab637f3c00f2a52bc047f749af8`, and
+`agent/agentMissionRuntime.js` SHA-256 `f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`.
+The installation has no Git metadata. Inert inspection of build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, checked
+`missions/client/missionObjectivesTracker.pyj` and `missions/client/ui/missionObjectiveData.pyj`:
+current objective arguments are text, objective-history arguments retain numbers, and specific targets have a nullable name ID.
+[EVE University missions](https://wiki.eveuniversity.org/Missions) describes the objective and completion indicators;
+the pinned client supplies the wire contract. Existing Blue adapters are reused without codec or Destiny changes.
+
+**Automated validation:** Tool/solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog and 9 formatting cases), formatting verification (1,687 files, including the 140-column check),
+UTF-8/newline/trailing-whitespace checks, new documentation links/anchors and diff checks passed.
+Final filter `(FullyQualifiedName~Eden.Protocol.Tests.Agents&FullyQualifiedName!~MissionContentTests)|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~SessionPerformanceTests`,
+with `xUnit.MaxParallelThreads=4`, passed **268 cases in 193.24 seconds**; the complete sequence took **218.82 seconds**.
+Focused tracker/protocol development coverage passed 33 cases. The initial exact courier filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionTrackerTests.CourierTracksCargoDeliveryClosureAndReopenWithoutDuplicateUpdates`;
+its two cases passed after correcting byte-string assertions. Coverage includes disk/resident paths, cargo moves,
+active-mission reopen, undocking after delivery, closure, exact deadlines, room boundaries, target/retrieval rules,
+encoded notification arguments and refresh deduplication. Empty and populated warmed reads assert zero SQL commands,
+connections and fitting calculations. No full .NET suite was requested or run.
+
+The first broader run was stopped after **229 passes and one failure**: the pre-existing diagnostics test expected
+two reports although storage also emits `projection.fallback`. The same exact test failed on unchanged main
+`a9e0596b`. Its assertion now checks exactly one report for each test-owned scope, retaining the SQL-count,
+connection-count, timing and scope-isolation assertions. The corrected exact test passed independently and in the final run.
+The interrupted run does not establish completion of its remaining cases.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe the native mission panel while picking up cargo and completing a combat objective.
+
 ## R&D agents and datacores — November 11, 2026
 
 Station R&D agents now support **Start Research**, **Buy Datacores**, and **Cancel Research** through native
@@ -468,6 +517,8 @@ Not performed; agent client testing is disabled. Native gate presentation, input
 - In The Assault (level 4), traverse both gates and return after docking/reconnecting; verify completed rooms retain their progress and final-room completion allows one reward payment.
 
 ## Mission-tracker refresh compatibility — November 9, 2026
+
+This historical compatibility-only behavior is superseded by the [native tracker implementation](#native-mission-objective-tracker--november-11-2026).
 
 The maintainer supplied an accepted-mission conversation screenshot showing **"Invalid mission tracker request."** The earlier handler recognized only `GetMissionInfoItems(agentID)` while claiming the entire `missionTrackerMgr` service. Inert inspection of the pinned build-3662168 archive (SHA-256 **37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368**) established four native calls in `missions/client/missionObjectivesTracker.pyj`: `UpdateAllMissions(agentList)` takes one Python list, while `GetMissionInfoItems`, `GetAllMissionObjectives` and `IsInActiveDungeonID` each take one agent ID. The info-panel consumer enumerates all-objective replies, so None is not valid for that collection read.
 

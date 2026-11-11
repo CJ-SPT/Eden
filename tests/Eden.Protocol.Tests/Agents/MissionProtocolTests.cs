@@ -115,7 +115,7 @@ public sealed class MissionProtocolTests
     [Theory]
     [InlineData(MissionRules.SecurityDivision)]
     [InlineData(MissionRules.DistributionDivision)]
-    public void LegacyTrackerRefreshAndReadsUseNativeShapesWithoutChangingMissionState(int division)
+    public void TrackerRefreshAndReadsUseNativeShapesWithoutChangingMissionState(int division)
     {
         using MissionFixture f = new(division: division);
         List<object?> agents = [MissionFixture.AgentId, MissionFixture.StorylineId];
@@ -126,8 +126,11 @@ public sealed class MissionProtocolTests
         {
             Assert.Null(MissionFixture.Reply(f.Call("missionTrackerMgr", "UpdateAllMissions", [agents])));
             Assert.Null(MissionFixture.Reply(f.Call("missionTrackerMgr", "UpdateAllMissions", [new List<object?>()])));
-            Assert.Null(MissionFixture.Reply(f.Call("missionTrackerMgr", "GetMissionInfoItems", [MissionFixture.AgentId])));
-            Assert.Empty(
+            var current = Assert.IsType<List<object?>>(
+                MissionFixture.Reply(f.Call("missionTrackerMgr", "GetMissionInfoItems", [MissionFixture.AgentId]))
+            );
+            Assert.Equal(division == MissionRules.SecurityDivision ? "TravelTo" : "TransportItemsMissing", BlueMarshal.Text(current[0]));
+            Assert.NotEmpty(
                 Assert.IsType<List<object?>>(
                     MissionFixture.Reply(f.Call("missionTrackerMgr", "GetAllMissionObjectives", [MissionFixture.AgentId]))
                 )
@@ -164,7 +167,7 @@ public sealed class MissionProtocolTests
         );
         Assert.Same(PilotCallResult.Unsupported, f.Call("missionTrackerMgr", "UnknownTrackerMethod", []));
         Assert.Equal(accepted, f.Missions.Current(MissionFixture.PilotId, MissionFixture.AgentId));
-        Assert.Empty(f.Context.Notifications);
+        Assert.All(f.Context.Notifications, notification => Assert.IsType<MissionsUpdated>(notification));
         var objectives = BlueRead.Fields(MissionFixture.Reply(f.Call($"@agent:{MissionFixture.AgentId}", "GetMissionObjectiveInfo", [])));
         Assert.Equal((long)accepted.MissionId, objectives["contentID"]);
     }

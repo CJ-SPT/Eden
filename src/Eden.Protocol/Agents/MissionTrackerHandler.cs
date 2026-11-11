@@ -5,9 +5,63 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Agents;
 
-[Injectable]
-internal sealed class MissionTrackerHandler(INpcDirectory directory) : ISelectedPilotCallHandler
+[Injectable(InjectionType.Scoped)]
+internal sealed class MissionTrackerHandler(INpcDirectory directory, IPilotMissions missions) : ISelectedPilotCallHandler
 {
+    private long? _pilot;
+    private readonly Dictionary<long, MissionTrackerObjective> _known = [];
+    public bool IsMonitoring => _known.Count > 0;
+
+    public void Reset()
+    {
+        _pilot = null;
+        _known.Clear();
+    }
+
+    public void Advance(PilotCallContext context)
+    {
+        if (!context.Selected)
+        {
+            Reset();
+            return;
+        }
+        if (_pilot != context.Pilot.PilotId)
+        {
+            _known.Clear();
+            _pilot = context.Pilot.PilotId;
+        }
+        var entries = missions.Tracking(context.Pilot.PilotId);
+        List<MissionTrackerUpdate> updates = [];
+        HashSet<long> current = [];
+        foreach (var entry in entries)
+        {
+            var objective = State(context, entry).Current;
+            current.Add(entry.Offer.Agent.Id);
+            if (!_known.TryGetValue(entry.Offer.Agent.Id, out var previous) || previous != objective)
+            {
+                updates.Add(new(entry.Offer.Agent.Id, objective));
+                _known[entry.Offer.Agent.Id] = objective;
+            }
+        }
+        foreach (long agent in _known.Keys.Where(agent => !current.Contains(agent)).ToArray())
+        {
+            updates.Add(new(agent, null));
+            _known.Remove(agent);
+        }
+        if (updates.Count > 0)
+        {
+            context.Notifications.Add(new MissionsUpdated(updates));
+        }
+    }
+
+    private static MissionTrackingState State(PilotCallContext context, MissionTrackingEntry entry) =>
+        MissionTrackingRules.Read(
+            entry,
+            context.Pilot.SystemId,
+            context.Pilot.Position is null ? context.Pilot.DockedLocationId : null,
+            context.Flight.InWarp ? null : context.Pilot.Position
+        );
+
     public PilotCallResult Call(
         PilotCallContext context,
         string service,
@@ -27,26 +81,56 @@ internal sealed class MissionTrackerHandler(INpcDirectory directory) : ISelected
         {
             return new PilotCallResult.Failure("Unexpected mission tracker keyword arguments.");
         }
-        // Build 3662168 MissionObjectivesTracker.UpdateMissionStatusData sends one
-        // Python list of agent IDs; the other three calls send one agent ID.
         if (method == "UpdateAllMissions")
         {
-            return args is [List<object?> agents] && agents.All(id => id is long agentId && directory.Agent(agentId) is not null)
-                ? PilotCallResult.None
-                : new PilotCallResult.Failure("Refresh mission tracking with a list of valid agent IDs.");
+            if (args is not [List<object?> agents] || agents.Any(id => id is not long agent || directory.Agent(agent) is null))
+            {
+                return new PilotCallResult.Failure("Refresh mission tracking with a list of valid agent IDs.");
+            }
+            if (_pilot != context.Pilot.PilotId)
+            {
+                _known.Clear();
+                _pilot = context.Pilot.PilotId;
+            }
+            var entries = missions.Tracking(context.Pilot.PilotId).ToDictionary(entry => entry.Offer.Agent.Id);
+            foreach (long agent in agents.Cast<long>().Distinct())
+            {
+                if (entries.TryGetValue(agent, out var entry))
+                {
+                    _known[agent] = State(context, entry).Current;
+                }
+                else
+                {
+                    _known.Remove(agent);
+                }
+            }
+            context.Notifications.Add(
+                new MissionsUpdated(
+                    agents
+                        .Cast<long>()
+                        .Distinct()
+                        .Select(agent => new MissionTrackerUpdate(
+                            agent,
+                            entries.TryGetValue(agent, out var entry) ? State(context, entry).Current : null
+                        ))
+                        .ToArray()
+                )
+            );
+            return PilotCallResult.None;
         }
         if (args is not [long id] || directory.Agent(id) is null)
         {
             return new PilotCallResult.Failure("Choose a valid mission tracker agent.");
         }
-        // Eden's mission sites have no legacy dungeon-tracker registrations. The
-        // current mission and progress remain available through the native journal
-        // and GetMissionObjectiveInfo; do not invent legacy objective/event tokens.
+        var selected = missions.Tracking(context.Pilot.PilotId).SingleOrDefault(entry => entry.Offer.Agent.Id == id);
+        var state = selected is null ? null : State(context, selected);
         return method switch
         {
-            "GetAllMissionObjectives" => BlueEmpty.List,
-            "IsInActiveDungeonID" => false,
-            _ => PilotCallResult.None,
+            "GetAllMissionObjectives" => new BlueList<MissionTrackerObjectiveReply>(
+                state?.Objectives.Select(objective => new MissionTrackerObjectiveReply(objective)).ToArray() ?? []
+            ),
+            "IsInActiveDungeonID" => state?.InDungeon == true,
+            _ => state is null ? PilotCallResult.None : new MissionTrackerObjectiveReply(state.Current, true),
         };
     }
 }

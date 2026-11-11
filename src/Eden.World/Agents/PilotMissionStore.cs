@@ -1,5 +1,6 @@
 using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
@@ -168,6 +169,79 @@ internal sealed partial class PilotMissionStore(
                 agent.FactionId is int faction ? Effective(faction) : 0,
                 pilot.Account.CloneGrade == AccountCloneGrade.Omega
             );
+    }
+
+    public IReadOnlyList<MissionTrackingEntry> Tracking(long pilotId) =>
+        LiveWorld.Execute(database.Path, () => TrackingOwned(pilotId), nameof(Tracking));
+
+    private IReadOnlyList<MissionTrackingEntry> TrackingOwned(long pilotId)
+    {
+        var reads = LiveReadModels.Find(database.Path);
+        return reads?.MissionTracking(pilotId, Now, () => LoadTracking(pilotId)) ?? LoadTracking(pilotId);
+    }
+
+    private sealed record MissionTrackingTargetRow(long MissionId, int TypeId, long Id, double HomeX, double HomeY, double HomeZ);
+
+    private IReadOnlyList<MissionTrackingEntry> LoadTracking(long pilotId)
+    {
+        var offers = JournalOwned(pilotId).Where(offer => offer.State == MissionState.Accepted).ToArray();
+        if (offers.Length == 0)
+        {
+            return Array.Empty<MissionTrackingEntry>();
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        using WorldDbContext world = new(database.Path);
+        var ids = offers.Select(offer => offer.Id).ToArray();
+        var enemies = (
+            from member in world.Set<SavedMissionMember>()
+            join npc in world.Set<WorldNpc>() on member.NpcId equals npc.Id
+            where ids.Contains(member.MissionId) && member.CompletesMission
+            select new MissionTrackingTargetRow(
+                member.MissionId,
+                npc.TypeId,
+                npc.Id,
+                npc.HomeX ?? npc.X,
+                npc.HomeY ?? npc.Y,
+                npc.HomeZ ?? npc.Z
+            )
+        ).ToArray();
+        var structures = (
+            from member in world.Set<SavedMissionStructure>()
+            join npc in world.Set<WorldNpc>() on member.NpcId equals npc.Id
+            where ids.Contains(member.MissionId) && (member.Required || member.CompletesMission) && member.DestroyedAt == null
+            select new MissionTrackingTargetRow(
+                member.MissionId,
+                npc.TypeId,
+                npc.Id,
+                npc.HomeX ?? npc.X,
+                npc.HomeY ?? npc.Y,
+                npc.HomeZ ?? npc.Z
+            )
+        ).ToArray();
+        return Array.AsReadOnly(
+            offers
+                .Select(offer => new MissionTrackingEntry(
+                    offer,
+                    Array.AsReadOnly(
+                        MissionCatalog.Find(catalog, offer.MissionId).Rooms.Select(room => offer.Position + room.Position).ToArray()
+                    )
+                )
+                {
+                    Targets = Array.AsReadOnly(
+                        enemies
+                            .Concat(structures)
+                            .Where(target => target.MissionId == offer.Id)
+                            .OrderBy(target => target.Id)
+                            .Select(target => new MissionTrackingTarget(
+                                target.TypeId,
+                                target.Id,
+                                new(target.HomeX, target.HomeY, target.HomeZ)
+                            ))
+                            .ToArray()
+                    ),
+                })
+                .ToArray()
+        );
     }
 
     public IReadOnlyList<MissionOffer> Journal(long pilotId, long? agentId = null)

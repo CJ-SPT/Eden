@@ -309,6 +309,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                 }
         );
         _missionSites.Observe(changes);
+        _missionTracking.Observe(changes);
         _learning.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
         _points.Observe(changes, (pilot, change) => pilot == change.Id);
         _extraction.Observe(changes, (pilot, change) => pilot == change.Id);
@@ -347,6 +348,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _resourceDeadline.Clear();
         _moduleConditions.Clear();
         _missionSites.Clear();
+        _missionTracking.Clear();
         _learning.Clear();
         _points.Clear();
         _extraction.Clear();
