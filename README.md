@@ -78,6 +78,10 @@ See [feature implementation notes](docs/feature-notes.md) for catalog coverage, 
 
 [Character portraits](docs/protocol/characters.md#character-portraits-across-the-client--november-9-2026) use the native scene renderer and cache across character selection, the character sheet, chat, station guests and Neocom. Created pilots retain their submitted appearance; seeded pilots and simulated capsuleers without creator data use catalog defaults matched to their bloodline and gender. Restart the server and client to install the signed login adapter.
 
+[Local and station list refreshes](docs/protocol/social.md#local-and-station-list-rebuild-races-november-11-2026)
+serialize native list rebuilds with arrivals/departures so yielding name lookups cannot overwrite visible rows.
+Rebuild/restart the server and fully reopen the client to install the signed login correction.
+
 The [ship and module completion program](docs/feature-notes.md#ship-and-module-completion-program) tracks remaining ordinary static content by operational role, with a reproducible inventory separating fitting admission, missing capabilities and external dependencies. [Milestone 6 heating](docs/protocol/fitting.md#complete-overheating-and-native-controls-november-8-2026) implements native module/rack controls, paid overload cycles for all 1,826 admitted heatable profiles, adjacent heat damage, burnout cancellation, saved module condition, station repairs and cargo-funded nanite repairs with partial material settlement. Burnout preserves shield and capacitor charge fractions. Automated validation establishes this scope; native presentation remains unverified.
 
 [NPC bounty skill points](docs/protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026) award the killer an additional **0.25% of the gross ISK bounty as unallocated SP**, rounded down per kill. A **150,000 ISK** bounty grants **375 SP** alongside its normal ISK payment.

@@ -20,6 +20,7 @@ public sealed class ConcordOverviewTests
         Assert.EndsWith(", 'eden-login', 'exec'), {}) or {}", expression);
         Assert.Contains("EvePhoto.GetPortrait = get_portrait", expression);
         Assert.Contains("install_concord_overview()", expression);
+        Assert.Contains("install_presence_lists()", expression);
     }
 
     [PinnedPortraitClientFact]

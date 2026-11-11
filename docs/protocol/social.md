@@ -283,6 +283,62 @@ Reference: installed `code.ccp` SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF491
 
 **Optional maintainer checks.** Exchange a rich-text message between disposable local pilots and inspect unread/body rendering; reply or forward and reconnect; exercise labels and trash/restoration through native menus. Native rendering, input, cache presentation and gameplay feel remain unverified.
 
+## Local and station list rebuild races, November 11, 2026
+
+The user reported ordinary-pilot Local counts exceeding visible rows and station Guests showing four members but only
+one name, without recovery on reopening. The screenshots establish the reported symptoms; no live client acceptance
+was performed. Inert inspection and a deterministic cooperative-tasklet reproduction identify two native list defects
+that can produce missing or stale rows independently of the server's membership snapshots.
+
+In build 3662168 `xmppchatclient/xmppchatwindow.pyj`, `InitUsers` (lines 1762–1775) clears the scroll but retains
+`userlistNodesByName`. It also iterates `members` while owner lookup can yield. An arrival or departure during that
+lookup can change the dictionary during iteration. Retained row indexes can then suppress a later visible insertion.
+In `eve/client/script/ui/shared/dockedUI/guests.pyj`, `_update_scroll_content` (lines 323–351) captures guest rows,
+allows yielding name/entry work, and finally replaces the scroll. Incremental `_add_guest_to_scroll` and
+`_remove_guest_from_scroll` do not invalidate that rebuild: an intervening arrival can be overwritten and a departed
+guest can be reinserted. The guest controller maintains its membership/count independently of those rendered rows.
+
+The signed login adapter now uses the client's existing per-view `locks.TempLock` (native default: `RLock`) to serialize
+each full rebuild with its incremental arrivals and departures. Local clears its row index before rebuilding it.
+Other chat windows and guest panels retain independent locks. No extra membership polling, database work, server
+population change or per-arrival full redraw is introduced. Installation is idempotent and reaches regular accounts
+through the existing signed login challenge; rebuild/restart the server and fully reopen the client to install it.
+
+Source archive SHA-256: `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The tested original archive is the staging backup `.eden-original-code.ccp`; the staged mod archive is intentionally
+different. The relevant chat, guest and lock modules match the original byte for byte. Native Python runtime SHA-256:
+`1266e119d5db70281831f06049faa2694e658a68d504e0cc5680ec5726ba3aa2`.
+Gameplay reference: [EVE University Local membership](https://wiki.eveuniversity.org/Identifying_war_targets_in_Local).
+The reference evejs release `261108.1`, `server/src/services/station/stationService.js` and
+`server/src/services/chat/xmppStubServer.js`, was checked for its guest snapshot and chat-presence boundaries;
+it targets an older client and supplies no code for this native UI correction. No Blue, transport or Destiny change
+is involved; the existing documented Carbon serialization references remain historical evidence for those unchanged formats.
+
+**Automated validation.** Tool restore, solution restore/build (zero warnings/errors), 120 focused .NET cases with no
+skips, both Python policy suites (8 catalog and 9 formatting cases), formatting/width verification across 1,665 files
+and diff verification passed in 49.19 seconds. The focused tests reported 23 seconds. The affected filter was
+`FullyQualifiedName~PresenceListTests|FullyQualifiedName~ConcordOverviewTests|FullyQualifiedName~CharacterPortraitTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~Eden.Protocol.Tests.Hosting`.
+The exact first filter was
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.PresenceListTests.NativePresenceRebuildsPreserveConcurrentArrivalsDeparturesAndRowIndexes`.
+The headless check first reproduces overwritten arrivals, resurrected departures, retained Local row indexes and a
+dictionary mutation error in the unmodified native methods. It then evaluates the exact signed adapter in the pinned
+Python interpreter and checks three repeated arrival/departure cycles, count/row/index agreement and idempotent
+installation. Only extracted method code executes with test UI, owner lookup and cooperative lock doubles; native
+rendering and the game's complete scheduler are outside this test. Initial fixture setup rejected modified archives
+and exposed missing test-double fields/builtins and Python 2 method-identity semantics; these were corrected before
+the passing exact test. No full .NET regression suite was requested or run.
+
+After integrating main's coarse-simulation update at `41c569ba`, the same required restore/build/test/policy/format
+sequence passed in 57.42 seconds, with zero build warnings/errors. The filter above plus
+`|FullyQualifiedName~CapsuleerMaintenanceTests` passed **125 cases with no skips** (25 seconds reported test duration),
+including the high-density real-world Local/station membership check. Both Python suites and formatting passed again.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After updating the server and reopening the client, compare Local names/counts and
+station Guests through arrivals/departures; reopen each list once during busy traffic. Native timing and rendering
+remain unverified.
+
 ## Station guests, November 4, 2026
 
 The user's screenshot showed two pilots at the same station, each seeing only themselves under Guests. The compatibility handler returned a hard-coded singleton containing the requesting pilot, and no station presence notifications existed.
