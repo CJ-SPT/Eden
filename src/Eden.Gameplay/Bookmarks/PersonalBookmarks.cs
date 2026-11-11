@@ -10,9 +10,31 @@ public enum BookmarkExpiry
     OneDay = 3,
 }
 
-public sealed record BookmarkFolder(long Id, long OwnerId, string Name, string Description, bool IsActive, bool IsKnown);
+public enum BookmarkAccess
+{
+    None = 0,
+    Personal = 1,
+    View = 2,
+    Use = 3,
+    Manage = 4,
+    Admin = 5,
+}
 
-public sealed record BookmarkSubfolder(long Id, long FolderId, string Name);
+public sealed record BookmarkFolderAccess(long? AdminGroupId, long? ManageGroupId, long? UseGroupId, long? ViewGroupId);
+
+public sealed record BookmarkFolder(
+    long Id,
+    long OwnerId,
+    string Name,
+    string Description,
+    bool IsActive,
+    bool IsKnown,
+    bool IsPersonal = true,
+    BookmarkAccess Access = BookmarkAccess.Personal,
+    BookmarkFolderAccess? Groups = null
+);
+
+public sealed record BookmarkSubfolder(long Id, long FolderId, string Name, long CreatorId = 0);
 
 public sealed record BookmarkTarget(long? ItemId, int TypeId, int LocationId, SpacePosition Position);
 
@@ -32,7 +54,8 @@ public sealed record PersonalBookmark(
 public sealed record BookmarkContents(
     IReadOnlyList<BookmarkFolder> Folders,
     IReadOnlyList<PersonalBookmark> Bookmarks,
-    IReadOnlyList<BookmarkSubfolder> Subfolders
+    IReadOnlyList<BookmarkSubfolder> Subfolders,
+    long? RefreshAt = null
 );
 
 public sealed record BookmarkFolderContents(
@@ -45,7 +68,10 @@ public sealed record BookmarkEdit(long Id, long FolderId, long NewFolderId, long
 
 public interface IPilotBookmarks
 {
+    long Revision { get; }
     BookmarkContents Read(long pilotId);
+    BookmarkFolder AddSharedFolder(long pilotId, string name, string description, BookmarkFolderAccess access);
+    BookmarkAccess UpdateSharedFolder(long pilotId, long folderId, string name, string description, BookmarkFolderAccess access);
     BookmarkFolder Folder(long pilotId, long folderId);
     BookmarkFolder AddFolder(long pilotId, string name, string description);
     void UpdateFolder(long pilotId, long folderId, string name, string description);
@@ -81,6 +107,11 @@ public static class BookmarkRules
 {
     // Build 3662168 appConst and bookmarkConst; personal access level is 1.
     public const int MaximumNameLength = 100;
+    public const int MaximumFolderNameLength = 40;
+    public const int MaximumSharedBookmarks = 500;
+    public const int MaximumActiveSharedFolders = 3;
+    public const int MaximumSubfolders = 30;
+    public static readonly long SharedDelay = TimeSpan.FromMinutes(2).Ticks;
     public const int MaximumDescriptionLength = 3900;
     public const int MaximumBookmarksPerFolder = 3000;
     public const int MaximumFolders = 30;

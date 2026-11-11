@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Shared bookmark folders and access lists, November 11, 2026](#shared-bookmark-folders-and-access-lists--november-11-2026)
+
 - [Dynamic and scan-result bookmarks, November 11, 2026](#dynamic-and-scan-result-bookmarks--november-11-2026)
 
 - [Aligning and native autopilot, November 11, 2026](#aligning-and-native-autopilot-november-11-2026)
@@ -40,6 +42,111 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Shared bookmark folders and access lists — November 11, 2026
+
+The eighth service-gap milestone adds shared folders to the existing native bookmark service. Personal folders,
+scan-result bookmarks and durable asteroid/object positions retain their existing paths. This supersedes the
+historical shared-folder exclusion in the personal-bookmark record below.
+
+`ownerGroupManager` owns persistent access lists, member management, names/descriptions and history. The selected
+pilot sees lists they administer or manage, plus their immutable built-in corporation list. Built-in lists follow
+actual saved corporation membership, survive restarts with stable IDs, and cannot be edited or deleted. Authored
+lists support known Eden pilots, player/NPC corporations and Everyone. Alliance identities and membership are not
+implemented by Eden and are rejected rather than inferred.
+
+Typed rules distinguish Member (0), Manager (1), Admin (2) and Excluded (3); Excluded never implies administration.
+Character entries override corporation entries, which override Everyone. Only characters may administer or manage
+an authored list; Everyone can only be a Member. Managers may change ordinary/blocked entries and demote or remove
+themselves, while administrators may also edit list metadata, promote members and delete lists. A creator retains
+no privileged override after self-demotion or exclusion. Limits are 1,000 manageable lists and 10,000 entries per
+list. Successful changes and their audit rows commit together; the native history call returns the latest 1,000
+rows, including actor, FILETIME, action, member-role changes and changed text. Deleted lists remove their history.
+
+Shared folders assign separate access lists for View (2), Use (3), Manage (4) and Admin (5), taking the highest
+granted level. Assigning a list requires its Admin/Manager role. Creating a folder requires an administrator list
+that actually grants its creator folder administration. View permits connected active navigation; Use adds
+creation, copying and changes to one's own bookmarks/subfolders; Manage permits changing other creators' content;
+Admin controls folder metadata, grants and deletion. Folder administration does not grant access-list management.
+Every read, destination, copy, move, batch deletion, subfolder operation, align and warp rechecks saved permissions.
+A rejected mixed-owner batch leaves all rows unchanged. Deleting a subfolder containing another creator's bookmarks
+also requires Manage, so Use cannot indirectly erase other pilots' locations.
+
+Connections and active/inactive state belong to each pilot. Non-administrators connect using a folder link;
+`SearchFoldersWithAdminAccess` also discovers folders the caller administers. There are at most 30 connected
+folders, five active personal folders, three active shared folders, 30 subfolders, and 500 live bookmarks per shared
+folder (3,000 personal). New folder/subfolder names follow the pinned 40-character limit; historical longer names
+remain readable. Expired rows release capacity transactionally. Folder creation and edits preserve native KeyVals,
+contents triples and access-level replies. Shared bookmarks appear immediately; their creator can navigate
+immediately, while other pilots wait exactly two minutes. The server enforces this boundary and the pinned client
+uses `created` for its delayed availability presentation.
+
+Primed sessions receive native bookmark addition/update/removal, folder/subfolder update, access-level and access-loss
+notifications. Access-list changes invalidate native membership/name/description caches through
+`OnOwnerGroupsUpdated`. Corporation creation/membership changes publish revisions after commit and revoke old
+connections in the same transaction. Restoring a revoked grant requires reconnecting the folder. Deleting a list
+clears its folder references without deleting saved locations; deleting a folder removes its bookmarks, subfolders
+and all connections atomically. Unchanged monitors open no SQL connection and perform no queries or fitting work;
+bookmark expiry retains an exact saved deadline. Access-list snapshots read groups and members in one transaction,
+and membership batches validate against bulk owner/role reads. Personal bookmark traffic does not invalidate
+access-list snapshots.
+
+World schema **145** adds access lists, members/history, per-pilot connections, four nullable folder grants and
+subfolder creator IDs. Existing folders remain personal, their IDs/states/content stay intact, and subfolder
+creators are backfilled from the folder creator. Opening the upgrade twice preserves IDs and foreign-key integrity.
+The immutable corporation lists are reconciled in batches on open and created transactionally for new corporations.
+
+References: installed EveJs **261108.1**, without Git metadata, checked these files:
+
+- `character/ownerGroupManagerService.js`, SHA-256 `a43f7e09b0064ae861a91b28d174277b428e209d306b2691bd1b4900f9d3b9fd`.
+- `bookmark/bookmarkRuntimeAccess.js`, SHA-256 `a2ead43c07b9e6e1aa11f42acacfa7db6b78ea6f5bad5e34e12d3bd9bdfc5574`.
+- `bookmark/bookmarkNotifications.js`, SHA-256 `4979b7e7f8d78103cc154e80c82a6df95477dcd57da89500447d85bb3eacfb3e`.
+
+Pinned build **3662168**, original archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, was inspected inertly for
+`bookmarkSvc`, `accessGroupsController`, access-group audit rows, `ownergroupConst` and `bookmarkConst`.
+In particular, bookmark update entries are `(target, kind, args)` triples, access loss is a folder-ID list, changed
+levels are a dictionary, group/member replies are lists of KeyVals, and audit entries are DBRows. Eden uses its
+existing Blue adapters and independent typed rules; no client Python or reference implementation was executed.
+Gameplay references: [EVE University bookmarks](https://wiki.eveuniversity.org/Bookmarks) and
+[access lists](https://wiki.eveuniversity.org/Access_Lists).
+
+**Automated validation:** development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.SharedBookmarksTests.SharedFoldersKeepConnectionsPrivateAndRevokeNavigationImmediatelyAcrossRestart`.
+The final affected filter below passed **214 tests**, including **14 new shared-bookmark cases**, with no failures or
+skips, in **71.68 seconds** including runner startup. Tool restore, solution restore/build (zero warnings/errors),
+eight Python catalog-policy cases, nine formatting-policy cases, formatting/width verification of 1,734 files and
+`git diff --check` passed in **103.25 seconds**. Four edited Markdown files and 712 local links/anchors passed
+validation. The full .NET suite was not requested or run. Evidence is retained outside version control under
+`artifacts/service-gap-milestones/shared-bookmarks/` in the primary checkout.
+
+Coverage includes personal compatibility, native replies, asteroid/scan bookmarks, shared navigation, permission
+precedence, immutable corporation lists, current saved membership, atomic rejection/rollback, limits, expiry,
+notifications, zero idle SQL counts and the version-144 upgrade. The initial reopen fixture used a different clock,
+and the historical-schema fixture attempted to drop an EF table-level foreign-key column directly. Both fixtures
+were corrected and their exact tests passed. No game or interactive server acceptance was run.
+
+```powershell
+$filter = @(
+    'FullyQualifiedName~SharedBookmark'
+    'FullyQualifiedName~PilotBookmarksTests'
+    'FullyQualifiedName~BookmarkServiceTests'
+    'FullyQualifiedName~ProbeScanningTests'
+    'FullyQualifiedName~CorporationMembershipTests'
+    'FullyQualifiedName~PlayerCorporationTests'
+    'FullyQualifiedName~CorporationAdministrationTests'
+    'FullyQualifiedName~CharacterDeletionTests'
+    'FullyQualifiedName~WorldMigrationTests'
+    'FullyQualifiedName~PilotServicesTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Hosting'
+) -join '|'
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native UI display remains unverified.
+
+**Optional maintainer checks:** connect a shared folder from a second pilot and compare Use/Manage behavior; revoke
+access while its window is open; bookmark an asteroid into the shared folder and compare availability before and
+after two minutes.
 
 ## Dynamic and scan-result bookmarks — November 11, 2026
 

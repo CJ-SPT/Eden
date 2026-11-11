@@ -5,8 +5,6 @@ namespace Eden.Protocol.Bookmarks;
 
 internal sealed record BookmarkFolderReply(BookmarkFolder Folder) : BlueModel
 {
-    private const int PersonalAccessLevel = 1;
-
     public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
@@ -15,15 +13,15 @@ internal sealed record BookmarkFolderReply(BookmarkFolder Folder) : BlueModel
                 ["folderID"] = Folder.Id,
                 ["folderName"] = new BlueUnicode(Folder.Name),
                 ["description"] = new BlueUnicode(Folder.Description),
-                ["isPersonal"] = true,
+                ["isPersonal"] = Folder.IsPersonal,
                 ["creatorID"] = Folder.OwnerId,
                 ["ownerID"] = Folder.OwnerId,
                 ["isActive"] = Folder.IsActive,
-                ["accessLevel"] = PersonalAccessLevel,
-                ["adminGroupID"] = null,
-                ["manageGroupID"] = null,
-                ["useGroupID"] = null,
-                ["viewGroupID"] = null,
+                ["accessLevel"] = (int)Folder.Access,
+                ["adminGroupID"] = Folder.Groups?.AdminGroupId,
+                ["manageGroupID"] = Folder.Groups?.ManageGroupId,
+                ["useGroupID"] = Folder.Groups?.UseGroupId,
+                ["viewGroupID"] = Folder.Groups?.ViewGroupId,
             }
         );
 }
@@ -38,6 +36,7 @@ internal sealed record BookmarkSubfolderReply(BookmarkSubfolder Subfolder) : Blu
                 ["subfolderID"] = Subfolder.Id,
                 ["folderID"] = Subfolder.FolderId,
                 ["subfolderName"] = new BlueUnicode(Subfolder.Name),
+                ["creatorID"] = Subfolder.CreatorId,
             }
         );
 }

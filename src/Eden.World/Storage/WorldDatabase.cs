@@ -43,6 +43,19 @@ public sealed record WorldDatabase(string Path)
         Eden.World.Runtime.LiveWorld.Find(Path)?.Enter(operation, systemId)
         ?? LazyInitializer.EnsureInitialized(ref _movementOwnership, () => new("database movement", MotionLock)).Enter(operation, systemId);
 
+    private long _bookmarkRevision;
+    private long _accessGroupRevision;
+    internal long BookmarkRevision => Volatile.Read(ref _bookmarkRevision);
+    internal long AccessGroupRevision => Volatile.Read(ref _accessGroupRevision);
+
+    internal void NotifyBookmarksChanged() => Interlocked.Increment(ref _bookmarkRevision);
+
+    internal void NotifyAccessGroupsChanged()
+    {
+        Interlocked.Increment(ref _accessGroupRevision);
+        NotifyBookmarksChanged();
+    }
+
     internal ConcurrentDictionary<int, long> CorporationContactStamps { get; } = new();
     internal ConcurrentDictionary<long, long> SavedFittingStamps { get; } = new();
     internal ConcurrentDictionary<int, int> MotionStamps { get; } = new();

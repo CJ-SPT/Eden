@@ -1,7 +1,9 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Bookmarks;
+using Eden.Gameplay.AccessGroups;
 using Eden.Gameplay.Bookmarks;
 using Eden.Infrastructure.Registration;
+using Eden.World.AccessGroups;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -11,52 +13,66 @@ namespace Eden.World.Bookmarks;
 [Injectable]
 internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider clock) : IPilotBookmarks
 {
+    public long Revision => database.BookmarkRevision;
+
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     public BookmarkContents Read(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         CheckPilot(world, pilotId);
-        var folders = world.Set<SavedBookmarkFolder>().Where(f => f.PilotId == pilotId && f.IsKnown).OrderBy(f => f.Id).ToArray();
+        var knownShared = world.Set<SavedBookmarkConnection>().Where(c => c.PilotId == pilotId).Select(c => c.FolderId).ToArray();
+        var folders = world
+            .Set<SavedBookmarkFolder>()
+            .Where(f => f.IsPersonal && f.PilotId == pilotId && f.IsKnown || !f.IsPersonal && knownShared.Contains(f.Id))
+            .OrderBy(f => f.Id)
+            .AsEnumerable()
+            .Select(f => FolderSnapshot(world, pilotId, f))
+            .Where(f => f.Access != BookmarkAccess.None)
+            .ToArray();
         var active = folders.Where(f => f.IsActive).Select(f => f.Id).ToArray();
         long now = Now;
+        var rows = world
+            .Set<SavedBookmark>()
+            .Where(b => active.Contains(b.FolderId) && (b.ExpiresAt == null || b.ExpiresAt > now))
+            .OrderBy(b => b.Id)
+            .ToArray();
+        var deadlines = rows.Select(b => b.ExpiresAt).Where(t => t > now).ToArray();
         return new(
-            folders.Select(f => f.Snapshot()).ToArray(),
-            world
-                .Set<SavedBookmark>()
-                .Where(b => active.Contains(b.FolderId) && (b.ExpiresAt == null || b.ExpiresAt > now))
-                .OrderBy(b => b.Id)
-                .AsEnumerable()
-                .Select(b => Snapshot(b))
-                .ToArray(),
+            folders,
+            rows.Select(b => Snapshot(b)).ToArray(),
             world
                 .Set<SavedBookmarkSubfolder>()
                 .Where(s => active.Contains(s.FolderId))
                 .OrderBy(s => s.Id)
                 .AsEnumerable()
                 .Select(s => s.Snapshot())
-                .ToArray()
+                .ToArray(),
+            deadlines.Length > 0 ? deadlines.Min() : null
         );
     }
 
     public BookmarkFolder Folder(long pilotId, long folderId)
     {
         using WorldDbContext world = new(database.Path);
-        return RequireFolder(world, pilotId, folderId).Snapshot();
+        using var transaction = world.Database.BeginTransaction();
+        return FolderSnapshot(world, pilotId, RequireFolder(world, pilotId, folderId));
     }
 
     public BookmarkFolder AddFolder(long pilotId, string name, string description)
     {
-        BookmarkRules.CheckName(name);
+        CheckSharedName(name);
         BookmarkRules.CheckDescription(description);
         return Write(
             pilotId,
             world =>
             {
-                if (world.Set<SavedBookmarkFolder>().Count(f => f.PilotId == pilotId) >= BookmarkRules.MaximumFolders)
+                if (world.Set<SavedBookmarkFolder>().Count(f => f.PilotId == pilotId && f.IsPersonal) >= BookmarkRules.MaximumFolders)
                 {
                     throw new InvalidDataException("You have reached the personal location folder limit.");
                 }
+                CheckKnownLimit(world, pilotId);
                 CheckActiveLimit(world, pilotId, null);
                 var folder = new SavedBookmarkFolder
                 {
@@ -71,15 +87,108 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
         );
     }
 
-    public void UpdateFolder(long pilotId, long folderId, string name, string description)
+    public BookmarkFolder AddSharedFolder(long pilotId, string name, string description, BookmarkFolderAccess access)
+    {
+        CheckSharedName(name);
+        BookmarkRules.CheckDescription(description);
+        return Write(
+            pilotId,
+            world =>
+            {
+                CheckGroups(world, pilotId, access);
+                CheckKnownLimit(world, pilotId);
+                CheckActiveLimit(world, pilotId, null, false);
+                var folder = new SavedBookmarkFolder
+                {
+                    PilotId = pilotId,
+                    Name = name,
+                    Description = description,
+                    IsPersonal = false,
+                    AdminGroupId = access.AdminGroupId,
+                    ManageGroupId = access.ManageGroupId,
+                    UseGroupId = access.UseGroupId,
+                    ViewGroupId = access.ViewGroupId,
+                };
+                if (Access(world, pilotId, folder) != BookmarkAccess.Admin)
+                {
+                    throw new InvalidDataException("Choose an administrator list that grants you folder administration.");
+                }
+                world.Add(folder);
+                world.SaveChanges();
+                world.Add(
+                    new SavedBookmarkConnection
+                    {
+                        PilotId = pilotId,
+                        FolderId = folder.Id,
+                        IsActive = true,
+                    }
+                );
+                world.SaveChanges();
+                return FolderSnapshot(world, pilotId, folder);
+            }
+        );
+    }
+
+    public BookmarkAccess UpdateSharedFolder(long pilotId, long folderId, string name, string description, BookmarkFolderAccess access)
+    {
+        CheckSharedName(name);
+        BookmarkRules.CheckDescription(description);
+        return Write(
+            pilotId,
+            world =>
+            {
+                var folder = RequireFolder(world, pilotId, folderId, BookmarkAccess.Admin);
+                if (folder.IsPersonal)
+                {
+                    throw new InvalidDataException("Personal folders cannot use access lists.");
+                }
+                CheckGroups(world, pilotId, access);
+                folder.Name = name;
+                folder.Description = description;
+                folder.AdminGroupId = access.AdminGroupId;
+                folder.ManageGroupId = access.ManageGroupId;
+                folder.UseGroupId = access.UseGroupId;
+                folder.ViewGroupId = access.ViewGroupId;
+                world.SaveChanges();
+                PruneUnavailableConnections(world, folderId: folderId);
+                return Access(world, pilotId, folder);
+            }
+        );
+    }
+
+    private static void CheckSharedName(string name)
     {
         BookmarkRules.CheckName(name);
+        if (name.Length > BookmarkRules.MaximumFolderNameLength)
+        {
+            throw new InvalidDataException("Folder names must contain at most 40 characters.");
+        }
+    }
+
+    private static void CheckGroups(WorldDbContext world, long pilotId, BookmarkFolderAccess access)
+    {
+        if (access.AdminGroupId is null)
+        {
+            throw new InvalidDataException("Shared folders need an administrator access list.");
+        }
+        foreach (long id in new[] { access.AdminGroupId, access.ManageGroupId, access.UseGroupId, access.ViewGroupId }.OfType<long>())
+        {
+            if (!AccessGroupRules.CanManage(AccessGroupStore.Role(world, pilotId, id)))
+            {
+                throw new InvalidDataException("Choose access lists you administer or manage.");
+            }
+        }
+    }
+
+    public void UpdateFolder(long pilotId, long folderId, string name, string description)
+    {
+        CheckSharedName(name);
         BookmarkRules.CheckDescription(description);
         Write(
             pilotId,
             world =>
             {
-                var folder = RequireFolder(world, pilotId, folderId);
+                var folder = RequireFolder(world, pilotId, folderId, BookmarkAccess.Admin);
                 folder.Name = name;
                 folder.Description = description;
                 return true;
@@ -92,9 +201,10 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
             pilotId,
             world =>
             {
-                var folder = RequireFolder(world, pilotId, folderId);
+                var folder = RequireFolder(world, pilotId, folderId, BookmarkAccess.Admin);
                 world.Set<SavedBookmark>().Where(b => b.FolderId == folderId).ExecuteDelete();
                 world.Set<SavedBookmarkSubfolder>().Where(s => s.FolderId == folderId).ExecuteDelete();
+                world.Set<SavedBookmarkConnection>().Where(c => c.FolderId == folderId).ExecuteDelete();
                 world.Remove(folder);
                 return true;
             }
@@ -106,15 +216,50 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
             world =>
             {
                 var folder = RequireFolder(world, pilotId, folderId);
-                if (active && known && !(folder.IsActive && folder.IsKnown))
+                var before = FolderSnapshot(world, pilotId, folder);
+                if (active && known && !(before.IsActive && before.IsKnown))
                 {
-                    CheckActiveLimit(world, pilotId, folderId);
+                    CheckActiveLimit(world, pilotId, folderId, folder.IsPersonal);
                 }
-                folder.IsActive = active && known;
-                folder.IsKnown = known;
+                if (known && !before.IsKnown)
+                {
+                    CheckKnownLimit(world, pilotId);
+                }
+                if (folder.IsPersonal)
+                {
+                    folder.IsActive = active && known;
+                    folder.IsKnown = known;
+                }
+                else
+                {
+                    var connection = world.Set<SavedBookmarkConnection>().Find(pilotId, folderId);
+                    if (!known && connection is not null)
+                    {
+                        world.Remove(connection);
+                    }
+                    else if (known)
+                    {
+                        if (connection is null)
+                        {
+                            world.Add(
+                                new SavedBookmarkConnection
+                                {
+                                    PilotId = pilotId,
+                                    FolderId = folderId,
+                                    IsActive = active,
+                                }
+                            );
+                        }
+                        else
+                        {
+                            connection.IsActive = active;
+                        }
+                    }
+                    world.SaveChanges();
+                }
                 long now = Now;
                 return new BookmarkFolderContents(
-                    folder.Snapshot(),
+                    FolderSnapshot(world, pilotId, folder),
                     active && known
                         ? world
                             .Set<SavedBookmark>()
@@ -140,25 +285,35 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
     public IReadOnlyList<BookmarkFolder> SearchFolders(long pilotId)
     {
         using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
         CheckPilot(world, pilotId);
         return world
             .Set<SavedBookmarkFolder>()
-            .Where(f => f.PilotId == pilotId)
             .OrderBy(f => f.Id)
             .AsEnumerable()
-            .Select(f => f.Snapshot())
+            .Select(f => FolderSnapshot(world, pilotId, f))
+            .Where(f => f.Access is BookmarkAccess.Personal or BookmarkAccess.Admin)
             .ToArray();
     }
 
     public BookmarkSubfolder AddSubfolder(long pilotId, long folderId, string name)
     {
-        BookmarkRules.CheckName(name);
+        CheckSharedName(name);
         return Write(
             pilotId,
             world =>
             {
-                RequireFolder(world, pilotId, folderId);
-                var subfolder = new SavedBookmarkSubfolder { FolderId = folderId, Name = name };
+                RequireFolder(world, pilotId, folderId, BookmarkAccess.Use);
+                if (world.Set<SavedBookmarkSubfolder>().Count(s => s.FolderId == folderId) >= BookmarkRules.MaximumSubfolders)
+                {
+                    throw new InvalidDataException("A folder may contain at most 30 subfolders.");
+                }
+                var subfolder = new SavedBookmarkSubfolder
+                {
+                    FolderId = folderId,
+                    Name = name,
+                    CreatorId = pilotId,
+                };
                 world.Add(subfolder);
                 world.SaveChanges();
                 return subfolder.Snapshot();
@@ -168,13 +323,14 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
 
     public void UpdateSubfolder(long pilotId, long folderId, long subfolderId, string name)
     {
-        BookmarkRules.CheckName(name);
+        CheckSharedName(name);
         Write(
             pilotId,
             world =>
             {
-                RequireFolder(world, pilotId, folderId);
-                RequireSubfolder(world, folderId, subfolderId).Name = name;
+                var subfolder = RequireSubfolder(world, folderId, subfolderId);
+                RequireOwnOrManage(world, pilotId, folderId, subfolder.CreatorId);
+                subfolder.Name = name;
                 return true;
             }
         );
@@ -185,8 +341,14 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
             pilotId,
             world =>
             {
-                RequireFolder(world, pilotId, folderId);
                 var subfolder = RequireSubfolder(world, folderId, subfolderId);
+                RequireOwnOrManage(world, pilotId, folderId, subfolder.CreatorId);
+                foreach (
+                    var creator in world.Set<SavedBookmark>().Where(b => b.SubfolderId == subfolderId).Select(b => b.CreatorId).Distinct()
+                )
+                {
+                    RequireOwnOrManage(world, pilotId, folderId, creator);
+                }
                 var ids = world.Set<SavedBookmark>().Where(b => b.SubfolderId == subfolderId).Select(b => b.Id).ToArray();
                 world.Set<SavedBookmark>().Where(b => b.SubfolderId == subfolderId).ExecuteDelete();
                 world.Remove(subfolder);
@@ -283,11 +445,12 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
     public PersonalBookmark Find(long pilotId, long bookmarkId)
     {
         using WorldDbContext world = new(database.Path);
-        var bookmark = world.Set<SavedBookmark>().Find(bookmarkId) ?? throw new InvalidDataException("Unknown personal location.");
-        var folder = RequireFolder(world, pilotId, bookmark.FolderId);
-        if (!folder.IsActive || !folder.IsKnown || bookmark.ExpiresAt <= Now)
+        using var transaction = world.Database.BeginTransaction();
+        var bookmark = world.Set<SavedBookmark>().Find(bookmarkId) ?? throw new InvalidDataException("Unknown location.");
+        var folder = FolderSnapshot(world, pilotId, RequireFolder(world, pilotId, bookmark.FolderId));
+        if (!folder.IsActive || !folder.IsKnown || bookmark.ExpiresAt <= Now || !Visible(world, pilotId, bookmark, Now))
         {
-            throw new InvalidDataException("This personal location is inactive or expired.");
+            throw new InvalidDataException("This location is inactive, expired or not yet available.");
         }
         return Snapshot(bookmark);
     }
@@ -301,6 +464,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
             world =>
             {
                 var bookmark = RequireBookmarks(world, pilotId, edit.FolderId, [edit.Id]).Single();
+                RequireOwnOrManage(world, pilotId, edit.FolderId, bookmark.CreatorId);
                 RequireDestination(world, pilotId, edit.NewFolderId, edit.SubfolderId);
                 if (edit.NewFolderId != edit.FolderId)
                 {
@@ -325,6 +489,10 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
             world =>
             {
                 var bookmarks = RequireBookmarks(world, pilotId, folderId, bookmarkIds);
+                foreach (var bookmark in bookmarks)
+                {
+                    RequireOwnOrManage(world, pilotId, folderId, bookmark.CreatorId);
+                }
                 world.RemoveRange(bookmarks);
                 return (IReadOnlyList<long>)bookmarks.Select(b => b.Id).ToArray();
             }
@@ -343,6 +511,17 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
             world =>
             {
                 var bookmarks = RequireBookmarks(world, pilotId, sourceFolderId, bookmarkIds);
+                foreach (var bookmark in bookmarks)
+                {
+                    if (copy)
+                    {
+                        RequireFolder(world, pilotId, sourceFolderId, BookmarkAccess.Use);
+                    }
+                    else
+                    {
+                        RequireOwnOrManage(world, pilotId, sourceFolderId, bookmark.CreatorId);
+                    }
+                }
                 RequireDestination(world, pilotId, folderId, subfolderId);
                 if (copy || sourceFolderId != folderId)
                 {
@@ -387,6 +566,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
         T result = operation(world);
         world.SaveChanges();
         transaction.Commit();
+        database.NotifyBookmarksChanged();
         return result;
     }
 
@@ -404,9 +584,74 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
         }
     }
 
-    private static SavedBookmarkFolder RequireFolder(WorldDbContext world, long pilotId, long folderId) =>
-        world.Set<SavedBookmarkFolder>().SingleOrDefault(f => f.Id == folderId && f.PilotId == pilotId)
-        ?? throw new InvalidDataException("Unknown personal location folder.");
+    private static SavedBookmarkFolder RequireFolder(
+        WorldDbContext world,
+        long pilotId,
+        long folderId,
+        BookmarkAccess required = BookmarkAccess.View
+    )
+    {
+        CheckPilot(world, pilotId);
+        var folder = world.Set<SavedBookmarkFolder>().Find(folderId) ?? throw new InvalidDataException("Unknown location folder.");
+        var access = Access(world, pilotId, folder);
+        if (access != BookmarkAccess.Personal && access < required)
+        {
+            throw new InvalidDataException("You do not have permission to use this location folder.");
+        }
+        return folder;
+    }
+
+    private static void RequireOwnOrManage(WorldDbContext world, long pilotId, long folderId, long creatorId) =>
+        RequireFolder(world, pilotId, folderId, creatorId == pilotId ? BookmarkAccess.Use : BookmarkAccess.Manage);
+
+    private static BookmarkAccess Access(WorldDbContext world, long pilotId, SavedBookmarkFolder folder)
+    {
+        if (folder.IsPersonal)
+        {
+            return folder.PilotId == pilotId ? BookmarkAccess.Personal : BookmarkAccess.None;
+        }
+        foreach (
+            var grant in new[]
+            {
+                (folder.AdminGroupId, BookmarkAccess.Admin),
+                (folder.ManageGroupId, BookmarkAccess.Manage),
+                (folder.UseGroupId, BookmarkAccess.Use),
+                (folder.ViewGroupId, BookmarkAccess.View),
+            }
+        )
+        {
+            if (grant.Item1 is { } id && AccessGroupRules.GrantsAccess(AccessGroupStore.Role(world, pilotId, id)))
+            {
+                return grant.Item2;
+            }
+        }
+        return BookmarkAccess.None;
+    }
+
+    private static BookmarkFolder FolderSnapshot(WorldDbContext world, long pilotId, SavedBookmarkFolder folder)
+    {
+        if (folder.IsPersonal)
+        {
+            return folder.PilotId == pilotId ? folder.Snapshot() : folder.Snapshot() with { Access = BookmarkAccess.None };
+        }
+        var connection = world.Set<SavedBookmarkConnection>().Find(pilotId, folder.Id);
+        return new(
+            folder.Id,
+            folder.PilotId,
+            folder.Name,
+            folder.Description,
+            connection?.IsActive == true,
+            connection is not null,
+            false,
+            Access(world, pilotId, folder),
+            new(folder.AdminGroupId, folder.ManageGroupId, folder.UseGroupId, folder.ViewGroupId)
+        );
+    }
+
+    private static bool Visible(WorldDbContext world, long pilotId, SavedBookmark bookmark, long now) =>
+        bookmark.CreatorId == pilotId
+        || bookmark.CreatedAt <= now - BookmarkRules.SharedDelay
+        || world.Set<SavedBookmarkFolder>().Find(bookmark.FolderId)!.IsPersonal;
 
     private static SavedBookmarkSubfolder RequireSubfolder(WorldDbContext world, long folderId, long subfolderId) =>
         world.Set<SavedBookmarkSubfolder>().SingleOrDefault(s => s.Id == subfolderId && s.FolderId == folderId)
@@ -414,7 +659,7 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
 
     private static void RequireDestination(WorldDbContext world, long pilotId, long folderId, long? subfolderId)
     {
-        RequireFolder(world, pilotId, folderId);
+        RequireFolder(world, pilotId, folderId, BookmarkAccess.Use);
         if (subfolderId is { } id)
         {
             RequireSubfolder(world, folderId, id);
@@ -433,28 +678,63 @@ internal sealed class PilotBookmarksStore(WorldDatabase database, TimeProvider c
             .ToArray();
         if (bookmarks.Length != ids.Distinct().Count())
         {
-            throw new InvalidDataException("Choose existing, unexpired personal locations in that folder.");
+            throw new InvalidDataException("Choose existing, unexpired locations in that folder.");
         }
         return bookmarks;
     }
 
-    private static void CheckActiveLimit(WorldDbContext world, long pilotId, long? except)
+    private static void CheckActiveLimit(WorldDbContext world, long pilotId, long? except, bool personal = true)
     {
-        if (
-            world.Set<SavedBookmarkFolder>().Count(f => f.PilotId == pilotId && f.IsActive && f.IsKnown && f.Id != except)
-            >= BookmarkRules.MaximumActiveFolders
+        int count = personal
+            ? world.Set<SavedBookmarkFolder>().Count(f => f.PilotId == pilotId && f.IsPersonal && f.IsActive && f.IsKnown && f.Id != except)
+            : world.Set<SavedBookmarkConnection>().Count(c => c.PilotId == pilotId && c.IsActive && c.FolderId != except);
+        if (count >= (personal ? BookmarkRules.MaximumActiveFolders : BookmarkRules.MaximumActiveSharedFolders))
+        {
+            throw new InvalidDataException("At most five personal and three shared location folders can be active.");
+        }
+    }
+
+    internal static void PruneUnavailableConnections(WorldDbContext world, long? pilotId = null, long? folderId = null)
+    {
+        foreach (
+            var connection in world
+                .Set<SavedBookmarkConnection>()
+                .Where(c => (pilotId == null || c.PilotId == pilotId) && (folderId == null || c.FolderId == folderId))
+                .ToArray()
         )
         {
-            throw new InvalidDataException("At most five personal location folders can be active.");
+            var folder = world.Set<SavedBookmarkFolder>().Find(connection.FolderId);
+            if (folder is null || Access(world, connection.PilotId, folder) == BookmarkAccess.None)
+            {
+                world.Remove(connection);
+            }
+        }
+    }
+
+    private static void CheckKnownLimit(WorldDbContext world, long pilotId)
+    {
+        int count =
+            world.Set<SavedBookmarkFolder>().Count(f => f.IsPersonal && f.PilotId == pilotId && f.IsKnown)
+            + world.Set<SavedBookmarkConnection>().Count(c => c.PilotId == pilotId);
+        if (count >= BookmarkRules.MaximumFolders)
+        {
+            throw new InvalidDataException("At most 30 location folders can be connected.");
         }
     }
 
     private static void CheckCapacity(WorldDbContext world, long folderId, int added, long now)
     {
         world.Set<SavedBookmark>().Where(b => b.FolderId == folderId && b.ExpiresAt <= now).ExecuteDelete();
-        if (world.Set<SavedBookmark>().Count(b => b.FolderId == folderId) + added > BookmarkRules.MaximumBookmarksPerFolder)
+        if (
+            world.Set<SavedBookmark>().Count(b => b.FolderId == folderId) + added
+            > (
+                world.Set<SavedBookmarkFolder>().Find(folderId)!.IsPersonal
+                    ? BookmarkRules.MaximumBookmarksPerFolder
+                    : BookmarkRules.MaximumSharedBookmarks
+            )
+        )
         {
-            throw new InvalidDataException("This personal location folder is full.");
+            throw new InvalidDataException("This location folder is full.");
         }
     }
 }

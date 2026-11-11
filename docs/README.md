@@ -3,6 +3,10 @@
 [Resident inventory and market transactions](protocol/performance.md#resident-inventory-and-market-transactions-november-11-2026)
 records atomic resident trades and ordinary cargo, coherent saves and matched economic-frame measurements.
 
+[Shared bookmark folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026) covers shared locations, permissions, subscriptions and native updates.
+
+[Structure compression and gas decompression](protocol/structures.md#structure-compression-and-gas-decompression--november-11-2026) covers native resource conversion, losses and fuel/access checks.
+
 [Corporation contacts and standings](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026) covers shared contacts, labels, roles and native updates.
 
 [Personal mining ledger](protocol/industry.md#personal-mining-ledger--november-11-2026) covers committed daily mining totals and waste.

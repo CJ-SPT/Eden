@@ -3,6 +3,8 @@
 [Resident inventory and market transactions](protocol/performance.md#resident-inventory-and-market-transactions-november-11-2026)
 records atomic resident trades and ordinary cargo, coherent saves and matched economic-frame measurements.
 
+[Shared bookmark folders and access lists](protocol/navigation.md#shared-bookmark-folders-and-access-lists--november-11-2026) covers shared locations, permissions, subscriptions and native updates.
+
 [Bulk industry-job delivery](protocol/industry.md#bulk-industry-job-delivery--november-11-2026) covers native multi-job completion and atomic rollback.
 
 [Blueprint supply at every regional hub](protocol/industry.md#blueprint-supply-at-every-regional-hub-november-11-2026)
@@ -44,6 +46,9 @@ records prepared traffic actions, committed market views, measured invalidation 
 
 [Bot queue throughput](protocol/performance.md#bot-queue-throughput-november-10-2026) records scheduler, travel and remote cleanup costs
 and the sustained replay.
+
+[Structure compression and gas decompression](protocol/structures.md#structure-compression-and-gas-decompression--november-11-2026)
+adds native resource conversion and gas losses with fuel/access checks.
 
 [Player Upwell structures](protocol/structures.md) covers persistent deployment for all 20 published hulls,
 native docking/storage, supported services, configuration speeds and explicit remaining mechanics.

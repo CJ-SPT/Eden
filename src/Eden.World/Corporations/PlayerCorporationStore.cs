@@ -187,7 +187,11 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
             }
         );
         world.SaveChanges();
+        Eden.World.Bookmarks.SharedBookmarkSchema.EnsureCorporation(world, corporation.Id, corporation.Name);
+        Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilotId);
+        world.SaveChanges();
         transaction.Commit();
+        database.NotifyAccessGroupsChanged();
         return new(corporation.Snapshot(1), balance);
     }
 

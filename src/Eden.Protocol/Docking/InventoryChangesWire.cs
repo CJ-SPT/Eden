@@ -39,6 +39,18 @@ internal static class InventoryChangesWire
         }
         else
         {
+            if (previous.TypeId != item.TypeId)
+            {
+                old[InventoryColumn.Type] = previous.TypeId;
+            }
+            if (previous.GroupId != item.GroupId)
+            {
+                old[InventoryColumn.Group] = previous.GroupId;
+            }
+            if (previous.CategoryId != item.CategoryId)
+            {
+                old[InventoryColumn.Category] = previous.CategoryId;
+            }
             if (previous.OwnerId != item.OwnerId)
             {
                 old[InventoryColumn.Owner] = previous.OwnerId;

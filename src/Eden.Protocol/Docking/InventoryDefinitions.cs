@@ -2,10 +2,13 @@ namespace Eden.Protocol.Docking;
 
 public enum InventoryColumn
 {
+    Type = 1,
     Owner = 2,
     Location = 3,
     Flag = 4,
     Quantity = 5,
+    Group = 6,
+    Category = 7,
     StackSize = 9,
     Singleton = 10,
 }

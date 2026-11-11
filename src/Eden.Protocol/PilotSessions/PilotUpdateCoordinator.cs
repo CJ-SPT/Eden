@@ -1,8 +1,10 @@
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.AccessGroups;
 using Eden.Protocol.Agents;
 using Eden.Protocol.Ammunition;
+using Eden.Protocol.Bookmarks;
 using Eden.Protocol.Calendar;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Chat;
@@ -82,6 +84,8 @@ internal sealed class PilotUpdateCoordinator(
     MissionTrackerHandler missionTracker,
     SavedFittingMonitor savedFittings,
     CorporationContactsMonitor corporationContacts,
+    BookmarkMonitor bookmarks,
+    AccessGroupMonitor accessGroups,
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null
 )
@@ -92,6 +96,8 @@ internal sealed class PilotUpdateCoordinator(
         || overload.IsMonitoring
         || corporations.IsMonitoring
         || fleets.IsMonitoring
+        || bookmarks.IsMonitoring
+        || accessGroups.IsMonitoring
         || corporationContacts.IsMonitoring
         || savedFittings.IsMonitoring
         || missionTracker.IsMonitoring
@@ -148,6 +154,8 @@ internal sealed class PilotUpdateCoordinator(
         ApplyPlayerDamage(context);
         context.ActiveFlight?.Checkpoint();
         context.ActiveFlight?.PrepareDisconnect();
+        bookmarks.Reset();
+        accessGroups.Reset();
         savedFittings.Reset();
         corporationContacts.Reset();
         chat.Dispose();
@@ -274,6 +282,8 @@ internal sealed class PilotUpdateCoordinator(
         {
             corporations.Advance(context);
             corporationWallet.Advance(context);
+            bookmarks.Advance(context);
+            accessGroups.Advance(context);
             savedFittings.Advance(context);
             corporationContacts.Advance(context);
             fleets.Advance(context);
