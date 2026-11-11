@@ -328,6 +328,11 @@ rendering and the game's complete scheduler are outside this test. Initial fixtu
 and exposed missing test-double fields/builtins and Python 2 method-identity semantics; these were corrected before
 the passing exact test. No full .NET regression suite was requested or run.
 
+After integrating main's coarse-simulation update at `41c569ba`, the same required restore/build/test/policy/format
+sequence passed in 57.42 seconds, with zero build warnings/errors. The filter above plus
+`|FullyQualifiedName~CapsuleerMaintenanceTests` passed **125 cases with no skips** (25 seconds reported test duration),
+including the high-density real-world Local/station membership check. Both Python suites and formatting passed again.
+
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** After updating the server and reopening the client, compare Local names/counts and
