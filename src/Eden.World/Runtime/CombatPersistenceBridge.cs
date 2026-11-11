@@ -64,6 +64,7 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
             "WorldCombatDamage",
             "WorldNpcAggression",
             "WorldDrone",
+            "WorldDroneCombatTriggers",
             "WorldArmorRepair",
             "WorldWeaponCooldown",
             "WorldShipEnergy",

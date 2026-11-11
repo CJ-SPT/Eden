@@ -121,6 +121,19 @@ internal sealed partial class ResidentEconomy
     private bool _loaded;
     internal bool IsLoaded => _loaded;
 
+    internal bool HasActiveAction => _transaction;
+
+    internal void PublishCombat(Eden.World.Runtime.Combat.CombatCheckpoint checkpoint)
+    {
+        if (!checkpoint.HasChanges)
+        {
+            return;
+        }
+        using var action = Begin(new(systems: _owner.CombatSystems(checkpoint)));
+        action.ImportCheckpoint(checkpoint);
+        action.Commit();
+    }
+
     internal void Warm()
     {
         using var action = Begin(TransactionParticipants.None);

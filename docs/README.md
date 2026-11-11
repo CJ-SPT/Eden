@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Resident detail retirement and drone publication](protocol/performance.md#resident-detail-retirement-and-drone-publication-november-11-2026)
+records SQL-free detail retirement, paid drone publication and preservation of other pending combat work.
+
 [Resident fatal NPC settlement and filtered lookups](protocol/performance.md#resident-fatal-npc-settlement-and-filtered-lookups-november-11-2026)
 records atomic kill rewards, retryable checkpoints and bounded resident pilot lookups.
 

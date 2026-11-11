@@ -31,6 +31,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Combat.SavedWeaponLink>().Where(child => child.MasterId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.SavedWeaponLink>().Where(child => child.SlaveId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.WorldPlayerEwar>().Where(child => child.ModuleId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Drones.WorldDrone>().Where(child => child.ItemId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Fittings.ActiveFittedModule>().Where(child => child.ModuleId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Propulsion.WorldTackle>().Where(child => child.ModuleId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.PendingLocalRepair>().Where(child => child.ModuleId == removed.Id));
@@ -85,6 +86,7 @@ internal sealed partial class EconomyTransaction
                 break;
             case Eden.Data.World.Capsuleers.SavedCapsuleerAgent removed:
                 RemoveRange(Set<Eden.Data.World.Capsuleers.SavedCapsuleerJob>().Where(child => child.PilotId == removed.PilotId));
+                RemoveRange(Set<Eden.Data.World.Capsuleers.SavedCapsuleerSuspension>().Where(child => child.PilotId == removed.PilotId));
                 break;
             case Eden.Data.World.Capsuleers.SavedCapsuleerPopulation removed:
                 RemoveRange(
@@ -116,6 +118,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Combat.ShipHealthState>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.WorldPlayerEwar>().Where(child => child.SourceShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Docking.FlightPosition>().Where(child => child.ShipId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Drones.WorldDroneCombatTriggers>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Fittings.ActiveFittedModule>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Fittings.ShipEnergy>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Propulsion.WorldTackle>().Where(child => child.SourceShipId == removed.Id));

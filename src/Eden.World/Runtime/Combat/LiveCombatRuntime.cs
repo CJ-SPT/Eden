@@ -525,6 +525,7 @@ internal sealed partial class LiveCombatRuntime(
             "WorldCombatDamage",
             "WorldNpcAggression",
             "WorldDrone",
+            "WorldDroneCombatTriggers",
         ];
         if (
             !read
@@ -658,9 +659,6 @@ internal sealed partial class LiveCombatRuntime(
                 case "WorldDroneCombatTriggers":
                     _droneCombatTriggers.Remove(change.Id);
                     break;
-                case "WorldDrone":
-                    _droneControllers = null;
-                    break;
                 case "schema":
                     _droneControllers = null;
                     Clear();
@@ -675,7 +673,7 @@ internal sealed partial class LiveCombatRuntime(
                     _acquisitions.Clear();
                     break;
                 case "WorldPosition":
-                    if (change.Resident)
+                    if (change.Resident || owner.Economy.IsLoaded)
                     {
                         ObserveEconomicPosition(change.Id);
                         break;
@@ -747,7 +745,31 @@ internal sealed partial class LiveCombatRuntime(
                 case "WorldNpcAggression":
                     _acquisitions.Clear();
                     _contactEpoch++;
-                    _aggressions = null;
+                    if (owner.Economy.IsLoaded)
+                    {
+                        if (_aggressions is not null && !_dirtyAggressions.Contains(change.Id))
+                        {
+                            if (owner.Economy.Peek<NpcAggression>(change.Id) is { } saved)
+                            {
+                                _aggressions[change.Id] = new(
+                                    saved.NpcId,
+                                    saved.TargetShipId,
+                                    saved.ReadyAt,
+                                    saved.MissileReadyAt,
+                                    saved.LastShotAt,
+                                    saved.LastTargetId
+                                );
+                            }
+                            else
+                            {
+                                _aggressions.Remove(change.Id);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        RefreshAggression();
+                    }
                     break;
                 case "WorldNpcEwar":
                     _contactEpoch++;
@@ -760,8 +782,22 @@ internal sealed partial class LiveCombatRuntime(
                     _contactEpoch++;
                     break;
                 case "WorldCombatDamage":
-                    _staleNpcs.UnionWith(_npcs.Keys);
-                    _staleShips.UnionWith(_ships.Keys);
+                    if (change.Resident)
+                    {
+                        if (_npcs.ContainsKey(change.Id) && !_dirtyNpcs.Contains(change.Id))
+                        {
+                            _staleNpcs.Add(change.Id);
+                        }
+                        if (_shipPilots.TryGetValue(change.Id, out long victim) && !_dirtyShips.Contains(victim))
+                        {
+                            _staleShips.Add(victim);
+                        }
+                    }
+                    else
+                    {
+                        _staleNpcs.UnionWith(_npcs.Keys);
+                        _staleShips.UnionWith(_ships.Keys);
+                    }
                     break;
             }
         }
@@ -774,6 +810,40 @@ internal sealed partial class LiveCombatRuntime(
             owner.ClearSystems();
         }
         Flush(retainPositions: retainPositions);
+        ResetDetails(retainPositions);
+    }
+
+    internal bool ClearResident(bool retainPositions)
+    {
+        if (owner.SqlConnections != 0 || owner.Economy.HasActiveAction)
+        {
+            return false;
+        }
+        var checkpoint = CaptureOwnCheckpoint(null);
+        if (checkpoint.HasChanges && !owner.Economy.IsLoaded)
+        {
+            return false;
+        }
+        PublishResident(checkpoint);
+        ResetDetails(retainPositions);
+        return true;
+    }
+
+    private void PublishResident(CombatCheckpoint checkpoint)
+    {
+        _internal++;
+        try
+        {
+            owner.Economy.PublishCombat(checkpoint);
+        }
+        finally
+        {
+            _internal--;
+        }
+    }
+
+    private void ResetDetails(bool retainPositions)
+    {
         ClearDrones();
         ClearDronePlayers();
         _droneCombatTriggers.Clear();

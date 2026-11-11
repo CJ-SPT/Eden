@@ -31,6 +31,10 @@ internal sealed partial class LiveCombatRuntime
         {
             value = Loading(() =>
             {
+                if (owner.SqlConnections == 0 && owner.Economy.IsLoaded)
+                {
+                    return owner.Economy.Inspect(world => DroneCombatPersistence.Read(world, shipId), new(ships: [shipId]));
+                }
                 using WorldDbContext world = new(database.Path);
                 return DroneCombatPersistence.Read(world, shipId);
             });

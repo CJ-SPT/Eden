@@ -28,6 +28,18 @@ internal sealed record CombatCheckpoint(
     IReadOnlyList<DroneCombatTriggers> DroneTriggers
 )
 {
+    internal bool HasChanges =>
+        Ships.Count
+            + Npcs.Count
+            + Positions.Count
+            + Drones.Count
+            + Aggressions.Count
+            + DroneTimers.Count
+            + DroneEngagements.Count
+            + DroneHostilities.Count
+            + DroneTriggers.Count
+        > 0;
+
     private const int PositionBatchSize = 128;
     private static readonly JsonSerializerOptions PositionOptions = new() { IgnoreReadOnlyProperties = true };
 

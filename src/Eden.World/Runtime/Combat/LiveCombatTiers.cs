@@ -13,7 +13,7 @@ internal sealed partial class LiveCombatRuntime
 
     private void TrimColdDetails()
     {
-        if (HasDetailedInteraction(owner.SimulationTime))
+        if (HasDetailedInteraction(owner.SimulationTime) || owner.Economy.HasActiveAction)
         {
             return;
         }
@@ -27,7 +27,14 @@ internal sealed partial class LiveCombatRuntime
         {
             return;
         }
-        Flush(new(systems: systems));
+        if (owner.Economy.IsLoaded && owner.SqlConnections == 0 && !owner.Economy.HasActiveAction)
+        {
+            PublishResident(CaptureOwnCheckpoint(new(systems: systems)));
+        }
+        else
+        {
+            Flush(new(systems: systems));
+        }
         var pilots = _ships.Values.Where(s => systems.Contains(s.SystemId)).Select(s => s.PilotId).ToHashSet();
         var ships = _shipPilots.Where(p => pilots.Contains(p.Value)).Select(p => p.Key).ToHashSet();
         foreach (long pilot in pilots)

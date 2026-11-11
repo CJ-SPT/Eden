@@ -51,19 +51,36 @@ internal sealed partial class EconomyTransaction
             var saved = Set<SavedShipHeat>().Find(ship) ?? Add(new SavedShipHeat { ShipId = ship }).Entity;
             saved.StateJson = ShipHeatPersistence.Encode(projection.State);
         }
-        if (_combat is null)
+        if (_combat is not null)
         {
-            return;
+            StageCombat(_combat);
         }
-        foreach (var change in _combat.Ships)
+    }
+
+    internal void ImportCheckpoint(CombatCheckpoint checkpoint)
+    {
+        if (_combat?.HasChanges == true)
+        {
+            throw new InvalidOperationException("The private action already imported participating combat.");
+        }
+        _combat = checkpoint;
+        StageCombat(checkpoint);
+    }
+
+    private void StageCombat(CombatCheckpoint checkpoint)
+    {
+        LiveCombatRuntime.ProjectDrones(this, checkpoint.Drones);
+        LiveCombatRuntime.ProjectDroneTriggers(this, checkpoint.DroneTriggers);
+        LiveCombatRuntime.ProjectDronePlayers(this, checkpoint.DroneTimers, checkpoint.DroneEngagements, checkpoint.DroneHostilities);
+        foreach (var change in checkpoint.Ships)
         {
             LiveCombatRuntime.ProjectShip(this, change.Before, change.After);
         }
-        foreach (var change in _combat.Npcs)
+        foreach (var change in checkpoint.Npcs)
         {
             LiveCombatRuntime.ProjectNpc(this, change.Before, change.After);
         }
-        foreach (var change in _combat.Aggressions)
+        foreach (var change in checkpoint.Aggressions)
         {
             var row =
                 Set<Eden.Data.World.Combat.NpcAggression>().Find(change.NpcId)
@@ -74,7 +91,7 @@ internal sealed partial class EconomyTransaction
             row.LastShotAt = change.LastShotAt;
             row.LastTargetId = change.LastTargetId;
         }
-        foreach (var position in _combat.Positions)
+        foreach (var position in checkpoint.Positions)
         {
             var row = Positions.Find(position.ShipId) ?? Add(new FlightPosition { ShipId = position.ShipId }).Entity;
             // Coordinates belong to movement; only an explicit travel command can

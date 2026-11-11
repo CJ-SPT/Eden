@@ -440,6 +440,24 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Capsuleers.SavedCapsuleerSuspension, EconomySavedCapsuleerSuspension>(
+                "WorldCapsuleerSuspension",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.StartedTicks),
+                state => new Eden.Data.World.Capsuleers.SavedCapsuleerSuspension
+                {
+                    PilotId = state.PilotId,
+                    StartedTicks = state.StartedTicks,
+                },
+                ProjectSavedCapsuleerSuspension,
+                "PilotId,StartedTicks",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Capsuleers.SavedTrafficCorrection, EconomySavedTrafficCorrection>(
                 "WorldTrafficCorrection",
                 row => new(row.PilotId),
@@ -1682,6 +1700,196 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Drones.WorldDrone, EconomyWorldDrone>(
+                "WorldDrone",
+                row => new(row.ItemId),
+                row =>
+                    new(
+                        row.ItemId,
+                        row.Activity,
+                        row.ArmorDamage,
+                        row.CommandedAt,
+                        row.ControllerShipId,
+                        row.CorporationId,
+                        row.DelegateFleetId,
+                        row.DelegateMembership,
+                        row.DelegatePilotId,
+                        row.DelegateShipId,
+                        row.DelegationMode,
+                        row.Orbiting,
+                        row.OwnerMembership,
+                        row.PilotId,
+                        row.ReactionRevision,
+                        row.ReadyAt,
+                        row.Shield,
+                        row.ShotAt,
+                        row.ShotTargetId,
+                        row.SpeedLimit,
+                        row.StructureDamage,
+                        row.SystemId,
+                        row.TargetId,
+                        row.UpdatedAt,
+                        row.VelocityX,
+                        row.VelocityY,
+                        row.VelocityZ,
+                        row.X,
+                        row.Y,
+                        row.Z
+                    ),
+                state => new Eden.Data.World.Drones.WorldDrone
+                {
+                    ItemId = state.ItemId,
+                    Activity = state.Activity,
+                    ArmorDamage = state.ArmorDamage,
+                    CommandedAt = state.CommandedAt,
+                    ControllerShipId = state.ControllerShipId,
+                    CorporationId = state.CorporationId,
+                    DelegateFleetId = state.DelegateFleetId,
+                    DelegateMembership = state.DelegateMembership,
+                    DelegatePilotId = state.DelegatePilotId,
+                    DelegateShipId = state.DelegateShipId,
+                    DelegationMode = state.DelegationMode,
+                    Orbiting = state.Orbiting,
+                    OwnerMembership = state.OwnerMembership,
+                    PilotId = state.PilotId,
+                    ReactionRevision = state.ReactionRevision,
+                    ReadyAt = state.ReadyAt,
+                    Shield = state.Shield,
+                    ShotAt = state.ShotAt,
+                    ShotTargetId = state.ShotTargetId,
+                    SpeedLimit = state.SpeedLimit,
+                    StructureDamage = state.StructureDamage,
+                    SystemId = state.SystemId,
+                    TargetId = state.TargetId,
+                    UpdatedAt = state.UpdatedAt,
+                    VelocityX = state.VelocityX,
+                    VelocityY = state.VelocityY,
+                    VelocityZ = state.VelocityZ,
+                    X = state.X,
+                    Y = state.Y,
+                    Z = state.Z,
+                },
+                ProjectWorldDrone,
+                "ItemId,Activity,ArmorDamage,CommandedAt,ControllerShipId,CorporationId,DelegateFleetId,"
+                    + "DelegateMembership,DelegatePilotId,DelegateShipId,DelegationMode,Orbiting,OwnerMembership,PilotId,"
+                    + "ReactionRevision,ReadyAt,Shield,ShotAt,ShotTargetId,SpeedLimit,StructureDamage,SystemId,TargetId,"
+                    + "UpdatedAt,VelocityX,VelocityY,VelocityZ,X,Y,Z",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        (Eden.Gameplay.Drones.DroneActivity)reader.GetInt32(2),
+                        reader.GetDouble(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetInt32(6),
+                        reader.GetInt64(7),
+                        reader.GetInt64(8),
+                        reader.GetInt64(9),
+                        reader.GetInt64(10),
+                        (Eden.Gameplay.Drones.DroneDelegationMode)reader.GetInt32(11),
+                        reader.GetBoolean(12),
+                        reader.GetInt64(13),
+                        reader.GetInt64(14),
+                        reader.GetInt64(15),
+                        reader.GetInt64(16),
+                        reader.GetDouble(17),
+                        reader.GetInt64(18),
+                        reader.GetInt64(19),
+                        reader.GetFloat(20),
+                        reader.GetDouble(21),
+                        reader.IsDBNull(22) ? null : reader.GetInt32(22),
+                        reader.GetInt64(23),
+                        reader.GetInt64(24),
+                        reader.GetDouble(25),
+                        reader.GetDouble(26),
+                        reader.GetDouble(27),
+                        reader.GetDouble(28),
+                        reader.GetDouble(29),
+                        reader.GetDouble(30)
+                    ),
+                state => new(state.ItemId),
+                indexes:
+                [
+                    new("ItemId", row => row.ItemId),
+                    new("ControllerShipId", row => row.ControllerShipId),
+                    new("CorporationId", row => row.CorporationId),
+                    new("DelegateFleetId", row => row.DelegateFleetId),
+                    new("DelegatePilotId", row => row.DelegatePilotId),
+                    new("DelegateShipId", row => row.DelegateShipId),
+                    new("PilotId", row => row.PilotId),
+                    new("ShotTargetId", row => row.ShotTargetId),
+                    new("SystemId", row => row.SystemId),
+                    new("TargetId", row => row.TargetId),
+                ],
+                primaryColumn: "ItemId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Drones.WorldDroneCombatTriggers, EconomyWorldDroneCombatTriggers>(
+                "WorldDroneCombatTriggers",
+                row => new(row.ShipId),
+                row =>
+                    new(
+                        row.ShipId,
+                        row.IncomingAt,
+                        row.IncomingRevision,
+                        row.IncomingSourceId,
+                        row.OffensiveAt,
+                        row.OffensiveRevision,
+                        row.OffensiveTargetId
+                    ),
+                state => new Eden.Data.World.Drones.WorldDroneCombatTriggers
+                {
+                    ShipId = state.ShipId,
+                    IncomingAt = state.IncomingAt,
+                    IncomingRevision = state.IncomingRevision,
+                    IncomingSourceId = state.IncomingSourceId,
+                    OffensiveAt = state.OffensiveAt,
+                    OffensiveRevision = state.OffensiveRevision,
+                    OffensiveTargetId = state.OffensiveTargetId,
+                },
+                ProjectWorldDroneCombatTriggers,
+                "ShipId,IncomingAt,IncomingRevision,IncomingSourceId,OffensiveAt,OffensiveRevision,OffensiveTargetId",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        reader.GetInt64(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetInt64(6),
+                        reader.GetInt64(7)
+                    ),
+                state => new(state.ShipId),
+                indexes:
+                [
+                    new("ShipId", row => row.ShipId),
+                    new("IncomingSourceId", row => row.IncomingSourceId),
+                    new("OffensiveTargetId", row => row.OffensiveTargetId),
+                ],
+                primaryColumn: "ShipId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Drones.WorldDroneSettings, EconomyWorldDroneSettings>(
+                "WorldDroneSettings",
+                row => new(row.PilotId),
+                row => new(row.PilotId, row.Aggressive, row.FocusFire),
+                state => new Eden.Data.World.Drones.WorldDroneSettings
+                {
+                    PilotId = state.PilotId,
+                    Aggressive = state.Aggressive,
+                    FocusFire = state.FocusFire,
+                },
+                ProjectWorldDroneSettings,
+                "PilotId,Aggressive,FocusFire",
+                reader => new(reader.GetInt64(1), reader.GetBoolean(2), reader.GetBoolean(3)),
+                state => new(state.PilotId),
+                indexes: [new("PilotId", row => row.PilotId)],
+                primaryColumn: "PilotId"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Economy.SavedBeltRenewal, EconomySavedBeltRenewal>(
                 "WorldBeltRenewal",
                 row => new(row.BeltId),
@@ -2787,6 +2995,13 @@ internal sealed partial class EconomyTransaction
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerPopulation>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerProvisioning>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerSupplies>()) { }
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerSuspension>())
+        {
+            if (Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident SavedCapsuleerAgent reference.");
+            }
+        }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedTrafficCorrection>()) { }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedTrafficIdentity>())
         {
@@ -3099,6 +3314,36 @@ internal sealed partial class EconomyTransaction
             }
         }
         foreach (var row in Retained<Eden.Data.World.Corporations.SavedWalletLedger>()) { }
+        foreach (var row in Retained<Eden.Data.World.Drones.WorldDrone>())
+        {
+            if (
+                !double.IsFinite(row.ArmorDamage)
+                || !double.IsFinite(row.Shield)
+                || !float.IsFinite(row.SpeedLimit)
+                || !double.IsFinite(row.StructureDamage)
+                || !double.IsFinite(row.VelocityX)
+                || !double.IsFinite(row.VelocityY)
+                || !double.IsFinite(row.VelocityZ)
+                || !double.IsFinite(row.X)
+                || !double.IsFinite(row.Y)
+                || !double.IsFinite(row.Z)
+            )
+            {
+                throw new InvalidDataException("Invalid resident WorldDrone values.");
+            }
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ItemId) is null)
+            {
+                throw new InvalidDataException("Missing resident OwnedItem reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Drones.WorldDroneCombatTriggers>())
+        {
+            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            {
+                throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Drones.WorldDroneSettings>()) { }
         foreach (var row in Retained<Eden.Data.World.Economy.SavedBeltRenewal>()) { }
         foreach (var row in Retained<Eden.Data.World.Economy.SavedEconomicPolicy>()) { }
         foreach (var row in Retained<Eden.Data.World.Exploration.WorldAnomalyMember>()) { }

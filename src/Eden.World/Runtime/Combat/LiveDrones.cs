@@ -57,6 +57,10 @@ internal sealed partial class LiveCombatRuntime
         {
             var rows = Loading(() =>
             {
+                if (owner.SqlConnections == 0)
+                {
+                    return owner.Economy.Read(world => LoadDrones(world, system), new(systems: [system]));
+                }
                 using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
                 return world
@@ -92,6 +96,10 @@ internal sealed partial class LiveCombatRuntime
         {
             inputs = Loading(() =>
             {
+                if (owner.SqlConnections == 0)
+                {
+                    return owner.Economy.Read(world => ReadDroneInputs(world, pilotId, drones), new(pilots: [pilotId]));
+                }
                 using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
                 var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
@@ -157,6 +165,17 @@ internal sealed partial class LiveCombatRuntime
         {
             systems = Loading(() =>
             {
+                if (owner.SqlConnections == 0)
+                {
+                    return owner.Economy.Inspect(world =>
+                        world
+                            .Set<WorldDrone>()
+                            .Where(d => d.PilotId == pilotId && d.ControllerShipId != 0 && d.SystemId != null)
+                            .Select(d => d.SystemId!.Value)
+                            .Distinct()
+                            .ToArray()
+                    );
+                }
                 using WorldDbContext world = new(database.Path);
                 return world
                     .Set<WorldDrone>()
@@ -551,8 +570,21 @@ internal sealed partial class LiveCombatRuntime
 
     private void ObserveDrones(IReadOnlyCollection<CombatRowChange> changes)
     {
+        HashSet<long> updated = [];
         foreach (var change in changes)
         {
+            var committed = change.Resident && change.Table == "WorldDrone" ? owner.Economy.Peek<WorldDrone>(change.Id) : null;
+            var existing = _liveDrones.GetValueOrDefault(change.Id);
+            bool sameMembership =
+                committed is not null
+                && existing is not null
+                && committed.PilotId == existing.Contact.PilotId
+                && committed.ControllerShipId == existing.Contact.ShipId
+                && committed.SystemId == existing.Contact.SystemId;
+            if (change.Table == "WorldDrone" && !sameMembership)
+            {
+                _droneControllers = null;
+            }
             if (change.Table is "WorldPilot" or "WorldFitRevision" or "WorldDroneSettings")
             {
                 _dronePilots.Remove(change.Id);
@@ -571,6 +603,15 @@ internal sealed partial class LiveCombatRuntime
                 .ToArray();
             foreach (var drone in affected)
             {
+                if (sameMembership && committed is { } saved)
+                {
+                    if (!_dirtyDrones.Contains(drone.Contact.Id))
+                    {
+                        _liveDrones[drone.Contact.Id] = CommittedDrone(drone, saved);
+                    }
+                    updated.Add(drone.Contact.Id);
+                    continue;
+                }
                 _droneSystems.Remove(drone.Contact.SystemId);
                 _dronePilotSystems.Remove(drone.Contact.PilotId);
                 _dronePilots.Remove(drone.Contact.PilotId);
@@ -581,9 +622,24 @@ internal sealed partial class LiveCombatRuntime
                 }
             }
         }
-        var ids = changes.Where(c => c.Table == "WorldDrone").Select(c => c.Id).ToArray();
+        var ids = changes.Where(c => c.Table == "WorldDrone" && !updated.Contains(c.Id)).Select(c => c.Id).ToArray();
         if (ids.Length > 0)
         {
+            if (owner.Economy.IsLoaded && changes.Any(c => c.Table == "WorldDrone" && c.Resident))
+            {
+                foreach (long id in ids)
+                {
+                    if (owner.Economy.Peek<WorldDrone>(id) is { } drone)
+                    {
+                        _dronePilotSystems.Remove(drone.PilotId);
+                        if (drone.SystemId is int system)
+                        {
+                            _droneSystems.Remove(system);
+                        }
+                    }
+                }
+                return;
+            }
             Loading(() =>
             {
                 using WorldDbContext world = new(database.Path) { IsResidentProjection = true };

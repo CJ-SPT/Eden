@@ -2767,3 +2767,56 @@ Not performed; agent client testing is disabled.
 
 Repeat the reported installed-save trade/collection workload after rebuilding this revision, comparing owner hold
 time, SQL commands/connections and allocation. This is required to establish the live improvement.
+
+## Resident detail retirement and drone publication (November 11, 2026)
+
+System demotion now publishes its captured dirty combat generation into the canonical resident image before
+releasing detailed objects. Eligible shared-owner detail trimming follows the same path. Rejection keeps the
+original dirty records; active interaction, unfinished missiles and speculative economic actions still prevent
+unsafe eviction. Compact movement coordinates remain immediately visible and join the next detached checkpoint.
+
+Resident publication now covers drone position, velocity, health, control/delegation, paid shot deadlines, offensive
+and incoming trigger revisions, and player timers, engagement and hostility records. Acknowledgement compares each
+captured immutable record with its current owner. Drone hydration, controller membership, qualifications and trigger
+reads use typed resident views. Unchanged control membership retains its fitted profile and inputs when publishing
+motion/health, avoiding fit reconstruction and a global controller rebuild on the next tick.
+
+Scoped publication also preserves other pending aggression entries and invalidates contribution inputs by victim.
+The two-NPC regression reproduced a checkpoint capture failure when publishing one NPC cleared the pending map for
+a different dirty NPC; it now retains both the other shot's payment and aggression. Committed coordinate changes
+refresh cached ship positions directly from the canonical image for both resident and SQL compatibility commands.
+The existing delegated attack range regression verifies the updated position on the following shot.
+
+The gameplay reference is [Drones](https://wiki.eveuniversity.org/Drones). Existing pinned profiles, control limits,
+range checks, aggression decisions, motion and damage calculations remain unchanged.
+
+### Automated validation
+
+Development began with exact motion-demotion, paid-drone publication, scoped-NPC publication, delegated-range and
+trigger-revision method filters. Tests assert zero SQL commands/connections and zero fit calculations for warmed
+handoff and paid-drone publication plus the following tick. Invalid private coordinates reject the complete image
+without clearing dirty work. Reopened checkpoints preserve coordinates, damage, ammunition, aggression and paid
+state. The closing filter is recorded in `artifacts/bot-resident-handoff/closing-filter.txt`.
+
+Tool and solution restore passed. The solution build passed with zero warnings/errors in **5.69 s**. Closing
+validation passed **475 affected tests / 254.27 s** including runner overhead. Catalog policy passed **8 tests /
+0.979 s**; formatting policy passed **9 tests / 0.014 s**. Formatting verification checked **1,901 files / 3.366 s**
+and the 140-column limit. Reports are under `artifacts/bot-resident-handoff/validated`. No full .NET suite was run.
+
+An earlier selection was deliberately stopped after one failure and 66 passes and is incomplete. It exposed a
+missing trigger-table compatibility synchronization check. A subsequent 379-case selection had 378 passes and
+exposed the delegated-range stale-position issue; the new two-NPC test independently reproduced the discarded
+aggression-map failure. The corrected cases passed targeted checks before the complete closing selection above.
+
+This removes a recurring SQL projection from remote detail retirement. Background preparation/admission, scheduler
+metadata and several initial combat/effect/destruction operations still retain SQL paths. The installed-world log
+has not been replayed on this revision; no live latency or supported-population improvement is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Repeat the reported installed-save trade/collection workload after rebuilding this revision; compare action and
+owner hold time, allocation and SQL command/connection counts.

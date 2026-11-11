@@ -13,9 +13,22 @@ internal sealed partial class LiveCombatRuntime
 {
     private ResidentMap<long, long>? _droneControllers;
 
+    private sealed record DroneController(long ControllerShipId, long PilotId);
+
     private ResidentMap<long, long> DroneControllers() =>
         _droneControllers ??= Loading(() =>
         {
+            if (owner.SqlConnections == 0 && owner.Economy.IsLoaded)
+            {
+                return owner.Economy.Inspect(world =>
+                    world
+                        .Set<WorldDrone>()
+                        .Where(d => d.ControllerShipId != 0 && d.SystemId != null && (systemId == null || d.SystemId == systemId))
+                        .Select(d => new DroneController(d.ControllerShipId, d.PilotId))
+                        .Distinct()
+                        .ToDictionary(d => d.ControllerShipId, d => d.PilotId)
+                );
+            }
             using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
             return world
                 .Set<WorldDrone>()

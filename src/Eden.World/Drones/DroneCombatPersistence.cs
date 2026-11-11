@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Drones;
 
-internal static class DroneCombatPersistence
+internal static partial class DroneCombatPersistence
 {
     internal static DroneCombatTriggers Read(WorldDbContext world, long shipId) =>
         world.Set<WorldDroneCombatTriggers>().Find(shipId) is { } saved ? Read(saved) : DroneCombatTriggers.Empty(shipId);

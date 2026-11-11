@@ -26,6 +26,10 @@ internal sealed partial class LiveWorld
         }
         bool LoadMissiles()
         {
+            if (Economy.IsLoaded)
+            {
+                return Economy.Inspect(world => world.Set<WorldMissile>().Any(m => m.SystemId == system && m.EndedAt == null));
+            }
             using WorldDbContext world = new(_path) { IsResidentProjection = true };
             return world.Set<WorldMissile>().Any(m => m.SystemId == system && m.EndedAt == null);
         }
@@ -33,11 +37,12 @@ internal sealed partial class LiveWorld
         {
             return false;
         }
-        // Projection is a transaction boundary. A failed projection leaves the dirty
-        // records resident and prevents eviction; the next handoff can retry it.
-        // Compact positions remain resident after detail eviction, retaining their
-        // dirty SQL difference for future transactions and detached checkpoints.
-        entry.State.Combat?.Clear(retainPositions: true);
+        // Publish the detailed generation into the canonical image before eviction.
+        // Rejection leaves every dirty record intact for a later retry.
+        if (entry.State.Combat?.ClearResident(retainPositions: true) == false)
+        {
+            return false;
+        }
         entry.State.Reads?.Clear();
         return true;
     }
