@@ -715,7 +715,11 @@ with `EDEN_TEST_CLIENT_ROOT=E:\EdenDev\3662168` and `xUnit.MaxParallelThreads=4`
 **3 minutes 34 seconds** runner duration. Tool/solution restores, solution build (zero warnings/errors),
 both Python suites (**8 catalog**, **9 formatting**), formatting verification (**1,678 files**),
 140-character coverage, documentation link/anchor verification and diff checks passed. The complete required
-sequence took **252.14 seconds**. No full .NET suite was requested or run.
+sequence took **252.14 seconds**. After integrating concurrent main commit `5f3e6ce2` (which changes mining
+persistence), an additional solution build and focused integration filter
+`FullyQualifiedName~FreePointClientTests|FullyQualifiedName~FreeSkillPointServiceTests|FullyQualifiedName~NpcSkillPointRewardTests|FullyQualifiedName~MiningSkillPointRewardTests|FullyQualifiedName~ConcordOverviewTests|FullyQualifiedName~PilotLoginTests`
+passed **78 tests**, zero skipped, in **33 seconds** runner duration (**48.46 seconds** including build and
+diff verification). No full .NET suite was requested or run.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
