@@ -17,6 +17,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -56,11 +57,14 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
         bool overloaded
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(
+            database,
+            select: world => TackleParticipants(world, pilotId, module: moduleId, target: target)
+        );
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
         int group = item is null ? 0 : catalog.RequireItem(item.TypeId).GroupId;
         bool core = effect == DogmaEffect.WarpCoreStabilizer;
@@ -80,22 +84,25 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
-        var calculation = FittingCalculation.Read(
-            world,
-            catalog,
-            pilot,
-            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
-        );
-        var module = TackleDefinitions.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
-        if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
-        {
-            throw new InvalidDataException("A destroyed ship cannot activate tackle equipment.");
-        }
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown is not null && cooldown.ReadyAt > now)
         {
             throw new InvalidDataException("The module is still cycling or waiting for reactivation.");
+        }
+        bool cached = !overloaded && world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId)) is not null;
+        var calculation = cached
+            ? null
+            : FittingCalculation.Read(world, catalog, pilot, overloadedModules: overloaded ? new HashSet<long> { moduleId } : null);
+        var module = TackleDefinitions.Define(
+            item.Id,
+            item.TypeId,
+            effect,
+            PilotFittingStore.ReadModuleAttributes(world, catalog, pilotId, PilotInventoryStore.Read(catalog, item), calculation)
+        );
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
+        if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
+        {
+            throw new InvalidDataException("A destroyed ship cannot activate tackle equipment.");
         }
         int system = System(catalog, pilot.ActiveShip);
         WorldNpc? npc = null;
@@ -134,10 +141,7 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
             }
             else
             {
-                var victim = world
-                    .Pilots.Include(p => p.ActiveShip)
-                        .ThenInclude(s => s.Position)
-                    .SingleOrDefault(p => p.ActiveShipId == target.Id);
+                var victim = world.Pilots.SingleOrDefault(p => p.ActiveShipId == target.Id);
                 if (
                     victim?.ActiveShip.Position is not { } saved
                     || System(catalog, victim.ActiveShip) != system
@@ -211,7 +215,7 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = checked(expires + (long)Math.Ceiling(module.ReactivationMilliseconds * TimeSpan.TicksPerMillisecond));
-        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, expires) : null;
+        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation!, moduleId, now, expires) : null;
         world.SaveChanges();
         transaction.Commit();
         if (heat is not null)
@@ -231,12 +235,12 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
         {
             return;
         }
-        using WorldDbContext world = new(database.Path);
+        using WorldActionScope transaction = new(database, select: world => TackleParticipants(world, all: true));
+        var world = transaction.World;
         if (!world.Set<WorldTackle>().Any() && !world.Set<ActiveFittedModule>().Any())
         {
             return;
         }
-        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         foreach (var active in world.Set<ActiveFittedModule>().ToArray())
         {
@@ -251,14 +255,15 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
                 .GetValueOrDefault(DogmaAttributeId.ModuleReactivationDelay);
             // Core strength ends with its paid cycle, independently of when the
             // owning connection next advances. Its reactivation deadline remains.
-            if (cooldown is null || cooldown.ReadyAt - delay * TimeSpan.TicksPerMillisecond <= now)
+            long delayTicks = (long)Math.Ceiling(delay * TimeSpan.TicksPerMillisecond);
+            if (cooldown is null || checked(cooldown.ReadyAt - delayTicks) <= now)
             {
                 world.Remove(active);
             }
         }
         foreach (var row in world.Set<WorldTackle>().ToArray())
         {
-            var source = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == row.PilotId);
+            var source = world.Pilots.Single(p => p.Id == row.PilotId);
             var item = world.Set<OwnedItem>().Find(row.ModuleId);
             // A connection owns each remote cycle. Its controller atomically
             // renews the paid row or stops it. Another connection must not
@@ -280,10 +285,7 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
             }
             else if (valid)
             {
-                var target = world
-                    .Pilots.Include(p => p.ActiveShip)
-                        .ThenInclude(s => s.Position)
-                    .SingleOrDefault(p => p.ActiveShipId == row.TargetId);
+                var target = world.Pilots.SingleOrDefault(p => p.ActiveShipId == row.TargetId);
                 valid =
                     target?.ActiveShip.Position is not null
                     && System(catalog, target.ActiveShip) == row.SystemId
@@ -330,8 +332,7 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
 
     private IReadOnlyList<NpcEwarContact> ReadNpcEwar(long shipId)
     {
-        using WorldDbContext world = new(database.Path);
-        return NpcEwarStore.Active(world, shipId);
+        return WorldActionScope.Inspect(database, world => NpcEwarStore.Active(world, shipId));
     }
 
     private IReadOnlyList<TackleEffect> PlayerIncoming(long shipId)
@@ -340,27 +341,32 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
         {
             return resident.Incoming(shipId);
         }
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<WorldTackle>()
-            .Where(t => t.TargetId == shipId && t.TargetKind == TackleTargetKind.Ship)
-            .OrderBy(t => t.ModuleId)
-            .AsEnumerable()
-            .Select(t => t.Contact())
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Set<WorldTackle>()
+                    .Where(t => t.TargetId == shipId && t.TargetKind == TackleTargetKind.Ship)
+                    .OrderBy(t => t.ModuleId)
+                    .AsEnumerable()
+                    .Select(t => t.Contact())
+                    .ToArray()
+        );
     }
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var result = PilotFittingStore.ShipAttributes(transaction.World, catalog, pilotId);
+        transaction.Commit();
+        return result;
     }
 
     public void Stop(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => TackleParticipants(world, pilotId, shipId, moduleId));
+        var world = transaction.World;
         if (
             world.Set<WorldTackle>().SingleOrDefault(t => t.ModuleId == moduleId && t.PilotId == pilotId && t.SourceShipId == shipId) is
             { } row
@@ -370,7 +376,7 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
         }
         if (world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
         {
-            world.Set<ActiveFittedModule>().Where(m => m.ModuleId == moduleId && m.ShipId == shipId).ExecuteDelete();
+            world.RemoveRange(world.Set<ActiveFittedModule>().Where(m => m.ModuleId == moduleId && m.ShipId == shipId));
         }
         world.SaveChanges();
         transaction.Commit();
@@ -378,8 +384,8 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
 
     public void Cancel(long pilotId, long shipId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => TackleParticipants(world, pilotId, shipId, incoming: true));
+        var world = transaction.World;
         var rows = world
             .Set<WorldTackle>()
             .Where(t => t.PilotId == pilotId && t.SourceShipId == shipId || t.TargetKind == TackleTargetKind.Ship && t.TargetId == shipId)
@@ -395,8 +401,8 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
 
     public void Disconnect(long pilotId, long shipId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => TackleParticipants(world, pilotId, shipId));
+        var world = transaction.World;
         long now = Now;
         foreach (var row in world.Set<WorldTackle>().Where(t => t.PilotId == pilotId && t.SourceShipId == shipId).ToArray())
         {
@@ -408,7 +414,7 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    private static void Remove(WorldDbContext world, WorldTackle row, long now)
+    private static void Remove(WorldAction world, WorldTackle row, long now)
     {
         ShipHeatPersistence.CancelSource(
             world,

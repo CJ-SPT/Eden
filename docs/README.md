@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Resident tackle transactions and core deadlines](protocol/performance.md#resident-tackle-transactions-and-core-deadlines-november-11-2026)
+records atomic paid repeats, cleanup, exact core expiry and retryable heat/effect checkpoints.
+
 [Resident player electronic warfare](protocol/performance.md#resident-player-electronic-warfare-november-11-2026)
 records paid contact replacement, bounded participants, cleanup and coherent heat/effect saves.
 

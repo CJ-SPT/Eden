@@ -3289,3 +3289,47 @@ Not performed; agent client testing is disabled.
 
 After rebuilding, compare the reported workload with repeated electronic-warfare cycles and cancellation; measure
 owner hold time, SQL, fitting calculations and allocation separately from checkpoint work.
+
+## Resident tackle transactions and core deadlines (November 11, 2026)
+
+Tackle activation, sweep, stop, travel cancellation and disconnect now use resident actions. Participant discovery
+includes the actor, previous source/target endpoints, saved systems, newly selected target and active core hulls.
+Capacitor, contact, hostility/crimewatch, cooldown and paid heat publish together. Incoming effects and cold ship
+attributes use canonical reads, with normal activation sharing cached module/ship inputs and one calculation for
+cold or overloaded inputs. Rejected cooldowns are checked before constructing a fit.
+
+Core strength expires at its paid boundary, independently of the retained reactivation deadline. The deadline
+comparison now subtracts integer ticks; the previous floating-point comparison could expire strength a tick early
+at modern file-time magnitudes. Source-controlled remote repeats retain their existing ownership semantics.
+Reference: [EVE University tackling](https://wiki.eveuniversity.org/Tackling) and
+[warp core strength](https://wiki.eveuniversity.org/Warp_core_strength), reconciled with the pinned catalog fixtures.
+
+### Automated validation
+
+The exact resident lifecycle regression failed on SQL against `ad5ab94f` and passed after conversion. Expanded
+coverage checks web, scrambler and disruptor paid repeats, rejected duplicate payments, sweep, cancellation and
+reopened checkpoints with zero SQL commands, connections and fitting calculations after warm-up.
+
+Development boundary selections each finished with **9 passes / 1 failure**: the first exposed early core expiry,
+and the second confirmed an unnecessary fit on the rejected reactivation. Both were corrected; the exact core
+boundary regression then passed in **6.04 seconds**. It retains core strength one tick before expiry, removes it at
+the deadline and reopens both captured generations with the paid cooldown intact.
+
+SQL heat insertion/removal rejection checks remain covered through the offline adapter. Detached save failure and
+retry now cover both tackle and propulsion, retaining the complete paid or stopped generation and coherent heat.
+
+All **357 affected tackle, propulsion, mobility-heat, combat, bot-defense, ownership and checkpoint tests passed
+in 2m42s**. The solution build passed without warnings in **5.68 seconds**. Tool/solution restore, both Python
+policy suites (8 catalog and 9 formatting checks), formatting verification (1,944 files) and line-width checks passed.
+
+Closing filters/results are recorded under `artifacts/bot-resident-tackle`. No full .NET suite was run. Other remote-effect mutations, missile launch/advancement, pilot loss, burnout and population maintenance
+still retain SQL paths. The installed-world workload has not been replayed; no live latency or population gain is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After rebuilding, compare the reported workload with repeated tackle cycles and cancellation; measure owner hold
+time, SQL, fitting calculations and allocation separately from checkpoint work.
