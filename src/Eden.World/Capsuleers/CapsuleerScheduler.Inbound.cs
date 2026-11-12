@@ -1,4 +1,5 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.World.Catalog;
 using Eden.World.Configuration;
 
 namespace Eden.World.Capsuleers;
@@ -6,105 +7,80 @@ namespace Eden.World.Capsuleers;
 internal sealed partial class CapsuleerScheduler
 {
     private readonly WorldConfigurationSlot _populationSettings = WorldConfigurationSlot.For(database.Path);
-    private readonly Dictionary<long, long> _inboundLanes = [];
-    private readonly HashSet<(long Gate, bool BothSystemsObserved)> _deferredInbound = [];
-    private readonly HashSet<long> _travelers = [];
+    private readonly HashSet<long> _preparedInbound = [];
+    private readonly Dictionary<long, InboundPreparation> _inboundPreparation = [];
 
     internal sealed record InboundPreparation(WatchedTrafficGate Gate, bool BothObserved, int Visitor = 0);
-
-    private readonly Dictionary<long, InboundPreparation> _inboundPreparation = [];
 
     internal InboundPreparation? NextInboundPreparation()
     {
         using var owner = synchronization.Enter("inbound preparation request");
-        return _inboundPreparation.Values.FirstOrDefault();
+        var occupied = presence.Read().ActiveSystems;
+        return _inboundPreparation.Values.FirstOrDefault(request =>
+            occupied.Contains(request.Gate.SourceSystemId) && occupied.Contains(request.Gate.ObserverSystemId)
+        );
     }
 
     internal void InboundPrepared(InboundPreparation request, long? pilot)
     {
         using var owner = synchronization.Enter("inbound preparation publication");
-        _membershipDirty = true;
-        long key = Math.Min(request.Gate.ArrivalGateId, request.Gate.DepartureGateId);
-        if (pilot is long committed)
+        long key = GateKey(request.Gate);
+        if (_inboundPreparation.GetValueOrDefault(key) != request)
         {
-            Load(preparedPilot: committed);
-            AdmitTraveler(committed);
-            _travelers.Add(committed);
+            return;
         }
-        if (pilot is not null && request.Visitor + 1 < _populationSettings.Settings.Capsuleers.GateVisitors)
+        if (pilot is long committed && presence.Read().ActiveSystems.Contains(request.Gate.SourceSystemId))
         {
-            _inboundPreparation[key] = request with { Visitor = request.Visitor + 1 };
-        }
-        else
-        {
-            _inboundPreparation.Remove(key);
-            if (pilot is long last)
+            Load(request.Gate.SourceSystemId, committed);
+            if (request.Visitor + 1 < _populationSettings.Settings.Capsuleers.GateVisitors)
             {
-                _inboundLanes[key] = last;
-            }
-            else
-            {
-                _deferredInbound.Add((key, request.BothObserved));
+                _inboundPreparation[key] = request with { Visitor = request.Visitor + 1 };
+                presence.Wake();
+                return;
             }
         }
+        _inboundPreparation.Remove(key);
+        _preparedInbound.Add(key);
         presence.Wake();
     }
 
-    private HashSet<long> ReconcileInbound(HumanActivitySnapshot activity, IReadOnlyList<WatchedTrafficGate> gates)
+    private void ReconcileInbound(IReadOnlyList<WatchedTrafficGate> gates)
     {
-        var policy = _populationSettings.Settings.Capsuleers;
+        foreach (long key in _inboundPreparation.Keys.Except(gates.Select(GateKey)).ToArray())
+        {
+            _inboundPreparation.Remove(key);
+        }
         foreach (var gate in gates)
         {
-            long key = Math.Min(gate.ArrivalGateId, gate.DepartureGateId);
-            bool bothObserved = activity.ActiveSystems.Contains(gate.SourceSystemId);
-            if (_inboundLanes.ContainsKey(key) || _deferredInbound.Contains((key, bothObserved)))
+            long key = GateKey(gate);
+            if (_preparedInbound.Contains(key))
             {
                 continue;
             }
             if (Live is not null)
             {
-                if (_inboundPreparation.TryAdd(key, new(gate, bothObserved)))
+                if (_inboundPreparation.TryAdd(key, new(gate, BothObserved: true)))
                 {
                     presence.RequestPreparation();
                 }
                 continue;
             }
-            long? lastPilot = null;
-            for (int visitor = 0; visitor < policy.GateVisitors; visitor++)
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            if (CapsuleerTrafficRoutes.Inbound(catalog, gate, sourceObserved: true)?.Systems[0] == gate.SourceSystemId)
             {
-                var prepared = new CapsuleerProvisioner(database, clock).EnsureInbound(gate, bothObserved, visitor);
-                if (prepared is not long pilot)
+                using CapsuleerProvisioner provisioner = new(database, clock);
+                for (int visitor = 0; visitor < _populationSettings.Settings.Capsuleers.GateVisitors; visitor++)
                 {
-                    _deferredInbound.Add((key, bothObserved));
-                    break;
+                    if (provisioner.EnsureInbound(gate, sourceObserved: true, visitor: visitor) is not long pilot)
+                    {
+                        break;
+                    }
+                    Load(gate.SourceSystemId, pilot);
                 }
-                if (!_haulers.ContainsKey(pilot))
-                {
-                    Load(preparedPilot: pilot);
-                }
-                _travelers.Add(pilot);
-                lastPilot = pilot;
             }
-            if (lastPilot is { } preparedPilot)
-            {
-                _inboundLanes[key] = preparedPilot;
-            }
+            _preparedInbound.Add(key);
         }
-        // Gate watches introduce bounded station journeys. Existing journeys keep their
-        // direction and deadlines independently of which side is subsequently watched.
-        return _travelers
-            .Where(pilot =>
-                !_suspended.Contains(pilot)
-                && (
-                    activity.ActiveSystems.Contains(_locations[pilot])
-                    || (_admittedTravelers.Contains(pilot) || _remoteSystems.Contains(_communities.GetValueOrDefault(pilot)))
-                        && gates.Any(gate =>
-                            gate.SourceSystemId == _locations[pilot]
-                            && _routes.GetValueOrDefault(pilot)?.Contains(gate.ObserverSystemId) == true
-                        )
-                    || _haulers[pilot].RequiresDetail
-                )
-            )
-            .ToHashSet();
     }
+
+    private static long GateKey(WatchedTrafficGate gate) => Math.Min(gate.ArrivalGateId, gate.DepartureGateId);
 }

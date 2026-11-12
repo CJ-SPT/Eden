@@ -8,25 +8,7 @@ public enum SystemSimulationMode
     Deactivating,
 }
 
-public enum SystemSimulationTier
-{
-    Uncreated,
-    RemoteScheduled,
-    Detailed,
-    Coarse,
-}
-
-public sealed record SystemSimulationState(int SystemId, SystemSimulationMode Mode, long Generation, long SettledTicks)
-{
-    public bool Scheduled { get; init; } = true;
-    public bool Pinned { get; init; }
-    public bool Coarse { get; init; }
-    public SystemSimulationTier Tier =>
-        Pinned || Mode is SystemSimulationMode.Active or SystemSimulationMode.Activating ? SystemSimulationTier.Detailed
-        : Coarse ? SystemSimulationTier.Coarse
-        : Scheduled ? SystemSimulationTier.RemoteScheduled
-        : SystemSimulationTier.Uncreated;
-}
+public sealed record SystemSimulationState(int SystemId, SystemSimulationMode Mode, long Generation, long SettledTicks);
 
 // Modes describe observers, never a second copy of a pilot or its paid work.
 // The registry is owned by the same coordinator as the authoritative job queue.
@@ -37,14 +19,10 @@ public sealed class SystemSimulationRegistry
     private long _settledTicks;
     public int Count => _systems.Count;
 
-    public void Register(int systemId, bool scheduled = true)
+    public void Register(int systemId)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(systemId);
-        _systems.TryAdd(systemId, new(systemId, SystemSimulationMode.Background, 0, 0) { Scheduled = scheduled });
-        if (scheduled)
-        {
-            _systems[systemId] = _systems[systemId] with { Scheduled = true };
-        }
+        _systems.TryAdd(systemId, new(systemId, SystemSimulationMode.Background, 0, 0));
     }
 
     public IReadOnlyList<SystemSimulationState> Read() => _systems.Keys.Order().Select(Get).ToArray();
@@ -63,7 +41,7 @@ public sealed class SystemSimulationRegistry
 
     public SystemSimulationState Get(int systemId)
     {
-        var state = _systems.GetValueOrDefault(systemId) ?? new(systemId, SystemSimulationMode.Background, 0, 0) { Scheduled = false };
+        var state = _systems.GetValueOrDefault(systemId) ?? new(systemId, SystemSimulationMode.Background, 0, 0);
         return state.SettledTicks >= _settledTicks ? state : state with { SettledTicks = _settledTicks };
     }
 
@@ -81,7 +59,6 @@ public sealed class SystemSimulationRegistry
             }
             var next = previous with
             {
-                Scheduled = true,
                 Mode = wasActive ? SystemSimulationMode.Deactivating : SystemSimulationMode.Activating,
                 Generation = checked(previous.Generation + 1),
             };
@@ -90,17 +67,6 @@ public sealed class SystemSimulationRegistry
             changed.Add(next);
         }
         return changed;
-    }
-
-    public void Pin(int systemId, bool pinned)
-    {
-        var state = Get(systemId);
-        _systems[systemId] = state with { Pinned = pinned };
-    }
-
-    public void SetCoarse(int systemId, bool coarse)
-    {
-        _systems[systemId] = Get(systemId) with { Coarse = coarse };
     }
 
     public void Settle(int systemId, long throughTicks)

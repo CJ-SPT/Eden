@@ -77,7 +77,7 @@ public sealed class CapsuleerRuntimeTests
         WorldInitialization.Initialize(f.Database, f.Clock);
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var restored = reopened.GetRequiredService<ICapsuleerScheduler>();
-        Assert.Equal(committed, restored.Jobs().OrderBy(job => job.PilotId));
+        Assert.Empty(restored.Jobs());
         using (WorldDbContext saved = new(f.Database.Path))
         {
             Assert.Equal(committed, CapsuleerPopulationStore.Jobs(saved).OrderBy(job => job.PilotId));
@@ -85,7 +85,10 @@ public sealed class CapsuleerRuntimeTests
         Assert.Equal(0, restored.Run(100).Turn.Completed);
         using var human = reopened.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
         Assert.Equal(committed, restored.Jobs().OrderBy(job => job.PilotId));
-        Assert.Equal(0, restored.Run(100).Turn.Completed);
+        restored.Run(100);
+        Assert.Equal(0, reopened.GetRequiredService<ICapsuleerDiagnostics>().Read().CompletedActions);
+        long elapsed = reopened.GetRequiredService<IHumanPresence>().Read().ElapsedTicks;
+        Assert.All(restored.Jobs(), job => Assert.True(job.DueTicks > elapsed));
     }
 
     [Fact]

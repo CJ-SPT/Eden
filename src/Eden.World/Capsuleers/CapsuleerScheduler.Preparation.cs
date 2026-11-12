@@ -25,28 +25,7 @@ internal sealed partial class CapsuleerScheduler
         IReadOnlyList<CapsuleerGeometry.ResourcePreparation> Geometry,
         CapsuleerHauler.JourneyInput? Journey,
         TrafficTemplateInput? Template
-    )
-    {
-        internal CapsuleerCoarseWork? Coarse { get; init; }
-    }
-
-    private sealed record CoarsePreparation(CapsuleerJob Job, CapsuleerCoarseWork Work);
-
-    private CoarsePreparation? SelectCoarsePreparation(HumanActivitySnapshot activity)
-    {
-        if (
-            !activity.Active
-            || _queue.NextDueTicks <= activity.ElapsedTicks
-            || NextCoarseDue(activity) is not { } due
-            || due > activity.ElapsedTicks
-        )
-        {
-            return null;
-        }
-        var work = _coarseWork[_coarseQueue.Min.System];
-        long pilot = _coarseMembers[work.SystemId].GetViewBetween(checked(work.Cursor + 1), long.MaxValue).FirstOrDefault();
-        return pilot == 0 ? null : new(Current[pilot], work);
-    }
+    );
 
     internal PreparationInput? CapturePreparation()
     {
@@ -55,10 +34,10 @@ internal sealed partial class CapsuleerScheduler
         Load();
         var activity = presence.Read();
         Reconcile(activity);
-        var coarse = SelectCoarsePreparation(activity);
-        var job = coarse?.Job ?? _queue.NextJob;
+        var job = _queue.NextJob;
         if (
             job is null
+            || _resuming.ContainsKey(job.PilotId)
             || job.DueTicks > activity.ElapsedTicks
             || job.Action
                 is not (CapsuleerAction.Trade or CapsuleerAction.GateTransfer or CapsuleerAction.Arrival or CapsuleerAction.Prepare)
@@ -66,14 +45,10 @@ internal sealed partial class CapsuleerScheduler
         {
             return null;
         }
-        if (coarse is not null)
-        {
-            RefreshCoarseRole(job.PilotId);
-        }
-        return WorldActionScope.Inspect(database, world => CapturePreparation(world, job, coarse?.Work));
+        return WorldActionScope.Inspect(database, world => CapturePreparation(world, job, activity.ActiveSystems));
     }
 
-    private PreparationInput CapturePreparation(WorldAction world, CapsuleerJob job, CapsuleerCoarseWork? coarse)
+    private PreparationInput CapturePreparation(WorldAction world, CapsuleerJob job, IReadOnlyList<int> occupied)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         var resident =
@@ -93,11 +68,15 @@ internal sealed partial class CapsuleerScheduler
         int system = _locations[job.PilotId];
         HashSet<int> systems = [system];
         var work = Live?.HaulerCheckpoints.GetValueOrDefault(job.PilotId)?.Work;
-        if (work?.TargetId is > 0 and <= int.MaxValue && catalog.Definitions.Gates.TryGetValue((int)work.TargetId, out var gate))
+        if (
+            work?.TargetId is > 0 and <= int.MaxValue
+            && catalog.Definitions.Gates.TryGetValue((int)work.TargetId, out var gate)
+            && occupied.Contains(gate.DestinationSystemId)
+        )
         {
             systems.Add(gate.DestinationSystemId);
         }
-        if (work?.TrafficLane is { } lane)
+        if (work?.TrafficLane is { } lane && occupied.Contains(lane.ObserverSystemId))
         {
             systems.Add(lane.ObserverSystemId);
         }
@@ -130,19 +109,13 @@ internal sealed partial class CapsuleerScheduler
                     _haulers.GetValueOrDefault(job.PilotId)?.PreparationRoute
                 )
                 : null
-        )
-        {
-            Coarse = coarse,
-        };
+        );
     }
 
     internal bool PreparationCurrent(PreparationInput input) =>
         Current.GetValueOrDefault(input.Job.PilotId) == input.Job
-        && (
-            input.Coarse is null
-                ? _queue.NextJob == input.Job
-                : SelectCoarsePreparation(presence.Read()) is { } selected && selected.Job == input.Job && selected.Work == input.Coarse
-        )
+        && _queue.NextJob == input.Job
+        && input.Systems.All(presence.Read().ActiveSystems.Contains)
         && _locations.GetValueOrDefault(input.Job.PilotId) == input.SystemId
         && (Live?.PreparationRevision ?? 0) == input.Revision
         && (Live?.TrafficGeometry.Revision ?? 0) == input.Resources
@@ -225,12 +198,6 @@ internal sealed partial class CapsuleerScheduler
             }
         }
         using var prepared = AsteroidFieldStore.UsePrepared(belts);
-        if (RunCoarse(destinyStamp, journey, input?.Coarse is not null))
-        {
-            return IncludeCoarseDue(new(new(1, Current.Count, null, false), [], []));
-        }
-        return IncludeCoarseDue(
-            RunCore(destinyStamp, maximumActions, preparedJourney: journey, measured: input is not null, turnStarted: started)
-        );
+        return RunCore(destinyStamp, maximumActions, preparedJourney: journey, measured: input is not null, turnStarted: started);
     }
 }

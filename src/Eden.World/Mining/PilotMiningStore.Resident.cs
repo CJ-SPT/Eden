@@ -4,7 +4,6 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Ammunition;
-using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
@@ -366,58 +365,6 @@ internal sealed partial class PilotMiningStore
             world.SaveChanges();
         }
         return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, depleted, collected.CargoFull, crystalState);
-    }
-
-    internal static CoarseCollection CollectRemote(
-        WorldAction world,
-        CatalogDbContext catalog,
-        long pilotId,
-        long moduleId,
-        long asteroidId,
-        long availableTicks,
-        MiningRolls rolls,
-        long now
-    )
-    {
-        var validated = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
-        var first = CollectPaid(world, catalog, pilotId, moduleId, asteroidId, new(1, true, rolls), now, 1, validated);
-        if (first.Depleted || first.CargoFull || availableTicks <= 0)
-        {
-            return new(first, 1);
-        }
-        // Crystal wear/destruction can change module attributes between cycles.
-        if (first.Crystal is not null)
-        {
-            validated = Validate(world, catalog, pilotId, moduleId, asteroidId, now);
-        }
-        // Cargo, capacitor and ore are read again; unchanged fitting inputs remain
-        // local to this transaction and are never cached across commands or commits.
-        var (pilot, asteroid, laser, attributes) = validated;
-        double volume = PilotInventoryStore.Volume(catalog, asteroid.TypeId);
-        var hold = OreHold(catalog, pilot.ActiveShip.TypeId, laser.Family);
-        double capacity = ShipHoldRules.Capacity((int)hold, attributes);
-        double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
-        int cycles = CapsuleerCoarseRules.MiningCycles(
-            new(
-                availableTicks,
-                laser,
-                ShipResources.Capacitor(world, pilot.ActiveShipId, attributes, now),
-                available,
-                asteroid.Quantity,
-                volume,
-                PilotAmmunitionStore.Contents(world, moduleId) is not null
-            )
-        );
-        if (cycles <= 0)
-        {
-            return new(first, 1);
-        }
-        BeginValidated(world, catalog, validated, now);
-        if (cycles > 1)
-        {
-            ShipResources.SpendCapacitor(world, pilot.ActiveShipId, attributes, (cycles - 1) * laser.CapacitorNeed, now);
-        }
-        return new(CollectPaid(world, catalog, pilotId, moduleId, asteroidId, new(1, true, rolls), now, cycles, validated), cycles + 1);
     }
 
     internal static void Stop(WorldAction world, long pilotId, long moduleId, long expectedCompletesAt)

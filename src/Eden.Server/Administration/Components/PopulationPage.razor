@@ -7,11 +7,8 @@
 <PageTitle>Population · Eden</PageTitle>
 <h1>Autonomous population</h1>
 <button class="secondary" @onclick="Load">Refresh population</button>
-<p class="muted">NPC regions activate when entered, starting with your current system. The remaining systems in that region
-    prepare in the background. Untouched regions stay dormant. Gate visitors are prepared when gates are watched.
-    Excess pilots are paused and retained for reuse, including their ships, possessions and progress.</p>
-<p class="muted">Distant pilots update about once a minute and may fall behind under heavy load.
-    Visiting more regions preserves their residents without keeping every pilot in detailed simulation.</p>
+<p class="muted">Pilots run only in systems with a connected player. When the last player leaves, pilots pause and retain their ships,
+    possessions and pending work. Gate visitor preparation requires players on both sides of the gate.</p>
 @if (Error is not null)
 {
     <p class="error" role="alert">@Error</p>
@@ -34,38 +31,9 @@
             <div><dt>Enabled pilots</dt><dd>@snapshot.Population.EnabledAgents</dd></div>
             <div><dt>Paused pilots</dt><dd>@snapshot.Population.PausedAgents</dd></div>
             <div><dt>Scheduled pilots</dt><dd>@snapshot.Runtime.ScheduledAgents</dd></div>
-            <div><dt>Coarse pilots / systems</dt><dd>@snapshot.Runtime.CoarseAgents / @snapshot.Runtime.CoarseSystems</dd></div>
-            <div><dt>Combat-pinned systems</dt><dd>@snapshot.Runtime.CombatPinnedSystems</dd></div>
-            <div><dt>Systems awaiting preparation</dt><dd>@snapshot.Runtime.PendingPreparationSystems</dd></div>
-            <div><dt>Oldest remote update age (seconds)</dt><dd>@TimeSpan.FromTicks(snapshot.Runtime.RemoteAgeTicks).TotalSeconds.ToString("F1")</dd></div>
-            <div><dt>Background budget overruns</dt><dd>@snapshot.Runtime.BackgroundBudgetOverruns</dd></div>
             <div><dt>Pilots in watched systems</dt><dd>@snapshot.MaterializedPilots</dd></div>
         </dl>
-        <p class="muted">Enabled pilots may travel outside watched systems. Scheduled pilots currently have simulation work enrolled.
-            Pilots in watched systems include docked guests. Saved totals include paused pilots.</p>
-        <p class="muted">@snapshot.Population.RegisteredSystems saved system records are retained, including earlier settings.
-            Saved prepared totals can include dormant regions. Preparation refreshes in entered regions;
-            deferred systems retry on a visit or after re-entry following restart.</p>
-    </section>
-    <section class="card">
-        <h2>Recent system returns</h2>
-        <p class="muted">The latest return with skipped progress for each of up to 32 systems, since startup.
-            Longest skipped interval describes one bot's overdue work on that visit. Saved assets and already-paid work are preserved.</p>
-        @if (snapshot.Runtime.RecentReturns.Count == 0)
-        {
-            <p class="muted">No remote progress has been skipped on a system return since startup.</p>
-        }
-        else
-        {
-            <div class="scroll"><table><thead><tr><th>System</th><th>Sampled (UTC)</th><th>Affected bots</th><th>Longest skipped interval</th></tr></thead><tbody>
-                @foreach (var returned in snapshot.Runtime.RecentReturns)
-                {
-                    <tr><td>@Name(returned.SystemId) (@returned.SystemId)</td>
-                        <td>@returned.SampledAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")</td><td>@returned.Bots</td>
-                        <td>@TimeSpan.FromTicks(returned.MaximumSkippedTicks).TotalSeconds.ToString("N1") s</td></tr>
-                }
-            </tbody></table></div>
-        }
+        <p class="muted">Saved totals include dormant pilots. Founders are prepared on demand in occupied systems.</p>
     </section>
     <section class="card">
         <h2>Waiting pilots</h2>

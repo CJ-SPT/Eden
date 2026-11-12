@@ -283,12 +283,11 @@ public sealed partial class AdministrationTests
         Assert.Contains("Memory in RAM", html);
         Assert.Contains("Last traffic maintenance pass", html);
         Assert.Contains("Saved communities / pilots", html);
-        Assert.Contains("Detailed / coarse pilots", html);
-        Assert.Contains("Observed / coarse systems", html);
-        Assert.Contains("Oldest remote update age", html);
-        Assert.Contains("Background budget overruns", html);
+        Assert.Contains("Scheduled pilots", html);
+        Assert.Contains("Occupied systems", html);
+        Assert.DoesNotContain("Oldest remote update age", html);
+        Assert.DoesNotContain("Background budget overruns", html);
         Assert.DoesNotContain("Remote time forgone on return", html);
-        Assert.Contains("Return diagnostics on the population page", html);
         Assert.DoesNotContain("Observed / background systems", html);
         Assert.Contains("Simulation and preparation", html);
         Assert.Contains("Scene and Local updates", html);

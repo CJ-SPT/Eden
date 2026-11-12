@@ -2,8 +2,6 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
-using Eden.Server.Capsuleers;
-using Eden.World.Capsuleers;
 
 namespace Eden.Server.Maintenance;
 
@@ -11,18 +9,15 @@ namespace Eden.Server.Maintenance;
 internal sealed class CapsuleerPopulationMaintenance(
     ICapsuleerBackgroundPreparation preparation,
     TimeProvider clock,
-    IPilotOperationScope operations,
-    CapsuleerBackgroundBudget? budget = null
+    IPilotOperationScope operations
 ) : IDisposable
 {
     private const int MaximumStepsPerTurn = 16;
     private static readonly TimeSpan ExecutionBudget = TimeSpan.FromMilliseconds(25);
-    private static readonly TimeSpan YieldInterval = CapsuleerCoarseRules.Window;
-    private readonly PopulationStartupProgress _progress = new(ServerLog.Console.Information, clock);
+    private static readonly TimeSpan YieldInterval = TimeSpan.FromMilliseconds(50);
     private CancellationTokenSource? _cancellation;
     private Task _loop = Task.CompletedTask;
     private bool _disposed;
-    private int _lastFinishedSystems;
 
     internal void Start()
     {
@@ -41,32 +36,14 @@ internal sealed class CapsuleerPopulationMaintenance(
         long started = clock.GetTimestamp();
         for (int step = 0; step < MaximumStepsPerTurn; step++)
         {
-            using var allowance = budget?.TryEnter("regional preparation");
-            if (budget is not null && allowance is null)
-            {
-                return false;
-            }
             cancellationToken.ThrowIfCancellationRequested();
             var turn = preparation.PrepareNext(cancellationToken);
-            if (budget is not null)
-            {
-                budget.PendingSystems = turn.Progress.TotalSystems - turn.Progress.CompletedSystems;
-            }
-            if (turn.Progress.TotalSystems > 0)
-            {
-                _progress.Report(turn.Progress);
-            }
             if (turn.Failure is { } failure)
             {
                 ServerLog.Console.Warning($"NPC population: system {turn.SystemId} deferred: {failure}");
             }
             if (turn.Complete)
             {
-                if (turn.Progress.CompletedSystems > _lastFinishedSystems)
-                {
-                    _lastFinishedSystems = turn.Progress.CompletedSystems;
-                    ServerLog.Console.Information("NPC preparation finished for activated regions; other regions wait for entry.");
-                }
                 return true;
             }
             if (turn.RetryLater || clock.GetElapsedTime(started) >= ExecutionBudget)
@@ -94,7 +71,7 @@ internal sealed class CapsuleerPopulationMaintenance(
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
-                    ServerLog.Console.Error($"NPC population background preparation failed; retrying: {error.Message}");
+                    ServerLog.Console.Error($"NPC population preparation failed; retrying: {error.Message}");
                 }
                 await Task.Delay(YieldInterval, clock, cancellationToken).ConfigureAwait(false);
             }

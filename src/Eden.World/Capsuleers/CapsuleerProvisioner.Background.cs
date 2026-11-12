@@ -21,6 +21,7 @@ internal sealed partial class CapsuleerProvisioner
     internal CapsuleerProvisioningTurn? PrepareBackgroundSystem(
         int system,
         IWorldSynchronization synchronization,
+        Func<bool> occupied,
         CancellationToken cancellationToken
     )
     {
@@ -31,6 +32,10 @@ internal sealed partial class CapsuleerProvisioner
         BackgroundSlot[] slots;
         using (synchronization.Enter("population preparation snapshot"))
         {
+            if (!occupied())
+            {
+                return null;
+            }
             var snapshot = WorldActionScope.Inspect(
                 database,
                 world =>
@@ -74,7 +79,7 @@ internal sealed partial class CapsuleerProvisioner
         TrafficProvisioning.Reservations? planning = null;
         if (needsShips || needsMiner)
         {
-            PrepareMovementCatalog(catalog, traffic.Routes.SelectMany(route => route.Systems).Append(system));
+            PrepareMovementCatalog(catalog, [system]);
             using var owner = synchronization.Enter("population identity snapshot");
             planning = WorldActionScope.Inspect(database, BackgroundReservations);
         }
@@ -122,9 +127,9 @@ internal sealed partial class CapsuleerProvisioner
         {
             return null;
         }
-        // A busy region must not hold the persistence coordinator while waiting for its system.
+        // A busy system must not hold the persistence coordinator while waiting for its system.
         using var systems = synchronization.TryEnterSystems("population prepared system", [system]);
-        if (systems is null)
+        if (systems is null || !occupied())
         {
             return null;
         }

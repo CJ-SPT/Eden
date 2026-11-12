@@ -31,12 +31,22 @@ internal static class CapsuleerTestHost
         {
             return host;
         }
-        // These tests execute saved jobs directly without entering their region.
-        // Register the fixture's prepared communities explicitly after regional startup.
+        // Direct role tests register the systems containing saved fixture pilots without selecting an observer.
         int[] systems;
         using (WorldDbContext world = new(database.Path))
         {
-            systems = world.Set<SavedCapsuleerPopulation>().AsNoTracking().Select(population => population.SystemId).ToArray();
+            var agents = world.Set<SavedCapsuleerAgent>().Select(agent => agent.PilotId).ToArray();
+            systems = world
+                .Pilots.Where(pilot => Enumerable.Contains(agents, pilot.Id))
+                .Select(pilot => new
+                {
+                    pilot.ActiveShip.StationId,
+                    SystemId = pilot.ActiveShip.Position == null ? null : pilot.ActiveShip.Position.SystemId,
+                })
+                .AsEnumerable()
+                .Select(ship => ship.SystemId ?? database.Catalog.FindStation(ship.StationId)!.SolarSystemId)
+                .Distinct()
+                .ToArray();
         }
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
         foreach (int system in systems)

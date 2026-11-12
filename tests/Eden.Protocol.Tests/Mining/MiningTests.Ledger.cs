@@ -83,27 +83,16 @@ public sealed partial class MiningTests
     }
 
     [Fact]
-    public void CoarsePaidMiningCyclesAggregateEveryCommittedOutputIntoOneDailyBucket()
+    public void PaidMiningCyclesAggregateEveryCommittedOutputIntoOneDailyBucket()
     {
         using Fixture f = new(liveWorld: false, useTestClock: true);
         var (context, _, _, module) = f.Client();
-        f.Store.Begin(context.Pilot.PilotId, module, Fixture.Asteroid, f.Clock.Now);
-        using (WorldDbContext world = new(f.Db.Path))
+        for (int cycle = 0; cycle < 2; cycle++)
         {
-            using var transaction = world.Database.BeginTransaction();
-            using Eden.World.Catalog.CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
-            var result = Eden.World.Mining.PilotMiningStore.CollectRemote(
-                world,
-                catalog,
-                context.Pilot.PilotId,
-                module,
-                Fixture.Asteroid,
-                TimeSpan.TicksPerMinute,
-                new(.99, .99, .99, .99, .99),
-                f.Clock.Now
-            );
-            Assert.True(result.Cycles > 1);
-            transaction.Commit();
+            f.Store.Begin(context.Pilot.PilotId, module, Fixture.Asteroid, f.Clock.Now);
+            f.Clock.Seconds += 180;
+            var result = f.Store.Collect(context.Pilot.PilotId, module, Fixture.Asteroid, new(1, true, new(.99, .99, .99, .99, .99)));
+            Assert.True(result.Extracted > 0);
         }
         var log = Assert.Single(f.Db.Services.GetRequiredService<IPersonalMiningLedger>().Read(context.Pilot.PilotId));
         long cargo = f.Inventory.List(context.Pilot.PilotId, context.Pilot.ShipId).Where(i => i.TypeId == 1230).Sum(i => i.Quantity);

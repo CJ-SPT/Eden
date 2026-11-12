@@ -110,7 +110,7 @@ internal static class ServerServices
             // Build the immutable directory before admitting clients, so their first
             // GetAgents/owner lookup never pays the catalog materialization cost.
             _ = provider.GetRequiredService<INpcDirectory>().Agents();
-            // Restore saved traffic indexes before a maintenance wake can block character selection.
+            // Warm the immutable traffic graph. Pilot membership is loaded on system entry.
             using var operation = provider.GetRequiredService<IPilotOperationScope>().Begin();
             provider.GetRequiredService<CapsuleerScheduler>().Prepare();
         }

@@ -143,30 +143,27 @@ public sealed class ResidentPopulationTests
     }
 
     [Fact]
-    public void RemoteJobPreparationRejectsAnAdvancedCursorWithoutReplayingItsJob()
+    public void PreparedJobIsRejectedWhenItsSystemBecomesEmpty()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         using var human = host.GetRequiredService<IHumanPresence>().Select(Human, Home);
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
         var live = host.GetRequiredService<LiveWorld>();
-        human.Transfer(Remote);
-        scheduler.Run(0);
         fixture.Clock.Seconds += 180;
         var input = Assert.IsType<CapsuleerScheduler.PreparationInput>(scheduler.CapturePreparation());
-        var work = Assert.IsType<CapsuleerCoarseWork>(input.Coarse);
-        using (var metrics = SessionPerformance.Begin("warmed remote preparation", _ => { }, force: true)!)
+        using (var metrics = SessionPerformance.Begin("warmed local preparation", _ => { }, force: true)!)
         {
             var repeated = Assert.IsType<CapsuleerScheduler.PreparationInput>(scheduler.CapturePreparation());
             Assert.Equal(input.Job, repeated.Job);
-            Assert.Equal(work, repeated.Coarse);
             Assert.Equal(0, metrics.Commands);
             Assert.Equal(0, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }
         Assert.True(scheduler.PreparationCurrent(input));
-        live.CapsuleerRoutines.Publish(work with { Generation = work.Generation + 1 });
+        human.Transfer(Remote);
         Assert.False(scheduler.PreparationCurrent(input));
+        Assert.Null(scheduler.CapturePreparation());
         Assert.Equal(input.Job, live.CapsuleerJobs[input.Job.PilotId]);
     }
 }

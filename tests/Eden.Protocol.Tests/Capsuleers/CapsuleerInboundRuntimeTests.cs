@@ -360,13 +360,15 @@ public sealed class CapsuleerInboundRuntimeTests
         }
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: liveWorld).WithPreparedCommunities(f.Database);
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
-        var job = scheduler.Jobs().Single();
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+        scheduler.Run(0);
+        var job = scheduler.Jobs().Single(j => j.PilotId == pilot);
         Assert.Equal(TimeSpan.FromSeconds(680).Ticks, job.DueTicks);
         var restored = scheduler.Hauler(pilot)!;
         Assert.False(restored.Work.InboundPaused);
         Assert.Equal(TimeSpan.FromSeconds(600).Ticks, restored.Work.ActiveTicks);
         Assert.Equal(ship, restored.Pilot.ShipId);
-        Assert.Equal(job, scheduler.Jobs().Single());
+        Assert.Contains(job, scheduler.Jobs());
     }
 
     private static long CreateLegacyInbound(CapsuleerHaulerTests.Fixture fixture, WatchedTrafficGate gate)

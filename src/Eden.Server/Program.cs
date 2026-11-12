@@ -161,14 +161,13 @@ internal static class Program
             bool preparePopulation = Value("--grant-redeem") is null && Value("--set-account-password") is null;
             if (preparePopulation)
             {
-                ServerLog.Console.Information("Loading saved world and NPC population settings...");
+                ServerLog.Console.Information("Loading saved world...");
             }
             WorldInitialization.Initialize(database, economy: startingEconomy, economics: economicConfiguration);
             if (preparePopulation)
             {
                 using var populationPhase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.capsuleerPopulation");
                 WorldInitialization.PrepareCapsuleers(database, maximumCommunities: 0);
-                ServerLog.Console.Information("Saved NPC data ready; regions activate on entry, starting with the entered system.");
             }
             ServerLog.Console.Information(
                 $"World reconciliation completed in {Stopwatch.GetElapsedTime(reconciliationStarted).TotalSeconds:F2}s."

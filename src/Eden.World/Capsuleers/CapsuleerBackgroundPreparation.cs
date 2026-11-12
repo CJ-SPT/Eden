@@ -1,7 +1,6 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
-using Eden.World.Catalog;
 using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
@@ -17,12 +16,7 @@ internal sealed class CapsuleerBackgroundPreparation(
 {
     private readonly Lock _gate = new();
     private readonly CapsuleerProvisioner _provisioner = new(database, clock);
-    private readonly Queue<int> _systems = new();
-    private readonly HashSet<int> _regions = [];
-    private HashSet<int> _pending = [];
-    private int _total;
-    private int _completed;
-    private int _deferred;
+    private readonly Dictionary<int, int> _completed = [];
 
     public Task Changed => activity.MembershipChanged;
 
@@ -31,7 +25,12 @@ internal sealed class CapsuleerBackgroundPreparation(
         cancellationToken.ThrowIfCancellationRequested();
         lock (_gate)
         {
-            using var scope = new CatalogReadScope().Begin();
+            var occupied = activity.Read().ActiveSystems;
+            var progress = new CapsuleerPreparationProgress(
+                occupied.Count(_completed.ContainsKey),
+                occupied.Count,
+                occupied.Sum(system => _completed.GetValueOrDefault(system))
+            );
             if (scheduler.NextInboundPreparation() is { } inbound)
             {
                 try
@@ -46,96 +45,53 @@ internal sealed class CapsuleerBackgroundPreparation(
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
                     scheduler.InboundPrepared(inbound, null);
-                    return new(new(_completed, _total, _deferred), inbound.Gate.ObserverSystemId, false) { Failure = error.Message };
+                    return new(progress, inbound.Gate.ObserverSystemId, false) { Failure = error.Message };
                 }
-                return new(new(_completed, _total, _deferred), inbound.Gate.ObserverSystemId, false);
+                return new(progress, inbound.Gate.ObserverSystemId, false);
             }
-            var occupied = activity.Read().ActiveSystems;
-            ActivateRegions(occupied);
-            int? selected = occupied.Where(_pending.Contains).Order().Cast<int?>().FirstOrDefault();
-            if (selected is null && occupied.Count > 0)
+            int target = occupied.FirstOrDefault(system => !_completed.ContainsKey(system));
+            if (target == 0)
             {
-                using CatalogDbContext catalog = new(database.CatalogPath);
-                selected = occupied
-                    .SelectMany(system => CapsuleerTrafficRoutes.Neighbours(catalog, system))
-                    .Where(_pending.Contains)
-                    .Order()
-                    .Cast<int?>()
-                    .FirstOrDefault();
-            }
-            if (selected is null)
-            {
-                while (_systems.TryPeek(out int next) && !_pending.Contains(next))
-                {
-                    _systems.Dequeue();
-                }
-                selected = _systems.TryPeek(out int system) ? system : null;
-            }
-            if (selected is not int target)
-            {
-                return new(new(_completed, _total, _deferred), null, true);
+                return new(progress, null, true);
             }
             try
             {
-                var turn = _provisioner.PrepareBackgroundSystem(target, synchronization, cancellationToken);
+                var turn = _provisioner.PrepareBackgroundSystem(
+                    target,
+                    synchronization,
+                    () => activity.Read().ActiveSystems.Contains(target),
+                    cancellationToken
+                );
                 if (turn is null)
                 {
-                    return new(new(_completed, _total, _deferred), target, false) { RetryLater = true };
+                    return new(progress, target, false) { RetryLater = true };
                 }
-                // Register only this committed community, rather than reloading every saved pilot on the next wake.
-                scheduler.PopulationPrepared(target, turn.CreatedPilotId);
-                if (turn.HasMoreWork)
+                if (turn.CreatedPilotId is long pilot)
                 {
-                    return new(new(_completed, _total, _deferred), target, false);
+                    scheduler.PopulationPrepared(target, pilot);
                 }
-                _pending.Remove(target);
-                _completed++;
-                _deferred += turn.PendingCommunities;
-                return new(new(_completed, _total, _deferred), target, _pending.Count == 0);
+                return turn.HasMoreWork ? new(progress, target, false) : Complete(target, turn.PendingCommunities, progress);
             }
             catch (CapsuleerBlueprintNotPreparedException)
             {
-                // A concurrent identity reservation changed the chosen fit. Revalidate outside the owner next turn.
-                return new(new(_completed, _total, _deferred), target, false);
+                return new(progress, target, false);
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
-                // Leave its saved fingerprint pending, and continue the other activated systems.
-                _pending.Remove(target);
-                _completed++;
-                _deferred++;
-                return new(new(_completed, _total, _deferred), target, _pending.Count == 0) { Failure = error.Message };
+                return Complete(target, 1, progress) with { Failure = error.Message };
             }
         }
     }
 
-    private void ActivateRegions(IReadOnlyList<int> occupied)
+    private CapsuleerBackgroundTurn Complete(int system, int deferred, CapsuleerPreparationProgress progress)
     {
-        if (occupied.Count == 0)
+        _completed[system] = deferred;
+        var updated = progress with
         {
-            return;
-        }
-        using (CatalogDbContext catalog = new(database.CatalogPath))
-        {
-            foreach (int entered in occupied)
-            {
-                int region = catalog.RequireSystem(entered).RegionId;
-                if (!_regions.Add(region))
-                {
-                    continue;
-                }
-                var systems = catalog
-                    .Definitions.Systems.Values.Where(system => system.RegionId == region)
-                    .OrderBy(system => system.Id == entered ? 0 : 1)
-                    .ThenBy(system => system.Id);
-                foreach (var system in systems)
-                {
-                    _pending.Add(system.Id);
-                    _systems.Enqueue(system.Id);
-                    _total++;
-                }
-            }
-        }
+            CompletedSystems = progress.CompletedSystems + 1,
+            DeferredSystems = progress.DeferredSystems + deferred,
+        };
+        return new(updated, system, updated.CompletedSystems == updated.TotalSystems);
     }
 
     public void Dispose() => _provisioner.Dispose();

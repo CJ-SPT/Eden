@@ -168,16 +168,18 @@ public sealed class CapsuleerMaintenanceTests
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var activity = host.GetRequiredService<CapsuleerActivitySource>();
+        activity.Update(Guid.NewGuid(), 30000141);
+        activity.Update(Guid.NewGuid(), 30000144);
         CapsuleerScheduler scheduler = new(
             f.Database,
-            host.GetRequiredService<CapsuleerActivitySource>(),
+            activity,
             host.GetRequiredService<ICapsuleerPopulation>(),
             host.GetRequiredService<IWorldSynchronization>(),
             f.Clock,
             host.GetRequiredService<CapsuleerMinerFactory>(),
             host.GetRequiredService<CapsuleerHaulerFactory>(),
             new TimedGateWatch(f.Clock),
-            host.GetRequiredService<MarketChangeSignal>(),
             host.GetRequiredService<PilotMarketStore>()
         );
         using CapsuleerMaintenance maintenance = new(

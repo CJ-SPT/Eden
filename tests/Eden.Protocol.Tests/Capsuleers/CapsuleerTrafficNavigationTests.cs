@@ -375,7 +375,6 @@ public sealed class CapsuleerTrafficNavigationTests
             if (scheduled)
             {
                 human = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
-                human.Transfer(route[^1]);
             }
             var job = scheduler.Jobs().Single(j => j.PilotId == founder.PilotId);
             HaulerObservation Current() => scheduled ? scheduler.Hauler(founder.PilotId)! : hauler.Read()!;
@@ -398,18 +397,19 @@ public sealed class CapsuleerTrafficNavigationTests
                 if (observation.Pilot.SystemId != visited[^1])
                 {
                     visited.Add(observation.Pilot.SystemId);
+                    human?.Transfer(observation.Pilot.SystemId);
                 }
                 if (!restarted && observation.Work.RouteIndex >= jumps / 2)
                 {
-                    await host.GetRequiredService<LiveWorld>().FlushAsync();
                     human?.Dispose();
+                    await host.GetRequiredService<LiveWorld>().FlushAsync();
                     host.Dispose();
                     host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
                     hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
                     scheduler = host.GetRequiredService<ICapsuleerScheduler>();
                     if (scheduled)
                     {
-                        human = host.GetRequiredService<IHumanPresence>().Select(90000001, route[^1]);
+                        human = host.GetRequiredService<IHumanPresence>().Select(90000001, observation.Pilot.SystemId);
                     }
                     job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
                     restarted = true;

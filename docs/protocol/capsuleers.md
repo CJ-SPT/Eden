@@ -2,6 +2,22 @@
 
 [Protocol index](../protocol.md)
 
+## Occupied-system simulation - November 12, 2026
+
+Each solar system runs its capsuleer jobs while at least one connected player has selected a character there.
+Founders are prepared in bounded batches for occupied systems. Gate visitor preparation requires both ends of the gate to
+be occupied and the visitor's starting station to be in the departure system. A pilot leaving an occupied system
+completes its gate transfer and pauses at the destination if that system is empty.
+
+The last player leaving removes that system's jobs from the active queue. Re-entry uses the pilot's physical location,
+including arrivals from other communities, and shifts pending deadlines by dormant time without replaying missed work.
+Saved identities, ships, cargo, paid mining cycles and gate transfer state carry forward. Older saves retain their last
+settled pilot ticks and their existing cursor rows for database compatibility. A stopped server accrues no simulation time.
+
+This supersedes the November 10 coarse scheduling and regional population preparation records below. Native client acceptance
+has not been performed. The [NPC mining operations reference](https://wiki.eveuniversity.org/NPC_Mining_Operations) describes
+in-system NPC activity. Eden's occupancy rule is a server scheduling policy.
+
 ## Coarse distant populations — November 10, 2026
 
 Regional preparation still fills the existing saved rosters. It does not enroll untouched home communities simply because

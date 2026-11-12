@@ -131,7 +131,7 @@ public sealed class ResidentAdmissionTests
         var synchronization = host.GetRequiredService<IWorldSynchronization>();
         using CapsuleerProvisioner provisioner = new(fixture.Database, fixture.Clock);
         var first = Assert.IsType<CapsuleerProvisioningTurn>(
-            provisioner.PrepareBackgroundSystem(Home, synchronization, CancellationToken.None)
+            provisioner.PrepareBackgroundSystem(Home, synchronization, () => true, CancellationToken.None)
         );
         Assert.NotNull(first.CreatedPilotId);
         Assert.True(first.HasMoreWork);
@@ -140,7 +140,7 @@ public sealed class ResidentAdmissionTests
         using (var metrics = SessionPerformance.Begin("warm resident population batch", _ => { }, force: true, command: commands.Add)!)
         {
             next = Assert.IsType<CapsuleerProvisioningTurn>(
-                provisioner.PrepareBackgroundSystem(Home, synchronization, CancellationToken.None)
+                provisioner.PrepareBackgroundSystem(Home, synchronization, () => true, CancellationToken.None)
             );
             Assert.NotNull(next.CreatedPilotId);
             Assert.NotEqual(first.CreatedPilotId, next.CreatedPilotId);
@@ -240,6 +240,7 @@ public sealed class ResidentAdmissionTests
                 humanShip = saved.Pilots.Find(Human)!.ActiveShipId;
             }
             host.GetRequiredService<SqliteWorld>().SetPosition(humanShip, new(1, 2, 3), Home);
+            using var player = host.GetRequiredService<IHumanPresence>().Select(Human, Home);
             using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
             using CapsuleerProvisioner provisioner = new(fixture.Database, fixture.Clock);
             using (live.EnterShared())

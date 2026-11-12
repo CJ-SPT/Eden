@@ -307,31 +307,33 @@ public sealed class CapsuleerGlobalPopulationTests
     }
 
     [Fact]
-    public void NewlyPreparedGlobalTrafficWaitsForItsCommunityVisitThenProgressesRemotely()
+    public void SavedGlobalTrafficRunsOnlyWhileItsSystemIsOccupied()
     {
+        const int home = 30000141;
+        const int elsewhere = 30000144;
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         Restart(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0));
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
-        using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, 30000144);
-        while (!host.GetRequiredService<ICapsuleerBackgroundPreparation>().PrepareNext().Complete) { }
+        using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, elsewhere);
+        host.PrepareActivatedPopulations();
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
-        var before = scheduler.Jobs().ToDictionary(job => job.PilotId);
-        Assert.NotEmpty(before);
+        Assert.Empty(scheduler.Jobs());
+
+        observer.Transfer(home);
+        var initial = scheduler.Jobs().ToDictionary(job => job.PilotId);
+        Assert.NotEmpty(initial);
         for (int i = 0; i < 35; i++)
         {
             f.Clock.Seconds++;
             host.GetRequiredService<CapsuleerMaintenance>().Tick();
         }
-        Assert.All(scheduler.Jobs(), job => Assert.Equal(before[job.PilotId], job));
+        var paused = scheduler.Jobs().ToArray();
+        Assert.Contains(paused, job => job.Sequence > initial[job.PilotId].Sequence);
+        observer.Transfer(elsewhere);
+        f.Clock.Seconds += 70;
+        host.GetRequiredService<CapsuleerMaintenance>().Tick();
+        Assert.Equal(paused, scheduler.Jobs());
         Assert.Equal(0, host.GetRequiredService<CapsuleerScene>().MaterializedPilots);
-        observer.Transfer(30000141);
-        observer.Transfer(30000144);
-        for (int i = 0; i < 70; i++)
-        {
-            f.Clock.Seconds++;
-            host.GetRequiredService<CapsuleerMaintenance>().Tick();
-        }
-        Assert.Contains(scheduler.Jobs(), job => job.Sequence > before[job.PilotId].Sequence);
     }
 
     [Theory]

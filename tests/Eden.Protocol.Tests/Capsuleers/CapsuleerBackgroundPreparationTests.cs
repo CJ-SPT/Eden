@@ -22,7 +22,7 @@ public sealed class CapsuleerBackgroundPreparationTests
     private const int Fourth = 31000002;
 
     [Fact]
-    public async Task BusyRegionPreparationLeavesAnotherAccountsRosterResponsiveAndRetries()
+    public async Task BusySystemPreparationLeavesAnotherAccountsRosterResponsiveAndRetries()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         CapsuleerProvisioningTests.AddSystem(f.Database, Third);
@@ -32,6 +32,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         activity.Update(Guid.NewGuid(), Third);
         var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
         var live = host.GetRequiredService<LiveWorld>();
+        live.Economy.Warm();
         var roster = host.GetRequiredService<Eden.Gameplay.Docking.IPilotLookup>();
         var expected = Assert.Single(roster.ListPilots(1000002));
         Assert.NotEqual(Third, expected.SystemId);
@@ -139,7 +140,7 @@ public sealed class CapsuleerBackgroundPreparationTests
     }
 
     [Fact]
-    public void WatchingGateQueuesVisitorsWithoutCreatingThemOnPlayerPath()
+    public void WatchingGateQueuesVisitorsOnlyWhenBothSystemsAreOccupied()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         var configuration = new WorldConfigurationStore(f.Database, f.Clock);
@@ -165,6 +166,10 @@ public sealed class CapsuleerBackgroundPreparationTests
         {
             Assert.Empty(saved.Set<SavedCapsuleerAgent>());
         }
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        Assert.Null(scheduler.NextInboundPreparation());
+        using var source = host.GetRequiredService<IHumanPresence>().Select(90000002, gate.DestinationSystemId!.Value);
+        Assert.NotNull(scheduler.NextInboundPreparation());
         var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
         var synchronization = host.GetRequiredService<IWorldSynchronization>();
         int planned = 0;
@@ -251,7 +256,7 @@ public sealed class CapsuleerBackgroundPreparationTests
     }
 
     [Fact]
-    public void RegionsWaitForEntryAndEnteredSystemPrecedesItsNeighbours()
+    public void OnlyOccupiedSystemsArePreparedAndLeavingStopsPendingFounders()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         AddOtherRegion(f.Database);
@@ -278,38 +283,30 @@ public sealed class CapsuleerBackgroundPreparationTests
         var first = preparation.PrepareNext();
         Assert.Null(first.Failure);
         Assert.Equal(Fourth, first.SystemId);
-        Assert.Equal(2, first.Progress.TotalSystems);
-        Assert.False(first.Complete);
-        while (first.Progress.CompletedSystems == 0)
+        Assert.Equal(1, first.Progress.TotalSystems);
+        activity.Update(session, null);
+        Assert.True(preparation.PrepareNext().Complete);
+        using (WorldDbContext world = new(f.Database.Path))
         {
-            first = preparation.PrepareNext();
-            Assert.Null(first.Failure);
-            Assert.Equal(Fourth, first.SystemId);
+            Assert.DoesNotContain(world.Set<SavedCapsuleerSystem>(), system => system.SystemId == Third);
+            Assert.All(world.Set<SavedCapsuleerAgent>(), agent => Assert.Equal(Fourth, agent.CommunitySystemId));
         }
-        var second = preparation.PrepareNext();
-        Assert.Null(second.Failure);
-        Assert.Equal(Third, second.SystemId);
-        while (!second.Complete)
+
+        activity.Update(session, Fourth);
+        host.PrepareActivatedPopulations();
+        using (WorldDbContext world = new(f.Database.Path))
         {
-            second = preparation.PrepareNext();
-            Assert.Null(second.Failure);
-            Assert.Equal(Third, second.SystemId);
+            Assert.All(world.Set<SavedCapsuleerAgent>(), agent => Assert.Equal(Fourth, agent.CommunitySystemId));
         }
-        Assert.True(second.Complete);
-        using WorldDbContext world = new(f.Database.Path);
-        Assert.DoesNotContain(world.Set<SavedCapsuleerAgent>(), agent => agent.CommunitySystemId == Source);
-        changed = preparation.Changed;
-        activity.Update(session, Source);
-        Assert.True(changed.IsCompleted);
-        var entered = preparation.PrepareNext();
-        Assert.Null(entered.Failure);
-        Assert.Equal(Source, entered.SystemId);
-        Assert.True(entered.Progress.TotalSystems > second.Progress.TotalSystems);
-        Assert.Contains(world.Set<SavedCapsuleerAgent>(), agent => agent.CommunitySystemId == Source);
+        activity.Update(session, Third);
+        host.PrepareActivatedPopulations();
+        using WorldDbContext visited = new(f.Database.Path);
+        Assert.Contains(visited.Set<SavedCapsuleerAgent>(), agent => agent.CommunitySystemId == Third);
+        Assert.DoesNotContain(visited.Set<SavedCapsuleerAgent>(), agent => agent.CommunitySystemId == Source);
     }
 
     [Fact]
-    public void SavedPilotsRemainDormantUntilTheirRegionIsEntered()
+    public void SavedPilotsRemainDormantUntilTheirSystemIsEntered()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         AddOtherRegion(f.Database);
@@ -337,6 +334,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         human.Transfer(Third);
         Assert.Contains(scheduler.Jobs(), job => distant.Contains(job.PilotId));
         long elapsed = host.GetRequiredService<IHumanPresence>().Read().ElapsedTicks;
+        scheduler.Run(0);
         Assert.All(scheduler.Jobs().Where(job => distant.Contains(job.PilotId)), job => Assert.True(job.DueTicks > elapsed));
         using WorldDbContext retained = new(f.Database.Path);
         Assert.All(distant, pilot => Assert.Single(retained.Set<SavedCapsuleerAgent>().Where(agent => agent.PilotId == pilot)));
@@ -433,6 +431,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         using (var host = ServerServices.Build(f.Database, f.Clock))
         {
             host.GetRequiredService<CapsuleerActivitySource>().Update(Guid.NewGuid(), Source);
+            host.GetRequiredService<CapsuleerActivitySource>().Update(Guid.NewGuid(), Third);
             using (WorldDbContext setup = new(f.Database.Path))
             {
                 setup.Database.ExecuteSqlRaw(
@@ -510,6 +509,38 @@ public sealed class CapsuleerBackgroundPreparationTests
         Assert.Equal(Source, retried.SystemId);
         Assert.Null(retried.Failure);
         Assert.NotEmpty(world.Set<SavedCapsuleerAgent>());
+    }
+
+    [Fact]
+    public void LeavingDuringBlueprintPreparationDiscardsTheUncommittedFounder()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        PrepareStartup(f);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var activity = host.GetRequiredService<CapsuleerActivitySource>();
+        Guid session = Guid.NewGuid();
+        activity.Update(session, Source);
+        var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
+        using (
+            SessionPerformance.Begin(
+                "leave during founder preparation",
+                line =>
+                {
+                    if (line.StartsWith("Performance startup.shipBlueprint:", StringComparison.Ordinal))
+                    {
+                        activity.Update(session, null);
+                    }
+                },
+                force: true
+            )
+        )
+        {
+            Assert.True(preparation.PrepareNext().RetryLater);
+        }
+        Assert.True(preparation.PrepareNext().Complete);
+        using WorldDbContext world = new(f.Database.Path);
+        Assert.Empty(world.Set<SavedCapsuleerAgent>());
+        Assert.Empty(world.Set<SavedCapsuleerJob>());
     }
 
     [Fact]

@@ -173,7 +173,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var scheduler = reopened.GetRequiredService<ICapsuleerScheduler>();
         Assert.All(reopened.GetRequiredService<ICapsuleerHandoff>().Systems(), s => Assert.Equal(SystemSimulationMode.Background, s.Mode));
-        Assert.Equal(jobs.OrderBy(j => j.PilotId), scheduler.Jobs().OrderBy(j => j.PilotId));
+        Assert.Empty(scheduler.Jobs());
         using (WorldDbContext saved = new(f.Database.Path))
         {
             Assert.Equal(jobs.OrderBy(job => job.PilotId), CapsuleerPopulationStore.Jobs(saved).OrderBy(job => job.PilotId));
@@ -184,7 +184,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         using var selected = reopened.GetRequiredService<IHumanPresence>().Select(Human, Source);
         reopened.GetRequiredService<CapsuleerMaintenance>().Tick();
         reopened.GetRequiredService<ICapsuleerPresentation>().Refresh();
-        Assert.Equal(jobs.Select(j => j.PilotId).Order(), scheduler.Jobs().Select(j => j.PilotId).Order());
+        Assert.Equal(paid.Pilot.PilotId, Assert.Single(scheduler.Jobs()).PilotId);
         long elapsed = reopened.GetRequiredService<IHumanPresence>().Read().ElapsedTicks;
         Assert.True(scheduler.Jobs().Single(j => j.PilotId == paid.Pilot.PilotId).DueTicks > elapsed);
         var peer = Assert.Single(Peers(reopened, paid.Pilot), p => p.Pilot.PilotId == paid.Pilot.PilotId);

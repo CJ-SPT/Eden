@@ -1021,6 +1021,7 @@ internal sealed partial class ResidentEconomy
                     ),
                 state => new(state.ShipId),
                 readOnly: false,
+                indexes: [new("SystemId", row => row.SystemId)],
                 primaryColumn: "ShipId"
             )
         );

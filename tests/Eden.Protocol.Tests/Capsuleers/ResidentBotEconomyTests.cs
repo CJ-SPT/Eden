@@ -52,29 +52,27 @@ public sealed class ResidentBotEconomyTests(ITestOutputHelper output)
         {
             using var action = live.Economy.Begin(participants);
             using var catalog = new Eden.World.Catalog.CatalogDbContext(fixture.Database.CatalogPath);
-            var result = PilotMiningStore.CollectRemote(
+            var result = PilotMiningStore.Collect(
                 action,
                 catalog,
                 paid.Pilot.PilotId,
                 paid.Work.ModuleId,
                 paid.Work.TargetId,
-                TimeSpan.FromSeconds(180).Ticks,
-                new(.5, .5, .5, .5, .5),
+                new(1, true, new(.5, .5, .5, .5, .5)),
                 fixture.Clock.Now
             );
             remaining = action.Set<WorldAsteroid>().Find(paid.Work.TargetId)!.Quantity;
             Assert.True(remaining < before);
-            Assert.True(result.Cycles > 0);
+            Assert.True(result.Extracted > 0);
             Assert.Null(action.Set<ModuleCooldown>().Find(paid.Work.ModuleId));
             Assert.Throws<InvalidDataException>(() =>
-                PilotMiningStore.CollectRemote(
+                PilotMiningStore.Collect(
                     action,
                     catalog,
                     paid.Pilot.PilotId,
                     paid.Work.ModuleId,
                     paid.Work.TargetId,
-                    0,
-                    new(.5, .5, .5, .5, .5),
+                    new(1, true, new(.5, .5, .5, .5, .5)),
                     fixture.Clock.Now
                 )
             );

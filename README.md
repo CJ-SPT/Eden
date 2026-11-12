@@ -97,13 +97,11 @@ mining-SP multiplier. One ice unit is valued as a whole block. Mining SP credits
 
 [CONCORD criminal response](docs/protocol/combat.md#concord-criminal-response--november-9-2026) now enforces supported high-security criminal offenses with persistent response deadlines, catalog Captains/Commanders, capsule escape and no insurance payout. Baseline response times approximate a fresh live response; existing-squad timing and pulling remain unsupported. CONCORD overview icons remain blue during attacks through the signed login adapter; restart the server and fully reopen the client after updating.
 
-[Simulation scaling milestones 3–5](docs/protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
-separate system simulation from persistence, keep activated populations progressing remotely, evict cold detail and
-release system owners before checkpoint copying. The save interval remains 15 seconds.
+[Simulation scaling milestones 3-5](docs/protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
+separate system simulation from persistence and release system owners before checkpoint copying.
 
-[Coarse distant populations](docs/protocol/capsuleers.md#coarse-distant-populations--november-10-2026) separate saved
-population from continuous execution. Remote pilots share durable system cursors and a preparation budget. The performance
-page distinguishes saved, detailed and coarse populations and measures the entire maintenance pass.
+[Occupied-system capsuleer simulation](docs/protocol/capsuleers.md#occupied-system-simulation---november-12-2026) advances
+NPC pilots only where a connected player has selected a character. Empty systems pause pilot routines and retain saved work.
 
 ## Local game data
 
@@ -168,10 +166,8 @@ dotnet run --no-build --project src/Eden.Server
 
 Normal server startup prints a bordered ASCII EDEN banner with a four-space left margin, the compiled version and full Git revision before world reconciliation. The border expands to fit the build identity. Build identity comes from the assembly's informational version, so published servers do not need Git installed. Builds without source revision metadata show `Revision: unknown`. Maintenance commands keep their existing output.
 
-Live NPC population preparation runs in the background for entered regions, committing one founder per step.
-Entry registers saved residents immediately; newly created home residents depart from stations normally, and gate visitors
-use queued preparation. The progress bar reports systems checked in activated regions and deferred counts; 100% does not
-mean the entire galaxy has been created. See [incremental admission](docs/protocol/performance.md#incremental-population-admission-november-10-2026).
+Live NPC population preparation runs for occupied systems, committing one founder per step. Entry registers pilots
+currently in the system, including saved visitors. Gate visitor preparation requires players on both sides of the gate.
 
 The console shows startup reconciliation and host timings, timestamped startup/shutdown and account/character session summaries, warnings and failures by default. Routine service calls, notifications, gateway requests, handshakes, movement and successful world checkpoints are quiet. Warnings and errors go to standard error. Set `$env:EDEN_VERBOSE_LOGGING = '1'` before starting the server to include routine diagnostics; remove it with `Remove-Item Env:EDEN_VERBOSE_LOGGING` to return to quiet output. The existing `EDEN_TRACE_PERFORMANCE=1` and `EDEN_TRACE_MOTION=1` switches still enable their targeted traces independently of verbose logging. Checkpoint failures always remain visible and pending changes retain the existing save/retry behavior.
 

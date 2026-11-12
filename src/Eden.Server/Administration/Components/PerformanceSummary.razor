@@ -71,23 +71,16 @@
         <h2>Autonomous capsuleers</h2>
         <dl class="readings">
             <div><dt>Saved communities / pilots</dt><dd>@capsuleers.Runtime.Population.Communities / @capsuleers.Runtime.Population.Agents</dd></div>
-            <div><dt>Detailed / coarse pilots</dt><dd>@capsuleers.Runtime.ScheduledAgents / @capsuleers.Runtime.CoarseAgents</dd></div>
-            <div><dt>Observed / coarse systems</dt><dd>@capsuleers.Runtime.ObservedSystems / @capsuleers.Runtime.CoarseSystems</dd></div>
-            <div><dt>Combat-pinned systems</dt><dd>@capsuleers.Runtime.CombatPinnedSystems</dd></div>
-            <div><dt>Systems awaiting preparation</dt><dd>@capsuleers.Runtime.PendingPreparationSystems</dd></div>
+            <div><dt>Scheduled pilots</dt><dd>@capsuleers.Runtime.ScheduledAgents</dd></div>
+            <div><dt>Occupied systems</dt><dd>@capsuleers.Runtime.ObservedSystems</dd></div>
             <div><dt>Native pilot scenes</dt><dd>@capsuleers.MaterializedPilots</dd></div>
-            <div><dt>Saved jobs / detailed jobs due</dt><dd>@capsuleers.Runtime.Jobs / @capsuleers.Runtime.DueJobs</dd></div>
-            <div><dt>Oldest detailed queue delay</dt><dd>@Milliseconds(TimeSpan.FromTicks(capsuleers.Runtime.OldestDelayTicks))</dd></div>
-            <div><dt>Oldest remote update age</dt><dd>@Seconds(capsuleers.Runtime.RemoteAgeTicks)</dd></div>
-            <div><dt>Background budget overruns</dt><dd>@capsuleers.Runtime.BackgroundBudgetOverruns</dd></div>
+            <div><dt>Loaded jobs / jobs due</dt><dd>@capsuleers.Runtime.Jobs / @capsuleers.Runtime.DueJobs</dd></div>
+            <div><dt>Oldest queue delay</dt><dd>@Milliseconds(TimeSpan.FromTicks(capsuleers.Runtime.OldestDelayTicks))</dd></div>
             <div><dt>Completed actions / failures</dt><dd>@capsuleers.Runtime.CompletedActions / @capsuleers.Runtime.Failures</dd></div>
             <div><dt>Last traffic maintenance pass</dt><dd>@Milliseconds(capsuleers.Runtime.LastUpdate)</dd></div>
             <div><dt>Simulation and preparation</dt><dd>@Milliseconds(capsuleers.Runtime.LastSimulation)</dd></div>
             <div><dt>Scene and Local updates</dt><dd>@Milliseconds(capsuleers.Runtime.LastPresentation)</dd></div>
         </dl>
-        <p class="muted">Saved pilots include dormant residents. Coarse systems share minute-scale updates; their bots have no individual action queue.</p>
-        <p class="muted">The last maintenance pass includes all scheduler turns and Scene and Local updates. Timings are elapsed wall time for that pass. Background preparation runs separately within the shared budget. Overruns are cumulative since startup.</p>
-        <p class="muted">Return diagnostics on the population page identify the affected system and the longest skipped interval for that visit.</p>
         @if (capsuleers.Runtime.LastFailure is { } failure)
         {
             <p class="error">@failure</p>

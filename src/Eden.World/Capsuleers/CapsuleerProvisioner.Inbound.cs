@@ -24,18 +24,16 @@ internal sealed partial class CapsuleerProvisioner
         var gate = request.Gate;
         using (synchronization.Enter("inbound observer snapshot"))
         {
-            request = request with
+            if (!BothOccupied(gate))
             {
-                BothObserved =
-                    LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ActiveSystems.Contains(gate.SourceSystemId)
-                    ?? request.BothObserved,
-            };
+                return null;
+            }
         }
         int gateSlot = checked((int)Math.Min(gate.ArrivalGateId, gate.DepartureGateId));
         int slot = checked(gateSlot + request.Visitor * TrafficJourneyRules.VisitorSlotStride);
         int community = gate.ArrivalGateId == gateSlot ? gate.ObserverSystemId : gate.SourceSystemId;
         var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, request.BothObserved, request.Visitor);
-        if (route is null)
+        if (route is null || route.Systems[0] != gate.SourceSystemId)
         {
             return null;
         }
@@ -105,6 +103,10 @@ internal sealed partial class CapsuleerProvisioner
         }
         cancellationToken.ThrowIfCancellationRequested();
         using var owner = synchronization.Enter("inbound prepared founder");
+        if (!BothOccupied(gate))
+        {
+            return null;
+        }
         try
         {
             _startupReservations = WorldActionScope.Inspect(database, BackgroundReservations);
@@ -123,6 +125,12 @@ internal sealed partial class CapsuleerProvisioner
             _startupReservations = null;
             _requirePreparedBlueprints = false;
         }
+    }
+
+    private bool BothOccupied(WatchedTrafficGate gate)
+    {
+        var systems = LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ActiveSystems;
+        return systems?.Contains(gate.SourceSystemId) == true && systems.Contains(gate.ObserverSystemId);
     }
 
     internal long? EnsureInbound(WatchedTrafficGate gate, bool sourceObserved = false, int visitor = 0)
