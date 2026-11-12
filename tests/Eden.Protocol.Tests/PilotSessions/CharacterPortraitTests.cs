@@ -22,8 +22,44 @@ public sealed class CharacterPortraitTests
     public void PortraitBatchAndPublicProfileWorkBeforeSelectionAndAcrossAccountsAfterReopen()
     {
         using TestWorld db = new();
-        var appearance = Avatar(new() { ["appearance"] = new PaperDollRow(Row("AppearanceRow"), [0.375d]) });
-        var portrait = Avatar(new() { ["cameraX"] = 1.25d, ["lightID"] = 10745L });
+        var appearance = Avatar(
+            new()
+            {
+                ["appearance"] = new PaperDollRow(Row("AppearanceRow"), [0.375d]),
+                ["modifiers"] = new List<object?>
+                {
+                    new PaperDollRow(Row("ModifierRow"), [10L, 60L, null]),
+                    new PaperDollRow(Row("ModifierRow"), [22L, 239L, 2L]),
+                },
+            }
+        );
+        var rendererAppearance = Avatar(
+            new()
+            {
+                ["appearance"] = new PaperDollRow(Row("AppearanceRow"), [0.375d]),
+                ["modifiers"] = new List<object?>
+                {
+                    new PaperDollRow(Row("ModifierRow"), [10L, 60L, 0L]),
+                    new PaperDollRow(Row("ModifierRow"), [22L, 239L, 2L]),
+                },
+            }
+        );
+        var portrait = Avatar(
+            new()
+            {
+                ["cameraPosition"] = new object?[] { 1.25d, 2d, 3d },
+                ["cameraPoi"] = new object?[] { 4d, 5d, 6d },
+                ["cameraFieldOfView"] = 0.75d,
+                ["backgroundID"] = 123L,
+                ["lightID"] = 10745L,
+                ["poseData"] = new Dictionary<string, object?>
+                {
+                    ["HeadLookTarget"] = new object?[] { 0.1d, 0.2d, 0.3d },
+                    ["SmileRight"] = 0.5d,
+                    ["PortraitPoseNumber"] = 2L,
+                },
+            }
+        );
         using (WorldDbContext saved = new(db.Path))
         {
             var pilot = saved.Pilots.Find(Other)!;
@@ -50,16 +86,35 @@ public sealed class CharacterPortraitTests
                 )
             )
         );
-        Assert.Equal(BlueMarshal.Encode(appearance), BlueMarshal.Encode(Assert.Single(batch).Value));
+        Assert.Equal(BlueMarshal.Encode(rendererAppearance), BlueMarshal.Encode(Assert.Single(batch).Value));
         Assert.Equal(Other, Assert.Single(batch).Key);
         var single = Reply(router.Call(context, "paperDollServer", "GetPaperDollData", new object?[] { Other }, _ => { }));
-        Assert.Equal(BlueMarshal.Encode(appearance), BlueMarshal.Encode(single));
+        Assert.Equal(BlueMarshal.Encode(rendererAppearance), BlueMarshal.Encode(single));
         var settings = BlueRead.Tuple(
             Reply(router.Call(context, "paperDollServer", "GetPaperDollPortraitDataFor", new object?[] { Other }, _ => { })),
             2
         );
-        Assert.Equal(BlueMarshal.Encode(portrait), BlueMarshal.Encode(Assert.Single(Assert.IsType<List<object?>>(settings[0]))));
+        var render = BlueRead.Fields(Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(settings[0]))).State);
+        Assert.Equal(1.25d, render["cameraX"]);
+        Assert.Equal(2d, render["cameraY"]);
+        Assert.Equal(3d, render["cameraZ"]);
+        Assert.Equal(4d, render["cameraPoiX"]);
+        Assert.Equal(5d, render["cameraPoiY"]);
+        Assert.Equal(6d, render["cameraPoiZ"]);
+        Assert.Equal(0.75d, render["cameraFieldOfView"]);
+        Assert.Equal(123L, render["backgroundID"]);
+        Assert.Equal(10745L, render["lightID"]);
+        Assert.Equal(0.1d, render["headLookTargetX"]);
+        Assert.Equal(0.2d, render["headLookTargetY"]);
+        Assert.Equal(0.3d, render["headLookTargetZ"]);
+        Assert.Equal(0.5d, render["smileRight"]);
+        Assert.Equal(2L, render["portraitPoseNumber"]);
         Assert.Null(settings[1]);
+        using (WorldDbContext saved = new(db.Path))
+        {
+            Assert.Equal(BlueMarshal.Encode(appearance), saved.Pilots.Find(Other)!.Appearance);
+            Assert.Equal(BlueMarshal.Encode(portrait), saved.Pilots.Find(Other)!.Portrait);
+        }
         var profile = BlueRead.Fields(
             Assert.IsType<BlueInstance>(Reply(router.Call(context, "charMgr", "GetPublicInfo", new object?[] { Pilot }, _ => { }))).State
         );

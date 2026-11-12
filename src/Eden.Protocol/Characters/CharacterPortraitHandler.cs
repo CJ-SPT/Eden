@@ -91,7 +91,7 @@ internal sealed record CharacterDollReply(CharacterPortraitSource Source) : Blue
     {
         if (Source.Appearance is { } data)
         {
-            return BlueMarshal.Decode(data);
+            return ReadRendererDoll(data);
         }
         if (Source.DefaultDoll is not { } doll)
         {
@@ -119,5 +119,26 @@ internal sealed record CharacterDollReply(CharacterPortraitSource Source) : Blue
                     .ToList(),
             }
         );
+    }
+
+    private static object? ReadRendererDoll(byte[] data)
+    {
+        var saved = BlueMarshal.Decode(data);
+        if (
+            saved is BlueInstance { State: Dictionary<string, object?> fields }
+            && fields.GetValueOrDefault("modifiers") is List<object?> modifiers
+        )
+        {
+            for (int index = 0; index < modifiers.Count; index++)
+            {
+                // Creator submissions leave unused variations as None. The
+                // native doll loader uses zero as the no-variation sentinel.
+                if (modifiers[index] is PaperDollRow { Name: RowNamespace + "ModifierRow", Fields: [var location, var resource, null] } row)
+                {
+                    modifiers[index] = row with { Fields = [location, resource, 0L] };
+                }
+            }
+        }
+        return saved;
     }
 }

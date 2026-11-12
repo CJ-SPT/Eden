@@ -31,9 +31,11 @@ names = ['eve', 'eve.client', 'eve.client.script', 'eve.client.script.ui',
          'inventorycommon', 'inventorycommon.const', 'spacecomponents',
          'spacecomponents.client', 'spacecomponents.client.components',
          'spacecomponents.client.components.entitystandings']
-names += ['locks', 'xmppchatclient', 'xmppchatclient.xmppchatwindow',
+names += ['os', 'os.path', 'blue', 'carbon', 'carbon.common', 'carbon.common.script', 'carbon.common.script.sys',
+          'carbon.common.script.sys.serviceConst', 'json', 'locks',
+          'xmppchatclient', 'xmppchatclient.xmppchatwindow', 'xmppchatclient.xmppchatsvc',
           'eve.client.script.ui.shared', 'eve.client.script.ui.shared.dockedUI',
-          'eve.client.script.ui.shared.dockedUI.guests',
+          'eve.client.script.ui.shared.dockedUI.guests', 'eve.client.script.ui.station', 'eve.client.script.ui.station.base',
           'eve.client.script.ui.services.skillQueueSvc', 'eve.client.script.ui.services.skillsvc',
           'eve.client.script.ui.skilltrading', 'eve.client.script.ui.skilltrading.applySkillPointsWindow']
 for name in names:
@@ -44,7 +46,10 @@ for name in names:
     if parent:
         setattr(sys.modules[parent], child, module)
 photo = sys.modules['eve.client.script.ui.services.evePhotosvc']
-photo.EvePhoto = type('EvePhoto', (object,), {})
+photo.EvePhoto = type('EvePhoto', (object,), {'GetPortrait': lambda *args: None})
+sys.modules['os.path'].exists = lambda *args: False
+sys.modules['blue'].paths = None
+sys.modules['carbon.common.script.sys.serviceConst'].ROLE_CHTINVISIBLE = 1048576
 sys.modules['eve.client.script.ui.services.skillQueueSvc'].SkillQueueService = type(
     'SkillQueueService', (object,), {'GetSkillLevelAndProgressWithFreePoints': lambda *args: None})
 sys.modules['eve.client.script.ui.services.skillsvc'].SkillsSvc = type(
@@ -52,11 +57,16 @@ sys.modules['eve.client.script.ui.services.skillsvc'].SkillsSvc = type(
 sys.modules['eve.client.script.ui.skilltrading.applySkillPointsWindow'].ApplySkillPointsListEntry = type(
     'ApplySkillPointsListEntry', (object,), {})
 chat_window = type('XmppChatWindow', (object,), {
-    name: lambda *args: None for name in ['InitUsers', 'CharacterJoinedChannel', 'CharacterLeftChannel']})
+    name: lambda *args: None for name in ['InitUsers', 'SetChannel', 'CharacterJoinedChannel', 'CharacterLeftChannel']})
 guest_panel = type('GuestsPanel', (object,), {
-    name: lambda *args: None for name in ['_update_scroll_content', '_add_guest_to_scroll', '_remove_guest_from_scroll']})
+    name: lambda *args: None for name in ['_update_scroll_content', '_get_filtered_guests',
+                                         '_add_guest_to_scroll', '_remove_guest_from_scroll']})
 sys.modules['xmppchatclient.xmppchatwindow'].XmppChatWindow = chat_window
+sys.modules['xmppchatclient.xmppchatsvc'].XmppChatService = type('XmppChatService', (object,), {
+    name: lambda *args: None for name in ['_UnpackVikingPresence', '_HandleMessageFromAdmin']})
 sys.modules['eve.client.script.ui.shared.dockedUI.guests'].GuestsPanel = guest_panel
+sys.modules['eve.client.script.ui.station.base'].StationSvc = type('StationSvc', (object,), {
+    name: lambda *args: None for name in ['GetGuests', 'OnCharNowInStation', 'OnCharNoLongerInStation']})
 const = sys.modules['inventorycommon.const']
 const.groupConcordDrone = 301
 entity = sys.modules['spacecomponents.client.components.entitystandings']

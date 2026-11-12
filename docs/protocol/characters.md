@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Player-created portrait settings, November 12, 2026](#player-created-portrait-settings-november-12-2026)
+
 - [Neocom skill startup, November 11, 2026](#neocom-skill-startup-november-11-2026)
 
 - [Direct skill purchasing, November 11, 2026](#direct-skill-purchasing-november-11-2026)
@@ -44,6 +46,54 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Player-created portrait settings, November 12, 2026
+
+Build 3662168 stores submitted portrait settings with tuple fields `cameraPosition` and `cameraPoi` and a
+nested `poseData` dictionary. Read-only inspection found this shape in all seven submitted player portraits
+in the local checkpoint. In `evephotosvc/scenePortraitRenderer.pyj`, `Render` reads individual camera components
+from a truthy settings object. Missing attributes abort the render. The simulated pilots in the same save
+have no submitted settings and therefore use the renderer's default camera.
+
+The `GetPaperDollPortraitDataFor` reply now exposes the flattened camera and pose fields defined by
+`paperdoll/common/npc.pyj` for the scene renderer. It carries the submitted field of view, backdrop and
+lighting metadata. Existing creator payloads remain in the save. The cross-account portrait test exercises
+the native reply shape from a reopened world and checks that the original submitted bytes are still saved.
+The original archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+[EVE University Character Creator](https://wiki.eveuniversity.org/Character_Creator)
+
+**Automated validation.** The exact test filter was
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CharacterPortraitTests.PortraitBatchAndPublicProfileWorkBeforeSelectionAndAcrossAccountsAfterReopen`.
+All five portrait cases passed in the focused in-process xUnit run, including the signed adapter in the
+pinned Python interpreter. [Build and validation results](social.md#local-presence-and-station-guest-snapshots-november-12-2026)
+
+**Live acceptance.** Agent client testing was not performed.
+
+**Optional maintainer checks.** Reopen the client and compare a player-created portrait on the selection
+card and in another account's Local or Guests list.
+
+### Creator image cache follow-up
+
+The follow-up Local screenshot showed one rendered simulated pilot and blank portraits for three
+player-created pilots. The corresponding three creator JPEGs were present in the staged client's
+`cache:/Pictures/Characters` directory. Its scene portrait directory contained the bot's image and no
+image for those three players. Build 3662168's `EvePhoto.AddPortrait` writes the chosen JPEG under the
+character ID at 512 and, when available, 256 pixels. Eden's photo adapter bypassed that directory.
+
+The adapter now checks the creator image before requesting a scene render. The 32-pixel Local and Guests
+entries can use the existing larger JPEG. On a cache miss, a sprite with a completion callback receives
+the placeholder texture while `GetPortrait` returns None, which keeps the native `GetOwnerLogo` caller
+subscribed for completion. The scene queue's completion signal publishes `OnPortraitCreated` for other
+rows waiting for the same character. Clients without the JPEG still use the saved doll. The portrait
+reply maps an unset modifier variation to the zero sentinel tested by native `ApplyDBRowToDoll`, and the
+creator's stored bytes retain the submitted form.
+
+**Automated validation.** The pinned adapter check covers a 32-pixel request using an existing 512-pixel
+creator JPEG, placeholder and completion handling, and the scene path for cache misses. Cross-account batch
+and single RPCs verify modifier normalization and saved-byte preservation.
+[Build and validation results](social.md#missing-rows-follow-up)
+
+**Live acceptance.** Agent client testing was not performed.
 
 ## Neocom skill startup, November 11, 2026
 

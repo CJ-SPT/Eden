@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Local presence and station guest snapshots, November 12, 2026](#local-presence-and-station-guest-snapshots-november-12-2026)
 - [Translocation destination Local handoff (November 6, 2026)](#translocation-destination-local-handoff-november-6-2026)
 - [Translocation chat continuity (November 6, 2026)](#translocation-chat-continuity-november-6-2026)
 - [Native chat ready-handshake correction (November 5, 2026)](#native-chat-ready-handshake-correction-november-5-2026)
@@ -22,6 +23,61 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
+
+## Local presence and station guest snapshots, November 12, 2026
+
+Build 3662168's `xmppchatclient/xmppchatsvc.pyj` handles `/admin` joins as direct window updates. Its
+`_UnpackVikingPresence` also primes owner data and records the channel participant role. Human arrivals now use
+one-record `/viking` presence for existing observers. Initial joins and simulated-pilot batches continue to send
+complete rosters. A `/viking` roster adds entries, so departures still use explicit `/admin` messages.
+The signed client adapter serializes roster application with admin updates for the same channel and clears the
+participant role on departure. A yielding roster application could previously reinsert a departed pilot.
+
+In `eve/client/script/ui/station/base.pyj`, `StationSvc.GetGuests` clears its cache and yields on the snapshot RPC.
+An intervening departure removes nothing from the cleared cache, allowing a row from the pending snapshot to
+restore that pilot. The signed adapter replays intervening deltas in order after the snapshot and suppresses the
+result if the session moved to a different station during the call. Concurrent readers share the native cache.
+
+The original archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+[EVE University Local membership](https://wiki.eveuniversity.org/Identifying_war_targets_in_Local)
+
+**Automated validation.** The original native methods reproduced both races in the pinned Python runtime.
+The exact regressions passed in 3.38 seconds using in-process xUnit after VSTest timed out connecting to its host.
+The focused selection passed 82 cases in 24.43 seconds. Loopback socket permissions prevented 17 TLS and
+connection cases from reaching their assertions. The passing coverage includes human Local participant
+wire data, multi-pilot chat state, station guest transitions and the signed adapter in the pinned runtime.
+The exact development selection was `PeerLocalArrivalCarriesNativeParticipantDataAndDepartureUsesExplicitLeave`,
+`NativePresenceRebuildsPreserveConcurrentArrivalsDeparturesAndRowIndexes` and
+`PortraitBatchAndPublicProfileWorkBeforeSelectionAndAcrossAccountsAfterReopen`.
+Tool restore, cached solution restore, build (10.36 seconds, zero warnings or errors), both Python policy
+suites (8 and 9 cases), CSharpier and line-width checks passed. NuGet vulnerability data was unavailable
+and the formatter's separate .NET style check could not connect to its build-host pipe.
+
+**Live acceptance.** Agent client testing was not performed.
+
+**Optional maintainer checks.** Restart the server and reopen two clients. Join the same system and station on
+different accounts, then undock, redock and log off one pilot while checking the other pilot's Local and Guests.
+
+### Missing rows follow-up
+
+The follow-up screenshots show Local with four members and three visible rows, and Guests with two members
+and no visible rows. Local's native `SetChannel` can clear the member and row dictionaries while an arrival is
+yielding in owner lookup. The adapter now includes the channel switch in the view's lock. After a `/viking`
+update it checks actual scroll rows against visible members and rebuilds only on a mismatch.
+
+Station rows require a cached owner profile. The native `Recordset._Prime` remembers missing owners and skips
+them on future prime calls. A missing profile can then abort the entire guest rebuild when it reads the name.
+The signed adapter retries those IDs through the existing owner RPC and builds rows for the profiles it can
+resolve. Incremental arrivals respect the search filter and skip a row already included in a concurrent rebuild.
+
+**Automated validation.** The pinned presence test reproduced the missing-owner guest rebuild failure and the
+channel-switch race. It checks cache recovery, duplicate arrivals and Local row reconciliation. In-process xUnit
+passed 79 affected cases in 21.22 seconds. After consolidating owner priming into one request, the solution
+built in 24.10 seconds with zero warnings or errors and 36 focused cases passed in 8.69 seconds. Both Python
+policy suites, CSharpier and the line-width check passed. Socket tests and the formatter's .NET style host remain
+blocked by the sandbox.
+
+**Live acceptance.** Agent client testing was not performed.
 
 ## Translocation destination Local handoff (November 6, 2026)
 

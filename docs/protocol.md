@@ -80,6 +80,12 @@ research points, native dialogs, paid datacore redemption, eligibility, schema m
 [Local and station list rebuild races](protocol/social.md#local-and-station-list-rebuild-races-november-11-2026)
 records native row/count divergence, the signed login correction and headless cooperative-tasklet regressions.
 
+[Local presence and station guest snapshots](protocol/social.md#local-presence-and-station-guest-snapshots-november-12-2026)
+records human Local arrivals, participant roles, and races between snapshots and departures.
+
+[Player-created portrait settings](protocol/characters.md#player-created-portrait-settings-november-12-2026)
+records how saved camera and pose fields are adapted for the native scene renderer.
+
 [Planetary industry](protocol/planetary.md) records colony construction, extraction and all 68 schematics,
 transactional orbital cargo, saved deadlines, native reply contracts and source-backed limitations.
 

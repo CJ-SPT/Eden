@@ -104,31 +104,16 @@ internal static class XmppWire
             new XAttribute("info", JsonSerializer.Serialize(new object?[] { pilot.Id, pilot.Name, CharacterType, pilot.GenderId, null }))
         );
 
-    private sealed record NativeUserData(
-        [property: JsonPropertyName("corpid")] int CorporationId,
-        [property: JsonPropertyName("allianceid")] int AllianceId,
-        [property: JsonPropertyName("warfactionid")] int WarFactionId,
-        [property: JsonPropertyName("typeid")] int TypeId,
-        [property: JsonPropertyName("role")] long Roles,
-        [property: JsonPropertyName("info")] string Info
-    );
-
-    private sealed record LocalControl(
+    private sealed record LocalDeparture(
         [property: JsonPropertyName("cmd")] string Command,
-        [property: JsonPropertyName("charid")] long CharacterId,
-        [property: JsonPropertyName("userdata")] NativeUserData UserData
+        [property: JsonPropertyName("charid")] long CharacterId
     );
 
     internal static XElement Event(ChatDelivery delivery, string domain, string recipient) =>
         delivery.Event switch
         {
             ChatEvent.Presence presence => Presence(delivery, presence, domain, recipient),
-            ChatEvent.Roster roster => new XElement(
-                "presence",
-                new XAttribute("from", RoomJid(roster.Room, domain) + "/viking"),
-                new XAttribute("to", recipient),
-                roster.Pilots.Select(UserData)
-            ),
+            ChatEvent.Roster roster => VikingPresence(roster.Room, domain, recipient, roster.Pilots.Select(UserData)),
             ChatEvent.Message message => new XElement(
                 "message",
                 new XAttribute("from", RoomJid(message.Room, domain) + "/" + message.Sender.Id),
@@ -153,27 +138,23 @@ internal static class XmppWire
             _ => throw new InvalidDataException("Unknown chat delivery."),
         };
 
+    private static XElement VikingPresence(ChatRoom room, string domain, string recipient, IEnumerable<XElement> users) =>
+        new("presence", new XAttribute("from", RoomJid(room, domain) + "/viking"), new XAttribute("to", recipient), users);
+
     private static XElement Presence(ChatDelivery delivery, ChatEvent.Presence presence, string domain, string recipient)
     {
         XNamespace muc = MucUserNamespace;
         bool self = recipient.StartsWith(UserJid(presence.Pilot.Id, domain) + "/", StringComparison.Ordinal);
         if (presence.Room.Kind == ChatRoomKind.Local && !self)
         {
-            // Build 3662168 explicitly ignores ordinary peers' Local leave
-            // presence. _HandleMessageFromAdmin owns Local join/leave updates.
-            var pilot = presence.Pilot;
-            LocalControl command = new(
-                presence.Available ? "join" : "leave",
-                pilot.Id,
-                new(
-                    pilot.CorporationId,
-                    0,
-                    0,
-                    CharacterType,
-                    pilot.Roles,
-                    JsonSerializer.Serialize(new object?[] { pilot.Id, pilot.Name, CharacterType, pilot.GenderId, null })
-                )
-            );
+            // Build 3662168's /viking handler populates both the Local window
+            // and its participant registry. The /admin join only updates the window.
+            if (presence.Available)
+            {
+                return VikingPresence(presence.Room, domain, recipient, [UserData(presence.Pilot)]);
+            }
+            // The roster is additive and ordinary peer leave presence is ignored.
+            LocalDeparture command = new("leave", presence.Pilot.Id);
             return new(
                 "message",
                 new XAttribute("from", RoomJid(presence.Room, domain) + "/admin"),

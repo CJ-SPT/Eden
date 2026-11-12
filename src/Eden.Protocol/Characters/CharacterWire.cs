@@ -21,9 +21,46 @@ internal sealed record CharacterPortraitReply(byte[]? Data) : BlueModel
         {
             Data is null
                 ? new List<object?>()
-                : new List<object?> { BlueMarshal.Decode(Data) },
+                : new List<object?> { ReadRendererSettings(Data) },
             null,
         };
+
+    private static object? ReadRendererSettings(byte[] data)
+    {
+        var saved = BlueMarshal.Decode(data);
+        if (saved is not BlueInstance { Name: "utillib.KeyVal", State: Dictionary<string, object?> fields })
+        {
+            return saved;
+        }
+
+        // The creator submits vectors and a nested pose map. The scene renderer
+        // reads the flat camera and pose fields used by native facial portrait data.
+        var settings = new Dictionary<string, object?>(fields);
+        AddVector(settings, fields.GetValueOrDefault("cameraPosition"), "camera");
+        AddVector(settings, fields.GetValueOrDefault("cameraPoi"), "cameraPoi");
+        if (fields.GetValueOrDefault("poseData") is Dictionary<string, object?> pose)
+        {
+            AddVector(settings, pose.GetValueOrDefault("HeadLookTarget"), "headLookTarget");
+            foreach (var (key, value) in pose)
+            {
+                if (key.Length > 0 && key != "HeadLookTarget")
+                {
+                    settings.TryAdd(char.ToLowerInvariant(key[0]) + key[1..], value);
+                }
+            }
+        }
+        return new BlueInstance("utillib.KeyVal", settings);
+    }
+
+    private static void AddVector(Dictionary<string, object?> settings, object? value, string prefix)
+    {
+        if (value is object?[] { Length: 3 } coordinates)
+        {
+            settings.TryAdd(prefix + "X", coordinates[0]);
+            settings.TryAdd(prefix + "Y", coordinates[1]);
+            settings.TryAdd(prefix + "Z", coordinates[2]);
+        }
+    }
 }
 
 internal sealed record PublicCharacterInfo(PublicCharacterProfile Pilot) : BlueModel

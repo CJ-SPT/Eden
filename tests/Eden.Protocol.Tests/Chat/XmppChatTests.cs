@@ -18,6 +18,26 @@ namespace Eden.Protocol.Tests.Chat;
 public sealed class XmppChatTests
 {
     [Fact]
+    public void PeerLocalArrivalCarriesNativeParticipantDataAndDepartureUsesExplicitLeave()
+    {
+        const string domain = "eden.chat";
+        const string recipient = "90000001@eden.chat/eveclient";
+        ChatRoom room = new(ChatRoomKind.Local, 30000142);
+        ChatPilot pilot = new(90000002, "Joining pilot", 1000044, 30000142, (long)PilotRole.Player, GenderId: 1);
+        var arrived = XmppWire.Event(new(Guid.Empty, new ChatEvent.Presence(room, pilot, true)), domain, recipient);
+        Assert.Equal("presence", arrived.Name.LocalName);
+        Assert.Equal("local_30000142@conference.eden.chat/viking", (string?)arrived.Attribute("from"));
+        Assert.Equal(recipient, (string?)arrived.Attribute("to"));
+        Assert.Equal(pilot.Id, Assert.Single(RosterIds(arrived)));
+        var data = Assert.Single(arrived.Elements());
+        Assert.Equal(pilot.CorporationId, (int?)data.Attribute("corpid"));
+        Assert.Equal(pilot.Roles, (long?)data.Attribute("role"));
+
+        var departed = XmppWire.Event(new(Guid.Empty, new ChatEvent.Presence(room, pilot, false)), domain, recipient);
+        Assert.True(IsControl(departed, "leave", pilot.Id));
+    }
+
+    [Fact]
     public async Task SimulatedPopulationBurstsReachAnAlreadyJoinedLocalAsOneCompleteNativeRoster()
     {
         using TestWorld world = new();
@@ -106,7 +126,9 @@ public sealed class XmppChatTests
         await second.JoinAsync("local_30000142", "second-ready");
         await second.UntilAsync(e => (string?)e.Attribute("id") == "second-ready");
         Assert.Equal(new long[] { 90000001, 90000002 }, RosterIds((await second.UntilAsync(IsRoster))[^1]));
-        await first.UntilAsync(e => IsControl(e, "join", 90000002));
+        var arrival = Assert.Single(await first.UntilAsync(IsRoster), IsRoster);
+        Assert.Equal(90000002, Assert.Single(RosterIds(arrival)));
+        Assert.Equal("1000044", (string?)arrival.Elements().Single().Attribute("corpid"));
         await second.MessageAsync("local_30000142", "first-message", "hello");
         foreach (var client in new[] { first, second })
         {
@@ -205,7 +227,7 @@ public sealed class XmppChatTests
         await first.UntilAsync(e => (string?)e.Attribute("id") == "a-local");
         await second.JoinAsync("local_30000142", "b-local");
         await second.UntilAsync(e => (string?)e.Attribute("id") == "b-local");
-        await first.UntilAsync(e => IsControl(e, "join", pilotB.Id));
+        await first.UntilAsync(e => IsArrival(e, pilotB.Id));
         await third.JoinAsync(destination, "c-local");
         await third.UntilAsync(e => (string?)e.Attribute("id") == "c-local");
         await first.JoinAsync("corp_1000044", "a-corp");
@@ -221,7 +243,7 @@ public sealed class XmppChatTests
         Assert.Equal("error", (string?)(await second.UntilAsync(e => (string?)e.Attribute("id") == "forbidden"))[^1].Attribute("type"));
         if (destinationKind == ChatRoomKind.Local)
         {
-            await third.UntilAsync(e => IsControl(e, "join", pilotB.Id));
+            await third.UntilAsync(e => IsArrival(e, pilotB.Id));
         }
         await second.MessageAsync(destination, "destination-message", "new Local");
         await third.UntilAsync(e => (string?)e.Attribute("id") == "destination-message");
@@ -337,7 +359,7 @@ public sealed class XmppChatTests
         Assert.Single(initialB, e => e.Name.LocalName == "presence" && (string?)e.Attribute("id") == "join-b");
         var rosterB = (await second.UntilAsync(IsRoster))[^1];
         Assert.Equal(new[] { pilotA.PilotId, pilotB.PilotId }, RosterIds(rosterB));
-        await first.UntilAsync(e => IsControl(e, "join", pilotB.PilotId));
+        await first.UntilAsync(e => IsArrival(e, pilotB.PilotId));
         const string message = "こんにちは 🚀 <b>two pilots</b> & Local";
         await first.MessageAsync(channel, "a-message", message);
         foreach (var client in new[] { first, second })
@@ -360,7 +382,7 @@ public sealed class XmppChatTests
         );
         await reconnected.JoinAsync(channel, "join-again");
         await reconnected.UntilAsync(e => (string?)e.Attribute("id") == "join-again");
-        await first.UntilAsync(e => IsControl(e, "join", pilotB.PilotId));
+        await first.UntilAsync(e => IsArrival(e, pilotB.PilotId));
         scopeB.ServiceProvider.GetRequiredService<ChatHandler>().Dispose();
         await first.UntilAsync(e => IsControl(e, "leave", pilotB.PilotId));
         Assert.Null(runtime.User(pilotB.PilotId));
@@ -379,6 +401,8 @@ public sealed class XmppChatTests
 
     private static bool IsRoster(XElement stanza) =>
         ((string?)stanza.Attribute("from"))?.EndsWith("/viking", StringComparison.Ordinal) == true;
+
+    private static bool IsArrival(XElement stanza, long pilotId) => IsRoster(stanza) && RosterIds(stanza).SequenceEqual([pilotId]);
 
     private static long[] RosterIds(XElement stanza) =>
         stanza
