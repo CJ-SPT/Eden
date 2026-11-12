@@ -174,7 +174,7 @@ internal sealed partial class LiveCombatRuntime
         var paid = LiveNpcCombatRules.Fire(ship, npc, velocity, now, roll);
         if (paid.Shot.Health.Remaining.Destroyed)
         {
-            // Capsule, insurance, inventory and report settlement retain one SQL transaction.
+            // The durable action settles capsule, insurance, inventory and report together.
             return false;
         }
         _ships[pilotId] = paid.Ship with

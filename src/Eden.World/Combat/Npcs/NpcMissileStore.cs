@@ -14,6 +14,7 @@ using Eden.World.Combat.Weapons;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
     private const int HistorySeconds = 120;
 
     internal static bool Launch(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         WorldNpc npc,
         NpcAggression aggression,
@@ -116,12 +117,12 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
         {
             return [];
         }
-        using WorldDbContext world = new(database.Path);
+        using WorldActionScope transaction = new(database, select: world => FlightParticipants(world, pilotId, shipId));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        using var transaction = world.Database.BeginTransaction();
         long oldest = now - HistorySeconds * TimeSpan.TicksPerSecond;
-        world.Set<WorldMissile>().Where(m => m.SourceKind == MissileSourceKind.Npc && m.EndedAt < oldest).ExecuteDelete();
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        world.RemoveRange(world.Set<WorldMissile>().Where(m => m.SourceKind == MissileSourceKind.Npc && m.EndedAt < oldest));
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         int targetSystem = pilot.ActiveShip.Position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         var rows = world
             .Set<WorldMissile>()
@@ -242,13 +243,31 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             }
         }
         world.SaveChanges();
-        transaction.Commit();
         if (shots.Count > 0 && shots[^1].Health.Remaining.Destroyed)
         {
-            shots[^1] = shots[^1] with { Capsule = lookup.FindPilot(pilot.AccountId, pilotId) };
+            shots[^1] = shots[^1] with { Capsule = lookup.FindPilot(world, pilot.AccountId, pilotId) };
         }
+        transaction.Commit();
         return shots;
     }
+
+    private TransactionParticipants FlightParticipants(WorldAction world, long pilot, long ship)
+    {
+        var flights = world
+            .Set<WorldMissile>()
+            .Where(row => row.SourceKind == MissileSourceKind.Npc && row.PilotId == pilot && row.Status == MissileFlightStatus.Flying)
+            .Select(row => new FlightEndpoint(row.SourceShipId, row.SystemId))
+            .ToArray();
+        var resources = flights
+            .Select(row => row.Npc)
+            .Concat(ShipLossPersistence.LossNpcParticipants(world, database.Path, ship))
+            .Distinct()
+            .Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
+            .ToArray();
+        return new(systems: flights.Select(row => row.System), pilots: [pilot], ships: [ship], resources: resources);
+    }
+
+    private sealed record FlightEndpoint(long Npc, int System);
 
     private sealed record PendingStep(WorldMissile Row, MissilePayload Payload, long Time);
 }

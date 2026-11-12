@@ -10,14 +10,14 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Inventory;
-using Eden.World.Storage;
+using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Drones;
 
 internal static class DroneNpcCombat
 {
     internal static NpcShot? TryFire(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         WorldNpc npc,
         NpcAggression aggression,

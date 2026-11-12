@@ -1,8 +1,10 @@
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Propulsion;
 using Eden.World.Catalog;
+using Eden.World.Combat;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -105,4 +107,17 @@ internal sealed partial class PilotTackleStore
             .Where(row => row.TargetKind == TackleTargetKind.Npc && Enumerable.Contains(ids, row.TargetId))
             .ToArray()
             .ToLookup(row => row.TargetId);
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> NpcAttributes(
+        WorldAction world,
+        long npcId,
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes,
+        double missileRange = 0
+    ) =>
+        PlayerEwarStore.NpcAttributes(
+            world,
+            npcId,
+            TackleDefinitions.NpcAttributes(attributes, NpcTackles(world, [npcId])[npcId].Select(row => row.Module()).ToArray()),
+            missileRange
+        );
 }

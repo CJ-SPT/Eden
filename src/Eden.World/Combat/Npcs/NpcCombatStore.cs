@@ -240,15 +240,27 @@ internal sealed partial class NpcCombatStore(
         {
             return resident;
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(
+            database,
+            select: world =>
+                new(
+                    pilots: [pilotId],
+                    ships: [shipId],
+                    resources: ShipLossPersistence
+                        .LossNpcParticipants(world, database.Path, shipId)
+                        .Append(npcId)
+                        .Distinct()
+                        .Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
+                )
+        );
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var aggression = world.Set<NpcAggression>().Find(npcId);
         if (aggression is null || aggression.TargetShipId != shipId)
         {
             return null;
         }
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var npc = world.Set<WorldNpc>().Find(npcId);
         if (npc?.Navigation == NpcNavigationState.Warping)
         {
@@ -394,17 +406,8 @@ internal sealed partial class NpcCombatStore(
             insurance = ShipLossPersistence.Apply(world, catalog, pilot, npcId, shipId, system, position, now, lootRoll);
         }
         world.SaveChanges();
+        var capsule = result.Remaining.Destroyed ? lookup.FindPilot(world, pilot.AccountId, pilotId) : null;
         transaction.Commit();
-        return new(
-            npc.Id,
-            npc.TypeId,
-            weapon,
-            damage,
-            result.Applied,
-            quality,
-            new(shipId, defense, result.Remaining),
-            result.Remaining.Destroyed ? lookup.FindPilot(pilot.AccountId, pilotId)! : null,
-            insurance
-        );
+        return new(npc.Id, npc.TypeId, weapon, damage, result.Applied, quality, new(shipId, defense, result.Remaining), capsule, insurance);
     }
 }

@@ -22,7 +22,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Insurance;
 
 [Injectable]
-internal sealed class PilotInsuranceStore(WorldDatabase database, TimeProvider clock) : IPilotInsurance
+internal sealed partial class PilotInsuranceStore(WorldDatabase database, TimeProvider clock) : IPilotInsurance
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 

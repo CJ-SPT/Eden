@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident NPC missiles and hull loss](protocol/performance.md#resident-npc-missiles-and-hull-loss-november-11-2026)
+records resident launch, flight, hull destruction, insurance and checkpoint retry.
+
 [Resident missile launches and report acknowledgement](protocol/performance.md#resident-missile-launches-and-report-acknowledgement-november-11-2026)
 records atomic volleys, cached fitted missile inputs, cancellation and retryable checkpoint saves.
 

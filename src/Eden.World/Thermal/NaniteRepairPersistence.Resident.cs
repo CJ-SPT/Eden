@@ -101,4 +101,12 @@ internal static partial class NaniteRepairPersistence
             quantity -= returned;
         }
     }
+
+    internal static void BeforeShipLoss(WorldAction world, CatalogDbContext catalog, long ship, long now)
+    {
+        foreach (var row in world.Set<SavedNaniteRepair>().Where(r => r.ShipId == ship).ToArray())
+        {
+            Finish(world, catalog, row, now);
+        }
+    }
 }

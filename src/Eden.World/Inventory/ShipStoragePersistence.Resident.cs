@@ -35,4 +35,11 @@ internal static partial class ShipStoragePersistence
             Contents(world, ship.OwnerId, ship.Id),
             world.Set<ShipHealthState>().Find(ship.Id)
         );
+
+    internal static void Destroy(WorldAction world, Ship ship)
+    {
+        PilotInsuranceStore.VoidRemovedHull(world, ship.Id);
+        world.RemoveRange(Contents(world, ship.OwnerId, ship.Id));
+        world.Remove(ship);
+    }
 }

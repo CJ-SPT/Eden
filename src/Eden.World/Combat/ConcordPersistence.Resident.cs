@@ -79,4 +79,20 @@ internal static partial class ConcordPersistence
         state.Apply(CrimewatchRules.Player(state.Timers(), now, decision.Flag, true, now));
         Schedule(world, catalog, pilot, now);
     }
+
+    internal static void Complete(WorldAction world, SavedConcordResponse response, long now)
+    {
+        response.CompletedAt = now;
+        // Each response owns only its three responders, including after restart.
+        if (response.CommanderId is long commander)
+        {
+            long[] ids = [commander, response.FirstCaptainId!.Value, response.SecondCaptainId!.Value];
+            var squad = world.Set<WorldNpc>().Where(n => Enumerable.Contains(ids, n.Id) && n.Role == NpcRole.Concord).ToArray();
+            foreach (var npc in squad)
+            {
+                npc.RetiredAt = now;
+            }
+            world.RemoveRange(world.Set<NpcAggression>().Where(a => Enumerable.Contains(ids, a.NpcId)));
+        }
+    }
 }

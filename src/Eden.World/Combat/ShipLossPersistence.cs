@@ -20,7 +20,7 @@ using Eden.World.Storage;
 
 namespace Eden.World.Combat;
 
-internal static class ShipLossPersistence
+internal static partial class ShipLossPersistence
 {
     internal static InsurancePayout? Apply(
         WorldDbContext world,

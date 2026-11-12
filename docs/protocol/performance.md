@@ -3374,3 +3374,45 @@ Not performed; agent client testing is disabled.
 
 After rebuilding, compare launch and cancellation counts during a missile-heavy encounter, separating them from
 flight advancement, settlement and checkpoint work.
+
+## Resident NPC missiles and hull loss (November 11, 2026)
+
+NPC launch, incoming missile advancement and NPC weapon settlement now use resident world actions. The launch
+and direct-fire deadlines remain independent. Flight uses the existing step order and contact time, and duplicate
+callbacks cannot replay an acknowledged hit. Selection names the victim, source NPCs and any other aggressors
+or Concord responders whose state may change on destruction. Existing fast paths for ordinary NPC turret fire
+and drone retaliation continue to use resident combat objects.
+
+Fatal NPC damage commits the replacement capsule, inventory transfers, wreck, report, task progress, insurance
+policy and wallet together. A detached checkpoint captures the same generation and rolls back as a unit on
+failure. Adjusted prices retain decimal precision, and a material-valued payout reads only its recipe's prices.
+
+### Automated validation
+
+On `d6846c84`, the incoming flight regression counted **51 SQL commands for the nonfatal path and 104 for the
+fatal path** in the fixture (two failures, 7.21 seconds). After conversion the nonfatal case passed and the cold
+fatal case retained **five static catalog commands**; the commands were on `TypeAttribute` and `SourceRecord`.
+With the wreck, capsule and task inputs warmed, both passed in **7.20 seconds**, requiring zero SQL commands
+and connections, zero nonfatal fits, and at most one fit for the replacement capsule. The cases reopen the
+checkpoint and verify the paid impact or the complete replacement hull and wreck.
+
+The incoming missile and insurance selection passed **26 cases in 18.05 seconds**. Two further cases passed in
+**7.04 seconds**, covering zero-SQL launch exactly at the saved deadline and failure/retry on the insurance
+ledger insert with the capsule, wreck, combat report, wallet and policy in the same save generation.
+
+All **379 affected combat, insurance, wreck, bot-defense, ownership and checkpoint tests passed in 2m34s**.
+The solution build passed without warnings in **5.78 seconds**. Tool/solution restore, both Python policy suites
+(8 catalog and 9 formatting checks), formatting verification (1,952 files) and line-width checks passed.
+
+Closing filters/results are recorded under `artifacts/bot-resident-npc-missiles`. No full .NET suite was run. Player missile flight and player loss settlement, NPC population maintenance, and some other
+combat/maintenance boundaries retain SQL paths. The installed-world workload has not been replayed; no live
+latency or supported-population increase is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After rebuilding, compare NPC launch, flight and destruction against the same workload, separating cold catalog
+preparation and checkpoint work from the steady frame timings.

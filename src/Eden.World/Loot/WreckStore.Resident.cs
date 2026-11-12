@@ -192,4 +192,66 @@ internal sealed partial class WreckStore
                 RandomNumberGenerator.GetInt32(NpcLootRules.ModuleChoices)
             );
     }
+
+    internal static WorldWreck CreatePlayer(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Ship ship,
+        Pilot pilot,
+        int systemId,
+        long now,
+        IReadOnlyList<OwnedItem> items,
+        IReadOnlySet<long> survivors
+    )
+    {
+        var definition = catalog.Read(CatalogData.Client.Types, (long)ship.TypeId);
+        var type = definition?.WreckTypeID is long wreckType
+            ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)
+            : null;
+        if (type is null)
+        {
+            throw new InvalidDataException("The lost ship has no supported catalog wreck.");
+        }
+        var position = ship.Position ?? throw new InvalidDataException("A destroyed ship must be in space.");
+        NaniteRepairPersistence.BeforeShipLoss(world, catalog, ship.Id, now);
+        var wreck = world
+            .Set<WorldWreck>()
+            .Add(
+                new()
+                {
+                    Id = checked(WreckDefinitions.FirstPlayerWreckId + ship.Id),
+                    ShipId = ship.Id,
+                    OwnerId = pilot.Id,
+                    CorporationId = pilot.CorporationId,
+                    TypeId = type.Id,
+                    SystemId = systemId,
+                    Name = ship.Name + " " + type.Name,
+                    X = position.X,
+                    Y = position.Y,
+                    Z = position.Z,
+                    CreatedAt = now,
+                    ExpiresAt = checked(now + WreckDefinitions.LifetimeSeconds * TimeSpan.TicksPerSecond),
+                }
+            )
+            .Entity;
+        // Surviving modules retain their singleton identity but are loose,
+        // offline cargo. The old hull's cooldowns must not follow them.
+        Eden.World.Information.SalvagePersistence.Seed(catalog, wreck);
+        var ids = items.Select(i => i.Id).ToArray();
+        world.RemoveRange(world.Set<ModuleCooldown>().Where(c => Enumerable.Contains(ids, c.ModuleId)));
+        foreach (var item in items)
+        {
+            if (survivors.Contains(item.Id))
+            {
+                item.LocationId = wreck.Id;
+                item.FlagId = (int)InventoryFlag.Cargo;
+                item.Online = false;
+            }
+            else
+            {
+                world.Remove(item);
+            }
+        }
+        return wreck;
+    }
 }

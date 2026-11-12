@@ -75,6 +75,8 @@ internal sealed partial class EconomyTransaction
                     Set<Eden.Data.World.Corporations.SavedCorporationWalletSelection>().Where(child => child.PilotId == removed.Id)
                 );
                 RemoveRange(Set<Eden.Data.World.Industry.IndustryJob>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Insurance.SavedInsuranceLedger>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Insurance.SavedInsurancePolicy>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Loot.WorldWreck>().Where(child => child.OwnerId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Market.MarketExecution>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Market.PilotWallet>().Where(child => child.PilotId == removed.Id));
@@ -99,6 +101,12 @@ internal sealed partial class EconomyTransaction
                 break;
             case Eden.Data.World.Corporations.SavedCorporation removed:
                 RemoveRange(Set<Eden.Data.World.Corporations.SavedCorporationTitle>().Where(child => child.CorporationId == removed.Id));
+                break;
+            case Eden.Data.World.Insurance.SavedInsurancePolicy removed:
+                if (Set<Eden.Data.World.Insurance.SavedInsuranceLedger>().Any(child => child.PolicyId == removed.Id))
+                {
+                    throw new InvalidDataException("The resident SavedInsurancePolicy still has SavedInsuranceLedger references.");
+                }
                 break;
             case Eden.Data.World.Mining.SavedMiningSite removed:
                 RemoveRange(Set<Eden.Data.World.Mining.SavedMiningDeposit>().Where(child => child.SiteId == removed.Id));

@@ -14,6 +14,7 @@ using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -136,6 +137,61 @@ public sealed class InsuranceLossTests
         Assert.Equal(100000, fixture.Fire()!.Insurance!.AmountCents);
         Assert.Equal(1, TaskTrackingTestData.Count(fixture.Db, TaskEvents.ShipLost));
         Assert.Empty(insurance.Contracts(Fixture.PilotId));
+    }
+
+    [Fact]
+    public void ResidentLossCheckpointRetriesTheCapsuleWreckReportAndInsuranceTogether()
+    {
+        using Fixture fixture = new(liveWorld: true, useTestClock: true);
+        InsuranceTestData.Prepare(fixture.Db);
+        fixture.AlmostLost();
+        InsuranceTestData.Fund(fixture.Db);
+        var position = fixture.Pilot.Position!;
+        int station = fixture.Pilot.StationId;
+        fixture.Db.Store.SetPosition(Fixture.ShipId, null);
+        PilotInsuranceStore insurance = new(new(fixture.Db.Path), fixture.Clock);
+        var purchase = insurance.Insure(Fixture.PilotId, station, Fixture.ShipId, 30000, false);
+        fixture.Db.Store.SetPosition(Fixture.ShipId, position, fixture.Npc.SystemId);
+        fixture.Aggress();
+        fixture.Clock.Milliseconds = 7500;
+        var paid = Assert.IsType<Eden.Gameplay.Combat.NpcShot>(fixture.Fire());
+        Assert.True(paid.Health.Remaining.Destroyed);
+        Assert.Equal(100000, paid.Insurance!.AmountCents);
+        var live = LiveWorld.Find(fixture.Db.Path)!;
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        using (WorldDbContext before = new(checkpoint.Database))
+        {
+            before.Database.ExecuteSqlRaw(
+                """
+                CREATE TRIGGER RejectResidentInsurance BEFORE INSERT ON WorldInsuranceLedger WHEN NEW.IsPayout=1
+                BEGIN SELECT RAISE(ABORT,'checkpoint insurance'); END
+                """
+            );
+        }
+        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => checkpoint.Project());
+        using (WorldDbContext failed = new(checkpoint.Database))
+        {
+            Assert.Equal(Fixture.ShipId, failed.Pilots.Find(Fixture.PilotId)!.ActiveShipId);
+            Assert.Empty(failed.Set<ShipLoss>());
+            Assert.Empty(failed.Set<WorldWreck>());
+            Assert.Empty(failed.Set<SavedCombatReport>());
+            Assert.Equal(purchase.BalanceCents, failed.Set<PilotWallet>().Find(Fixture.PilotId)!.Cents);
+            Assert.Equal(InsurancePolicyStatus.Active, failed.Set<SavedInsurancePolicy>().Find(purchase.Policy.Id)!.Status);
+            Assert.Single(failed.Set<SavedInsuranceLedger>());
+            failed.Database.ExecuteSqlRaw("DROP TRIGGER RejectResidentInsurance");
+        }
+        Assert.Equal(paid.Capsule!.ShipId, live.Economy.Inspect(world => world.Pilots.Find(Fixture.PilotId)!.ActiveShipId));
+        Assert.Null(fixture.Fire());
+        checkpoint.Project();
+        using WorldDbContext saved = new(checkpoint.Database);
+        Assert.Equal(paid.Capsule.ShipId, saved.Pilots.Find(Fixture.PilotId)!.ActiveShipId);
+        Assert.Null(saved.Ships.Find(Fixture.ShipId));
+        Assert.Equal(paid.Capsule.ShipId, Assert.Single(saved.Set<ShipLoss>()).CapsuleId);
+        Assert.Equal(Fixture.ShipId, Assert.Single(saved.Set<WorldWreck>()).ShipId);
+        Assert.Single(saved.Set<SavedCombatReport>());
+        Assert.Equal(purchase.BalanceCents + 100000, saved.Set<PilotWallet>().Find(Fixture.PilotId)!.Cents);
+        Assert.Equal(InsurancePolicyStatus.Paid, saved.Set<SavedInsurancePolicy>().Find(purchase.Policy.Id)!.Status);
+        Assert.Equal(100000, Assert.Single(saved.Set<SavedInsuranceLedger>().Where(row => row.IsPayout)).AmountCents);
     }
 
     [Fact]

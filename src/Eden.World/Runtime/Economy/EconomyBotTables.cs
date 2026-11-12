@@ -2054,6 +2054,20 @@ internal sealed partial class ResidentEconomy
             )
         );
         Register(
+            new EconomyTable<Eden.Data.World.Economy.SavedAdjustedPrice, EconomySavedAdjustedPrice>(
+                "WorldAdjustedPrice",
+                row => new(row.TypeId),
+                row => new(row.TypeId, row.PriceIsk),
+                state => new Eden.Data.World.Economy.SavedAdjustedPrice { TypeId = state.TypeId, PriceIsk = state.PriceIsk },
+                ProjectSavedAdjustedPrice,
+                "TypeId,PriceIsk",
+                reader => new(reader.GetInt32(1), reader.GetDecimal(2)),
+                state => new(state.TypeId),
+                indexes: [new("TypeId", row => row.TypeId)],
+                primaryColumn: "TypeId"
+            )
+        );
+        Register(
             new EconomyTable<Eden.Data.World.Economy.SavedBeltRenewal, EconomySavedBeltRenewal>(
                 "WorldBeltRenewal",
                 row => new(row.BeltId),
@@ -2210,6 +2224,117 @@ internal sealed partial class ResidentEconomy
                 state => new(state.ShipId),
                 indexes: [new("ShipId", row => row.ShipId)],
                 primaryColumn: "ShipId"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Insurance.SavedInsuranceLedger, EconomySavedInsuranceLedger>(
+                "WorldInsuranceLedger",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.AmountCents,
+                        row.BalanceCents,
+                        row.IsPayout,
+                        row.PilotId,
+                        row.PolicyId,
+                        row.ShipId,
+                        row.Time,
+                        row.TypeId
+                    ),
+                state => new Eden.Data.World.Insurance.SavedInsuranceLedger
+                {
+                    Id = state.Id,
+                    AmountCents = state.AmountCents,
+                    BalanceCents = state.BalanceCents,
+                    IsPayout = state.IsPayout,
+                    PilotId = state.PilotId,
+                    PolicyId = state.PolicyId,
+                    ShipId = state.ShipId,
+                    Time = state.Time,
+                    TypeId = state.TypeId,
+                },
+                ProjectSavedInsuranceLedger,
+                "Id,AmountCents,BalanceCents,IsPayout,PilotId,PolicyId,ShipId,Time,TypeId",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        reader.GetInt64(3),
+                        reader.GetBoolean(4),
+                        reader.GetInt64(5),
+                        reader.IsDBNull(6) ? null : reader.GetInt64(6),
+                        reader.GetInt64(7),
+                        reader.GetInt64(8),
+                        reader.GetInt32(9)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("PilotId", row => row.PilotId),
+                    new("PolicyId", row => row.PolicyId),
+                    new("ShipId", row => row.ShipId),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "Id"
+            )
+        );
+        Register(
+            new EconomyTable<Eden.Data.World.Insurance.SavedInsurancePolicy, EconomySavedInsurancePolicy>(
+                "WorldInsurancePolicy",
+                row => new(row.Id),
+                row =>
+                    new(
+                        row.Id,
+                        row.EndTime,
+                        row.Level,
+                        row.PilotId,
+                        row.PremiumCents,
+                        row.ShipId,
+                        row.StartTime,
+                        row.Status,
+                        row.TypeId,
+                        row.ValueCents
+                    ),
+                state => new Eden.Data.World.Insurance.SavedInsurancePolicy
+                {
+                    Id = state.Id,
+                    EndTime = state.EndTime,
+                    Level = state.Level,
+                    PilotId = state.PilotId,
+                    PremiumCents = state.PremiumCents,
+                    ShipId = state.ShipId,
+                    StartTime = state.StartTime,
+                    Status = state.Status,
+                    TypeId = state.TypeId,
+                    ValueCents = state.ValueCents,
+                },
+                ProjectSavedInsurancePolicy,
+                "Id,EndTime,Level,PilotId,PremiumCents,ShipId,StartTime,Status,TypeId,ValueCents",
+                reader =>
+                    new(
+                        reader.GetInt64(1),
+                        reader.GetInt64(2),
+                        (Eden.Gameplay.Insurance.InsuranceLevel)reader.GetInt32(3),
+                        reader.GetInt64(4),
+                        reader.GetInt64(5),
+                        reader.GetInt64(6),
+                        reader.GetInt64(7),
+                        (Eden.Gameplay.Insurance.InsurancePolicyStatus)reader.GetInt32(8),
+                        reader.GetInt32(9),
+                        reader.GetInt64(10)
+                    ),
+                state => new(state.Id),
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("PilotId", row => row.PilotId),
+                    new("ShipId", row => row.ShipId),
+                    new("Status", row => row.Status),
+                    new("TypeId", row => row.TypeId),
+                ],
+                primaryColumn: "Id"
             )
         );
         Register(
@@ -3181,6 +3306,14 @@ internal sealed partial class EconomyTransaction
                 value.Id = value.Id == 0 ? Next("WorldCombatAnomaly") : value.Id;
                 Reserve("WorldCombatAnomaly", value.Id);
                 break;
+            case Eden.Data.World.Insurance.SavedInsuranceLedger value:
+                value.Id = value.Id == 0 ? Next("WorldInsuranceLedger") : value.Id;
+                Reserve("WorldInsuranceLedger", value.Id);
+                break;
+            case Eden.Data.World.Insurance.SavedInsurancePolicy value:
+                value.Id = value.Id == 0 ? Next("WorldInsurancePolicy") : value.Id;
+                Reserve("WorldInsurancePolicy", value.Id);
+                break;
             case Eden.Data.World.Mining.SavedMiningSite value:
                 value.Id = value.Id == 0 ? Next("WorldMiningSite") : value.Id;
                 Reserve("WorldMiningSite", value.Id);
@@ -3697,6 +3830,7 @@ internal sealed partial class EconomyTransaction
             }
         }
         foreach (var row in Retained<Eden.Data.World.Drones.WorldDroneSettings>()) { }
+        foreach (var row in Retained<Eden.Data.World.Economy.SavedAdjustedPrice>()) { }
         foreach (var row in Retained<Eden.Data.World.Economy.SavedBeltRenewal>()) { }
         foreach (var row in Retained<Eden.Data.World.Economy.SavedEconomicPolicy>()) { }
         foreach (var row in Retained<Eden.Data.World.Exploration.WorldAnomalyMember>()) { }
@@ -3727,6 +3861,40 @@ internal sealed partial class EconomyTransaction
             if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Insurance.SavedInsuranceLedger>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (row.PolicyId is not null && Set<Eden.Data.World.Insurance.SavedInsurancePolicy>().Find(row.PolicyId.Value) is null)
+            {
+                throw new InvalidDataException("Missing resident SavedInsurancePolicy reference.");
+            }
+            if (
+                row.IsPayout
+                && Set<Eden.Data.World.Insurance.SavedInsuranceLedger>()
+                    .Any(other => other.IsPayout && other.ShipId == row.ShipId && (other.Id != row.Id))
+            )
+            {
+                throw new InvalidDataException("Duplicate resident SavedInsuranceLedger unique value.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Insurance.SavedInsurancePolicy>())
+        {
+            if (Set<Eden.Data.World.Characters.Pilot>().Find(row.PilotId) is null)
+            {
+                throw new InvalidDataException("Missing resident Pilot reference.");
+            }
+            if (
+                row.Status == 0
+                && Set<Eden.Data.World.Insurance.SavedInsurancePolicy>()
+                    .Any(other => other.Status == 0 && other.ShipId == row.ShipId && (other.Id != row.Id))
+            )
+            {
+                throw new InvalidDataException("Duplicate resident SavedInsurancePolicy unique value.");
             }
         }
         foreach (var row in Retained<Eden.Data.World.Loot.WorldWreck>())
