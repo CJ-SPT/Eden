@@ -1082,7 +1082,12 @@ internal sealed partial class ResidentEconomy
                     ),
                 state => new(state.Id),
                 readOnly: false,
-                indexes: [new("OwnerId", row => row.OwnerId), new("TypeId", row => row.TypeId), new("LocationId", row => row.LocationId)],
+                indexes:
+                [
+                    new("OwnerId", row => row.OwnerId, member: EconomyIndexMember.RowId),
+                    new("TypeId", row => row.TypeId, member: EconomyIndexMember.RowId),
+                    new("LocationId", row => row.LocationId, member: EconomyIndexMember.RowId),
+                ],
                 primaryColumn: "Id",
                 rowIdIsKey: true
             )
@@ -1177,10 +1182,10 @@ internal sealed partial class ResidentEconomy
                 readOnly: false,
                 indexes:
                 [
-                    new("StationId", row => row.StationId),
-                    new("RegionId", row => row.RegionId),
-                    new("OwnerId", row => row.OwnerId),
-                    new("TypeId", row => row.TypeId),
+                    new("StationId", row => row.StationId, member: EconomyIndexMember.RowId),
+                    new("RegionId", row => row.RegionId, member: EconomyIndexMember.RowId),
+                    new("OwnerId", row => row.OwnerId, member: EconomyIndexMember.RowId),
+                    new("TypeId", row => row.TypeId, member: EconomyIndexMember.RowId),
                     new(nameof(NpcMarketAssortment), row => new NpcMarketAssortment(row.StationId, row.TypeId, row.Bid, row.Kind)),
                 ],
                 primaryColumn: "Id",
@@ -1507,7 +1512,7 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.GetInt64(3)),
                 state => new(state.PilotId, state.TypeId),
                 readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId)],
+                indexes: [new("PilotId", row => row.PilotId, member: EconomyIndexMember.SkillTypeId)],
                 primaryColumn: null
             )
         );

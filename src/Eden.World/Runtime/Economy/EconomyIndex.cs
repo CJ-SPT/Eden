@@ -3,11 +3,23 @@ using System.Linq.Expressions;
 
 namespace Eden.World.Runtime.Economy;
 
-internal sealed class EconomyIndex<T>(string name, Func<T, object?> value, IEqualityComparer<object>? comparer = null)
+internal enum EconomyIndexMember
+{
+    FullKey,
+    RowId,
+    SkillTypeId,
+}
+
+internal sealed class EconomyIndex<T>(
+    string name,
+    Func<T, object?> value,
+    IEqualityComparer<object>? comparer = null,
+    EconomyIndexMember member = EconomyIndexMember.FullKey
+)
     where T : class
 {
     private static readonly object NullKey = new();
-    private readonly Dictionary<object, Bucket> _keys = new(comparer);
+    private readonly Dictionary<object, IBucket> _keys = new(comparer);
     internal string Name => name;
 
     internal IReadOnlyCollection<EconomyKey> Find(object? key) => _keys.TryGetValue(key ?? NullKey, out var found) ? found : [];
@@ -20,7 +32,15 @@ internal sealed class EconomyIndex<T>(string name, Func<T, object?> value, IEqua
     {
         if (!_keys.TryGetValue(key, out var keys))
         {
-            _keys.Add(key, new(id));
+            _keys.Add(
+                key,
+                member switch
+                {
+                    EconomyIndexMember.RowId => new Bucket<long, RowId>(id),
+                    EconomyIndexMember.SkillTypeId => new Bucket<int, SkillTypeId>(id),
+                    _ => new Bucket<EconomyKey, FullKey>(id),
+                }
+            );
             return;
         }
         keys.Add(id);
@@ -47,36 +67,70 @@ internal sealed class EconomyIndex<T>(string name, Func<T, object?> value, IEqua
         }
     }
 
-    // Most membership keys are unique. Allocate a set only for genuinely shared
-    // values; a second dictionary of per-row HashSet instances wastes resident memory.
-    private sealed class Bucket(EconomyKey first) : IReadOnlyCollection<EconomyKey>
+    private interface IBucket : IReadOnlyCollection<EconomyKey>
+    {
+        void Add(EconomyKey id);
+        bool Remove(EconomyKey id);
+    }
+
+    private interface IMember<TMember>
+    {
+        static abstract TMember Pack(EconomyKey key);
+        static abstract EconomyKey Unpack(EconomyKey first, TMember member);
+    }
+
+    private readonly struct FullKey : IMember<EconomyKey>
+    {
+        public static EconomyKey Pack(EconomyKey key) => key;
+
+        public static EconomyKey Unpack(EconomyKey first, EconomyKey member) => member;
+    }
+
+    private readonly struct RowId : IMember<long>
+    {
+        public static long Pack(EconomyKey key) => key.Id;
+
+        public static EconomyKey Unpack(EconomyKey first, long member) => new(member);
+    }
+
+    // Every skill in a pilot's bucket shares that pilot ID.
+    private readonly struct SkillTypeId : IMember<int>
+    {
+        public static int Pack(EconomyKey key) => checked((int)key.Part);
+
+        public static EconomyKey Unpack(EconomyKey first, int member) => new(first.Id, member);
+    }
+
+    // Allocate a set only when more than one row shares a membership value.
+    private sealed class Bucket<TMember, TFormat>(EconomyKey first) : IBucket
+        where TFormat : struct, IMember<TMember>
     {
         private EconomyKey _first = first;
-        private HashSet<EconomyKey>? _many;
+        private HashSet<TMember>? _many;
         public int Count => _many?.Count ?? 1;
 
-        internal void Add(EconomyKey id)
+        public void Add(EconomyKey id)
         {
             if (_many is not null)
             {
-                _many.Add(id);
+                _many.Add(TFormat.Pack(id));
             }
             else if (id != _first)
             {
-                _many = [_first, id];
+                _many = [TFormat.Pack(_first), TFormat.Pack(id)];
             }
         }
 
-        internal bool Remove(EconomyKey id)
+        public bool Remove(EconomyKey id)
         {
             if (_many is null)
             {
                 return _first == id;
             }
-            _many.Remove(id);
+            _many.Remove(TFormat.Pack(id));
             if (_many.Count == 1)
             {
-                _first = _many.Single();
+                _first = TFormat.Unpack(_first, _many.Single());
                 _many = null;
             }
             return false;
@@ -88,7 +142,7 @@ internal sealed class EconomyIndex<T>(string name, Func<T, object?> value, IEqua
             {
                 foreach (var id in _many)
                 {
-                    yield return id;
+                    yield return TFormat.Unpack(_first, id);
                 }
             }
             else

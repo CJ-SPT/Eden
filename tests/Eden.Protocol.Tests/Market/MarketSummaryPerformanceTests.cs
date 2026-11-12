@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Market;
@@ -16,6 +18,36 @@ namespace Eden.Protocol.Tests.Market;
 
 public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
 {
+    [Fact]
+    public void InvalidatingAViewReleasesItsOrdersWhileThePilotLocationIsRetained()
+    {
+        LiveMarketSummaries summaries = new();
+        var orders = Invalidate(summaries);
+
+        GC.Collect(2, GCCollectionMode.Forced, blocking: true);
+
+        Assert.False(orders.TryGetTarget(out _));
+        GC.KeepAlive(summaries);
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static WeakReference<MarketOrder[]> Invalidate(LiveMarketSummaries summaries)
+        {
+            const long pilot = 90000001;
+            const long ship = 7000000000001;
+            const int station = 60003760;
+            const int system = 30000142;
+            const int region = 10000002;
+            MarketOrder[] orders = [new(1, station, system, region, pilot, 215, false, 100, 5, 5, 0)];
+            WorldSettings settings = new();
+            summaries.Publish(new(pilot, ship, station, system, region, orders, 10, 10), MarketScope.Region, 1, settings, 0, 0);
+            Assert.True(summaries.TryRead(pilot, MarketScope.Region, 1, settings, 0, 0, out var cached));
+            Assert.Same(orders, cached);
+            summaries.Observe([new("WorldMarketOrder", orders[0].Id)], [new(station, system, region, Bid: false)]);
+            Assert.False(summaries.TryRead(pilot, MarketScope.Region, 1, settings, 0, 0, out _));
+            return new(orders);
+        }
+    }
+
     [Fact]
     public void RegionalSummarySelectsBestAsksAcrossAPopulatedRegion()
     {

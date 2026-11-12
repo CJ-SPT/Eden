@@ -83,7 +83,8 @@ internal sealed class EconomyTable<TRow, TState>(
     where TRow : class
     where TState : class
 {
-    private readonly Dictionary<EconomyKey, TState> _rows = [];
+    private readonly Dictionary<EconomyKey, TState>? _rows = rowIdIsKey ? null : [];
+    private readonly Dictionary<long, TState>? _integerRows = rowIdIsKey ? [] : null;
 
     // Keep the SQLite baseline only until a resident change is projected or reverted.
     private readonly Dictionary<EconomyKey, TState?> _sqlBaselines = [];
@@ -110,8 +111,8 @@ internal sealed class EconomyTable<TRow, TState>(
         {
             // A whole entity argument cannot be evaluated on its scalar snapshot.
         }
-        var keys = candidates ?? _rows.Keys;
-        return keys.Where(id => _rows.TryGetValue(id, out var row) && (match is null || match(row))).ToArray();
+        var keys = candidates ?? Keys;
+        return keys.Where(id => Snapshot(id) is { } row && (match is null || match(row))).ToArray();
     }
 
     private IReadOnlyCollection<EconomyKey>? Candidates(string column, object? value)
@@ -122,27 +123,42 @@ internal sealed class EconomyTable<TRow, TState>(
                 value is long wide ? wide
                 : value is int narrow ? narrow
                 : null;
-            return id is long known && _rows.ContainsKey(new(known)) ? [new(known)] : [];
+            return id is long known && Contains(new(known)) ? [new(known)] : [];
         }
         return _indexes.TryGetValue(column, out var index) ? index.Find(value) : null;
     }
 
     private TState? Replace(EconomyKey id, TState? state)
     {
-        _rows.TryGetValue(id, out var before);
+        var before = Snapshot(id);
         if (state is null)
         {
-            if (_rows.Remove(id))
+            if (before is not null)
             {
+                if (_integerRows is not null)
+                {
+                    _integerRows.Remove(id.Id);
+                }
+                else
+                {
+                    _rows!.Remove(id);
+                }
                 foreach (var index in _indexes.Values)
                 {
-                    index.Remove(id, before!);
+                    index.Remove(id, before);
                 }
             }
         }
         else
         {
-            _rows[id] = state;
+            if (_integerRows is not null)
+            {
+                _integerRows[id.Id] = state;
+            }
+            else
+            {
+                _rows![id] = state;
+            }
             foreach (var index in _indexes.Values)
             {
                 if (before is null)
@@ -163,7 +179,8 @@ internal sealed class EconomyTable<TRow, TState>(
     string IEconomyTable.Name => name;
     public bool HasChanges => _sqlBaselines.Count != 0;
     public IReadOnlyList<string> Columns => columns.Split(',');
-    internal IEnumerable<EconomyKey> Keys => _rows.Keys;
+    internal IEnumerable<EconomyKey> Keys =>
+        _integerRows is not null ? _integerRows.Keys.Select(static id => new EconomyKey(id)) : _rows!.Keys;
 
     internal IReadOnlyCollection<EconomyKey> Indexed(string column, object? value) => _indexes[column].Find(value);
 
@@ -173,18 +190,25 @@ internal sealed class EconomyTable<TRow, TState>(
 
     public TRow? Peek(EconomyKey id) => Read(id);
 
-    public bool Contains(EconomyKey id) => _rows.ContainsKey(id);
+    public bool Contains(EconomyKey id) => Snapshot(id) is not null;
 
-    internal TState? Snapshot(EconomyKey id) => _rows.GetValueOrDefault(id);
+    internal TState? Snapshot(EconomyKey id)
+    {
+        if (_integerRows is null)
+        {
+            return _rows!.TryGetValue(id, out var row) ? row : null;
+        }
+        return id is { Part: 0, Name: null } && _integerRows.TryGetValue(id.Id, out var integerRow) ? integerRow : null;
+    }
 
-    internal TRow? Read(EconomyKey id) => _rows.TryGetValue(id, out var state) ? materialize(state) : null;
+    internal TRow? Read(EconomyKey id) => Snapshot(id) is { } state ? materialize(state) : null;
 
     internal bool Same(TState? first, TState? second) =>
         first is null
             ? second is null
             : second is not null && (equal?.Invoke(first, second) ?? EqualityComparer<TState>.Default.Equals(first, second));
 
-    internal bool Same(EconomyKey id, TState? state) => Same(_rows.GetValueOrDefault(id), state);
+    internal bool Same(EconomyKey id, TState? state) => Same(Snapshot(id), state);
 
     internal void Validate(EconomyKey id, TState? state)
     {
@@ -210,7 +234,8 @@ internal sealed class EconomyTable<TRow, TState>(
 
     public void Load(WorldDbContext world)
     {
-        _rows.Clear();
+        _rows?.Clear();
+        _integerRows?.Clear();
         foreach (var index in _indexes.Values)
         {
             index.Clear();
@@ -267,10 +292,7 @@ internal sealed class EconomyTable<TRow, TState>(
     }
 
     public IEconomyProjection Capture() =>
-        new EconomyProjection<TState>(
-            _sqlBaselines.Keys.Select(id => new EconomyChange<TState>(id, _rows.GetValueOrDefault(id))).ToArray(),
-            project
-        );
+        new EconomyProjection<TState>(_sqlBaselines.Keys.Select(id => new EconomyChange<TState>(id, Snapshot(id))).ToArray(), project);
 
     public void Projected(WorldDbContext world, IEconomyProjection projection)
     {

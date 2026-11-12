@@ -3558,3 +3558,51 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare working set and private memory on the administration Performance page after startup and during a save.
+
+## Compact economy indexes, November 12, 2026
+
+Resident items, NPC orders and asteroids store their integer primary keys directly. Their secondary indexes
+keep row IDs in shared buckets. A pilot's skill bucket stores skill type IDs and restores the shared pilot ID
+when enumerated. Membership lookups still use hash indexes. Market summaries now keep only location and ship
+identity per pilot, so replacing or invalidating a shared market view releases its order list when readers finish.
+
+### Automated validation
+
+The saved-world comparison used the same frozen 376 MiB save and catalog, server GC and a fixed clock. Baseline
+`db0e942d` already includes the sparse SQLite baselines. Memory samples were taken after a forced collection
+in the probe.
+
+| Measurement | Baseline | Updated |
+| --- | ---: | ---: |
+| Managed memory after economy hydration | 1,341.7 MiB | 1,110.8 MiB |
+| Working set after catalog preload | 2,481.1 MiB | 2,231.8 MiB |
+| Working set while holding the detached checkpoint | 2,902.9 MiB | 2,624.9 MiB |
+| Economy hydration | 4.84 s | 4.62 s |
+| Detached checkpoint copy | 158.0 ms | 149.0 ms |
+
+Four hundred warmed skill and asteroid read pairs returned 59,700 rows in both runs with zero SQL commands,
+connection opens or fitting calculations. The median batch of 40 pairs took 5.60 / 5.80 ms, baseline / updated.
+The checkpoint copies each contained 375.71 MiB of SQLite pages. An independent SQLite backup probe measured
+median copy into memory at 169.5 ms and median copy to a temporary file at 302.9 ms over three samples each,
+with file journaling and synchronization disabled for the comparison. That copy runs under SQL persistence admission.
+
+Two runs per revision used four player sessions and eight combat NPCs, with 30 warmed frames per run. Median
+frame time ranged from 4.22–4.39 ms on the baseline and 4.24–5.00 ms with compact indexes. Frame p95 ranged
+from 5.47–7.58 ms and 5.90–6.29 ms, respectively. Every measured frame used zero SQL commands, connection
+opens and fitting calculations. The fixture checkpoint copy ranges were 0.38–0.45 ms and 0.34–0.57 ms.
+Installed save writes varied across the two local probes, from 1.23–1.26 s on the baseline to 1.27–1.99 s
+with compact indexes. Live multiplayer capacity remains unmeasured.
+
+The warning-free solution build and both Python policy suites passed. The two new regressions passed in
+0.07 seconds. The market retention test reproduced the retained order array on the baseline. The focused
+xUnit run passed 166 of 171 cases in 68.03 seconds and reproduced the same five pre-existing failures
+listed in the previous entry. CSharpier and line-width verification passed. The sandbox blocked the .NET
+style process connection, and tests ran through xUnit in-process. No full .NET suite ran.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare the administration Performance page after startup, during a save and after browsing several markets.

@@ -11,18 +11,20 @@ internal sealed class LiveMarketSummaries
 {
     private const int MaximumEntries = 512;
     private readonly Lock _gate = new();
-    private readonly Dictionary<long, MarketSummary> _locations = [];
+    private readonly Dictionary<long, PilotLocation> _locations = [];
     private readonly Dictionary<(MarketScope Scope, int Location), Entry> _views = [];
     private long _catalog;
 
     private sealed record Entry(MarketSummary Summary, long Catalog, WorldSettings Settings, long At, long ActiveAt);
 
-    private static int Location(MarketSummary summary, MarketScope scope) =>
+    private readonly record struct PilotLocation(long ShipId, int StationId, int SystemId, int RegionId);
+
+    private static int Location(PilotLocation location, MarketScope scope) =>
         scope switch
         {
-            MarketScope.Station => summary.StationId,
-            MarketScope.System => summary.SystemId,
-            MarketScope.Region => summary.RegionId,
+            MarketScope.Station => location.StationId,
+            MarketScope.System => location.SystemId,
+            MarketScope.Region => location.RegionId,
             _ => throw new ArgumentOutOfRangeException(nameof(scope)),
         };
 
@@ -68,8 +70,9 @@ internal sealed class LiveMarketSummaries
                 _locations.Clear();
             }
             _catalog = catalog;
-            _locations[summary.PilotId] = summary;
-            _views[(scope, Location(summary, scope))] = new(summary, catalog, settings, now, active);
+            PilotLocation location = new(summary.ShipId, summary.StationId, summary.SystemId, summary.RegionId);
+            _locations[summary.PilotId] = location;
+            _views[(scope, Location(location, scope))] = new(summary, catalog, settings, now, active);
         }
     }
 

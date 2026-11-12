@@ -1,5 +1,6 @@
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
@@ -9,6 +10,7 @@ using Eden.Server;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +28,31 @@ public sealed class ResidentEconomyTests
     {
         using WorldDbContext world = new(database.Path);
         world.Database.ExecuteSqlRaw("INSERT OR REPLACE INTO WorldWallet(PilotId,Cents) VALUES(90000001,10000000000)");
+    }
+
+    [Fact]
+    public void CompactSkillIndexPreservesPilotIdentityWhenABucketShrinksAndGrows()
+    {
+        const long otherPilot = 90000002;
+        const int firstSkill = 3300;
+        const int secondSkill = 3301;
+        var index = new EconomyIndex<PilotSkill>(nameof(PilotSkill.PilotId), row => row.PilotId, member: EconomyIndexMember.SkillTypeId);
+        PilotSkill first = new() { PilotId = Human, TypeId = firstSkill };
+        PilotSkill second = new() { PilotId = Human, TypeId = secondSkill };
+        PilotSkill other = new() { PilotId = otherPilot, TypeId = firstSkill };
+        EconomyKey firstKey = new(Human, firstSkill);
+        EconomyKey secondKey = new(Human, secondSkill);
+        EconomyKey otherKey = new(otherPilot, firstSkill);
+
+        index.Add(firstKey, first);
+        index.Add(secondKey, second);
+        index.Add(otherKey, other);
+        Assert.Equal(new[] { firstKey, secondKey }, index.Find(Human));
+        index.Remove(firstKey, first);
+        Assert.Equal(secondKey, Assert.Single(index.Find(Human)));
+        index.Add(firstKey, first);
+        Assert.Equal(new[] { secondKey, firstKey }, index.Find(Human));
+        Assert.Equal(otherKey, Assert.Single(index.Find(otherPilot)));
     }
 
     [Fact]
