@@ -179,7 +179,13 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
             for (int frame = 0; frame < 24; frame++)
             {
                 f.Clock.Seconds++;
-                using var metrics = SessionPerformance.Begin("complete capsuleer and observer frame", _ => { }, force: true)!;
+                List<string> commands = [];
+                using var metrics = SessionPerformance.Begin(
+                    "complete capsuleer and observer frame",
+                    _ => { },
+                    force: true,
+                    command: commands.Add
+                )!;
                 var started = Stopwatch.GetTimestamp();
                 worker.Tick();
                 foreach (var client in clients)
@@ -197,8 +203,8 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
                     samples.Add(Stopwatch.GetElapsedTime(started).TotalMilliseconds);
                     sql.Add(metrics.Commands);
                     connections.Add(metrics.Connections);
-                    Assert.InRange(metrics.Commands, 0, 12);
-                    Assert.InRange(metrics.Connections, 0, 10);
+                    Assert.True(metrics.Commands == 0, string.Join(Environment.NewLine, commands));
+                    Assert.Equal(0, metrics.Connections);
                     Assert.Equal(0, metrics.FittingCalculations);
                 }
             }

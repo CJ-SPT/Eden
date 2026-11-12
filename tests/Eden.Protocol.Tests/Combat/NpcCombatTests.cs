@@ -249,7 +249,19 @@ public sealed class NpcCombatTests
         Assert.Equal(FleetDefinitions.CapsuleType, capsule.ShipTypeId);
         Assert.Equal(f.Npc.Position + new SpacePosition(1000, 0, 0), capsule.Position);
         Assert.Equal(f.Npc.SystemId, capsule.SystemId);
-        Assert.True(f.Health.WasDestroyed(Fixture.ShipId));
+        void CheckLoss()
+        {
+            Assert.True(f.Health.WasDestroyed(Fixture.ShipId));
+            Assert.False(f.Health.WasDestroyed(capsule.ShipId));
+        }
+        if (resident)
+        {
+            ResidentMonitorAssertions.WithoutSql(CheckLoss);
+        }
+        else
+        {
+            CheckLoss();
+        }
         using (WorldDbContext saved = new(f.Db.Path))
         {
             Assert.Null(saved.Ships.Find(Fixture.ShipId));

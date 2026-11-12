@@ -145,6 +145,8 @@ internal sealed class LiveCapsuleerRoutines(LiveWorld owner, string path)
         _projecting = true;
         try
         {
+            // A newly provisioned pilot can still be resident when its routine first needs SQL projection.
+            owner.Economy.Flush();
             using WorldDbContext world = new(path) { IsResidentProjection = true };
             using var transaction = world.Database.BeginTransaction();
             capture.Apply(world);

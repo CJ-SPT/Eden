@@ -7,6 +7,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Repair;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 
@@ -17,6 +18,10 @@ internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotH
 {
     public bool WasDestroyed(long shipId)
     {
+        if (LiveReadModels.Find(database.Path)?.ShipDestroyed(shipId) is bool destroyed)
+        {
+            return destroyed;
+        }
         using WorldDbContext world = new(database.Path);
         return world.Set<ShipLoss>().Any(l => l.ShipId == shipId);
     }

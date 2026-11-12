@@ -211,7 +211,7 @@ public sealed class CapsuleerHaulerTests
         internal WorldDatabase Database { get; }
         internal TestClock Clock { get; } = new();
 
-        internal Fixture(bool legacyFounders = true, bool isolateRoute = false)
+        internal Fixture(bool legacyFounders = true, bool isolateRoute = false, bool migrateRoutineTables = false)
         {
             Database = new(Path.Combine(_directory.FullName, "world.sqlite"));
             CapsuleerMinerTests.CreateWorld(Database, Clock, legacyFounders);
@@ -227,6 +227,11 @@ public sealed class CapsuleerHaulerTests
                     PRAGMA user_version=114;
                     """
                 );
+                if (migrateRoutineTables)
+                {
+                    // Let startup recreate these tables with the foreign keys present in upgraded worlds.
+                    world.Database.ExecuteSqlRaw("DROP TABLE WorldCapsuleerAdmission; DROP TABLE WorldCapsuleerCoarsePilot;");
+                }
             }
             using (CatalogDbContext catalog = new(Database.CatalogPath, writable: true))
             {

@@ -5,6 +5,7 @@ using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.World.Capsuleers;
+using Eden.World.Catalog;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -19,6 +20,48 @@ public sealed class CapsuleerResidentRoutineTests
     private const int Home = 30000141;
     private const int Remote = 30000144;
     private const long Human = 90000001;
+
+    [Fact]
+    public async Task AsyncTransactionProjectsNewResidentPilotBeforeRoutineRows()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true, migrateRoutineTables: true);
+        long pilot;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using CapsuleerProvisioner provisioner = new(fixture.Database, fixture.Clock);
+            using (live.EnterShared())
+            {
+                using (var action = live.Economy.Begin(new(systems: [Home])))
+                {
+                    pilot = Assert.IsType<long>(provisioner.Provision(Home, catalog, action, maximumFounders: 1).CreatedPilotId);
+                    action.Commit();
+                }
+                live.CapsuleerRoutines.Admit(pilot);
+                live.CapsuleerRoutines.Settle(pilot, TimeSpan.TicksPerSecond);
+            }
+            host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(Home, pilot);
+
+            using (WorldDbContext saved = new(fixture.Database.Path) { IsResidentProjection = true })
+            {
+                Assert.Null(saved.Pilots.Find(pilot));
+            }
+            using (WorldDbContext world = new(fixture.Database.Path) { Participants = new(pilots: [pilot]) })
+            {
+                using var transaction = await world.Database.BeginTransactionAsync();
+                Assert.NotNull(world.Pilots.Find(pilot));
+                Assert.NotNull(world.Set<SavedCapsuleerAdmission>().Find(pilot));
+                Assert.Equal(TimeSpan.TicksPerSecond, world.Set<SavedCapsuleerCoarsePilot>().Find(pilot)!.SettledTicks);
+                await transaction.CommitAsync();
+            }
+            await live.FlushAsync();
+        }
+        using WorldDbContext reopened = new(fixture.Database.Path);
+        Assert.NotNull(reopened.Pilots.Find(pilot));
+        Assert.NotNull(reopened.Set<SavedCapsuleerAdmission>().Find(pilot));
+        Assert.Equal(TimeSpan.TicksPerSecond, reopened.Set<SavedCapsuleerCoarsePilot>().Find(pilot)!.SettledTicks);
+    }
 
     [Fact]
     public void RoutineCursorAndPositionStayResidentAndDetachedCaptureKeepsOneGeneration()

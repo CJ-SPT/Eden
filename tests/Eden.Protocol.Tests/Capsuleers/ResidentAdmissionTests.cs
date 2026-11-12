@@ -1,15 +1,18 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Docking;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Combat;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Docking;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -213,5 +216,75 @@ public sealed class ResidentAdmissionTests
         Assert.Equal(ship, reopened.Pilots.Find(pilot)!.ActiveShipId);
         Assert.True(reopened.Set<PilotWallet>().Find(pilot)!.Cents >= 0);
         Assert.NotNull(reopened.Set<SavedHomeStation>().Find(pilot));
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    public async Task RoutineProjectionPersistsNewResidentFounderBeforeItsDependents(bool disconnect, bool settled)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true, migrateRoutineTables: true);
+        long founder;
+        long humanShip;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var crimewatch = host.GetRequiredService<IPilotCrimewatch>();
+            using (WorldDbContext saved = new(fixture.Database.Path))
+            {
+                humanShip = saved.Pilots.Find(Human)!.ActiveShipId;
+            }
+            host.GetRequiredService<SqliteWorld>().SetPosition(humanShip, new(1, 2, 3), Home);
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using CapsuleerProvisioner provisioner = new(fixture.Database, fixture.Clock);
+            using (live.EnterShared())
+            {
+                using (var action = live.Economy.Begin(new(systems: [Home])))
+                {
+                    founder = Assert.IsType<long>(provisioner.Provision(Home, catalog, action, maximumFounders: 1).CreatedPilotId);
+                    action.Commit();
+                }
+                live.CapsuleerRoutines.Admit(founder);
+                if (settled)
+                {
+                    live.CapsuleerRoutines.Settle(founder, TimeSpan.TicksPerSecond);
+                }
+            }
+            host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(Home, founder);
+
+            using (WorldDbContext raw = new(fixture.Database.Path) { IsResidentProjection = true })
+            {
+                Assert.Null(raw.Pilots.Find(founder));
+            }
+            if (disconnect)
+            {
+                crimewatch.Disconnect(Human, humanShip);
+            }
+            else
+            {
+                using WorldDbContext world = new(fixture.Database.Path);
+                Assert.Equal(founder, world.Set<SavedCapsuleerAdmission>().Single().PilotId);
+            }
+            using (WorldDbContext projected = new(fixture.Database.Path) { IsResidentProjection = true })
+            {
+                Assert.NotNull(projected.Pilots.Find(founder));
+                Assert.NotNull(projected.Set<SavedCapsuleerAdmission>().Find(founder));
+                Assert.Equal(
+                    settled ? TimeSpan.TicksPerSecond : (long?)null,
+                    projected.Set<SavedCapsuleerCoarsePilot>().Find(founder)?.SettledTicks
+                );
+                Assert.Equal(disconnect ? humanShip : (long?)null, projected.Set<SavedLogoff>().Find(Human)?.ShipId);
+            }
+            await live.FlushAsync();
+        }
+        using WorldDbContext reopened = new(fixture.Database.Path);
+        Assert.NotNull(reopened.Pilots.Find(founder));
+        Assert.NotNull(reopened.Set<SavedCapsuleerAdmission>().Find(founder));
+        Assert.Equal(
+            settled ? TimeSpan.TicksPerSecond : (long?)null,
+            reopened.Set<SavedCapsuleerCoarsePilot>().Find(founder)?.SettledTicks
+        );
+        Assert.Equal(disconnect ? humanShip : (long?)null, reopened.Set<SavedLogoff>().Find(Human)?.ShipId);
     }
 }

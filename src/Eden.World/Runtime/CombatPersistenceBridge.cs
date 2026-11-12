@@ -180,7 +180,6 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
             {
                 LiveWorld.Find(path)?.CapsuleerRoutines.Flush((eventData.Context as WorldDbContext)?.Participants);
             }
-            LiveWorld.Find(path)?.Economy.Flush();
             Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return result;
@@ -204,7 +203,6 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
             {
                 LiveWorld.Find(path)?.CapsuleerRoutines.Flush((eventData.Context as WorldDbContext)?.Participants);
             }
-            LiveWorld.Find(path)?.Economy.Flush();
             Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return ValueTask.FromResult(result);

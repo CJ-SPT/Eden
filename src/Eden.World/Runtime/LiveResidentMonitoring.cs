@@ -52,6 +52,11 @@ internal sealed partial class LiveReadModels
             return owner.HasPersistenceOwnership && owner.Economy.HasActiveAction ? owner.Economy.Inspect(pending) : committed();
         });
 
+    internal bool? ShipDestroyed(long ship) =>
+        CanReadResident
+            ? ReadResidentGuard(() => owner.Economy.HasShipLoss(ship), world => world.Set<ShipLoss>().Find(ship) is not null)
+            : null;
+
     private NpcEffectView ResidentNpcTarget(long ship) =>
         ReadResidentVersion(
             _residentNpcTargets,
