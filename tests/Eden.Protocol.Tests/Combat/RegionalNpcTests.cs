@@ -5,12 +5,14 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -147,6 +149,52 @@ public sealed class RegionalNpcTests
             int expected = NpcSpawnRules.Composition(NpcSpawnRules.SecurityBand(security), NpcSpawnRules.Seed(System, group.Key)).Count;
             Assert.Equal(expected, group.Count());
         }
+    }
+
+    [Fact]
+    public void ResidentRegionalRespawnHonorsSavedDeadlineWithoutSql()
+    {
+        using TestWorld db = new(regionalNpcs: true, liveWorld: true);
+        Prepare(db, -0.5);
+        using CatalogLifetime catalogLifetime = new(new(db.Path));
+        var encounters = db.Services.GetRequiredService<INpcEncounters>();
+        Assert.NotEmpty(encounters.List(System, Now));
+        var live = LiveWorld.Find(db.Path)!;
+        long deadline = Now + TimeSpan.TicksPerMinute + 1;
+        var (encounterId, oldIds) = live.Economy.Read(
+            world =>
+            {
+                var encounter = world.Set<WorldNpcEncounter>().Where(row => row.SystemId == System && row.Occupied).First();
+                var members = world.Set<WorldNpc>().Where(row => row.EncounterId == encounter.Id).ToArray();
+                foreach (var member in members)
+                {
+                    member.DestroyedAt = Now;
+                }
+                encounter.NextSpawnAt = deadline;
+                return (encounter.Id, members.Select(row => row.Id).ToArray());
+            },
+            new(systems: [System])
+        );
+        var simulation = db.Services.GetRequiredService<INpcSimulation>();
+        var before = simulation.Advance(System, deadline - 1);
+        List<string> commands = [];
+        using (var metrics = SessionPerformance.Begin("resident NPC population deadline", _ => { }, force: true, command: commands.Add)!)
+        {
+            var after = simulation.Advance(System, deadline);
+            Assert.Equal(before.Count + oldIds.Length, after.Count);
+            Assert.Equal(after, simulation.Advance(System, deadline));
+            Assert.DoesNotContain(after, npc => oldIds.Contains(npc.Id));
+            Assert.True(metrics.Commands == 0, string.Join(Environment.NewLine, commands));
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        snapshot.Project();
+        using WorldDbContext reopened = new(snapshot.Database);
+        Assert.Null(reopened.Set<WorldNpcEncounter>().Find(encounterId)!.NextSpawnAt);
+        var rows = reopened.Set<WorldNpc>().Where(n => n.EncounterId == encounterId).ToArray();
+        Assert.Equal(oldIds.Length, rows.Count(n => n.DestroyedAt == Now));
+        Assert.Equal(oldIds.Length, rows.Count(n => n.DestroyedAt == null));
     }
 
     [Fact]

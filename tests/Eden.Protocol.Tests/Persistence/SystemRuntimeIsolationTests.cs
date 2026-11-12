@@ -49,7 +49,7 @@ public sealed class SystemRuntimeIsolationTests
             foreach (int system in Enumerable.Range(1, unrelated))
             {
                 var runtime = live.CombatForSystem(system)!;
-                Assert.Empty(runtime.Simulate(system, clock.Now, () => { }, () => long.MaxValue)!);
+                Assert.Empty(runtime.Simulate(system, clock.Now, () => long.MaxValue)!);
             }
             var simulation = fixture.Services.GetRequiredService<Eden.Gameplay.Combat.INpcSimulation>();
             (int, int, int) counts;

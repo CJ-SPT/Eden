@@ -838,6 +838,7 @@ internal sealed partial class ResidentEconomy
     private void RegisterTables()
     {
         RegisterBotTables();
+        RegisterCloneTrainingTables();
         Register(
             new EconomyTable<InventoryOwner, EconomyInventoryOwner>(
                 "WorldInventoryOwner",

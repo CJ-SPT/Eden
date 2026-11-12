@@ -9,6 +9,7 @@ using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,6 +44,14 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
 
     internal TrainingState ChangeAttributes(
         WorldDbContext world,
+        long pilotId,
+        Action change,
+        bool implantChange = true,
+        long? effectiveTime = null
+    ) => ChangeAttributes(new SqlWorldAction(world), pilotId, change, implantChange, effectiveTime);
+
+    internal TrainingState ChangeAttributes(
+        WorldAction world,
         long pilotId,
         Action change,
         bool implantChange = true,
@@ -105,6 +114,18 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         CharacterAttributes? attributes,
         PointOperation? points,
         bool preview,
+        long now
+    ) => UpdateCore(new SqlWorldAction(world), pilotId, targets, activate, pause, attributes, points, preview, now);
+
+    private TrainingUpdateResult UpdateCore(
+        WorldAction world,
+        long pilotId,
+        IReadOnlyList<TrainingTarget>? targets,
+        bool activate,
+        bool pause,
+        CharacterAttributes? attributes,
+        PointOperation? points,
+        bool preview,
         long now,
         Action? changeAttributes = null,
         bool implantChange = true
@@ -113,15 +134,20 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         bool remapped = false;
         if (attributes is not null)
         {
-            var before = PilotCharacterSheetStore.ReadAttributes(world, pilotId);
+            if (!world.Filter<Pilot>(pilot => pilot.Id == pilotId).Any())
+            {
+                throw new InvalidDataException("Unknown character.");
+            }
+            var sheet = world.Set<SavedCharacterSheet>().Find(pilotId);
+            var before = sheet?.Snapshot() ?? NeuralRemapState.Default;
             var after = CharacterSheetRules.Remap(before, attributes, now);
             remapped = after != before;
             if (remapped)
             {
-                PilotCharacterSheetStore.GetOrCreate(world, pilotId).Apply(after);
+                (sheet ?? world.Add(new SavedCharacterSheet { PilotId = pilotId }).Entity).Apply(after);
             }
         }
-        var saved = world.Set<QueuedLevel>().Where(q => q.PilotId == pilotId).OrderBy(q => q.Position).ToArray();
+        var saved = world.Filter<QueuedLevel>(q => q.PilotId == pilotId).OrderBy(q => q.Position).ToArray();
         List<TrainingEntry> queue = [];
         HashSet<int> changed = [];
         bool alphaBudgetStopped = false;
@@ -253,14 +279,8 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 queue
             );
             activate = queue.FirstOrDefault()?.StartTime is not null;
-            world.Set<QueuedLevel>().Where(q => q.PilotId == pilotId).ExecuteDelete();
-            // ExecuteDelete bypasses EF tracking. Batched rewards can rebuild
-            // this pilot's queue repeatedly within one transaction/context.
-            // Detach only the deleted rows before reusing their composite keys.
-            foreach (var tracked in world.ChangeTracker.Entries<QueuedLevel>().Where(e => e.Entity.PilotId == pilotId).ToArray())
-            {
-                tracked.State = EntityState.Detached;
-            }
+            world.RemoveRange(world.Filter<QueuedLevel>(q => q.PilotId == pilotId).ToArray());
+            world.SaveChanges();
             for (int i = 0; i < queue.Count; i++)
             {
                 var entry = queue[i];
@@ -302,7 +322,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
     }
 
     private List<TrainingEntry> Plan(
-        WorldDbContext world,
+        WorldAction world,
         long pilotId,
         IReadOnlyList<TrainingTarget> targets,
         bool activate,
@@ -322,11 +342,15 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         return TrainingRules.Plan(targets, inputs, activate, running, now, clampAlphaBudget || partial);
     }
 
-    private TrainingInputs ReadInputs(WorldDbContext world, long pilotId, IReadOnlyList<TrainingTarget> targets, long now)
+    private TrainingInputs ReadInputs(WorldDbContext world, long pilotId, IReadOnlyList<TrainingTarget> targets, long now) =>
+        ReadInputs(new SqlWorldAction(world), pilotId, targets, now);
+
+    private TrainingInputs ReadInputs(WorldAction world, long pilotId, IReadOnlyList<TrainingTarget> targets, long now)
     {
-        var points = world.Set<PilotSkill>().Where(s => s.PilotId == pilotId).ToDictionary(s => s.TypeId, s => s.Points);
+        var points = world.Filter<PilotSkill>(s => s.PilotId == pilotId).ToDictionary(s => s.TypeId, s => s.Points);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        int race = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.RaceId).Single();
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
+        int race = pilot.RaceId;
         var alpha = catalog
             .Require(CatalogData.Client.Clonegrades, race.ToString(CultureInfo.InvariantCulture))
             .Skills!.Value.ToDictionary(s => s.TypeID!.Value, s => s.Level!.Value);
@@ -334,8 +358,13 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             .Select(t => t.TypeId)
             .Distinct()
             .ToDictionary(type => type, type => catalog.Read(CatalogData.Client.Requiredskillsfortypes, (long)type));
-        var basis = PilotImplantStore.Read(world, pilotId).Attributes.ToDogma();
-        var boosters = PilotBoosterStore.Active(world, pilotId, now).Where(b => b.Bonus > 0).ToArray();
+        var implants = PilotImplantStore.ActiveImplants(world, pilotId).Select(implant => implant.Snapshot()).ToArray();
+        var attributes = world.Set<SavedCharacterSheet>().Find(pilotId)?.Snapshot().Attributes ?? CharacterAttributes.Default;
+        var basis = ImplantRules.Effective(attributes, implants).ToDogma();
+        var boosters = world
+            .Filter<SavedBooster>(b => b.PilotId == pilotId && b.ExpiresAt > now && b.Bonus > 0)
+            .OrderBy(b => b.Slot)
+            .ToArray();
         int bonus = boosters.Sum(b => b.Bonus);
         var inputs = points.ToDictionary(
             p => p.Key,
@@ -375,11 +404,14 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 };
             }
         );
-        var grade = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.Account.CloneGrade).Single();
+        var grade = pilot.Account.CloneGrade;
         return new(inputs, grade, ReadFreePoints(world, pilotId));
     }
 
-    private void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId)
+    private void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId) =>
+        Record(new SqlWorldAction(world), pilotId, time, typeId, points, eventId);
+
+    private void Record(WorldAction world, long pilotId, long time, int typeId, long points, int eventId)
     {
         if (eventId == Started)
         {

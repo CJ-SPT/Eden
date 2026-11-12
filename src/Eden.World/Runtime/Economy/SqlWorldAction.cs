@@ -73,6 +73,8 @@ internal sealed class SqlWorldAction(WorldDbContext world) : WorldAction
 
     internal override EconomyEntry<T> Add<T>(T row) => new(world.Add(row).Entity, EntityState.Added);
 
+    internal override IQueryable<T> Filter<T>(Expression<Func<T, bool>> predicate) => ((SqlActionRows<T>)Set<T>()).Filter(predicate);
+
     internal override void Remove<T>(T row) => world.Remove(row);
 
     internal override void RemoveRange<T>(IEnumerable<T> rows) => world.RemoveRange(rows);
@@ -112,6 +114,9 @@ internal sealed class SqlActionRows<T>(WorldDbContext world) : EconomySet<T>
         : typeof(T) == typeof(Ship) ? (IQueryable<T>)world.Ships.Include(s => s.Position)
         : world.Set<T>();
     protected override IEnumerable<T> Rows => Query.ToArray();
+
+    internal IQueryable<T> Filter(Expression<Func<T, bool>> predicate) => Query.Where(predicate);
+
     internal override IReadOnlyCollection<T> Local => world.ChangeTracker.Entries<T>().Select(e => e.Entity).ToArray();
 
     internal override IQueryable<T> Where(Expression<Func<T, bool>> predicate) => SelectRows(predicate).AsQueryable();

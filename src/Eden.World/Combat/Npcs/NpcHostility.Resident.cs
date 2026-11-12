@@ -12,6 +12,29 @@ namespace Eden.World.Combat.Npcs;
 
 internal static partial class NpcHostility
 {
+    internal static IEnumerable<long> Participants(WorldAction world, long target)
+    {
+        yield return target;
+        if (world.Set<WorldNpc>().Find(target) is { EncounterId: not 0, Role: not NpcRole.Pirate } npc)
+        {
+            foreach (
+                long id in world
+                    .Set<WorldNpc>()
+                    .Where(member =>
+                        member.EncounterId == npc.EncounterId
+                        && member.SystemId == npc.SystemId
+                        && member.Id != target
+                        && member.DestroyedAt == null
+                        && member.RetiredAt == null
+                    )
+                    .Select(member => member.Id)
+            )
+            {
+                yield return id;
+            }
+        }
+    }
+
     internal static void Record(WorldAction world, CatalogDbContext catalog, WorldNpc attacked, long shipId, long now)
     {
         if (attacked.Role == NpcRole.Concord)

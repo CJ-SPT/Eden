@@ -285,18 +285,41 @@ public sealed class CapsuleCombatTests
         var before = f.Health.Read(Victim, f.Clock.Now);
         List<PilotDamage> messages = [];
         f.Db.Services.GetRequiredService<PilotDamageSignal>().Applied += messages.Add;
-        using (WorldDbContext world = new(f.Db.Path))
+        const string reject =
+            "CREATE TRIGGER reject_capsule_transfer BEFORE INSERT ON WorldHomeCloneTransfer " + "BEGIN SELECT RAISE(ABORT,'test'); END";
+        const string remove = "DROP TRIGGER reject_capsule_transfer";
+        if (LiveWorld.Find(f.Db.Path) is { } live)
         {
-            world.Database.ExecuteSqlRaw(
-                "CREATE TRIGGER reject_capsule_transfer BEFORE INSERT ON WorldHomeCloneTransfer BEGIN SELECT RAISE(ABORT,'test'); END"
-            );
+            Assert.True(Fire(f).Destroyed);
+            using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+            using WorldDbContext world = new(snapshot.Database);
+            world.Database.ExecuteSqlRaw(reject);
+            Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => snapshot.Project());
+            CheckUnchanged(world);
+            world.Database.ExecuteSqlRaw(remove);
+            snapshot.Project();
+            world.ChangeTracker.Clear();
+            Assert.Single(world.Set<SavedHomeCloneTransfer>());
+            Assert.NotNull(world.Set<ModuleCooldown>().Find(f.Module));
+            Assert.Null(world.Set<SavedPilotImplant>().Find(ActiveImplant));
         }
-        Assert.Throws<DbUpdateException>(() => Fire(f));
-        Assert.Empty(messages);
-        Assert.Equal(before, f.Health.Read(Victim, f.Clock.Now));
-        using (WorldDbContext world = new(f.Db.Path))
+        else
+        {
+            using WorldDbContext world = new(f.Db.Path);
+            world.Database.ExecuteSqlRaw(reject);
+            Assert.Throws<DbUpdateException>(() => Fire(f));
+            Assert.Empty(messages);
+            Assert.Equal(before, f.Health.Read(Victim, f.Clock.Now));
+            CheckUnchanged(world);
+            world.Database.ExecuteSqlRaw(remove);
+            Assert.True(Fire(f).Destroyed);
+        }
+        Assert.Single(messages);
+
+        void CheckUnchanged(WorldDbContext world)
         {
             Assert.Equal(Capsule, world.Pilots.Find(Victim)!.ActiveShipId);
+            Assert.Equal(before.Defense.Structure - 1, world.Set<ShipHealthState>().Find(Capsule)!.StructureDamage);
             Assert.NotNull(world.Set<SavedPilotImplant>().Find(ActiveImplant));
             Assert.Equal(2, world.Set<SavedJumpClone>().Count());
             Assert.Empty(world.Set<SavedHomeCloneTransfer>());
@@ -307,10 +330,7 @@ public sealed class CapsuleCombatTests
             var savedQueue = Assert.Single(world.Set<QueuedLevel>());
             Assert.Equal(queue.EndTime, savedQueue.EndTime);
             Assert.Equal(queue.StartPoints, world.Set<PilotSkill>().Find(Victim, 3327)!.Points);
-            world.Database.ExecuteSqlRaw("DROP TRIGGER reject_capsule_transfer");
         }
-        Assert.True(Fire(f).Destroyed);
-        Assert.Single(messages);
     }
 
     [Fact]

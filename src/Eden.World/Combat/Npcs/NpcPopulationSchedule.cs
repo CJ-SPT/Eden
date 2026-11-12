@@ -3,6 +3,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Mining;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,17 +11,23 @@ namespace Eden.World.Combat.Npcs;
 
 internal static class NpcPopulationSchedule
 {
-    internal static long Next(WorldDbContext world, int system, long now)
+    internal static long Next(WorldDbContext world, int system, long now) => Next(new SqlWorldAction(world), system, now);
+
+    internal static long Next(WorldAction world, int system, long now)
     {
-        var encounters = world.Set<WorldNpcEncounter>().AsNoTracking().Where(e => e.SystemId == system).ToArray();
+        var encounters = world.Filter<WorldNpcEncounter>(e => e.SystemId == system).ToArray();
         // Guards respawn per slot. Legacy fixture pirates have no encounter row.
         var tracked = encounters.Select(e => e.Id).ToHashSet();
         // Authored anomaly and mission losses advance their own objectives. They never
         // use regional slot respawns, even without a regional encounter row.
-        var rows = world
-            .Set<WorldNpc>()
-            .AsNoTracking()
-            .Where(n => n.SystemId == system && n.AnchorKind != NpcAnchorKind.Anomaly && n.AnchorKind != NpcAnchorKind.Mission)
+        var slots = world
+            .Filter<WorldNpc>(n =>
+                n.SystemId == system
+                && n.AnchorKind != NpcAnchorKind.Anomaly
+                && n.AnchorKind != NpcAnchorKind.Mission
+                && (n.Role == NpcRole.Navy || n.Role == NpcRole.Customs || !Enumerable.Contains(tracked, n.EncounterId))
+            )
+            .Select(n => new PopulationSlot(n.Id, n.EncounterId, n.BeltId, n.SpawnSlot, n.DestroyedAt, n.RetiredAt))
             .ToArray();
         long due = long.MaxValue;
         foreach (var encounter in encounters.Where(e => e.Occupied && e.NextSpawnAt != null))
@@ -28,15 +35,11 @@ internal static class NpcPopulationSchedule
             long next = encounter.NextSpawnAt!.Value;
             if (encounter.Role == NpcRole.MiningMiner)
             {
-                next = CalmMiningDeadline(world, encounter, rows, now) ?? next;
+                next = CalmMiningDeadline(world, encounter, now) ?? next;
             }
             due = Math.Min(due, next);
         }
-        foreach (
-            var latest in rows.Where(n => n.Role is NpcRole.Navy or NpcRole.Customs || !tracked.Contains(n.EncounterId))
-                .GroupBy(n => (n.EncounterId, n.BeltId, n.SpawnSlot))
-                .Select(g => g.MaxBy(n => n.Id)!)
-        )
+        foreach (var latest in slots.GroupBy(n => (n.EncounterId, n.BeltId, n.Slot)).Select(g => g.MaxBy(n => n.Id)!))
         {
             if (latest.DestroyedAt is { } destroyed && latest.RetiredAt is null)
             {
@@ -47,9 +50,11 @@ internal static class NpcPopulationSchedule
         return due <= now ? checked(now + TimeSpan.TicksPerSecond) : due;
     }
 
-    private static long? CalmMiningDeadline(WorldDbContext world, WorldNpcEncounter encounter, WorldNpc[] rows, long now)
+    private sealed record PopulationSlot(long Id, long EncounterId, int BeltId, int Slot, long? DestroyedAt, long? RetiredAt);
+
+    private static long? CalmMiningDeadline(WorldAction world, WorldNpcEncounter encounter, long now)
     {
-        var operation = world.Set<WorldNpcMiningOperation>().AsNoTracking().SingleOrDefault(o => o.EncounterId == encounter.Id);
+        var operation = world.Set<WorldNpcMiningOperation>().Find(encounter.Id);
         if (
             operation is not { Stage: NpcMiningStage.Working }
             || operation.PickupAt <= now
@@ -58,7 +63,15 @@ internal static class NpcPopulationSchedule
         {
             return null;
         }
-        var active = rows.Where(n => n.EncounterId == encounter.Id && n.DestroyedAt == null && n.RetiredAt == null).ToArray();
+        var active = world
+            .Filter<WorldNpc>(n =>
+                n.EncounterId == encounter.Id
+                && n.DestroyedAt == null
+                && n.RetiredAt == null
+                && n.AnchorKind != NpcAnchorKind.Anomaly
+                && n.AnchorKind != NpcAnchorKind.Mission
+            )
+            .ToArray();
         if (
             active.Length != NpcMiningRules.MinerCount
             || active.Any(n => n.Role != NpcRole.MiningMiner || n.Navigation != NpcNavigationState.Idle)
@@ -66,7 +79,7 @@ internal static class NpcPopulationSchedule
         {
             return null;
         }
-        var members = world.Set<WorldNpcMiningMember>().AsNoTracking().Where(m => m.EncounterId == encounter.Id).ToArray();
+        var members = world.Filter<WorldNpcMiningMember>(m => m.EncounterId == encounter.Id).ToArray();
         var current = members.Where(m => active.Any(n => n.Id == m.NpcId)).ToArray();
         if (current.Length != active.Length || current.Any(m => m.MiningDueAt is null || m.MiningDueAt <= now || m.WarpStartedAt != null))
         {

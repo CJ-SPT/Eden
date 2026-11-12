@@ -138,7 +138,7 @@ internal sealed partial class LiveCombatRuntime
         IPilotCombatPresence presence,
         IPilotDamageEvents damageEvents,
         Eden.Gameplay.Fleets.ICooperativeFleets fleets,
-        Func<IReadOnlyDictionary<long, double>, DroneUpdate> settle
+        Func<IReadOnlyDictionary<long, double>, IReadOnlyCollection<long>, DroneUpdate> settle
     )
     {
         return Execute(() => AdvanceDronesOwned(pilotId, now, stamp, presence, damageEvents, fleets, settle), nameof(AdvanceDrones));
@@ -151,7 +151,7 @@ internal sealed partial class LiveCombatRuntime
         IPilotCombatPresence presence,
         IPilotDamageEvents damageEvents,
         Eden.Gameplay.Fleets.ICooperativeFleets fleets,
-        Func<IReadOnlyDictionary<long, double>, DroneUpdate> settle
+        Func<IReadOnlyDictionary<long, double>, IReadOnlyCollection<long>, DroneUpdate> settle
     )
     {
         using var ownership = owner.Enter();
@@ -200,8 +200,28 @@ internal sealed partial class LiveCombatRuntime
         ResidentMap<long, double> rolls = [];
         DroneUpdate Settle()
         {
-            Flush();
-            return settle(rolls);
+            var reactive = inputs.Settings.Aggressive
+                ? Aggression()
+                    .Values.Where(row => row.ShipId == ship.ShipId)
+                    .Select(row => row.NpcId)
+                    .Concat(PlayerAttacks(ship.ShipId, now).Where(row => row.ExpiresAt > now).Select(row => row.SourceShipId))
+                : [];
+            var delegated = drones
+                .Select(drone => drone.Contact.Delegation)
+                .OfType<DroneDelegation>()
+                .SelectMany(delegation =>
+                {
+                    var triggers = DroneTriggers(delegation.ShipId);
+                    return new[] { delegation.ShipId, triggers.Offensive.OtherId, triggers.Incoming.OtherId };
+                });
+            long[] endpoints = drones
+                .Select(drone => drone.Contact.TargetId)
+                .Concat(reactive)
+                .Concat(delegated)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray();
+            return settle(rolls, endpoints);
         }
         int count = 0;
         double bandwidth = 0;
@@ -293,7 +313,7 @@ internal sealed partial class LiveCombatRuntime
                 source is null || player is null || player.PilotId == pilotId ? null : DroneLegality(source, player, ship.SystemId, now);
             if (decision?.Flag == CrimewatchFlag.Criminal)
             {
-                // The paid criminal shot and its CONCORD deadline share one SQL
+                // The paid criminal shot and its CONCORD deadline share one resident
                 // transaction, including when earlier legal rights have expired.
                 return Settle();
             }
@@ -367,7 +387,7 @@ internal sealed partial class LiveCombatRuntime
             var next = impact.Target;
             if (!next.Available)
             {
-                // No staged drone or paid volley has been published. SQL replays this interval atomically.
+                // No staged drone or paid volley has been published. Settlement replays this interval atomically.
                 return Settle();
             }
             targets[npc.Id] = RepairNpc(next, now);

@@ -3416,3 +3416,73 @@ Not performed; agent client testing is disabled.
 
 After rebuilding, compare NPC launch, flight and destruction against the same workload, separating cold catalog
 preparation and checkpoint work from the steady frame timings.
+
+## Resident missile impacts, drone commands and NPC population (November 11, 2026)
+
+Outgoing missile flight preserves saved step boundaries and orders impacts by contact time and projectile ID.
+The resident action settles damage, NPC rewards, wrecks, combat history and pilot hull loss before publishing
+notifications. Missile history uses ordered expiry indexes so a paid flight does not scan every recorded projectile.
+Unacknowledged pilot reports remain eligible for retrieval. Capsule loss also removes the active clone and its
+implants and rebases the training queue at the impact time. The same settlement handles fatal turret and drone
+damage, while existing resident combat objects continue to process ordinary volleys.
+
+Live drone commands, recall into the drone bay, criminal-response deadlines and squad retirement use resident
+actions. Regional pirate, guard, convoy and mining updates import the participating NPC state and commit their
+membership, deposits, cargo and deadlines together. The running scene reads the committed generation and
+calculates its next deadline from the same action. Stopped-world tools use the SQL adapter. Cold catalog reads
+and detached SQLite checkpoint projection remain separate from the warmed simulation measurements.
+
+The pinned build-3662168 fixtures preserve the existing gameplay rules for missile application, regional spawns,
+drone recall, home-station respawn and criminal enforcement. Gameplay references include
+[missile mechanics](https://wiki.eveuniversity.org/Missile_mechanics),
+[belt ratting](https://wiki.eveuniversity.org/Ratting), [drone mechanics](https://wiki.eveuniversity.org/Drone_mechanics),
+[home station](https://wiki.eveuniversity.org/Home_Station) and [CONCORD](https://wiki.eveuniversity.org/CONCORD).
+The local evejs reference's `server/src/space/runtime/missileEntity.js` was checked for impact ordering and
+target handling. The snapshot did not contain Git metadata. Its file SHA-256 was
+`7b27b19c4725272cd51b6d08f930755afc6934037d9c11d1c74deee8da7eda12`.
+
+### Automated validation
+
+Identical warmed fixtures compared the previous `main` revision `1fc6046c` and the resident paths.
+The four zero-SQL assertions failed on the baseline with these counts.
+
+| Fixture | Baseline SQL commands | Baseline connection opens | Resident SQL commands and opens |
+| --- | ---: | ---: | ---: |
+| Outgoing missile against an NPC | 27 | 3 | 0 |
+| Outgoing missile against a pilot | 75 | 15 | 0 |
+| Regional NPC respawn at the saved deadline | 28 | 4 | 0 |
+| Five drones ordered to return to the bay | 232 | 10 | 0 |
+
+The missile and respawn fixtures also require zero warmed fitting calculations. Detached checkpoint tests
+inject a failed write during capsule respawn and CONCORD enforcement, then verify the old generation and retry
+the save. A duplicate callback produces no second loss or notification. The capsule case reopens the rebased
+training queue with the paid skill points and implant removal in the same generation.
+
+The broader selection ran 1,112 affected cases in 9m50s. It passed 1,110 and found two rollback fixtures
+that still injected SQL errors during live combat. Their stopped-world checks retain transaction rollback,
+and the resident cases inject failure during detached checkpoint projection. The final targeted selection
+passed all 17 cases in 9 seconds, including those corrections and character remapping. The solution build
+passed without warnings in 16.74 seconds. Tool and solution restores, the eight catalog policy checks,
+nine formatting policy checks and repository formatting verification passed. No full .NET suite ran.
+
+The complete-frame comparison used 12 warmed frames per case with two observers. Both revisions recorded
+0–2 SQL commands and 0–2 connection opens per frame, with zero fitting calculations. Checkpoint costs are
+reported separately in milliseconds for capture, projection and file write.
+
+| Fixture | Frame p95, baseline → resident (ms) | Checkpoint, baseline → resident (ms) |
+| --- | ---: | ---: |
+| Idle traffic | 7.78 → 22.43 | 3.71 / 2.23 / 20.25 → 3.80 / 3.63 / 19.40 |
+| Player retaliation | 10.92 → 7.45 | 0.42 / 2.10 / 15.73 → 0.27 / 2.11 / 14.59 |
+| Ratting return | 5.96 → 7.22 | 0.45 / 0.70 / 15.40 → 0.39 / 0.84 / 16.58 |
+
+The timings vary by fixture. Installed-world latency and supported population remain unmeasured for this change.
+Filters, counts and both complete-frame runs are recorded under `artifacts/bot-resident-completion`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Replay the installed-world workload with the updated build and compare warmed SQL counts, world-owner wait time,
+and checkpoint cost.

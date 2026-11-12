@@ -6,6 +6,7 @@ using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -181,15 +182,15 @@ internal sealed partial class LiveCombatRuntime
         if (!_droneAttackers.TryGetValue(shipId, out var attackers))
         {
             attackers = Loading(() =>
-            {
-                using WorldDbContext world = new(database.Path);
-                return world
-                    .Set<SavedPilotHostility>()
-                    .Where(h => h.TargetShipId == shipId && h.ExpiresAt > now)
-                    .AsEnumerable()
-                    .Select(h => new DronePilotHostility(h.SourceShipId, h.TargetShipId, h.LastAttackAt, h.ExpiresAt))
-                    .ToArray();
-            });
+                WorldActionScope.Inspect(
+                    database,
+                    world =>
+                        world
+                            .Filter<SavedPilotHostility>(h => h.TargetShipId == shipId && h.ExpiresAt > now)
+                            .Select(h => new DronePilotHostility(h.SourceShipId, h.TargetShipId, h.LastAttackAt, h.ExpiresAt))
+                            .ToArray()
+                )
+            );
             _droneAttackers[shipId] = attackers;
         }
         return attackers

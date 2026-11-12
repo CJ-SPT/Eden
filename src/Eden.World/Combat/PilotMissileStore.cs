@@ -349,30 +349,23 @@ internal sealed partial class PilotMissileStore(
             return;
         }
         bool destroyed = false;
-        List<PendingPilotImpact> pilotImpacts = [];
-        using WorldDbContext world = new(database.Path);
-        SqlWorldAction action = new(world);
-        using var transaction = world.Database.BeginTransaction();
+        List<PilotDamage> pilotImpacts = [];
+        using WorldActionScope transaction = new(database, select: world => FlightParticipants(world, systemId));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var rows = world
-            .Set<WorldMissile>()
-            .Where(m => m.SourceKind == MissileSourceKind.Pilot && m.SystemId == systemId && m.Status == MissileFlightStatus.Flying)
-            .OrderBy(m => m.LaunchedAt)
-            .ThenBy(m => m.Id)
-            .ToArray();
+        var rows = Flying(world, systemId).OrderBy(m => m.LaunchedAt).ThenBy(m => m.Id).ToArray();
         if (rows.Length == 0)
         {
             return;
         }
         foreach (var source in rows.GroupBy(m => (m.PilotId, m.SourceShipId)))
         {
-            var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == source.Key.PilotId);
+            var pilot = world.Pilots.Find(source.Key.PilotId)!;
             var position = pilot.ActiveShip.Position;
-            int sourceSystem = position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
             if (
                 pilot.ActiveShipId != source.Key.SourceShipId
                 || position is null
-                || sourceSystem != systemId
+                || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != systemId
                 || world.Set<ShipLoss>().Any(l => l.ShipId == source.Key.SourceShipId)
             )
             {
@@ -421,8 +414,8 @@ internal sealed partial class PilotMissileStore(
                 }
                 if (
                     row.TargetKind == MissileTargetKind.Pilot
-                    && FindVictim(action, catalog, systemId, row.TargetId, now) is { } victim
-                    && FindContact(action, victim, systemId, now) is { } contact
+                    && FindVictim(world, catalog, systemId, row.TargetId, now) is { } victim
+                    && FindContact(world, victim, systemId, now) is { } contact
                 )
                 {
                     // The contact is current. Reconstruct this step's start for the existing flight integrator.
@@ -451,8 +444,8 @@ internal sealed partial class PilotMissileStore(
                 }
                 if (row.Status == MissileFlightStatus.Impact && row.TargetKind == MissileTargetKind.Pilot)
                 {
-                    var victim = FindVictim(action, catalog, systemId, row.TargetId, now);
-                    if (victim is not null && FindContact(action, victim, systemId, now) is { } contact)
+                    var victim = FindVictim(world, catalog, systemId, row.TargetId, now);
+                    if (victim is not null && FindContact(world, victim, systemId, now) is { } contact)
                     {
                         pilotImpacts.Add(ApplyPilotImpact(world, catalog, row, payload, victim, contact, time));
                     }
@@ -470,7 +463,7 @@ internal sealed partial class PilotMissileStore(
                         NpcMotion.Velocity(npc).Length
                     );
                     var damage = payload.Warhead.Damage.Scale(application);
-                    var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == row.PilotId);
+                    var pilot = world.Pilots.Find(row.PilotId)!;
                     var result = NpcDamagePersistence.Apply(
                         world,
                         catalog,
@@ -504,17 +497,12 @@ internal sealed partial class PilotMissileStore(
             }
         }
         long oldest = now - HistorySeconds * TimeSpan.TicksPerSecond;
-        world.Set<WorldMissile>().Where(m => m.EndedAt < oldest && (m.Outcome == null || m.Reported)).ExecuteDelete();
-        world.SaveChanges();
+        world.RemoveRange(world.ExpiredMissileHistory(oldest, npcOnly: false));
         transaction.Commit();
+        transaction.Dispose();
         foreach (var impact in pilotImpacts)
         {
-            damageEvents.Publish(
-                impact.Damage with
-                {
-                    Capsule = impact.Damage.Health.Remaining.Destroyed ? lookup.FindPilot(impact.AccountId, impact.Damage.PilotId)! : null,
-                }
-            );
+            damageEvents.Publish(impact);
         }
         if (destroyed)
         {

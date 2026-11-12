@@ -1,8 +1,10 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Contracts;
 using Eden.Data.World.Docking;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
@@ -100,6 +102,23 @@ internal sealed partial class EconomyTransaction(
             ship.Position = position;
         }
         return new(row, EntityState.Added);
+    }
+
+    internal override IReadOnlyList<WorldMissile> ExpiredMissileHistory(long oldest, bool npcOnly)
+    {
+        var flights = Set<WorldMissile>();
+        return store
+            .ExpiredMissileHistory(oldest, npcOnly)
+            .Select(id => flights.Find(id))
+            .OfType<WorldMissile>()
+            .Concat(flights.Local)
+            .Where(row =>
+                flights.State(row) != EntityState.Deleted
+                && row.EndedAt < oldest
+                && (npcOnly ? row.SourceKind == MissileSourceKind.Npc : row.Outcome is null || row.Reported)
+            )
+            .DistinctBy(row => row.Id)
+            .ToArray();
     }
 
     internal override void Remove<T>(T row)

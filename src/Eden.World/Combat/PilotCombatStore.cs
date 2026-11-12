@@ -151,6 +151,19 @@ internal sealed partial class PilotCombatStore(
         IReadOnlyDictionary<DogmaAttributeId, double> Attributes
     );
 
+    private TransactionParticipants VolleyParticipants(WorldAction world, long pilot, long target, PilotWeaponTarget? player)
+    {
+        long source = world.Pilots.Where(row => row.Id == pilot).Select(row => row.ActiveShipId).Single();
+        var npcs = player is null
+            ? NpcHostility.Participants(world, target)
+            : ShipLossPersistence.LossNpcParticipants(world, database.Path, target);
+        return new(
+            pilots: [pilot],
+            ships: player is null ? [source] : [source, target],
+            resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
+        );
+    }
+
     private CombatVolley FireVolley(
         long pilotId,
         long moduleId,
@@ -198,22 +211,22 @@ internal sealed partial class PilotCombatStore(
         {
             return residentPilot;
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => VolleyParticipants(world, pilotId, targetId, playerTarget));
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId)!;
         var npc = playerTarget is null ? world.Set<WorldNpc>().Find(targetId) : null;
         Pilot? victim = null;
         AggressionDecision? aggression = null;
         TurretTarget target;
         if (playerTarget is not null)
         {
-            victim = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == targetId);
+            victim = world.Filter<Pilot>(p => p.ActiveShipId == targetId).SingleOrDefault();
             if (
                 victim?.ActiveShip.Position is not { } saved
                 || victim.Id == pilotId
-                || world.Set<SavedLogoff>().Any(l => l.PilotId == victim.Id && l.ExpiresAt <= now)
+                || world.Set<SavedLogoff>().Find(victim.Id) is { } logoff && logoff.ExpiresAt <= now
                 || !double.IsFinite(playerTarget.Velocity.DistanceTo(SpacePosition.Zero))
             )
             {
@@ -221,7 +234,7 @@ internal sealed partial class PilotCombatStore(
             }
             int system = CrimewatchPersistence.System(catalog, victim.ActiveShip);
             aggression = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim, system, now);
-            var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim.Id);
+            var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim);
             if (PilotHealthStore.Read(world, targetId, ShipHealth.DefenseFrom(attributes), now).Remaining.Destroyed)
             {
                 throw new InvalidDataException("The target ship is destroyed.");
@@ -321,7 +334,9 @@ internal sealed partial class PilotCombatStore(
             );
         }
         world.SaveChanges();
+        var replacement = settlement.Destroyed && victim is not null ? lookup.FindPilot(world, victim.AccountId, victim.Id)! : null;
         transaction.Commit();
+        transaction.Dispose();
         if (heat is not null)
         {
             WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
@@ -364,7 +379,7 @@ internal sealed partial class PilotCombatStore(
                     shot.Quality,
                     shot.Weapon.TypeId,
                     paid.Count > 1,
-                    settlement.Destroyed ? lookup.FindPilot(victim.AccountId, victim.Id)! : null,
+                    replacement,
                     insurance
                 )
                 {
@@ -376,7 +391,7 @@ internal sealed partial class PilotCombatStore(
     }
 
     private static PaidShot Prepare(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         long pilotId,

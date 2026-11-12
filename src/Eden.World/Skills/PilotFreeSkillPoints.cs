@@ -1,6 +1,7 @@
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Skills;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Skills;
@@ -84,7 +85,7 @@ internal sealed partial class PilotTrainingStore
     }
 
     private FreePointPlan ChangePoints(
-        WorldDbContext world,
+        WorldAction world,
         long pilotId,
         PointOperation operation,
         IReadOnlyList<TrainingEntry> queue,

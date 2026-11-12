@@ -24,6 +24,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -43,11 +44,12 @@ internal sealed partial class PilotDroneStore(
 {
     private const int ProbabilityResolution = 1_000_000;
 
-    private static Pilot InSpace(WorldDbContext world, long pilotId, bool requireDroneHull = true)
+    private static Pilot InSpace(WorldDbContext world, long pilotId, bool requireDroneHull = true) =>
+        InSpace(new SqlWorldAction(world), pilotId, requireDroneHull);
+
+    private static Pilot InSpace(WorldAction world, long pilotId, bool requireDroneHull = true)
     {
-        var pilot =
-            world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
-            ?? throw new InvalidDataException("Choose an existing pilot.");
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Choose an existing pilot.");
         if (pilot.ActiveShip.Position is null)
         {
             throw new InvalidDataException("Use drones while your ship is in space.");
@@ -73,19 +75,27 @@ internal sealed partial class PilotDroneStore(
     private static int CurrentSystem(CatalogDbContext catalog, Pilot pilot) =>
         pilot.ActiveShip.Position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
 
-    private static DroneSettings Settings(WorldDbContext world, long pilotId) =>
+    private static DroneSettings Settings(WorldAction world, long pilotId) =>
         world.Set<WorldDroneSettings>().Find(pilotId) is { } settings ? new(settings.Aggressive, settings.FocusFire) : new();
 
     public DroneControl Control(long pilotId)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(world => ReadControl(world, pilotId), new(pilots: [pilotId]));
+        }
         using WorldDbContext world = new(database.Path);
+        return ReadControl(new SqlWorldAction(world), pilotId);
+    }
+
+    private DroneControl ReadControl(WorldAction world, long pilotId)
+    {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId)!;
         long ship = pilot.ActiveShipId;
         var fitting = FittingCalculation.Read(world, catalog, pilot);
         double bandwidth = world
-            .Set<WorldDrone>()
-            .Where(d => d.PilotId == pilotId && d.ControllerShipId == ship && d.SystemId != null)
+            .Filter<WorldDrone>(d => d.PilotId == pilotId && d.ControllerShipId == ship && d.SystemId != null)
             .AsEnumerable()
             .Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth);
         return new(
@@ -108,11 +118,10 @@ internal sealed partial class PilotDroneStore(
 
     public DroneProfile? Profile(long pilotId, int typeId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         try
         {
-            return DroneCatalog.Skilled(world, catalog, pilotId, typeId);
+            return WorldActionScope.Inspect(database, world => DroneCatalog.Skilled(world, catalog, pilotId, typeId));
         }
         catch (InvalidDataException)
         {
@@ -123,8 +132,8 @@ internal sealed partial class PilotDroneStore(
     public DroneOperation Launch(long pilotId, IReadOnlyList<DroneStack> stacks, long now)
     {
         CheckIds(stacks.Select(s => s.Id).ToArray());
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = InSpace(world, pilotId);
         var ship = pilot.ActiveShip;
@@ -254,6 +263,17 @@ internal sealed partial class PilotDroneStore(
         return new(changes, launches);
     }
 
+    private static TransactionParticipants OrderParticipants(WorldAction world, long pilot, long? target)
+    {
+        if (target is not long id)
+        {
+            return new(pilots: [pilot]);
+        }
+        return world.Set<WorldNpc>().Find(id) is not null
+            ? new(pilots: [pilot], resources: [new(SharedSimulationResource.Npc, id)])
+            : new(pilots: [pilot], ships: [id]);
+    }
+
     public void Order(long pilotId, IReadOnlyList<long> drones, DroneOrder order, long? targetId, IReadOnlySet<long> locks, long now)
     {
         CheckIds(drones);
@@ -261,8 +281,8 @@ internal sealed partial class PilotDroneStore(
         {
             throw new InvalidDataException("Unknown drone command.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => OrderParticipants(world, pilotId, targetId));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = InSpace(world, pilotId);
         var position = pilot.ActiveShip.Position!;
@@ -450,10 +470,12 @@ internal sealed partial class PilotDroneStore(
 
     public bool WasDestroyed(long droneId)
     {
-        using WorldDbContext world = new(database.Path);
         // NPC destruction moves the item to the graveyard. Scooping a damaged drone
         // can change its owner's durability skills, but must never play an explosion.
-        return world.Set<OwnedItem>().Any(i => i.Id == droneId && i.LocationId == (int)InventoryLocation.Graveyard);
+        return WorldActionScope.Inspect(
+            database,
+            world => world.Set<OwnedItem>().Find(droneId)?.LocationId == (int)InventoryLocation.Graveyard
+        );
     }
 
     public IReadOnlyDictionary<long, ShipHealth> BayHealth(long pilotId, long shipId, IReadOnlySet<long> ids)
@@ -485,28 +507,80 @@ internal sealed partial class PilotDroneStore(
     public DroneUpdate Advance(long pilotId, long now, int stamp) =>
         LiveCombatRuntime
             .Find(database.Path, pilotId)
-            ?.AdvanceDrones(pilotId, now, stamp, presence, damageEvents, fleets, rolls => AdvanceSql(pilotId, now, stamp, rolls))
-        ?? AdvanceSql(pilotId, now, stamp);
+            ?.AdvanceDrones(
+                pilotId,
+                now,
+                stamp,
+                presence,
+                damageEvents,
+                fleets,
+                (rolls, endpoints) => SettleAdvance(pilotId, now, stamp, rolls, endpoints)
+            )
+        ?? SettleAdvance(pilotId, now, stamp);
 
-    private DroneUpdate AdvanceSql(long pilotId, long now, int stamp, IReadOnlyDictionary<long, double>? rolls = null)
+    private TransactionParticipants AdvanceParticipants(WorldAction world, long pilot, long now, IReadOnlyCollection<long>? endpoints)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        var owner = world.Pilots.Find(pilot) ?? throw new InvalidDataException("Choose an existing pilot.");
+        long ship = owner.ActiveShipId;
+        var candidates = new HashSet<long>(endpoints ?? []);
+        if (endpoints is null)
+        {
+            var drones = world.Filter<WorldDrone>(row => row.PilotId == pilot && row.ControllerShipId != 0).ToArray();
+            candidates.UnionWith(drones.Select(row => row.TargetId));
+            foreach (long delegateShip in drones.Select(row => row.DelegateShipId).Where(id => id > 0).Distinct())
+            {
+                var triggers = DroneCombatPersistence.Read(world, delegateShip);
+                candidates.UnionWith([delegateShip, triggers.Offensive.OtherId, triggers.Incoming.OtherId]);
+            }
+            if (Settings(world, pilot).Aggressive)
+            {
+                candidates.UnionWith(world.Filter<NpcAggression>(row => row.TargetShipId == ship).Select(row => row.NpcId));
+                candidates.UnionWith(
+                    world
+                        .Filter<SavedPilotHostility>(row => row.TargetShipId == ship && row.ExpiresAt > now)
+                        .Select(row => row.SourceShipId)
+                );
+            }
+        }
+        HashSet<long> ships = [ship];
+        HashSet<long> npcs = [];
+        foreach (long id in candidates.Where(id => id > 0 && id != ship))
+        {
+            if (world.Set<WorldNpc>().Find(id) is not null)
+            {
+                npcs.UnionWith(NpcHostility.Participants(world, id));
+            }
+            else
+            {
+                ships.Add(id);
+                npcs.UnionWith(ShipLossPersistence.LossNpcParticipants(world, database.Path, id));
+            }
+        }
+        return new(pilots: [pilot], ships: ships, resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id)));
+    }
+
+    private DroneUpdate SettleAdvance(
+        long pilotId,
+        long now,
+        int stamp,
+        IReadOnlyDictionary<long, double>? rolls = null,
+        IReadOnlyCollection<long>? endpoints = null
+    )
+    {
+        using WorldActionScope transaction = new(database, select: world => AdvanceParticipants(world, pilotId, now, endpoints));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot =
-            world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
-            ?? throw new InvalidDataException("Choose an existing pilot.");
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Choose an existing pilot.");
         var ship = pilot.ActiveShip;
         int systemId = CurrentSystem(catalog, pilot);
         List<InventoryChange> changes = [];
         List<DroneHit> hits = [];
-        List<PendingDroneDamage> pilotHits = [];
+        List<PilotDamage> pilotHits = [];
         var settings = Settings(world, pilotId);
         var fitting = FittingCalculation.Read(world, catalog, pilot);
+        var shipAttributes = fitting.Graph.Attributes(ship.Id);
         int allowedCount = DroneCatalog.ControlLimit(fitting);
-        bool sourceDestroyed = PilotHealthStore
-            .Read(world, ship.Id, ShipHealth.DefenseFrom(fitting.Graph.Attributes(ship.Id)), now)
-            .Remaining.Destroyed;
+        bool sourceDestroyed = PilotHealthStore.Read(world, ship.Id, ShipHealth.DefenseFrom(shipAttributes), now).Remaining.Destroyed;
         double allowedBandwidth = fitting.Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
         double controlRange = fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
         int controlledCount = 0;
@@ -575,7 +649,7 @@ internal sealed partial class PilotDroneStore(
                 var candidates = world
                     .Set<WorldNpc>()
                     .Where(n =>
-                        attacking.Contains(n.Id)
+                        Enumerable.Contains(attacking, n.Id)
                         && n.SystemId == drone.SystemId
                         && n.DestroyedAt == null
                         && n.RetiredAt == null
@@ -658,7 +732,6 @@ internal sealed partial class PilotDroneStore(
                 && contact.Position.DistanceTo(target) - radius - profile.Radius <= DroneRules.RecallRange
             )
             {
-                var shipAttributes = FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(ship.Id);
                 double available =
                     shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity)
                     - InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, (int)InventoryFlag.DroneBay);
@@ -731,7 +804,7 @@ internal sealed partial class PilotDroneStore(
             {
                 CrimewatchPersistence.Player(world, catalog, pilot.Id, victim!.Id, systemId, decision!, now, drone.ReadyAt);
                 var impact = ApplyPilotDamage(world, catalog, pilot, victim, drone, profile, attributes, damage, now);
-                pilotHits.Add(impact);
+                pilotHits.Add(impact.Damage);
                 hit = impact.Hit;
             }
             else
@@ -746,9 +819,10 @@ internal sealed partial class PilotDroneStore(
         }
         world.SaveChanges();
         transaction.Commit();
+        transaction.Dispose();
         foreach (var impact in pilotHits)
         {
-            Publish(impact);
+            damageEvents.Publish(impact);
         }
         if (hits.Any(h => h.Health.Remaining.Destroyed))
         {
@@ -772,11 +846,12 @@ internal sealed partial class PilotDroneStore(
 
     public void Release(long pilotId, long shipId)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         foreach (var drone in world.Set<WorldDrone>().Where(d => d.PilotId == pilotId && d.ControllerShipId == shipId))
         {
             Release(drone);
         }
-        world.SaveChanges();
+        transaction.Commit();
     }
 }

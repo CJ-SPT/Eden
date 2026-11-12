@@ -10,6 +10,7 @@ using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -35,8 +36,8 @@ internal sealed partial class PilotDroneStore
         {
             throw new InvalidDataException("A destroyed ship cannot delegate drones.");
         }
-        var owner = DelegationOwner(world, catalog, pilot, system);
-        var member = DelegationMember(world, catalog, memberId, system);
+        var owner = DelegationOwner(new SqlWorldAction(world), catalog, pilot, system);
+        var member = DelegationMember(new SqlWorldAction(world), catalog, memberId, system);
         if (member.Available)
         {
             var targetDefense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, memberId));
@@ -87,7 +88,7 @@ internal sealed partial class PilotDroneStore
                     .Pilots.Include(p => p.ActiveShip)
                         .ThenInclude(s => s.Position)
                     .SingleOrDefault(p => p.Id == other.PilotId);
-                previousOwner = savedOwner is null ? null : DelegationOwner(world, catalog, savedOwner, system);
+                previousOwner = savedOwner is null ? null : DelegationOwner(new SqlWorldAction(world), catalog, savedOwner, system);
                 owners[other.PilotId] = previousOwner;
             }
             var delegation = DroneDelegationPersistence.Read(other)!;
@@ -134,7 +135,7 @@ internal sealed partial class PilotDroneStore
         transaction.Commit();
     }
 
-    private DroneDelegateMember DelegationOwner(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int system)
+    private DroneDelegateMember DelegationOwner(WorldAction world, CatalogDbContext catalog, Pilot pilot, int system)
     {
         var ship = pilot.ActiveShip;
         bool available =
@@ -151,9 +152,9 @@ internal sealed partial class PilotDroneStore
         );
     }
 
-    private DroneDelegateMember DelegationMember(WorldDbContext world, CatalogDbContext catalog, long pilotId, int system)
+    private DroneDelegateMember DelegationMember(WorldAction world, CatalogDbContext catalog, long pilotId, int system)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId);
         var online = pilot is null ? null : presence.FindOnline(system, pilot.ActiveShipId);
         bool available =
             pilot?.ActiveShip.Position is not null
@@ -183,7 +184,7 @@ internal sealed partial class PilotDroneStore
     }
 
     private DroneDelegateMember? AdvanceDelegation(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         WorldDrone drone,

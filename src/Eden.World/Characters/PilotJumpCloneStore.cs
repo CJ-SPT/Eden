@@ -13,6 +13,7 @@ using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -230,6 +231,11 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
     internal static void ResetActive(WorldDbContext world, long pilotId)
     {
         world.RemoveRange(world.Set<SavedJumpClone>().Where(c => c.PilotId == pilotId && c.Active));
+    }
+
+    internal static void ResetActive(WorldAction world, long pilotId)
+    {
+        world.RemoveRange(world.Filter<SavedJumpClone>(c => c.PilotId == pilotId && c.Active).ToArray());
     }
 
     public JumpCloneTransfer Jump(long pilotId, long expectedShipId, int stationId, long cloneId, long quotedCents)

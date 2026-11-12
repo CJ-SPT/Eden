@@ -7,12 +7,12 @@ internal sealed partial class LiveCombatRuntime
 {
     private readonly ResidentMap<int, NpcSceneIndex> _npcSceneIndices = [];
 
-    internal NpcSceneContacts? ReadScene(int system, SpacePosition position, long now, Action refresh, Func<long> nextPopulation)
+    internal NpcSceneContacts? ReadScene(int system, SpacePosition position, long now, Func<long> refreshPopulation)
     {
-        return Execute(() => ReadSceneOwned(system, position, now, refresh, nextPopulation), nameof(ReadScene));
+        return Execute(() => ReadSceneOwned(system, position, now, refreshPopulation), nameof(ReadScene));
     }
 
-    private NpcSceneContacts? ReadSceneOwned(int system, SpacePosition position, long now, Action refresh, Func<long> nextPopulation)
+    private NpcSceneContacts? ReadSceneOwned(int system, SpacePosition position, long now, Func<long> refreshPopulation)
     {
         using var ownership = owner.Enter();
         if (!simulationObjects || !CanRun)
@@ -20,7 +20,7 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         Trim();
-        var contacts = SimulationContacts(system, now, refresh, nextPopulation, position);
+        var contacts = SimulationContacts(system, now, refreshPopulation, position);
         return new(contacts, _npcSceneIndices[system].Warping);
     }
 

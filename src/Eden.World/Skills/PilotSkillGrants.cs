@@ -3,7 +3,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
 using Eden.World.Catalog;
-using Eden.World.Storage;
+using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Skills;
 
@@ -18,7 +18,7 @@ internal sealed partial class PilotTrainingStore
         return new(result.Points!.Remaining, result.Training, result.Points.Allocations, result.PointRevision);
     }
 
-    private FreePointPlan GrantPoints(WorldDbContext world, long pilotId, TrainingTarget target, long balance)
+    private FreePointPlan GrantPoints(WorldAction world, long pilotId, TrainingTarget target, long balance)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         var type = catalog.FittingType(target.TypeId);

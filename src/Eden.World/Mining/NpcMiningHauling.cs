@@ -14,6 +14,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Propulsion;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,7 @@ namespace Eden.World.Mining;
 
 internal sealed partial class NpcMiningSeeder
 {
-    private void SpawnHauler(WorldDbContext world, CatalogDbContext catalog, WorldNpcMiningOperation operation, WorldNpc[] active, long now)
+    private void SpawnHauler(WorldAction world, CatalogDbContext catalog, WorldNpcMiningOperation operation, WorldNpc[] active, long now)
     {
         var miner = active.FirstOrDefault(n => n.Role == NpcRole.MiningMiner);
         if (miner is null)
@@ -60,7 +61,7 @@ internal sealed partial class NpcMiningSeeder
     }
 
     private void Haul(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         WorldNpcMiningOperation operation,
         WorldNpc npc,
@@ -84,7 +85,7 @@ internal sealed partial class NpcMiningSeeder
             .ToArray();
         foreach (var miner in miners)
         {
-            var cargo = world.Set<WorldNpcMiningCargo>().Where(c => c.NpcId == miner.Id && c.Quantity > 0).OrderBy(c => c.TypeId).ToArray();
+            var cargo = world.Filter<WorldNpcMiningCargo>(c => c.NpcId == miner.Id && c.Quantity > 0).OrderBy(c => c.TypeId).ToArray();
             if (cargo.Length == 0)
             {
                 continue;
@@ -133,7 +134,7 @@ internal sealed partial class NpcMiningSeeder
     }
 
     private static bool BeginWarp(
-        WorldDbContext world,
+        WorldAction world,
         WorldNpc npc,
         WorldNpcMiningMember member,
         NpcMiningHull hull,
@@ -143,8 +144,7 @@ internal sealed partial class NpcMiningSeeder
     )
     {
         var disruption = world
-            .Set<WorldTackle>()
-            .Where(t => t.TargetId == npc.Id && t.TargetKind == TackleTargetKind.Npc && t.ExpiresAt > now)
+            .Filter<WorldTackle>(t => t.TargetId == npc.Id && t.TargetKind == TackleTargetKind.Npc && t.ExpiresAt > now)
             .Select(t => t.Strength)
             .ToArray();
         if (!NpcMiningRules.CanWarp(hull.Hull.Attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus), disruption))
@@ -217,7 +217,7 @@ internal sealed partial class NpcMiningSeeder
             : NpcMiningTravel.Working;
     }
 
-    private void SpawnDefense(WorldDbContext world, CatalogDbContext catalog, WorldNpcMiningOperation operation, long now)
+    private void SpawnDefense(WorldAction world, CatalogDbContext catalog, WorldNpcMiningOperation operation, long now)
     {
         var roster = NpcMiningRules.Roster(operation.FactionId)!;
         int[] types =
@@ -271,7 +271,7 @@ internal sealed partial class NpcMiningSeeder
     }
 
     private void Support(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         WorldNpcMiningOperation operation,
         WorldNpc[] active,

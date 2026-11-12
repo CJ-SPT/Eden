@@ -6,6 +6,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ namespace Eden.World.Combat.Npcs;
 [Injectable(InjectionType.Singleton)]
 internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
 {
-    internal void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, double security, long now)
+    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, double security, long now)
     {
         if (!NpcConvoyRules.Eligible(security))
         {
@@ -24,7 +25,7 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
         var obstacles = NpcGuardSeeder.CatalogObstacles(catalog, systemId);
         obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));
         // Include newly seeded, tracked guard encounters as well as saved ones.
-        _ = world.Set<WorldNpcEncounter>().Where(e => e.SystemId == systemId && e.Role == NpcRole.Navy).ToArray();
+        _ = world.Filter<WorldNpcEncounter>(e => e.SystemId == systemId && e.Role == NpcRole.Navy).ToArray();
         obstacles.AddRange(
             world
                 .Set<WorldNpcEncounter>()
@@ -73,7 +74,7 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
             {
                 continue;
             }
-            var active = world.Set<WorldNpc>().Where(n => n.EncounterId == id && n.DestroyedAt == null && n.RetiredAt == null).ToArray();
+            var active = world.Filter<WorldNpc>(n => n.EncounterId == id && n.DestroyedAt == null && n.RetiredAt == null).ToArray();
             if (active.Length > 0)
             {
                 foreach (var member in active)

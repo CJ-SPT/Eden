@@ -275,28 +275,53 @@ public sealed class PilotDroneTests
         Engage(f, ids);
         List<PilotDamage> messages = [];
         f.Base.Db.Services.GetRequiredService<PilotDamageSignal>().Applied += messages.Add;
-        using (WorldDbContext world = new(f.Base.Db.Path))
-        {
-            world.Database.ExecuteSqlRaw(
-                "CREATE TRIGGER reject_drone_loss BEFORE INSERT ON WorldShipLoss BEGIN SELECT RAISE(ABORT,'test failure'); END"
-            );
-        }
+        const string reject =
+            "CREATE TRIGGER reject_drone_loss BEFORE INSERT ON WorldShipLoss " + "BEGIN SELECT RAISE(ABORT,'test failure'); END";
+        const string remove = "DROP TRIGGER reject_drone_loss";
         var before = f.Drones.List(SystemId, f.Now).ToArray();
-        Assert.Throws<DbUpdateException>(() => f.Tick());
-        Assert.Empty(messages);
-        Assert.Equal(before, f.Drones.List(SystemId, f.Now));
-        using (WorldDbContext world = new(f.Base.Db.Path))
+        if (live is not null)
+        {
+            using (WorldDbContext world = new(f.Base.Db.Path))
+            {
+                CheckUnchanged(world);
+            }
+            Assert.True(Assert.Single(f.Tick().Hits).Health.Remaining.Destroyed);
+            using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+            using WorldDbContext saved = new(snapshot.Database);
+            saved.Database.ExecuteSqlRaw(reject);
+            Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => snapshot.Project());
+            CheckUnchanged(saved);
+            saved.Database.ExecuteSqlRaw(remove);
+            Assert.Empty(f.Drones.Advance(f.Pilot, f.Now, 1).Hits);
+            snapshot.Project();
+            saved.ChangeTracker.Clear();
+            Assert.Single(saved.Set<ShipLoss>());
+            Assert.Single(saved.Set<WorldDrone>().Where(d => d.ReadyAt > f.Now));
+        }
+        else
+        {
+            using WorldDbContext world = new(f.Base.Db.Path);
+            world.Database.ExecuteSqlRaw(reject);
+            Assert.Throws<DbUpdateException>(() => f.Tick());
+            Assert.Empty(messages);
+            Assert.Equal(before, f.Drones.List(SystemId, f.Now));
+            CheckUnchanged(world);
+            world.Database.ExecuteSqlRaw(remove);
+            Assert.True(Assert.Single(f.Drones.Advance(f.Pilot, f.Now, 1).Hits).Health.Remaining.Destroyed);
+        }
+        Assert.Single(messages);
+
+        void CheckUnchanged(WorldDbContext world)
         {
             Assert.Empty(world.Set<ShipLoss>());
             Assert.Empty(world.Set<WorldWreck>());
             Assert.Empty(world.Set<SavedCombatReport>());
             Assert.Empty(world.Set<SavedCombatDamage>());
             Assert.Equal(VictimShip, world.Pilots.Find(Victim)!.ActiveShipId);
-            Assert.All(world.Set<WorldDrone>(), d => Assert.Equal(0, d.ReadyAt));
-            world.Database.ExecuteSqlRaw("DROP TRIGGER reject_drone_loss");
+            var drones = world.Set<WorldDrone>().ToArray();
+            Assert.Equal(ids.Length, drones.Length);
+            Assert.All(drones, d => Assert.Equal(0, d.ReadyAt));
         }
-        Assert.True(Assert.Single(f.Drones.Advance(f.Pilot, f.Now, 1).Hits).Health.Remaining.Destroyed);
-        Assert.Single(messages);
     }
 
     [Fact]

@@ -25,21 +25,16 @@ internal sealed partial class LiveCombatRuntime
     private const int RetainedAcquisitions = 128;
     private readonly List<AcquisitionSnapshot> _acquisitions = [];
 
-    internal IReadOnlyList<NpcContact>? Contacts(
-        int system,
-        long now,
-        Func<IReadOnlyList<NpcContact>> read,
-        Func<long>? nextPopulation = null
-    )
+    internal IReadOnlyList<NpcContact>? Contacts(int system, long now, Func<IReadOnlyList<NpcContact>> read, Func<long> refreshPopulation)
     {
-        return Execute(() => ContactsOwned(system, now, read, nextPopulation), nameof(Contacts));
+        return Execute(() => ContactsOwned(system, now, read, refreshPopulation), nameof(Contacts));
     }
 
     private IReadOnlyList<NpcContact>? ContactsOwned(
         int system,
         long now,
         Func<IReadOnlyList<NpcContact>> read,
-        Func<long>? nextPopulation = null
+        Func<long> refreshPopulation
     )
     {
         using var ownership = owner.Enter();
@@ -50,7 +45,7 @@ internal sealed partial class LiveCombatRuntime
         Trim();
         if (simulationObjects)
         {
-            return SimulationContacts(system, now, () => read(), nextPopulation ?? (() => long.MaxValue));
+            return SimulationContacts(system, now, refreshPopulation);
         }
         long second = now / TimeSpan.TicksPerSecond;
         int motion = database.MotionStamps.GetValueOrDefault(system);

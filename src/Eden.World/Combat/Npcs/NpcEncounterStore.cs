@@ -7,12 +7,14 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,9 +37,7 @@ internal sealed class NpcEncounterStore(
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            return LiveCombatRuntime
-                    .Find(database.Path)
-                    ?.ReadScene(systemId, position, now, () => Read(systemId, now, false), () => NextPopulation(systemId, now))
+            return LiveCombatRuntime.Find(database.Path)?.ReadScene(systemId, position, now, () => RefreshPopulation(systemId, now))
                 ?? NpcSceneContacts.From(List(systemId, now), systemId, position);
         }
     }
@@ -57,7 +57,7 @@ internal sealed class NpcEncounterStore(
             if (
                 LiveCombatRuntime
                     .Find(database.Path)
-                    ?.Contacts(systemId, now, () => Read(systemId, now), () => NextPopulation(systemId, now)) is
+                    ?.Contacts(systemId, now, () => Read(systemId, now), () => RefreshPopulation(systemId, now)) is
                 { } resident
             )
             {
@@ -77,12 +77,7 @@ internal sealed class NpcEncounterStore(
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            if (
-                LiveCombatRuntime
-                    .Find(database.Path)
-                    ?.Simulate(systemId, now, () => Read(systemId, now, false), () => NextPopulation(systemId, now)) is
-                { } resident
-            )
+            if (LiveCombatRuntime.Find(database.Path)?.Simulate(systemId, now, () => RefreshPopulation(systemId, now)) is { } resident)
             {
                 return resident;
             }
@@ -98,10 +93,55 @@ internal sealed class NpcEncounterStore(
         }
     }
 
-    private long NextPopulation(int systemId, long now)
+    private long RefreshPopulation(int systemId, long now)
     {
-        using WorldDbContext world = new(database.Path) { Participants = new(systems: [systemId]) };
-        return population?.NextUpdate(world, systemId, now) ?? long.MaxValue;
+        if (population is null)
+        {
+            return long.MaxValue;
+        }
+        if (population is not NpcPopulationSeeder seeder || LiveWorld.Find(database.Path) is not { SqlConnections: 0 } live)
+        {
+            Read(systemId, now, false);
+            return database.PopulationDeadlines[systemId];
+        }
+        using var phase = SessionPerformance.Phase("resident.npcPopulation");
+        long stamp = now / TimeSpan.TicksPerSecond;
+        bool seed =
+            database.PopulationStamps.GetValueOrDefault(systemId, -1) != stamp
+            || database.PopulationDeadlines.GetValueOrDefault(systemId, long.MaxValue) <= now;
+        long due;
+        if (seed)
+        {
+            using WorldActionScope transaction = new(database, select: world => PopulationParticipants(world, systemId));
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            seeder.Seed(transaction.World, catalog, systemId, now);
+            due = NpcPopulationSchedule.Next(transaction.World, systemId, now);
+            transaction.Commit();
+        }
+        else
+        {
+            var participants = live.Economy.Inspect(world => PopulationParticipants(world, systemId));
+            due = live.Economy.Inspect(world => NpcPopulationSchedule.Next(world, systemId, now), participants);
+        }
+        database.PopulationStamps[systemId] = stamp;
+        database.PopulationDeadlines[systemId] = due;
+        return due;
+    }
+
+    private static TransactionParticipants PopulationParticipants(WorldAction world, int system)
+    {
+        var npcs = world
+            .Set<WorldNpc>()
+            .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
+            .ToArray()
+            .Where(n =>
+                NpcPopulationRules.IsMining(n.Role)
+                || n.Role == NpcRole.Convoy
+                || n.TypeId == NpcEncounterDefinitions.GuristasRookieType
+                || n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId)
+            )
+            .Select(n => new SimulationResource(SharedSimulationResource.Npc, n.Id));
+        return new(systems: [system], resources: npcs);
     }
 
     private IReadOnlyList<NpcContact> Read(int systemId, long now, bool buildContacts = true)
@@ -272,9 +312,6 @@ internal sealed class NpcEncounterStore(
         return new(profile.Type, profile.Attributes, profile.Defense) { StandingThresholds = profile.StandingThresholds };
     }
 
-    public bool WasDestroyed(long npcId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<WorldNpc>().Any(n => n.Id == npcId && n.DestroyedAt != null);
-    }
+    public bool WasDestroyed(long npcId) =>
+        WorldActionScope.Inspect(database, world => world.Set<WorldNpc>().Find(npcId)?.DestroyedAt is not null);
 }

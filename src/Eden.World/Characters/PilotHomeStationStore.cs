@@ -11,6 +11,7 @@ using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,10 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
         return station is > 0 and <= int.MaxValue ? (int)station : null;
     }
 
-    internal static HomeStation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    internal static HomeStation Read(WorldDbContext world, CatalogDbContext catalog, Pilot pilot) =>
+        Read(new SqlWorldAction(world), catalog, pilot);
+
+    internal static HomeStation Read(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
         int id = world.Set<SavedHomeStation>().Find(pilot.Id)?.StationId ?? pilot.ActiveShip.StationId;
         if (Station(catalog, id) is { } saved)

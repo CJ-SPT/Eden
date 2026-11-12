@@ -5,12 +5,14 @@ using Eden.Data.World.Docking;
 using Eden.Data.World.Insurance;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
 using Eden.Gameplay.Thermal;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
@@ -25,6 +27,7 @@ using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Runtime;
+using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,12 +44,31 @@ public sealed partial class PilotMissileTests
     {
         using var f = Prepare();
         using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
+        const int skill = 3327;
+        const long implantItem = 140_000_010_000;
         long launcher = MissileCombatTests.Load(f, Launcher, Charge);
         using (WorldDbContext world = new(f.Db.Path))
         {
             world.Ships.Find(VictimShip)!.TypeId = FleetDefinitions.CapsuleType;
+            world.Set<PilotSkill>().Find(Victim, skill)!.Points = 0;
+            var clone = world.Add(new SavedJumpClone { PilotId = Victim, Active = true }).Entity;
+            world.SaveChanges();
+            world.Add(
+                new SavedPilotImplant
+                {
+                    ItemId = implantItem,
+                    CloneId = clone.Id,
+                    TypeId = 10216,
+                    Slot = 1,
+                    Attribute = DogmaAttributeId.Perception,
+                    Bonus = 3,
+                }
+            );
             world.SaveChanges();
         }
+        PilotTrainingStore training = new(new(f.Db.Path), f.Clock);
+        var original = Assert.Single(training.Save(Victim, [new(skill, 1)], true).Queue);
+        f.Clock.AdvanceWallTime(TimeSpan.FromMinutes(2));
         Space(f);
         AlmostLost(f);
         var home = f.Db.Services.GetRequiredService<Eden.Gameplay.Characters.IPilotHomeStation>().Read(Victim);
@@ -54,7 +76,8 @@ public sealed partial class PilotMissileTests
         f.Db.Services.GetRequiredService<PilotDamageSignal>().Applied += messages.Add;
         Launch(f, launcher);
         Advance(f);
-        Assert.True(Assert.Single(Store(f).TakeImpacts(f.PilotId)).Destroyed);
+        var impact = Assert.Single(Store(f).TakeImpacts(f.PilotId));
+        Assert.True(impact.Destroyed);
         var loss = Assert.Single(messages);
         Assert.Null(loss.Capsule!.Position);
         Assert.Equal(home.Id, loss.Capsule.StationId);
@@ -62,8 +85,42 @@ public sealed partial class PilotMissileTests
         Assert.Equal(2, loss.InventoryChanges.Count);
         Advance(f);
         Assert.Single(messages);
-        using WorldDbContext saved = new(f.Db.Path);
-        Assert.Single(saved.Set<SavedHomeCloneTransfer>());
+        using var snapshot = live?.CaptureSnapshot();
+        if (snapshot is not null)
+        {
+            using (WorldDbContext before = new(snapshot.Database))
+            {
+                before.Database.ExecuteSqlRaw(
+                    """
+                    CREATE TRIGGER RejectHomeCloneTransfer BEFORE INSERT ON WorldHomeCloneTransfer
+                    BEGIN SELECT RAISE(ABORT,'checkpoint home clone transfer'); END
+                    """
+                );
+            }
+            Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => snapshot.Project());
+            using (WorldDbContext failed = new(snapshot.Database))
+            {
+                Assert.Equal(VictimShip, failed.Pilots.Find(Victim)!.ActiveShipId);
+                Assert.NotNull(failed.Set<SavedPilotImplant>().Find(implantItem));
+                Assert.Equal(original.EndTime, failed.Set<QueuedLevel>().Find(Victim, 0)!.EndTime);
+                Assert.Empty(failed.Set<SavedCombatReport>());
+                Assert.Empty(failed.Set<SavedHomeCloneTransfer>());
+                failed.Database.ExecuteSqlRaw("DROP TRIGGER RejectHomeCloneTransfer");
+            }
+            snapshot.Project();
+        }
+        using var saved = snapshot is null ? new WorldDbContext(f.Db.Path) : new WorldDbContext(snapshot.Database);
+        var transfer = Assert.Single(saved.Set<SavedHomeCloneTransfer>());
+        Assert.Equal(VictimShip, transfer.OldShipId);
+        Assert.Equal(loss.Capsule.ShipId, transfer.NewShipId);
+        Assert.Null(saved.Set<SavedPilotImplant>().Find(implantItem));
+        Assert.DoesNotContain(saved.Set<SavedJumpClone>(), row => row.PilotId == Victim && row.Active);
+        var rebased = saved.Set<QueuedLevel>().Find(Victim, 0)!;
+        Assert.Equal(transfer.Time, rebased.StartTime);
+        Assert.Equal(original.PointsAt(transfer.Time), rebased.StartPoints);
+        Assert.True(rebased.EndTime > original.EndTime);
+        Assert.Equal(rebased.StartPoints, saved.Set<PilotSkill>().Find(Victim, skill)!.Points);
+        Assert.Equal(1, saved.Set<SavedImplantState>().Find(Victim)!.Revision);
         Assert.Equal(2, saved.Set<SavedCombatReport>().Count());
         Assert.Empty(saved.Set<WorldWreck>());
         Assert.Empty(saved.Set<NpcBounty>());

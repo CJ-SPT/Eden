@@ -12,6 +12,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,11 +36,11 @@ internal sealed class ConcordStore(WorldDatabase database, SqliteWorld lookup, I
         {
             return null;
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, select: world => Participants(world, pilotId));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        var response = world.Set<SavedConcordResponse>().SingleOrDefault(r => r.PilotId == pilotId && r.CompletedAt == null);
+        var pilot = world.Pilots.Find(pilotId)!;
+        var response = Pending(world, pilotId);
         response ??= ConcordPersistence.Schedule(world, catalog, pilot, now);
         NpcShot? result = null;
         bool destroyed = false;
@@ -57,7 +58,7 @@ internal sealed class ConcordStore(WorldDatabase database, SqliteWorld lookup, I
                 }
                 if (now >= response.DestroyAt)
                 {
-                    var commander = world.Set<WorldNpc>().Find(response.CommanderId)!;
+                    var commander = world.Set<WorldNpc>().Find(response.CommanderId!.Value)!;
                     var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
                     var defense = ShipHealth.DefenseFrom(attributes);
                     var health = PilotHealthStore.Read(world, response.ShipId, defense, now);
@@ -104,14 +105,34 @@ internal sealed class ConcordStore(WorldDatabase database, SqliteWorld lookup, I
             }
         }
         world.SaveChanges();
+        if (destroyed)
+        {
+            result = result! with { Capsule = lookup.FindPilot(world, pilot.AccountId, pilotId)! };
+        }
         transaction.Commit();
-        return destroyed ? result! with { Capsule = lookup.FindPilot(pilot.AccountId, pilotId)! } : null;
+        return result;
     }
 
-    private long Deadline(long pilotId, long now)
+    private static SavedConcordResponse? Pending(WorldAction world, long pilot) =>
+        world.Filter<SavedConcordResponse>(row => row.PilotId == pilot && row.CompletedAt == null).SingleOrDefault();
+
+    private TransactionParticipants Participants(WorldAction world, long pilot)
     {
-        using WorldDbContext world = new(database.Path) { ReadsResidentNpcTimer = true };
-        var pending = world.Set<SavedConcordResponse>().AsNoTracking().SingleOrDefault(r => r.PilotId == pilotId && r.CompletedAt == null);
+        long active = world.Pilots.Where(row => row.Id == pilot).Select(row => row.ActiveShipId).Single();
+        long ship = Pending(world, pilot)?.ShipId ?? active;
+        var npcs = ShipLossPersistence.LossNpcParticipants(world, database.Path, ship);
+        return new(
+            pilots: [pilot],
+            ships: [active, ship],
+            resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
+        );
+    }
+
+    private long Deadline(long pilotId, long now) => WorldActionScope.Inspect(database, world => Deadline(world, pilotId, now));
+
+    private long Deadline(WorldAction world, long pilotId, long now)
+    {
+        var pending = Pending(world, pilotId);
         if (pending is not null)
         {
             return pending.CommanderId is null ? pending.RespondAt : pending.DestroyAt;
@@ -120,7 +141,7 @@ internal sealed class ConcordStore(WorldDatabase database, SqliteWorld lookup, I
         {
             return long.MaxValue;
         }
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId)!;
         using CatalogDbContext catalog = new(database.CatalogPath);
         return
             pilot.ActiveShip.Position is not null
@@ -148,23 +169,24 @@ internal sealed class ConcordStore(WorldDatabase database, SqliteWorld lookup, I
         }
     }
 
-    private ConcordSweep Offline(long now)
-    {
-        using WorldDbContext world = new(database.Path) { ReadsResidentNpcTimer = true };
-        var flags = world.Set<SavedCrimewatch>().Where(c => c.CriminalUntil > now).AsNoTracking().ToArray();
-        var ids = flags.Select(c => c.PilotId).ToArray();
-        var pilots = world
-            .Set<SavedLogoff>()
-            .Where(l =>
-                ids.Contains(l.PilotId) || world.Set<SavedConcordResponse>().Any(r => r.PilotId == l.PilotId && r.CompletedAt == null)
-            )
-            .Select(l => l.PilotId)
-            .ToArray();
-        return new(pilots, flags.Select(c => c.CriminalUntil).DefaultIfEmpty(long.MaxValue).Min());
-    }
+    private ConcordSweep Offline(long now) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var flags = world.Filter<SavedCrimewatch>(c => c.CriminalUntil > now).ToArray();
+                var ids = flags
+                    .Select(row => row.PilotId)
+                    .Concat(world.Filter<SavedConcordResponse>(row => row.CompletedAt == null).Select(row => row.PilotId))
+                    .Distinct()
+                    .ToArray();
+                var pilots = ids.Where(id => world.Set<SavedLogoff>().Find(id) is not null).ToArray();
+                return new ConcordSweep(pilots, flags.Select(row => row.CriminalUntil).DefaultIfEmpty(long.MaxValue).Min());
+            }
+        );
 
     private static void Spawn(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedConcordResponse response,
         Eden.Data.World.Docking.FlightPosition position,

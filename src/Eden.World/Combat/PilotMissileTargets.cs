@@ -19,7 +19,7 @@ internal sealed partial class PilotMissileStore
 {
     private static Pilot? FindVictim(WorldAction world, CatalogDbContext catalog, int system, long shipId, long now)
     {
-        var victim = world.Pilots.SingleOrDefault(p => p.ActiveShipId == shipId);
+        var victim = world.Filter<Pilot>(p => p.ActiveShipId == shipId).SingleOrDefault();
         if (
             victim?.ActiveShip.Position is null
             || CrimewatchPersistence.System(catalog, victim.ActiveShip) != system
@@ -71,10 +71,8 @@ internal sealed partial class PilotMissileStore
         }
     }
 
-    private sealed record PendingPilotImpact(long AccountId, PilotDamage Damage);
-
-    private PendingPilotImpact ApplyPilotImpact(
-        WorldDbContext world,
+    private PilotDamage ApplyPilotImpact(
+        WorldAction world,
         CatalogDbContext catalog,
         WorldMissile row,
         MissilePayload payload,
@@ -83,7 +81,7 @@ internal sealed partial class PilotMissileStore
         long time
     )
     {
-        var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim.Id);
+        var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim);
         var defense = ShipHealth.DefenseFrom(attributes);
         double application = MissileRules.Application(
             payload.Warhead,
@@ -92,7 +90,7 @@ internal sealed partial class PilotMissileStore
         );
         var damage = payload.Warhead.Damage.Scale(application);
         var result = PilotHealthStore.Apply(world, row.TargetId, defense, damage, time);
-        var attacker = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == row.PilotId);
+        var attacker = world.Pilots.Find(row.PilotId)!;
         var party = PilotInteractionHistoryStore.Player(world, attacker, row.SourceShipId, row.LauncherTypeId);
         PilotInteractionHistoryStore.Damage(world, row.TargetId, party, result.Applied);
         CrimewatchPersistence.PlayerImpact(world, row.PilotId, victim.Id, row.SystemId, time);
@@ -115,12 +113,22 @@ internal sealed partial class PilotMissileStore
         );
         row.Outcome = JsonSerializer.Serialize(outcome, MissileJson.Default.MissileImpact);
         world.SaveChanges();
+        var capsule = result.Remaining.Destroyed ? lookup.FindPilot(world, victim.AccountId, victim.Id)! : null;
         return new(
-            victim.AccountId,
-            new(victim.Id, row.PilotId, row.SourceShipId, health, damage, result.Applied, 1, row.ChargeTypeId, false, null, loss?.Insurance)
-            {
-                InventoryChanges = loss?.Changes ?? [],
-            }
-        );
+            victim.Id,
+            row.PilotId,
+            row.SourceShipId,
+            health,
+            damage,
+            result.Applied,
+            1,
+            row.ChargeTypeId,
+            false,
+            capsule,
+            loss?.Insurance
+        )
+        {
+            InventoryChanges = loss?.Changes ?? [],
+        };
     }
 }

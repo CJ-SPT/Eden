@@ -6,6 +6,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -50,4 +51,33 @@ internal sealed partial class PilotMissileStore
         }
         return new(pilots: [pilotId], ships: ships, resources: resources);
     }
+
+    private static IQueryable<WorldMissile> Flying(WorldAction world, int system) =>
+        world.Filter<WorldMissile>(row =>
+            row.SourceKind == MissileSourceKind.Pilot && row.SystemId == system && row.Status == MissileFlightStatus.Flying
+        );
+
+    private TransactionParticipants FlightParticipants(WorldAction world, int system)
+    {
+        var flights = Flying(world, system)
+            .Select(row => new FlightEndpoint(row.PilotId, row.SourceShipId, row.TargetKind, row.TargetId))
+            .ToArray();
+        var targets = flights.Where(row => row.Kind == MissileTargetKind.Pilot).Select(row => row.Target).Distinct().ToArray();
+        HashSet<long> npcs = targets.SelectMany(ship => ShipLossPersistence.LossNpcParticipants(world, database.Path, ship)).ToHashSet();
+        npcs.UnionWith(
+            flights
+                .Where(row => row.Kind == MissileTargetKind.Npc)
+                .Select(row => row.Target)
+                .Distinct()
+                .SelectMany(target => NpcHostility.Participants(world, target))
+        );
+        return new(
+            systems: [system],
+            pilots: flights.Select(row => row.Pilot),
+            ships: flights.Select(row => row.Source).Concat(targets),
+            resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
+        );
+    }
+
+    private sealed record FlightEndpoint(long Pilot, long Source, MissileTargetKind Kind, long Target);
 }

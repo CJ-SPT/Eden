@@ -1,6 +1,9 @@
+using System.Linq.Expressions;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Docking;
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.World.Fittings;
@@ -43,6 +46,15 @@ internal abstract class WorldAction
     internal abstract IReadOnlyDictionary<DogmaAttributeId, double> Attributes(long pilot);
     internal abstract EconomySet<T> Set<T>()
         where T : class;
+
+    internal virtual IQueryable<T> Filter<T>(Expression<Func<T, bool>> predicate)
+        where T : class => Set<T>().Where(predicate);
+
+    internal virtual IReadOnlyList<WorldMissile> ExpiredMissileHistory(long oldest, bool npcOnly) =>
+        npcOnly
+            ? Filter<WorldMissile>(row => row.SourceKind == MissileSourceKind.Npc && row.EndedAt < oldest).ToArray()
+            : Filter<WorldMissile>(row => row.EndedAt < oldest && (row.Outcome == null || row.Reported)).ToArray();
+
     internal abstract EconomyEntry<T> Add<T>(T row)
         where T : class;
     internal abstract void Remove<T>(T row)

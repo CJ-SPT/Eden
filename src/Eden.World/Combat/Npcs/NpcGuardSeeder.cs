@@ -13,6 +13,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat.Weapons;
 using Eden.World.Fittings;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -140,7 +141,7 @@ internal sealed class NpcGuardSeeder
         return obstacles;
     }
 
-    internal void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, ClientSystems system, NpcSecurityBand band, long now)
+    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, ClientSystems system, NpcSecurityBand band, long now)
     {
         if (band == NpcSecurityBand.Null || system.FactionID is not long faction || NpcGuardRules.Roster(checked((int)faction)) is null)
         {
@@ -196,7 +197,7 @@ internal sealed class NpcGuardSeeder
     }
 
     private void SeedAnchor(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         int anchorId,
         int systemId,
@@ -245,8 +246,7 @@ internal sealed class NpcGuardSeeder
         for (int slot = 0; slot < members.Length; slot++)
         {
             var previous = world
-                .Set<WorldNpc>()
-                .Where(n => n.EncounterId == encounter.Id && n.SpawnSlot == slot)
+                .Filter<WorldNpc>(n => n.EncounterId == encounter.Id && n.SpawnSlot == slot)
                 .OrderByDescending(n => n.Id)
                 .FirstOrDefault();
             if (

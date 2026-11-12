@@ -48,8 +48,26 @@ public sealed partial class LiveSimulationTests
         long now = new TestClock().Now;
         int localRefreshes = 0;
         int remoteRefreshes = 0;
-        void ReadLocal() => runtime.Simulate(system, now, () => localRefreshes++, () => now + TimeSpan.TicksPerDay);
-        void ReadRemote() => runtime.Simulate(remote, now, () => remoteRefreshes++, () => now + TimeSpan.TicksPerDay);
+        void ReadLocal() =>
+            runtime.Simulate(
+                system,
+                now,
+                () =>
+                {
+                    localRefreshes++;
+                    return now + TimeSpan.TicksPerDay;
+                }
+            );
+        void ReadRemote() =>
+            runtime.Simulate(
+                remote,
+                now,
+                () =>
+                {
+                    remoteRefreshes++;
+                    return now + TimeSpan.TicksPerDay;
+                }
+            );
         ReadLocal();
         ReadRemote();
         Assert.Equal(1, localRefreshes);

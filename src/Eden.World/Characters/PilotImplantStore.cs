@@ -10,6 +10,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,14 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
 
     internal static bool IsLearningEffects(IEnumerable<ClientTypedogmaDogmaEffectsItem> effects) =>
         effects.Select(e => e.EffectID).ToHashSet().SetEquals(Enum.GetValues<LearningEffect>().Select(e => (long?)e));
+
+    internal static SavedPilotImplant[] ActiveImplants(WorldAction world, long pilotId)
+    {
+        var body = world.Filter<SavedJumpClone>(clone => clone.PilotId == pilotId && clone.Active).SingleOrDefault();
+        return body is null
+            ? []
+            : world.Filter<SavedPilotImplant>(implant => implant.CloneId == body.Id).OrderBy(implant => implant.Slot).ToArray();
+    }
 
     internal static ImplantSnapshot Read(WorldDbContext world, long pilotId)
     {

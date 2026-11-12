@@ -14,9 +14,8 @@ using Eden.World.Characters;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
-using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
 
@@ -24,7 +23,7 @@ namespace Eden.World.Combat;
 internal sealed class PilotLossSettlement(PilotTrainingStore training, IShipLootRoll lootRoll)
 {
     internal PilotLossResult Apply(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         long shipId,
@@ -51,13 +50,7 @@ internal sealed class PilotLossSettlement(PilotTrainingStore training, IShipLoot
             throw new InvalidDataException("The catalog has no supported replacement capsule.");
         }
         var items = ShipStoragePersistence.Contents(world, pilot.Id, shipId);
-        var implants = (
-            from implant in world.Set<SavedPilotImplant>()
-            join body in world.Set<SavedJumpClone>() on implant.CloneId equals body.Id
-            where body.PilotId == pilot.Id && body.Active
-            orderby implant.Slot
-            select implant
-        ).ToArray();
+        var implants = PilotImplantStore.ActiveImplants(world, pilot.Id);
         var lostItems = PilotInteractionHistoryStore
             .LostItems(shipId, items, new HashSet<long>())
             .Concat(implants.Select(i => new CombatLostItem(i.TypeId, (int)InventoryFlag.Implant, true, 0, 1, [])))
@@ -119,7 +112,10 @@ internal sealed class PilotLossSettlement(PilotTrainingStore training, IShipLoot
         training.ChangeAttributes(world, pilot.Id, () => PilotJumpCloneStore.ResetActive(world, pilot.Id), effectiveTime: now);
         pilot.ActiveShip = replacement;
         pilot.ActiveShipId = replacement.Id;
-        world.RemoveRange(world.Set<SavedLogoff>().Where(l => l.PilotId == pilot.Id));
+        if (world.Set<SavedLogoff>().Find(pilot.Id) is { } logoff)
+        {
+            world.Remove(logoff);
+        }
         // Release the active-ship FK before removing the dead capsule. The caller
         // owns one transaction for damage, body/implant loss, history and respawn.
         world.SaveChanges();

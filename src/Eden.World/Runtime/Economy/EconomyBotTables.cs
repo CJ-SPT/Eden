@@ -3290,6 +3290,14 @@ internal sealed partial class EconomyTransaction
                 value.Id = value.Id == 0 ? Next("WorldSecurityTransaction") : value.Id;
                 Reserve("WorldSecurityTransaction", value.Id);
                 break;
+            case Eden.Data.World.Characters.SavedHomeCloneTransfer value:
+                value.Id = value.Id == 0 ? Next("WorldHomeCloneTransfer") : value.Id;
+                Reserve("WorldHomeCloneTransfer", value.Id);
+                break;
+            case Eden.Data.World.Skills.TrainingLog value:
+                value.Id = value.Id == 0 ? Next("WorldSkillHistory") : value.Id;
+                Reserve("WorldSkillHistory", value.Id);
+                break;
             case Eden.Data.World.Combat.WorldMissile value:
                 value.Id = value.Id == 0 ? Next("WorldMissile") : value.Id;
                 Reserve("WorldMissile", value.Id);

@@ -9,6 +9,7 @@ using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,9 +17,9 @@ namespace Eden.World.Drones;
 
 internal sealed partial class PilotDroneStore
 {
-    private static Pilot? FindVictim(WorldDbContext world, CatalogDbContext catalog, Pilot source, long ship, int system, long now)
+    private static Pilot? FindVictim(WorldAction world, CatalogDbContext catalog, Pilot source, long ship, int system, long now)
     {
-        var victim = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == ship);
+        var victim = world.Filter<Pilot>(p => p.ActiveShipId == ship).SingleOrDefault();
         return
             victim is null
             || victim.Id == source.Id
@@ -30,7 +31,7 @@ internal sealed partial class PilotDroneStore
             : victim;
     }
 
-    private PilotCombatPresence? FindContact(WorldDbContext world, Pilot victim, int system, long now)
+    private PilotCombatPresence? FindContact(WorldAction world, Pilot victim, int system, long now)
     {
         if (presence.FindOnline(system, victim.ActiveShipId) is { } online)
         {
@@ -48,7 +49,7 @@ internal sealed partial class PilotDroneStore
     }
 
     private IEnumerable<long> AutomaticTargets(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot source,
         long commandedAt,
@@ -85,10 +86,10 @@ internal sealed partial class PilotDroneStore
         }
     }
 
-    private sealed record PendingDroneDamage(long AccountId, DroneHit Hit, PilotDamage Damage);
+    private sealed record PendingDroneDamage(DroneHit Hit, PilotDamage Damage);
 
     private PendingDroneDamage ApplyPilotDamage(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot source,
         Pilot victim,
@@ -110,8 +111,9 @@ internal sealed partial class PilotDroneStore
             : null;
         ShipHealth health = new(shipId, defense, result.Remaining);
         double quality = damage.Total / profile.Damage.Total;
+        world.SaveChanges();
+        var capsule = result.Remaining.Destroyed ? lookup.FindPilot(world, victim.AccountId, victim.Id)! : null;
         return new(
-            victim.AccountId,
             new(drone.ItemId, profile.TypeId, shipId, result.Applied, damage, health, quality),
             new(
                 victim.Id,
@@ -123,7 +125,7 @@ internal sealed partial class PilotDroneStore
                 quality,
                 profile.TypeId,
                 false,
-                null,
+                capsule,
                 loss?.Insurance
             )
             {
@@ -131,12 +133,4 @@ internal sealed partial class PilotDroneStore
             }
         );
     }
-
-    private void Publish(PendingDroneDamage impact) =>
-        damageEvents.Publish(
-            impact.Damage with
-            {
-                Capsule = impact.Damage.Health.Remaining.Destroyed ? lookup.FindPilot(impact.AccountId, impact.Damage.PilotId)! : null,
-            }
-        );
 }

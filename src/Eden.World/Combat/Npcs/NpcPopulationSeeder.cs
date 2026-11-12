@@ -9,6 +9,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Mining;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,15 +38,17 @@ internal sealed partial class NpcPopulationSeeder(
         }
     }
 
-    public void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
+    public void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, long now) =>
+        Seed(new SqlWorldAction(world), catalog, systemId, now);
+
+    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
         var excluded = NpcSpecialTypes.Excluded.ToArray();
         var retired = world
-            .Set<WorldNpc>()
-            .Where(n =>
+            .Filter<WorldNpc>(n =>
                 n.SystemId == systemId
                 && n.Role == NpcRole.Pirate
-                && excluded.Contains(n.TypeId)
+                && Enumerable.Contains(excluded, n.TypeId)
                 && n.DestroyedAt == null
                 && n.RetiredAt == null
             )
@@ -53,11 +56,19 @@ internal sealed partial class NpcPopulationSeeder(
         foreach (var npc in retired)
         {
             npc.RetiredAt = now;
-            world.Set<NpcAggression>().Where(a => a.NpcId == npc.Id).ExecuteDelete();
-            world
-                .Set<WorldMissile>()
-                .Where(m => m.SourceKind == MissileSourceKind.Npc && m.SourceShipId == npc.Id && m.Status == MissileFlightStatus.Flying)
-                .ExecuteUpdate(set => set.SetProperty(m => m.Status, MissileFlightStatus.Expired).SetProperty(m => m.EndedAt, now));
+            if (world.Set<NpcAggression>().Find(npc.Id) is { } aggression)
+            {
+                world.Remove(aggression);
+            }
+            foreach (
+                var missile in world.Filter<WorldMissile>(m =>
+                    m.SourceKind == MissileSourceKind.Npc && m.SourceShipId == npc.Id && m.Status == MissileFlightStatus.Flying
+                )
+            )
+            {
+                missile.Status = MissileFlightStatus.Expired;
+                missile.EndedAt = now;
+            }
         }
         world.SaveChanges();
         foreach (long encounterId in retired.Select(n => n.EncounterId).Distinct())
@@ -73,12 +84,15 @@ internal sealed partial class NpcPopulationSeeder(
         // Production policy retires the old fixture on activation. Tests inject
         // their own seeder, keeping that fixture isolated from normal space.
         int rookie = NpcEncounterDefinitions.GuristasRookieType;
-        world.Database.ExecuteSql(
-            $"""
-            UPDATE WorldNpc SET RetiredAt={now}
-                WHERE SystemId={systemId} AND TypeId={rookie} AND DestroyedAt IS NULL AND RetiredAt IS NULL
-            """
-        );
+        foreach (
+            var npc in world.Filter<WorldNpc>(n =>
+                n.SystemId == systemId && n.TypeId == rookie && n.DestroyedAt == null && n.RetiredAt == null
+            )
+        )
+        {
+            npc.RetiredAt = now;
+        }
+        world.SaveChanges();
         var system = catalog.FindSystem(systemId);
         if (system is null)
         {

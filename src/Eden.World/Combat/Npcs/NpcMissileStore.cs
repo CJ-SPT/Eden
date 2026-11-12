@@ -121,7 +121,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         long oldest = now - HistorySeconds * TimeSpan.TicksPerSecond;
-        world.RemoveRange(world.Set<WorldMissile>().Where(m => m.SourceKind == MissileSourceKind.Npc && m.EndedAt < oldest));
+        world.RemoveRange(world.ExpiredMissileHistory(oldest, npcOnly: true));
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         int targetSystem = pilot.ActiveShip.Position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         var rows = world

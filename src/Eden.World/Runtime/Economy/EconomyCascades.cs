@@ -40,6 +40,9 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedModuleCondition>().Where(child => child.ModuleId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedNaniteRepair>().Where(child => child.ModuleId == removed.Id));
                 break;
+            case Eden.Data.World.Characters.SavedJumpClone removed:
+                RemoveRange(Set<Eden.Data.World.Characters.SavedPilotImplant>().Where(child => child.CloneId == removed.Id));
+                break;
             case Eden.Data.World.Characters.Pilot removed:
                 RemoveRange(Set<Eden.Data.World.Agents.SavedMission>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>().Where(child => child.PilotId == removed.Id));
@@ -51,6 +54,9 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCharacterDeletion>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCombatReport>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCompletedTask>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Characters.SavedHomeCloneTransfer>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Characters.SavedImplantState>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Characters.SavedJumpClone>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedHomeStation>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedNpcStanding>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedStandingTransaction>().Where(child => child.PilotId == removed.Id));
@@ -86,6 +92,8 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Repair.StationRepairPayment>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteAssistance>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteRepair>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Skills.QueuedLevel>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Skills.TrainingLog>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Skills.PilotSkill>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Skills.SavedFreeSkillPoints>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedNaniteRepair>().Where(child => child.PilotId == removed.Id));

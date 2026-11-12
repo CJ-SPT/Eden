@@ -1,16 +1,79 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Protocol.Combat;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Combat;
 
 public sealed partial class PilotMissileTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ResidentOutgoingMissileImpactPublishesAndSavesWithoutSql(bool npcTarget)
+    {
+        using var f = Prepare();
+        using CatalogLifetime catalogLifetime = new(new(f.Db.Path));
+        using ResidentFitCache fitting = new(new(f.Db.Path));
+        long launcher = MissileCombatTests.Load(f, Launcher, Charge);
+        Space(f);
+        var npc = MissileCombatTests.Space(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        long target = npcTarget ? npc.Id : VictimShip;
+        List<PilotDamage> events = [];
+        f.Db.Services.GetRequiredService<PilotDamageSignal>().Applied += events.Add;
+        var launch = Launch(f, launcher, target);
+        live.Economy.Read(
+            world =>
+            {
+                using CatalogDbContext catalog = new(f.CatalogPath);
+                if (npcTarget)
+                {
+                    _ = PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
+                }
+                else
+                {
+                    _ = PilotFittingStore.ShipAttributes(world, catalog, Victim);
+                }
+                return true;
+            },
+            new(pilots: [Victim], ships: [VictimShip])
+        );
+        MissileImpact? impact = null;
+        ResidentMonitorAssertions.WithoutSql(() =>
+        {
+            Advance(f);
+            impact = Assert.Single(Store(f).TakeImpacts(f.PilotId));
+            Advance(f);
+            Assert.Empty(Store(f).TakeImpacts(f.PilotId));
+        });
+        Assert.Equal(launch.Projectile.Id, impact!.ProjectileId);
+        Assert.True(impact.Applied > 0);
+        Assert.False(impact.Destroyed);
+        if (npcTarget)
+        {
+            Assert.Empty(events);
+        }
+        else
+        {
+            Assert.Equal(impact.Applied, Assert.Single(events).Applied);
+        }
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext reopened = new(checkpoint.Database);
+        var projectile = reopened.Set<WorldMissile>().Find(launch.Projectile.Id)!;
+        Assert.True(projectile.Reported);
+        Assert.Equal(MissileFlightStatus.Impact, projectile.Status);
+        Assert.Equal(impact.Applied, reopened.Set<SavedCombatDamage>().Find(target, f.ShipId)!.Damage);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -13,6 +13,7 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,7 @@ namespace Eden.World.Mining;
 [Injectable(InjectionType.Singleton)]
 internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
 {
-    internal void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, ClientSystems system, double security, long now)
+    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, ClientSystems system, double security, long now)
     {
         if (!NpcConvoyRules.Eligible(security) || system.FactionID is not long faction)
         {
@@ -44,8 +45,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
             AsteroidFieldStore.Populate(world, catalog, systemId, now);
             world.SaveChanges();
             var rock = world
-                .Set<WorldAsteroid>()
-                .Where(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
+                .Filter<WorldAsteroid>(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
                 .OrderBy(a => a.Id)
                 .FirstOrDefault();
             if (rock is null)
@@ -83,12 +83,11 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         }
         encounter!.NextSpawnAt = checked(now + TimeSpan.TicksPerSecond);
         var active = world
-            .Set<WorldNpc>()
-            .Where(n => n.EncounterId == id && n.DestroyedAt == null && n.RetiredAt == null)
+            .Filter<WorldNpc>(n => n.EncounterId == id && n.DestroyedAt == null && n.RetiredAt == null)
             .OrderBy(n => n.Id)
             .ToArray();
         var activeIds = active.Select(n => n.Id).ToArray();
-        var members = world.Set<WorldNpcMiningMember>().Where(m => activeIds.Contains(m.NpcId)).ToArray();
+        var members = world.Filter<WorldNpcMiningMember>(m => Enumerable.Contains(activeIds, m.NpcId)).ToArray();
         if (operation.ResetAt is long reset && now >= reset)
         {
             foreach (var npc in active)
@@ -109,8 +108,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
                 return;
             }
             var rock = world
-                .Set<WorldAsteroid>()
-                .Where(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
+                .Filter<WorldAsteroid>(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
                 .OrderBy(a => a.Id)
                 .FirstOrDefault();
             if (rock is null)
@@ -133,7 +131,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
             SettleTransit(npc, member, hull, now);
             if (npc.RetiredAt is not null)
             {
-                foreach (var cargo in world.Set<WorldNpcMiningCargo>().Where(c => c.NpcId == npc.Id))
+                foreach (var cargo in world.Filter<WorldNpcMiningCargo>(c => c.NpcId == npc.Id))
                 {
                     cargo.Quantity = 0;
                 }
@@ -180,7 +178,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
     }
 
     private void SpawnMiners(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         WorldNpcMiningOperation operation,
         WorldNpcEncounter encounter,
@@ -227,7 +225,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
     }
 
     private static WorldNpc Spawn(
-        WorldDbContext world,
+        WorldAction world,
         WorldNpcMiningOperation operation,
         NpcMiningHull hull,
         NpcRole role,
@@ -262,21 +260,19 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         return npc;
     }
 
-    private static void DetectThreat(WorldDbContext world, WorldNpcMiningOperation operation, WorldNpc[] active, long now)
+    private static void DetectThreat(WorldAction world, WorldNpcMiningOperation operation, WorldNpc[] active, long now)
     {
         if (operation.Stage != NpcMiningStage.Working)
         {
             return;
         }
         var hostiles = world
-            .Set<SavedNpcStanding>()
-            .Where(s => s.SourceId == operation.CorporationId && s.Value <= NpcMiningRules.HostileStanding)
+            .Filter<SavedNpcStanding>(s => s.SourceId == operation.CorporationId && s.Value <= NpcMiningRules.HostileStanding)
             .Select(s => s.PilotId)
             .ToArray();
         var positions = world
-            .Pilots.Include(p => p.ActiveShip)
-                .ThenInclude(s => s.Position)
-            .Where(p => hostiles.Contains(p.Id) && p.ActiveShip.Position != null)
+            .Filter<Pilot>(p => Enumerable.Contains(hostiles, p.Id))
+            .Where(p => p.ActiveShip.Position != null)
             .OrderBy(p => p.Id)
             .ToArray();
         foreach (var pilot in positions)
@@ -296,50 +292,19 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         }
     }
 
-    internal static void Alert(WorldDbContext world, WorldNpc attacked, long shipId, long now)
-    {
-        var operation = world.Set<WorldNpcMiningOperation>().Find(attacked.EncounterId);
-        if (operation is null || operation.Stage == NpcMiningStage.Cooldown)
-        {
-            return;
-        }
-        if (operation.Stage != NpcMiningStage.Alarm)
-        {
-            operation.Stage = NpcMiningStage.Alarm;
-            operation.ThreatShipId = shipId;
-            operation.ResponseAt = checked(now + NpcMiningRules.ResponseSeconds * TimeSpan.TicksPerSecond);
-            operation.ResetAt = checked(now + NpcMiningRules.DefenseLifetimeSeconds * TimeSpan.TicksPerSecond);
-            (operation.AlertX, operation.AlertY, operation.AlertZ) = (attacked.X, attacked.Y, attacked.Z);
-        }
-        foreach (
-            var defender in world
-                .Set<WorldNpc>()
-                .Where(n =>
-                    n.EncounterId == operation.EncounterId
-                    && n.Role == NpcRole.MiningDefender
-                    && n.DestroyedAt == null
-                    && n.RetiredAt == null
-                )
-                .ToArray()
-        )
-        {
-            if (world.Set<NpcAggression>().Find(defender.Id) is null)
-            {
-                world.Add(NpcAggression.Start(defender.Id, shipId, 0, now));
-            }
-        }
-    }
+    internal static void Alert(WorldDbContext world, WorldNpc attacked, long shipId, long now) =>
+        Alert(new SqlWorldAction(world), attacked, shipId, now);
 
     private static double OreVolume(CatalogDbContext catalog, int type) =>
         catalog.Read(CatalogData.Client.Types, (long)type)?.Volume is > 0 and var volume && double.IsFinite(volume)
             ? volume
             : throw new InvalidDataException("Missing catalog ore volume.");
 
-    private static double CargoVolume(WorldDbContext world, CatalogDbContext catalog, long npc) =>
-        world.Set<WorldNpcMiningCargo>().Where(c => c.NpcId == npc).ToArray().Sum(c => c.Quantity * OreVolume(catalog, c.TypeId));
+    private static double CargoVolume(WorldAction world, CatalogDbContext catalog, long npc) =>
+        world.Filter<WorldNpcMiningCargo>(c => c.NpcId == npc).ToArray().Sum(c => c.Quantity * OreVolume(catalog, c.TypeId));
 
     private static void Mine(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         WorldNpc npc,
         WorldNpcMiningMember member,
@@ -353,7 +318,7 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         {
             member.MiningDueAt = null;
             member.MiningStartedAt = null;
-            rock = world.Set<WorldAsteroid>().Where(a => a.BeltId == npc.BeltId && a.Quantity > 0).OrderBy(a => a.Id).FirstOrDefault();
+            rock = world.Filter<WorldAsteroid>(a => a.BeltId == npc.BeltId && a.Quantity > 0).OrderBy(a => a.Id).FirstOrDefault();
             member.AsteroidId = rock?.Id;
         }
         if (rock is null)

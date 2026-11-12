@@ -391,30 +391,57 @@ public sealed class ConcordTests
         Assert.NotNull(Assert.Single(saved.Set<SavedConcordResponse>()).CompletedAt);
     }
 
-    [Fact]
-    public async Task CompetingEnforcementAndFailedLossAreAtomicAndRetryTheOriginalDeadline()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CompetingEnforcementAndFailedLossAreAtomicAndRetryTheOriginalDeadline(bool resident)
     {
-        using Fixture f = new(liveWorld: true, useTestClock: true);
+        using Fixture f = new(liveWorld: resident, useTestClock: true);
         Catalog(f);
         Attack(f);
         long deadline = f.Clock.Now + TimeSpan.FromSeconds(22).Ticks;
-        using (WorldDbContext world = new(f.Db.Path))
+        const string reject = "CREATE TRIGGER RejectLoss BEFORE INSERT ON WorldShipLoss BEGIN SELECT RAISE(ABORT,'test'); END";
+        var live = LiveWorld.Find(f.Db.Path);
+        if (live is null)
         {
-            world.Database.ExecuteSqlRaw("CREATE TRIGGER RejectLoss BEFORE INSERT ON WorldShipLoss BEGIN SELECT RAISE(ABORT,'test'); END");
+            using WorldDbContext world = new(f.Db.Path);
+            world.Database.ExecuteSqlRaw(reject);
+            Assert.Throws<DbUpdateException>(() => Store(f).Advance(Fixture.PilotId, deadline));
+            CheckUnchanged(world);
+            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectLoss");
         }
-        Assert.Throws<DbUpdateException>(() => Store(f).Advance(Fixture.PilotId, deadline));
-        using (WorldDbContext world = new(f.Db.Path))
+        else
+        {
+            // The compatibility read records the pending response in the relational image
+            // used as the base for the detached checkpoint.
+            using WorldDbContext world = new(f.Db.Path);
+            CheckUnchanged(world);
+        }
+        var results = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() => Store(f).Advance(Fixture.PilotId, deadline))));
+        Assert.Single(results.OfType<NpcShot>());
+        using var snapshot = live?.CaptureSnapshot();
+        if (snapshot is not null)
+        {
+            using (WorldDbContext world = new(snapshot.Database))
+            {
+                world.Database.ExecuteSqlRaw(reject);
+                Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => snapshot.Project());
+                CheckUnchanged(world);
+                world.Database.ExecuteSqlRaw("DROP TRIGGER RejectLoss");
+            }
+            Assert.Null(Store(f).Advance(Fixture.PilotId, deadline));
+            snapshot.Project();
+        }
+        using var saved = snapshot is null ? new WorldDbContext(f.Db.Path) : new WorldDbContext(snapshot.Database);
+        Assert.Single(saved.Set<ShipLoss>());
+        Assert.Equal(deadline, Assert.Single(saved.Set<SavedConcordResponse>()).DestroyAt);
+
+        static void CheckUnchanged(WorldDbContext world)
         {
             Assert.Null(Assert.Single(world.Set<SavedConcordResponse>()).CommanderId);
             Assert.DoesNotContain(world.Set<WorldNpc>(), n => n.Role == NpcRole.Concord);
             Assert.Equal(Fixture.ShipId, world.Pilots.Find(Fixture.PilotId)!.ActiveShipId);
-            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectLoss");
         }
-        var results = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(() => Store(f).Advance(Fixture.PilotId, deadline))));
-        Assert.Single(results.OfType<NpcShot>());
-        using WorldDbContext saved = new(f.Db.Path);
-        Assert.Single(saved.Set<ShipLoss>());
-        Assert.Equal(deadline, Assert.Single(saved.Set<SavedConcordResponse>()).DestroyAt);
     }
 
     [Fact]

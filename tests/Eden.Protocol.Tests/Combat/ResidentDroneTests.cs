@@ -69,7 +69,9 @@ public sealed class ResidentDroneTests
     public void WarmObserversAndControllerChecksShareContactsAndSeeCommittedOrders()
     {
         using Fixture f = new();
-        using LiveWorld live = new(f.Base.Db.Services.GetRequiredService<WorldDatabase>(), f.Base.Clock, _ => { });
+        var database = f.Base.Db.Services.GetRequiredService<WorldDatabase>();
+        using CatalogLifetime catalog = new(database);
+        using LiveWorld live = new(database, f.Base.Clock, _ => { });
         var ids = f.Launch();
         long ship = f.Ship;
         var contacts = f.Drones.List(30000144, f.Now);
@@ -86,11 +88,21 @@ public sealed class ResidentDroneTests
             Assert.Equal(0, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }
-        f.Drones.Order(f.Pilot, ids, DroneOrder.ReturnToBay, null, new HashSet<long>(), f.Now);
-        Assert.All(f.Drones.List(30000144, f.Now), d => Assert.Equal(DroneActivity.ReturningToBay, d.Activity));
-        f.Tick();
-        Assert.Empty(f.Drones.List(30000144, f.Now));
-        Assert.False(f.Drones.HasControlled(f.Pilot, ship));
+        List<string> commands = [];
+        using (var metrics = SessionPerformance.Begin("resident drone recall", _ => { }, force: true, command: commands.Add)!)
+        {
+            f.Drones.Order(f.Pilot, ids, DroneOrder.ReturnToBay, null, new HashSet<long>(), f.Now);
+            Assert.All(f.Drones.List(30000144, f.Now), d => Assert.Equal(DroneActivity.ReturningToBay, d.Activity));
+            f.Tick();
+            Assert.Empty(f.Drones.List(30000144, f.Now));
+            Assert.False(f.Drones.HasControlled(f.Pilot, ship));
+            Assert.True(metrics.Commands == 0, string.Join(Environment.NewLine, commands));
+            Assert.Equal(0, metrics.Connections);
+        }
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext saved = new(checkpoint.Database);
+        Assert.All(ids, id => Assert.Equal(ship, saved.Set<OwnedItem>().Find(id)!.LocationId));
     }
 
     [Fact]

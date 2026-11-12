@@ -15,6 +15,7 @@ internal sealed partial class ResidentEconomy
     private readonly ConcurrentDictionary<long, int> _missileReportPilots = new();
     private readonly ConcurrentDictionary<long, byte> _missileImpacts = new();
     private readonly SortedSet<(long EndedAt, long Id)> _npcMissileEnds = [];
+    private readonly SortedSet<(long EndedAt, long Id)> _reportedMissileEnds = [];
     private long _oldestNpcMissileEnd = long.MaxValue;
     private readonly ConcurrentDictionary<long, long> _npcEwarTargets = new();
     private readonly ConcurrentDictionary<long, long> _npcEwarSources = new();
@@ -32,6 +33,7 @@ internal sealed partial class ResidentEconomy
         _missileReportPilots.Clear();
         _missileImpacts.Clear();
         _npcMissileEnds.Clear();
+        _reportedMissileEnds.Clear();
         Volatile.Write(ref _oldestNpcMissileEnd, long.MaxValue);
         _npcEwarTargets.Clear();
         _npcEwarSources.Clear();
@@ -62,6 +64,9 @@ internal sealed partial class ResidentEconomy
 
     internal bool HasNpcMissileWork(long pilot, long oldest) =>
         _npcMissilePilots.ContainsKey(pilot) || Volatile.Read(ref _oldestNpcMissileEnd) < oldest;
+
+    internal IEnumerable<long> ExpiredMissileHistory(long oldest, bool npcOnly) =>
+        (npcOnly ? _npcMissileEnds : _reportedMissileEnds).TakeWhile(row => row.EndedAt < oldest).Select(row => row.Id);
 
     internal bool HasTackleRows => Volatile.Read(ref _tackleRows) != 0;
     internal bool HasPlayerEwarRows => Volatile.Read(ref _playerEwarRows) != 0;
@@ -137,16 +142,17 @@ internal sealed partial class ResidentEconomy
                     _missileImpacts.TryRemove(row.Id, out _);
                 }
             }
-            if (row.SourceKind == MissileSourceKind.Npc && row.EndedAt is long ended)
+            if (row.EndedAt is not long ended)
             {
-                if (add)
-                {
-                    _npcMissileEnds.Add((ended, row.Id));
-                }
-                else
-                {
-                    _npcMissileEnds.Remove((ended, row.Id));
-                }
+                return;
+            }
+            if (row.SourceKind == MissileSourceKind.Npc)
+            {
+                UpdateEnd(_npcMissileEnds, ended, row.Id, add);
+            }
+            if (row.Outcome is null || row.Reported)
+            {
+                UpdateEnd(_reportedMissileEnds, ended, row.Id, add);
             }
         }
         if (before is not null)
@@ -158,6 +164,18 @@ internal sealed partial class ResidentEconomy
             Update(after, true);
         }
         Volatile.Write(ref _oldestNpcMissileEnd, _npcMissileEnds.Count == 0 ? long.MaxValue : _npcMissileEnds.Min.EndedAt);
+    }
+
+    private static void UpdateEnd(SortedSet<(long EndedAt, long Id)> ends, long ended, long id, bool add)
+    {
+        if (add)
+        {
+            ends.Add((ended, id));
+        }
+        else
+        {
+            ends.Remove((ended, id));
+        }
     }
 
     private static void EffectVersion(ConcurrentDictionary<long, long> versions, long key, bool present, long revision)

@@ -352,23 +352,21 @@ internal sealed partial class LiveCombatRuntime
             }
             : ship;
 
-    private LiveCombatNpc[] AdvanceSimulationNpcs(int system, long now, Action refresh, Func<long> nextPopulation)
+    private LiveCombatNpc[] AdvanceSimulationNpcs(int system, long now, Func<long> refreshPopulation)
     {
         if (!_populationDue.TryGetValue(system, out long due) || now >= due)
         {
-            Flush();
             int? previousScope = _populationRefreshSystem;
             _populationRefreshSystem = system;
             try
             {
-                refresh();
+                _populationDue[system] = refreshPopulation();
             }
             finally
             {
                 _populationRefreshSystem = previousScope;
             }
             _systemNpcs.Remove(system);
-            _populationDue[system] = nextPopulation();
         }
         var npcs = SystemNpcs(system, now);
         var effective = database.MotionStamps.ContainsKey(system) ? null : Effective(npcs);
@@ -402,12 +400,12 @@ internal sealed partial class LiveCombatRuntime
         return npcs;
     }
 
-    internal IReadOnlyList<NpcSimulationContact>? Simulate(int system, long now, Action refresh, Func<long> nextPopulation)
+    internal IReadOnlyList<NpcSimulationContact>? Simulate(int system, long now, Func<long> refreshPopulation)
     {
-        return Execute(() => SimulateOwned(system, now, refresh, nextPopulation), nameof(Simulate));
+        return Execute(() => SimulateOwned(system, now, refreshPopulation), nameof(Simulate));
     }
 
-    private IReadOnlyList<NpcSimulationContact>? SimulateOwned(int system, long now, Action refresh, Func<long> nextPopulation)
+    private IReadOnlyList<NpcSimulationContact>? SimulateOwned(int system, long now, Func<long> refreshPopulation)
     {
         using var ownership = owner.Enter();
         if (!simulationObjects || !CanRun)
@@ -415,7 +413,7 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         Trim();
-        return AdvanceSimulationNpcs(system, now, refresh, nextPopulation)
+        return AdvanceSimulationNpcs(system, now, refreshPopulation)
             .Select(n => new NpcSimulationContact(n.Id, n.Position, n.Transit is not null))
             .ToArray();
     }
@@ -437,15 +435,9 @@ internal sealed partial class LiveCombatRuntime
         database.MotionStamps.TryRemove(system, out _);
     }
 
-    private IReadOnlyList<NpcContact> SimulationContacts(
-        int system,
-        long now,
-        Action refresh,
-        Func<long> nextPopulation,
-        SpacePosition? position = null
-    )
+    private IReadOnlyList<NpcContact> SimulationContacts(int system, long now, Func<long> refreshPopulation, SpacePosition? position = null)
     {
-        var npcs = AdvanceSimulationNpcs(system, now, refresh, nextPopulation);
+        var npcs = AdvanceSimulationNpcs(system, now, refreshPopulation);
         if (position is not null)
         {
             var visible = SceneIndex(system, npcs).Find(position);
