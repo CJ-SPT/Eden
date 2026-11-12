@@ -31,6 +31,7 @@ public enum MissionKind
 {
     Courier,
     Combat,
+    Mining,
 }
 
 // Build 3662168 appConst factionsPirates and factionsWhoseStandingsAreNotAffectedBySkillBonuses.
@@ -55,6 +56,7 @@ public enum MissionSocialSkill
     Diplomacy = 3357,
     Connections = 3359,
     CriminalConnections = 3361,
+    MiningConnections = 3893,
     DistributionConnections = 3894,
     SecurityConnections = 3895,
 }
@@ -136,6 +138,7 @@ public sealed record MissionSite(
     public SpacePosition Entrance { get; init; } = Position;
     public IReadOnlyList<MissionGate> Gates { get; init; } = [];
     public bool Deadspace { get; init; } = true;
+    public bool Private { get; init; }
 }
 
 public sealed record MissionGate(long Id, SpacePosition Position, float Radius, SpacePosition Destination, bool RequiresClear)
@@ -175,6 +178,7 @@ public static class MissionRules
     public const int StorylineInterval = 16;
     public const int SecurityDivision = 24;
     public const int DistributionDivision = 22;
+    public const int MiningDivision = 23;
     public const double ArrivalRange = 150_000;
     public const double PlacementOffset = 10_000_000_000;
 
@@ -185,6 +189,15 @@ public static class MissionRules
     public const int NpcsPerMission = 1000;
     public const int MembersPerWave = 100;
     public const int ActionStride = 32;
+
+    public static MissionKind? KindForDivision(int division) =>
+        division switch
+        {
+            SecurityDivision => MissionKind.Combat,
+            MiningDivision => MissionKind.Mining,
+            DistributionDivision => MissionKind.Courier,
+            _ => null,
+        };
 
     // Eden's agreed base rewards, November 8, 2026. Percentages are percentages
     // of the remaining distance to +10, not absolute standing points.

@@ -3,6 +3,7 @@ using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Market;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
@@ -29,6 +30,10 @@ internal sealed partial class PilotMissionStore
 
     private static void Close(WorldAction world, SavedMission mission, MissionState state, long now)
     {
+        if (MissionCatalog.IsMining(mission.MissionId))
+        {
+            world.RemoveRange(MissionDeposits(world.Set<WorldAsteroid>(), mission.Id));
+        }
         long firstContainer = MissionContainerRules.Id(mission.Id, 0);
         long endContainer = checked(firstContainer + MissionRules.NpcsPerMission);
         world.RemoveRange(

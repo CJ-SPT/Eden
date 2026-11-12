@@ -36,7 +36,7 @@ public static class AgentInformationRules
         {
             return new(agent, true, false, access.Reason);
         }
-        if (agent.DivisionId is not (MissionRules.SecurityDivision or MissionRules.DistributionDivision))
+        if (MissionRules.KindForDivision(agent.DivisionId) is null)
         {
             return new(agent, false, false, "This agent's mission division is not implemented.");
         }

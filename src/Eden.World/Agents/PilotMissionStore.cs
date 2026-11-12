@@ -369,6 +369,10 @@ internal sealed partial class PilotMissionStore(
                             )
                         );
                     }
+                    if (profile.Kind == MissionKind.Mining)
+                    {
+                        SeedMiningDeposits(world, row, profile);
+                    }
                     SeedContainers(world, catalog, row, profile);
                     SeedStructures(world, catalog, row, profile, now);
                     eventName = "accepted";
@@ -377,15 +381,15 @@ internal sealed partial class PilotMissionStore(
                     RequireState(row, MissionState.Accepted);
                     var mission = MissionCatalog.Find(catalog, row!.MissionId);
                     RequireStation(pilot, mission.Kind == MissionKind.Courier ? row.DestinationStation : agent.StationId);
-                    if (mission.Kind == MissionKind.Courier)
+                    if (mission.Kind != MissionKind.Courier && !row.ObjectiveComplete)
                     {
-                        ConsumeCargo(world, catalog, pilot, row, mission, changes);
+                        throw new InvalidDataException(
+                            mission.Kind == MissionKind.Mining
+                                ? "Mine the required deposits in your mission pocket first."
+                                : "The mission's combat objective is not complete."
+                        );
                     }
-                    else if (!row.ObjectiveComplete)
-                    {
-                        throw new InvalidDataException("The mission's combat objective is not complete.");
-                    }
-                    if (mission.Kind == MissionKind.Combat && mission.CargoType > 0)
+                    if (mission.CargoType > 0)
                     {
                         ConsumeCargo(world, catalog, pilot, row, mission, changes);
                     }
@@ -505,7 +509,7 @@ internal sealed partial class PilotMissionStore(
             PilotId = row.PilotId,
             CombatComplete = row.ObjectiveComplete,
             Retrieval =
-                profile.Kind == MissionKind.Combat && profile.CargoType > 0
+                profile.Kind != MissionKind.Courier && profile.CargoType > 0
                     ? new(
                         profile.CargoType,
                         profile.CargoQuantity,
@@ -528,6 +532,13 @@ internal sealed partial class PilotMissionStore(
                 && (
                     i.LocationId == row.DestinationStation && i.FlagId == (int)InventoryFlag.Hangar
                     || i.LocationId == pilot.ActiveShipId && i.FlagId == (int)InventoryFlag.Cargo
+                    || profile.Definition.Mining
+                        && i.LocationId == pilot.ActiveShipId
+                        && (
+                            i.FlagId == (int)InventoryFlag.GeneralMiningHold
+                            || i.FlagId == (int)InventoryFlag.GasHold
+                            || i.FlagId == (int)InventoryFlag.IceHold
+                        )
                 )
             )
             .OrderBy(i => i.Id)

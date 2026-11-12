@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
@@ -120,6 +121,9 @@ internal sealed class FlightScene(
             is { } ship
             ? new(id, ship.Velocity)
             : null;
+
+    private static bool IsPublicAsteroid(StaticSpaceObject item) =>
+        MiningDefinitions.IsResource(item.CategoryId, item.GroupId) && !MissionMiningRules.IsDeposit(item.Id);
 
     private StaticSpaceObject[] VisibleObjects(FlightSceneContext context) =>
         Objects
@@ -303,7 +307,7 @@ internal sealed class FlightScene(
 
     internal void RefreshAsteroids(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> asteroids)
     {
-        Objects = Objects.Where(o => !MiningDefinitions.IsResource(o.CategoryId, o.GroupId)).Concat(asteroids).ToArray();
+        Objects = Objects.Where(o => !IsPublicAsteroid(o)).Concat(asteroids).ToArray();
         RefreshVisibleAsteroids(context);
     }
 
@@ -341,7 +345,7 @@ internal sealed class FlightScene(
         {
             return;
         }
-        var current = VisibleObjects(context).Where(o => MiningDefinitions.IsResource(o.CategoryId, o.GroupId)).ToArray();
+        var current = VisibleObjects(context).Where(IsPublicAsteroid).ToArray();
         foreach (var departed in _visibleAsteroids.ExceptBy(current.Select(o => o.Id), o => o.Id))
         {
             update(new DestinyCommand.RemoveBall(departed.Id, false));
@@ -406,7 +410,7 @@ internal sealed class FlightScene(
         _wrecks = ReadWrecks(context);
         _missiles = ReadMissiles(context);
         Drones.Capture(context);
-        _visibleAsteroids = visible.Where(o => MiningDefinitions.IsResource(o.CategoryId, o.GroupId)).ToArray();
+        _visibleAsteroids = visible.Where(IsPublicAsteroid).ToArray();
         send(
             new(
                 stamp,

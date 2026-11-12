@@ -2,6 +2,47 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Mining missions - November 12, 2026
+
+Mining division 23 agents offer 23 reviewed, standalone missions across levels 1–4. The [content inventory](../missions.md#mining-content)
+lists the offer pool and the faction-limited level-three ice mission. The pinned catalog provides the objective type and quantity,
+entry object, offsets and stock for all 63 deposits. Deposit `dunRadius` gives units, and Eden derives the visible rock radius using
+its existing asteroid geometry. Gas uses the catalog type radius. Existing standing and clone-grade gates apply. ISK and LP use
+Eden's level bands and world multipliers, including Mining Connections for LP.
+
+Acceptance seeds the private pocket and deposits in one transaction. Only the accepting pilot receives its scene objects and can
+mine or survey the deposits. Normal mining cycles settle quantity and cargo together. Objective deposits omit residue and critical
+bonus units. The final depletion marks the site objective complete. Station turn-in also checks ownership and quantity, then
+consumes the required material and settles wallet, LP, standings and mission closure together. Quit, expiry and successful
+turn-in remove the deposit rows. Public belts and mining NPCs use their existing deposit pools. Saved missions and asteroids
+use the existing schema and checkpoint owners.
+
+Native agent calls reuse the dungeon bookmark and the fetch objective reply. Build 3662168
+`missions/client/ui/missionObjectiveData.pyj` maps `MissionFetchMine` and `MissionFetchMineTrigger` to a type-and-quantity
+prompt and `FetchObjectAcquiredDungeonDone` to a type, agent, station and quantity. The original archive SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The installed EVE.js **261108.1** mission
+runtime SHA-256 is `f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`. Consulted Carbon Destiny
+revision [27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+for the existing AddBall and RemoveBall lifecycle and [EVE University mining missions](https://wiki.eveuniversity.org/Mining_missions)
+for harvesting and return requirements.
+
+**Automated validation.** The solution built with zero warnings or errors. In-process xUnit passed 233 focused cases:
+77 agent cases in 128.38 seconds, 91 mining and Agency cases in 41.82 seconds, and 65 capsuleer and NPC mining
+cases in 60.28 seconds. Development used the exact method
+`Eden.Protocol.Tests.Agents.MiningMissionTests.PrivateMiningPocketPersistsDepletionAndPaysOnce`. Its SQLite and
+resident-world cases cover native warp and tracker replies, observer isolation, warm read counters, partial depletion,
+reopening, mining-hold turn-in, wrong-station rejection and duplicate reward prevention. Additional cases cover
+catalog quantities, quit and exact expiry. The normal test host timed out at its sandboxed IPC connection.
+
+Two resident belt-renewal SQL-budget assertions saw seven and eight commands against a maximum of six. Both failed
+with the same counts on unchanged main `dd6ab78e`. Catalog, formatting and mission Python policies passed 8, 9 and 5
+cases respectively. The catalog manifest, audit and fixture reproduced byte-for-byte. CSharpier checked 1,951 files
+and the 140-column check passed. The standalone .NET style check could not connect to its build host's named pipe.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Accept a Mining division offer and verify the native journal warp, mining tracker and agent turn-in.
+
 ## Native mission objective tracker — November 11, 2026
 
 The native `missionTrackerMgr` now reads accepted Eden missions instead of compatibility placeholders.

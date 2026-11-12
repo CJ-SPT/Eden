@@ -53,6 +53,7 @@ public sealed record MissionDefinition(
     public ImmutableArray<MissionStructureDefinition> Structures { get; init; } = [];
     public bool Deadspace { get; init; } = true;
     public int OfferOrder { get; init; }
+    public bool Mining { get; init; }
 }
 
 public sealed record MissionContent(int Build, ImmutableArray<MissionDefinition> Missions);

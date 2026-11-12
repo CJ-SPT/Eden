@@ -2,7 +2,23 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 pool contains **311 definitions: 50 combat encounters, 177 ordinary deliveries and 84 delivery storylines**. These are reconstructed Eden offers, using the existing mission systems. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,581** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability; the audit does not claim that every excluded combat mission needs new mechanics.
+The build-3662168 pool contains **334 definitions: 50 combat encounters, 177 ordinary deliveries, 84 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,558** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
+
+## Mining content
+
+| Level | Admitted definitions |
+| --- | --- |
+| 1 | Seven ore missions, including Starting Simple, Bountiful Banidine and Asteroid Catastrophe |
+| 2 | Eight ore missions, including three Mercium Belt layouts and Unknown Events |
+| 3 | Stay Frosty (ice), available through eligible Minmatar agents |
+| 4 | Five ore missions, Cheap Chills (ice) and Gas Injections |
+
+Request and accept an offer from a Mining division agent. Warp to the pocket from the mission tracker, harvest every
+objective deposit, and return the required stack quantity to the agent's station. Turn-in accepts cargo from the active
+ship's eligible holds and the personal station hangar. Bring the appropriate ore laser, ice harvester, or gas tool.
+Each deposit retains its saved quantity across visits and restarts. Eden suppresses residue and critical bonus units on
+these deposits so the exact stock can satisfy the objective. Scripted hostile waves, incidental belt-rat spawns and
+mission chains are outside the admitted mining pool. See the [implementation record](protocol/agents.md#mining-missions---november-12-2026).
 
 ## Combat content
 
@@ -44,7 +60,7 @@ The client catalog omits courier agent-level assignments. Existing eight level a
 
 These bands are not CCP level assignments. Rewards use Eden's existing level/difficulty/social-skill rules. Pickup is the issuing agent's station; the existing route policy selects a neighboring station, preferring the corporation, then a local fallback. Mission duration remains seven days. The existing twenty definitions stay first in their eligible offer pools, followed by the expansion in stable order. Supplier restrictions mean an individual agent offers only a subset of the total pool. Generic delivery storylines still require sixteen completed missions for the same faction and level.
 
-Chain parts, scripted objectives/node graphs, initial gifts, singleton cargo, differing deadlines and fixed item rewards are excluded. Non-generic storyline, career, epic-arc, COSMOS, research, mining and other specialized agent lifecycles are not admitted merely because a record contains cargo. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers; those require verified reports and explicit bindings. Level-five combat remains outside the admitted encounter policy.
+Chain parts, scripted objectives/node graphs, initial gifts, singleton cargo, differing deadlines and fixed item rewards are excluded. Non-generic storyline, career, epic-arc, COSMOS, research, mining and other specialized agent lifecycles are outside the courier pool. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers; those require verified reports and explicit bindings. Level-five combat remains outside the admitted encounter policy.
 
 Gameplay references: [University distribution reports](https://wiki.eveuniversity.org/Distribution_mission_reports), [agent types and divisions](https://wiki.eveuniversity.org/Agent), and the revision-specific encounter links recorded per definition. The source reports describe gameplay; pinned catalog records determine build-specific identities. Source inspection and automated checks do not establish native client acceptance.
 

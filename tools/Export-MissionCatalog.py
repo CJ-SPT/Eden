@@ -178,7 +178,7 @@ def export(catalog, output, audit_output):
         if not row:
             raise ValueError(f'Missing catalog mission {m["missionId"]}')
         data = json.loads(row[0])
-        if m['waves']:
+        if m['waves'] or m.get('mining'):
             dungeon = json.loads(db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/dungeons' AND Key=?",
                                            (str(data['killMission']['dungeonID']),)).fetchone()[0])
             if len(dungeon['rooms']) != len(m.get('rooms', [None])) or dungeon['difficulty'] != m['level']:

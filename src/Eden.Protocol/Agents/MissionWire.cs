@@ -121,26 +121,26 @@ internal sealed record MissionLocation(MissionOffer Offer, bool Pickup = false) 
 
     public override object ToBlue()
     {
-        bool combat = Offer.Kind == MissionKind.Combat;
+        bool dungeon = Offer.Kind != MissionKind.Courier;
         var values = new Dictionary<string, object?>
         {
             ["typeID"] =
-                combat ? SolarSystemType
+                dungeon ? SolarSystemType
                 : Pickup ? Offer.Cargo!.PickupTypeId
                 : Offer.Cargo!.DestinationTypeId,
             ["locationID"] =
-                combat ? Offer.SystemId
+                dungeon ? Offer.SystemId
                 : Pickup ? Offer.Cargo!.PickupStation
                 : Offer.Cargo!.DestinationStation,
             ["solarsystemID"] = Pickup ? Offer.Cargo!.PickupSystemId : Offer.SystemId,
             ["agentID"] = Offer.Agent.Id,
             ["locationType"] =
-                combat ? "dungeon"
+                dungeon ? "dungeon"
                 : Pickup ? "objective.source"
                 : "objective.destination",
             ["locationNumber"] = 0,
         };
-        if (combat)
+        if (dungeon)
         {
             values["coords"] = new object?[] { Offer.Position.X, Offer.Position.Y, Offer.Position.Z };
         }
@@ -284,7 +284,8 @@ internal sealed record MissionBookmark(MissionOffer Offer) : BlueModel
                 ["locationType"] = "dungeon",
                 ["locationNumber"] = 0,
                 ["solarsystemID"] = Offer.SystemId,
-                ["hint"] = "UI/Agents/Bookmarks/Encounter/Deadspace",
+                ["hint"] =
+                    Offer.Kind == MissionKind.Mining ? "UI/Agents/Bookmarks/Mining/Mining" : "UI/Agents/Bookmarks/Encounter/Deadspace",
                 ["memo"] = Offer.Name,
                 ["x"] = Offer.Position.X,
                 ["y"] = Offer.Position.Y,
@@ -307,11 +308,12 @@ internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers, IReadO
                             o.Storyline,
                             o.Storyline ? "UI/Agents/MissionTypes/StorylineCourier"
                             : o.Kind == MissionKind.Combat ? "UI/Agents/MissionTypes/Encounter"
+                            : o.Kind == MissionKind.Mining ? "UI/Agents/MissionTypes/Mining"
                             : "UI/Agents/MissionTypes/Courier",
                             o.NameId,
                             o.Agent.Id,
                             o.ExpiresAt,
-                            o.Kind == MissionKind.Combat
+                            o.Kind != MissionKind.Courier
                                 ? new List<object?> { new MissionBookmark(o) }
                                 : new List<object?>(),
                             false,

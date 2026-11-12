@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.World.Runtime.Combat;
@@ -69,7 +70,7 @@ internal sealed class LiveTrafficGeometry
                     _systems.Clear();
                     _belts.Clear();
                 }
-                else if (change.Table is "WorldAsteroid" or "WorldBeltRenewal")
+                else if (change.Table == "WorldBeltRenewal" || change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id))
                 {
                     Revision++;
                     long belt =

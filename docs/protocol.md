@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Mining missions](protocol/agents.md#mining-missions---november-12-2026)
+records Mining division offers, private deposits, native objectives and durable ore turn-in.
+
 [Concurrent account login](protocol/startup.md#concurrent-account-login-november-12-2026)
 records character-roster ownership and durable launch tickets under concurrent login.
 

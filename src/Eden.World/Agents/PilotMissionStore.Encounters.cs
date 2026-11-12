@@ -45,7 +45,7 @@ internal sealed partial class PilotMissionStore
                 Expire(world, row, Now);
             }
             var sites = rows.Where(m => m.State == MissionState.Accepted)
-                .Where(m => MissionCatalog.Find(catalog, m.MissionId).Kind == MissionKind.Combat)
+                .Where(m => MissionCatalog.Find(catalog, m.MissionId).DungeonId.HasValue)
                 .SelectMany(m =>
                 {
                     var profile = MissionCatalog.Find(catalog, m.MissionId);
@@ -78,6 +78,7 @@ internal sealed partial class PilotMissionStore
                                         )
                                         .Select(s => RecoveryContainer(catalog, m, profile, s.Key, structures[s.Value.ObjectId].LootEmpty))
                                 )
+                                .Concat(profile.Kind == MissionKind.Mining ? MiningContacts(world, m, profile) : [])
                                 .ToArray();
                             var gates = room
                                 .Gates.Select(g =>
@@ -104,6 +105,7 @@ internal sealed partial class PilotMissionStore
                                 Entrance = position,
                                 Gates = gates,
                                 Deadspace = profile.Definition.Deadspace,
+                                Private = profile.Kind == MissionKind.Mining,
                             };
                         })
                         .ToArray();

@@ -17,6 +17,8 @@ public enum MissionObjectiveKind
     DestroyAll,
     Destroy,
     Fetch,
+    Mine,
+    ReturnMinedCargo,
     Complete,
 }
 
@@ -45,7 +47,7 @@ public static class MissionTrackingRules
             throw new InvalidDataException("Track accepted missions only.");
         }
         bool inDungeon =
-            offer.Kind == MissionKind.Combat
+            offer.Kind != MissionKind.Courier
             && systemId == offer.SystemId
             && position is { } point
             && entry.Rooms.Any(room => room.DistanceTo(point) <= MissionRules.ArrivalRange);
@@ -67,6 +69,18 @@ public static class MissionTrackingRules
             return new(current, [missing, present, complete], false);
         }
         var travel = new MissionTrackerObjective(MissionObjectiveKind.Travel, offer.Agent.Id, offer.SystemId);
+        if (offer.Kind == MissionKind.Mining && offer.Retrieval is { } ore)
+        {
+            var mine = new MissionTrackerObjective(MissionObjectiveKind.Mine, offer.Agent.Id, TypeId: ore.TypeId, Quantity: ore.Quantity);
+            var returnToAgent = mine with { Kind = MissionObjectiveKind.ReturnMinedCargo, LocationId = offer.Agent.StationId!.Value };
+            return new(
+                offer.ObjectiveComplete ? (stationId == offer.Agent.StationId ? complete : returnToAgent)
+                    : inDungeon ? mine
+                    : travel,
+                [travel, mine, returnToAgent, complete],
+                inDungeon
+            );
+        }
         var destroy = new MissionTrackerObjective(MissionObjectiveKind.DestroyAll, offer.Agent.Id);
         var target = position is { } at
             ? entry.Targets.FirstOrDefault(target => target.Position.DistanceTo(at) <= MissionRules.ArrivalRange)

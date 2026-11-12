@@ -24,7 +24,8 @@ internal sealed partial class LiveReadModels
         "resident.missionSites",
         "WorldMission",
         "WorldMissionRoom",
-        "WorldMissionStructure"
+        "WorldMissionStructure",
+        "WorldAsteroid"
     );
 
     internal MissionSitesView MissionSites(int systemId, long now, Func<MissionSitesView> load) =>

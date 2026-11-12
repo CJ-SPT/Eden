@@ -2,6 +2,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Mining;
 using Eden.Data.World.Propulsion;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -24,6 +25,9 @@ internal sealed partial class LiveCombatRuntime
     private readonly ResidentMap<int, long> _populationDue = [];
     private int? _populationRefreshSystem;
 
+    private static bool IsPublicAsteroidChange(CombatRowChange change) =>
+        change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id);
+
     private void ObserveAsteroidPopulation(IReadOnlyCollection<CombatRowChange> changes)
     {
         if (_populationDue.Count == 0)
@@ -35,7 +39,7 @@ internal sealed partial class LiveCombatRuntime
             _populationDue.Remove(scoped);
             return;
         }
-        var ids = changes.Where(change => change.Table == "WorldAsteroid").Select(change => change.Id).ToArray();
+        var ids = changes.Where(IsPublicAsteroidChange).Select(change => change.Id).ToArray();
         var systems =
             owner.Economy.IsLoaded || changes.Any(c => c.Resident)
                 ? ids.Select(id => owner.Economy.Peek<WorldAsteroid>(id)?.SystemId).OfType<int>().ToArray()

@@ -272,7 +272,7 @@ internal sealed partial class CapsuleerCommunityStore(WorldDatabase database) : 
                 {
                     AsteroidFieldStore.Populate(world, catalog, system, now);
                     world.SaveChanges();
-                    if (world.Set<WorldAsteroid>().Any(a => a.SystemId == system && a.Quantity > 0))
+                    if (world.Set<WorldAsteroid>().Any(a => a.SystemId == system && a.BeltId > 0 && a.Quantity > 0))
                     {
                         return station.Id;
                     }

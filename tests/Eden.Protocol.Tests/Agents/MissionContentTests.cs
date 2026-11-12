@@ -35,7 +35,7 @@ public sealed partial class MissionContentTests
     private static TheoryData<int, int> Cases(bool combat)
     {
         TheoryData<int, int> cases = new();
-        foreach (var mission in Content().Missions.Where(m => combat ? m.OfferOrder > 0 && !m.Waves.IsEmpty : m.Waves.IsEmpty))
+        foreach (var mission in Content().Missions.Where(m => combat ? m.OfferOrder > 0 && !m.Waves.IsEmpty : m.Waves.IsEmpty && !m.Mining))
         {
             cases.Add(mission.MissionId, mission.Level);
         }
@@ -51,6 +51,7 @@ public sealed partial class MissionContentTests
         Assert.Equal(Content().Missions.Length, profiles.Length);
         Assert.Equal(50, profiles.Count(p => p.Kind == MissionKind.Combat));
         Assert.Equal(261, profiles.Count(p => p.Kind == MissionKind.Courier));
+        Assert.Equal(23, profiles.Count(p => p.Kind == MissionKind.Mining));
         foreach (var profile in profiles)
         {
             Assert.NotEqual("Mission", profile.Name);

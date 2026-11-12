@@ -17,6 +17,13 @@ KNOWN_BLOCKERS = {
     2253: 'Requires a verified reinforcement trigger',
 }
 
+# Reviewed standalone mining pockets. The other mining dungeons contain
+# scripted encounters, chain stages or duplicate content for the same pocket.
+MINING_MISSIONS = {
+    4800, 4801, 4802, 4803, 4804, 4805, 4806, 4807, 4808, 4809, 4810, 4811, 4812, 4813, 4814,
+    4859, 4862, 4863, 4864, 4865, 4866, 4884, 13822,
+}
+
 
 def source(db, dataset, key):
     row = db.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, str(key))).fetchone()
@@ -42,6 +49,24 @@ def delivery_rejection(mission, name, volume):
         if isinstance(reward, dict) and reward.get('rewardTypeID', 29) != 29:
             return 'Requires fixed item rewards'
     return None
+
+
+def mining_definition(db, mission_id, mission):
+    objective = mission['killMission']
+    dungeon = source(db, 'client/dungeons', objective['dungeonID'])
+    level = dungeon['difficulty']
+    rooms = dungeon['rooms']
+    if not 1 <= level <= 4 or len(rooms) != 1 or dungeon.get('connections'):
+        raise ValueError(f'Mining mission {mission_id} needs unsupported room or level handling')
+    objects = next(iter(rooms.values()))['objects'].values()
+    rocks = [o for o in objects if o.get('typeID') == objective['objectiveTypeID']]
+    if (not rocks or any(o.get('entities') for o in objects)
+            or any(not o.get('position') or not 0 < o.get('radius', 0) == int(o['radius']) for o in rocks)
+            or sum(o['radius'] for o in rocks) != objective['objectiveQuantity']):
+        raise ValueError(f'Mining mission {mission_id} needs verified deposits or encounters')
+    return dict(missionId=mission_id, level=level, difficulty=500, storyline=False, mining=True, deadspace=False,
+                source='build-3662168 client/missions and client/dungeons; Eden mining reward policy',
+                sourceRevision='3662168', waves=[])
 
 
 def extend(db, missions, group):
@@ -189,6 +214,12 @@ def extend(db, missions, group):
             reason = KNOWN_BLOCKERS[mid]
         elif mid in admitted:
             reason = None
+        elif template == 'BasicMiningMission':
+            if mid in MINING_MISSIONS:
+                missions.append(mining_definition(db, mid, data))
+                reason = None
+            else:
+                reason = 'Requires verified mining scripts, chain progression or a distinct pocket'
         elif 'CourierMission' in template:
             cargo = data.get('courierMission', {})
             item = source(db, 'client/types', cargo.get('objectiveTypeID', 0)) or {}
@@ -218,7 +249,8 @@ def extend(db, missions, group):
         else:
             reason = 'Requires another mission or agent lifecycle'
         audit.append(dict(missionId=mid, name=name, template=template, status='blocked' if reason else 'admitted',
-                          reason=reason or 'Catalog cargo or reviewed encounter'))
+                          reason=reason or ('Catalog mining deposits' if template == 'BasicMiningMission'
+                                            else 'Catalog cargo or reviewed encounter')))
     return audit
 
 

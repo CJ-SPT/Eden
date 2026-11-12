@@ -3,6 +3,7 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
@@ -71,6 +72,7 @@ internal sealed partial class AsteroidFieldStore
             .Set<WorldAsteroid>()
             .AsNoTracking()
             .Where(a => a.SystemId == systemId && a.Quantity > 0)
+            .Where(a => a.Id < MissionMiningRules.FirstDepositId || a.Id >= MissionMiningRules.EndDepositId)
             .OrderBy(a => a.Id)
             .ToArray();
         var types = saved.Select(a => a.TypeId).Distinct().ToArray();

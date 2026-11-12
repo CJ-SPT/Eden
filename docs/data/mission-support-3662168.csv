@@ -1828,21 +1828,21 @@ missionId,name,template,status,reason
 4785,Pot and Kettle - Seek and Destroy (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
 4786,Pot and Kettle - To Battle (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
 4789,Pot and Kettle - Making Amends (5 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4800,Claimjumpers,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4801,Starting Simple,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4802,Bountiful Banidine,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4803,I Don't Ask,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4804,Asteroid Catastrophe,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4805,Burnt Traces,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4806,Down and Dirty,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4807,Passing the ISK,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4808,Understanding Augumene,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4809,Mercium Belt,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4810,Mercium Belt,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4811,Mercium Belt,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4812,Unknown Events,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4813,"Oh, the Augumene!",BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4814,Mercium Experiments,BasicMiningMission,blocked,Requires another mission or agent lifecycle
+4800,Claimjumpers,BasicMiningMission,admitted,Catalog mining deposits
+4801,Starting Simple,BasicMiningMission,admitted,Catalog mining deposits
+4802,Bountiful Banidine,BasicMiningMission,admitted,Catalog mining deposits
+4803,I Don't Ask,BasicMiningMission,admitted,Catalog mining deposits
+4804,Asteroid Catastrophe,BasicMiningMission,admitted,Catalog mining deposits
+4805,Burnt Traces,BasicMiningMission,admitted,Catalog mining deposits
+4806,Down and Dirty,BasicMiningMission,admitted,Catalog mining deposits
+4807,Passing the ISK,BasicMiningMission,admitted,Catalog mining deposits
+4808,Understanding Augumene,BasicMiningMission,admitted,Catalog mining deposits
+4809,Mercium Belt,BasicMiningMission,admitted,Catalog mining deposits
+4810,Mercium Belt,BasicMiningMission,admitted,Catalog mining deposits
+4811,Mercium Belt,BasicMiningMission,admitted,Catalog mining deposits
+4812,Unknown Events,BasicMiningMission,admitted,Catalog mining deposits
+4813,"Oh, the Augumene!",BasicMiningMission,admitted,Catalog mining deposits
+4814,Mercium Experiments,BasicMiningMission,admitted,Catalog mining deposits
 4815,Furrier Fiasco,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4816,Escaped Dissident,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4817,Escaped Spy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1876,29 +1876,29 @@ missionId,name,template,status,reason
 4845,Hunting a Heretic - Book Burning (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
 4846,Hunting a Heretic - Crackpot Captured! (3 of 3),BasicCourierMission,blocked,Requires mission-chain progression
 4847,For the Troops - Food for Fun (1 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4848,Persistent Pests,BasicMiningMission,blocked,Requires another mission or agent lifecycle
+4848,Persistent Pests,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 4849,For the Troops - Error of Comedy (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4850,Drone Distribution,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4851,Coming 'Round the Mountain,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4852,A Better World,BasicMiningMission,blocked,Requires another mission or agent lifecycle
+4850,Drone Distribution,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4851,Coming 'Round the Mountain,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4852,A Better World,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 4853,For the Troops - Final Negotiations (3 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4854,Beware They Live,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4855,Pile of Pithix,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4856,Ours Now,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4857,Ours Now,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4858,Ice Installation,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4859,Cheap Chills,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4860,Like Drones to a Cloud,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4861,Like Drones to a Cloud,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4862,Mother Lode,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4863,Geodite and Gemology,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4864,Feeding the Giant,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4865,Arisite Envy,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4866,Not Gneiss at All,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-4868,Like Drones to a Cloud,BasicMiningMission,blocked,Requires another mission or agent lifecycle
+4854,Beware They Live,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4855,Pile of Pithix,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4856,Ours Now,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4857,Ours Now,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4858,Ice Installation,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4859,Cheap Chills,BasicMiningMission,admitted,Catalog mining deposits
+4860,Like Drones to a Cloud,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4861,Like Drones to a Cloud,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+4862,Mother Lode,BasicMiningMission,admitted,Catalog mining deposits
+4863,Geodite and Gemology,BasicMiningMission,admitted,Catalog mining deposits
+4864,Feeding the Giant,BasicMiningMission,admitted,Catalog mining deposits
+4865,Arisite Envy,BasicMiningMission,admitted,Catalog mining deposits
+4866,Not Gneiss at All,BasicMiningMission,admitted,Catalog mining deposits
+4868,Like Drones to a Cloud,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 4869,Greater Good – Less Distasteful Matters (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
 4870,Greater Good - Not Even Remotely Drastic Measures (4 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4884,Gas Injections,BasicMiningMission,blocked,Requires another mission or agent lifecycle
+4884,Gas Injections,BasicMiningMission,admitted,Catalog mining deposits
 4885,Lights Out,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4886,Foreign Investment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4887,The Cost of Greener Grass,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1938,7 +1938,7 @@ missionId,name,template,status,reason
 13468,A New Venture – Healthy Competition (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
 13470,Athran Exigency (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
 13471,Athran Exigency (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13472,Augumene Allergen (1 of 5),BasicMiningMission,blocked,Requires another mission or agent lifecycle
+13472,Augumene Allergen (1 of 5),BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 13473,A New Venture  – Education is Key (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
 13474,Augumene Allergen (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
 13475,A New Venture  – Right People (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
@@ -1968,7 +1968,7 @@ missionId,name,template,status,reason
 13505,"They, Robots (1 of 5)",BasicCourierMission,blocked,Requires mission-chain progression
 13506,"They, Robots (2 of 5)",BasicKillMission,blocked,Requires mission-chain progression
 13507,"They, Robots (3 of 5)",BasicKillMission,blocked,Requires mission-chain progression
-13509,"They, Robots (4 of 5)",BasicMiningMission,blocked,Requires another mission or agent lifecycle
+13509,"They, Robots (4 of 5)",BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 13510,"They, Robots (5 of 5)",BasicKillMission,blocked,Requires mission-chain progression
 13511,Patriotic Measures (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
 13512,Patriotic Measures (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
@@ -1977,7 +1977,7 @@ missionId,name,template,status,reason
 13515,Patriotic Measures (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
 13516,The Heiress (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
 13517,The Heiress (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13518,The Heiress (3 of 5),BasicMiningMission,blocked,Requires another mission or agent lifecycle
+13518,The Heiress (3 of 5),BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 13519,The Heiress (4 of 5),BasicCourierMission,blocked,Requires mission-chain progression
 13520,The Heiress (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
 13521,Lost That Bet (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
@@ -2263,7 +2263,7 @@ missionId,name,template,status,reason
 13819,Labors of War (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
 13820,Labors of War (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
 13821,Labors of War (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13822,Stay Frosty,BasicMiningMission,blocked,Requires another mission or agent lifecycle
+13822,Stay Frosty,BasicMiningMission,admitted,Catalog mining deposits
 13823,Aiding the Dark Amarr,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13824,Are You Receiving? (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
 13825,Are You Receiving? (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
@@ -2723,10 +2723,10 @@ missionId,name,template,status,reason
 15565,Covering the Basics,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15566,Combat Basics,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15568,The Academy,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-15600,"Oh, the Augumene!",BasicMiningMission,blocked,Requires another mission or agent lifecycle
-15601,Mercium Belt,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-15602,I Don't Ask,BasicMiningMission,blocked,Requires another mission or agent lifecycle
-15603,Like Drones to a Cloud,BasicMiningMission,blocked,Requires another mission or agent lifecycle
+15600,"Oh, the Augumene!",BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+15601,Mercium Belt,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+15602,I Don't Ask,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
+15603,Like Drones to a Cloud,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 15621,Moving Onwards,EpicArcCourierMission,blocked,Requires another mission or agent lifecycle
 15622,Covering the Basics,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15623,Combat Basics,EpicArcKillMission,blocked,Requires another mission or agent lifecycle

@@ -179,7 +179,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             world.SaveChanges();
             addMiner = world
                 .Set<WorldAsteroid>()
-                .Where(a => a.SystemId == systemId && a.Quantity > 0)
+                .Where(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
                 .Select(a => a.TypeId)
                 .Distinct()
                 .AsEnumerable()
@@ -583,7 +583,11 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             );
             // New encounters can begin midway through their first shift. This is
             // paid once, in the same transaction that creates their owned ship.
-            var rocks = world.Set<WorldAsteroid>().Where(a => a.SystemId == site.SystemId && a.Quantity > 0).OrderBy(a => a.Id).ToArray();
+            var rocks = world
+                .Set<WorldAsteroid>()
+                .Where(a => a.SystemId == site.SystemId && a.BeltId > 0 && a.Quantity > 0)
+                .OrderBy(a => a.Id)
+                .ToArray();
             var openingPhase = startDocked ? MinerEncounterOpening.Docked : CapsuleerEncounterRules.Opening(seed, site.SystemId);
             if (rocks.Length > 0 && openingPhase != MinerEncounterOpening.Docked)
             {

@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
@@ -14,6 +15,7 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -128,11 +130,16 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
         var ore = catalog.FittingType(asteroid.TypeId);
         var moduleAttributes = catalog.FittingAttributes(module.TypeId);
         var family = MiningDefinitions.Family(module.GroupId, moduleAttributes);
+        bool missionDeposit = MissionMiningRules.IsDeposit(asteroid.Id);
+        if (missionDeposit)
+        {
+            PilotMissionStore.RequireMiningAccess(world, asteroid.Id, pilotId, now);
+        }
         bool compatible =
             family == MiningFamily.Gas
                 ? ore?.CategoryId == MiningDefinitions.GasCloudCategory
                     && ore.GroupId == MiningDefinitions.GasCloudGroup
-                    && MiningSiteCatalog.SupportsGas(ore.Id)
+                    && (missionDeposit || MiningSiteCatalog.SupportsGas(ore.Id))
                 : ore?.CategoryId == AsteroidDefinitions.Category
                     && (
                         family == MiningFamily.Ice
@@ -175,9 +182,9 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
             attributes.GetValueOrDefault(DogmaAttributeId.Duration),
             attributes.GetValueOrDefault(DogmaAttributeId.MiningAmount),
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
-            family == MiningFamily.Gas ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalChance),
+            missionDeposit || family == MiningFamily.Gas ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalChance),
             family == MiningFamily.Gas ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.MiningCriticalBonusYield),
-            attributes.GetValueOrDefault(DogmaAttributeId.MiningResidueChance) / 100,
+            missionDeposit ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.MiningResidueChance) / 100,
             attributes.GetValueOrDefault(DogmaAttributeId.MiningResidueMultiplier, 1),
             family
         );
@@ -410,7 +417,14 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
         bool depleted = asteroid.Quantity == 0;
         if (depleted)
         {
-            MiningSiteStore.Collected(world, asteroid.Id, now);
+            if (MissionMiningRules.IsDeposit(asteroid.Id))
+            {
+                PilotMissionStore.MiningDepleted(world, asteroid.Id);
+            }
+            else
+            {
+                MiningSiteStore.Collected(world, asteroid.Id, now);
+            }
             world.SaveChanges();
         }
         return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, depleted, collected.CargoFull, crystalState);

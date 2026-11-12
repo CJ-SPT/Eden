@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
@@ -8,6 +9,7 @@ using Eden.Data.World.Information;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
@@ -401,6 +403,18 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             .Set<WorldAsteroid>()
             .AsNoTracking()
             .Where(a => a.SystemId == system && a.Quantity > 0)
+            .Where(a =>
+                a.Id < MissionMiningRules.FirstDepositId
+                || a.Id >= MissionMiningRules.EndDepositId
+                || world
+                    .Set<SavedMission>()
+                    .Any(m =>
+                        m.Id == (a.Id - MissionMiningRules.FirstDepositId) / MissionMiningRules.DepositsPerMission
+                        && m.PilotId == pilotId
+                        && m.State == MissionState.Accepted
+                        && m.ExpiresAt > now
+                    )
+            )
             .AsEnumerable()
             .Where(a => position.DistanceTo(new(a.X, a.Y, a.Z)) <= InformationRules.MiningScanRange)
             .OrderBy(a => a.Id)

@@ -5,6 +5,7 @@ using Eden.Data.Catalog.Agents;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 
@@ -27,10 +28,14 @@ internal sealed record MissionProfile(
 {
     internal int WaveRoom(int wave) => Definition.Waves[wave].RoomId == 0 ? Rooms[0].Id : Definition.Waves[wave].RoomId;
 
-    internal MissionKind Kind => DungeonId.HasValue ? MissionKind.Combat : MissionKind.Courier;
+    internal MissionKind Kind =>
+        Definition.Mining ? MissionKind.Mining
+        : DungeonId.HasValue ? MissionKind.Combat
+        : MissionKind.Courier;
 
     internal int SupplierFaction { get; init; }
     internal int SupplierCorporation { get; init; }
+    internal ImmutableArray<MissionDeposit> Deposits { get; init; } = [];
 
     internal bool AvailableTo(CatalogAgent agent) =>
         (SupplierFaction == 0 || SupplierFaction == agent.FactionId)
@@ -53,8 +58,11 @@ internal sealed record MissionRoomProfile(
 
 internal sealed record MissionRoomGate(long ObjectId, int DestinationRoomId, bool RequiresClear, MissionGateAccess Access);
 
+internal sealed record MissionDeposit(StaticSpaceObject Contact, int Quantity);
+
 internal static class MissionCatalog
 {
+    private const string BasicMiningMission = "agent.missionTemplatizedContent_BasicMiningMission";
     private const int InvisibleBeaconGroup = 4055;
     private static readonly Lazy<MissionContent> s_content = new(() =>
     {
@@ -75,6 +83,8 @@ internal static class MissionCatalog
     );
 
     internal static ImmutableArray<MissionProfile> Read(CatalogDbContext catalog) => catalog.Definition(s_profiles, 0);
+
+    internal static bool IsMining(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && m.Mining);
 
     internal static MissionProfile Find(CatalogDbContext catalog, int missionId) =>
         Read(catalog).SingleOrDefault(p => p.Definition.MissionId == missionId)
@@ -98,20 +108,29 @@ internal static class MissionCatalog
                 ?? "Mission";
             string briefing = catalog.Read(CatalogData.Client.LocalizationFsdEnUs, (long)briefingId)?.Text ?? name;
             int? dungeonId = checked((int?)mission.KillMission?.DungeonID);
+            int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? mission.KillMission?.ObjectiveTypeID ?? 0));
+            int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? mission.KillMission?.ObjectiveQuantity ?? 0));
+            double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
+            if (definition.Mining && (mission.ContentTemplate != BasicMiningMission || dungeonId is null || !(volume > 0)))
+            {
+                throw new InvalidDataException("Mining mission does not have a catalog dungeon and objective cargo.");
+            }
             int faction = 0;
             int corporation = 0;
             ImmutableArray<MissionRoomProfile> rooms = [];
+            ImmutableArray<MissionDeposit> deposits = [];
             if (dungeonId is int id)
             {
                 var dungeon = catalog.Require(CatalogData.Client.Dungeons, (long)id);
                 faction = checked((int)(dungeon.FactionID ?? 0));
                 corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
                 rooms = Rooms(catalog, definition, dungeon, corporation);
+                if (definition.Mining)
+                {
+                    deposits = Deposits(catalog, dungeon, cargoType, quantity, volume);
+                }
             }
 
-            int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? mission.KillMission?.ObjectiveTypeID ?? 0));
-            int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? mission.KillMission?.ObjectiveQuantity ?? 0));
-            double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
             if (dungeonId.HasValue && cargoType > 0 && (quantity <= 0 || volume <= 0))
             {
                 throw new InvalidDataException("Combat retrieval objective has invalid catalog cargo.");
@@ -125,10 +144,55 @@ internal static class MissionCatalog
                 {
                     SupplierFaction = checked((int)(mission.FactionID ?? 0)),
                     SupplierCorporation = checked((int)(mission.CorporationID ?? 0)),
+                    Deposits = deposits,
                 }
             );
         }
         return profiles.ToImmutableArray();
+    }
+
+    private static ImmutableArray<MissionDeposit> Deposits(
+        CatalogDbContext catalog,
+        ClientDungeons dungeon,
+        int typeId,
+        int quantity,
+        double volume
+    )
+    {
+        var type = catalog.RequireItem(typeId);
+        var objects = dungeon.Rooms!.Values.Single().Objects!.Values;
+        var entry = Position(objects.Single(o => o.ObjectID == dungeon.EntryObjectID).Position!);
+        var deposits = objects.Where(o => o.TypeID == typeId).OrderBy(o => o.ObjectID).ToArray();
+        if (
+            !MiningDefinitions.IsResource(type.CategoryId, type.GroupId)
+            || deposits.Length is 0 or > MissionMiningRules.DepositsPerMission
+            || deposits.Any(o =>
+                o.Position is null || o.Radius is not (> 0 and <= int.MaxValue) || o.Radius != Math.Truncate(o.Radius.Value)
+            )
+            || deposits.Sum(o => (long)o.Radius!.Value) != quantity
+        )
+        {
+            throw new InvalidDataException("Mining mission deposits do not match the catalog objective.");
+        }
+        bool cloud = type.GroupId == MiningDefinitions.GasCloudGroup;
+        return deposits
+            .Select(o => new MissionDeposit(
+                new(
+                    o.ObjectID!.Value,
+                    typeId,
+                    type.GroupId,
+                    type.CategoryId,
+                    1,
+                    Position(o.Position!) - entry,
+                    DungeonObjectGeometry.Radius(type.CategoryId, type.Radius, cloud ? null : o.Radius, volume)
+                )
+                {
+                    IsGlobal = false,
+                    Solid = !cloud,
+                },
+                (int)o.Radius!.Value
+            ))
+            .ToImmutableArray();
     }
 
     private static ImmutableArray<MissionRoomProfile> Rooms(
@@ -152,7 +216,7 @@ internal static class MissionCatalog
             bindings.Length != source.Count
             || bindings.Select(r => r.RoomId).Distinct().Count() != bindings.Length
             || bindings[0].EntryObjectId != dungeon.EntryObjectID
-            || definition.Waves.IsDefaultOrEmpty
+            || !definition.Mining && definition.Waves.IsDefaultOrEmpty
             || definition.Waves.Length * MissionRules.MembersPerWave > MissionRules.NpcsPerMission
         )
         {
@@ -197,6 +261,7 @@ internal static class MissionCatalog
                 bool structure = definition.Structures.Any(s => s.ObjectId == item.ObjectID);
                 if (
                     type is null
+                    || definition.Mining && MiningDefinitions.IsResource(type.CategoryId, type.GroupId)
                     || !container && !structure && type.CategoryId is not (2 or 25)
                     || type.GroupId == InvisibleBeaconGroup
                     || item.ObjectID == binding.EntryObjectId

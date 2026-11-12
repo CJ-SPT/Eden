@@ -58,6 +58,10 @@ internal sealed class ResidentSnapshot<TKey, TValue>(string name, params string[
     internal void ObserveValues(IReadOnlyCollection<CombatRowChange> changes, Func<TKey, TValue, CombatRowChange, bool> affects)
     {
         var relevant = changes.Where(c => tables.Contains(c.Table, StringComparer.Ordinal)).ToArray();
+        if (relevant.Length == 0)
+        {
+            return;
+        }
         foreach (var pair in _entries.Where(p => relevant.Any(c => affects(p.Key, p.Value.Value, c))).ToArray())
         {
             _entries.Remove(pair.Key);

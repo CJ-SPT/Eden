@@ -3,6 +3,7 @@ using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Market;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
@@ -32,7 +33,7 @@ internal sealed partial class PilotMissionStore
         {
             throw new InvalidDataException("This special agent does not offer ordinary missions.");
         }
-        if (!storyline && agent.DivisionId is not (MissionRules.SecurityDivision or MissionRules.DistributionDivision))
+        if (!storyline && MissionRules.KindForDivision(agent.DivisionId) is null)
         {
             throw new InvalidDataException("This agent's mission division is not implemented.");
         }
@@ -47,15 +48,17 @@ internal sealed partial class PilotMissionStore
         }
         int sequence = world.Set<SavedMission>().Count(m => m.PilotId == pilot.Id && m.AgentId == agent.Id);
         var profile = profiles[sequence % profiles.Length];
-        int skill =
-            profile.Kind == MissionKind.Combat
-                ? (int)MissionSocialSkill.SecurityConnections
-                : (int)MissionSocialSkill.DistributionConnections;
+        var skill = profile.Kind switch
+        {
+            MissionKind.Combat => MissionSocialSkill.SecurityConnections,
+            MissionKind.Mining => MissionSocialSkill.MiningConnections,
+            _ => MissionSocialSkill.DistributionConnections,
+        };
         var reward = MissionRules.Reward(
             level,
             profile.Definition.Difficulty,
             Skill(world, catalog, pilot, MissionSocialSkill.Negotiation),
-            Skill(world, catalog, pilot, (MissionSocialSkill)skill),
+            Skill(world, catalog, pilot, skill),
             Skill(world, catalog, pilot, MissionSocialSkill.Social),
             storyline
         );
@@ -91,7 +94,7 @@ internal sealed partial class PilotMissionStore
             OfferedAt = now,
             ExpiresAt = checked(now + MissionRules.OfferLifetime.Ticks),
             DestinationStation = destination.Id,
-            SystemId = profile.Kind == MissionKind.Combat ? station.SolarSystemId : destination.SolarSystemId,
+            SystemId = destination.SolarSystemId,
             X = station.X + offset,
             Y = station.Y + MissionRules.PlacementOffset,
             Z = station.Z - offset,
@@ -106,7 +109,7 @@ internal sealed partial class PilotMissionStore
 
     private static IEnumerable<MissionProfile> ProfilesForAgent(CatalogDbContext catalog, CatalogAgent agent, int level, bool storyline)
     {
-        var kind = agent.DivisionId == MissionRules.SecurityDivision ? MissionKind.Combat : MissionKind.Courier;
+        var kind = MissionRules.KindForDivision(agent.DivisionId);
         return MissionCatalog
             .Read(catalog)
             .Where(profile =>
@@ -278,6 +281,10 @@ internal sealed partial class PilotMissionStore
 
     private static void Close(WorldDbContext world, SavedMission mission, MissionState state, long now)
     {
+        if (MissionCatalog.IsMining(mission.MissionId))
+        {
+            MissionDeposits(world.Set<WorldAsteroid>(), mission.Id).ExecuteDelete();
+        }
         long firstContainer = MissionContainerRules.Id(mission.Id, 0);
         long endContainer = checked(firstContainer + MissionRules.NpcsPerMission);
         world

@@ -4,6 +4,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Mail;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
@@ -308,7 +309,14 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                     _ => conditions.Any(c => c.Condition.ItemId == change.Id),
                 }
         );
-        _missionSites.Observe(changes);
+        _missionSites.ObserveValues(
+            changes,
+            (_, view, change) =>
+                change.Table != "WorldAsteroid"
+                || change.Id == 0
+                || MissionMiningRules.IsDeposit(change.Id)
+                    && view.Sites.Any(s => s.Private && s.Id == MissionMiningRules.MissionId(change.Id))
+        );
         _missionTracking.Observe(changes);
         _learning.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
         _points.Observe(changes, (pilot, change) => pilot == change.Id);
@@ -319,7 +327,10 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _listHead.Observe(changes);
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
         ObserveDefenseProfiles(changes);
-        _asteroids.Observe(changes);
+        if (changes.Any(change => change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id)))
+        {
+            _asteroids.Observe(changes);
+        }
         _unfinishedMissiles.Observe(changes);
         _miningSites.Observe(changes);
         ObserveStructures(changes);

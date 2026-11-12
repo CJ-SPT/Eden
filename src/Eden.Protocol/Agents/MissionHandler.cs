@@ -186,12 +186,12 @@ internal sealed partial class MissionHandler(
                     || distance is not (double or long)
                     || referringAgent is not null && !Equals(referringAgent, agentId)
                     || BlueMarshal.Text(args[0]) != "dungeon"
-                    || offer is not { Kind: MissionKind.Combat, State: MissionState.Accepted }
+                    || offer is not { Kind: MissionKind.Combat or MissionKind.Mining, State: MissionState.Accepted }
                     || offer.SystemId != context.Pilot.SystemId
                     || context.Pilot.Position is null
                 )
                 {
-                    throw new InvalidDataException("Warp to your accepted combat mission in its solar system.");
+                    throw new InvalidDataException("Warp to your accepted mission pocket in its solar system.");
                 }
                 var warp = new FlightCommand.WarpToPoint(MissionRules.FirstSiteId + offer.Id, offer.Position, Convert.ToDouble(distance));
                 if (args[3] is true or 1L)

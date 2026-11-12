@@ -1,4 +1,6 @@
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 
@@ -82,9 +84,15 @@ internal sealed class CombatAnomalyHandler(
             current
                 .Concat(signatures)
                 .SelectMany(s => s.Objects)
-                .Concat(missions.Sites(system).SelectMany(s => s.Objects))
+                .Concat(missions.Sites(system).Where(s => !s.Private || s.PilotId == context.Pilot.PilotId).SelectMany(s => s.Objects))
                 .Where(o =>
-                    position is not null && position.DistanceTo(o.Position) <= Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
+                    position is not null
+                    && position.DistanceTo(o.Position)
+                        <= (
+                            MissionMiningRules.IsDeposit(o.Id)
+                                ? AsteroidDefinitions.VisibilityRange
+                                : Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
+                        )
                 )
                 .ToArray()
         );

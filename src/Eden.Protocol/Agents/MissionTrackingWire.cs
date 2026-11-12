@@ -17,6 +17,20 @@ internal sealed record MissionTrackerObjectiveReply(MissionTrackerObjective Obje
             MissionObjectiveKind.DestroyAll => ["DestroyAll"],
             MissionObjectiveKind.Destroy => ["Destroy", Objective.TypeId, Objective.TargetId, null],
             MissionObjectiveKind.Fetch => ["MissionFetch", Objective.TypeId, Objective.Quantity],
+            MissionObjectiveKind.Mine =>
+            [
+                TextArguments ? "MissionFetchMineTrigger" : "MissionFetchMine",
+                Objective.TypeId,
+                Objective.Quantity,
+            ],
+            MissionObjectiveKind.ReturnMinedCargo =>
+            [
+                "FetchObjectAcquiredDungeonDone",
+                Objective.TypeId,
+                Objective.AgentId,
+                Objective.LocationId,
+                Objective.Quantity,
+            ],
             MissionObjectiveKind.Complete => ["AllObjectivesComplete", Objective.AgentId],
             _ => throw new InvalidDataException("Unknown mission objective."),
         };

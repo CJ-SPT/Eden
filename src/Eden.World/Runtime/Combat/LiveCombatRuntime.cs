@@ -638,7 +638,7 @@ internal sealed partial class LiveCombatRuntime(
         {
             return;
         }
-        if (changes.Any(change => change.Table == "WorldAsteroid"))
+        if (changes.Any(IsPublicAsteroidChange))
         {
             ObserveAsteroidPopulation(changes);
         }
