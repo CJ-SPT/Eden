@@ -1779,6 +1779,29 @@ Native rendering, input and gameplay feel remain unverified.
 latency and oldest due-job age. Native rendering, input and gameplay feel remain unverified.
 
 
+## Region population under contention, November 12, 2026
+
+The regional population worker previously took the world persistence coordinator before waiting for the target system's
+simulation owner. This could block unrelated account roster reads for as long as the target system stayed busy. The
+worker now tries to acquire the coordinator and target system in the existing order. If either is busy, the system stays
+pending and the worker yields until the next maintenance interval. Founder creation and its first job still commit together.
+
+The concurrency regression holds a system open during region preparation and checks that the worker yields, a second
+account can read its roster, and the retried founder and its first job survive checkpoint and reopen.
+
+**Automated validation.** Tool and cached solution restore passed. The solution built without warnings in 30.33 seconds.
+The exact regression
+`CapsuleerBackgroundPreparationTests.BusyRegionPreparationLeavesAnotherAccountsRosterResponsiveAndRetries` passed
+in 7.10 seconds. All 37 cases in `CapsuleerBackgroundPreparationTests`, `ResidentAdmissionTests`, and
+`SystemRuntimeIsolationTests` passed in 21.37 seconds. The testhost connection timed out, so these tests ran through
+the in-process xUnit runner. Eight catalog policy tests, nine formatting policy tests, CSharpier, and the line-width
+check passed. The standalone .NET style check could not connect to its build host pipe.
+
+**Live acceptance.** Agent client testing is disabled.
+
+**Optional maintainer checks.** Enter a previously unprepared region while a second client stays active.
+
+
 ## Incremental population admission, November 10, 2026
 
 Live human entry registers saved residents and requests background population through presence changes; it no longer

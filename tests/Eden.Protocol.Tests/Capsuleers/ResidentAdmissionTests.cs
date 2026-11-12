@@ -130,14 +130,18 @@ public sealed class ResidentAdmissionTests
         var live = host.GetRequiredService<LiveWorld>();
         var synchronization = host.GetRequiredService<IWorldSynchronization>();
         using CapsuleerProvisioner provisioner = new(fixture.Database, fixture.Clock);
-        var first = provisioner.PrepareBackgroundSystem(Home, synchronization, CancellationToken.None);
+        var first = Assert.IsType<CapsuleerProvisioningTurn>(
+            provisioner.PrepareBackgroundSystem(Home, synchronization, CancellationToken.None)
+        );
         Assert.NotNull(first.CreatedPilotId);
         Assert.True(first.HasMoreWork);
         CapsuleerProvisioningTurn next;
         List<string> commands = [];
         using (var metrics = SessionPerformance.Begin("warm resident population batch", _ => { }, force: true, command: commands.Add)!)
         {
-            next = provisioner.PrepareBackgroundSystem(Home, synchronization, CancellationToken.None);
+            next = Assert.IsType<CapsuleerProvisioningTurn>(
+                provisioner.PrepareBackgroundSystem(Home, synchronization, CancellationToken.None)
+            );
             Assert.NotNull(next.CreatedPilotId);
             Assert.NotEqual(first.CreatedPilotId, next.CreatedPilotId);
             Assert.True(metrics.Commands == 0, string.Join(Environment.NewLine, commands));

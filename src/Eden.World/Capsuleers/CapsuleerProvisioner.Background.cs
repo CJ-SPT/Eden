@@ -18,7 +18,7 @@ internal sealed partial class CapsuleerProvisioner
     private TrafficProvisioning.Reservations? _backgroundReservations;
     private long _backgroundIdentityRevision = -1;
 
-    internal CapsuleerProvisioningTurn PrepareBackgroundSystem(
+    internal CapsuleerProvisioningTurn? PrepareBackgroundSystem(
         int system,
         IWorldSynchronization synchronization,
         CancellationToken cancellationToken
@@ -117,42 +117,50 @@ internal sealed partial class CapsuleerProvisioner
         }
         _ = CapsuleerProvisioningCatalog.Mining(catalog, system);
         cancellationToken.ThrowIfCancellationRequested();
-        using (synchronization.Enter("population prepared batch"))
+        using var coordinator = synchronization.TryEnterShared("population prepared batch");
+        if (coordinator is null)
         {
-            try
+            return null;
+        }
+        // A busy region must not hold the persistence coordinator while waiting for its system.
+        using var systems = synchronization.TryEnterSystems("population prepared system", [system]);
+        if (systems is null)
+        {
+            return null;
+        }
+        try
+        {
+            // Re-read reservations after validation: sessions and gate visitors may have committed meanwhile.
+            if (needsShips || needsMiner)
             {
-                // Re-read reservations after validation: sessions and gate visitors may have committed meanwhile.
-                if (needsShips || needsMiner)
-                {
-                    _startupReservations = WorldActionScope.Inspect(database, BackgroundReservations);
-                }
-                _requirePreparedBlueprints = true;
-                CapsuleerProvisioningTurn result;
-                using (database.EnterMovement())
-                {
-                    result = ProvisionPrepared(system, catalog);
-                }
-                // Commit has published the identity revision. The
-                // reservation view already contains this batch's new identity/name.
-                if (_startupReservations is null)
-                {
-                    _backgroundReservations = null;
-                }
-                _backgroundIdentityRevision = LiveWorld.Find(database.Path)?.PopulationIdentityRevision ?? -1;
-                return result;
+                _startupReservations = WorldActionScope.Inspect(database, BackgroundReservations);
             }
-            catch
+            _requirePreparedBlueprints = true;
+            CapsuleerProvisioningTurn result;
+            using (database.EnterMovement())
             {
-                // Founder construction stages reservations before commit. Never retain
-                // those names or exhausted candidate pools after a rolled-back batch.
+                result = ProvisionPrepared(system, catalog);
+            }
+            // Commit has published the identity revision. The
+            // reservation view already contains this batch's new identity/name.
+            if (_startupReservations is null)
+            {
                 _backgroundReservations = null;
-                throw;
             }
-            finally
-            {
-                _startupReservations = null;
-                _requirePreparedBlueprints = false;
-            }
+            _backgroundIdentityRevision = LiveWorld.Find(database.Path)?.PopulationIdentityRevision ?? -1;
+            return result;
+        }
+        catch
+        {
+            // Founder construction stages reservations before commit. Never retain
+            // those names or exhausted candidate pools after a rolled-back batch.
+            _backgroundReservations = null;
+            throw;
+        }
+        finally
+        {
+            _startupReservations = null;
+            _requirePreparedBlueprints = false;
         }
     }
 }

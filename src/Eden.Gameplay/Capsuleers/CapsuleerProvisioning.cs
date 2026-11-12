@@ -47,6 +47,7 @@ public sealed record CapsuleerPreparationProgress(int CompletedSystems, int Tota
 public sealed record CapsuleerBackgroundTurn(CapsuleerPreparationProgress Progress, int? SystemId, bool Complete)
 {
     public string? Failure { get; init; }
+    public bool RetryLater { get; init; }
 }
 
 public interface ICapsuleerBackgroundPreparation

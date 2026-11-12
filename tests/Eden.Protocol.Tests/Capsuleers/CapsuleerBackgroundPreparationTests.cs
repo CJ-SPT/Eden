@@ -7,6 +7,8 @@ using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +20,72 @@ public sealed class CapsuleerBackgroundPreparationTests
     private const int Source = 30000141;
     private const int Third = 31000001;
     private const int Fourth = 31000002;
+
+    [Fact]
+    public async Task BusyRegionPreparationLeavesAnotherAccountsRosterResponsiveAndRetries()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerProvisioningTests.AddSystem(f.Database, Third);
+        PrepareStartup(f);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var activity = host.GetRequiredService<CapsuleerActivitySource>();
+        activity.Update(Guid.NewGuid(), Third);
+        var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
+        var live = host.GetRequiredService<LiveWorld>();
+        var roster = host.GetRequiredService<Eden.Gameplay.Docking.IPilotLookup>();
+        var expected = Assert.Single(roster.ListPilots(1000002));
+        Assert.NotEqual(Third, expected.SystemId);
+
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var system = Task.Run(() =>
+        {
+            using var ownership = live.Enter("paused region entry", Third);
+            entered.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(15)));
+        });
+        Task<CapsuleerBackgroundTurn>? turn = null;
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            turn = Task.Run(() => preparation.PrepareNext());
+            var paused = await turn.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.False(paused.Complete);
+            Assert.True(paused.RetryLater);
+            Assert.Null(paused.Failure);
+            Assert.Equal(Third, paused.SystemId);
+            Assert.Equal(0, paused.Progress.CompletedSystems);
+            Assert.Equal(0, paused.Progress.DeferredSystems);
+            var other = await Task.Run(() => Assert.Single(roster.ListPilots(1000002))).WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(expected.PilotId, other.PilotId);
+            var founderCount = await Task.Run(() => WorldActionScope.Inspect(f.Database, world => world.Set<SavedCapsuleerAgent>().Count()))
+                .WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(0, founderCount);
+        }
+        finally
+        {
+            release.Set();
+            await system;
+            if (turn is not null)
+            {
+                await turn;
+            }
+        }
+
+        var resumed = preparation.PrepareNext();
+        Assert.Equal(Third, resumed.SystemId);
+        Assert.Null(resumed.Failure);
+        Assert.False(resumed.RetryLater);
+        long pilot = WorldActionScope.Inspect(f.Database, world => world.Set<SavedCapsuleerAgent>().Single().PilotId);
+        await live.FlushAsync();
+        string reopenedPath = Path.Combine(Path.GetDirectoryName(f.Database.Path)!, "region-preparation-reopened.sqlite");
+        File.Copy(f.Database.Path, reopenedPath);
+        using WorldDbContext reopened = new(reopenedPath);
+        var founder = Assert.Single(reopened.Set<SavedCapsuleerAgent>());
+        Assert.Equal(Third, founder.CommunitySystemId);
+        Assert.Equal(pilot, founder.PilotId);
+        Assert.Equal(founder.PilotId, Assert.Single(reopened.Set<SavedCapsuleerJob>()).PilotId);
+    }
 
     [Fact]
     public void MinerBlueprintIsPreparedOutsideOwnershipAndFailedNextFounderPreservesIt()

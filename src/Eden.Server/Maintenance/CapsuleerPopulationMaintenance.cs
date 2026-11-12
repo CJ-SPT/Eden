@@ -69,7 +69,7 @@ internal sealed class CapsuleerPopulationMaintenance(
                 }
                 return true;
             }
-            if (clock.GetElapsedTime(started) >= ExecutionBudget)
+            if (turn.RetryLater || clock.GetElapsedTime(started) >= ExecutionBudget)
             {
                 break;
             }

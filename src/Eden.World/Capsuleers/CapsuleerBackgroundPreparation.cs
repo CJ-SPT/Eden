@@ -78,6 +78,10 @@ internal sealed class CapsuleerBackgroundPreparation(
             try
             {
                 var turn = _provisioner.PrepareBackgroundSystem(target, synchronization, cancellationToken);
+                if (turn is null)
+                {
+                    return new(new(_completed, _total, _deferred), target, false) { RetryLater = true };
+                }
                 // Register only this committed community, rather than reloading every saved pilot on the next wake.
                 scheduler.PopulationPrepared(target, turn.CreatedPilotId);
                 if (turn.HasMoreWork)
