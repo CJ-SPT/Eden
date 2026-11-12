@@ -362,13 +362,16 @@ public sealed partial class PilotMissileTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void AutomaticMissilesChooseOnlyAnActualPilotAggressorAndRejectExpiredHostility(bool offline)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void AutomaticMissilesChooseOnlyAnActualPilotAggressorAndRejectExpiredHostility(bool offline, bool resident)
     {
         using var f = Prepare();
         long launcher = MissileCombatTests.Load(f, Launcher, AutomaticCharge);
         var space = Space(f);
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
         Assert.Throws<InvalidDataException>(() => Launch(f, launcher, target: null, locked: false));
         using (WorldDbContext world = new(f.Db.Path))
         {

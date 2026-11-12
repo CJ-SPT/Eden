@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident missile launches and report acknowledgement](protocol/performance.md#resident-missile-launches-and-report-acknowledgement-november-11-2026)
+records atomic volleys, cached fitted missile inputs, cancellation and retryable checkpoint saves.
+
 [Resident tackle transactions and core deadlines](protocol/performance.md#resident-tackle-transactions-and-core-deadlines-november-11-2026)
 records atomic paid repeats, cleanup, exact core expiry and retryable heat/effect checkpoints.
 

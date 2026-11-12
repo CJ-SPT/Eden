@@ -3333,3 +3333,44 @@ Not performed; agent client testing is disabled.
 
 After rebuilding, compare the reported workload with repeated tackle cycles and cancellation; measure owner hold
 time, SQL, fitting calculations and allocation separately from checkpoint work.
+
+## Resident missile launches and report acknowledgement (November 11, 2026)
+
+Pilot missile launch and bank payment, contact reads, impact acknowledgement and cancellation now use the resident
+world. A volley publishes the projectile IDs, rounds, cooldowns, hostility and paid heat as one transaction.
+Target selection declares the source, the explicit target, and, for automatic ammunition, current hostile ships
+and NPCs before importing their state. Unchanged fits share evaluated missile-charge values and the corresponding
+hull defense, targeting range and damage multiplier. Only fits with loaded missiles capture these extra inputs.
+Cold and overloaded volleys use the original graph once. Flight and damage rules are unchanged; see the pinned
+catalog cases and [EVE University missile mechanics](https://wiki.eveuniversity.org/Missile_mechanics).
+
+### Automated validation
+
+Both NPC and pilot target lifecycle cases reproduced SQL on `11fbd0a8` (two failures in 7.57 seconds). After
+conversion both passed in 7.40 seconds, requiring zero commands, connections and fits for warmed payment,
+duplicate rejection, cancellation and contact reads. A real impact report is acknowledged without SQL or repeat
+publication, and the checkpoint before acknowledgement retains the pending report.
+
+The expanded boundary selection passed **14 cases in 16.20 seconds**, including automatic acquisition and
+expired hostility through both resident and offline paths. A rejection on the second launcher discards the first
+member's private changes. An injected failure on the second projectile rolls back the detached save image;
+retry projects the full volley with its rounds, deadlines, crimewatch and heat. The offline SQL rejection check
+still verifies failed heat insertion during a bank transaction.
+
+All **351 affected missile, fitting, bot-defense, combat, ownership and checkpoint tests passed in 2m22s**.
+The solution build passed without warnings in **0.92 seconds** after the feature build. Tool/solution restore,
+both Python policy suites (8 catalog and 9 formatting checks), formatting verification (1,946 files) and line-width checks passed.
+
+Closing filters/results are recorded under `artifacts/bot-resident-missile-launch`.
+No full .NET suite was run. Player and NPC missile advancement, NPC missile launch, pilot loss, burnout and
+other maintenance still retain SQL paths. The installed-world workload has not been replayed and no live
+latency or supported-population increase is claimed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After rebuilding, compare launch and cancellation counts during a missile-heavy encounter, separating them from
+flight advancement, settlement and checkpoint work.

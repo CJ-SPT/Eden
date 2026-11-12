@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.World.Storage;
 
 namespace Eden.World.Fittings;
@@ -9,10 +11,45 @@ internal readonly record struct FitCacheKey(long PilotId, long ShipId, long Item
 
 internal sealed record FitCacheEntry(string Revision, FrozenDictionary<DogmaAttributeId, double> Values);
 
+internal sealed record MissileFittingSnapshot(
+    FrozenDictionary<long, FrozenDictionary<DogmaAttributeId, double>> Charges,
+    HullDefense Defense,
+    double MaximumTargetRange,
+    double DamageMultiplier
+);
+
 internal sealed record FittingSnapshot(
     FrozenDictionary<long, FrozenDictionary<DogmaAttributeId, double>> Modules,
-    IReadOnlyList<Eden.Gameplay.Inventory.FittingSkillBonus> SkillBonuses
-);
+    IReadOnlyList<FittingSkillBonus> SkillBonuses,
+    MissileFittingSnapshot? Missiles
+)
+{
+    internal static FittingSnapshot Capture(
+        DogmaGraph graph,
+        long pilot,
+        long ship,
+        IReadOnlyList<FittingLocation> modules,
+        IReadOnlyList<FittingLocation> charges,
+        FittingSkillBonus[] bonuses
+    )
+    {
+        var missiles = charges
+            .Where(charge => MissileDefinitions.ChargeGroups.Contains(charge.GroupId))
+            .ToFrozenDictionary(charge => charge.Item.Id, charge => graph.Attributes(charge.Item.Id).ToFrozenDictionary());
+        return new(
+            modules.ToFrozenDictionary(module => module.Item.Id, module => graph.Attributes(module.Item.Id).ToFrozenDictionary()),
+            Array.AsReadOnly(bonuses),
+            missiles.Count == 0
+                ? null
+                : new(
+                    missiles,
+                    ShipHealth.DefenseFrom(graph.Attributes(ship)),
+                    graph.Read(ship, DogmaAttributeId.MaxTargetRange),
+                    graph.Read(pilot, DogmaAttributeId.MissileDamageMultiplier)
+                )
+        );
+    }
+}
 
 internal sealed record FittingSnapshotEntry(string Revision, FittingSnapshot Snapshot);
 

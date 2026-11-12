@@ -169,19 +169,26 @@ public sealed class MissileHeatTests
     [Theory]
     [InlineData("skill")]
     [InlineData("empty")]
+    [InlineData("cooldown")]
     [InlineData("heat-write")]
     public void RejectedBankPreservesEveryMagazineCooldownAndHeatSource(string rejection)
     {
         using var f = Prepare(trained: rejection != "skill");
         var bank = LoadBank(f);
         var npc = MissileCombatTests.Space(f);
-        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using LiveWorld? live = rejection == "heat-write" ? null : new(new(f.Db.Path), f.Clock, _ => { });
         var ammo = f.Db.Services.GetRequiredService<IPilotAmmunition>();
         var heat = f.Db.Services.GetRequiredService<IPilotShipHeat>();
         if (rejection == "empty")
         {
             using WorldDbContext world = new(f.Db.Path);
             world.Set<OwnedItem>().Where(i => i.LocationId == bank[1]).ExecuteDelete();
+        }
+        if (rejection == "cooldown")
+        {
+            using WorldDbContext world = new(f.Db.Path);
+            world.Set<ModuleCooldown>().Find(bank[1])!.ReadyAt = f.Clock.Now + TimeSpan.TicksPerSecond;
+            world.SaveChanges();
         }
         if (rejection == "heat-write")
         {
@@ -213,6 +220,63 @@ public sealed class MissileHeatTests
         }
         Assert.Equal(magazines.ToArray(), ammo.Read(f.PilotId, f.ShipId).ToArray());
         Assert.True(heat.Read(f.PilotId, f.ShipId, f.Clock.Now).Idle);
+    }
+
+    [Fact]
+    public void ResidentBankCheckpointFailureRetainsTheWholePaidVolleyForRetry()
+    {
+        using var f = Prepare();
+        var bank = LoadBank(f);
+        long ship = f.ShipId;
+        var npc = MissileCombatTests.Space(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var volley = Pay(f, bank[0], npc.Id);
+        var missiles = MissileCombatTests.Missiles(f);
+        var heat = f.Db.Services.GetRequiredService<IPilotShipHeat>();
+        var paid = heat.Read(f.PilotId, ship, f.Clock.Now);
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        using (WorldDbContext before = new(checkpoint.Database))
+        {
+            before.Database.ExecuteSqlRaw(
+                """
+                CREATE TRIGGER RejectSecondProjectile BEFORE INSERT ON WorldMissile
+                WHEN EXISTS (SELECT 1 FROM WorldMissile)
+                BEGIN SELECT RAISE(ABORT,'checkpoint volley'); END
+                """
+            );
+        }
+        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => checkpoint.Project());
+        Assert.Equal(volley.Select(launch => launch.Projectile.Id), missiles.List(npc.SystemId).Select(row => row.Id));
+        Assert.True(HeatCycleRules.SameState(paid, heat.Read(f.PilotId, ship, f.Clock.Now)));
+        using (WorldDbContext failed = new(checkpoint.Database))
+        {
+            Assert.Empty(failed.Set<WorldMissile>());
+            Assert.Empty(failed.Set<SavedShipHeat>());
+            Assert.Empty(failed.Set<SavedCrimewatch>());
+            foreach (long module in bank)
+            {
+                Assert.Equal(3, failed.Set<OwnedItem>().Single(row => row.LocationId == module).Quantity);
+                Assert.Equal(ModuleCooldownKind.Reload, failed.Set<ModuleCooldown>().Find(module)!.Kind);
+            }
+            failed.Database.ExecuteSqlRaw("DROP TRIGGER RejectSecondProjectile");
+        }
+        checkpoint.Project();
+        using WorldDbContext reopened = new(checkpoint.Database);
+        Assert.Equal(
+            volley.Select(launch => launch.Projectile.Id),
+            reopened.Set<WorldMissile>().OrderBy(row => row.Id).Select(row => row.Id)
+        );
+        Assert.True(HeatCycleRules.SameState(paid, ShipHeatPersistence.Decode(reopened.Set<SavedShipHeat>().Find(ship)!.StateJson)));
+        Assert.NotEmpty(reopened.Set<SavedCrimewatch>());
+        foreach (var launch in volley)
+        {
+            long module = launch.Launcher.ItemId;
+            Assert.Equal(launch.Magazine.Quantity, reopened.Set<OwnedItem>().Single(row => row.LocationId == module).Quantity);
+            Assert.Equal(
+                paid.Cycles.Single(cycle => cycle.ModuleId == module).CompletesAt,
+                reopened.Set<ModuleCooldown>().Find(module)!.ReadyAt
+            );
+        }
     }
 
     [Theory]

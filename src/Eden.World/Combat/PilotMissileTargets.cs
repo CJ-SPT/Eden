@@ -9,6 +9,7 @@ using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Fittings;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,9 +17,9 @@ namespace Eden.World.Combat;
 
 internal sealed partial class PilotMissileStore
 {
-    private static Pilot? FindVictim(WorldDbContext world, CatalogDbContext catalog, int system, long shipId, long now)
+    private static Pilot? FindVictim(WorldAction world, CatalogDbContext catalog, int system, long shipId, long now)
     {
-        var victim = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == shipId);
+        var victim = world.Pilots.SingleOrDefault(p => p.ActiveShipId == shipId);
         if (
             victim?.ActiveShip.Position is null
             || CrimewatchPersistence.System(catalog, victim.ActiveShip) != system
@@ -31,7 +32,7 @@ internal sealed partial class PilotMissileStore
         return victim;
     }
 
-    private PilotCombatPresence? FindContact(WorldDbContext world, Pilot pilot, int system, long now)
+    private PilotCombatPresence? FindContact(WorldAction world, Pilot pilot, int system, long now)
     {
         long shipId = pilot.ActiveShipId;
         if (presence.FindOnline(system, shipId) is { } online)
@@ -52,7 +53,7 @@ internal sealed partial class PilotMissileStore
             : null;
     }
 
-    private static Pilot? AutomaticVictim(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long shipId, int system, long now)
+    private static Pilot? AutomaticVictim(WorldAction world, CatalogDbContext catalog, Pilot pilot, long shipId, int system, long now)
     {
         var victim = FindVictim(world, catalog, system, shipId, now);
         if (victim is null || victim.Id == pilot.Id)

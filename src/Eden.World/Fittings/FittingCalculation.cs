@@ -614,10 +614,7 @@ internal sealed partial record FittingCalculation(
                 pilot.Id,
                 ship.Id,
                 revision,
-                new(
-                    modules.ToFrozenDictionary(m => m.Item.Id, m => graph.Attributes(m.Item.Id).ToFrozenDictionary()),
-                    Array.AsReadOnly(bonuses)
-                )
+                FittingSnapshot.Capture(graph, pilot.Id, ship.Id, modules, charges, bonuses)
             );
         }
         return new(graph, ship.Id, pilot.Id, modules, bonuses, charges, levels)

@@ -179,12 +179,15 @@ public sealed class MissileCombatTests
         Assert.Equal(2, Assert.Single(Ammo(f).Read(f.PilotId, f.ShipId)).Quantity);
     }
 
-    [Fact]
-    public void AutomaticMissilesSelectOnlyActualAggressorsWithoutALock()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AutomaticMissilesSelectOnlyActualAggressorsWithoutALock(bool resident)
     {
         using Fixture f = Prepare(LightLauncher, 269);
         long launcher = Load(f, LightLauncher, 269);
         var npc = Space(f);
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
         var firing = new MissileFiringState(SpacePosition.Zero, 295, new(0, 0, -1), 42);
         Assert.Throws<InvalidDataException>(() =>
             Missiles(f).Launch(f.PilotId, launcher, npc.Id, new HashSet<long>(), firing, f.Clock.Now)
