@@ -3509,3 +3509,52 @@ Not performed; agent client testing is disabled.
 
 Replay the installed-world workload with the updated build and compare warmed SQL counts, world-owner wait time,
 and checkpoint cost.
+
+## Resident economy memory, November 12, 2026
+
+Startup hydrates the resident economy from the saved SQLite image. The resident tables retain the original SQLite
+value only while a row differs from it. Reverting a change removes its pending projection. Projecting or observing
+a committed SQL change updates the baseline, and an earlier checkpoint keeps its captured values. Items, market
+orders and asteroids use their integer primary keys as SQLite row IDs. Skill lookups retain the pilot index and
+direct composite-key lookups. Asteroid lookups retain the belt and system indexes and use the primary map for IDs.
+
+### Automated validation
+
+An isolated startup probe used fresh copies of the same installed 376 MiB save and catalog with server GC and a
+fixed clock. The baseline was `84c3f4cf`. The save contained 2,377,385 skill rows and 1,460,535 asteroid rows.
+The probe collected before sampling retained memory and working set. It opened no listeners or game client.
+
+| Measurement | Baseline | Updated |
+| --- | ---: | ---: |
+| Managed memory after economy hydration | 2,165.4 MiB | 1,341.7 MiB |
+| Working set after catalog preload | 3,473.4 MiB | 2,565.3 MiB |
+| Working set while holding the detached checkpoint | 3,899.7 MiB | 2,969.4 MiB |
+| Economy hydration | 7.25 s | 6.72 s |
+| Detached checkpoint copy | 227.7 ms | 157.5 ms |
+| Save file write | 1,323.8 ms | 1,270.1 ms |
+
+Both checkpoint images contained 375.71 MiB of SQLite pages. Four hundred paired skill and asteroid reads
+returned 59,700 rows in both runs with zero SQL commands, connection opens or fitting calculations. Median
+time per batch of 40 paired reads was 10.64 ms on the baseline and 5.83 ms after the change.
+
+The complete session replay ran 30 warmed combat frames with four players and eight NPCs in both revisions.
+Median frame time was 4.45 / 4.42 ms and p95 was 6.24 / 5.49 ms, baseline / updated. Every measured frame used
+zero SQL commands, connection opens or fitting calculations. The four checkpoints per run measured relational
+copy at 0.38–0.44 / 0.36–0.47 ms and file write at 12.61–16.26 / 11.69–15.64 ms. The local probes cover saved-world
+hydration, targeted warmed reads, checkpoints and fixture sessions. Live multiplayer latency remains unmeasured.
+
+The solution built without warnings. The exact regression
+`ResidentEconomyTests.ResidentRowsTrackReversionsAndUseCommittedSqlRowIdsAfterProjection` passed in 3.85 seconds.
+The focused xUnit run passed 164 of 169 cases in 68.84 seconds. The five failures reproduced on the baseline in
+17 seconds across two cold system isolation cases, two resident belt renewal SQL budgets and the regional payment
+rollback fixture. Both Python policy suites, repository CSharpier checks and line-width checks passed. The sandbox
+blocked the standard VSTest and .NET format style process connections. The focused tests ran through xUnit
+in-process. No full .NET suite ran.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare working set and private memory on the administration Performance page after startup and during a save.

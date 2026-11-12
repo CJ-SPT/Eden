@@ -158,6 +158,72 @@ public sealed class ResidentEconomyTests
         Assert.True(live.Economy.Capture().Count > 0);
     }
 
+    [Fact]
+    public async Task ResidentRowsTrackReversionsAndUseCommittedSqlRowIdsAfterProjection()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        long itemId = InventoryDefinitions.FirstOwnedItemId + 10000;
+        using (WorldDbContext world = new(fixture.Database.Path))
+        {
+            world.Add(
+                new OwnedItem
+                {
+                    Id = itemId,
+                    OwnerId = Human,
+                    TypeId = Ammunition,
+                    LocationId = Station,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 10,
+                }
+            );
+            world.SaveChanges();
+        }
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        var items = live.Economy.Mappings[typeof(OwnedItem)];
+        SetQuantity(15);
+        using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        Assert.Equal(1, items.Capture().Count);
+        SetQuantity(10);
+        Assert.False(items.HasChanges);
+
+        SetQuantity(20);
+        using (WorldDbContext world = new(fixture.Database.Path))
+        {
+            Assert.Equal(20, world.Set<OwnedItem>().Where(item => item.Id == itemId).Select(item => item.Quantity).Single());
+            world.Set<OwnedItem>().Where(item => item.Id == itemId).ExecuteUpdate(update => update.SetProperty(item => item.Quantity, 25));
+        }
+        Assert.False(items.HasChanges);
+        using (var read = live.Economy.Begin())
+        {
+            Assert.Equal(25, read.Set<OwnedItem>().Find(itemId)!.Quantity);
+        }
+        snapshot.Project();
+        using (WorldDbContext earlier = new(snapshot.Database))
+        {
+            Assert.Equal(15, earlier.Set<OwnedItem>().Find(itemId)!.Quantity);
+        }
+        using (WorldDbContext world = new(fixture.Database.Path))
+        {
+            world.Set<OwnedItem>().Where(item => item.Id == itemId).ExecuteDelete();
+        }
+        using (var read = live.Economy.Begin())
+        {
+            Assert.Null(read.Set<OwnedItem>().Find(itemId));
+        }
+        await live.FlushAsync();
+        using SqliteConnection disk = new($"Data Source={fixture.Database.Path};Mode=ReadOnly;Pooling=False");
+        using WorldDbContext saved = new(disk);
+        Assert.Null(saved.Set<OwnedItem>().Find(itemId));
+
+        void SetQuantity(int quantity)
+        {
+            using var action = live.Economy.Begin();
+            action.Set<OwnedItem>().Find(itemId)!.Quantity = quantity;
+            action.Commit();
+        }
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(4)]

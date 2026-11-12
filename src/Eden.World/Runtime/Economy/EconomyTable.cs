@@ -77,13 +77,19 @@ internal sealed class EconomyTable<TRow, TState>(
     Func<TState, TState, bool>? equal = null,
     IReadOnlyList<EconomyIndex<TState>>? indexes = null,
     Action<TState?, TState?>? changed = null,
-    string? primaryColumn = "Id"
+    string? primaryColumn = "Id",
+    bool rowIdIsKey = false
 ) : IEconomyTable<TRow>
     where TRow : class
     where TState : class
 {
     private readonly Dictionary<EconomyKey, TState> _rows = [];
-    private readonly Dictionary<EconomyKey, TState> _sql = [];
+
+    // Keep the SQLite baseline only until a resident change is projected or reverted.
+    private readonly Dictionary<EconomyKey, TState?> _sqlBaselines = [];
+
+    // INTEGER PRIMARY KEY tables can use SQLite's update-hook row ID directly.
+    private readonly Dictionary<long, EconomyKey>? _rowIds = rowIdIsKey ? null : [];
     private readonly Dictionary<string, EconomyIndex<TState>> _indexes = (indexes ?? []).ToDictionary(i => i.Name);
 
     internal IEnumerable<EconomyKey> Matching(Expression<Func<TRow, bool>> predicate)
@@ -121,7 +127,7 @@ internal sealed class EconomyTable<TRow, TState>(
         return _indexes.TryGetValue(column, out var index) ? index.Find(value) : null;
     }
 
-    private void Replace(EconomyKey id, TState? state)
+    private TState? Replace(EconomyKey id, TState? state)
     {
         _rows.TryGetValue(id, out var before);
         if (state is null)
@@ -150,13 +156,12 @@ internal sealed class EconomyTable<TRow, TState>(
             }
         }
         changed?.Invoke(before, state);
+        return before;
     }
 
-    private readonly HashSet<EconomyKey> _dirty = [];
-    private readonly Dictionary<long, EconomyKey> _rowIds = [];
     internal string Name => name;
     string IEconomyTable.Name => name;
-    public bool HasChanges => _dirty.Count != 0;
+    public bool HasChanges => _sqlBaselines.Count != 0;
     public IReadOnlyList<string> Columns => columns.Split(',');
     internal IEnumerable<EconomyKey> Keys => _rows.Keys;
 
@@ -191,14 +196,15 @@ internal sealed class EconomyTable<TRow, TState>(
 
     internal void Publish(EconomyKey id, TState? state)
     {
-        Replace(id, state);
-        if (Same(_sql.GetValueOrDefault(id), state))
+        var before = Replace(id, state);
+        bool dirty = _sqlBaselines.TryGetValue(id, out var saved);
+        if (Same(dirty ? saved : before, state))
         {
-            _dirty.Remove(id);
+            _sqlBaselines.Remove(id);
         }
-        else
+        else if (!dirty)
         {
-            _dirty.Add(id);
+            _sqlBaselines.Add(id, before);
         }
     }
 
@@ -209,9 +215,8 @@ internal sealed class EconomyTable<TRow, TState>(
         {
             index.Clear();
         }
-        _sql.Clear();
-        _dirty.Clear();
-        _rowIds.Clear();
+        _sqlBaselines.Clear();
+        _rowIds?.Clear();
         ReadRows(world, null);
     }
 
@@ -234,10 +239,15 @@ internal sealed class EconomyTable<TRow, TState>(
         {
             var state = read(reader);
             var id = stateKey(state);
-            _rowIds[reader.GetInt64(0)] = id;
+            if (_rowIds is not null)
+            {
+                _rowIds[reader.GetInt64(0)] = id;
+            }
             Replace(id, state);
-            _sql[id] = state;
-            _dirty.Remove(id);
+            if (_sqlBaselines.Count != 0)
+            {
+                _sqlBaselines.Remove(id);
+            }
         }
         SessionPerformance.DatabaseElapsed(Stopwatch.GetElapsedTime(started));
     }
@@ -246,39 +256,48 @@ internal sealed class EconomyTable<TRow, TState>(
     {
         foreach (long rowId in rowIds)
         {
-            if (_rowIds.Remove(rowId, out var id))
+            EconomyKey id = new(rowId);
+            if (_rowIds is null || _rowIds.Remove(rowId, out id))
             {
                 Replace(id, null);
-                _sql.Remove(id);
-                _dirty.Remove(id);
+                _sqlBaselines.Remove(id);
             }
         }
         ReadRows(world, rowIds);
     }
 
     public IEconomyProjection Capture() =>
-        new EconomyProjection<TState>(_dirty.Select(id => new EconomyChange<TState>(id, _rows.GetValueOrDefault(id))).ToArray(), project);
+        new EconomyProjection<TState>(
+            _sqlBaselines.Keys.Select(id => new EconomyChange<TState>(id, _rows.GetValueOrDefault(id))).ToArray(),
+            project
+        );
 
     public void Projected(WorldDbContext world, IEconomyProjection projection)
     {
-        foreach (var change in ((EconomyProjection<TState>)projection).Rows)
+        var rows = ((EconomyProjection<TState>)projection).Rows;
+        foreach (var change in rows)
         {
-            if (change.Value is null)
+            if (_rowIds is not null)
             {
-                _sql.Remove(change.Key);
-                _rowIds.Remove(change.Key.Id);
-            }
-            else
-            {
-                _sql[change.Key] = change.Value;
-                _rowIds[change.Key.Id] = change.Key;
+                if (change.Value is null)
+                {
+                    _rowIds.Remove(change.Key.Id);
+                }
+                else
+                {
+                    _rowIds[change.Key.Id] = change.Key;
+                }
             }
             if (Same(change.Key, change.Value))
             {
-                _dirty.Remove(change.Key);
+                _sqlBaselines.Remove(change.Key);
+            }
+            else
+            {
+                _sqlBaselines[change.Key] = change.Value;
             }
         }
-        if (((EconomyProjection<TState>)projection).Rows.Any(c => c.Key.Name is not null || c.Key.Part != 0))
+        if (_rowIds is not null && rows.Any(c => c.Key.Name is not null || c.Key.Part != 0))
         {
             _rowIds.Clear();
             ReadRows(world, null);

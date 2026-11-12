@@ -1083,7 +1083,8 @@ internal sealed partial class ResidentEconomy
                 state => new(state.Id),
                 readOnly: false,
                 indexes: [new("OwnerId", row => row.OwnerId), new("TypeId", row => row.TypeId), new("LocationId", row => row.LocationId)],
-                primaryColumn: "Id"
+                primaryColumn: "Id",
+                rowIdIsKey: true
             )
         );
         Register(
@@ -1182,7 +1183,8 @@ internal sealed partial class ResidentEconomy
                     new("TypeId", row => row.TypeId),
                     new(nameof(NpcMarketAssortment), row => new NpcMarketAssortment(row.StationId, row.TypeId, row.Bid, row.Kind)),
                 ],
-                primaryColumn: "Id"
+                primaryColumn: "Id",
+                rowIdIsKey: true
             )
         );
         Register(
@@ -1505,7 +1507,7 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.GetInt64(3)),
                 state => new(state.PilotId, state.TypeId),
                 readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId), new("TypeId", row => row.TypeId)],
+                indexes: [new("PilotId", row => row.PilotId)],
                 primaryColumn: null
             )
         );

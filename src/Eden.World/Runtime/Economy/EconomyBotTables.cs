@@ -2538,14 +2538,9 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(9)
                     ),
                 state => new(state.Id),
-                indexes:
-                [
-                    new("Id", row => row.Id),
-                    new("BeltId", row => row.BeltId),
-                    new("SystemId", row => row.SystemId),
-                    new("TypeId", row => row.TypeId),
-                ],
-                primaryColumn: "Id"
+                indexes: [new("BeltId", row => row.BeltId), new("SystemId", row => row.SystemId)],
+                primaryColumn: "Id",
+                rowIdIsKey: true
             )
         );
         Register(
