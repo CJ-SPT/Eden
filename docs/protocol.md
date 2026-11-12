@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Concurrent account login](protocol/startup.md#concurrent-account-login-november-12-2026)
+records character-roster ownership and durable launch tickets under concurrent login.
+
 [Resident missile impacts, drone commands and NPC population](protocol/performance.md#resident-missile-impacts-drone-commands-and-npc-population-november-11-2026)
 records outgoing combat settlement, clone and training checkpoints, and regional population deadlines.
 

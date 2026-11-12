@@ -20,7 +20,7 @@ namespace Eden.Protocol.Tests.Hosting;
 public sealed class ServerServicesTests
 {
     [Fact]
-    public void LauncherTicketsUseTheHostClockAndIdentity()
+    public async Task LauncherTicketsUseTheHostClockAndIdentity()
     {
         TestClock clock = new();
         using TestWorld world = new(clock: clock);
@@ -33,13 +33,13 @@ public sealed class ServerServicesTests
         var account = accounts.Register(new("Launcher Integration", password));
         var session = accounts.SignIn(new("Launcher Integration", password, false));
         var identity = services.GetRequiredService<ILoginIdentity>();
-        string ticket = accounts.IssueTicket(session.AccessToken);
-        Assert.Equal(account.AccountId, identity.ValidateTicket(ticket));
-        Assert.Null(identity.ValidateTicket(ticket));
+        string ticket = await accounts.IssueTicketAsync(session.AccessToken);
+        Assert.Equal(account.AccountId, await identity.ValidateTicketAsync(ticket, CancellationToken.None));
+        Assert.Null(await identity.ValidateTicketAsync(ticket, CancellationToken.None));
         Assert.Equal((long)PilotRole.Player, identity.ReadRoles(account.AccountId));
-        string expired = accounts.IssueTicket(session.AccessToken);
+        string expired = await accounts.IssueTicketAsync(session.AccessToken);
         clock.AdvanceWallTime(TimeSpan.FromSeconds(LauncherStore.TicketSeconds));
-        Assert.Null(identity.ValidateTicket(expired));
+        Assert.Null(await identity.ValidateTicketAsync(expired, CancellationToken.None));
     }
 
     [Fact]

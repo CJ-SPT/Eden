@@ -28,7 +28,7 @@ public sealed class LauncherCleanupTests
         store.Initialize();
         store.Register(new("Cleanup pilot", Password));
         var session = store.SignIn(new("Cleanup pilot", Password, true));
-        store.IssueTicket(session.AccessToken);
+        await store.IssueTicketAsync(session.AccessToken);
         var rotated = await Task.Run(() => store.Refresh(session.RefreshToken!));
         clock.Seconds = LauncherStore.TicketSeconds;
         Assert.Equal(new LauncherCleanup(1, 0, 0), store.CleanupExpired());
@@ -43,7 +43,7 @@ public sealed class LauncherCleanupTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void InitializationRemovesExpiredFamiliesAndRetainsActiveSessionsAcrossReopen(bool resident)
+    public async Task InitializationRemovesExpiredFamiliesAndRetainsActiveSessionsAcrossReopen(bool resident)
     {
         TestClock clock = new();
         using TestWorld world = new(clock: clock, liveWorld: resident);
@@ -51,7 +51,7 @@ public sealed class LauncherCleanupTests
         store.Initialize();
         store.Register(new("Reopen pilot", Password));
         var old = store.SignIn(new("Reopen pilot", Password, true));
-        store.IssueTicket(old.AccessToken);
+        await store.IssueTicketAsync(old.AccessToken);
         clock.AdvanceWallTime(TimeSpan.FromDays(31));
         var current = store.SignIn(new("Reopen pilot", Password, true));
         world.Services.Dispose();
@@ -61,7 +61,7 @@ public sealed class LauncherCleanupTests
         Assert.Equal(1, Count(world.Path, "LauncherSession"));
         Assert.Equal(1, Count(world.Path, "LauncherRefresh"));
         Assert.Equal(0, Count(world.Path, "LauncherTicket"));
-        Assert.NotNull(reopened.IssueTicket(current.AccessToken));
+        Assert.NotNull(await reopened.IssueTicketAsync(current.AccessToken));
         Assert.Equal(2, Count(world.Path, "WorldPilot"));
     }
 

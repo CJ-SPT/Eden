@@ -111,7 +111,7 @@ internal static class LauncherApi
         );
         app.MapPost(
                 "/api/v1/launch-tickets",
-                (LaunchRequest request, HttpContext context) =>
+                async (LaunchRequest request, HttpContext context) =>
                 {
                     if (request.Build != CompatibilityHandshake.Build)
                     {
@@ -135,7 +135,7 @@ internal static class LauncherApi
                     }
                     accounts.AuthorizeAccess(Access(context));
                     byte[] manifest = identity.SignManifest(request.ManifestPrefix, request.ChatBundleSha256, package?.CodeSha256);
-                    string ticket = accounts.IssueTicket(Access(context));
+                    string ticket = await accounts.IssueTicketAsync(Access(context), context.RequestAborted);
                     return new LaunchReply(
                         ticket,
                         clock.GetUtcNow().ToUnixTimeSeconds() + LauncherStore.TicketSeconds,

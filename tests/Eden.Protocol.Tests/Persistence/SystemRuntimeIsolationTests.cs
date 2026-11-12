@@ -98,6 +98,46 @@ public sealed class SystemRuntimeIsolationTests
     }
 
     [Fact]
+    public async Task ConcurrentAccountRostersDoNotWaitForAnUnrelatedSystem()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        var first = Assert.Single(fixture.Store.ListPilots(1000001));
+        var second = Assert.Single(fixture.Store.ListPilots(1000002));
+        Assert.NotEqual(LocalSystem, first.SystemId);
+        Assert.NotEqual(LocalSystem, second.SystemId);
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var unrelated = Task.Run(() =>
+        {
+            using var ownership = live.Enter("paused unrelated system", LocalSystem);
+            entered.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(15)));
+        });
+        Task<DockedPilot[]>? rosters = null;
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+            rosters = Task.WhenAll(
+                Task.Run(() => Assert.Single(fixture.Store.ListPilots(1000001))),
+                Task.Run(() => Assert.Single(fixture.Store.ListPilots(1000002)))
+            );
+            var loaded = await rosters.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(first.PilotId, loaded[0].PilotId);
+            Assert.Equal(second.PilotId, loaded[1].PilotId);
+        }
+        finally
+        {
+            release.Set();
+            await unrelated;
+            if (rosters is not null)
+            {
+                await rosters;
+            }
+        }
+    }
+
+    [Fact]
     public async Task ColdAsteroidReadDoesNotAcquireAnUnrelatedSystem()
     {
         using TestWorld fixture = new(liveWorld: true);

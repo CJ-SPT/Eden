@@ -404,7 +404,7 @@ internal static partial class WorldConnections
             return Task.CompletedTask;
         }
 
-        public override void Close()
+        private void CloseConnection()
         {
             try
             {
@@ -439,17 +439,20 @@ internal static partial class WorldConnections
                     }
                 }
             }
-            if (DurableOnClose)
-            {
-                DurableOnClose = false;
-                world.FlushAsync().GetAwaiter().GetResult();
-            }
         }
+
+        public override void Close() => CloseAsync().GetAwaiter().GetResult();
 
         public override Task CloseAsync()
         {
-            Close();
-            return Task.CompletedTask;
+            // Release the thread-affine connection and system leases before awaiting durability.
+            CloseConnection();
+            if (!DurableOnClose)
+            {
+                return Task.CompletedTask;
+            }
+            DurableOnClose = false;
+            return world.FlushAsync();
         }
 
         protected override void Dispose(bool disposing)

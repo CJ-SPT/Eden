@@ -32,7 +32,7 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session, S
 
         EncryptedPackets packets = new(stream, aes, cancellationToken);
         var credentials = LoginCredentials.Read(await packets.ReadAsync());
-        if (identity.ValidateTicket(credentials.Ticket) is not long accountId)
+        if (await identity.ValidateTicketAsync(credentials.Ticket, cancellationToken) is not long accountId)
         {
             throw new InvalidDataException("Invalid or expired local login ticket.");
         }

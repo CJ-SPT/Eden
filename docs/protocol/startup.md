@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Concurrent account login (November 12, 2026)](#concurrent-account-login-november-12-2026)
 - [Launcher Omega account default (November 4, 2026)](#launcher-omega-account-default-november-4-2026)
 - [Launcher accounts and developer roles](#launcher-accounts-and-developer-roles)
 - [Startup exchange](#startup-exchange)
@@ -19,6 +20,34 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Two pilots in Jita, November 2, 2026](#two-pilots-in-jita-november-2-2026)
 - [Character logoff to selection, November 4, 2026](#character-logoff-to-selection-november-4-2026)
 - [Client-requested exit logging, November 4, 2026](#client-requested-exit-logging-november-4-2026)
+
+## Concurrent account login (November 12, 2026)
+
+Character-roster snapshots identify the pilot whose state they read. Previously each snapshot acquired the world
+persistence owner and then waited for every resident system. One unrelated system could hold up concurrent rosters
+and other persistence work. A paused system reproduced the roster timeout before the change. Both accounts loaded
+their own pilots while that same system remained paused after the change.
+
+Launcher ticket issuance and redemption release SQLite ownership before asynchronously waiting for the world checkpoint.
+The HTTP response and encrypted login still require durable ticket changes. A test pauses the first checkpoint write,
+consumes tickets for two accounts, rejects both replays immediately, and verifies both deletions on disk after release.
+
+**Automated validation.** The solution built in 27.69 seconds with zero warnings or errors. The two exact regressions
+passed in 3.85 seconds. Direct invocation of the affected launcher, login, hosting and persistence tests passed 69 cases
+in a 21.98-second run. Seven socket cases were blocked by Windows permissions. VSTest could not connect to its host.
+The catalog and formatting policy suites passed eight and nine cases. CSharpier and the line-width check passed.
+The .NET style command could not open its build-host named pipe. Restore used cached packages with NuGet audit disabled.
+
+After rebasing onto `76fdd8df`, the solution built in 26.86 seconds with zero warnings or errors. A direct run passed
+73 cases in 22.79 seconds. The selection included `ClientManifestTests`, `DeveloperAccountTests`, `LauncherAccountTests`,
+`LauncherCleanupTests`, `PasswordConcurrencyTests`, `LiveWorldTests`, and `SystemRuntimeIsolationTests`, plus
+`AccountRemainsOccupiedThroughoutScopeCleanup`, `LauncherTicketsUseTheHostClockAndIdentity`,
+`SharesWorldAndGateButIsolatesPilotSessions`, `AsyncTransactionProjectsNewResidentPilotBeforeRoutineRows`, and
+`RoutineProjectionPersistsNewResidentFounderBeforeItsDependents`.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Launch two different accounts together and verify both reach character selection.
 
 ## Launcher Omega account default (November 4, 2026)
 

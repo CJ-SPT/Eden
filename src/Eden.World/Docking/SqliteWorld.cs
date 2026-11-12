@@ -202,7 +202,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public DockedPilot? FindPilot(long accountId, long? pilotId = null)
     {
-        using WorldDbContext world = new(_database.Path);
+        using WorldDbContext world = new(_database.Path) { Participants = pilotId is long id ? new(pilots: [id]) : null };
         using var transaction = world.Database.BeginTransaction();
         var result = FindPilot(world, accountId, pilotId);
         if (result is not null)

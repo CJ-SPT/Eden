@@ -5,6 +5,6 @@ namespace Eden.Protocol.PilotSessions;
 public interface ILoginIdentity
 {
     RSA Key { get; }
-    long? ValidateTicket(string ticket);
+    ValueTask<long?> ValidateTicketAsync(string ticket, CancellationToken cancellationToken);
     long ReadRoles(long accountId) => (long)PilotRole.Player;
 }

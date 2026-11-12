@@ -92,7 +92,7 @@ public sealed class LauncherAccountTests
     }
 
     [Fact]
-    public void RefreshRotatesAndReplayRevokesTheFamily()
+    public async Task RefreshRotatesAndReplayRevokesTheFamily()
     {
         using TestWorld world = new();
         var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
@@ -101,15 +101,15 @@ public sealed class LauncherAccountTests
         var first = store.SignIn(new("Remembered", Password, true));
         var second = store.Refresh(first.RefreshToken!);
         Assert.NotEqual(first.AccessToken, second.AccessToken);
-        Assert.Throws<LauncherException>(() => store.IssueTicket(first.AccessToken));
-        Assert.NotNull(store.IssueTicket(second.AccessToken));
+        await Assert.ThrowsAsync<LauncherException>(() => store.IssueTicketAsync(first.AccessToken));
+        Assert.NotNull(await store.IssueTicketAsync(second.AccessToken));
         Assert.Throws<LauncherException>(() => store.Refresh(first.RefreshToken!));
-        Assert.Throws<LauncherException>(() => store.IssueTicket(second.AccessToken));
+        await Assert.ThrowsAsync<LauncherException>(() => store.IssueTicketAsync(second.AccessToken));
         Assert.Throws<LauncherException>(() => store.Refresh(second.RefreshToken!));
     }
 
     [Fact]
-    public void TicketsAreSingleUseBoundToAccountAndRevokedOnSignOut()
+    public async Task TicketsAreSingleUseBoundToAccountAndRevokedOnSignOut()
     {
         using TestWorld world = new();
         var clock = new Clock();
@@ -117,20 +117,20 @@ public sealed class LauncherAccountTests
         store.Initialize();
         var account = store.Register(new("Ticket User", Password));
         var session = store.SignIn(new("Ticket User", Password, true));
-        string ticket = store.IssueTicket(session.AccessToken);
-        Assert.Equal(account.AccountId, store.ConsumeTicket(ticket));
-        Assert.Null(store.ConsumeTicket(ticket));
-        string expired = store.IssueTicket(session.AccessToken);
+        string ticket = await store.IssueTicketAsync(session.AccessToken);
+        Assert.Equal(account.AccountId, await store.ConsumeTicketAsync(ticket));
+        Assert.Null(await store.ConsumeTicketAsync(ticket));
+        string expired = await store.IssueTicketAsync(session.AccessToken);
         clock.Now += TimeSpan.FromSeconds(LauncherStore.TicketSeconds);
-        Assert.Null(store.ConsumeTicket(expired));
-        string revoked = store.IssueTicket(session.AccessToken);
+        Assert.Null(await store.ConsumeTicketAsync(expired));
+        string revoked = await store.IssueTicketAsync(session.AccessToken);
         store.Revoke(session.AccessToken);
-        Assert.Null(store.ConsumeTicket(revoked));
+        Assert.Null(await store.ConsumeTicketAsync(revoked));
         Assert.Throws<LauncherException>(() => store.Refresh(session.RefreshToken!));
     }
 
     [Fact]
-    public void ExpiredAccessAndRefreshAreRejected()
+    public async Task ExpiredAccessAndRefreshAreRejected()
     {
         using TestWorld world = new();
         var clock = new Clock();
@@ -139,7 +139,7 @@ public sealed class LauncherAccountTests
         store.Register(new("Expiring", Password));
         var session = store.SignIn(new("Expiring", Password, true));
         clock.Now += TimeSpan.FromSeconds(LauncherStore.AccessSeconds);
-        Assert.Throws<LauncherException>(() => store.IssueTicket(session.AccessToken));
+        await Assert.ThrowsAsync<LauncherException>(() => store.IssueTicketAsync(session.AccessToken));
         Assert.NotNull(store.Refresh(session.RefreshToken!));
         clock.Now += TimeSpan.FromDays(30);
         Assert.Throws<LauncherException>(() => store.Refresh(session.RefreshToken!));
@@ -162,7 +162,7 @@ public sealed class LauncherAccountTests
     }
 
     [Fact]
-    public void ArbitraryManifestSigningAndImplicitDevelopmentLoginAreRejected()
+    public async Task ArbitraryManifestSigningAndImplicitDevelopmentLoginAreRejected()
     {
         using TestWorld world = new();
         var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
@@ -170,7 +170,7 @@ public sealed class LauncherAccountTests
         using var identity = new DevelopmentIdentity(TimeProvider.System, store, new LauncherOptions());
         Assert.Throws<LauncherException>(() => identity.SignManifest(Convert.ToBase64String(RandomNumberGenerator.GetBytes(17769))));
         Assert.Throws<LauncherException>(() => identity.SignManifest("not base64"));
-        Assert.Null(identity.ValidateTicket("eden2.1000001.1.BAD.BAD"));
+        Assert.Null(await identity.ValidateTicketAsync("eden2.1000001.1.BAD.BAD", CancellationToken.None));
     }
 
     [Theory]
@@ -179,7 +179,7 @@ public sealed class LauncherAccountTests
     [InlineData(6, true)]
     [InlineData(128, true)]
     [InlineData(129, false)]
-    public void PasswordLengthLimitsApplyToRegistrationAndPasswordChanges(int length, bool accepted)
+    public async Task PasswordLengthLimitsApplyToRegistrationAndPasswordChanges(int length, bool accepted)
     {
         using TestWorld world = new();
         var database = new WorldDatabase(world.Path);
@@ -198,7 +198,7 @@ public sealed class LauncherAccountTests
             using WorldDbContext saved = new(world.Path);
             Assert.False(saved.Set<Account>().Any(account => account.UserName == "Length User"));
             Assert.Equal(previous.AccountId, store.SignIn(new("Eden", Password, false)).AccountId);
-            Assert.NotNull(store.IssueTicket(previous.AccessToken));
+            Assert.NotNull(await store.IssueTicketAsync(previous.AccessToken));
             return;
         }
         var account = store.Register(new("Length User", password));
@@ -207,7 +207,7 @@ public sealed class LauncherAccountTests
         reopened.Initialize();
         Assert.Equal(account.AccountId, reopened.SignIn(new("Length User", password, false)).AccountId);
         Assert.Equal(previous.AccountId, reopened.SignIn(new("Eden", password, false)).AccountId);
-        Assert.Throws<LauncherException>(() => reopened.IssueTicket(previous.AccessToken));
+        await Assert.ThrowsAsync<LauncherException>(() => reopened.IssueTicketAsync(previous.AccessToken));
     }
 
     [Theory]

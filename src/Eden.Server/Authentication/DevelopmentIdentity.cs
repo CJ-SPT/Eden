@@ -60,11 +60,11 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
             + Convert.ToHexString(Key.SignData(Encoding.ASCII.GetBytes(claim), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1));
     }
 
-    public long? ValidateTicket(string ticket)
+    public async ValueTask<long?> ValidateTicketAsync(string ticket, CancellationToken cancellationToken)
     {
         if (ticket.StartsWith("eden3.", StringComparison.Ordinal))
         {
-            return accounts.ConsumeTicket(ticket);
+            return await accounts.ConsumeTicketAsync(ticket, cancellationToken);
         }
         if (!options.DevelopmentLogin)
         {

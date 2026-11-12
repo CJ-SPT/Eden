@@ -14,7 +14,8 @@ public sealed class PilotLoginTests
     {
         public RSA Key => key;
 
-        public long? ValidateTicket(string ticket) => ticket == "fixture" ? 1000001 : null;
+        public ValueTask<long?> ValidateTicketAsync(string ticket, CancellationToken cancellationToken) =>
+            ValueTask.FromResult<long?>(ticket == "fixture" ? 1000001 : null);
     }
 
     [Theory]

@@ -233,25 +233,36 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
         Execute(db, null, "UPDATE LauncherSession SET Revoked=1 WHERE AccessHash=$h", ("$h", Hash(access)));
     }
 
-    public string IssueTicket(string access)
+    public async Task<string> IssueTicketAsync(string access, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        string ticket = "eden3." + Token();
         using var db = Open();
-        using var tx = db.BeginTransaction(deferred: false);
-        var session =
-            Scalar(
+        using (var tx = db.BeginTransaction(deferred: false))
+        {
+            var session =
+                Scalar(
+                    db,
+                    tx,
+                    """
+                    SELECT Id FROM LauncherSession WHERE AccessHash=$h AND AccessExpires>$now AND Revoked=0 AND Expires>$now
+                    """,
+                    ("$h", Hash(access)),
+                    ("$now", Now)
+                ) as string
+                ?? throw Unauthorized();
+            Execute(db, tx, "DELETE FROM LauncherTicket WHERE Expires<=$now", ("$now", Now));
+            Execute(
                 db,
                 tx,
-                """
-                SELECT Id FROM LauncherSession WHERE AccessHash=$h AND AccessExpires>$now AND Revoked=0 AND Expires>$now
-                """,
-                ("$h", Hash(access)),
-                ("$now", Now)
-            ) as string
-            ?? throw Unauthorized();
-        string ticket = "eden3." + Token();
-        Execute(db, tx, "DELETE FROM LauncherTicket WHERE Expires<=$now", ("$now", Now));
-        Execute(db, tx, "INSERT INTO LauncherTicket VALUES($h,$s,$e)", ("$h", Hash(ticket)), ("$s", session), ("$e", Now + TicketSeconds));
-        tx.Commit();
+                "INSERT INTO LauncherTicket VALUES($h,$s,$e)",
+                ("$h", Hash(ticket)),
+                ("$s", session),
+                ("$e", Now + TicketSeconds)
+            );
+            tx.Commit();
+        }
+        await db.CloseAsync().WaitAsync(cancellationToken);
         return ticket;
     }
 
@@ -273,22 +284,28 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
         }
     }
 
-    public long? ConsumeTicket(string ticket)
+    public async Task<long?> ConsumeTicketAsync(string ticket, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+        object? id;
         using var db = Open();
-        using var tx = db.BeginTransaction(deferred: false);
-        var id = Scalar(
-            db,
-            tx,
-            """
-            SELECT s.AccountId FROM LauncherTicket t JOIN LauncherSession s ON t.SessionId=s.Id
-            WHERE t.Hash=$h AND t.Expires>$now AND s.Revoked=0 AND s.Expires>$now
-            """,
-            ("$h", Hash(ticket)),
-            ("$now", Now)
-        );
-        Execute(db, tx, "DELETE FROM LauncherTicket WHERE Hash=$h", ("$h", Hash(ticket)));
-        tx.Commit();
+        using (var tx = db.BeginTransaction(deferred: false))
+        {
+            string hash = Hash(ticket);
+            id = Scalar(
+                db,
+                tx,
+                """
+                SELECT s.AccountId FROM LauncherTicket t JOIN LauncherSession s ON t.SessionId=s.Id
+                WHERE t.Hash=$h AND t.Expires>$now AND s.Revoked=0 AND s.Expires>$now
+                """,
+                ("$h", hash),
+                ("$now", Now)
+            );
+            Execute(db, tx, "DELETE FROM LauncherTicket WHERE Hash=$h", ("$h", hash));
+            tx.Commit();
+        }
+        await db.CloseAsync().WaitAsync(cancellationToken);
         return id is long account ? account : null;
     }
 
