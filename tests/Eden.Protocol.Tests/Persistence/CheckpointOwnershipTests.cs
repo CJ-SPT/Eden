@@ -8,8 +8,10 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Ammunition;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Runtime;
@@ -25,6 +27,95 @@ public sealed class CheckpointOwnershipTests(ITestOutputHelper report)
 {
     private const int LocalSystem = 30000144;
     private const int RemoteSystem = 30000142;
+
+    [Theory]
+    [InlineData("station", "GetGuests")]
+    [InlineData("marketProxy", "GetRegionBest")]
+    public async Task WarmDockedCallsCompleteDuringCheckpointCopyOnFirstPeriodicPoll(string service, string method)
+    {
+        TestClock clock = new();
+        using TestWorld fixture = new(clock: clock);
+        using PausedCopy copy = new();
+        using LiveWorld live = new(new(fixture.Path), clock, _ => { }, copy: copy.Copy);
+        using var scope = fixture.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var pilot = fixture.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            services.GetRequiredService<FlightSessionFactory>().Create,
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        var updates = services.GetRequiredService<PilotUpdateCoordinator>();
+        updates.Enter(context);
+        List<byte[]> replies = [];
+        PilotSessionOutput output = new(
+            context,
+            1000001,
+            42,
+            packet =>
+            {
+                if (packet is BlueInstance instance && instance.Name.EndsWith(".CallRsp", StringComparison.Ordinal))
+                {
+                    replies.Add(BlueMarshal.Encode(packet));
+                }
+                return Task.CompletedTask;
+            },
+            _ => { }
+        );
+        PilotSessionCalls calls = new(
+            context,
+            output,
+            services.GetRequiredService<PilotCallRouter>(),
+            updates,
+            services.GetRequiredService<SkillHandler>(),
+            clock,
+            report.WriteLine,
+            1000001,
+            42,
+            services.GetRequiredService<IPilotOperationScope>(),
+            handoff: services.GetRequiredService<ICapsuleerHandoff>(),
+            presentation: services.GetRequiredService<ICapsuleerPresentation>()
+        );
+        var request = PilotServicesTests.Request(service, method, []);
+        await calls.ProcessAsync(request);
+        Assert.NotEmpty(Assert.Single(replies));
+        clock.Seconds++;
+        live.ObjectsChanged();
+        var capture = Task.Run(live.CaptureSnapshot);
+        Task<(int Commands, int Connections, int Fittings)>? call = null;
+        try
+        {
+            Assert.True(copy.Started.Wait(TimeSpan.FromSeconds(10)));
+            call = Task.Run(async () =>
+            {
+                using var metrics = SessionPerformance.Begin(
+                    method,
+                    report.WriteLine,
+                    force: true,
+                    command: sql => report.WriteLine("SQL " + sql.ReplaceLineEndings(" "))
+                )!;
+                await calls.ProcessAsync(request);
+                return (metrics.Commands, metrics.Connections, metrics.FittingCalculations);
+            });
+            Assert.Same(call, await Task.WhenAny(call, Task.Delay(TimeSpan.FromSeconds(2))));
+            Assert.Equal((0, 0, 0), await call);
+            Assert.Equal(2, replies.Count);
+            Assert.Equal(replies[0], replies[1]);
+        }
+        finally
+        {
+            copy.Release.Set();
+            using var snapshot = await capture;
+            if (call is not null)
+            {
+                await call.WaitAsync(TimeSpan.FromSeconds(10));
+            }
+        }
+    }
 
     [Fact]
     public async Task DestructionQueuedDuringCopyCannotBeResurrectedByTheEarlierCapture()

@@ -120,6 +120,8 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Enter(PilotCallContext context)
     {
+        // Warm the same resident views that subsequent RPCs and ticks will use.
+        using var system = context.Flight.UseSystem();
         naniteRepairs.Enter(context);
         playerDamage.Enter(context);
         remoteRepairs.Enter(context);

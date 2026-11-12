@@ -17,6 +17,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Agents;
 
+internal sealed record MissionTrackingView(IReadOnlyList<MissionTrackingEntry> Entries, long ExpiresAt);
+
 [Injectable(InjectionType.Singleton)]
 internal sealed partial class PilotMissionStore(
     WorldDatabase database,
@@ -177,17 +179,19 @@ internal sealed partial class PilotMissionStore(
     private IReadOnlyList<MissionTrackingEntry> TrackingOwned(long pilotId)
     {
         var reads = LiveReadModels.Find(database.Path);
-        return reads?.MissionTracking(pilotId, Now, () => LoadTracking(pilotId)) ?? LoadTracking(pilotId);
+        return (reads?.MissionTracking(pilotId, Now, () => LoadTracking(pilotId)) ?? LoadTracking(pilotId)).Entries;
     }
 
     private sealed record MissionTrackingTargetRow(long MissionId, int TypeId, long Id, double HomeX, double HomeY, double HomeZ);
 
-    private IReadOnlyList<MissionTrackingEntry> LoadTracking(long pilotId)
+    private MissionTrackingView LoadTracking(long pilotId)
     {
-        var offers = JournalOwned(pilotId).Where(offer => offer.State == MissionState.Accepted).ToArray();
+        var journal = JournalOwned(pilotId);
+        long expires = journal.Select(offer => offer.ExpiresAt).DefaultIfEmpty(long.MaxValue).Min();
+        var offers = journal.Where(offer => offer.State == MissionState.Accepted).ToArray();
         if (offers.Length == 0)
         {
-            return Array.Empty<MissionTrackingEntry>();
+            return new([], expires);
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         using WorldDbContext world = new(database.Path);
@@ -218,29 +222,32 @@ internal sealed partial class PilotMissionStore(
                 npc.HomeZ ?? npc.Z
             )
         ).ToArray();
-        return Array.AsReadOnly(
-            offers
-                .Select(offer => new MissionTrackingEntry(
-                    offer,
-                    Array.AsReadOnly(
-                        MissionCatalog.Find(catalog, offer.MissionId).Rooms.Select(room => offer.Position + room.Position).ToArray()
+        return new(
+            Array.AsReadOnly(
+                offers
+                    .Select(offer => new MissionTrackingEntry(
+                        offer,
+                        Array.AsReadOnly(
+                            MissionCatalog.Find(catalog, offer.MissionId).Rooms.Select(room => offer.Position + room.Position).ToArray()
+                        )
                     )
-                )
-                {
-                    Targets = Array.AsReadOnly(
-                        enemies
-                            .Concat(structures)
-                            .Where(target => target.MissionId == offer.Id)
-                            .OrderBy(target => target.Id)
-                            .Select(target => new MissionTrackingTarget(
-                                target.TypeId,
-                                target.Id,
-                                new(target.HomeX, target.HomeY, target.HomeZ)
-                            ))
-                            .ToArray()
-                    ),
-                })
-                .ToArray()
+                    {
+                        Targets = Array.AsReadOnly(
+                            enemies
+                                .Concat(structures)
+                                .Where(target => target.MissionId == offer.Id)
+                                .OrderBy(target => target.Id)
+                                .Select(target => new MissionTrackingTarget(
+                                    target.TypeId,
+                                    target.Id,
+                                    new(target.HomeX, target.HomeY, target.HomeZ)
+                                ))
+                                .ToArray()
+                        ),
+                    })
+                    .ToArray()
+            ),
+            expires
         );
     }
 

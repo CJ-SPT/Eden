@@ -31,6 +31,48 @@ public sealed class ResidentEconomyTests
     }
 
     [Fact]
+    public void WarmWalletReadsFollowCommittedResidentAndSqlWrites()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        var wallet = fixture.Services.GetRequiredService<IPilotWalletReader>();
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        Assert.Equal(0, wallet.Balance(Human));
+
+        using (var action = live.Economy.Begin())
+        {
+            action.Add(new PilotWallet { PilotId = Human, Cents = 100 });
+            action.Commit();
+        }
+        Assert.Equal(100, wallet.Balance(Human));
+        using (var action = live.Economy.Begin())
+        {
+            action.Set<PilotWallet>().Find(Human)!.Cents = 200;
+        }
+        Assert.Equal(100, wallet.Balance(Human));
+
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            using var transaction = world.Database.BeginTransaction();
+            world.Set<PilotWallet>().Find(Human)!.Cents = 300;
+            world.SaveChanges();
+            transaction.Rollback();
+        }
+        Assert.Equal(100, wallet.Balance(Human));
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Set<PilotWallet>().Find(Human)!.Cents = 400;
+            world.SaveChanges();
+        }
+        Assert.Equal(400, wallet.Balance(Human));
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Remove(world.Set<PilotWallet>().Find(Human)!);
+            world.SaveChanges();
+        }
+        Assert.Equal(0, wallet.Balance(Human));
+    }
+
+    [Fact]
     public void CompactSkillIndexPreservesPilotIdentityWhenABucketShrinksAndGrows()
     {
         const long otherPilot = 90000002;

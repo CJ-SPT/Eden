@@ -6,8 +6,10 @@ using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Agents;
 using Eden.Protocol.Serialization;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Agents;
 
@@ -174,7 +176,23 @@ public sealed class MissionTrackerTests
         using MissionFixture f = new(live: true);
         var tracker = f.Handler<MissionTrackerHandler>();
         tracker.Advance(f.Context);
-        using var measured = SessionPerformance.Begin("empty tracker", _ => { }, force: true)!;
+        var live = f.Services.GetRequiredService<LiveWorld>();
+        using (var action = live.Economy.Begin())
+        {
+            action.Add(
+                new OwnedItem
+                {
+                    Id = action.NextItemId(),
+                    OwnerId = MissionFixture.PilotId,
+                    LocationId = MissionFixture.StationId,
+                    TypeId = 34,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 1,
+                }
+            );
+            action.Commit();
+        }
+        using var measured = SessionPerformance.Begin("empty tracker after inventory change", _ => { }, force: true)!;
         for (int i = 0; i < 4; i++)
         {
             tracker.Advance(f.Context);
@@ -184,6 +202,26 @@ public sealed class MissionTrackerTests
         Assert.Equal(0, measured.FittingCalculations);
         Assert.Empty(f.Context.Notifications);
         Assert.False(tracker.IsMonitoring);
+    }
+
+    [Fact]
+    public void EmptyTrackerStillExpiresAnUnacceptedOfferAtItsDeadline()
+    {
+        using MissionFixture f = new(live: true);
+        var offer = f.Request();
+        Assert.Empty(f.Missions.Tracking(MissionFixture.PilotId));
+        f.Clock.UtcNow = DateTimeOffset.FromFileTime(offer.ExpiresAt - 1);
+        Assert.Empty(f.Missions.Tracking(MissionFixture.PilotId));
+        Assert.Null(ClosedAt());
+        f.Clock.UtcNow = DateTimeOffset.FromFileTime(offer.ExpiresAt);
+        Assert.Empty(f.Missions.Tracking(MissionFixture.PilotId));
+        Assert.Equal(offer.ExpiresAt, ClosedAt());
+
+        long? ClosedAt()
+        {
+            using WorldDbContext world = new(f.Db.Path);
+            return world.Set<SavedMission>().Single(m => m.Id == offer.Id).ClosedAt;
+        }
     }
 
     private static List<object?> Current(MissionFixture f) =>

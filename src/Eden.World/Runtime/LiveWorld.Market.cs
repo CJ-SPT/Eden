@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Eden.Data.World.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime.Combat;
 
@@ -9,6 +10,61 @@ internal readonly record struct MarketLocation(int Station, int System, int Regi
 
 internal sealed partial class LiveWorld
 {
+    private const int CachedWalletLimit = 512;
+    private readonly Lock _walletBalanceGate = new();
+    private readonly Dictionary<long, long> _walletBalances = [];
+
+    internal long WalletBalance(long pilotId)
+    {
+        if (HasPersistenceOwnership && Economy.HasActiveAction)
+        {
+            return Economy.Inspect(world => world.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0);
+        }
+        lock (_walletBalanceGate)
+        {
+            if (_walletBalances.TryGetValue(pilotId, out long cached))
+            {
+                return cached;
+            }
+        }
+        // Load and publish under the same owner that observes committed wallet writes.
+        // Cache hits need neither SQLite admission nor the owner held by the checkpoint copy.
+        using var ownership = EnterShared("wallet balance");
+        long balance = Economy.Inspect(world => world.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0);
+        lock (_walletBalanceGate)
+        {
+            if (_walletBalances.Count >= CachedWalletLimit)
+            {
+                _walletBalances.Clear();
+            }
+            _walletBalances[pilotId] = balance;
+        }
+        return balance;
+    }
+
+    private void ObserveWalletBalances(IReadOnlyCollection<CombatRowChange> changes)
+    {
+        if (!changes.Any(change => change.Table is "WorldWallet" or "schema"))
+        {
+            return;
+        }
+        lock (_walletBalanceGate)
+        {
+            if (changes.Any(change => change.Table == "schema"))
+            {
+                _walletBalances.Clear();
+                return;
+            }
+            foreach (var change in changes)
+            {
+                if (change.Table == "WorldWallet" && _walletBalances.ContainsKey(change.Id))
+                {
+                    _walletBalances[change.Id] = Economy.Peek<PilotWallet>(change.Id)?.Cents ?? 0;
+                }
+            }
+        }
+    }
+
     // Resolve committed market membership once, on the already-open coordinated connection.
     // Unknown/deleted identities and definition changes retain conservative invalidation.
     private IReadOnlyList<MarketLocation>? MarketLocations(IReadOnlyCollection<CombatRowChange> changes)

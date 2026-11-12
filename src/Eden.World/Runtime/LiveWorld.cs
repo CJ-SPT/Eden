@@ -131,6 +131,7 @@ internal sealed partial class LiveWorld : IDisposable
         {
             return;
         }
+        ObserveWalletBalances(changes);
         var marketLocations = residentMarketLocations ?? MarketLocations(changes);
         MarketSummaries.Observe(changes, marketLocations);
         if (

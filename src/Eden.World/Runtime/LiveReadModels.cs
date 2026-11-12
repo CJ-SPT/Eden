@@ -74,7 +74,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "WorldPilot",
         "WorldLoyaltyWallet"
     );
-    private readonly ResidentSnapshot<long, long> _wallet = new("resident.wallet", "WorldWallet");
     private readonly ResidentSnapshot<long, long> _mailHead = new("resident.mailHead", "WorldMailChange");
     private readonly ResidentSnapshot<long, long> _listHead = new("resident.listHead", "WorldMailingListChange");
     private readonly ResidentSnapshot<long, FrozenDictionary<DogmaAttributeId, double>> _fits = new(
@@ -183,8 +182,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     internal FreeSkillPointBalance Points(long pilot, Func<FreeSkillPointBalance> load) => Read(_points, pilot, load);
 
     internal long Extraction(long pilot, Func<long> load) => Read(_extraction, pilot, load);
-
-    internal long Wallet(long pilot, Func<long> load) => Read(_wallet, pilot, load);
 
     internal bool HasMailChanges(long pilot, long cursor) =>
         cursor
@@ -317,12 +314,11 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                 || MissionMiningRules.IsDeposit(change.Id)
                     && view.Sites.Any(s => s.Private && s.Id == MissionMiningRules.MissionId(change.Id))
         );
-        _missionTracking.Observe(changes);
+        ObserveMissionTracking(changes);
         _learning.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
         _points.Observe(changes, (pilot, change) => pilot == change.Id);
         _extraction.Observe(changes, (pilot, change) => pilot == change.Id);
         _loyalty.Observe(changes);
-        _wallet.Observe(changes, (pilot, change) => pilot == change.Id);
         _mailHead.Observe(changes);
         _listHead.Observe(changes);
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
@@ -364,7 +360,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _points.Clear();
         _extraction.Clear();
         _loyalty.Clear();
-        _wallet.Clear();
         _mailHead.Clear();
         _listHead.Clear();
         _fits.Clear();

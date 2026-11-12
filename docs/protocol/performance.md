@@ -3606,3 +3606,60 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare the administration Performance page after startup, during a save and after browsing several markets.
+
+## Docked RPC latency during checkpoints, November 12, 2026
+
+The older two-player replay recorded reply times of 1,583.65 ms for `station.GetGuests` and 1,588.46 ms for
+`beyonce.CmdGotoDirection`. Their handlers accounted for 0.03 and 2.68 ms, respectively. This replay included
+traffic maintenance from before the occupied-system restriction. A separate November 10 replay also recorded
+warmed `marketProxy.GetRegionBest` handlers around 0.1 ms while session updates waited on persistence.
+
+On `558f6cd6`, a simulated docked session reproduced checkpoint contention on its first one-second poll.
+The baseline `GetGuests` and `GetRegionBest` calls waited through the test's two-second pause in the SQLite
+copy. Each completed with four SQL commands, three connections and zero fitting calculations after the copy
+resumed. The four queries came from personal and corporate loyalty balance reloads. Character entry primed
+those balances outside the pilot's system, so the first poll missed both resident views. The pause is
+deliberate and does not represent an installed-world save time.
+
+Character entry now primes monitors in the system where they will poll. Warmed wallet reads use a bounded
+view of committed balances. Both resident and SQL commits update the view, including wallet removal. Rollback
+keeps the last committed balance visible. The wallet notification poll retains its one-second schedule. The
+mission tracker retains its cached empty state when inventory changes and refreshes cargo-dependent
+objectives when needed. Tracking now records the earliest expiry of all open offers, including unaccepted
+offers. Mission deadlines and objective types follow the pinned Eden mission data and existing rules. See the
+[EVE University mission guide](https://wiki.eveuniversity.org/Mission).
+
+### Automated validation
+
+The focused replay used the same selected pilot, manually advanced clock and encoded reply checks on both revisions.
+The baseline samples measured the complete call through output flushing and ended after the test released
+the copy. The updated calls finished while the copy remained paused. The figures are individual fixture
+samples in milliseconds.
+
+| Call | Baseline complete call | Updated complete call | Updated reply | SQL commands / opens, before → after |
+| --- | ---: | ---: | ---: | ---: |
+| `station.GetGuests` | 2,008.25 | 1.07 | 0.99 | 4 / 3 → 0 / 0 |
+| `marketProxy.GetRegionBest` | 2,028.21 | 3.75 | 2.61 | 4 / 3 → 0 / 0 |
+
+The replies matched the same encoded replies obtained before the copy, with zero fitting calculations. The
+empty mission tracker used six SQL commands after an inventory change on the baseline and zero after the
+update. The focused seven-case run passed in 8.39 seconds, covering the two calls, mission offer expiry,
+and wallet reads after resident and SQLite commits, rollbacks and deletion. The solution built in 52.23 seconds
+with zero warnings. Installed-world timing and socket backpressure were outside this replay.
+
+The broader run passed all 147 cases in 103.46 seconds. The class filter selected `CheckpointOwnershipTests`,
+`MissionTrackerTests`, `MiningMissionTests`, `MissionRetrievalTests`, `PilotServicesTests`, `StationGuestTests`,
+`MarketSummaryPerformanceTests`, `ResidentEconomyTests`, `CorporationWalletTests`, `LoyaltyWalletServiceTests`
+and `TransactionParticipantTests`. The standard runner could not connect to its test host, so the selected
+tests ran through xUnit in-process. Tool restore and solution restore passed using cached packages with the
+NuGet audit disabled because the feed was unreachable. Both Python suites passed, with eight catalog and
+nine formatting checks. CSharpier verified 1,951 files, and the 140-character line-width check passed.
+The standalone .NET style check could not connect to its build host. No full .NET suite ran.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare `GetGuests` and `GetRegionBest` reply times during an installed-world save with several sessions online.

@@ -3,6 +3,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Information;
+using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -186,13 +187,12 @@ public sealed class TransactionParticipantTests
     {
         using TestWorld db = new(liveWorld: true);
         const long pilot = 90000001;
-        var reads = LiveWorld.Find(db.Path)!.Reads!;
+        PilotWalletReader wallet = new(new(db.Path));
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSql($"INSERT OR IGNORE INTO WorldWallet(PilotId,Cents) VALUES({pilot},0)");
         }
-        int loads = 0;
-        Assert.Equal(1, reads.Wallet(pilot, () => ++loads));
+        Assert.Equal(0, wallet.Balance(pilot));
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.OpenConnection();
@@ -206,23 +206,21 @@ public sealed class TransactionParticipantTests
                 transaction.Rollback();
             }
         }
-        Assert.Equal(2, reads.Wallet(pilot, () => ++loads));
+        Assert.Equal(1, wallet.Balance(pilot));
     }
 
     [Fact]
     public void RemoteWalletCommitAndLocalRollbackPreserveWarmPersonalReads()
     {
         using TestWorld db = new(liveWorld: true);
-        var reads = LiveWorld.Find(db.Path)!.Reads!;
+        PilotWalletReader wallet = new(new(db.Path));
         const long pilot = 90000001;
         const long other = 90000002;
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSql($"INSERT OR IGNORE INTO WorldWallet(PilotId,Cents) VALUES({pilot},0),({other},0)");
         }
-        int loads = 0;
-        long Read() => reads.Wallet(pilot, () => ++loads);
-        Assert.Equal(1, Read());
+        Assert.Equal(0, wallet.Balance(pilot));
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSql($"UPDATE WorldWallet SET Cents=Cents+1 WHERE PilotId={other}");
@@ -233,11 +231,11 @@ public sealed class TransactionParticipantTests
             world.Database.ExecuteSql($"UPDATE WorldWallet SET Cents=Cents+1 WHERE PilotId={pilot}");
             transaction.Rollback();
         }
-        Assert.Equal(1, Read());
+        Assert.Equal(0, wallet.Balance(pilot));
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSql($"UPDATE WorldWallet SET Cents=Cents+1 WHERE PilotId={pilot}");
         }
-        Assert.Equal(2, Read());
+        Assert.Equal(1, wallet.Balance(pilot));
     }
 }
