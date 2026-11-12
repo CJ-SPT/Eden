@@ -108,17 +108,21 @@ internal sealed partial class LiveWorld : IDisposable
         ObserveCommitted(changes, participants, projectionSystem, committedSystems);
     }
 
-    internal void PublishEconomic(IReadOnlyCollection<CombatRowChange> changes, TransactionParticipants? participants = null) =>
-        ObserveCommitted(changes, participants, resident: true);
+    internal void PublishEconomic(
+        IReadOnlyCollection<CombatRowChange> changes,
+        TransactionParticipants? participants,
+        IReadOnlyList<MarketLocation> marketLocations
+    ) => ObserveCommitted(changes, participants, residentMarketLocations: marketLocations);
 
     private void ObserveCommitted(
         IReadOnlyCollection<CombatRowChange> changes,
         TransactionParticipants? participants = null,
         int? projectionSystem = null,
         IReadOnlySet<int>? committedSystems = null,
-        bool resident = false
+        IReadOnlyList<MarketLocation>? residentMarketLocations = null
     )
     {
+        bool resident = residentMarketLocations is not null;
         if (!resident)
         {
             Economy.Observe(changes);
@@ -127,7 +131,7 @@ internal sealed partial class LiveWorld : IDisposable
         {
             return;
         }
-        var marketLocations = resident ? null : MarketLocations(changes);
+        var marketLocations = residentMarketLocations ?? MarketLocations(changes);
         MarketSummaries.Observe(changes, marketLocations);
         if (
             changes.Any(c => c.Table is "schema" or "WorldMarketMembership" or "WorldEconomy" or "WorldConfigurationState")

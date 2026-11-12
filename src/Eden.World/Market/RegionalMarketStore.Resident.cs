@@ -68,19 +68,7 @@ internal sealed partial class RegionalMarketStore
                 && (types == null || Enumerable.Contains(types, o.TypeId))
             )
             .ToDictionary(o => (o.TypeId, o.Bid));
-        var states = world
-            .Set<SavedRegionalMarketStock>()
-            .Where(s =>
-                world
-                    .Set<NpcMarketOrder>()
-                    .Any(o =>
-                        o.Id == s.OrderId
-                        && o.StationId == stationId
-                        && (includeDemand || !o.Bid)
-                        && (types == null || Enumerable.Contains(types, o.TypeId))
-                    )
-            )
-            .ToDictionary(s => s.OrderId);
+        var states = world.Set<SavedRegionalMarketStock>();
         IEnumerable<RegionalDemand> candidates =
             !includeDemand ? []
             : types is not null ? types.Select(type => profiles.Demand.GetValueOrDefault(type)).OfType<RegionalDemand>()
@@ -153,7 +141,7 @@ internal sealed partial class RegionalMarketStore
             }
             else
             {
-                state = states[order.Id];
+                state = states.Find(order.Id) ?? throw new InvalidDataException("The regional market order has no stock state.");
             }
             if (order.Issued == 0)
             {

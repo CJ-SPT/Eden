@@ -1400,3 +1400,49 @@ dotnet test tests/Eden.Protocol.Tests/Eden.Protocol.Tests.csproj --no-build `
 
 **Optional maintainer checks:** After saving and restarting, inspect the mining-SP control and refreshed skill-window pool
 following an ore, ice or gas harvest. Native rendering remains unverified.
+
+## Regional best-ask performance (November 12, 2026)
+
+The resident market now selects the best ask per type in a single pass. It compares price first and order ID second,
+then merges personal and NPC asks into the existing market reply. Stock refresh and recovery use direct lookups by
+station ID for testing-market preparation and order ID for regional stock. Resident commit validation uses the same
+station, type, side and kind key as the saved NPC order uniqueness constraint. Summary rebuilds acquire the requesting
+pilot's simulation participants.
+
+Resident market commits invalidate station, system and region summaries using the old and new order locations. A change
+to a buy order or a sell order in another region keeps an otherwise valid regional summary warm. Committed sell changes
+are visible on the next call, and summaries still expire at their wall-clock and active-play deadlines.
+
+Regional market behavior is described in [EVE University trading](https://wiki.eveuniversity.org/Trading).
+
+The matched automated workload used 1,500 NPC asks across three stations and 500 types, plus a cheaper personal listing.
+With resident state loaded, the first regional summary took 585.52 ms and allocated 339.19 MB on `b0940ae7`. The
+optimized build took 45.88 ms and allocated 4.93 MB. Both samples used one SQL command and one connection and performed
+zero fitting calculations. The next read reused the summary with zero SQL commands, connections and fitting calculations.
+The test also checks price and order-ID priority and encodes the `marketProxy.GetRegionBest` reply. Timing covers the
+summary lookup and rebuild after world hydration.
+
+**Automated validation**
+
+Tool and solution restore succeeded using cached packages. NuGet audit was disabled for the local invocation after the
+advisory feed was unreachable. The solution built with zero warnings and errors in 29.44 seconds. The exact development
+filter was `FullyQualifiedName=Eden.Protocol.Tests.Market.MarketSummaryPerformanceTests.RegionalSummarySelectsBestAsksAcrossAPopulatedRegion`.
+The isolated comparison used the in-process xUnit runner after VSTest could not connect to its test host. The optimized
+case passed in 3.74 seconds. The focused market, resident economy and capsuleer hauler run passed 186 of 188 cases
+in 85.65 seconds. `RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` and
+`NpcRestingOrderTests.MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback` also failed on `b0940ae7`.
+Both inject SQLite triggers that fail during resident checkpoint projection. The regional test then fails to delete
+the fixture's open owner file. The focused run covers stock recovery deadlines, committed changes, rollback, unrelated
+trades and native reply encoding.
+
+The Python catalog and formatting policy suites passed all 8 and 9 cases, respectively, in 1.07 seconds combined.
+CSharpier checked 1,953 files in 3.65 seconds. Line width, the protocol index link and `git diff --check` passed.
+The sandbox denied the named-pipe connection used by the .NET style phase of `tools/Format.ps1 -Check`.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+After restarting with the updated build, compare the first and second market opens in the affected region on the same save.

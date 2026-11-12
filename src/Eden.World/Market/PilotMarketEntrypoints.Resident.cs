@@ -209,7 +209,7 @@ internal sealed partial class PilotMarketStore
     private MarketSummary ResidentReadOrders(Eden.World.Runtime.LiveWorld live, long pilotId, int? typeId, MarketScope? scope)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryLoad");
-        using var world = live.Economy.Begin();
+        using var world = live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var station = Station(catalog, pilot.ActiveShip.StationId);
@@ -219,7 +219,7 @@ internal sealed partial class PilotMarketStore
         }
         int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
         int region = catalog.RequireSystem(system).RegionId;
-        var query = world.Set<NpcMarketOrder>().AsNoTracking().Where(o => o.RegionId == region);
+        var regionOrders = world.Set<NpcMarketOrder>().AsNoTracking().Where(o => o.RegionId == region);
         var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
             ? NpcMarketKind.Institutional
             : NpcMarketKind.Development;
@@ -227,14 +227,8 @@ internal sealed partial class PilotMarketStore
         if (progressive)
         {
             var regional = new RegionalMarketStore(activity);
-            var knownStations = world
-                .Set<NpcMarketOrder>()
-                .Where(o =>
-                    o.RegionId == region
-                    && o.Kind == NpcMarketKind.Regional
-                    && (scope == null || !o.Bid)
-                    && (!typeId.HasValue || o.TypeId == typeId.Value)
-                )
+            var knownStations = regionOrders
+                .Where(o => o.Kind == NpcMarketKind.Regional && (scope == null || !o.Bid) && (!typeId.HasValue || o.TypeId == typeId.Value))
                 .Select(o => o.StationId)
                 .Distinct()
                 .ToArray();
@@ -247,7 +241,9 @@ internal sealed partial class PilotMarketStore
                 regional.Advance(world, catalog, region, known, Now, typeId, includeDemand: scope is null);
             }
         }
-        query = query.Where(o => progressive ? o.Kind == NpcMarketKind.Regional || o.Kind == NpcMarketKind.Institutional : o.Kind == kind);
+        var query = regionOrders.Where(o =>
+            progressive ? o.Kind == NpcMarketKind.Regional || o.Kind == NpcMarketKind.Institutional : o.Kind == kind
+        );
         if (typeId.HasValue)
         {
             query = query.Where(o => o.TypeId == typeId.Value);
@@ -262,18 +258,9 @@ internal sealed partial class PilotMarketStore
         };
         Refresh(world, query);
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
-        query = query.Where(o => o.Remaining > 0 && o.Issued > cutoff);
-        if (scope.HasValue)
-        {
-            var candidates = query;
-            query = query.Where(o =>
-                !candidates.Any(other =>
-                    other.TypeId == o.TypeId && (other.PriceCents < o.PriceCents || other.PriceCents == o.PriceCents && other.Id < o.Id)
-                )
-            );
-        }
-        var result = query
-            .OrderBy(o => o.Id)
+        var npcOrders = query
+            .Where(o => o.Remaining > 0 && o.Issued > cutoff)
+            .AsEnumerable()
             .Select(o => new MarketOrder(
                 o.Id,
                 o.StationId,
@@ -286,8 +273,8 @@ internal sealed partial class PilotMarketStore
                 o.Remaining,
                 o.Entered,
                 o.Issued
-            ))
-            .ToArray();
+            ));
+        var result = (scope.HasValue ? BestAskPerType(npcOrders) : npcOrders).ToArray();
         var personal = world
             .Set<SavedPersonalOrder>()
             .AsNoTracking()
@@ -307,7 +294,7 @@ internal sealed partial class PilotMarketStore
         IEnumerable<MarketOrder> combined = result.Concat(personalRows.Select(o => o.Snapshot()));
         if (scope.HasValue)
         {
-            combined = combined.GroupBy(o => o.TypeId).Select(g => g.OrderBy(o => o.PriceCents).ThenBy(o => o.Id).First());
+            combined = BestAskPerType(combined);
         }
         var book = combined.OrderBy(o => o.Id).ToArray();
         long expires = Math.Min(
@@ -318,14 +305,11 @@ internal sealed partial class PilotMarketStore
         if (scope.HasValue && progressive)
         {
             long elapsed = world.ActiveTicks;
-            long? recovery = world
-                .Set<SavedRegionalMarketStock>()
-                .Where(s =>
-                    world
-                        .Set<NpcMarketOrder>()
-                        .Any(o => o.Id == s.OrderId && o.RegionId == region && !o.Bid && o.Kind == NpcMarketKind.Regional && o.Issued > 0)
-                )
-                .Min(s => (long?)s.RefreshedTicks);
+            var stock = world.Set<SavedRegionalMarketStock>();
+            long? recovery = regionOrders
+                .Where(o => !o.Bid && o.Kind == NpcMarketKind.Regional && o.Issued > 0)
+                .AsEnumerable()
+                .Min(o => stock.Find(o.Id)?.RefreshedTicks);
             activeUntil = RegionalMarketRules.NextCapacityChange(elapsed);
             if (recovery.HasValue)
             {
@@ -334,6 +318,22 @@ internal sealed partial class PilotMarketStore
         }
         world.Commit();
         return new(pilotId, pilot.ActiveShipId, station.Id, system, region, Array.AsReadOnly(book), expires, activeUntil);
+    }
+
+    private static IEnumerable<MarketOrder> BestAskPerType(IEnumerable<MarketOrder> orders)
+    {
+        Dictionary<int, MarketOrder> best = [];
+        foreach (var order in orders)
+        {
+            if (
+                !best.TryGetValue(order.TypeId, out var current)
+                || (order.PriceCents, order.Id).CompareTo((current.PriceCents, current.Id)) < 0
+            )
+            {
+                best[order.TypeId] = order;
+            }
+        }
+        return best.Values;
     }
 
     private void ResidentCheckStation(Eden.World.Runtime.LiveWorld live, long pilotId, int stationId)

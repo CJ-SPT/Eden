@@ -5,7 +5,7 @@ using Eden.World.Runtime.Combat;
 
 namespace Eden.World.Runtime;
 
-internal sealed record MarketLocation(int Station, int System, int Region, bool Bid);
+internal readonly record struct MarketLocation(int Station, int System, int Region, bool Bid);
 
 internal sealed partial class LiveWorld
 {

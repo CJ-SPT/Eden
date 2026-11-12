@@ -250,6 +250,28 @@ public sealed class RegionalMarketTests
     }
 
     [Fact]
+    public void BestAsksRequoteAtTheExactActiveRecoveryBoundary()
+    {
+        using CapsuleerHaulerTests.Fixture f = UnlockedFixture();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(pilot.PilotId, Source);
+        var market = host.GetRequiredService<IPilotMarket>();
+        var quote = market.BestAsks(pilot.PilotId, MarketScope.Station).Single(o => o.TypeId == Ammunition);
+        const int purchaseQuantity = 100;
+        Fund(f.Database, pilot.PilotId, quote.PriceCents * purchaseQuantity * 2);
+        market.Buy(pilot.PilotId, pilot.StationId, [new(Ammunition, quote.PriceCents, purchaseQuantity)]);
+        var depleted = market.BestAsks(pilot.PilotId, MarketScope.Station);
+        Assert.Equal(quote.Remaining - purchaseQuantity, depleted.Single(o => o.Id == quote.Id).Remaining);
+        f.Clock.Milliseconds += RegionalMarketRules.RecoveryIntervalTicks / TimeSpan.TicksPerMillisecond - 1;
+        Assert.Same(depleted, market.BestAsks(pilot.PilotId, MarketScope.Station));
+        f.Clock.Milliseconds++;
+        var recovered = market.BestAsks(pilot.PilotId, MarketScope.Station).Single(o => o.Id == quote.Id);
+        Assert.Equal(quote.Remaining, recovered.Remaining);
+        Assert.Equal(quote.PriceCents, recovered.PriceCents);
+    }
+
+    [Fact]
     public async Task CompetingBuyersCanPurchaseTheLastUnitOnlyOnce()
     {
         using CapsuleerHaulerTests.Fixture f = UnlockedFixture();

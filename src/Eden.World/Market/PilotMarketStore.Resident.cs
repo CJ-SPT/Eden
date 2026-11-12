@@ -159,29 +159,23 @@ internal sealed partial class PilotMarketStore
         }
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
         long now = Now;
+        var supply = world.Settings.DevelopmentSupply;
         int[] retiredSkills = database
             .PublishedSkills.Values.Where(skill => skill.Deleted || !skill.Definition.Published)
             .Select(skill => skill.Definition.TypeId)
             .ToArray();
         // Refresh only stations upgraded to this policy, leaving historical NPC bids finite.
+        var stations = world.Set<MarketStation>();
         var refreshedOrders = orders
-            .Where(o =>
-                o.Kind == NpcMarketKind.Development
-                && !o.Bid
-                && !Enumerable.Contains(retiredSkills, o.TypeId)
-                && world.Set<MarketStation>().Any(s => s.StationId == o.StationId && s.SeedVersion == TestingMarketRules.SeedVersion)
-            )
-            .Where(o =>
-                o.Remaining != world.Settings.DevelopmentSupply.TestingStock
-                || o.PriceCents != world.Settings.DevelopmentSupply.TestingPriceCents
-                || o.Issued <= cutoff
-            )
-            .ToArray();
+            .Where(o => o.Kind == NpcMarketKind.Development && !o.Bid && !Enumerable.Contains(retiredSkills, o.TypeId))
+            .Where(o => o.Remaining != supply.TestingStock || o.PriceCents != supply.TestingPriceCents || o.Issued <= cutoff)
+            .AsEnumerable()
+            .Where(o => stations.Find(o.StationId)?.SeedVersion == TestingMarketRules.SeedVersion);
         foreach (var order in refreshedOrders)
         {
-            order.Remaining = world.Settings.DevelopmentSupply.TestingStock;
-            order.Entered = world.Settings.DevelopmentSupply.TestingStock;
-            order.PriceCents = world.Settings.DevelopmentSupply.TestingPriceCents;
+            order.Remaining = supply.TestingStock;
+            order.Entered = supply.TestingStock;
+            order.PriceCents = supply.TestingPriceCents;
             if (order.Issued <= cutoff)
             {
                 order.Issued = now;

@@ -330,6 +330,11 @@ internal sealed partial class ResidentEconomy
     }
 }
 
+internal readonly record struct NpcMarketAssortment(int StationId, int TypeId, bool Bid, NpcMarketKind Kind)
+{
+    internal static NpcMarketAssortment For(NpcMarketOrder order) => new(order.StationId, order.TypeId, order.Bid, order.Kind);
+}
+
 internal sealed record EconomyNpcMarketOrder(
     long Id,
     int StationId,
@@ -1174,6 +1179,7 @@ internal sealed partial class ResidentEconomy
                     new("RegionId", row => row.RegionId),
                     new("OwnerId", row => row.OwnerId),
                     new("TypeId", row => row.TypeId),
+                    new(nameof(NpcMarketAssortment), row => new NpcMarketAssortment(row.StationId, row.TypeId, row.Bid, row.Kind)),
                 ],
                 primaryColumn: "Id"
             )

@@ -303,16 +303,20 @@ internal sealed partial class EconomyTransaction(
                 throw new InvalidDataException("The resident market order is invalid.");
             }
         }
+        HashSet<NpcMarketAssortment> assortments = [];
+        var npcOrders = Set<NpcMarketOrder>();
         foreach (var order in Retained<NpcMarketOrder>())
         {
+            var assortment = NpcMarketAssortment.For(order);
             if (
                 order.Remaining < 0
                 || order.Entered <= 0
                 || order.Remaining > order.Entered
                 || order.PriceCents <= 0
-                || Set<NpcMarketOrder>()
-                    .Where(o => o.StationId == order.StationId && o.TypeId == order.TypeId)
-                    .Any(o => o.Id != order.Id && o.Bid == order.Bid && o.Kind == order.Kind)
+                || !assortments.Add(assortment)
+                || store
+                    .NpcMarketOrders(assortment)
+                    .Any(key => key.Id != order.Id && npcOrders.Find(key) is { } other && NpcMarketAssortment.For(other) == assortment)
             )
             {
                 throw new InvalidDataException("The resident NPC stock is invalid or duplicates an existing assortment.");
@@ -360,6 +364,11 @@ internal sealed partial class EconomyTransaction(
             set.Prepare();
         }
         var changes = sets.SelectMany(set => set.Changes).ToArray();
+        var marketLocations =
+            changes.Any(c => c.Table is "WorldMarketOrder" or "WorldPersonalOrder" or "WorldRegionalMarketStock")
+            && owner.MarketSummaries.HasViews
+                ? AffectedMarketLocations(changes)
+                : [];
         long[] candidates = sets.SelectMany(set => set.Owners).Distinct().ToArray();
         foreach (var set in sets)
         {
@@ -384,9 +393,44 @@ internal sealed partial class EconomyTransaction(
                 participants.Ships,
                 participants.Resources
             );
-        store.Committed(_sequences, changes, affected, pilots);
+        store.Committed(_sequences, changes, affected, pilots, marketLocations);
         _completed = true;
         PublishActions();
+    }
+
+    private IReadOnlyList<MarketLocation> AffectedMarketLocations(IReadOnlyCollection<CombatRowChange> changes)
+    {
+        HashSet<MarketLocation> locations = [];
+        foreach (var change in changes)
+        {
+            if (change.Table is "WorldMarketOrder" or "WorldRegionalMarketStock")
+            {
+                AddNpcLocation(store.Peek<NpcMarketOrder>(change.Id));
+                AddNpcLocation(Set<NpcMarketOrder>().Find(change.Id));
+            }
+            else if (change.Table == "WorldPersonalOrder")
+            {
+                AddPersonalLocation(store.Peek<SavedPersonalOrder>(change.Id));
+                AddPersonalLocation(Set<SavedPersonalOrder>().Find(change.Id));
+            }
+        }
+        return locations.ToArray();
+
+        void AddNpcLocation(NpcMarketOrder? order)
+        {
+            if (order is not null)
+            {
+                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid));
+            }
+        }
+
+        void AddPersonalLocation(SavedPersonalOrder? order)
+        {
+            if (order is not null)
+            {
+                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid));
+            }
+        }
     }
 
     public void Dispose()

@@ -246,31 +246,41 @@ internal sealed partial class PilotMarketStore(
     public IReadOnlyList<MarketOrder> BestAsks(long pilotId, MarketScope scope)
     {
         var live = LiveWorld.Find(database.Path);
+        if (live is null)
+        {
+            return ReadOrders(pilotId, null, scope).Orders;
+        }
         long catalog = database.Catalog.Identity.Generation;
         long now = Now;
-        long active = live?.CapsuleerActivity.ReadElapsed() ?? 0;
+        long active = live.CapsuleerActivity.ReadElapsed() ?? 0;
         if (
-            live is not null
-            && live.SqlConnections == 0
+            live.SqlConnections == 0
             && live.MarketSummaries.TryRead(pilotId, scope, catalog, database.Settings, now, active, out var cached)
         )
         {
             return cached;
         }
-        return live is null ? LiveWorldOperation() : live.Run(LiveWorldOperation);
-
-        IReadOnlyList<MarketOrder> LiveWorldOperation()
+        return live.Run(() =>
         {
-            // A caller holding a simulation owner must unwind before opening SQL.
-            using var owner = live?.EnterShared("market summary");
-            bool publish = live is not null && live.SqlConnections == 0;
-            var summary = ReadOrders(pilotId, null, scope);
+            using var owner = live.EnterShared("market summary");
+            long ownedCatalog = database.Catalog.Identity.Generation;
+            long ownedNow = Now;
+            long ownedActive = live.CapsuleerActivity.ReadElapsed() ?? 0;
+            bool publish = live.SqlConnections == 0;
+            if (
+                publish
+                && live.MarketSummaries.TryRead(pilotId, scope, ownedCatalog, database.Settings, ownedNow, ownedActive, out var view)
+            )
+            {
+                return view;
+            }
+            var summary = ResidentReadOrders(live, pilotId, null, scope);
             if (publish)
             {
-                live!.MarketSummaries.Publish(summary, scope, catalog, database.Settings, now, active);
+                live.MarketSummaries.Publish(summary, scope, ownedCatalog, database.Settings, ownedNow, ownedActive);
             }
             return summary.Orders;
-        }
+        });
     }
 
     private MarketSummary ReadOrders(long pilotId, int? typeId, MarketScope? scope)

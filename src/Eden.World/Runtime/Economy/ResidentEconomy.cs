@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Data.World.Structures;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Market;
@@ -59,6 +60,12 @@ internal sealed partial class ResidentEconomy
     private readonly Dictionary<long, long> _marketHeads = [];
     private readonly HashSet<long> _staleHeads = [];
     internal long NextExpiry => _openOrders.Count == 0 ? long.MaxValue : _openOrders.Min.Expires;
+
+    internal IReadOnlyCollection<EconomyKey> NpcMarketOrders(NpcMarketAssortment assortment) =>
+        ((EconomyTable<NpcMarketOrder, EconomyNpcMarketOrder>)_tables[typeof(NpcMarketOrder)]).Indexed(
+            nameof(NpcMarketAssortment),
+            assortment
+        );
 
     private void OrderChanged(EconomySavedPersonalOrder? before, EconomySavedPersonalOrder? after)
     {
@@ -322,7 +329,8 @@ internal sealed partial class ResidentEconomy
         IReadOnlyDictionary<string, long> sequences,
         IReadOnlyCollection<CombatRowChange> changes,
         TransactionParticipants? participants,
-        IReadOnlyList<long> pilots
+        IReadOnlyList<long> pilots,
+        IReadOnlyList<MarketLocation> marketLocations
     )
     {
         InvalidateFits(changes);
@@ -340,7 +348,7 @@ internal sealed partial class ResidentEconomy
                 TrackPilot(pilot);
                 _owner.CombatForKnownPilot(pilot)?.ObserveEconomicItems(changes, id => Peek<OwnedItem>(id));
             }
-            _owner.PublishEconomic(changes, participants);
+            _owner.PublishEconomic(changes, participants, marketLocations);
         }
     }
 
