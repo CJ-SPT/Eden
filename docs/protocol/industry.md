@@ -165,6 +165,27 @@ formatting and audit reproduction passed.
 
 **Optional maintainer checks:** Probe a wormhole, jump both ways and verify native effects and the polarization timer.
 
+## Catalog original pricing and existing exploration supply
+
+Published manufacturing originals with a positive catalog corporation sell offer can use their positive catalog base price
+when the market snapshot lacks a sell quote. The fallback preserves the established hub assortment and the existing rejection
+of Tech II blueprint sales. A published item or price alone cannot create a seller. Condensers and harvested or reacted inputs
+retain the player-supply rules.
+
+The audit now includes the existing published datacore pool in pirate data sites and common and advanced salvage pools in
+pirate relic sites. The revised model covers 998 of 1,188 admitted Tech II recipes. It lists 218 distinct unresolved items
+across the remaining 190 recipes, including special or retired blueprints, LP and exploration rewards, and uncommon
+components. Those gaps retain their current availability. The four jump-freighter graphs still close under the modeled routes.
+
+**Automated validation.** The exact original-supply test passed in 6.27 seconds. It checks pricing at an actual supplier and
+rejects an unlisted blueprint and a catalog trade entry for an invented blueprint. The final affected filter passed
+75 cases in 33.07 seconds across blueprint supply, NPC supply, pricing, production catalog and hacking rules.
+Tool and solution restore, solution build, both Python policy suites, formatting and audit reproduction passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of

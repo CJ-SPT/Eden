@@ -76,6 +76,41 @@ public sealed class BlueprintMarketTests
     }
 
     [Fact]
+    public void SnapshotlessCatalogOriginalKeepsItsNpcSupplierWithoutSeedingUnlistedOrInventedBlueprints()
+    {
+        const int Offered = 691;
+        const int Unlisted = 939;
+        const int Invented = 784;
+        using TestWorld fixture = CreateWorld(Hub);
+        using (CatalogDbContext catalog = new(new WorldDatabase(fixture.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES
+                    (691,'Rifter Blueprint',134),(939,'Navitas Blueprint',134),(784,'Miner II Blueprint',134),(482,'Miner II',54);
+                INSERT OR IGNORE INTO DogmaAttribute VALUES (422,'techLevel');
+                INSERT OR REPLACE INTO TypeAttribute VALUES (482,422,2);
+                INSERT OR REPLACE INTO SourceRecord VALUES
+                    ('client/types','691','{{"published":1,"marketGroupID":1,"basePrice":2800000}}'),
+                    ('client/types','939','{{"published":1,"marketGroupID":1,"basePrice":2525000}}'),
+                    ('client/types','784','{{"published":1,"marketGroupID":1,"basePrice":5000000}}'),
+                    ('client/blueprints','"691"','{{"blueprintTypeID":691,"activities":{{"manufacturing":
+                        {{"products":[{{"typeID":601,"quantity":1}}]}}}}}}'),
+                    ('client/blueprints','"939"','{{"blueprintTypeID":939,"activities":{{"manufacturing":
+                        {{"products":[{{"typeID":601,"quantity":1}}]}}}}}}'),
+                    ('client/blueprints','"784"','{{"blueprintTypeID":784,"activities":{{"manufacturing":
+                        {{"products":[{{"typeID":482,"quantity":1}}]}}}}}}'),
+                    ('client/npccorporations','1000035','{{"corporationTrades":{{"691":1,"784":1}}}}');
+                """
+            );
+        }
+        var market = fixture.Services.GetRequiredService<IPilotMarket>();
+        Assert.Equal(280_000_000, Assert.Single(market.Orders(Pilot, Offered), order => !order.Bid).PriceCents);
+        Assert.DoesNotContain(market.Orders(Pilot, Unlisted), order => !order.Bid);
+        Assert.DoesNotContain(market.Orders(Pilot, Invented), order => !order.Bid);
+    }
+
+    [Fact]
     public void OrdinaryStationsKeepLocalSuppliersWhileRemoteHubBlueprintsAreVisible()
     {
         using TestWorld fixture = CreateWorld(OrdinaryStation);

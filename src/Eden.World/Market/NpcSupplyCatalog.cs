@@ -119,9 +119,13 @@ internal sealed partial class PilotMarketStore
                     ? quote.BuyCents
                     : quote.SellCents
                 : null;
+            // Preserve catalog supplier eligibility when the snapshot lacks a sell quote for a manufacturing original.
+            bool isOriginal =
+                type.CategoryId == (int)InventoryCategory.Blueprint
+                && catalog.Definitions.ManufacturingRecipe(typeId)?.Products is { Length: > 0 };
             bool useCatalogPrice =
                 database.PublishedSkills.TryGetValue(typeId, out var editedSkill) && editedSkill.PriceChanged
-                || !bid && price is null && NpcSupplyRules.UsesIndustrialCatalogPrice(typeId);
+                || !bid && price is null && (isOriginal || NpcSupplyRules.UsesIndustrialCatalogPrice(typeId));
             price = NpcSupplyRules.Price(
                 new(
                     typeId,

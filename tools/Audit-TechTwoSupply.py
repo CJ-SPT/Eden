@@ -3,6 +3,7 @@
 import argparse
 from collections import Counter, defaultdict, deque
 import json
+import re
 from pathlib import Path
 import sqlite3
 
@@ -117,6 +118,9 @@ def audit(db, production, market, mining):
         return stations
 
     market_stations = reachable_market_stations()
+    data_sites = json.loads(
+        (REPOSITORY / "src/Eden.Data/Catalog/Exploration/pirate-exploration-3662168.json").read_text(encoding="utf-8")
+    )["sites"]
     if not market_stations:
         raise ValueError("The pinned catalog has no reachable market stations")
     sell_quotes = {q["typeId"] for q in market["quotes"] if q.get("sellCents", 0) and q["sellCents"] > 0}
@@ -138,8 +142,34 @@ def audit(db, production, market, mining):
             continue
         if type_id in sell_quotes:
             add(type_id, "institutional sell offer", station)
-        elif type_id in INDUSTRIAL_CATALOG_PRICES and definition.get("basePrice", 0) > 0:
+        elif definition.get("basePrice", 0) > 0 and (
+            type_id in INDUSTRIAL_CATALOG_PRICES or (categories[groups[type_id]] == 9 and manufactured.get("products"))
+        ):
             add(type_id, "institutional sell offer at catalog price", station)
+
+    data_factions = {site["factionId"] for site in data_sites if site["kind"] == 0}
+    if data_factions:
+        for type_id, group in groups.items():
+            if group == DATACORE_GROUP and types.get(type_id, {}).get("published") == 1:
+                add(type_id, "pirate data site datacore pool", None)
+    # Derive the salvage pools from the same typed rule the hacking path uses.
+    salvage_source = (REPOSITORY / "src/Eden.Gameplay/Information/SalvageLootRules.cs").read_text(encoding="utf-8")
+    salvage_ids = {name: int(value) for name, value in re.findall(r"^    (\w+) = (\d+),$", salvage_source, re.MULTILINE)}
+    salvage_families = {
+        "Caldari": 500010, "Minmatar": 500011, "BloodRaider": 500012, "Sansha": 500019, "Gallente": 500020,
+    }
+    relics = {(site["factionId"], site["band"]) for site in data_sites if site["kind"] == 1}
+    for family, faction in salvage_families.items():
+        pools = re.findall(rf"\bSalvageFamily\.{family}\b[^=]*=>\s*\[([^\]]+)\]", salvage_source)
+        if len(pools) != 2:
+            raise ValueError(f"Missing salvage pools for {family}")
+        for advanced, pool in enumerate(pools[::-1]):
+            if not any(f == faction and (not advanced or band == 2) for f, band in relics):
+                continue
+            for name in re.findall(r"SalvageMaterial\.(\w+)", pool):
+                type_id = salvage_ids[name]
+                if types.get(type_id, {}).get("published") == 1:
+                    add(type_id, "pirate relic site salvage pool", faction)
 
     for skillbook, factions in ENCRYPTION_LOOT_FACTIONS.items():
         if types[skillbook].get("published") == 1:
