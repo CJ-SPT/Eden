@@ -456,7 +456,7 @@ internal sealed partial record FittingCalculation
             .Concat(Enum.GetValues<Eden.Gameplay.Information.InformationSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<CapacitorEmissionSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
-            .Concat([OverloadRules.ThermodynamicsSkill, SpatialModuleRules.MicroJumpSkill])
+            .Concat([OverloadRules.ThermodynamicsSkill, SpatialModuleRules.MicroJumpSkill, SmartbombRules.EnergyPulseWeaponsSkill])
             .Concat(Enum.GetValues<NaniteRepairSkill>().Select(s => (int)s))
             // Drone work/damage skills remain owned by DroneRules.ApplySkills.
             .Concat([(int)DroneSkill.Drones, (int)DroneSkill.DroneAvionics, (int)DroneSkill.AdvancedDroneAvionics])

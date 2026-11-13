@@ -29,7 +29,7 @@ internal sealed record WeaponContact(
     long ModuleId,
     int TypeId,
     int ChargeTypeId,
-    long Target,
+    long? Target,
     long StartedAt,
     double Duration,
     string Graphic = "effects.Laser"
@@ -429,6 +429,48 @@ internal sealed class SharedSpace(
     public ShipContact[] Peers(DockedPilot pilot)
     {
         return RunMotion(pilot.SystemId, () => PeersOwned(pilot), nameof(Peers));
+    }
+
+    internal SmartbombShip[] SmartbombShips(DockedPilot pilot)
+    {
+        if (pilot.Position is not { } origin)
+        {
+            return [];
+        }
+        return RunMotion(
+            pilot.SystemId,
+            () =>
+            {
+                using var motion = EnterMotion(systemId: pilot.SystemId);
+                var online = _ships
+                    .Values.Where(ship =>
+                        ship.Pilot.SystemId == pilot.SystemId
+                        && ship.Pilot.ShipId != pilot.ShipId
+                        && ship.Pilot.Position is { } position
+                        && Near(position, ship.Pilot.Flight.ShipRadius)
+                        && ship.Warp is null
+                        && ship.DepartureGate is null
+                        && !ship.Arriving
+                        && ship.Health?.Remaining.Destroyed != true
+                    )
+                    .Select(ship => new SmartbombShip(ship.Pilot.ShipId, ship.Pilot.Position!));
+                var offline =
+                    crimewatch
+                        ?.LoggedOff(pilot.SystemId)
+                        .Where(entry =>
+                            entry.Pilot.Position is { } position
+                            && Near(position, entry.Pilot.Flight.ShipRadius)
+                            && !_ships.ContainsKey(entry.Pilot.ShipId)
+                        )
+                        .Select(entry => new SmartbombShip(entry.Pilot.ShipId, entry.Pilot.Position!))
+                    ?? [];
+                return online.Concat(offline).ToArray();
+            },
+            nameof(SmartbombShips)
+        );
+
+        bool Near(SpacePosition position, double radius) =>
+            SmartbombRules.InRange(origin, pilot.Flight.ShipRadius, position, radius, NavigationDefinitions.MaximumTargetDistance);
     }
 
     private ShipContact[] PeersOwned(DockedPilot pilot)

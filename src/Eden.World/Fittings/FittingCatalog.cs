@@ -35,6 +35,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (type.GroupId == SmartbombRules.Group && !SmartbombCatalog.Supported(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         if (
             type.GroupId == Eden.Gameplay.Exploration.ProbeScanRules.LauncherGroup
             && !Eden.World.Exploration.ProbeCatalog.Launcher(catalog, typeId, type.GroupId)

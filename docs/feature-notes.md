@@ -305,7 +305,7 @@ Milestone 3 implements combat drones across its admitted hull cohort. Its first 
 | 10. Exploration | Catalog-backed targets, data/relic analyzers and authoritative hacking attempts. |
 | 11. Cloaks/micro jumps | [Implemented for 14 static cloaks and four standard drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026): visibility, covert warp, persisted delays, paid spools and scrambler interruption. |
 | 12. Fleet services | Bursts, shared ship bays, in-space refitting/boarding, frigate escape and micro-jump fields. |
-| 13. Area/interdiction | Smartbombs, burst jams, bombs/defenders, probes/bubbles, focused scripts, grapplers and nullifiers. |
+| 13. Area/interdiction | [125 static smartbombs](protocol/combat.md#smartbombs-november-12-2026) implemented. Burst jams, bombs/defenders, probes/bubbles, focused scripts, grapplers and nullifiers remain. |
 | 14. Weapons | Disintegrators, Vorton chains, breacher pods/counters and remaining restricted ordinary weapon variants. |
 | 15. T2 subcapitals | Complete ordinary subcapital cohorts, real-budget fits and role/equipment verification. |
 | 16. T3 | Tactical modes, strategic-cruiser subsystem assembly/refitting and nondestructive T3 rig removal. |

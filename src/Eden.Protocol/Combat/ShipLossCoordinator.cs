@@ -24,7 +24,8 @@ internal sealed class ShipLossCoordinator(
     SupportModuleHandler? support = null,
     TackleHandler? tackle = null,
     RemoteRepairHandler? remoteRepairs = null,
-    ISystemObjects? systems = null
+    ISystemObjects? systems = null,
+    SmartbombHandler? smartbombs = null
 )
 {
     internal void Replace(PilotCallContext context, DockedPilot capsule)
@@ -32,6 +33,7 @@ internal sealed class ShipLossCoordinator(
         context.Flight.BeginShipLoss();
         mining.Cancel(context);
         weapons.Cancel(context);
+        smartbombs?.Cancel(context);
         missiles?.Cancel(context);
         shields.Cancel(context);
         repairs.Cancel(context);

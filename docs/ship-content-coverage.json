@@ -26,7 +26,7 @@
     {
       "category": "Module",
       "state": "Complete",
-      "count": 3356
+      "count": 3481
     },
     {
       "category": "Module",
@@ -36,7 +36,7 @@
     {
       "category": "Module",
       "state": "Planned",
-      "count": 369
+      "count": 244
     },
     {
       "category": "Module",
@@ -11217,8 +11217,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -11228,9 +11228,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -11244,8 +11258,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -11255,9 +11269,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -11271,8 +11299,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -11282,9 +11310,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -11298,8 +11340,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -11309,9 +11351,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -11325,8 +11381,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -11336,9 +11392,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -11352,8 +11422,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -11363,9 +11433,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -11379,8 +11463,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -11390,9 +11474,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -11406,8 +11504,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -11417,9 +11515,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20195,8 +20307,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20206,9 +20318,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20222,8 +20348,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20233,9 +20359,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20249,8 +20389,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20260,9 +20400,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20276,8 +20430,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20287,9 +20441,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20303,8 +20471,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20314,9 +20482,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20330,8 +20512,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20341,9 +20523,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20357,8 +20553,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20368,9 +20564,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20384,8 +20594,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20395,9 +20605,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20411,8 +20635,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20422,9 +20646,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20438,8 +20676,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20449,9 +20687,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20465,8 +20717,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20476,9 +20728,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20492,8 +20758,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20503,9 +20769,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20519,8 +20799,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20530,9 +20810,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20546,8 +20840,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20557,9 +20851,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20573,8 +20881,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20584,9 +20892,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20600,8 +20922,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20611,9 +20933,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20627,8 +20963,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20638,9 +20974,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20654,8 +21004,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20665,9 +21015,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20681,8 +21045,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20692,9 +21056,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20708,8 +21086,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20719,9 +21097,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20776,8 +21168,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20787,9 +21179,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20803,8 +21209,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20814,9 +21220,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20830,8 +21250,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20841,9 +21261,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -20857,8 +21291,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -20868,9 +21302,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35703,8 +36151,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35714,9 +36162,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35730,8 +36192,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35741,9 +36203,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35757,8 +36233,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35768,9 +36244,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35784,8 +36274,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35795,9 +36285,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35811,8 +36315,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35822,9 +36326,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35838,8 +36356,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35849,9 +36367,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35865,8 +36397,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35876,9 +36408,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35892,8 +36438,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35903,9 +36449,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35919,8 +36479,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35930,9 +36490,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35946,8 +36520,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35957,9 +36531,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -35973,8 +36561,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -35984,9 +36572,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -36000,8 +36602,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -36011,9 +36613,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -36027,8 +36643,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -36038,9 +36654,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -36054,8 +36684,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -36065,9 +36695,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -36081,8 +36725,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -36092,9 +36736,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -36108,8 +36766,8 @@
       "category": "Module",
       "techLevel": null,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -36119,9 +36777,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -54994,8 +55666,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55005,9 +55677,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55021,8 +55707,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55032,9 +55718,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55048,8 +55748,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55059,9 +55759,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55075,8 +55789,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55086,9 +55800,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55102,8 +55830,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55113,9 +55841,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55129,8 +55871,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55140,9 +55882,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55156,8 +55912,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55167,9 +55923,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55183,8 +55953,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55194,9 +55964,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55210,8 +55994,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55221,9 +56005,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55237,8 +56035,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55248,9 +56046,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55264,8 +56076,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55275,9 +56087,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55291,8 +56117,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55302,9 +56128,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55318,8 +56158,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55329,9 +56169,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55345,8 +56199,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55356,9 +56210,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55372,8 +56240,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55383,9 +56251,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55399,8 +56281,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55410,9 +56292,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55426,8 +56322,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55437,9 +56333,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55453,8 +56363,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55464,9 +56374,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55480,8 +56404,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55491,9 +56415,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -55507,8 +56445,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -55518,9 +56456,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -60152,8 +61104,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -60163,9 +61115,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -60179,8 +61145,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -60190,9 +61156,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -60206,8 +61186,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -60217,9 +61197,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -60233,8 +61227,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -60244,9 +61238,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -62290,8 +63298,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -62301,9 +63309,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -62317,8 +63339,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -62328,9 +63350,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -62344,8 +63380,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -62355,9 +63391,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -62371,8 +63421,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -62382,9 +63432,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -64494,8 +65558,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -64505,9 +65569,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -64521,8 +65599,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -64532,9 +65610,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -64548,8 +65640,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -64559,9 +65651,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -64575,8 +65681,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -64586,9 +65692,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -64602,8 +65722,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -64613,9 +65733,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -64629,8 +65763,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -64640,9 +65774,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -64656,8 +65804,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -64667,9 +65815,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -64683,8 +65845,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -64694,9 +65856,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -71414,8 +72590,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -71425,9 +72601,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -71441,8 +72631,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -71452,9 +72642,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -71468,8 +72672,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -71479,9 +72683,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -71495,8 +72713,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -71506,9 +72724,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -80817,8 +82049,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -80828,9 +82060,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -80844,8 +82090,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -80855,9 +82101,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -80871,8 +82131,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -80882,9 +82142,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -80898,8 +82172,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -80909,9 +82183,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -80925,8 +82213,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -80936,9 +82224,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -80952,8 +82254,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -80963,9 +82265,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -80979,8 +82295,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -80990,9 +82306,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81006,8 +82336,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81017,9 +82347,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81033,8 +82377,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81044,9 +82388,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81060,8 +82418,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81071,9 +82429,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81087,8 +82459,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81098,9 +82470,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81114,8 +82500,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81125,9 +82511,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81141,8 +82541,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81152,9 +82552,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81168,8 +82582,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81179,9 +82593,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81195,8 +82623,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81206,9 +82634,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81222,8 +82664,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81233,9 +82675,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81249,8 +82705,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81260,9 +82716,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81276,8 +82746,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81287,9 +82757,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81303,8 +82787,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81314,9 +82798,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -81330,8 +82828,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -81341,9 +82839,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -116237,8 +117749,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -116248,9 +117760,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -116264,8 +117790,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -116275,9 +117801,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -116291,8 +117831,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -116302,9 +117842,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -116318,8 +117872,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -116329,9 +117883,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -125755,8 +127323,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -125766,9 +127334,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -125782,8 +127364,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -125793,9 +127375,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -125809,8 +127405,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -125820,9 +127416,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -139203,8 +140813,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -139214,9 +140824,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -139305,8 +140929,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -139316,9 +140940,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -139441,8 +141079,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -139452,9 +141090,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -210622,8 +212274,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -210633,9 +212285,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -210649,8 +212315,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -210660,9 +212326,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -210676,8 +212356,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -210687,9 +212367,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -210703,8 +212397,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -210714,9 +212408,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -210730,8 +212438,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -210741,9 +212449,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -210757,8 +212479,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 3,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -210768,9 +212490,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -210784,8 +212520,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -210795,9 +212531,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "Each paid untargeted pulse registers its shortened heat cycle. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],

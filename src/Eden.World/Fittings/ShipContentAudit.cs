@@ -324,6 +324,7 @@ internal static class ShipContentAudit
             {
                 evidence = type.GroupId switch
                 {
+                    SmartbombRules.Group => "Each paid untargeted pulse registers its shortened heat cycle.",
                     CombatDefinitions.EnergyWeaponGroup or CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup =>
                         "Single and grouped turrets pay the native overload rate or damage with their rack heat.",
                     CapacitorBoosterDefinitions.Group => "Injection spends a booster charge and registers its shortened heat cycle.",

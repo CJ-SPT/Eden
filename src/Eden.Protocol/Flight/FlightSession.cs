@@ -127,6 +127,20 @@ internal sealed partial class FlightSession(
     public IReadOnlyList<WreckContact> VisibleWrecks => Scene.VisibleWrecks;
     public IReadOnlyList<MissileContact> VisibleMissiles => Scene.VisibleMissiles;
 
+    internal SmartbombCandidates SmartbombCandidates()
+    {
+        Scene.RefreshNpcs(SceneContext);
+        Scene.RefreshDrones(SceneContext);
+        Scene.RefreshMissiles(SceneContext);
+        return new(
+            space.SmartbombShips(Pilot),
+            VisibleNpcs.Where(npc => npc.Warp is null).Select(npc => npc.Id).ToArray(),
+            VisibleDrones.Select(drone => drone.Id).ToArray(),
+            VisibleMissiles.Select(missile => missile.Id).ToArray(),
+            Scene.Objects
+        );
+    }
+
     public void RefreshDrones() => Scene.RefreshDrones(SceneContext);
 
     private void PublishContact()

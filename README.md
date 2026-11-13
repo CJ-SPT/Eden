@@ -88,6 +88,9 @@ Rebuild/restart the server and fully reopen the client to install the signed log
 
 The [ship and module completion program](docs/feature-notes.md#ship-and-module-completion-program) tracks remaining ordinary static content by operational role, with a reproducible inventory separating fitting admission, missing capabilities and external dependencies. [Milestone 6 heating](docs/protocol/fitting.md#complete-overheating-and-native-controls-november-8-2026) implements native module/rack controls, paid overload cycles for all 1,826 admitted heatable profiles, adjacent heat damage, burnout cancellation, saved module condition, station repairs and cargo-funded nanite repairs with partial material settlement. Burnout preserves shield and capacitor charge fractions. Automated validation establishes this scope; native presentation remains unverified.
 
+[Smartbombs](docs/protocol/combat.md#smartbombs-november-12-2026) support all 125 published static profiles, including targetless
+area damage, capacitor-funded repeats and overload, friendly drone damage, missile interception and Crimewatch enforcement.
+
 [NPC bounty skill points](docs/protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026) award the killer an additional **0.25% of the gross ISK bounty as unallocated SP**, rounded down per kill. A **150,000 ISK** bounty grants **375 SP** alongside its normal ISK payment.
 
 Bounty SP gains are silent; refresh the skill window to read the updated total.

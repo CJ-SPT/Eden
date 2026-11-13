@@ -185,6 +185,7 @@ public enum DogmaEffect
     TurretFitted = 42,
     Microwarpdrive = 6730,
     ProjectileFired = 34,
+    Smartbomb = 38,
     MiningLaser = 67,
     MiningClouds = 2726,
     MiningCrystalInformation = 1212,

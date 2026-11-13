@@ -52,7 +52,8 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            groupId == SpatialModuleRules.CloakGroup && effects.Any(SpatialModuleRules.IsCloak)
+            groupId == SmartbombRules.Group && effects.Contains(DogmaEffect.Smartbomb)
+            || groupId == SpatialModuleRules.CloakGroup && effects.Any(SpatialModuleRules.IsCloak)
             || groupId == SpatialModuleRules.MicroJumpGroup && effects.Contains(DogmaEffect.MicroJumpDrive)
             || groupId is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup
                 && effects.Contains(DogmaEffect.MiningClouds)

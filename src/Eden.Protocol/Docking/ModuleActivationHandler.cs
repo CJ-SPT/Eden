@@ -38,7 +38,8 @@ internal sealed class ModuleActivationHandler(
     SharedTargetLocks? targetLocks = null,
     Eden.Protocol.Exploration.ProbeScanningHandler? probes = null,
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
-    SpatialModuleHandler? spatial = null
+    SpatialModuleHandler? spatial = null,
+    SmartbombHandler? smartbombs = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -56,6 +57,7 @@ internal sealed class ModuleActivationHandler(
         string effectName = BlueMarshal.Text(args[1]);
         bool offensive =
             effectName is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect or MissileHandler.EffectName
+            || effectName == SmartbombHandler.EffectName
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
             || CapacitorWire.Effect(effectName) is DogmaEffect.EnergyNeutralizer or DogmaEffect.EnergyNosferatu;
@@ -87,6 +89,7 @@ internal sealed class ModuleActivationHandler(
             ),
             CombatWireDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
             CombatWireDefinitions.AmmoWeaponEffect => combat.Call(context, service, method, args, keywords),
+            SmartbombHandler.EffectName => smartbombs?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,
             ShieldBoostWireDefinitions.EffectName or ShieldBoostWireDefinitions.AncillaryEffectName => shields.Call(
                 context,

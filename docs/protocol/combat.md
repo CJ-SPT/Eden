@@ -6,6 +6,44 @@ Targeting, health, weapons, NPC populations and behavior, losses, wrecks and rep
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Smartbombs, November 12, 2026
+
+All 125 published static group-72 modules fit high slots without consuming hardpoints. Each paid pulse uses the fitted range,
+damage, capacitor cost and duration. It applies damage immediately without a lock or tracking roll. Energy Pulse Weapons
+effect **590** reduces duration by 5% per level. Native overload effect **3002** further reduces duration by 15% and registers
+the paid high-rack interval. Repeats check the current fit, safety, capacitor and contacts. Manual deactivation finishes the paid
+interval. Warp, ship loss, cloak and session transitions stop repetition. The saved cooldown prevents an extra pulse on reconnect.
+
+The pulse measures distance between ball surfaces and uses the existing damage and destruction paths for pilot ships and NPCs.
+Deployed drones, including the activating pilot's drones, take damage and can be destroyed. A pulse intercepts each in-flight
+projectile whose catalog HP it exceeds. Weaker pulses leave that projectile intact. Eden already represents bank members as
+individual projectiles. Wrecks and static scenery receive no damage. In high security red safety is required, and the existing
+Crimewatch and CONCORD paths handle unlawful hits. Each paid pulse starts a weapons timer, including in an empty grid.
+Stations, stargates and acceleration gates block activation within the greater of 5,000 m or module range. The exact server-side
+geometry is an Eden policy based on the reference and existing surface-distance rules.
+
+The catalog declares effect **38**, `empWave`, as untargeted, offensive, repeatable and not warp-safe. Inert inspection of the
+available client archive found `godma.Activate` forwarding module, effect, target and repeat, and `EMPWave.pyj` loading attribute
+**99** for its effect radius. The inspected archive has SHA-256
+`051a2f027309aa9e806273200c9f5e969cad8675f49ef97313ff57a6b4549bb9`, which differs from the archived pinned baseline.
+The build-3662168 catalog independently establishes the effect name, graphic, range, duration and capacitor bindings.
+Eden uses the existing timed `OnSpecialFX` and `OnGodmaShipEffect` adapters with a None target. References include
+[EVE University Smartbombs](https://wiki.eveuniversity.org/Smartbombs),
+[CCP Weapons and Logoff Timers](https://support.eveonline.com/hc/en-us/articles/203208932-Weapon-and-Logoff-Timers),
+[CCP Weapon Grouping](https://www.eveonline.com/news/view/weapon-grouping), and
+[Carbon Destiny GetSurfaceDist at 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Thunkers.cpp#L1798).
+
+**Automated validation.** Solution build passed in 30 seconds. The focused xUnit run covered `SmartbombTests`,
+`ConcordTests`, `MissileCombatTests`, `MissileHeatTests`, `OverloadControlTests` and `ShipContentCoverageTests`.
+All 105 cases passed in 57 seconds. The existing in-process xUnit runner replaced VSTest after testhost could not connect.
+Both Python policy suites, CSharpier and the line-width check passed. The Roslyn style check could not connect to its
+build host. Restore used cached packages with NuGet audit disabled for that invocation because the feed was unreachable.
+The offline production export matched the committed coverage entries.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a smartbomb pulse from a second client and check the fitted module's HUD cycle.
+
 ## CONCORD overview color during attacks — November 9, 2026
 
 The maintainer reported that CONCORD police turned red in the overview while attacking. CONCORD now sends the explicit blue standing thresholds in both initial snapshots and incremental NPC additions, overriding hostile catalog defaults. Those thresholds alone are insufficient: pinned build **3662168** `spacecomponents/client/components/entitystandings.pyj` `_get_icon_color_and_hint_from_entity_standing_response` unconditionally replaces a friendly color with `ICON_COLOR_BAD` when `threatAttackingMe` is true.

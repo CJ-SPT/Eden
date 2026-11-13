@@ -191,6 +191,7 @@ public enum DogmaAttributeId
     Agility = 70,
     ShieldCapacityBonus = 72,
     Duration = 73,
+    EmpFieldRange = 99,
     MaxTargetRange = 76,
     MiningAmount = 77,
     OverloadDurationBonus = 1206,
