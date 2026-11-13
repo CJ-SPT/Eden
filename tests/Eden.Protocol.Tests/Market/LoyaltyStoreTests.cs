@@ -65,6 +65,68 @@ public sealed class LoyaltyStoreTests
 
     private static IPilotLoyaltyStore Store(TestWorld db) => db.Services.GetRequiredService<IPilotLoyaltyStore>();
 
+    [Fact]
+    public void EarnedConcordLoyaltyDeliversDistinctMonitorCopiesWithLicensedRuns()
+    {
+        const int MonitorBlueprint = 45535;
+        const int MonitorOffer = 16339;
+        int concord = LoyaltyStoreRules.ConcordCorporation;
+        using var db = Create();
+        WorldDatabase database = new(db.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO NpcCorporation VALUES (1000125,'CONCORD');
+                UPDATE Station SET OwnerId=1000125 WHERE Id=60003760;
+                INSERT OR IGNORE INTO ItemGroup VALUES (1972,'Flag Cruiser',6);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (45535,'Monitor Blueprint',400),(45534,'Monitor',1972);
+                INSERT OR REPLACE INTO SourceRecord VALUES
+                    ('client/types','45535','{{"published":1,"volume":0.01}}'),
+                    ('client/types','45534','{{"published":1,"volume":100000}}'),
+                    ('client/blueprints','"45535"','{{"blueprintTypeID":45535,"maxProductionLimit":1,"activities":{{
+                        "manufacturing":{{"time":3600,"materials":[{{"typeID":2506,"quantity":1}}],
+                        "products":[{{"typeID":45534,"quantity":1}}]}}}}}}');
+                """
+            );
+        }
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Add(
+                new SavedLoyaltyBalance
+                {
+                    PilotId = Pilot,
+                    IssuerCorporationId = concord,
+                    Points = 20_000,
+                }
+            );
+            world.SaveChanges();
+        }
+        var store = Store(db);
+        var offer = Assert.Single(store.Offers(Pilot, concord), o => o.Id == MonitorOffer);
+        Assert.Equal(MonitorBlueprint, offer.TypeId);
+        var purchase = store.Purchase(Pilot, concord, MonitorOffer, 2);
+        Assert.Equal(0, purchase.PointsAfter);
+        Assert.Equal(Budget - 200_000_000, purchase.BalanceCents);
+        Assert.Equal(2, purchase.Changes.Count);
+        Assert.Equal(2, purchase.Changes.Select(change => change.Item.Id).Distinct().Count());
+        Assert.All(
+            purchase.Changes,
+            change =>
+            {
+                Assert.Equal((MonitorBlueprint, 1, 1), (change.Item.TypeId, change.Item.Quantity, change.Item.BlueprintRuns));
+                Assert.True(change.Item.Singleton);
+            }
+        );
+        Assert.Throws<InvalidDataException>(() => store.Purchase(Pilot, concord, MonitorOffer, 1));
+        WorldInitialization.Open(db.Path);
+        using WorldDbContext saved = new(db.Path);
+        Assert.Equal(
+            2,
+            saved.Set<OwnedItem>().Count(item => item.OwnerId == Pilot && item.TypeId == MonitorBlueprint && item.BlueprintRuns == 1)
+        );
+    }
+
     private static object? Reply(PilotCallResult result) =>
         BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(result).Reply));
 

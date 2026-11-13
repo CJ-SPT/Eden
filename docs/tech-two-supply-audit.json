@@ -31,8 +31,8 @@
     "1": 400,
     "2": 400,
     "3": 444,
-    "4": 994,
-    "5": 998
+    "4": 1007,
+    "5": 1011
   },
   "bootstrap": [
     {
@@ -446,14 +446,6 @@
       "name": "'Augmented' Mining Drone Blueprint"
     },
     {
-      "typeId": 43915,
-      "name": "'Excavator' Mining Drone Blueprint"
-    },
-    {
-      "typeId": 43916,
-      "name": "'Excavator' Ice Harvesting Drone Blueprint"
-    },
-    {
       "typeId": 45486,
       "name": "Pacifier Blueprint"
     },
@@ -472,10 +464,6 @@
     {
       "typeId": 45533,
       "name": "Virtuoso Blueprint"
-    },
-    {
-      "typeId": 45535,
-      "name": "Monitor Blueprint"
     },
     {
       "typeId": 47968,
@@ -530,6 +518,10 @@
       "name": "Zero-Point Condensate"
     },
     {
+      "typeId": 48121,
+      "name": "Triglavian Survey Database"
+    },
+    {
       "typeId": 49716,
       "name": "Rodiva Blueprint"
     },
@@ -566,78 +558,6 @@
       "name": "Lattice Locked Dekaisogen"
     },
     {
-      "typeId": 52684,
-      "name": "Low-grade Mimesis Alpha Blueprint"
-    },
-    {
-      "typeId": 52685,
-      "name": "Low-grade Mimesis Beta Blueprint"
-    },
-    {
-      "typeId": 52686,
-      "name": "Low-grade Mimesis Gamma Blueprint"
-    },
-    {
-      "typeId": 52687,
-      "name": "Low-grade Mimesis Delta Blueprint"
-    },
-    {
-      "typeId": 52688,
-      "name": "Low-grade Mimesis Epsilon Blueprint"
-    },
-    {
-      "typeId": 52689,
-      "name": "Low-grade Mimesis Omega Blueprint"
-    },
-    {
-      "typeId": 52791,
-      "name": "Mid-grade Mimesis Alpha Blueprint"
-    },
-    {
-      "typeId": 52792,
-      "name": "Mid-grade Mimesis Beta Blueprint"
-    },
-    {
-      "typeId": 52793,
-      "name": "Mid-grade Mimesis Delta Blueprint"
-    },
-    {
-      "typeId": 52794,
-      "name": "Mid-grade Mimesis Epsilon Blueprint"
-    },
-    {
-      "typeId": 52795,
-      "name": "Mid-grade Mimesis Gamma Blueprint"
-    },
-    {
-      "typeId": 52796,
-      "name": "Mid-grade Mimesis Omega Blueprint"
-    },
-    {
-      "typeId": 52972,
-      "name": "High-grade Mimesis Alpha Blueprint"
-    },
-    {
-      "typeId": 52974,
-      "name": "High-grade Mimesis Beta Blueprint"
-    },
-    {
-      "typeId": 52975,
-      "name": "High-grade Mimesis Delta Blueprint"
-    },
-    {
-      "typeId": 52976,
-      "name": "High-grade Mimesis Epsilon Blueprint"
-    },
-    {
-      "typeId": 52977,
-      "name": "High-grade Mimesis Gamma Blueprint"
-    },
-    {
-      "typeId": 52978,
-      "name": "High-grade Mimesis Omega Blueprint"
-    },
-    {
       "typeId": 53030,
       "name": "Ultratidal Entropic Disintegrator I Blueprint"
     },
@@ -648,54 +568,6 @@
     {
       "typeId": 53304,
       "name": "Meson Exotic Plasma XL Blueprint"
-    },
-    {
-      "typeId": 53722,
-      "name": "Mid-grade Nirvana Alpha Blueprint"
-    },
-    {
-      "typeId": 53723,
-      "name": "Mid-grade Nirvana Beta Blueprint"
-    },
-    {
-      "typeId": 53724,
-      "name": "Mid-grade Nirvana Delta Blueprint"
-    },
-    {
-      "typeId": 53725,
-      "name": "Mid-grade Nirvana Epsilon Blueprint"
-    },
-    {
-      "typeId": 53726,
-      "name": "Mid-grade Nirvana Gamma Blueprint"
-    },
-    {
-      "typeId": 53727,
-      "name": "Mid-grade Nirvana Omega Blueprint"
-    },
-    {
-      "typeId": 53728,
-      "name": "High-grade Nirvana Alpha Blueprint"
-    },
-    {
-      "typeId": 53729,
-      "name": "High-grade Nirvana Beta Blueprint"
-    },
-    {
-      "typeId": 53730,
-      "name": "High-grade Nirvana Delta Blueprint"
-    },
-    {
-      "typeId": 53731,
-      "name": "High-grade Nirvana Epsilon Blueprint"
-    },
-    {
-      "typeId": 53732,
-      "name": "High-grade Nirvana Gamma Blueprint"
-    },
-    {
-      "typeId": 53733,
-      "name": "High-grade Nirvana Omega Blueprint"
     },
     {
       "typeId": 53859,
@@ -722,54 +594,6 @@
       "name": "Low-grade Nirvana Omega Blueprint"
     },
     {
-      "typeId": 53908,
-      "name": "High-grade Savior Alpha Blueprint"
-    },
-    {
-      "typeId": 53909,
-      "name": "High-grade Savior Beta Blueprint"
-    },
-    {
-      "typeId": 53910,
-      "name": "High-grade Savior Gamma Blueprint"
-    },
-    {
-      "typeId": 53911,
-      "name": "High-grade Savior Delta Blueprint"
-    },
-    {
-      "typeId": 53912,
-      "name": "High-grade Savior Epsilon Blueprint"
-    },
-    {
-      "typeId": 53913,
-      "name": "High-grade Savior Omega Blueprint"
-    },
-    {
-      "typeId": 53914,
-      "name": "Mid-grade Savior Alpha Blueprint"
-    },
-    {
-      "typeId": 53915,
-      "name": "Mid-grade Savior Beta Blueprint"
-    },
-    {
-      "typeId": 53916,
-      "name": "Mid-grade Savior Gamma Blueprint"
-    },
-    {
-      "typeId": 53917,
-      "name": "Mid-grade Savior Delta Blueprint"
-    },
-    {
-      "typeId": 53918,
-      "name": "Mid-grade Savior Epsilon Blueprint"
-    },
-    {
-      "typeId": 53919,
-      "name": "Mid-grade Savior Omega Blueprint"
-    },
-    {
       "typeId": 53920,
       "name": "Low-grade Savior Alpha Blueprint"
     },
@@ -794,118 +618,6 @@
       "name": "Low-grade Savior Omega Blueprint"
     },
     {
-      "typeId": 54410,
-      "name": "High-grade Hydra Alpha Blueprint"
-    },
-    {
-      "typeId": 54411,
-      "name": "High-grade Hydra Beta Blueprint"
-    },
-    {
-      "typeId": 54412,
-      "name": "High-grade Hydra Gamma Blueprint"
-    },
-    {
-      "typeId": 54413,
-      "name": "High-grade Hydra Delta Blueprint"
-    },
-    {
-      "typeId": 54414,
-      "name": "High-grade Hydra Epsilon Blueprint"
-    },
-    {
-      "typeId": 54415,
-      "name": "High-grade Hydra Omega Blueprint"
-    },
-    {
-      "typeId": 54416,
-      "name": "Mid-grade Hydra Alpha Blueprint"
-    },
-    {
-      "typeId": 54417,
-      "name": "Mid-grade Hydra Beta Blueprint"
-    },
-    {
-      "typeId": 54418,
-      "name": "Mid-grade Hydra Gamma Blueprint"
-    },
-    {
-      "typeId": 54419,
-      "name": "Mid-grade Hydra Delta Blueprint"
-    },
-    {
-      "typeId": 54420,
-      "name": "Mid-grade Hydra Epsilon Blueprint"
-    },
-    {
-      "typeId": 54421,
-      "name": "Mid-grade Hydra Omega Blueprint"
-    },
-    {
-      "typeId": 54422,
-      "name": "Low-grade Hydra Alpha Blueprint"
-    },
-    {
-      "typeId": 54423,
-      "name": "Low-grade Hydra Beta Blueprint"
-    },
-    {
-      "typeId": 54424,
-      "name": "Low-grade Hydra Gamma Blueprint"
-    },
-    {
-      "typeId": 54425,
-      "name": "Low-grade Hydra Delta Blueprint"
-    },
-    {
-      "typeId": 54426,
-      "name": "Low-grade Hydra Epsilon Blueprint"
-    },
-    {
-      "typeId": 54427,
-      "name": "Low-grade Hydra Omega Blueprint"
-    },
-    {
-      "typeId": 54845,
-      "name": "Small Vorton Projector I Blueprint"
-    },
-    {
-      "typeId": 54852,
-      "name": "Medium Vorton Projector I Blueprint"
-    },
-    {
-      "typeId": 54857,
-      "name": "Large Vorton Projector I Blueprint"
-    },
-    {
-      "typeId": 54861,
-      "name": "GalvaSurge Condenser Pack S Blueprint"
-    },
-    {
-      "typeId": 54862,
-      "name": "MesmerFlux Condenser Pack S Blueprint"
-    },
-    {
-      "typeId": 54865,
-      "name": "GalvaSurge Condenser Pack M Blueprint"
-    },
-    {
-      "typeId": 54866,
-      "name": "MesmerFlux Condenser Pack M Blueprint"
-    },
-    {
-      "typeId": 54869,
-      "name": "GalvaSurge Condenser Pack L Blueprint"
-    },
-    {
-      "typeId": 54870,
-      "name": "MesmerFlux Condenser Pack L Blueprint"
-    },
-    {
-      "typeId": 54873,
-      "name": "Vorton Tuning System I Blueprint"
-    },
-    {
       "typeId": 54970,
       "name": "Electromagnetic Metaprismatic Sheeting"
     },
@@ -920,6 +632,14 @@
     {
       "typeId": 55025,
       "name": "Upwell Encryption Methods"
+    },
+    {
+      "typeId": 55830,
+      "name": "Triglavian Sublight Telemeter"
+    },
+    {
+      "typeId": 55831,
+      "name": "Triglavian Transconduit Datacaster"
     },
     {
       "typeId": 57129,
@@ -940,54 +660,6 @@
     {
       "typeId": 57133,
       "name": "Low-grade Rapture Epsilon Blueprint"
-    },
-    {
-      "typeId": 57134,
-      "name": "Mid-grade Rapture Alpha Blueprint"
-    },
-    {
-      "typeId": 57135,
-      "name": "Mid-grade Rapture Beta Blueprint"
-    },
-    {
-      "typeId": 57136,
-      "name": "Mid-grade Rapture Gamma Blueprint"
-    },
-    {
-      "typeId": 57137,
-      "name": "Mid-grade Rapture Delta Blueprint"
-    },
-    {
-      "typeId": 57138,
-      "name": "Mid-grade Rapture Epsilon Blueprint"
-    },
-    {
-      "typeId": 57139,
-      "name": "Mid-grade Rapture Omega Blueprint"
-    },
-    {
-      "typeId": 57140,
-      "name": "High-grade Rapture Alpha Blueprint"
-    },
-    {
-      "typeId": 57142,
-      "name": "High-grade Rapture Beta Blueprint"
-    },
-    {
-      "typeId": 57143,
-      "name": "High-grade Rapture Gamma Blueprint"
-    },
-    {
-      "typeId": 57144,
-      "name": "High-grade Rapture Delta Blueprint"
-    },
-    {
-      "typeId": 57145,
-      "name": "High-grade Rapture Epsilon Blueprint"
-    },
-    {
-      "typeId": 57146,
-      "name": "High-grade Rapture Omega Blueprint"
     },
     {
       "typeId": 57147,
@@ -4735,8 +4407,8 @@
     {"typeId": 43912, "name": "Ice Harvesting Drone II Blueprint", "paths": [{"source": "invention", "reference": 43911, "inputs": [11446, 11453, 20418, 20419, 23121, 43911], "milestone": 1}]},
     {"typeId": 43913, "name": "'Augmented' Ice Harvesting Drone Blueprint", "paths": []},
     {"typeId": 43914, "name": "'Augmented' Mining Drone Blueprint", "paths": []},
-    {"typeId": 43915, "name": "'Excavator' Mining Drone Blueprint", "paths": []},
-    {"typeId": 43916, "name": "'Excavator' Ice Harvesting Drone Blueprint", "paths": []},
+    {"typeId": 43915, "name": "'Excavator' Mining Drone Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16273, "inputs": [], "milestone": 1}]},
+    {"typeId": 43916, "name": "'Excavator' Ice Harvesting Drone Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16274, "inputs": [], "milestone": 1}]},
     {"typeId": 43921, "name": "Standup M-Set Equipment Manufacturing Material Efficiency II", "paths": [{"source": "manufacturing", "reference": 44003, "inputs": [3380, 11475, 25609, 25610, 25611, 25612, 25613, 25616, 25617, 25618, 25620, 25623, 44003], "milestone": 1}]},
     {"typeId": 44002, "name": "Standup M-Set Equipment Manufacturing Material Efficiency I Blueprint", "paths": [{"source": "institutional sell offer at catalog price", "reference": 60000310, "inputs": [], "milestone": 1}]},
     {"typeId": 44003, "name": "Standup M-Set Equipment Manufacturing Material Efficiency II Blueprint", "paths": [{"source": "invention", "reference": 44002, "inputs": [11446, 11453, 20418, 20419, 23121, 44002], "milestone": 1}]},
@@ -4858,7 +4530,7 @@
     {"typeId": 45532, "name": "Victor Blueprint", "paths": []},
     {"typeId": 45533, "name": "Virtuoso Blueprint", "paths": []},
     {"typeId": 45534, "name": "Monitor", "paths": [{"source": "manufacturing", "reference": 45535, "inputs": [34, 35, 36, 37, 38, 39, 40, 3380, 3397, 3828, 11399, 11442, 11443, 11452, 11478, 11530, 11534, 11541, 11543, 11548, 11554, 11558, 45535], "milestone": 1}]},
-    {"typeId": 45535, "name": "Monitor Blueprint", "paths": []},
+    {"typeId": 45535, "name": "Monitor Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16339, "inputs": [], "milestone": 1}]},
     {"typeId": 45537, "name": "Standup Composite Reactor I", "paths": [{"source": "manufacturing", "reference": 45540, "inputs": [34, 35, 36, 37, 38, 39, 40, 2867, 2868, 2869, 2870, 2871, 2872, 2875, 2876, 3400, 45540], "milestone": 1}]},
     {"typeId": 45538, "name": "Standup Hybrid Reactor I", "paths": [{"source": "manufacturing", "reference": 45541, "inputs": [34, 35, 36, 37, 38, 39, 40, 2867, 2868, 2869, 2870, 2871, 2872, 2875, 2876, 3400, 45541], "milestone": 1}]},
     {"typeId": 45539, "name": "Standup Biochemical Reactor I", "paths": [{"source": "manufacturing", "reference": 45542, "inputs": [34, 35, 36, 37, 38, 39, 40, 2867, 2868, 2869, 2870, 2871, 2872, 2875, 2876, 3400, 45542], "milestone": 1}]},
@@ -5203,6 +4875,7 @@
     {"typeId": 48110, "name": "Occult L Blueprint", "paths": [{"source": "invention", "reference": 48107, "inputs": [11433, 11447, 20411, 20413, 48107], "milestone": 1}]},
     {"typeId": 48111, "name": "Mystic L Blueprint", "paths": [{"source": "invention", "reference": 48109, "inputs": [11433, 11447, 20411, 20413, 48109], "milestone": 1}]},
     {"typeId": 48112, "name": "Zero-Point Condensate", "paths": []},
+    {"typeId": 48121, "name": "Triglavian Survey Database", "paths": []},
     {"typeId": 49712, "name": "Rodiva", "paths": [{"source": "manufacturing", "reference": 49716, "inputs": [34, 35, 36, 37, 38, 39, 40, 3380, 47975, 48112, 49716, 57478, 57486], "milestone": 1}]},
     {"typeId": 49713, "name": "Zarmazd", "paths": [{"source": "manufacturing", "reference": 49717, "inputs": [3380, 3397, 11399, 11478, 11537, 11543, 11557, 49712, 49717, 52307, 52310, 52311, 52312, 52313, 52314], "milestone": 1}]},
     {"typeId": 49716, "name": "Rodiva Blueprint", "paths": []},
@@ -5225,24 +4898,24 @@
     {"typeId": 52681, "name": "Low-grade Mimesis Delta", "paths": [{"source": "manufacturing", "reference": 52687, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52687], "milestone": 1}]},
     {"typeId": 52682, "name": "Low-grade Mimesis Epsilon", "paths": [{"source": "manufacturing", "reference": 52688, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52688], "milestone": 1}]},
     {"typeId": 52683, "name": "Low-grade Mimesis Omega", "paths": [{"source": "manufacturing", "reference": 52689, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52689], "milestone": 1}]},
-    {"typeId": 52684, "name": "Low-grade Mimesis Alpha Blueprint", "paths": []},
-    {"typeId": 52685, "name": "Low-grade Mimesis Beta Blueprint", "paths": []},
-    {"typeId": 52686, "name": "Low-grade Mimesis Gamma Blueprint", "paths": []},
-    {"typeId": 52687, "name": "Low-grade Mimesis Delta Blueprint", "paths": []},
-    {"typeId": 52688, "name": "Low-grade Mimesis Epsilon Blueprint", "paths": []},
-    {"typeId": 52689, "name": "Low-grade Mimesis Omega Blueprint", "paths": []},
+    {"typeId": 52684, "name": "Low-grade Mimesis Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16374, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52685, "name": "Low-grade Mimesis Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16375, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52686, "name": "Low-grade Mimesis Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16376, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52687, "name": "Low-grade Mimesis Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16377, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52688, "name": "Low-grade Mimesis Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16379, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52689, "name": "Low-grade Mimesis Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16380, "inputs": [48121], "milestone": 1}]},
     {"typeId": 52785, "name": "Mid-grade Mimesis Alpha", "paths": [{"source": "manufacturing", "reference": 52791, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52791], "milestone": 1}]},
     {"typeId": 52786, "name": "Mid-grade Mimesis Beta", "paths": [{"source": "manufacturing", "reference": 52792, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52792], "milestone": 1}]},
     {"typeId": 52787, "name": "Mid-grade Mimesis Gamma", "paths": [{"source": "manufacturing", "reference": 52795, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52795], "milestone": 1}]},
     {"typeId": 52788, "name": "Mid-grade Mimesis Delta", "paths": [{"source": "manufacturing", "reference": 52793, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52793], "milestone": 1}]},
     {"typeId": 52789, "name": "Mid-grade Mimesis Epsilon", "paths": [{"source": "manufacturing", "reference": 52794, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52794], "milestone": 1}]},
     {"typeId": 52790, "name": "Mid-grade Mimesis Omega", "paths": [{"source": "manufacturing", "reference": 52796, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52796], "milestone": 1}]},
-    {"typeId": 52791, "name": "Mid-grade Mimesis Alpha Blueprint", "paths": []},
-    {"typeId": 52792, "name": "Mid-grade Mimesis Beta Blueprint", "paths": []},
-    {"typeId": 52793, "name": "Mid-grade Mimesis Delta Blueprint", "paths": []},
-    {"typeId": 52794, "name": "Mid-grade Mimesis Epsilon Blueprint", "paths": []},
-    {"typeId": 52795, "name": "Mid-grade Mimesis Gamma Blueprint", "paths": []},
-    {"typeId": 52796, "name": "Mid-grade Mimesis Omega Blueprint", "paths": []},
+    {"typeId": 52791, "name": "Mid-grade Mimesis Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16381, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52792, "name": "Mid-grade Mimesis Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16383, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52793, "name": "Mid-grade Mimesis Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16385, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52794, "name": "Mid-grade Mimesis Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16386, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52795, "name": "Mid-grade Mimesis Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16384, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52796, "name": "Mid-grade Mimesis Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16387, "inputs": [48121], "milestone": 1}]},
     {"typeId": 52915, "name": "Ultratidal Entropic Disintegrator I", "paths": [{"source": "manufacturing", "reference": 53030, "inputs": [34, 35, 36, 37, 40, 3380, 22242, 47975, 48112, 53030], "milestone": 1}]},
     {"typeId": 52917, "name": "High-grade Mimesis Alpha", "paths": [{"source": "manufacturing", "reference": 52972, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52972], "milestone": 1}]},
     {"typeId": 52918, "name": "High-grade Mimesis Beta", "paths": [{"source": "manufacturing", "reference": 52974, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52974], "milestone": 1}]},
@@ -5250,12 +4923,12 @@
     {"typeId": 52920, "name": "High-grade Mimesis Epsilon", "paths": [{"source": "manufacturing", "reference": 52976, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52976], "milestone": 1}]},
     {"typeId": 52921, "name": "High-grade Mimesis Gamma", "paths": [{"source": "manufacturing", "reference": 52977, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52977], "milestone": 1}]},
     {"typeId": 52922, "name": "High-grade Mimesis Omega", "paths": [{"source": "manufacturing", "reference": 52978, "inputs": [2346, 2367, 3380, 11399, 52313, 52314, 52978], "milestone": 1}]},
-    {"typeId": 52972, "name": "High-grade Mimesis Alpha Blueprint", "paths": []},
-    {"typeId": 52974, "name": "High-grade Mimesis Beta Blueprint", "paths": []},
-    {"typeId": 52975, "name": "High-grade Mimesis Delta Blueprint", "paths": []},
-    {"typeId": 52976, "name": "High-grade Mimesis Epsilon Blueprint", "paths": []},
-    {"typeId": 52977, "name": "High-grade Mimesis Gamma Blueprint", "paths": []},
-    {"typeId": 52978, "name": "High-grade Mimesis Omega Blueprint", "paths": []},
+    {"typeId": 52972, "name": "High-grade Mimesis Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16388, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52974, "name": "High-grade Mimesis Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16389, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52975, "name": "High-grade Mimesis Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16391, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52976, "name": "High-grade Mimesis Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16392, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52977, "name": "High-grade Mimesis Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16390, "inputs": [48121], "milestone": 1}]},
+    {"typeId": 52978, "name": "High-grade Mimesis Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16393, "inputs": [48121], "milestone": 1}]},
     {"typeId": 53030, "name": "Ultratidal Entropic Disintegrator I Blueprint", "paths": []},
     {"typeId": 53303, "name": "Tetryon Exotic Plasma XL Blueprint", "paths": []},
     {"typeId": 53304, "name": "Meson Exotic Plasma XL Blueprint", "paths": []},
@@ -5271,18 +4944,18 @@
     {"typeId": 53713, "name": "High-grade Nirvana Epsilon", "paths": [{"source": "manufacturing", "reference": 53731, "inputs": [2346, 2869, 3380, 11399, 12836, 17136, 53731], "milestone": 1}]},
     {"typeId": 53714, "name": "High-grade Nirvana Omega", "paths": [{"source": "manufacturing", "reference": 53733, "inputs": [2346, 2348, 2367, 2869, 3380, 11399, 17136, 53733], "milestone": 1}]},
     {"typeId": 53715, "name": "High-grade Nirvana Gamma", "paths": [{"source": "manufacturing", "reference": 53732, "inputs": [2348, 2869, 3380, 11399, 12836, 17136, 53732], "milestone": 1}]},
-    {"typeId": 53722, "name": "Mid-grade Nirvana Alpha Blueprint", "paths": []},
-    {"typeId": 53723, "name": "Mid-grade Nirvana Beta Blueprint", "paths": []},
-    {"typeId": 53724, "name": "Mid-grade Nirvana Delta Blueprint", "paths": []},
-    {"typeId": 53725, "name": "Mid-grade Nirvana Epsilon Blueprint", "paths": []},
-    {"typeId": 53726, "name": "Mid-grade Nirvana Gamma Blueprint", "paths": []},
-    {"typeId": 53727, "name": "Mid-grade Nirvana Omega Blueprint", "paths": []},
-    {"typeId": 53728, "name": "High-grade Nirvana Alpha Blueprint", "paths": []},
-    {"typeId": 53729, "name": "High-grade Nirvana Beta Blueprint", "paths": []},
-    {"typeId": 53730, "name": "High-grade Nirvana Delta Blueprint", "paths": []},
-    {"typeId": 53731, "name": "High-grade Nirvana Epsilon Blueprint", "paths": []},
-    {"typeId": 53732, "name": "High-grade Nirvana Gamma Blueprint", "paths": []},
-    {"typeId": 53733, "name": "High-grade Nirvana Omega Blueprint", "paths": []},
+    {"typeId": 53722, "name": "Mid-grade Nirvana Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16416, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16416, "inputs": [], "milestone": 1}]},
+    {"typeId": 53723, "name": "Mid-grade Nirvana Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16417, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16417, "inputs": [], "milestone": 1}]},
+    {"typeId": 53724, "name": "Mid-grade Nirvana Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16418, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16418, "inputs": [], "milestone": 1}]},
+    {"typeId": 53725, "name": "Mid-grade Nirvana Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16419, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16419, "inputs": [], "milestone": 1}]},
+    {"typeId": 53726, "name": "Mid-grade Nirvana Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16420, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16420, "inputs": [], "milestone": 1}]},
+    {"typeId": 53727, "name": "Mid-grade Nirvana Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16421, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16421, "inputs": [], "milestone": 1}]},
+    {"typeId": 53728, "name": "High-grade Nirvana Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16423, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16423, "inputs": [], "milestone": 1}]},
+    {"typeId": 53729, "name": "High-grade Nirvana Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16424, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16424, "inputs": [], "milestone": 1}]},
+    {"typeId": 53730, "name": "High-grade Nirvana Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16425, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16425, "inputs": [], "milestone": 1}]},
+    {"typeId": 53731, "name": "High-grade Nirvana Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16426, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16426, "inputs": [], "milestone": 1}]},
+    {"typeId": 53732, "name": "High-grade Nirvana Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16427, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16427, "inputs": [], "milestone": 1}]},
+    {"typeId": 53733, "name": "High-grade Nirvana Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16428, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16428, "inputs": [], "milestone": 1}]},
     {"typeId": 53839, "name": "Low-grade Nirvana Omega", "paths": [{"source": "manufacturing", "reference": 53864, "inputs": [2346, 2348, 2367, 2869, 3380, 11399, 17136, 53864], "milestone": 1}]},
     {"typeId": 53853, "name": "Low-grade Nirvana Alpha", "paths": [{"source": "manufacturing", "reference": 53859, "inputs": [2346, 2367, 2869, 3380, 11399, 17136, 53859], "milestone": 1}]},
     {"typeId": 53854, "name": "Low-grade Nirvana Beta", "paths": [{"source": "manufacturing", "reference": 53860, "inputs": [2348, 2367, 2869, 3380, 11399, 17136, 53860], "milestone": 1}]},
@@ -5313,18 +4986,18 @@
     {"typeId": 53905, "name": "Low-grade Savior Delta", "paths": [{"source": "manufacturing", "reference": 53923, "inputs": [2367, 2869, 3380, 11399, 12836, 34575, 53923], "milestone": 1}]},
     {"typeId": 53906, "name": "Low-grade Savior Epsilon", "paths": [{"source": "manufacturing", "reference": 53924, "inputs": [2346, 2869, 3380, 11399, 12836, 34575, 53924], "milestone": 1}]},
     {"typeId": 53907, "name": "Low-grade Savior Omega", "paths": [{"source": "manufacturing", "reference": 53925, "inputs": [2346, 2348, 2367, 2869, 3380, 11399, 34575, 53925], "milestone": 1}]},
-    {"typeId": 53908, "name": "High-grade Savior Alpha Blueprint", "paths": []},
-    {"typeId": 53909, "name": "High-grade Savior Beta Blueprint", "paths": []},
-    {"typeId": 53910, "name": "High-grade Savior Gamma Blueprint", "paths": []},
-    {"typeId": 53911, "name": "High-grade Savior Delta Blueprint", "paths": []},
-    {"typeId": 53912, "name": "High-grade Savior Epsilon Blueprint", "paths": []},
-    {"typeId": 53913, "name": "High-grade Savior Omega Blueprint", "paths": []},
-    {"typeId": 53914, "name": "Mid-grade Savior Alpha Blueprint", "paths": []},
-    {"typeId": 53915, "name": "Mid-grade Savior Beta Blueprint", "paths": []},
-    {"typeId": 53916, "name": "Mid-grade Savior Gamma Blueprint", "paths": []},
-    {"typeId": 53917, "name": "Mid-grade Savior Delta Blueprint", "paths": []},
-    {"typeId": 53918, "name": "Mid-grade Savior Epsilon Blueprint", "paths": []},
-    {"typeId": 53919, "name": "Mid-grade Savior Omega Blueprint", "paths": []},
+    {"typeId": 53908, "name": "High-grade Savior Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16431, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16431, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16431, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16431, "inputs": [], "milestone": 1}]},
+    {"typeId": 53909, "name": "High-grade Savior Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16432, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16432, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16432, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16432, "inputs": [], "milestone": 1}]},
+    {"typeId": 53910, "name": "High-grade Savior Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16435, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16435, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16435, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16435, "inputs": [], "milestone": 1}]},
+    {"typeId": 53911, "name": "High-grade Savior Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16433, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16433, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16433, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16433, "inputs": [], "milestone": 1}]},
+    {"typeId": 53912, "name": "High-grade Savior Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16434, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16434, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16434, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16434, "inputs": [], "milestone": 1}]},
+    {"typeId": 53913, "name": "High-grade Savior Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16436, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16436, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16436, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16436, "inputs": [], "milestone": 1}]},
+    {"typeId": 53914, "name": "Mid-grade Savior Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16437, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16437, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16437, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16437, "inputs": [], "milestone": 1}]},
+    {"typeId": 53915, "name": "Mid-grade Savior Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16438, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16438, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16438, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16438, "inputs": [], "milestone": 1}]},
+    {"typeId": 53916, "name": "Mid-grade Savior Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16441, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16441, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16441, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16441, "inputs": [], "milestone": 1}]},
+    {"typeId": 53917, "name": "Mid-grade Savior Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16439, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16439, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16439, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16439, "inputs": [], "milestone": 1}]},
+    {"typeId": 53918, "name": "Mid-grade Savior Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16440, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16440, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16440, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16440, "inputs": [], "milestone": 1}]},
+    {"typeId": 53919, "name": "Mid-grade Savior Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16442, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16442, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16442, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16442, "inputs": [], "milestone": 1}]},
     {"typeId": 53920, "name": "Low-grade Savior Alpha Blueprint", "paths": []},
     {"typeId": 53921, "name": "Low-grade Savior Beta Blueprint", "paths": []},
     {"typeId": 53922, "name": "Low-grade Savior Gamma Blueprint", "paths": []},
@@ -5349,24 +5022,24 @@
     {"typeId": 54407, "name": "Low-grade Hydra Delta", "paths": [{"source": "manufacturing", "reference": 54425, "inputs": [2367, 2869, 3380, 11399, 12836, 28363, 54425], "milestone": 1}]},
     {"typeId": 54408, "name": "Low-grade Hydra Epsilon", "paths": [{"source": "manufacturing", "reference": 54426, "inputs": [2346, 2869, 3380, 11399, 12836, 28363, 54426], "milestone": 1}]},
     {"typeId": 54409, "name": "Low-grade Hydra Omega", "paths": [{"source": "manufacturing", "reference": 54427, "inputs": [2346, 2348, 2367, 2869, 3380, 11399, 28363, 54427], "milestone": 1}]},
-    {"typeId": 54410, "name": "High-grade Hydra Alpha Blueprint", "paths": []},
-    {"typeId": 54411, "name": "High-grade Hydra Beta Blueprint", "paths": []},
-    {"typeId": 54412, "name": "High-grade Hydra Gamma Blueprint", "paths": []},
-    {"typeId": 54413, "name": "High-grade Hydra Delta Blueprint", "paths": []},
-    {"typeId": 54414, "name": "High-grade Hydra Epsilon Blueprint", "paths": []},
-    {"typeId": 54415, "name": "High-grade Hydra Omega Blueprint", "paths": []},
-    {"typeId": 54416, "name": "Mid-grade Hydra Alpha Blueprint", "paths": []},
-    {"typeId": 54417, "name": "Mid-grade Hydra Beta Blueprint", "paths": []},
-    {"typeId": 54418, "name": "Mid-grade Hydra Gamma Blueprint", "paths": []},
-    {"typeId": 54419, "name": "Mid-grade Hydra Delta Blueprint", "paths": []},
-    {"typeId": 54420, "name": "Mid-grade Hydra Epsilon Blueprint", "paths": []},
-    {"typeId": 54421, "name": "Mid-grade Hydra Omega Blueprint", "paths": []},
-    {"typeId": 54422, "name": "Low-grade Hydra Alpha Blueprint", "paths": []},
-    {"typeId": 54423, "name": "Low-grade Hydra Beta Blueprint", "paths": []},
-    {"typeId": 54424, "name": "Low-grade Hydra Gamma Blueprint", "paths": []},
-    {"typeId": 54425, "name": "Low-grade Hydra Delta Blueprint", "paths": []},
-    {"typeId": 54426, "name": "Low-grade Hydra Epsilon Blueprint", "paths": []},
-    {"typeId": 54427, "name": "Low-grade Hydra Omega Blueprint", "paths": []},
+    {"typeId": 54410, "name": "High-grade Hydra Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16455, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16455, "inputs": [], "milestone": 1}]},
+    {"typeId": 54411, "name": "High-grade Hydra Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16456, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16456, "inputs": [], "milestone": 1}]},
+    {"typeId": 54412, "name": "High-grade Hydra Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16457, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16457, "inputs": [], "milestone": 1}]},
+    {"typeId": 54413, "name": "High-grade Hydra Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16458, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16458, "inputs": [], "milestone": 1}]},
+    {"typeId": 54414, "name": "High-grade Hydra Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16459, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16459, "inputs": [], "milestone": 1}]},
+    {"typeId": 54415, "name": "High-grade Hydra Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16460, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16460, "inputs": [], "milestone": 1}]},
+    {"typeId": 54416, "name": "Mid-grade Hydra Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16449, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16449, "inputs": [], "milestone": 1}]},
+    {"typeId": 54417, "name": "Mid-grade Hydra Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16450, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16450, "inputs": [], "milestone": 1}]},
+    {"typeId": 54418, "name": "Mid-grade Hydra Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16451, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16451, "inputs": [], "milestone": 1}]},
+    {"typeId": 54419, "name": "Mid-grade Hydra Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16452, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16452, "inputs": [], "milestone": 1}]},
+    {"typeId": 54420, "name": "Mid-grade Hydra Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16453, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16453, "inputs": [], "milestone": 1}]},
+    {"typeId": 54421, "name": "Mid-grade Hydra Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16454, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16454, "inputs": [], "milestone": 1}]},
+    {"typeId": 54422, "name": "Low-grade Hydra Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16443, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16443, "inputs": [], "milestone": 1}]},
+    {"typeId": 54423, "name": "Low-grade Hydra Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16444, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16444, "inputs": [], "milestone": 1}]},
+    {"typeId": 54424, "name": "Low-grade Hydra Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16447, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16447, "inputs": [], "milestone": 1}]},
+    {"typeId": 54425, "name": "Low-grade Hydra Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16445, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16445, "inputs": [], "milestone": 1}]},
+    {"typeId": 54426, "name": "Low-grade Hydra Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16446, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16446, "inputs": [], "milestone": 1}]},
+    {"typeId": 54427, "name": "Low-grade Hydra Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16448, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 16448, "inputs": [], "milestone": 1}]},
     {"typeId": 54739, "name": "Small Vorton Projector I", "paths": [{"source": "manufacturing", "reference": 54845, "inputs": [34, 35, 36, 3380, 48112, 54845, 54970, 54971, 54972], "milestone": 1}]},
     {"typeId": 54742, "name": "Small Vorton Projector II", "paths": [{"source": "manufacturing", "reference": 54850, "inputs": [3380, 9848, 11399, 11448, 11455, 11486, 11690, 54739, 54850], "milestone": 1}]},
     {"typeId": 54745, "name": "Medium Vorton Projector I", "paths": [{"source": "manufacturing", "reference": 54852, "inputs": [34, 35, 36, 37, 38, 3380, 48112, 54852, 54970, 54971, 54972], "milestone": 1}]},
@@ -5379,25 +5052,25 @@
     {"typeId": 54784, "name": "ElectroPunch Ultra S", "paths": [{"source": "manufacturing", "reference": 54884, "inputs": [3380, 11399, 11448, 11455, 11476, 16679, 48112, 54884], "milestone": 1}]},
     {"typeId": 54785, "name": "StrikeSnipe Ultra M", "paths": [{"source": "manufacturing", "reference": 54887, "inputs": [3380, 11399, 11448, 11455, 11476, 16679, 48112, 54887], "milestone": 1}]},
     {"typeId": 54786, "name": "ElectroPunch Ultra M", "paths": [{"source": "manufacturing", "reference": 54886, "inputs": [3380, 11399, 11448, 11455, 11476, 16679, 48112, 54886], "milestone": 1}]},
-    {"typeId": 54845, "name": "Small Vorton Projector I Blueprint", "paths": []},
+    {"typeId": 54845, "name": "Small Vorton Projector I Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16464, "inputs": [55830, 55831], "milestone": 1}]},
     {"typeId": 54850, "name": "Small Vorton Projector II Blueprint", "paths": [{"source": "invention", "reference": 54845, "inputs": [11441, 11455, 20412, 20414, 54845, 55025], "milestone": 1}]},
-    {"typeId": 54852, "name": "Medium Vorton Projector I Blueprint", "paths": []},
+    {"typeId": 54852, "name": "Medium Vorton Projector I Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16465, "inputs": [55830, 55831], "milestone": 1}]},
     {"typeId": 54855, "name": "Medium Vorton Projector II Blueprint", "paths": [{"source": "invention", "reference": 54852, "inputs": [11441, 11455, 20412, 20414, 54852, 55025], "milestone": 1}]},
-    {"typeId": 54857, "name": "Large Vorton Projector I Blueprint", "paths": []},
+    {"typeId": 54857, "name": "Large Vorton Projector I Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16466, "inputs": [55830, 55831], "milestone": 1}]},
     {"typeId": 54860, "name": "Large Vorton Projector II Blueprint", "paths": [{"source": "invention", "reference": 54857, "inputs": [11441, 11455, 20412, 20414, 54857, 55025], "milestone": 1}]},
-    {"typeId": 54861, "name": "GalvaSurge Condenser Pack S Blueprint", "paths": []},
-    {"typeId": 54862, "name": "MesmerFlux Condenser Pack S Blueprint", "paths": []},
-    {"typeId": 54863, "name": "BlastShot Condenser Pack S Blueprint", "paths": []},
-    {"typeId": 54864, "name": "SlamBolt Condenser Pack S Blueprint", "paths": []},
-    {"typeId": 54865, "name": "GalvaSurge Condenser Pack M Blueprint", "paths": []},
-    {"typeId": 54866, "name": "MesmerFlux Condenser Pack M Blueprint", "paths": []},
-    {"typeId": 54867, "name": "BlastShot Condenser Pack M Blueprint", "paths": []},
-    {"typeId": 54868, "name": "SlamBolt Condenser Pack M Blueprint", "paths": []},
-    {"typeId": 54869, "name": "GalvaSurge Condenser Pack L Blueprint", "paths": []},
-    {"typeId": 54870, "name": "MesmerFlux Condenser Pack L Blueprint", "paths": []},
-    {"typeId": 54871, "name": "BlastShot Condenser Pack L Blueprint", "paths": []},
-    {"typeId": 54872, "name": "SlamBolt Condenser Pack L Blueprint", "paths": []},
-    {"typeId": 54873, "name": "Vorton Tuning System I Blueprint", "paths": []},
+    {"typeId": 54861, "name": "GalvaSurge Condenser Pack S Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16478, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54862, "name": "MesmerFlux Condenser Pack S Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16479, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54863, "name": "BlastShot Condenser Pack S Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16480, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54864, "name": "SlamBolt Condenser Pack S Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16481, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54865, "name": "GalvaSurge Condenser Pack M Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16482, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54866, "name": "MesmerFlux Condenser Pack M Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16483, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54867, "name": "BlastShot Condenser Pack M Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16484, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54868, "name": "SlamBolt Condenser Pack M Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16485, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54869, "name": "GalvaSurge Condenser Pack L Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16486, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54870, "name": "MesmerFlux Condenser Pack L Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16487, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54871, "name": "BlastShot Condenser Pack L Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16488, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54872, "name": "SlamBolt Condenser Pack L Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16489, "inputs": [55830, 55831], "milestone": 1}]},
+    {"typeId": 54873, "name": "Vorton Tuning System I Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 16477, "inputs": [55830, 55831], "milestone": 1}]},
     {"typeId": 54876, "name": "Vorton Tuning System II Blueprint", "paths": [{"source": "invention", "reference": 54873, "inputs": [11452, 11453, 20418, 20424, 54873, 55025], "milestone": 1}]},
     {"typeId": 54884, "name": "ElectroPunch Ultra S Blueprint", "paths": [{"source": "invention", "reference": 54861, "inputs": [11441, 11455, 20412, 20414, 54861, 55025], "milestone": 1}, {"source": "invention", "reference": 54863, "inputs": [11441, 11455, 20412, 20414, 54863, 55025], "milestone": 1}]},
     {"typeId": 54885, "name": "StrikeSnipe Ultra S Blueprint", "paths": [{"source": "invention", "reference": 54862, "inputs": [11441, 11455, 20412, 20414, 54862, 55025], "milestone": 1}, {"source": "invention", "reference": 54864, "inputs": [11441, 11455, 20412, 20414, 54864, 55025], "milestone": 1}]},
@@ -5413,6 +5086,8 @@
     {"typeId": 55025, "name": "Upwell Encryption Methods", "paths": []},
     {"typeId": 55760, "name": "Salvage Drone II", "paths": [{"source": "manufacturing", "reference": 55762, "inputs": [3380, 9848, 11399, 11446, 11453, 11481, 11541, 11689, 32787, 55762], "milestone": 1}]},
     {"typeId": 55762, "name": "Salvage Drone II Blueprint", "paths": [{"source": "invention", "reference": 32982, "inputs": [11446, 11453, 20418, 20419, 23121, 32982], "milestone": 1}]},
+    {"typeId": 55830, "name": "Triglavian Sublight Telemeter", "paths": []},
+    {"typeId": 55831, "name": "Triglavian Transconduit Datacaster", "paths": []},
     {"typeId": 56202, "name": "Athanor Upwell Quantum Core", "paths": [{"source": "institutional sell offer", "reference": 60002368, "inputs": [], "milestone": 1}]},
     {"typeId": 56205, "name": "Tatara Upwell Quantum Core", "paths": [{"source": "institutional sell offer", "reference": 60002368, "inputs": [], "milestone": 1}]},
     {"typeId": 57110, "name": "Low-grade Rapture Alpha", "paths": [{"source": "manufacturing", "reference": 57129, "inputs": [2346, 2367, 2869, 3380, 11399, 47975, 57129], "milestone": 1}]},
@@ -5438,18 +5113,18 @@
     {"typeId": 57131, "name": "Low-grade Rapture Gamma Blueprint", "paths": []},
     {"typeId": 57132, "name": "Low-grade Rapture Delta Blueprint", "paths": []},
     {"typeId": 57133, "name": "Low-grade Rapture Epsilon Blueprint", "paths": []},
-    {"typeId": 57134, "name": "Mid-grade Rapture Alpha Blueprint", "paths": []},
-    {"typeId": 57135, "name": "Mid-grade Rapture Beta Blueprint", "paths": []},
-    {"typeId": 57136, "name": "Mid-grade Rapture Gamma Blueprint", "paths": []},
-    {"typeId": 57137, "name": "Mid-grade Rapture Delta Blueprint", "paths": []},
-    {"typeId": 57138, "name": "Mid-grade Rapture Epsilon Blueprint", "paths": []},
-    {"typeId": 57139, "name": "Mid-grade Rapture Omega Blueprint", "paths": []},
-    {"typeId": 57140, "name": "High-grade Rapture Alpha Blueprint", "paths": []},
-    {"typeId": 57142, "name": "High-grade Rapture Beta Blueprint", "paths": []},
-    {"typeId": 57143, "name": "High-grade Rapture Gamma Blueprint", "paths": []},
-    {"typeId": 57144, "name": "High-grade Rapture Delta Blueprint", "paths": []},
-    {"typeId": 57145, "name": "High-grade Rapture Epsilon Blueprint", "paths": []},
-    {"typeId": 57146, "name": "High-grade Rapture Omega Blueprint", "paths": []},
+    {"typeId": 57134, "name": "Mid-grade Rapture Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19414, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19414, "inputs": [], "milestone": 1}]},
+    {"typeId": 57135, "name": "Mid-grade Rapture Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19415, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19415, "inputs": [], "milestone": 1}]},
+    {"typeId": 57136, "name": "Mid-grade Rapture Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19418, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19418, "inputs": [], "milestone": 1}]},
+    {"typeId": 57137, "name": "Mid-grade Rapture Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19416, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19416, "inputs": [], "milestone": 1}]},
+    {"typeId": 57138, "name": "Mid-grade Rapture Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19417, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19417, "inputs": [], "milestone": 1}]},
+    {"typeId": 57139, "name": "Mid-grade Rapture Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19419, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19419, "inputs": [], "milestone": 1}]},
+    {"typeId": 57140, "name": "High-grade Rapture Alpha Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19420, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19420, "inputs": [], "milestone": 1}]},
+    {"typeId": 57142, "name": "High-grade Rapture Beta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19421, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19421, "inputs": [], "milestone": 1}]},
+    {"typeId": 57143, "name": "High-grade Rapture Gamma Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19424, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19424, "inputs": [], "milestone": 1}]},
+    {"typeId": 57144, "name": "High-grade Rapture Delta Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19422, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19422, "inputs": [], "milestone": 1}]},
+    {"typeId": 57145, "name": "High-grade Rapture Epsilon Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19423, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19423, "inputs": [], "milestone": 1}]},
+    {"typeId": 57146, "name": "High-grade Rapture Omega Blueprint", "paths": [{"source": "earned LP blueprint copy", "reference": 19425, "inputs": [], "milestone": 1}, {"source": "earned LP blueprint copy", "reference": 19425, "inputs": [], "milestone": 1}]},
     {"typeId": 57147, "name": "Low-grade Rapture Omega Blueprint", "paths": []},
     {"typeId": 57445, "name": "LM-Composite Molecular Condenser", "paths": [{"source": "pirate data Info Shard", "reference": 500012, "inputs": [], "milestone": 5}, {"source": "pirate data Info Shard", "reference": 500019, "inputs": [], "milestone": 5}]},
     {"typeId": 57446, "name": "AG-Composite Molecular Condenser", "paths": [{"source": "pirate data Info Shard", "reference": 500010, "inputs": [], "milestone": 5}, {"source": "pirate data Info Shard", "reference": 500019, "inputs": [], "milestone": 5}]},

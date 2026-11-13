@@ -253,6 +253,35 @@ def audit(db, production, market, mining):
             if skill in datacores and not any(p["source"] == "R&D agent" for p in paths[datacores[skill]]):
                 add(datacores[skill], "R&D agent", character, [skill])
 
+    # LP copy delivery uses admitted manufacturing definitions. Require a reachable
+    # station and a basic agent issuing that corporation's loyalty points.
+    lp_offers = json.loads(
+        (REPOSITORY / "src/Eden.World/Market/loyalty-offers.json").read_text(encoding="utf-8")
+    )
+    lp_stations = defaultdict(set)
+    operations = records(db, "client/stationoperations")
+    for station, owner, system, operation in db.execute(
+        "SELECT Id,OwnerId,SolarSystemId,OperationId FROM Station ORDER BY Id"
+    ):
+        if system in reachable and 25 in operations.get(operation, {}).get("services", []):
+            lp_stations[owner].add(station)
+    issuers = {
+        data.get("corporationID")
+        for data in records(db, "sde/npcCharacters").values()
+        if (data.get("agent") or {}).get("agentTypeID") == 2 and station_systems.get(data.get("locationID")) in reachable
+    }
+    offers = {offer["id"]: offer for offer in lp_offers["offers"]}
+    admitted = {recipe["blueprintId"] for recipe in production["recipes"] if recipe["admitted"]}
+    for issuer, offer_ids in lp_offers["stores"].items():
+        corporation = int(issuer)
+        if corporation not in issuers or not lp_stations[corporation]:
+            continue
+        for offer_id in offer_ids:
+            offer = offers[offer_id]
+            if offer["analysisKredits"] == 0 and offer["typeId"] in admitted and offer["quantity"] > 0:
+                add(offer["typeId"], "earned LP blueprint copy", offer_id,
+                    [item["typeId"] for item in offer["requiredItems"]])
+
     for recipe in production["recipes"]:
         if recipe["admitted"]:
             blueprint = recipe["blueprintId"]

@@ -220,6 +220,24 @@ Python policy suites and formatting verification passed.
 
 **Optional maintainer checks:** None.
 
+## Earned LP blueprint copies
+
+Supported manufacturing blueprints in the saved LP offer catalog now deliver one singleton copy per purchase. The offer
+quantity sets each copy's licensed runs. The existing transaction charges LP, ISK and required items and delivers those
+copies together. Offers with missing manufacturing definitions remain unavailable. The Monitor uses the existing CONCORD
+offer for a one-run copy. The audit includes offers whose corporation has a reachable LP station and basic agents, raising
+the modeled coverage to 1,011 of 1,188 Tech II recipes. It still lists 136 distinct blockers across 177 recipes. Issuer
+coverage in the audit is based on catalog agents and does not verify mission availability or standings for each issuer.
+
+**Automated validation.** The exact Monitor offer test passed in 7.56 seconds. It verifies charges, distinct licensed
+copies, insufficient-LP rejection and saved inventory after reopen. The final affected filter passed 89 cases in 44.38
+seconds across LP stores, market supply, the production catalog and science jobs. Tool and solution restore, solution
+build, both Python policy suites, formatting and audit reproduction passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect the Monitor blueprint offer and its copy run count in the native CONCORD LP store.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of
