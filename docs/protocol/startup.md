@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Orderly host shutdown](#orderly-host-shutdown)
+
 - [Concurrent account login (November 12, 2026)](#concurrent-account-login-november-12-2026)
 - [Launcher Omega account default (November 4, 2026)](#launcher-omega-account-default-november-4-2026)
 - [Launcher accounts and developer roles](#launcher-accounts-and-developer-roles)
@@ -20,6 +22,13 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Two pilots in Jita, November 2, 2026](#two-pilots-in-jita-november-2-2026)
 - [Character logoff to selection, November 4, 2026](#character-logoff-to-selection-november-4-2026)
 - [Client-requested exit logging, November 4, 2026](#client-requested-exit-logging-november-4-2026)
+
+## Orderly host shutdown
+
+Eden drains the game listener, HTTP services and chat, then stops maintenance and mods before the final resident
+checkpoint. Shutdown collects failures across those steps and reports them after attempting the checkpoint.
+One failed mod stop callback does not prevent later callbacks from running. An automated test injects listener
+and mod failures and reopens the saved world to verify that the later callback's position change survived.
 
 ## Concurrent account login (November 12, 2026)
 

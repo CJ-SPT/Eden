@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Orderly host shutdown](protocol/startup.md#orderly-host-shutdown) records final checkpoint ordering and fault handling.
+
 [Mining missions](protocol/agents.md#mining-missions---november-12-2026)
 records Mining division offers, private deposits, native objectives and durable ore turn-in.
 

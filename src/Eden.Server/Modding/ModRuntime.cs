@@ -28,8 +28,10 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
 
     private sealed record Command(long Roles, Func<ModCommandContext, ModCommandReply> Handler);
 
+    private sealed record EventCallback(string Mod, Action<ModEvent> Handler);
+
     private readonly Dictionary<(string Mod, string Name), Command> _commands = [];
-    private readonly Dictionary<ModEventKind, List<Action<ModEvent>>> _events = [];
+    private readonly Dictionary<ModEventKind, List<EventCallback>> _events = [];
     private readonly List<PluginContext> _contexts = [];
     private readonly CancellationTokenSource _failure = new();
     private readonly object _gate = new();
@@ -74,12 +76,14 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
                 var instance =
                     Activator.CreateInstance(type) as IServerMod
                     ?? throw new InvalidDataException("A server mod entry must implement IServerMod.");
-                instance.Register(new Registration(this, manifest.Id));
+                Register(manifest.Id, instance);
             }
             _started = true;
             Publish(new(ModEventKind.Started, null));
         }
     }
+
+    internal void Register(string id, IServerMod plugin) => plugin.Register(new Registration(this, id));
 
     public ModCommandReply Execute(string modId, string command, ModCommandContext context)
     {
@@ -124,7 +128,7 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
 
     public void Publish(ModEvent notification)
     {
-        Action<ModEvent>[] callbacks;
+        EventCallback[] callbacks;
         lock (_gate)
         {
             if (_failure.IsCancellationRequested)
@@ -137,7 +141,7 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
         {
             foreach (var callback in callbacks)
             {
-                callback(notification);
+                callback.Handler(notification);
             }
         }
         catch
@@ -149,6 +153,19 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
 
     public void Dispose()
     {
+        try
+        {
+            Stop();
+        }
+        catch (AggregateException error)
+        {
+            ServerLog.Console.Error($"Mod shutdown failed: {error}");
+        }
+    }
+
+    internal void Stop()
+    {
+        List<Exception> failures = [];
         lock (_gate)
         {
             if (_disposed)
@@ -158,9 +175,20 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
             _disposed = true;
             try
             {
-                if (_started)
+                if (_started && _events.TryGetValue(ModEventKind.Stopping, out var callbacks))
                 {
-                    Publish(new(ModEventKind.Stopping, null));
+                    var stopping = new ModEvent(ModEventKind.Stopping, null);
+                    foreach (var callback in callbacks)
+                    {
+                        try
+                        {
+                            callback.Handler(stopping);
+                        }
+                        catch (Exception error)
+                        {
+                            failures.Add(new InvalidOperationException($"Mod {callback.Mod} failed during shutdown.", error));
+                        }
+                    }
                 }
             }
             finally
@@ -173,6 +201,10 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
                 }
                 _failure.Dispose();
             }
+        }
+        if (failures.Count > 0)
+        {
+            throw new AggregateException("Mod shutdown failed.", failures);
         }
     }
 
@@ -233,7 +265,7 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
                 callbacks = [];
                 runtime._events.Add(kind, callbacks);
             }
-            callbacks.Add(handler);
+            callbacks.Add(new(id, handler));
         }
     }
 

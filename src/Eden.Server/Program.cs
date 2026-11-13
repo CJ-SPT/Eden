@@ -240,76 +240,102 @@ internal static class Program
             Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
             return;
         }
-        // Load the canonical world image before accepting players or starting bot turns.
-        // The first economic action must not pay the full saved-world hydration cost.
-        long residentStarted = Stopwatch.GetTimestamp();
-        services.GetService<Eden.World.Runtime.LiveWorld>()?.Economy.Warm();
-        ServerLog.Console.Information($"Resident world loaded in {Stopwatch.GetElapsedTime(residentStarted).TotalSeconds:F2}s.");
-        services.GetRequiredService<Eden.Server.Modding.ModRuntime>().Start();
-        services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
-        services.GetRequiredService<CatalogProvider>().PreloadCore();
-        if (shutdown.IsCancellationRequested)
+        await ServerLifetime.RunAsync(async lifetime =>
         {
-            return;
-        }
-        int administrationPort = Value("--admin-port") is { } adminPort
-            ? int.TryParse(adminPort, out int parsedPort) && parsedPort is > 0 and <= 65535
-                ? parsedPort
-                : throw new InvalidDataException("--admin-port requires a port between 1 and 65535.")
-            : AdministrationHost.DefaultPort;
-        bool administrationEnabled = !args.Contains("--disable-admin") && new AdministratorAccounts(worldPath).Provisioned;
-        if (
-            administrationEnabled
-            && new[] { options.GamePort, options.GatewayPort, options.ApiPort, ChatServer.ClientPort }.Contains(administrationPort)
-        )
-        {
-            throw new InvalidDataException("Administration requires a separate local port.");
-        }
-        await using var administration = administrationEnabled ? AdministrationHost.Create(services, worldPath, administrationPort) : null;
-        services.GetRequiredService<LauncherMaintenance>().Start();
-        services.GetRequiredService<MarketMaintenance>().Start();
-        services.GetRequiredService<ConcordMaintenance>().Start();
-        services.GetRequiredService<CapsuleerMaintenance>().Start();
-        await using var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
-        await using var api = LauncherApi.Create(
-            options,
-            accounts,
-            services.GetRequiredService<DevelopmentIdentity>(),
-            TimeProvider.System,
-            services.GetRequiredService<ChatCertificate>().PublicPem,
-            services.GetRequiredService<Eden.Server.Administration.SkillClientPublisher>(),
-            services.GetRequiredService<Eden.World.Modding.ModStore>()
-        );
-        await using var chat = services.GetRequiredService<ChatServer>();
-        await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));
-        await gateway.StartAsync();
-        await api.StartAsync();
-        if (administration is not null)
-        {
-            await administration.StartAsync();
-            ServerLog.Console.Information($"Local administration listening on http://127.0.0.1:{administrationPort}.");
-        }
-        ServerLog.Console.Information($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
-        ServerLog.Console.Information($"Gateway listening on {options.ListenAddress}:{options.GatewayPort}.");
-        ServerLog.Console.Information($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
-        try
-        {
+            var world = services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
+            lifetime.OnStop("resident world", world.Dispose);
+            // Load the canonical world image before accepting players or starting bot turns.
+            // The first economic action must not pay the full saved-world hydration cost.
+            long residentStarted = Stopwatch.GetTimestamp();
+            world.Economy.Warm();
+            ServerLog.Console.Information($"Resident world loaded in {Stopwatch.GetElapsedTime(residentStarted).TotalSeconds:F2}s.");
+            var mods = services.GetRequiredService<Eden.Server.Modding.ModRuntime>();
+            lifetime.OnStop("mods", mods.Stop);
+            mods.Start();
+            services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
+            services.GetRequiredService<CatalogProvider>().PreloadCore();
+            if (shutdown.IsCancellationRequested)
+            {
+                return;
+            }
+            int administrationPort = Value("--admin-port") is { } adminPort
+                ? int.TryParse(adminPort, out int parsedPort) && parsedPort is > 0 and <= 65535
+                    ? parsedPort
+                    : throw new InvalidDataException("--admin-port requires a port between 1 and 65535.")
+                : AdministrationHost.DefaultPort;
+            bool administrationEnabled = !args.Contains("--disable-admin") && new AdministratorAccounts(worldPath).Provisioned;
+            if (
+                administrationEnabled
+                && new[] { options.GamePort, options.GatewayPort, options.ApiPort, ChatServer.ClientPort }.Contains(administrationPort)
+            )
+            {
+                throw new InvalidDataException("Administration requires a separate local port.");
+            }
+            var launcherMaintenance = services.GetRequiredService<LauncherMaintenance>();
+            lifetime.OnStop(nameof(LauncherMaintenance), launcherMaintenance.DisposeAsync);
+            launcherMaintenance.Start();
+            var marketMaintenance = services.GetRequiredService<MarketMaintenance>();
+            lifetime.OnStop(nameof(MarketMaintenance), marketMaintenance.DisposeAsync);
+            marketMaintenance.Start();
+            var concordMaintenance = services.GetRequiredService<ConcordMaintenance>();
+            lifetime.OnStop(nameof(ConcordMaintenance), concordMaintenance.Dispose);
+            concordMaintenance.Start();
+            var capsuleerMaintenance = services.GetRequiredService<CapsuleerMaintenance>();
+            lifetime.OnStop(nameof(CapsuleerMaintenance), capsuleerMaintenance.Dispose);
+            capsuleerMaintenance.Start();
+            var population = services.GetRequiredService<CapsuleerPopulationMaintenance>();
+            lifetime.OnStop(nameof(CapsuleerPopulationMaintenance), population.Dispose);
+            var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
+            lifetime.OnStop("gateway", gateway.DisposeAsync);
+            var api = LauncherApi.Create(
+                options,
+                accounts,
+                services.GetRequiredService<DevelopmentIdentity>(),
+                TimeProvider.System,
+                services.GetRequiredService<ChatCertificate>().PublicPem,
+                services.GetRequiredService<Eden.Server.Administration.SkillClientPublisher>(),
+                services.GetRequiredService<Eden.World.Modding.ModStore>()
+            );
+            lifetime.OnStop("launcher API", api.DisposeAsync);
+            var chat = services.GetRequiredService<ChatServer>();
+            lifetime.OnStop("chat", chat.DisposeAsync);
+            await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));
+            lifetime.OnStop("gateway listener", () => new ValueTask(gateway.StopAsync()));
+            await gateway.StartAsync();
+            lifetime.OnStop("launcher API listener", () => new ValueTask(api.StopAsync()));
+            await api.StartAsync();
+            if (administrationEnabled)
+            {
+                var administration = AdministrationHost.Create(services, worldPath, administrationPort);
+                lifetime.OnStop("administration", administration.DisposeAsync);
+                lifetime.OnStop("administration listener", () => new ValueTask(administration.StopAsync()));
+                await administration.StartAsync();
+                ServerLog.Console.Information($"Local administration listening on http://127.0.0.1:{administrationPort}.");
+            }
+            ServerLog.Console.Information($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
+            ServerLog.Console.Information($"Gateway listening on {options.ListenAddress}:{options.GatewayPort}.");
+            ServerLog.Console.Information($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
             Task server = services.GetRequiredService<LoopbackServer>().RunAsync(startupStarted, shutdown.Token);
+            // Startup can fail after the listener starts. Always cancel and join it before stopping world producers.
+            bool joined = false;
+            lifetime.OnStop(
+                "game listener",
+                async () =>
+                {
+                    await shutdown.CancelAsync();
+                    if (!joined)
+                    {
+                        await server;
+                    }
+                }
+            );
             if (!server.IsCompleted)
             {
-                services.GetRequiredService<CapsuleerPopulationMaintenance>().Start();
+                population.Start();
             }
+            joined = true;
             await server;
-        }
-        finally
-        {
-            if (administration is not null)
-            {
-                await administration.StopAsync();
-            }
-            await api.StopAsync();
-            await gateway.StopAsync();
-        }
+        });
     }
 
     private static string ReadPassword()
