@@ -35,6 +35,11 @@ internal static class ModCommands
             );
             return true;
         }
+        if (Value("--mod-export-automining") is { } output)
+        {
+            AutoMiningPackage.Write(database, output);
+            return true;
+        }
         if (Value("--mod-install") is { } archive)
         {
             Console.WriteLine(store.Install(archive));

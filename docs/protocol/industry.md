@@ -73,6 +73,52 @@ Tool and solution restore, the solution build and both Python policy suites pass
 
 **Optional maintainer checks:** In the native Industry window, quote and deliver a composite job at a fueled refinery.
 
+## AutoMining the current grid
+
+Hosts activate the bundled AutoMining package through [Eden Mods](../modding.md#automining). The pinned build-3662168
+panel uses the selected-pilot `edenAutoMining` service for Start, Stop, GetStatus and SaveFilter. The session publishes
+status changes with `OnEdenAutoMiningStatus`. Settings use an existing per-character setting row. The active run belongs
+to the selected connection, ship and system. Departing the grid through warp, docking or translocation ends the run,
+as do ship loss, disconnection and loss of targeting capability.
+
+The controller considers published public ore contacts by surface distance, with object ID breaking ties. It checks the
+fit's range, ore family, deep-core capability and loaded crystal type list, and uses the usual lock and mining cycle
+paths. Native lock time, capacitor payment, yield, cargo, crystal wear and ledger rules apply. Automatic Stop settles a
+cycle already due and cancels unfinished automatic cycles. Manual cycles and manually requested locks remain under pilot
+control. A manually stopped module stays paused until Start, and unlocking an automation-owned target skips that rock
+until Start or until the pilot requests that lock again. A full hold leaves the run waiting for space.
+
+EveJS-Automining v1.2.27 at `0986770cbc186287e9e72c0eb2377fcf1c670c89` supplied the targeting and filter behavior
+reference. The local EveJS 261108.1 mining runtime was consulted for native cargo and cycle boundaries. Eden keeps the
+existing build-3662168 motion, serialization and signed mod-archive paths.
+[AutoMining source](https://github.com/V0nCleef/EveJS-Automining/tree/v1.2.27) ·
+[EVE University mining mechanics](https://wiki.eveuniversity.org/Mining#Mining_mechanics)
+
+### Automated validation
+
+Tool and solution restore passed. The solution built with zero warnings or errors in 1.74 seconds. The focused run
+completed 314 cases in 2 minutes 36 seconds, with 312 passing and two failing. The two resident
+`ResourceRenewalTests.OverdueRenewalUsesBatchSqlAndPreservesDepositsAcrossCheckpointAndRestart` variants counted
+seven and eight SQL commands against the maximum of six. An isolated build of base commit `6056c7a4` reproduced
+both counts. All five new cases passed, including two-pilot ore conservation and retargeting, exact-deadline stop,
+manual control, filter isolation after reopening, and inert package composition with the pinned client archive.
+The warmed pending-lock decision used zero SQL commands, connection opens or fitting calculations. Both Python
+policy suites (8 and 9 tests), formatting and whitespace checks passed.
+
+The focused filter selected `Eden.Protocol.Tests.Mining`, `MiningMissionTests`, `TargetingTests`,
+`TargetLockSessionTests`, `CharacterSettingsTests`, `CharacterSettingsServiceTests`, `CharacterLogoffTests`,
+`TypedFlightTests`, `ModuleBurnout`, `AutoMiningPackageTests`, `ModRuntimeTests`, `ModFoundationTests`,
+`ModLauncherApiTests`, `ServerServicesTests` and `GameplayDependenciesTests` by fully qualified name substring.
+The full .NET suite was not run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The pinned archive checks compile the panel without starting the game.
+
+### Optional maintainer checks
+
+Open AutoMining through Eden Mods, save a filter, and verify the status, beam and target change when the first rock depletes.
+
 ## Deep-core mining and Morphite
 
 The three Mercoxit variants in the pinned belt catalog require a deep-core module. The static Deep Core Mining Laser I,

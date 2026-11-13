@@ -89,7 +89,8 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null,
     SmartbombHandler? smartbombs = null,
-    Eden.Protocol.Fleets.CommandBurstHandler? commandBursts = null
+    Eden.Protocol.Fleets.CommandBurstHandler? commandBursts = null,
+    AutoMiningHandler? autoMining = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -153,6 +154,8 @@ internal sealed class PilotUpdateCoordinator(
         missionTracker.Advance(context);
     }
 
+    internal void DisconnectAutoMining(PilotCallContext context) => autoMining?.Cancel(context);
+
     public void Leave(PilotCallContext context)
     {
         ApplyPlayerDamage(context);
@@ -196,6 +199,7 @@ internal sealed class PilotUpdateCoordinator(
         walletBalance.Reset();
         personalMarket.Reset();
         context.Flight.Checkpoint();
+        autoMining?.Cancel(context);
         mining.Cancel(context);
         combat.Cancel(context);
         smartbombs?.Cancel(context);
@@ -255,6 +259,7 @@ internal sealed class PilotUpdateCoordinator(
         {
             tackle.Advance(context);
         }
+        autoMining?.CheckFlight(context);
         mining.Advance(context);
         using (SessionPerformance.Phase("update.combat"))
         {
@@ -282,6 +287,7 @@ internal sealed class PilotUpdateCoordinator(
             npcCombat.Advance(context);
         }
         missionTracker.Advance(context);
+        autoMining?.Advance(context);
         using (SessionPerformance.Phase("update.targeting"))
         {
             targeting.Advance(context);

@@ -46,6 +46,8 @@ internal sealed class FlightScene(
     private FlightNpcScene Npcs => _npcScene ??= new(space, clock, encounters, effects, update, send);
     private FlightDroneScene Drones => _droneScene ??= new(space, clock, drones, update);
 
+    internal IReadOnlyList<StaticSpaceObject> VisibleAsteroids => _visibleAsteroids;
+
     internal IReadOnlyList<StaticSpaceObject> Objects { get; private set; } = objects;
     internal IReadOnlyList<NpcContact> VisibleNpcs => Npcs.Contacts;
     internal IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;

@@ -27,6 +27,26 @@ Build reads an unchanged build-3662168 client, or a prepared client's verified o
 Python runtime. It compiles inert code without starting the game. Neither the source client nor the base catalog
 is changed. Built sets reuse the existing immutable `.skill-packages` catalog/archive boundary.
 
+## AutoMining
+
+AutoMining is an optional Eden-supplied client package with server-side mining controls. Export it for the target
+world and activate it through the normal mod workflow.
+
+```powershell
+dotnet run --project src/Eden.Server -- --mod-export-automining AutoMining.edenmod
+dotnet run --project src/Eden.Server -- --mod-install AutoMining.edenmod
+dotnet run --project src/Eden.Server -- --mod-enable PACKAGE_SHA256
+dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
+```
+
+Use the hash printed by install. Append the same `--world PATH` to all four commands for a nondefault world.
+Restart Eden, then launch through Eden Launcher to receive the active mod set. In space, open **Eden Mods →
+AutoMining** from the Neocom context menu. Enter comma-separated ore group names such as `Veldspar, Scordite`,
+or leave the field empty for all supported ore. Select **Save Filter**, then **Start**. The filter is saved for the
+selected character. **Stop** ends the automated run, and the panel displays changes in run status.
+
+See the [AutoMining protocol record](protocol/industry.md#automining-the-current-grid) for cycle behavior.
+
 ## Identity and persistence
 
 Custom skill references use `author.mod:skill`; original skills use `catalog:TYPE_ID`. World allocates permanent

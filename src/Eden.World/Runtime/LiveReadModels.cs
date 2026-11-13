@@ -85,6 +85,16 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
 
     internal bool UnfinishedMissiles(int system, Func<bool> load) => Read(_unfinishedMissiles, system, load);
 
+    private readonly ResidentSnapshot<(long Pilot, long Ship), IReadOnlyList<AutoMiningModule>> _autoMiningModules = new(
+        "resident.autoMiningModules",
+        "WorldFitRevision",
+        "WorldAccount",
+        "WorldConfigurationState"
+    );
+
+    internal IReadOnlyList<AutoMiningModule> AutoMiningModules(long pilot, long ship, Func<IReadOnlyList<AutoMiningModule>> load) =>
+        Read(_autoMiningModules, (pilot, ship), load);
+
     private readonly ResidentSnapshot<int, IReadOnlyList<StaticSpaceObject>> _asteroids = new("resident.asteroids", "WorldAsteroid");
     private readonly ResidentSnapshot<(int System, MiningFamily Family, long Catalog), MiningSiteView> _miningSites = new(
         "resident.miningSites",
@@ -326,6 +336,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _mailHead.Observe(changes);
         _listHead.Observe(changes);
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
+        _autoMiningModules.Observe(changes, (key, change) => change.Table != "WorldFitRevision" || key.Pilot == change.Id);
         ObserveDefenseProfiles(changes);
         if (changes.Any(change => change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id)))
         {
@@ -370,6 +381,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _fits.Clear();
         _defenseProfiles.Clear();
         _asteroids.Clear();
+        _autoMiningModules.Clear();
         _unfinishedMissiles.Clear();
         _miningSites.Clear();
         _structures.Clear();

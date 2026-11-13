@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
 using System.Text.Json;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Diagnostics;
@@ -19,6 +20,7 @@ namespace Eden.Server.Modding;
 internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServiceScopeFactory scopes)
     : IModCommands,
         IModSessionEvents,
+        IAutoMiningAvailability,
         IDisposable
 {
     private readonly WorldDatabase _database = database;
@@ -38,6 +40,7 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
     private bool _started;
     private bool _disposed;
     public CancellationToken FailureToken => _failure.Token;
+    public bool AutoMiningEnabled { get; private set; }
 
     public void Start()
     {
@@ -78,6 +81,7 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
                     ?? throw new InvalidDataException("A server mod entry must implement IServerMod.");
                 Register(manifest.Id, instance);
             }
+            AutoMiningEnabled = set.Mods.Any(mod => mod.Id == AutoMiningFilter.ModId);
             _started = true;
             Publish(new(ModEventKind.Started, null));
         }
@@ -173,6 +177,7 @@ internal sealed class ModRuntime(WorldDatabase database, ModStore store, IServic
                 return;
             }
             _disposed = true;
+            AutoMiningEnabled = false;
             try
             {
                 if (_started && _events.TryGetValue(ModEventKind.Stopping, out var callbacks))

@@ -19,14 +19,23 @@ internal sealed class PilotCharacterSettingsStore(WorldDatabase database) : IPil
             .Where(s => s.PilotId == pilotId)
             .OrderBy(s => s.Key)
             .AsEnumerable()
-            .Select(s => new CharacterSetting(
-                s.Key,
-                s.Text is { } text
-                    ? new CharacterSettingValue.Text(text)
-                    : new CharacterSettingValue.Binary(s.Binary ?? throw new InvalidDataException("Invalid saved character setting."))
-            ))
+            .Select(Read)
             .ToArray();
     }
+
+    public CharacterSetting? Read(long pilotId, string key)
+    {
+        using WorldDbContext world = new(database.Path);
+        return world.Set<SavedCharacterSetting>().Find(pilotId, key) is { } saved ? Read(saved) : null;
+    }
+
+    private static CharacterSetting Read(SavedCharacterSetting setting) =>
+        new(
+            setting.Key,
+            setting.Text is { } text
+                ? new CharacterSettingValue.Text(text)
+                : new CharacterSettingValue.Binary(setting.Binary ?? throw new InvalidDataException("Invalid saved character setting."))
+        );
 
     public void Save(long pilotId, CharacterSetting setting)
     {

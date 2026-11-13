@@ -270,6 +270,8 @@ internal sealed partial class FlightSession(
         }
     }
 
+    internal IReadOnlyList<StaticSpaceObject> VisibleAsteroids => Scene.VisibleAsteroids;
+
     internal StaticSpaceObject? FindBookmarkObject(long id) => Scene.NavigationTarget(SceneContext, id);
 
     public TargetContact? FindTarget(long id) => Scene.FindTarget(SceneContext, id);

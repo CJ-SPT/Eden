@@ -217,6 +217,9 @@ records six static ice tools, 117 admitted high-security systems and persistent 
 [Gas harvesting and Mykoserocin nebulae, November 9, 2026](protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026)
 records the first gas-resource cohort, native targeting/mining and persistent signatures.
 
+[AutoMining the current grid](protocol/industry.md#automining-the-current-grid) covers the Eden Mods panel,
+per-character ore filters, target selection and paid cycle ownership.
+
 [Modulated ore mining and crystals, November 9, 2026](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
 records loaded-crystal modifiers, target compatibility, persistent wear and native shattering updates.
 

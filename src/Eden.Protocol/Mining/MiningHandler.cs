@@ -15,9 +15,19 @@ namespace Eden.Protocol.Mining;
 [Injectable(InjectionType.Scoped)]
 internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, TargetingHandler targeting) : IModuleEffectSource
 {
-    private sealed record Cycle(MiningLaser Laser, long Target, long Started, long StartTime, long Repeats);
+    private sealed record Cycle(
+        long PilotId,
+        long ShipId,
+        MiningLaser Laser,
+        long Target,
+        long Started,
+        long StartTime,
+        long Repeats,
+        bool Automatic
+    );
 
     private readonly Dictionary<long, Cycle> _cycles = [];
+    private readonly HashSet<long> _manuallyStopped = [];
     private const int ProbabilityResolution = 1_000_000;
 
     public void Cancel(PilotCallContext context)
@@ -29,6 +39,36 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
     }
 
     public bool IsActive(long module) => _cycles.ContainsKey(module);
+
+    internal bool IsAutomatic(long module) => _cycles.TryGetValue(module, out var cycle) && cycle.Automatic;
+
+    internal bool IsMiningTarget(long target) => _cycles.Values.Any(cycle => cycle.Target == target);
+
+    internal void ResetManualStops() => _manuallyStopped.Clear();
+
+    internal bool WasManuallyStopped(long module) => _manuallyStopped.Contains(module);
+
+    internal void StartAutomatic(PilotCallContext context, long module, long target) =>
+        Start(context, module, target, int.MaxValue, effect: DogmaEffect.MiningLaser, automatic: true);
+
+    internal void StopAutomatic(PilotCallContext context, bool settleDue = false)
+    {
+        foreach (var cycle in _cycles.Values.Where(cycle => cycle.Automatic).ToArray())
+        {
+            if (settleDue && CanCollect(context, cycle) && IsDue(cycle))
+            {
+                try
+                {
+                    _ = Collect(context, cycle, 1, true);
+                }
+                catch (Exception error) when (error is InvalidDataException or CargoCapacityException)
+                {
+                    // The rock or fitting can become unavailable before the due cycle settles.
+                }
+            }
+            Stop(context, cycle);
+        }
+    }
 
     public void CancelModule(PilotCallContext context, long module)
     {
@@ -52,7 +92,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             )
             : null;
 
-    public void Advance(PilotCallContext context)
+    public void Advance(PilotCallContext context, long? suppressRepeat = null)
     {
         if (!context.Selected)
         {
@@ -60,24 +100,19 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         }
         foreach (var (module, cycle) in _cycles.ToArray())
         {
-            var target = context.Flight.FindTarget(cycle.Target);
-            if (
-                !targeting.IsLocked(cycle.Target)
-                || target is null
-                || context.Pilot.Position!.DistanceTo(target.Position) - context.Pilot.Flight.ShipRadius - target.Radius > cycle.Laser.Range
-            )
+            if (!CanCollect(context, cycle))
             {
                 Stop(context, cycle);
                 continue;
             }
-            if (clock.GetElapsedTime(cycle.Started).TotalMilliseconds < cycle.Laser.DurationMilliseconds)
+            if (!IsDue(cycle))
             {
                 continue;
             }
             try
             {
                 var result = Collect(context, cycle, 1, true);
-                if (cycle.Repeats > 0 && !result.Depleted && !result.CargoFull)
+                if (module != suppressRepeat && cycle.Repeats > 0 && !result.Depleted && !result.CargoFull)
                 {
                     Start(context, module, cycle.Target, cycle.Repeats - 1, cycle);
                 }
@@ -92,6 +127,14 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             }
         }
     }
+
+    private bool IsDue(Cycle cycle) => clock.GetElapsedTime(cycle.Started).TotalMilliseconds >= cycle.Laser.DurationMilliseconds;
+
+    private bool CanCollect(PilotCallContext context, Cycle cycle) =>
+        context.ActiveFlight?.Pilot.ShipId == cycle.ShipId
+        && targeting.IsLocked(cycle.Target)
+        && context.Flight.FindTarget(cycle.Target) is { } target
+        && context.Pilot.Position!.DistanceTo(target.Position) - context.Pilot.Flight.ShipRadius - target.Radius <= cycle.Laser.Range;
 
     private static double Roll() => (double)RandomNumberGenerator.GetInt32(ProbabilityResolution) / ProbabilityResolution;
 
@@ -119,12 +162,29 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         return result;
     }
 
-    private void Start(PilotCallContext context, long module, long target, long repeats, Cycle? previous = null, DogmaEffect? effect = null)
+    private void Start(
+        PilotCallContext context,
+        long module,
+        long target,
+        long repeats,
+        Cycle? previous = null,
+        DogmaEffect? effect = null,
+        bool automatic = false
+    )
     {
         long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var start = mining.Begin(context.Pilot.PilotId, module, target, now, effect ?? previous?.Laser.Effect);
-        Cycle cycle = new(start.Laser, target, started, now, repeats);
+        Cycle cycle = new(
+            context.Pilot.PilotId,
+            context.Pilot.ShipId,
+            start.Laser,
+            target,
+            started,
+            now,
+            repeats,
+            previous?.Automatic ?? automatic
+        );
         _cycles[module] = cycle;
         if (previous is null)
         {
@@ -155,13 +215,16 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             return;
         }
         long completesAt = checked(cycle.StartTime + (long)Math.Ceiling(cycle.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
-        mining.Stop(context.Pilot.PilotId, cycle.Laser.ItemId, completesAt);
+        mining.Stop(cycle.PilotId, cycle.Laser.ItemId, completesAt);
         if (!_cycles.Remove(cycle.Laser.ItemId))
         {
             return;
         }
-        Effect(context, cycle, false);
-        context.Flight.SetMiningEffect(Contact(cycle), false);
+        if (context.ActiveFlight is { } flight && flight.Pilot.ShipId == cycle.ShipId)
+        {
+            Effect(context, cycle, false);
+            flight.SetMiningEffect(Contact(cycle), false);
+        }
     }
 
     private void Effect(PilotCallContext context, Cycle cycle, bool active)
@@ -199,9 +262,16 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         {
             return PilotCallResult.Unsupported;
         }
+        long? stopAutomatic =
+            method == "Deactivate"
+            && args is [long stoppedModule, var stoppedEffect]
+            && MiningWireDefinitions.Effect(BlueMarshal.Text(stoppedEffect)) == DogmaEffect.MiningLaser
+            && IsAutomatic(stoppedModule)
+                ? stoppedModule
+                : null;
         context.Flight.Checkpoint();
         targeting.Advance(context);
-        Advance(context);
+        Advance(context, stopAutomatic);
         try
         {
             if (
@@ -223,6 +293,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                         : new PilotCallResult.Failure("The mining laser is already active.");
                 }
                 Start(context, module, target, repeats, effect: requested);
+                _manuallyStopped.Remove(module);
                 return PilotCallResult.None;
             }
             if (
@@ -231,6 +302,10 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
                 && MiningWireDefinitions.Effect(BlueMarshal.Text(effectName)) is { } requestedEffect
             )
             {
+                if (stopAutomatic == item)
+                {
+                    _manuallyStopped.Add(item);
+                }
                 if (_cycles.TryGetValue(item, out var cycle))
                 {
                     if (cycle.Laser.Effect != requestedEffect)
