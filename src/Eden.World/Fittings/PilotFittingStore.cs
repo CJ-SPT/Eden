@@ -9,6 +9,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Fittings;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
@@ -30,7 +31,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Fittings;
 
 [Injectable]
-internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProvider clock) : IPilotFitting, IPilotRigRemoval
+internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProvider clock)
+    : IPilotFitting,
+        IPilotRigRemoval,
+        IPilotApplyFitting
 {
     public IReadOnlyDictionary<DogmaAttributeId, double> Attributes(int typeId)
     {
@@ -178,19 +182,13 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
         int flagId,
         long now,
         IReadOnlyDictionary<long, int>? placements = null,
-        bool completeOnline = false
+        bool completeOnline = false,
+        FittingCheckpoint? batchCheckpoint = null
     )
     {
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
-        if (ship.Position is null && ship.StructureId is long structureId)
-        {
-            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
-            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId))
-            {
-                throw new InvalidDataException("Ship fitting requires a quantum core and access to this structure.");
-            }
-        }
+        CheckFittingService(world, ship, pilotId);
         if (
             ship.Position is not null
             || (sourceId != ship.Id && sourceId != ship.DockedLocationId)
@@ -221,8 +219,12 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
         {
             throw new InvalidDataException("Equipment is unavailable.");
         }
-        var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
-        var before = PilotInventoryStore.List(world, catalog, pilotId, sourceId).ToDictionary(i => i.Id);
+        var checkpoint = batchCheckpoint ?? FittingChanges.Capture(world, catalog, pilot, now);
+        var before = (
+            sourceId == ship.Id
+                ? PilotInventoryStore.List(world, catalog, pilotId, sourceId)
+                : items.Select(i => PilotInventoryStore.Read(catalog, i))
+        ).ToDictionary(i => i.Id);
         var capacity = checkpoint.Capacity;
         var rack = world
             .Set<OwnedItem>()
@@ -334,6 +336,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
                             OwnerId = pilotId,
                             TypeId = item.TypeId,
                             Quantity = 1,
+                            VolumeOverride = item.VolumeOverride,
                         }
                     )
                     .Entity;
@@ -346,20 +349,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
             changed.Add((fitted, previous));
         }
         world.SaveChanges();
-        var result = changed
-            .Select(c => new InventoryChange(
-                before.Values.First(i => i.TypeId == c.Item.TypeId) with
-                {
-                    Id = c.Item.Id,
-                    LocationId = c.Item.LocationId,
-                    FlagId = c.Item.FlagId,
-                    Quantity = c.Item.Quantity,
-                    Singleton = c.Item.Singleton,
-                    Online = c.Item.Online,
-                },
-                c.Previous
-            ))
-            .ToArray();
+        var result = changed.Select(c => new InventoryChange(PilotInventoryStore.Read(catalog, c.Item), c.Previous)).ToArray();
         foreach (
             var change in result.Where(change =>
                 change.Item.LocationId == ship.Id
@@ -388,6 +378,11 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
             OnlineCompleteFit(world, catalog, pilotId, ship.Id, now, checkpoint);
             return result;
         }
+        if (batchCheckpoint is not null)
+        {
+            return result;
+        }
+
         var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
         return result.Concat(cascaded).ToArray();
 
@@ -401,6 +396,18 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
             int first = definition.FirstFlag;
             int slots = capacity.Slots(definition.Rack);
             return (first, slots);
+        }
+    }
+
+    private static void CheckFittingService(WorldDbContext world, Ship ship, long pilotId)
+    {
+        if (ship.Position is null && ship.StructureId is long structureId)
+        {
+            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
+            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId))
+            {
+                throw new InvalidDataException("Ship fitting requires a quantum core and access to this structure.");
+            }
         }
     }
 

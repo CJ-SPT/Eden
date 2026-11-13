@@ -28,7 +28,7 @@ internal sealed class InventoryHandler(
     ICorporationStorage corporationStorage
 ) : IPilotCallHandler, ISelectedPilotCallHandler
 {
-    private const string ShipInventoryPrefix = "@ship:";
+    internal const string ShipInventoryPrefix = "@ship:";
 
     internal static BlueConstructor ItemDescriptor() => InventoryWire.Descriptor();
 

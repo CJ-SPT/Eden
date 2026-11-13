@@ -18,6 +18,10 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
         Dictionary<string, object?>? keywords = null
     )
     {
+        if ((service, method) == ("invbroker", "SetLabel"))
+        {
+            return RenameShip(context, args, keywords);
+        }
         if ((service, method) == ("ship", "GetShipConfiguration"))
         {
             return args is [long id] && id == context.Pilot.ShipId
@@ -93,6 +97,28 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
                 return dogma.ShipState(boarding.Pilot);
             }
             return new PilotCallResult.Failure("Unsupported ship assembly or boarding request.");
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private PilotCallResult RenameShip(PilotCallContext context, object?[] args, Dictionary<string, object?>? keywords)
+    {
+        try
+        {
+            if (args is not [long id, string or byte[]] || keywords is { Count: > 0 })
+            {
+                throw new InvalidDataException("Choose a ship and a valid name.");
+            }
+            string name = fleet.RenameDockedShip(context.Pilot.PilotId, id, BlueMarshal.Text(args[1]));
+            if (id == context.Pilot.ShipId)
+            {
+                context.Flight.RenameShip(name);
+            }
+            context.Notifications.Add(new ShipLabelChanged(id, name));
+            return PilotCallResult.None;
         }
         catch (InvalidDataException error)
         {

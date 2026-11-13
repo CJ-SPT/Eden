@@ -467,6 +467,11 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
         {
             throw new InvalidDataException("Unload into your cargo or current docked station hangar with a valid quantity.");
         }
+        // Simulation can send an empty set when the real ship has no modules to unload.
+        if (moduleIds.Count == 0 && quantity is null)
+        {
+            return new([], []);
+        }
         var modules = Modules(world, catalog, pilot, moduleIds, now, unloading: true);
         List<InventoryChange> items = [];
         List<MagazineChange> magazines = [];

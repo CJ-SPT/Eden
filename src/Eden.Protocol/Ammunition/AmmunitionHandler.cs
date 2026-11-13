@@ -14,6 +14,7 @@ internal sealed class AmmunitionHandler(TimeProvider clock, IPilotAmmunition amm
         value switch
         {
             long id => [id],
+            HashSet<long> ids => ids.Order().ToArray(),
             List<object?> ids when ids.All(i => i is long) => ids.Cast<long>().ToArray(),
             _ => null,
         };

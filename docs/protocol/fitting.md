@@ -2,6 +2,43 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Apply a simulated fitting to the active ship
+
+Build **3662168** routes **Fit Ship** through `hullAndHardwareTypeBrowser.FitShip` and `fittingSvc.LoadFitting`.
+The latter calls the bound active ship inventory's `FitFitting` with ship ID, hull type ID, a `defaultdict(set)`
+of selected hangar item IDs by type, the docked location, a `utillib.KeyVal` describing the fit, cargo quantities,
+and the rig confirmation flag. The reply is a Python list of `(typeID, quantity)` shortage tuples. The browser
+then calls the Dogma unload and load routes for ammunition in individual slots. The fitting-name preference sends
+a separate `invbroker.SetLabel` call for the active ship.
+
+Eden uses the selected stacks from the pilot's personal hangar and applies supported equipment to the requested slots
+of the matching docked active hull. A slot with matching equipment keeps its item identity. Replacing a module returns
+it and any loaded charges to the hangar. Fitted rigs stay installed, and fitting new rigs requires the client's
+confirmation. The transaction applies module limits, skills, CPU, power grid, calibration, and hold capacity. Cargo,
+drone bay, and fighter bay quantities are topped up from available stacks. Slot and hold changes commit together.
+The server publishes the final inventory rows, magazine removals, online effects, and ship attributes. The separate
+ammunition call accepts the native set of module IDs, including an empty set.
+
+Inert inspection used the original archive for build **3662168**, SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`, specifically `fittingSvc.LoadFitting`,
+`shipfitting.fitting.Fitting.GetKeyValForApplyingFit`, and `clientDogmaLocation.UnloadAmmoFromModules`.
+Carbon Blue's `ReadObjectReduce` and `ReadObjectDictIter` define the key-then-value iterator that Eden reads as
+inert IDs and sets. The local evejs **261108.1** fitting service was consulted for matching-slot behavior and
+shortage replies. [Carbon Marshal.cpp revision fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp) ·
+[EVE University fitting guide](https://wiki.eveuniversity.org/Fitting_ships)
+
+**Automated validation.** `ApplyFittingTests` exercises the bound call and native argument encoding, replacement
+and unloaded charges, shortages, repeated application, rig confirmation, ammunition follow-up, wrong hull and foreign
+source handling, capacity rollback, notifications, and reopened persistence. The focused .NET filter included
+`ApplyFittingTests`, `SavedFittingsTests`, `MultifitCapabilityTests`, `PilotFittingTests`, `FittingConstraintTests`,
+`ModuleFittingTests`, `ShipRigTests`, `PilotFleetTests`, `PilotInventoryTests`, `AmmunitionTests`, and `BlueMarshalTests`.
+It passed 188 tests in 54 seconds. The solution build and both Python policy suites passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** While docked, simulate a fit for your active hull with the parts in your Item Hangar.
+Click **Fit Ship** and verify the installed modules and loaded ammunition after leaving simulation.
+
 ## Bulk and corporation saved fittings — November 11, 2026
 
 Milestone 4 completes existing fitting-plan management with native `SaveManyFittings` and `DeleteManyFittings` on

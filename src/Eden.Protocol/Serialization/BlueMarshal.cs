@@ -175,17 +175,43 @@ internal static class BlueMarshal
 
         object ReadReduction(int depth)
         {
-            // Bounty sets and inventory row descriptors reduce to inert arguments.
+            // Only known data shapes reduce to inert values.
             // Interpret only these allowlisted shapes; never execute a global.
             if (
                 Read(depth + 1) is not object?[] { Length: 2 or 3 } pair
                 || pair[0] is not BlueGlobal global
                 || pair[1] is not object?[] { Length: 1 } args
                 || reader.ReadByte() != 45
-                || reader.ReadByte() != 45
             )
             {
                 throw new InvalidDataException("Unsupported Blue reduction.");
+            }
+            // FittingSvc builds a defaultdict(set) with type IDs as keys and
+            // sets of item IDs as values. The second iterator is key then value.
+            if (pair.Length == 2 && global.Name == "collections.defaultdict" && args[0] is BlueGlobal { Name: "set" or "__builtin__.set" })
+            {
+                Dictionary<long, object?> itemsByType = [];
+                while (stream.Position < end && bytes[(int)stream.Position] != 45)
+                {
+                    if (
+                        Read(depth + 1) is not long type
+                        || Read(depth + 1) is not HashSet<long> itemIds
+                        || !itemsByType.TryAdd(type, itemIds)
+                    )
+                    {
+                        throw new InvalidDataException("Invalid fitting source dictionary.");
+                    }
+                }
+                if (stream.Position >= end)
+                {
+                    throw new InvalidDataException("Unterminated fitting source dictionary.");
+                }
+                reader.ReadByte();
+                return itemsByType;
+            }
+            if (reader.ReadByte() != 45)
+            {
+                throw new InvalidDataException("Unsupported Blue reduction dictionary iterator.");
             }
             if (pair.Length == 2 && global.Name is "set" or "__builtin__.set" && args[0] is List<object?> ids && ids.All(id => id is long))
             {

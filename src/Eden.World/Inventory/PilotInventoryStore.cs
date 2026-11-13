@@ -74,7 +74,8 @@ internal sealed partial class PilotInventoryStore(WorldDatabase database, TimePr
         long pilotId,
         long destinationId,
         InventoryMoveRequest request,
-        long now
+        long now,
+        bool deferFittingChanges = false
     )
     {
         var (itemIds, sourceId, flagId, quantity) = request;
@@ -160,7 +161,7 @@ internal sealed partial class PilotInventoryStore(WorldDatabase database, TimePr
             return splitChanges;
         }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
-        var checkpoint = unfittedIds.Length > 0 ? FittingChanges.Capture(world, catalog, pilot, now) : null;
+        var checkpoint = unfittedIds.Length > 0 && !deferFittingChanges ? FittingChanges.Capture(world, catalog, pilot, now) : null;
         var magazines = world
             .Set<OwnedItem>()
             .Where(i => i.OwnerId == pilotId && unfittedIds.Contains(i.LocationId))

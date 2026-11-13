@@ -77,6 +77,33 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         return world.Ships.Where(s => s.OwnerId == pilotId && s.Id == shipId).Select(s => s.Name).Single();
     }
 
+    public string RenameDockedShip(long pilotId, long shipId, string name)
+    {
+        if (name.Length > FleetDefinitions.MaximumShipNameLength || name.Any(char.IsControl))
+        {
+            throw new InvalidDataException("Choose a valid ship name.");
+        }
+
+        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId], ships: [shipId]) };
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var active = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId).ActiveShip;
+        var target = world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
+        if (
+            active.Position is not null
+            || target is not { Position: null, StoredInId: null }
+            || target.DockedLocationId != active.DockedLocationId
+        )
+        {
+            throw new InvalidDataException("Rename an owned ship at your current docked location.");
+        }
+
+        target.Name = string.IsNullOrWhiteSpace(name) ? catalog.RequireItem(target.TypeId).Name : name.Trim();
+        world.SaveChanges();
+        transaction.Commit();
+        return target.Name;
+    }
+
     public ShipAssembly Assemble(long pilotId, IReadOnlyList<long> itemIds, string? name)
     {
         using WorldDbContext world = new(database.Path);

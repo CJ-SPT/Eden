@@ -97,6 +97,9 @@ internal sealed partial class FlightSession(
             _pilot = value with { Identity = value.Identity with { Fleet = _pilot.Identity.Fleet } };
         }
     }
+
+    internal void RenameShip(string name) => Pilot = Pilot with { Ship = Pilot.Ship with { Name = name } };
+
     public List<StampedDestinyUpdate> Updates { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
     internal SpatialStatus SpatialStatus => space.SpatialStatus(Pilot.ShipId);
