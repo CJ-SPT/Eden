@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident NPC spawn-slot replacement](protocol/combat.md#resident-npc-spawn-slot-replacement) records the SQLite
+constraint failure during checkpoint and disconnect projection.
+
 [Active-mining session stalls and checkpoint copies](protocol/performance.md#active-mining-session-stalls-and-checkpoint-copies-november-13-2026)
 records resident cycle settlement and logoff reads, shared market encoding, NPC catalog preparation and native snapshot copies.
 

@@ -1,3 +1,4 @@
+using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
@@ -15,6 +16,88 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class DetachedCheckpointTests
 {
+    [Theory]
+    [InlineData(0)]
+    [InlineData(128)]
+    public async Task NpcSlotReplacementsSurviveCheckpointAndDisconnect(int interveningChanges)
+    {
+        const int system = 30000142;
+        const long encounter = 101;
+        TestClock clock = new();
+        using TestWorld fixture = new();
+        var pilot = fixture.Store.FindPilot(1000001)!;
+        fixture.Store.SetPosition(pilot.ShipId, new(10_000_000, 0, 0), system);
+        var retired = Guard(0);
+        var destroyed = Guard(1);
+        var deleted = Guard(2);
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.AddRange(retired, destroyed, deleted);
+            world.SaveChanges();
+            world.Add(new WorldNpcEnergy { NpcId = retired.Id, Charge = 10 });
+            world.SaveChanges();
+        }
+
+        using LiveWorld live = new(new(fixture.Path), new CheckpointClock(clock), _ => { });
+        WorldNpc[] replacements = [Guard(0), Guard(1), Guard(2)];
+        using (var action = live.Economy.Begin())
+        {
+            foreach (var replacement in replacements)
+            {
+                action.Add(replacement);
+            }
+            for (int slot = 0; slot < interveningChanges; slot++)
+            {
+                action.Add(
+                    new WorldNpc
+                    {
+                        EncounterId = encounter + 1,
+                        SystemId = system,
+                        SpawnSlot = slot,
+                    }
+                );
+            }
+            var npcs = action.Set<WorldNpc>();
+            npcs.Find(retired.Id)!.RetiredAt = clock.Now;
+            npcs.Find(destroyed.Id)!.DestroyedAt = clock.Now;
+            npcs.Remove(npcs.Find(deleted.Id)!);
+            action.Commit();
+        }
+
+        using (var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot()))
+        {
+            snapshot.Project();
+            using WorldDbContext captured = new(snapshot.Database);
+            CheckNpcRows(captured);
+        }
+
+        fixture.Services.GetRequiredService<IPilotCrimewatch>().Disconnect(pilot.PilotId, pilot.ShipId);
+        await live.FlushAsync();
+        using var disk = WorldConnections.FileConnection(fixture.Path);
+        using WorldDbContext reopened = new(disk);
+        CheckNpcRows(reopened);
+        Assert.Equal(pilot.ShipId, reopened.Set<SavedLogoff>().Find(pilot.PilotId)!.ShipId);
+
+        WorldNpc Guard(int slot) =>
+            new()
+            {
+                EncounterId = encounter,
+                SystemId = system,
+                Role = NpcRole.Navy,
+                SpawnSlot = slot,
+            };
+
+        void CheckNpcRows(WorldDbContext world)
+        {
+            var rows = world.Set<WorldNpc>().Where(n => n.EncounterId == encounter).OrderBy(n => n.Id).ToArray();
+            Assert.Equal(new[] { retired.Id, destroyed.Id }.Concat(replacements.Select(n => n.Id)), rows.Select(n => n.Id));
+            Assert.Equal(clock.Now, rows[0].RetiredAt);
+            Assert.Equal(clock.Now, rows[1].DestroyedAt);
+            Assert.Equal(replacements.Select(n => n.Id), rows.Where(n => n.RetiredAt is null && n.DestroyedAt is null).Select(n => n.Id));
+            Assert.Equal(10, world.Set<WorldNpcEnergy>().Find(retired.Id)!.Charge);
+        }
+    }
+
     [Fact]
     public void ColdCrimewatchReadsDoNotProjectUnrelatedResidentCombat()
     {

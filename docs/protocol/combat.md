@@ -6,6 +6,36 @@ Targeting, health, weapons, NPC populations and behavior, losses, wrecks and rep
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Resident NPC spawn-slot replacement
+
+On November 13, 2026, a server log showed SQLite rejecting a duplicate `WorldNpc(EncounterId, SpawnSlot)` during the
+resident flush at Crimewatch disconnect. Resident validation sees the final population, while SQLite checks its partial
+unique index as each row is written. A projection could write a replacement before the previous occupant's retirement,
+destruction or deletion, even when the resident population had exactly one active occupant.
+
+NPC projection now applies deletions and writes rows outside the active-slot index before writing active occupants.
+The order applies across all batches inside the existing transaction, including detached checkpoints and the flush
+before a SQL transaction. Retirement and destruction retain the previous NPC and its dependent records.
+The fix uses the existing save schema.
+
+**Automated validation.** Both cases of
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.DetachedCheckpointTests.NpcSlotReplacementsSurviveCheckpointAndDisconnect`
+reproduced SQLite error 19 on the original projection. The regression covers retirement, destruction and deletion
+within and across 128-row batches, detached snapshot projection, the Crimewatch disconnect transaction and reopening
+the durable checkpoint. The final cases also check that the retired NPC's capacitor row survives.
+
+The focused filter was `FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~ResidentEconomyTests|
+FullyQualifiedName~CrimewatchTests|FullyQualifiedName~ConcordTests|FullyQualifiedName~NpcEncounterTests|
+FullyQualifiedName~NpcGuardTests|FullyQualifiedName~NpcConvoyTests|FullyQualifiedName~NpcMiningTests|
+FullyQualifiedName~RegionalNpcTests`, joined without whitespace. All 229 cases passed in 125.85 seconds.
+Pinned tool and solution restores passed, the solution build passed in 6.33 seconds with zero warnings or errors,
+and the Python catalog and formatting policy suites passed 8 and 9 cases. Formatting verification and
+`git diff --check` passed. Validation used fixture worlds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Advanced weapons, November 12, 2026
 
 Disintegrators use strict optimal range and standard turret hit resolution. The first paid cycle uses base damage. Each
