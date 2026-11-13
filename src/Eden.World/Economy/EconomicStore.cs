@@ -130,6 +130,7 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
             .Definitions.Items.Values.Where(t => t.CategoryId == (int)InventoryCategory.Material)
             .Select(t => (long)t.Id)
             .Concat(ManufacturingCatalog.Recipes(catalog).Values.SelectMany(r => r.Materials.Select(m => m.TypeId!.Value)))
+            .Concat(ReactionCatalog.Recipes(catalog).Keys.Select(id => (long)id))
             .Distinct();
         Dictionary<int, decimal> prices = [];
         foreach (var (id, definition) in catalog.Definitions.FindMany(CatalogData.Client.Types, types))

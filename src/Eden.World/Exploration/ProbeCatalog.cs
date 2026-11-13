@@ -13,7 +13,7 @@ internal static class ProbeCatalog
 
     internal static bool Launcher(CatalogDbContext catalog, int typeId, int group)
     {
-        if (group != ProbeScanRules.LauncherGroup)
+        if (group is not (ProbeScanRules.LauncherGroup or ProbeScanRules.SurveyLauncherGroup))
         {
             return false;
         }
@@ -34,6 +34,11 @@ internal static class ProbeCatalog
 
     internal static bool Probe(CatalogDbContext catalog, int typeId, int group)
     {
+        if (group == (int)HoldCargoGroup.SurveyProbe)
+        {
+            return catalog.Read(CatalogData.Client.Types, (long)typeId)?.Published == 1
+                && catalog.FittingAttributes(typeId).GetValueOrDefault(DogmaAttributeId.MissileFlightTime) > 0;
+        }
         if (
             group != ProbeScanRules.ProbeGroup
             || catalog.Read(CatalogData.Client.Types, (long)typeId)?.Published != 1
@@ -52,7 +57,7 @@ internal static class ProbeCatalog
         IReadOnlyDictionary<DogmaAttributeId, double> launcher,
         IReadOnlyDictionary<DogmaAttributeId, double> probe
     ) =>
-        launcher.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == ProbeScanRules.ProbeGroup
+        launcher.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) is ProbeScanRules.ProbeGroup or (int)HoldCargoGroup.SurveyProbe
         && launcher.GetValueOrDefault(DogmaAttributeId.ChargeSize) >= probe.GetValueOrDefault(DogmaAttributeId.ChargeSize);
 
     internal static ProbeProfile FittedProfile(CatalogDbContext catalog, FittingCalculation fitting, long target, int typeId, int hullType)

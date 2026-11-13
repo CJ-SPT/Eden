@@ -14,6 +14,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Docking;
+using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -86,11 +87,15 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
 
     private static bool Supported(CatalogDbContext catalog, LoyaltyOfferDefinition offer)
     {
-        // ESI blueprint quantity denotes copy runs. Never deliver it as a stack of originals.
+        // The snapshot's blueprint quantity is the run count of one licensed copy.
         // Analysis Kredits and cosmetic licenses require their own authoritative ledgers.
         return offer.AnalysisKredits == 0
             && catalog.Definitions.Items.GetValueOrDefault(offer.TypeId) is { } type
-            && RedemptionRules.Deliverable((InventoryCategory)type.CategoryId)
+            && (
+                type.CategoryId == (int)InventoryCategory.Blueprint
+                    ? offer.Quantity > 0 && ManufacturingCatalog.Recipes(catalog).ContainsKey(offer.TypeId)
+                    : RedemptionRules.Deliverable((InventoryCategory)type.CategoryId)
+            )
             && offer.RequiredItems.All(item => catalog.Definitions.Items.ContainsKey(item.TypeId));
     }
 
@@ -170,9 +175,40 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
                 }
             }
         }
-        changes.Add(
-            InventoryPersistence.MergeOutput(world, catalog, pilotId, station.Id, (int)InventoryFlag.Hangar, offer.TypeId, cost.Quantity)
-        );
+        if (catalog.RequireItem(offer.TypeId).CategoryId == (int)InventoryCategory.Blueprint)
+        {
+            long first = InventoryPersistence.NextId(world);
+            for (int index = 0; index < count; index++)
+            {
+                var copy = new OwnedItem
+                {
+                    Id = checked(first + index),
+                    TypeId = offer.TypeId,
+                    OwnerId = pilotId,
+                    LocationId = station.Id,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 1,
+                    Singleton = true,
+                    BlueprintRuns = offer.Quantity,
+                };
+                world.Add(copy);
+                changes.Add(new(PilotInventoryStore.Read(catalog, copy), null));
+            }
+        }
+        else
+        {
+            changes.Add(
+                InventoryPersistence.MergeOutput(
+                    world,
+                    catalog,
+                    pilotId,
+                    station.Id,
+                    (int)InventoryFlag.Hangar,
+                    offer.TypeId,
+                    cost.Quantity
+                )
+            );
+        }
         if (loyalty is not null)
         {
             loyalty.Points -= cost.Points;

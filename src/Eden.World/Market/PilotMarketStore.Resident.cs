@@ -73,14 +73,18 @@ internal sealed partial class PilotMarketStore
             .Set<NpcMarketOrder>()
             .Where(o => o.StationId == station.Id && o.Kind == NpcMarketKind.Development)
             .ToDictionary(o => (o.TypeId, o.Bid));
-        var knownTypes = catalog.Definitions.Items.Keys.ToHashSet();
+        var knownTypes = catalog.Definitions.Items;
         var types = catalog.RecordsInSourceOrder(CatalogData.Client.Types);
         foreach (var record in types)
         {
             int id = checked((int)record.Key);
             var type = record.Value;
             int? group = type.MarketGroupID is > 0 and <= int.MaxValue ? (int)type.MarketGroupID : null;
-            if (!Enumerable.Contains(knownTypes, id) || !TestingMarketRules.IsEligible(new(id, type.Published == 1, group)))
+            if (
+                !knownTypes.TryGetValue(id, out var item)
+                || RegionalMarketRules.IsPlayerSuppliedIndustryInput(id, (InventoryCategory)item.CategoryId, item.GroupId)
+                || !TestingMarketRules.IsEligible(new(id, type.Published == 1, group))
+            )
             {
                 continue;
             }
@@ -94,7 +98,7 @@ internal sealed partial class PilotMarketStore
             order.Entered = world.Settings.DevelopmentSupply.TestingStock;
             order.Issued = Now;
         }
-        foreach (var offer in s_offers.Where(o => o.BuyPriceCents.HasValue && Enumerable.Contains(knownTypes, o.TypeId)))
+        foreach (var offer in s_offers.Where(o => o.BuyPriceCents.HasValue && knownTypes.ContainsKey(o.TypeId)))
         {
             if (existing.ContainsKey((offer.TypeId, true)))
             {
@@ -167,7 +171,7 @@ internal sealed partial class PilotMarketStore
         // Refresh only stations upgraded to this policy, leaving historical NPC bids finite.
         var stations = world.Set<MarketStation>();
         var refreshedOrders = orders
-            .Where(o => o.Kind == NpcMarketKind.Development && !o.Bid && !Enumerable.Contains(retiredSkills, o.TypeId))
+            .Where(o => o.Kind == NpcMarketKind.Development && !o.Bid && o.Issued > 0 && !Enumerable.Contains(retiredSkills, o.TypeId))
             .Where(o => o.Remaining != supply.TestingStock || o.PriceCents != supply.TestingPriceCents || o.Issued <= cutoff)
             .AsEnumerable()
             .Where(o => stations.Find(o.StationId)?.SeedVersion == TestingMarketRules.SeedVersion);

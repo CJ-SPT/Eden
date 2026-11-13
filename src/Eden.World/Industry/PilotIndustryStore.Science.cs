@@ -141,7 +141,10 @@ internal sealed partial class PilotIndustryStore
                 world
                     .Set<IndustryJob>()
                     .Count(j =>
-                        j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed && j.Activity != IndustryActivity.Manufacturing
+                        j.PilotId == pilotId
+                        && j.Status == IndustryJobStatus.Installed
+                        && j.Activity != IndustryActivity.Manufacturing
+                        && j.Activity != IndustryActivity.Reaction
                     ),
                 Bonuses(world, catalog, pilotId),
                 materials,

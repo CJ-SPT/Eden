@@ -12,6 +12,7 @@ public enum IndustryActivity
     ResearchMaterial = 4,
     Copying = 5,
     Invention = 8,
+    Reaction = 9,
 }
 
 public enum IndustryJobStatus
@@ -34,6 +35,9 @@ public enum IndustrySkill
     MassProduction = 3387,
     AdvancedIndustry = 3388,
     AdvancedMassProduction = 24625,
+    Reactions = 45746,
+    MassReactions = 45748,
+    AdvancedMassReactions = 45749,
 }
 
 public sealed record IndustryFacility(
@@ -46,7 +50,9 @@ public sealed record IndustryFacility(
     bool Manufacturing = true,
     bool Laboratory = false,
     double TimeMultiplier = 1,
-    double MaterialMultiplier = 1
+    double MaterialMultiplier = 1,
+    IReadOnlyList<int>? ReactionProducts = null,
+    double ReactionTimeMultiplier = 1
 );
 
 public sealed record OwnedBlueprint(

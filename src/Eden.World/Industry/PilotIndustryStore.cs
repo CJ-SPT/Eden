@@ -11,6 +11,7 @@ using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -42,7 +43,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             Manufacturing: HasService(catalog, station),
             Laboratory: HasService(catalog, station, StationService.Laboratory),
             TimeMultiplier: FacilityMultiplier(catalog, station, 2602),
-            MaterialMultiplier: FacilityMultiplier(catalog, station, 2600)
+            MaterialMultiplier: FacilityMultiplier(catalog, station, 2600),
+            ReactionProducts: ReactionProducts(catalog, station),
+            ReactionTimeMultiplier: FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier)
         );
 
     private static IndustryFacility PricedFacility(WorldDbContext world, CatalogDbContext catalog, IndustryStation station)
@@ -58,13 +61,29 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             HasService(catalog, station),
             HasService(catalog, station, StationService.Laboratory),
             FacilityMultiplier(catalog, station, 2602),
-            FacilityMultiplier(catalog, station, 2600)
+            FacilityMultiplier(catalog, station, 2600),
+            ReactionProducts(catalog, station),
+            FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier)
         );
     }
 
     // Pinned strEngTimeBonus/strEngMatBonus are factors, rather than percentage points.
     private static double FacilityMultiplier(CatalogDbContext catalog, IndustryStation station, int attribute) =>
         station.StructureServices is null ? 1 : catalog.FittingAttributes(station.TypeId).GetValueOrDefault((DogmaAttributeId)attribute, 1);
+
+    private static IReadOnlyList<int>? ReactionProducts(CatalogDbContext catalog, IndustryStation station) =>
+        station.StructureServices is { } services
+        && services.Any(s =>
+            s is StructureService.CompositeReactions or StructureService.HybridReactions or StructureService.BiochemicalReactions
+        )
+            ? ReactionCatalog
+                .Recipes(catalog)
+                .Values.Where(recipe => services.Contains(recipe.Service))
+                .Select(recipe => recipe.Output)
+                .Distinct()
+                .Order()
+                .ToArray()
+            : null;
 
     private static bool HasService(
         CatalogDbContext catalog,
@@ -188,7 +207,11 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     )
                     .Select(s => IndustryStation.From(Eden.World.Structures.PilotStructureStore.Snapshot(world, catalog, s)))
             )
-            .Where(s => HasService(catalog, s) || HasService(catalog, s, StationService.Laboratory))
+            .Where(s =>
+                HasService(catalog, s)
+                || HasService(catalog, s, StationService.Laboratory)
+                || s.StructureServices?.Contains(Eden.Gameplay.Structures.StructureService.Reactions) == true
+            )
             .Select(s => PricedFacility(world, catalog, s))
             .ToArray();
     }
@@ -232,6 +255,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         var inventory = PilotInventoryStore.Read(catalog, item);
         if (
             inventory.CategoryId is not ((int)InventoryCategory.Blueprint or (int)InventoryCategory.Relic)
+                && !ReactionCatalog.Recipes(catalog).ContainsKey(item.TypeId)
             || item.FlagId != (int)InventoryFlag.Hangar
             || item.LocationId <= 0
         )
@@ -257,6 +281,8 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         var types = catalog
             .Definitions.Items.Values.Where(t => t.CategoryId is (int)InventoryCategory.Blueprint or (int)InventoryCategory.Relic)
             .Select(t => t.Id)
+            .Concat(ReactionCatalog.Recipes(catalog).Keys)
+            .Distinct()
             .ToArray();
         return world
             .Set<OwnedItem>()
@@ -362,6 +388,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     DogmaAttributeId.ManufactureSlotLimit,
                     true
                 ),
+                (IndustrySkill.Reactions, DogmaAttributeId.ReactionTimePerLevel, DogmaAttributeId.ReactionTimeMultiplier, false),
+                (IndustrySkill.MassReactions, DogmaAttributeId.ReactionSlotLimit, DogmaAttributeId.ReactionSlotLimit, true),
+                (IndustrySkill.AdvancedMassReactions, DogmaAttributeId.ReactionSlotLimit, DogmaAttributeId.ReactionSlotLimit, true),
             }
         )
         {
@@ -448,6 +477,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
 
     public IndustryResult Install(long pilotId, IndustryRequest request)
     {
+        if (request.Activity == IndustryActivity.Reaction)
+        {
+            return InstallReaction(pilotId, request);
+        }
         if (request.Activity != IndustryActivity.Manufacturing)
         {
             return InstallScience(pilotId, request);
@@ -623,7 +656,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             throw new InvalidDataException("This industry job cannot be completed yet.");
         }
         List<InventoryChange> changes = [];
-        if (!cancel && job.Activity != IndustryActivity.Manufacturing)
+        if (!cancel && job.Activity is not (IndustryActivity.Manufacturing or IndustryActivity.Reaction))
         {
             DeliverScience(world, catalog, job, changes);
         }

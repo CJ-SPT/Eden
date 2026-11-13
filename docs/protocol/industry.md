@@ -7,6 +7,267 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Tech II supply audit and refinery bootstrap
+
+The [build-3662168 audit](../tech-two-supply-audit.json) traces the admitted Tech II manufacturing catalog and the first refinery's
+equipment to catalog recipes and acquisition paths. It checks material dependencies, reachable NPC suppliers, ore and ice sources,
+planetary schematics, R&D fields, and racial invention skillbooks. Regenerate it from the pinned catalog with
+`python tools/Audit-TechTwoSupply.py --catalog <catalog.sqlite>`. Future moon extraction, composite reactions, Mercoxit and
+Fullerite sources are marked with their planned milestone. The reported closure counts describe the modeled graph and require
+end-to-end gameplay verification. Missing loot, LP and other unmodeled sources are listed as unresolved.
+
+The pinned corporate offers include the originals for the Athanor, Tatara, their reprocessing facility, Moon Drill and both
+reactors, the Deep Core Mining Laser I original, and the Deep Core Mining skillbook. Eden uses the catalog base price as a fallback
+for these items when the saved market snapshot lacks a sell quote. A published type, a market group and a positive corporate sell
+offer are still required. The audit traces all four fuel blocks to ice and planetary commodities and the refinery and service
+modules to ordinary ore and P4 planetary goods. Pirate data containers can award one racial encryption skillbook from their saved
+loot seed. Eden uses one chance in twelve, with the Amarr book available from both Blood Raider and Sansha sites.
+
+NPC sells and production unlocks exclude moon ore and materials, Mercoxit and Morphite, raw reaction gases, reaction outputs and
+advanced construction components. Existing player orders and NPC buy eligibility use the ordinary market rules. The catalog has
+58 moon composite formulas, eight Prismaticite formulas in the same group, and nine hybrid formulas. The four jump freighters
+need both hybrid polymers and racial molecular-forged outputs through their T1 freighters. The latter require Mykoserocin,
+Cytoserocin and molecular condensers. Fullerite access alone leaves those chains open.
+
+Reference: EVE University [moon mining](https://wiki.eveuniversity.org/Moon_mining),
+[reactions](https://wiki.eveuniversity.org/Reactions) and [data site rewards](https://wiki.eveuniversity.org/Data_site), and CCP
+[Quantum Cores](https://support.eveonline.com/hc/en-us/articles/208289605-Structure-Management). Reviewed the local evejs
+build-3396210 `moonExtractionsService.js` (SHA-256 `B1661BE2D68E60DA6F2701A46D04D807A6D050A276E96B200CEACB7589479393`)
+and `industryRestrictions.js` (SHA-256 `35CE309015A6CC17368CC636AD151BE774BC5F8AAFE560AE75F910AABC0375EC`) as behavioral
+references for subsequent milestones.
+
+**Automated validation.** The exact-method filter for industrial originals, NPC material exclusion and encryption skillbook
+rolls passed 11 cases in 6.07 seconds. Tool and solution restore, solution build (zero warnings/errors), both Python policy
+suites (8 catalog and 9 formatting cases), format and width verification for 1,980 files, and byte-for-byte audit reproduction
+passed. A follow-up filter covering the affected market, hacking, production-catalog and starter-supply checks passed
+135 cases in 49 seconds. The broader follow-up, including all three starter mine-to-replacement cases, passed
+138 cases in 471.98 seconds. Both follow-ups excluded the existing rollback test.
+The first broader run hit a checkpoint failure in `FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce`.
+The same payment-trigger failure and retained `world.sqlite.owner` handle reproduced on the unchanged parent checkout.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
+## Composite reaction jobs
+
+The build-3662168 composite catalog admits the 58 published moon-material formulas. They use activity 9 in a low- or
+null-security refinery with an online Standup Composite Reactor. The native facility and blueprint replies advertise
+reaction outputs. Reactions have their own slot pool, skills and hull time multiplier. Install verifies the quoted materials,
+duration and charge. It reserves one reusable formula and consumes recipe fuel from Item Hangar. The existing Upwell
+fuel bay pays for onlining and hourly operation. Jobs pause at the saved service outage and resume when it returns.
+Delivery moves the exact output to the personal hangar once and releases the formula. Reaction delivery creates no
+NPC supply unlock. Fixed moon-alchemy outputs can be reprocessed to their catalog yields.
+
+World version 149 backfills missing adjusted prices for formulas with existing catalog references. The pinned
+`industry/activities/reaction.pyj` values each reaction run using the formula's adjusted price. The local evejs
+`industryRestrictions.js` and `structureIndustryJobs.js` informed slot separation and suspension behavior.
+See [CCP reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions).
+
+**Automated validation.** The exact composite reaction lifecycle test passed in 12.51 seconds. The final affected filter
+covered ReactionJobTests, ScienceJobTests, BulkIndustryDeliveryTests, ProductionCatalogTests, StructureRulesTests,
+StructureFuelRulesTests, MoonExtractionTests and ReprocessingTests. All 101 cases passed in 52.07 seconds.
+Tool and solution restore, the solution build and both Python policy suites passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** In the native Industry window, quote and deliver a composite job at a fueled refinery.
+
+## Deep-core mining and Morphite
+
+The three Mercoxit variants in the pinned belt catalog require a deep-core module. The static Deep Core Mining Laser I,
+ORE Deep Core Mining Laser, ORE Deep Core Strip Miner, Modulated Deep Core Miner II and Modulated Deep Core Strip Miner II
+can mine Mercoxit. The two modulated tools accept all six published Mercoxit crystals and check the fitted crystal's
+target type list at activation and collection. Deep-core equipment retains its ordinary ore capability and its
+catalog skill and hull requirements. Existing reprocessing uses the 100-unit ore portions and variant-specific Morphite
+yields. Mercoxit and Morphite stay outside NPC sell supply.
+
+The pinned catalog defines a mining pollution cloud. Its damage, persistence and native display remain unimplemented.
+The local evejs build-3396210 mining resource distribution was used as a behavioral reference
+(`miningRuntimeState.js`, SHA-256 `613E77ACFCF7B3FBFB17551EBF35BCDC41DD9E612917CA2CF13DA5C8C863EC06`).
+See [EVE University mining yield](https://wiki.eveuniversity.org/Mining_Yield).
+
+**Automated validation.** The exact `DeepCoreMiningProducesOreThatRefinesToMorphite` test passed in 11.85 seconds and
+exercised paid mining cycles, docking, unloading and reprocessing. The first affected run exposed obsolete assertions
+that static ice and modulated ore equipment should be unavailable. Their positive coverage already exists in
+`IceMiningTests` and `MiningCrystalTests`. The final affected filter passed 182 cases in 117.70 seconds and covered mining tiers, crystals, extraction, asteroid fields,
+utility hull operations, ship content, reprocessing and reactions. Tool and solution restore, build, both Python policy
+suites and formatting verification passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Mine a Mercoxit rock with a loaded deep-core tool and compare native cargo and reprocessing quotes.
+
+## Racial molecular-forged reactions and Cytoserocin
+
+Standup Biochemical Reactors run the four racial Neurolink Enhancer formulas and the four racial Neurolink Stabilizer
+formulas. Standup Hybrid Reactors run the nine polymer formulas. The native facility lists the products supported by
+its online services, and each job pauses on outage of its own reactor family. The Biochemical Reactor original is available
+at its pinned NPC suppliers using catalog pricing when the snapshot has no quote. World version 150 adds adjusted prices for
+the newly admitted formulas and preserves existing overrides.
+
+Eight undefended Cytoserocin signatures rotate alongside existing Mykoserocin sites in the documented low-security regions.
+Their cloud geometry and finite deposits come from the pinned dungeon templates. The Saintly Nebula has an unknown damage
+profile in the gameplay reference. This cohort treats its pinned undefended layout as non-damaging pending hazard verification.
+Pirate Info Shard data containers can drop one faction-appropriate stack of four to eight molecular condensers using the
+saved loot seed. Eden uses one chance in eight. Gas, condensers and outputs remain excluded from NPC sell supply.
+
+The local evejs build-3396210 loot and placement references were `containerLootTables.js`
+(SHA-256 `342E97409455CB083FE4229F49B0FE4222470678C94B6FAC1A2FFEDA571513F3`) and `kspaceGasPlacementAuthority.js`
+(SHA-256 `75914D7B6623D68F36399DC1BC099516908AFF952D24B0BF31E47D63057C2C6E`).
+See [CCP reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions) and
+[EVE University gas cloud harvesting](https://wiki.eveuniversity.org/Gas_cloud_harvesting).
+
+The audit projects all four jump-freighter supply paths once wormhole gas is accessible. Fullerite acquisition remains
+pending at this checkpoint. The model still lists unrelated loot, LP and blueprint-price gaps across the wider Tech II catalog.
+
+**Automated validation.** Exact filters passed for the three reactor families (10.69 seconds), condenser hacking and
+looting across reopen (9.97 seconds), and regional gas placement and harvesting (three cases in 9.43 seconds).
+The final affected filter passed 175 cases in 65.44 seconds across industry, structure services, gas and ice mining,
+exploration loot, NPC supply and world migration. Tool and solution restore, build, both Python policy suites,
+formatting and audit reproduction passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Probe a low-security Cytoserocin site and compare the native Hybrid and Biochemical product lists.
+
+## Fullerite reservoirs and wormhole access
+
+Three stable, two-way signatures connect Tama to J125227 (C2), Aunenen to J114342 (C3), and Old Man Star to J152820 (C5).
+Players resolve the entrances with probes, warp to them, and use the native wormhole jump call. Eden checks the fitted ship mass,
+range, travel permissions and five-minute per-direction polarization. The saved polarization and ship movement commit together.
+The three connections use pinned wormhole types and jump mass limits. Stable connections provide repeatable access to the gas
+supply. Rolling connections, total-mass collapse and Sleeper waves in the reservoirs remain pending.
+
+The nine pinned reservoir templates supply all nine Fullerite gases through finite deposits. The template rotates after expiry
+or depletion and follows the documented C1–C6 restrictions for perimeter, frontier and core sites. The audit follows the
+implemented routes and reservoir templates. It models closed acquisition paths for 543 of 1,188 admitted Tech II recipes,
+including the Ark, Anshar, Nomad and Rhea. Its 412 remaining distinct blockers include missing legitimate blueprint price
+references and special loot or LP paths. Those items remain unavailable through NPC sell supply where no legitimate source
+exists. The model establishes recipe reachability. End-to-end production of each jump freighter remains unverified.
+
+The build-3662168 native routes were inspected in `movementFunctions.RealEnterWormhole`,
+`jumpPolarization.UpdatePolarizationAndBroadcast`, and the wormhole space object's `Assemble`.
+Local evejs build-3396210 references were `wormholeMgrService.js`
+(SHA-256 `92F88B40BE233B2CCE7A73E51460981F65F003EEB14361E3D1DE511409CBB258`)
+and `wormholeSignatureProvider.js`
+(SHA-256 `9FA665CE37FA930E92EB4530163BB8F34401C36C387C7061F8367A12F93FA631`).
+See [EVE University wormholes](https://wiki.eveuniversity.org/Wormholes) and
+[wormhole gas sites](https://wiki.eveuniversity.org/Wormhole_Gas_Sites).
+
+**Automated validation.** The exact saved-world scenario uses real probe launches and scan results, the wormhole RPC,
+space travel, a finite gas deposit, return transit and reopen-persistent polarization (8.49 seconds). The final affected
+filter passed 112 cases in 63.18 seconds across wormhole travel, probing, gas and ice mining, gate travel, anomalies,
+reactions and world initialization and migration. Tool and solution restore, solution build, both Python policy suites,
+formatting and audit reproduction passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Probe a wormhole, jump both ways and verify native effects and the polarization timer.
+
+## Catalog original pricing and existing exploration supply
+
+Published manufacturing originals with a positive catalog corporation sell offer can use their positive catalog base price
+when the market snapshot lacks a sell quote. The fallback preserves the established hub assortment and the existing rejection
+of Tech II blueprint sales. A published item or price alone cannot create a seller. Condensers and harvested or reacted inputs
+retain the player-supply rules.
+
+The audit now includes the existing published datacore pool in pirate data sites and common and advanced salvage pools in
+pirate relic sites. The revised model covers 998 of 1,188 admitted Tech II recipes. It lists 218 distinct unresolved items
+across the remaining 190 recipes, including special or retired blueprints, LP and exploration rewards, and uncommon
+components. Those gaps retain their current availability. The four jump-freighter graphs still close under the modeled routes.
+
+**Automated validation.** The exact original-supply test passed in 6.27 seconds. It checks pricing at an actual supplier and
+rejects an unlisted blueprint and a catalog trade entry for an invented blueprint. The final affected filter passed
+75 cases in 33.07 seconds across blueprint supply, NPC supply, pricing, production catalog and hacking rules.
+Tool and solution restore, solution build, both Python policy suites, formatting and audit reproduction passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
+## Tech II manufacturing integration
+
+A saved-world fixture produces Crystallite Alloy and Carbon Polymers from moon materials, combines them into Crystalline
+Carbonide, and transports the output from an Athanor to a station. The station consumes that carbonide to produce Photon
+Microprocessors. A separate copying and invention sequence creates the licensed Miner II copy. A manufacturing install
+with missing Morphite rejects without spending the copy's runs. The completed job consumes the microprocessors and one
+licensed run and delivers one Miner II. The fixture supplies the remaining inputs, including Morphite, and controls the
+invention roll. The separate deep-core scenario covers mining and reprocessing Morphite.
+
+**Automated validation.** The exact manufacturing integration passed in 8.31 seconds. The final affected filter passed
+97 cases in 46.82 seconds across reactions, science jobs, the production catalog, moon extraction, mining tiers and
+reprocessing. Tool and solution restore, solution build, both Python policy suites and formatting verification passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Install the same chain from the native Industry window and compare its quotes and delivery.
+
+## Player-supplied inputs in development worlds
+
+The development market now applies the same player-input exclusion as institutional and regional markets. World version
+152 retires existing NPC asks for those inputs by clearing their available stock and issued time. Their order IDs and
+trade history remain intact. Both market refresh paths skip retired rows. Ordinary development stock and player orders
+continue to use their existing rules.
+
+**Automated validation.** Three exact cases passed in 6.82 seconds across fresh disk and resident development worlds and a
+version-151 save with an existing Morphite ask. The upgrade scenario reopens twice and verifies that the ask cannot be
+bought or refreshed. The final affected filter passed 68 cases in 26.18 seconds across development, institutional,
+blueprint and personal markets and world migration and initialization. Tool and solution restore, solution build, both
+Python policy suites and formatting verification passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
+## Earned LP blueprint copies
+
+Supported manufacturing blueprints in the saved LP offer catalog now deliver one singleton copy per purchase. The offer
+quantity sets each copy's licensed runs. The existing transaction charges LP, ISK and required items and delivers those
+copies together. Offers with missing manufacturing definitions remain unavailable. The Monitor uses the existing CONCORD
+offer for a one-run copy. The audit includes offers whose corporation has a reachable LP station and basic agents, raising
+the modeled coverage to 1,011 of 1,188 Tech II recipes. It still lists 136 distinct blockers across 177 recipes. Issuer
+coverage in the audit is based on catalog agents and does not verify mission availability or standings for each issuer.
+
+**Automated validation.** The exact Monitor offer test passed in 7.56 seconds. It verifies charges, distinct licensed
+copies, insufficient-LP rejection and saved inventory after reopen. The final affected filter passed 89 cases in 44.38
+seconds across LP stores, market supply, the production catalog and science jobs. Tool and solution restore, solution
+build, both Python policy suites, formatting and audit reproduction passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect the Monitor blueprint offer and its copy run count in the native CONCORD LP store.
+
+## Jump-freighter manufacturing recipes
+
+The pinned production fixture now includes Ark, Anshar, Nomad and Rhea. The automated test installs each recipe with a
+licensed copy, verifies the exact material deductions, restarts the world, delivers one ship and rejects a duplicate
+delivery. This scenario begins with fixture stock and a licensed copy for each hull. The supply audit separately traces
+those materials and copies through reactions, exploration, and invention.
+
+**Automated validation.** The exact pinned-catalog manufacturing filter passed all 19 cases in 24.83 seconds, including
+the four jump freighters. The final affected filter passed 34 cases in 35.22 seconds across the manufacturing catalog,
+reaction jobs and wormhole travel. Tool and solution restore, the solution build, both Python policy suites, format
+verification and byte-for-byte reproduction of both catalog exports passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
+## Main integration
+
+Reaction skill bonuses use the shared resident-compatible industry reader on main. The reactor-family test checks that
+Reactions I reduces a 3,600-second job to 3,456 seconds and that the undiscounted quote is rejected.
+
+**Automated validation.** The exact reactor-family filter passed 3 cases in 10.11 seconds. The merged tree passed 499
+focused cases in 602.86 seconds across industry, structures, mining, exploration, markets, world initialization and
+migration, map navigation and the pilot brain. The known payment rollback failure recorded above was excluded.
+The solution build, both Python policy suites, formatting and both catalog reproductions passed.
+
+**Live acceptance.** Agent client testing was disabled.
+
+**Optional maintainer checks.** None.
+
 ## Personal mining ledger â€” November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of

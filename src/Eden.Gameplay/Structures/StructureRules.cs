@@ -40,7 +40,11 @@ public static class StructureRules
                 or StructureService.TimeResearch
                 or StructureService.MaterialResearch
                 or StructureService.Copying
-                or StructureService.Invention;
+                or StructureService.Invention
+                or StructureService.MoonMining
+                or StructureService.CompositeReactions
+                or StructureService.HybridReactions
+                or StructureService.BiochemicalReactions;
 
     public static int FuelAmount(StructureFamily family, IReadOnlyList<StructureService> services, double roleBonus, int amount)
     {

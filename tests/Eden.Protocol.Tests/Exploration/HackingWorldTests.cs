@@ -159,6 +159,46 @@ public sealed class HackingWorldTests
     }
 
     [Fact]
+    public void InfoShardLootCanBeTakenOnceAndRetainsItsFactionCondenserAcrossReopen()
+    {
+        const int GuristasInfoShard = 33249;
+        using var f = Prepare();
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemCategory VALUES (17,'Commodity');
+                INSERT OR IGNORE INTO ItemGroup VALUES (526,'Commodities',17);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (57446,'Amber Condenser',526),(57447,'Celadon Condenser',526);
+                INSERT OR REPLACE INTO SourceRecord VALUES
+                    ('client/types','57446','{{"published":1,"volume":1}}'),
+                    ('client/types','57447','{{"published":1,"volume":1}}');
+                """
+            );
+        }
+        long module = f.Fit(22175);
+        PirateExplorationStore store = new(new(f.Db.Path));
+        var site = store.Signatures(CombatAnomalyRules.SystemId, f.Clock.Now).Single(s => s.Exploration == ExplorationKind.Data);
+        var container = site.Objects.First(c => c.TypeId == GuristasInfoShard);
+        f.Db.Store.SetPosition(f.ShipId, container.Position, site.SystemId);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<SavedHackingContainer>().Find(container.Id)!.LootSeed = 8;
+            world.SaveChanges();
+        }
+        store.Begin(f.PilotId, module, container.Id, new HashSet<long> { container.Id }, f.Clock.Now);
+        Finish(store, f);
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        store = new(new(f.Db.Path));
+        var condenser = Assert.Single(store.Read(f.PilotId, container.Id, f.Clock.Now).Items, i => i.TypeId is 57446 or 57447);
+        Assert.InRange(condenser.Quantity, 4, 8);
+        var request = new InventoryMoveRequest([condenser.Id], container.Id, (int)InventoryFlag.Cargo, null);
+        var cargo = Assert.Single(store.Take(f.PilotId, f.ShipId, request, f.Clock.Now)).Item;
+        Assert.Equal((condenser.TypeId, condenser.Quantity), (cargo.TypeId, cargo.Quantity));
+        Assert.Throws<InvalidDataException>(() => store.Take(f.PilotId, f.ShipId, request, f.Clock.Now));
+    }
+
+    [Fact]
     public void RestartAndRepeatedQuitCountEachAbandonedAttemptOnceAndPreservePaidCooldown()
     {
         using var f = Prepare();

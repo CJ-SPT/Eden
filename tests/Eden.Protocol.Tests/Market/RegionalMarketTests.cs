@@ -78,6 +78,19 @@ public sealed class RegionalMarketTests
         Assert.False(RegionalMarketRules.CanUnlock(category, group, true, false));
     }
 
+    [Theory]
+    [InlineData(11399, InventoryCategory.Material, 18)]
+    [InlineData(16633, InventoryCategory.Material, 427)]
+    [InlineData(16670, InventoryCategory.Material, 429)]
+    [InlineData(17323, InventoryCategory.Commodity, 334)]
+    [InlineData(30303, InventoryCategory.Material, 974)]
+    public void IndustrialInputsArePlayerSuppliedEvenWhenMarketable(int typeId, InventoryCategory category, int group)
+    {
+        Assert.True(RegionalMarketRules.CanUnlock(category, group, true, true));
+        Assert.True(RegionalMarketRules.IsPlayerSuppliedIndustryInput(typeId, category, group));
+        Assert.True(RegionalMarketRules.CanDemand(new(category, group, true, true, 1, 1, false, true, false)));
+    }
+
     [Fact]
     public async Task FiniteTradesRecoverOnSharedPlaytimeAndRespectNonCrossingPlayerListings()
     {

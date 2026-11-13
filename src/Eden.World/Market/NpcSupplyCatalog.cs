@@ -93,6 +93,10 @@ internal sealed partial class PilotMarketStore
             {
                 continue;
             }
+            if (!bid && RegionalMarketRules.IsPlayerSuppliedIndustryInput(typeId, (InventoryCategory)type.CategoryId, type.GroupId))
+            {
+                continue;
+            }
             // Invented/T2 blueprints never become NPC supply, including if an
             // inconsistent corporation offer is present in an imported catalog.
             if (
@@ -115,14 +119,19 @@ internal sealed partial class PilotMarketStore
                     ? quote.BuyCents
                     : quote.SellCents
                 : null;
+            // Preserve catalog supplier eligibility when the snapshot lacks a sell quote for a manufacturing original.
+            bool isOriginal =
+                type.CategoryId == (int)InventoryCategory.Blueprint
+                && catalog.Definitions.ManufacturingRecipe(typeId)?.Products is { Length: > 0 };
+            bool useCatalogPrice =
+                database.PublishedSkills.TryGetValue(typeId, out var editedSkill) && editedSkill.PriceChanged
+                || !bid && price is null && (isOriginal || NpcSupplyRules.UsesIndustrialCatalogPrice(typeId));
             price = NpcSupplyRules.Price(
                 new(
                     typeId,
                     (InventoryCategory)type.CategoryId,
                     definition?.Published == 1,
-                    database.PublishedSkills.TryGetValue(typeId, out var editedSkill) && editedSkill.PriceChanged
-                        ? (decimal)(definition?.BasePrice ?? 0)
-                        : (decimal)(price ?? 0) / MarketDefinitions.CentsPerIsk,
+                    useCatalogPrice ? (decimal)(definition?.BasePrice ?? 0) : (decimal)(price ?? 0) / MarketDefinitions.CentsPerIsk,
                     definition?.MarketGroupID is > 0
                 )
             );

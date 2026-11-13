@@ -7,6 +7,7 @@ import sqlite3
 
 
 BUILD = 3662168
+MERCOXIT = {11396, 17869, 17870}
 GROUPS = {54, 464, 483, 482, 663, 737, 4138}
 
 # Positive high-security locations from the four UniWiki ice-belt pages, November 9, 2026.
@@ -52,6 +53,27 @@ MYKO_REGIONS = {
 }
 
 
+# Positive low-security locations for the eight undefended nebula templates.
+CYTO_REGIONS = {
+    'Bandit Nebula': 'The Forge',
+    'Rapture Nebula': 'Molden Heath',
+    'Profiteer Nebula': 'Lonetrek',
+    'Forgotten Nebula': 'Placid',
+    'Phoenix Nebula': 'Solitude',
+    'Saintly Nebula': 'Heimatar',
+    'Emerald Nebula': 'Derelik',
+    'Crimson Nebula': 'Aridia',
+}
+
+
+# Native Fullerite reservoir templates, grouped by documented wormhole access.
+RESERVOIRS = {
+    **{dungeon: [1, 2, 3, 4] for dungeon in range(3555, 3560)},
+    **{dungeon: [3, 4, 5, 6] for dungeon in range(3560, 3562)},
+    **{dungeon: [5, 6] for dungeon in range(3562, 3564)},
+}
+
+
 def export(catalog_path, output, sites_output):
     if catalog_path.resolve() in (output.resolve(), sites_output.resolve()) or output.resolve() == sites_output.resolve():
         raise ValueError('The output must not overwrite the source catalog')
@@ -66,6 +88,9 @@ def export(catalog_path, output, sites_output):
         pending = {type_id for type_id, group in catalog.execute('SELECT Id,GroupId FROM ItemType')
                    if group in GROUPS and record('client/types', type_id).get('published') == 1}
         pending.update({601, 1230, 1223, 17478, 17480, 17476, 32880, 32918, 3410, 90727, 90728, 25268, 91174, 33697, 28444})
+        pending.update(MERCOXIT)
+        for ore in MERCOXIT:
+            pending.update(material['materialTypeID'] for material in record('client/typematerials', ore)['materials'])
         regions = {name: region_id for region_id, name in catalog.execute('SELECT Id,Name FROM Region')}
         systems = {name: system_id for system_id, name in catalog.execute('SELECT Id,Name FROM SolarSystem')}
         sites = []
@@ -74,11 +99,14 @@ def export(catalog_path, output, sites_output):
             name_id = dungeon.get('dungeonNameID', 0)
             name = record('client/localization_fsd_en-us', name_id).get('text', '')
             ice = int(key) in ICE_SYSTEMS
-            if ((not ice and (name not in MYKO_REGIONS or dungeon.get('archetypeID') != 30))
+            cyto = name in CYTO_REGIONS
+            reservoir = RESERVOIRS.get(int(key))
+            if ((not ice and ((name not in MYKO_REGIONS and not cyto and reservoir is None)
+                              or dungeon.get('archetypeID') != 30))
                     or (ice and dungeon.get('archetypeID') != 28) or len(dungeon.get('rooms', {})) != 1):
                 continue
             objects = list(next(iter(dungeon['rooms'].values())).get('objects', {}).values())
-            if any(o.get('entities') for o in objects):
+            if reservoir is None and any(o.get('entities') for o in objects):
                 raise ValueError('Unexpected defenders in ' + name)
             entry = next(o['position'] for o in objects if o.get('objectID') == dungeon.get('entryObjectID'))
             deposits = []
@@ -87,7 +115,8 @@ def export(catalog_path, output, sites_output):
                 row = catalog.execute('SELECT Name,GroupId,Radius FROM ItemType WHERE Id=?', (type_id,)).fetchone()
                 if not row or row[1] != (465 if ice else 711):
                     continue
-                if (not ice and 'Mykoserocin' not in row[0]) or obj.get('radius', 0) <= 0:
+                gas_kind = 'Fullerite' if reservoir else 'Cytoserocin' if cyto else 'Mykoserocin'
+                if (not ice and gas_kind not in row[0]) or obj.get('radius', 0) <= 0:
                     raise ValueError('Unexpected gas resource in ' + name)
                 quantity = int(obj['radius'])
                 if not ice and quantity != obj['radius']:
@@ -99,12 +128,18 @@ def export(catalog_path, output, sites_output):
                 pending.add(type_id)
             site = dict(dungeonId=int(key), nameId=name_id, name=name, family=1 if ice else 2,
                         difficulty=dungeon.get('difficulty', 1),
-                        regions=[] if ice else [regions[r] for r in MYKO_REGIONS[name]], deposits=deposits)
+                        regions=[] if ice or reservoir else
+                        [regions[r] for r in ([CYTO_REGIONS[name]] if cyto else MYKO_REGIONS[name])],
+                        deposits=deposits)
+            if cyto:
+                site['lowSecurityOnly'] = True
+            if reservoir:
+                site['wormholeClasses'] = reservoir
             if ice:
                 site['systems'] = [systems[s] for s in ICE_SYSTEMS[int(key)]]
             sites.append(site)
-        if len(sites) != len(MYKO_REGIONS) + len(ICE_SYSTEMS):
-            raise ValueError('Missing or ambiguous Mykoserocin templates')
+        if len(sites) != len(MYKO_REGIONS) + len(CYTO_REGIONS) + len(ICE_SYSTEMS) + len(RESERVOIRS):
+            raise ValueError('Missing or ambiguous mining site templates')
         types, records, attributes, effects = [], {}, set(), set()
         while pending:
             type_id = min(pending)
@@ -126,6 +161,8 @@ def export(catalog_path, output, sites_output):
                     records['client/typelist', int(v)] = record('client/typelist', int(v))
             for dataset in ('client/types', 'client/typedogma'):
                 records[dataset, type_id] = record(dataset, type_id)
+            if type_id in MERCOXIT:
+                records['client/typematerials', type_id] = record('client/typematerials', type_id)
             effects.update(e['effectID'] for e in records['client/typedogma', type_id].get('dogmaEffects', []))
         for effect in sorted(effects):
             data = record('client/dogmaeffects', effect)

@@ -16,7 +16,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Structures;
 
 [Injectable]
-internal sealed partial class PilotStructureStore(WorldDatabase database, TimeProvider clock) : IPilotStructures, IStructureContacts
+internal sealed partial class PilotStructureStore(WorldDatabase database, TimeProvider clock)
+    : IPilotStructures,
+        IStructureContacts,
+        IMoonExtractions
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -307,9 +310,33 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                 {
                     throw new InvalidDataException("Choose a finite deployment position within range of your ship.");
                 }
+                int? moonId = profile.Family is StructureFamily.Refinery or StructureFamily.MoonDrill
+                    ? MoonMiningRules.FindPoint(point, MoonMiningCatalog.Points(catalog, system))
+                    : null;
+                if (deployment.MoonId is int requestedMoon && requestedMoon != moonId)
+                {
+                    throw new InvalidDataException("The selected moon does not match the structure's deployment position.");
+                }
+                if (
+                    moonId.HasValue
+                    && world
+                        .Set<SavedStructure>()
+                        .Any(s =>
+                            s.SystemId == system
+                            && s.MoonId == moonId
+                            && s.State != StructureState.Destroyed
+                            && s.State != StructureState.Unanchored
+                        )
+                )
+                {
+                    throw new InvalidDataException("This moon mining point is already occupied.");
+                }
                 foreach (var obstacle in SystemObjects.Geometry(catalog, system))
                 {
-                    if (point.DistanceTo(obstacle.Position) < obstacle.Radius + profile.Radius + StructureRules.Separation)
+                    if (
+                        obstacle.Solid
+                        && point.DistanceTo(obstacle.Position) < obstacle.Radius + profile.Radius + StructureRules.Separation
+                    )
                     {
                         throw new InvalidDataException("The deployment position is too close to a celestial, gate or station.");
                     }
@@ -344,7 +371,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     Description = deployment.Description,
                     CorporationId = corporation.Id,
                     SystemId = system,
-                    MoonId = deployment.MoonId,
+                    MoonId = moonId,
                     ReinforceWeekday = deployment.ReinforceWeekday,
                     ReinforceHour = deployment.ReinforceHour,
                     X = point.X,
@@ -599,6 +626,10 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     .Select(d => d!.Value)
                     .DefaultIfEmpty(long.MaxValue)
                     .Min();
+                var extractions = world.Set<SavedMoonExtraction>().Where(e => e.SystemId == systemId);
+                long? nextFracture = extractions.Where(e => !e.Ended).Select(e => (long?)e.AutoFractureAt).Min();
+                long? nextExpiry = extractions.Select(e => e.FieldExpiresAt).Min();
+                deadline = Math.Min(deadline, Math.Min(nextFracture ?? long.MaxValue, nextExpiry ?? long.MaxValue));
                 return new Eden.World.Runtime.StructureContactView(
                     Array.AsReadOnly(contacts),
                     deadline,

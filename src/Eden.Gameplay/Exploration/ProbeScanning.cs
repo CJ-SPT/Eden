@@ -30,6 +30,17 @@ public sealed record ProbeScan(
     IReadOnlyList<ProbeScanResult> Results
 );
 
+public sealed record MoonSurveyLaunch(
+    long Id,
+    int TypeId,
+    SpacePosition Position,
+    long ReadyAt,
+    double MaximumRange,
+    int? MoonId,
+    IReadOnlyList<Structures.MoonOreShare> Composition,
+    Magazine Magazine
+);
+
 public sealed record ProbeLaunch(IReadOnlyList<ScanProbe> Probes, Magazine Magazine);
 
 public sealed record ProbeRecovery(IReadOnlyList<long> Removed, IReadOnlyList<InventoryChange> Items);
@@ -40,6 +51,8 @@ public interface IPilotProbeScanning
     ProbeScan? Pending(long pilotId);
     bool IsLauncher(long pilotId, long moduleId);
     ProbeLaunch Launch(long pilotId, long moduleId, int count, long now);
+    bool IsSurveyLauncher(long pilotId, long moduleId);
+    MoonSurveyLaunch LaunchSurvey(long pilotId, long moduleId, SpacePosition heading, long now);
     ProbeRecovery Recover(long pilotId, IReadOnlyList<long> ids, long now);
     void Destroy(long pilotId, long id, long now);
     ProbeScan Begin(long pilotId, IReadOnlyList<ProbePlacement> placements, long now);
@@ -57,6 +70,7 @@ public static class ProbeScanRules
     public static IReadOnlyList<int> Skills { get; } = [AstrometricsSkill, RangefindingSkill, PinpointingSkill, AcquisitionSkill];
     public const int LauncherGroup = 481;
     public const int ProbeGroup = 479;
+    public const int SurveyLauncherGroup = 1226;
     public const int MaximumProbes = 8;
     public const int RangeSteps = 8;
     public const int SignaturesPerSystem = 2;

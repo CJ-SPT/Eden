@@ -216,6 +216,28 @@ internal abstract record DestinyCommand(string Name) : BlueModel
             [Id, null, null, GateId, null, "effects.JumpOut", false, true, false, Duration, 0, null, 0, new object?[] { SystemId }];
     }
 
+    internal sealed record WormholeJumpOut(long Id, long Entrance, int DestinationClass, int SystemId, int Duration)
+        : DestinyCommand("OnSpecialFX")
+    {
+        protected override object?[] Arguments =>
+            [
+                Id,
+                null,
+                null,
+                Entrance,
+                DestinationClass,
+                "effects.JumpOutWormhole",
+                false,
+                true,
+                false,
+                Duration,
+                0,
+                null,
+                0,
+                new object?[] { SystemId },
+            ];
+    }
+
     internal sealed record GateActivity(long GateId, bool Arriving) : DestinyCommand("OnClientControllerEvent")
     {
         // Build 3662168 Park.OnClientControllerEvent forwards these five fields

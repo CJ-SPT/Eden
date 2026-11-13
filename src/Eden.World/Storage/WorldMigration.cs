@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 147;
+    internal const int CurrentVersion = 152;
 
     public static void Open(
         WorldDbContext world,
@@ -126,6 +126,10 @@ internal static class WorldMigration
             Eden.World.Capsuleers.CapsuleerNameMigration.Apply(world);
         }
         Eden.World.Market.RegionalMarketSchema.Upgrade(world);
+        if (version < 152)
+        {
+            Eden.World.Market.MarketProgressionStore.RetirePlayerSuppliedInputs(world, catalog);
+        }
         if (version < 122)
         {
             Eden.World.Market.MarketProgressionStore.Upgrade(world, catalog);
@@ -133,11 +137,12 @@ internal static class WorldMigration
         Eden.World.Agents.MissionSchema.Upgrade(world);
         ConcordSchema.Upgrade(world);
         Eden.World.Exploration.ProbeScanningSchema.Upgrade(world);
-        if (version < 130)
+        if (version < 150)
         {
             Eden.World.Economy.EconomicStore.ReconcileIndustryPrices(world, catalog);
         }
         Eden.World.Exploration.HackingSchema.Upgrade(world);
+        Eden.World.Exploration.WormholeTravelSchema.Upgrade(world);
         Eden.World.Mining.MiningSiteSchema.Upgrade(world);
         Eden.World.Propulsion.SpatialNavigationSchema.Upgrade(world);
         InventoryLookupSchema.Upgrade(world);
@@ -163,7 +168,7 @@ internal static class WorldMigration
         JetcanSchema.Upgrade(world);
         JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Eden.World.Fleets.CommandBurstSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=147");
+        world.Database.ExecuteSqlRaw($"PRAGMA user_version={CurrentVersion}");
         history.Commit();
     }
 }

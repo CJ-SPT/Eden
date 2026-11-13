@@ -107,6 +107,78 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         return world.Set<SavedProbeScan>().Find(pilotId) is { } saved ? JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson) : null;
     }
 
+    public bool IsSurveyLauncher(long pilotId, long moduleId)
+    {
+        using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var module = world.Set<OwnedItem>().Find(moduleId);
+        return module?.OwnerId == pilotId && catalog.FittingType(module.TypeId)?.GroupId == ProbeScanRules.SurveyLauncherGroup;
+    }
+
+    public MoonSurveyLaunch LaunchSurvey(long pilotId, long moduleId, SpacePosition heading, long now) =>
+        Write(
+            (world, catalog) =>
+            {
+                var pilot = Pilot(world, catalog, pilotId, now);
+                int system = SystemId(pilot, catalog);
+                var module = world.Set<OwnedItem>().Find(moduleId);
+                var probe = PilotAmmunitionStore.Contents(world, moduleId);
+                if (
+                    module is not { Online: true, Singleton: true }
+                    || module.OwnerId != pilotId
+                    || module.LocationId != pilot.ActiveShipId
+                    || !InventoryDefinitions.IsHighSlot(module.FlagId)
+                    || catalog.RequireItem(module.TypeId).GroupId != ProbeScanRules.SurveyLauncherGroup
+                    || !ProbeCatalog.Launcher(catalog, module.TypeId, ProbeScanRules.SurveyLauncherGroup)
+                    || probe is null
+                    || probe.OwnerId != pilotId
+                    || probe.Quantity <= 0
+                    || catalog.RequireItem(probe.TypeId).GroupId != (int)HoldCargoGroup.SurveyProbe
+                    || !ProbeCatalog.Probe(catalog, probe.TypeId, (int)HoldCargoGroup.SurveyProbe)
+                    || world.Set<ModuleCooldown>().Find(moduleId)?.ReadyAt > now
+                )
+                {
+                    throw new InvalidDataException("Use an online survey launcher with a ready, compatible probe.");
+                }
+                PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+                PilotSkillReader.CheckRequirements(world, catalog, pilotId, probe.TypeId);
+                PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
+                NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
+                var attributes = catalog.FittingAttributes(probe.TypeId);
+                var launcher = catalog.FittingAttributes(module.TypeId);
+                const DogmaAttributeId maximumScanRange = (DogmaAttributeId)2697;
+                const DogmaAttributeId surveyTimeBonus = (DogmaAttributeId)2701;
+                double range = attributes.GetValueOrDefault(maximumScanRange);
+                double duration =
+                    attributes.GetValueOrDefault(DogmaAttributeId.MissileFlightTime)
+                    * (1 + launcher.GetValueOrDefault(surveyTimeBonus) / 100);
+                if (!double.IsFinite(range) || range <= 0 || !double.IsFinite(duration) || duration <= 0)
+                {
+                    throw new InvalidDataException("The survey probe has invalid scan attributes.");
+                }
+                var position = pilot.ActiveShip.Position!;
+                SpacePosition origin = new(position.X, position.Y, position.Z);
+                var moon = Eden.World.Structures.MoonMiningCatalog.SurveyTarget(catalog, system, origin, heading, range);
+                var composition =
+                    moon is int id && catalog.Definitions.SystemSecurity.TryGetValue(system, out double security)
+                        ? Eden.Gameplay.Structures.MoonMiningRules.Composition(id, security)
+                        : [];
+                long ready = checked(now + (long)Math.Ceiling(duration * TimeSpan.TicksPerMillisecond));
+                var cooldown = world.Set<ModuleCooldown>().Find(moduleId) ?? world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
+                cooldown.Kind = ModuleCooldownKind.Cycle;
+                cooldown.ReadyAt = checked(
+                    now + (long)Math.Ceiling(launcher.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime) * TimeSpan.TicksPerMillisecond)
+                );
+                probe.Quantity--;
+                var magazine = PilotAmmunitionStore.Read(world, module, probe) with { ReadyAt = cooldown.ReadyAt };
+                if (probe.Quantity == 0)
+                {
+                    world.Remove(probe);
+                }
+                return new MoonSurveyLaunch(0, probe.TypeId, origin, ready, range, moon, composition, magazine);
+            }
+        );
+
     public ProbeLaunch Launch(long pilotId, long moduleId, int count, long now) =>
         Write(
             (world, catalog) =>
@@ -393,7 +465,8 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                 }
                 var results = authoritative
                     .Results.Where(r =>
-                        world
+                        r.Site.Wormhole && WormholeTravelStore.Exists(catalog, authoritative.SystemId, r.Site.Id)
+                        || world
                             .Set<WorldCombatAnomaly>()
                             .Any(s => s.Id == r.Site.Id && s.CompletedAt == null && s.IsSignature && s.SystemId == authoritative.SystemId)
                         || world
@@ -431,9 +504,13 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     public bool Resolved(long pilotId, long siteId, int systemId, long now)
     {
         using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
         return world.Set<SavedResolvedSignature>().Any(r => r.PilotId == pilotId && r.SiteId == siteId && r.SystemId == systemId)
             && (
-                world.Set<WorldCombatAnomaly>().Any(s => s.Id == siteId && s.SystemId == systemId && s.IsSignature && s.CompletedAt == null)
+                WormholeRules.IsEndpoint(siteId) && WormholeTravelStore.Exists(catalog, systemId, siteId)
+                || world
+                    .Set<WorldCombatAnomaly>()
+                    .Any(s => s.Id == siteId && s.SystemId == systemId && s.IsSignature && s.CompletedAt == null)
                 || world
                     .Set<SavedExplorationSite>()
                     .Any(s => s.Id == siteId && s.SystemId == systemId && s.ReplaceAt == null && s.ExpiresAt > now)

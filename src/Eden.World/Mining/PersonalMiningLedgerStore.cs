@@ -1,6 +1,8 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Mining;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -73,5 +75,23 @@ internal sealed partial class PersonalMiningLedgerStore(WorldDatabase database, 
         saved.Quantity = total.Collected;
         saved.Critical = total.Critical;
         saved.Wasted = total.Wasted;
+        if (
+            MoonMiningRules.IsMoonRock(resource.Id)
+            && world.Set<SavedMoonExtraction>().Find(MoonMiningRules.ExtractionId(resource.Id)) is { } extraction
+        )
+        {
+            long structure = extraction.StructureId;
+            long first = MiningLedgerRules.EarliestDay(now);
+            world.Set<SavedMoonMiningLog>().Where(l => l.StructureId == structure && l.Day < first).ExecuteDelete();
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldMoonMiningLog(StructureId,PilotId,Day,CorporationId,SystemId,TypeId,Quantity,Critical,Wasted)
+                VALUES ({structure},{pilot.Id},{day},{pilot.CorporationId},{resource.SystemId},{resource.TypeId},
+                    {quantity.Collected},{quantity.Critical},{quantity.Wasted})
+                ON CONFLICT(StructureId,Day,PilotId,CorporationId,TypeId) DO UPDATE SET
+                    Quantity=Quantity+excluded.Quantity,Critical=Critical+excluded.Critical,Wasted=Wasted+excluded.Wasted
+                """
+            );
+        }
     }
 }

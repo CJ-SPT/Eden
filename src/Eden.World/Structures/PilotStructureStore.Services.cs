@@ -130,6 +130,7 @@ internal sealed partial class PilotStructureStore
                     ? null
                     : structure.LowPowerAt ?? now;
                 StructureIndustry.Synchronize(world, catalog, structure, now);
+                InterruptMoonExtraction(world, catalog, structure, now);
             }
         );
 
@@ -335,6 +336,7 @@ internal sealed partial class PilotStructureStore
                     ? null
                     : structure.LowPowerAt ?? deadline.OfflineAt;
                 StructureIndustry.Synchronize(world, catalog, structure, deadline.OfflineAt!.Value);
+                InterruptMoonExtraction(world, catalog, structure, deadline.OfflineAt.Value);
             }
         }
         foreach (var structure in stopping.Values)
@@ -361,7 +363,9 @@ internal sealed partial class PilotStructureStore
             structure.LowPowerAt ??= stoppedAt;
             world.SaveChanges();
             StructureIndustry.Synchronize(world, catalog, structure, stoppedAt);
+            InterruptMoonExtraction(world, catalog, structure, stoppedAt);
         }
+        AdvanceMoonExtractions(world, catalog, now, systemId);
         world.SaveChanges();
     }
 }

@@ -145,11 +145,24 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
                         family == MiningFamily.Ice
                             ? ore.GroupId == MiningDefinitions.IceGroup
                                 && PilotInventoryStore.Volume(catalog, ore.Id) == MiningDefinitions.IceBlockVolume
-                            : Enum.IsDefined((MiningResourceGroup)ore.GroupId)
+                            : MiningDefinitions.MatchesOre(ore.GroupId, moduleAttributes)
                     );
         if (!compatible)
         {
             throw new InvalidDataException("The mining module does not match this resource.");
+        }
+        if (
+            Eden.Gameplay.Structures.MoonMiningRules.IsMoonRock(asteroid.Id)
+            && (
+                world
+                    .Set<Eden.Data.World.Structures.SavedMoonExtraction>()
+                    .Find(Eden.Gameplay.Structures.MoonMiningRules.ExtractionId(asteroid.Id))
+                    ?.FieldExpiresAt
+                ?? 0
+            ) <= now
+        )
+        {
+            throw new InvalidDataException("The moon field is no longer available.");
         }
         if (MiningSiteRules.IsDeposit(asteroid.Id) && world.Set<SavedMiningDeposit>().Find(asteroid.Id) is { } deposit)
         {

@@ -5,6 +5,7 @@ using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Exploration;
 
@@ -18,6 +19,8 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
     private int _system;
     private ProbeScan? _scan;
     private IReadOnlyList<ScanProbe> _probes = [];
+    private readonly List<MoonSurveyLaunch> _moonSurveys = [];
+    private long _nextMoonProbe;
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
@@ -33,7 +36,47 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
 
     internal PilotCallResult? CallModule(PilotCallContext context, string method, object?[] args)
     {
-        if (args[0] is not long module || !scanning.IsLauncher(context.Pilot.PilotId, module))
+        if (args[0] is not long module)
+        {
+            return null;
+        }
+        if (scanning.IsSurveyLauncher(context.Pilot.PilotId, module))
+        {
+            if (method == "Deactivate")
+            {
+                return PilotCallResult.None;
+            }
+            if (args is not [_, _, null or long, long surveyRepeats] || surveyRepeats < 0)
+            {
+                return new PilotCallResult.Failure("Invalid survey probe launch arguments.");
+            }
+            try
+            {
+                context.Flight.Checkpoint();
+                if (!context.Flight.CanUseSelfModules || !context.Flight.CanTarget)
+                {
+                    throw new InvalidDataException("Wait until your ship is ready to launch a survey probe.");
+                }
+                Advance(context);
+                const int maximumSurveyProbes = 16;
+                if (_moonSurveys.Count >= maximumSurveyProbes)
+                {
+                    throw new InvalidDataException("Wait for an outstanding moon survey to complete.");
+                }
+                var survey = scanning.LaunchSurvey(context.Pilot.PilotId, module, context.Flight.Heading, Now);
+                const long firstSurveyProbeId = 8_700_000_000_000;
+                survey = survey with { Id = checked(firstSurveyProbeId + ++_nextMoonProbe) };
+                _moonSurveys.Add(survey);
+                MagazineWire.NotifyQuantity(context, survey.Magazine, survey.Magazine.Quantity, Now);
+                context.Notifications.Add(new NewMoonProbe(survey, Now));
+                return PilotCallResult.None;
+            }
+            catch (Exception error) when (error is InvalidDataException or OverflowException)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
+        }
+        if (!scanning.IsLauncher(context.Pilot.PilotId, module))
         {
             return null;
         }
@@ -52,6 +95,7 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
         {
             return;
         }
+        _moonSurveys.Clear();
         _pilot = context.Pilot.PilotId;
         _system = context.Pilot.SystemId;
         _probes = scanning.List(_pilot, _system, Now);
@@ -73,6 +117,23 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
             return;
         }
         Enter(context);
+        if (_moonSurveys.Count != 0)
+        {
+            for (int index = _moonSurveys.Count - 1; index >= 0; index--)
+            {
+                var survey = _moonSurveys[index];
+                if (survey.ReadyAt > Now)
+                {
+                    continue;
+                }
+                if (survey.MoonId is int moon && survey.Composition.Count > 0)
+                {
+                    context.Notifications.Add(new MoonSurveyCompleted(moon, survey.Composition));
+                }
+                context.Notifications.Add(new MoonProbeRemoved(survey.Id));
+                _moonSurveys.RemoveAt(index);
+            }
+        }
         foreach (var (module, effect) in _launches.ToArray())
         {
             if (
@@ -215,4 +276,35 @@ internal sealed class ProbeScanningHandler(IPilotProbeScanning scanning, TimePro
         }
         _probes = _probes.Where(p => !ids.Contains(p.Id)).ToArray();
     }
+}
+
+internal sealed record NewMoonProbe(MoonSurveyLaunch Survey, long Now) : PilotNotification("OnNewMoonProbe")
+{
+    public override object?[] Arguments =>
+        [
+            new BlueInstance(
+                "utillib.KeyVal",
+                new Dictionary<string, object?>
+                {
+                    ["probeID"] = Survey.Id,
+                    ["typeID"] = (long)Survey.TypeId,
+                    ["pos"] = new List<object?> { Survey.Position.X, Survey.Position.Y, Survey.Position.Z },
+                    ["expiry"] = Survey.ReadyAt,
+                    ["delay"] = (Survey.ReadyAt - Now) / TimeSpan.TicksPerMillisecond,
+                    ["maxScanRange"] = Survey.MaximumRange,
+                }
+            ),
+        ];
+}
+
+internal sealed record MoonSurveyCompleted(int Moon, IReadOnlyList<Eden.Gameplay.Structures.MoonOreShare> Composition)
+    : PilotNotification("OnMoonScanComplete")
+{
+    public override object?[] Arguments =>
+        [(long)Moon, new BlueMap<long, double>(Composition.ToDictionary(share => (long)share.TypeId, share => share.Percentage / 100d))];
+}
+
+internal sealed record MoonProbeRemoved(long Id) : PilotNotification("OnRemoveMoonProbe")
+{
+    public override object?[] Arguments => [Id];
 }

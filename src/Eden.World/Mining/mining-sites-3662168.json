@@ -695,6 +695,630 @@
       ]
     },
     {
+      "dungeonId": 3394,
+      "nameId": 111305,
+      "name": "Bandit Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000002
+      ],
+      "deposits": [
+        {
+          "typeId": 25268,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 29488.0,
+            "y": 10364.0,
+            "z": -17406.0
+          }
+        },
+        {
+          "typeId": 25268,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 20524.0,
+            "y": 0.0,
+            "z": 13374.0
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3395,
+      "nameId": 113129,
+      "name": "Rapture Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000028
+      ],
+      "deposits": [
+        {
+          "typeId": 25279,
+          "quantity": 600,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 2217.0,
+            "z": 39993.28125
+          }
+        },
+        {
+          "typeId": 25279,
+          "quantity": 700,
+          "radius": 100.0,
+          "position": {
+            "x": -12219.0,
+            "y": 0.0,
+            "z": 39993.28125
+          }
+        },
+        {
+          "typeId": 25279,
+          "quantity": 700,
+          "radius": 100.0,
+          "position": {
+            "x": 6527.0,
+            "y": 0.0,
+            "z": 39993.28125
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3396,
+      "nameId": 111306,
+      "name": "Profiteer Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000016
+      ],
+      "deposits": [
+        {
+          "typeId": 25273,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 29488.0,
+            "y": 10364.0,
+            "z": -17406.0
+          }
+        },
+        {
+          "typeId": 25273,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 20524.0,
+            "y": 0.0,
+            "z": 13374.0
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3397,
+      "nameId": 111307,
+      "name": "Forgotten Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000048
+      ],
+      "deposits": [
+        {
+          "typeId": 25274,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 29488.0,
+            "y": 10364.0,
+            "z": -17406.0
+          }
+        },
+        {
+          "typeId": 25274,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 20524.0,
+            "y": 0.0,
+            "z": 13374.0
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3398,
+      "nameId": 111308,
+      "name": "Phoenix Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000044
+      ],
+      "deposits": [
+        {
+          "typeId": 25275,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 29488.0,
+            "y": 10364.0,
+            "z": -17406.0
+          }
+        },
+        {
+          "typeId": 25275,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 20524.0,
+            "y": 0.0,
+            "z": 13374.0
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3399,
+      "nameId": 113130,
+      "name": "Saintly Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000030
+      ],
+      "deposits": [
+        {
+          "typeId": 25278,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": -593.7537841796875,
+            "y": 2217.0,
+            "z": 38486.21484375
+          }
+        },
+        {
+          "typeId": 25278,
+          "quantity": 750,
+          "radius": 100.0,
+          "position": {
+            "x": -12812.753784179688,
+            "y": 0.0,
+            "z": 38486.21484375
+          }
+        },
+        {
+          "typeId": 25278,
+          "quantity": 750,
+          "radius": 100.0,
+          "position": {
+            "x": 5933.2462158203125,
+            "y": 0.0,
+            "z": 38486.21484375
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3403,
+      "nameId": 113131,
+      "name": "Emerald Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000001
+      ],
+      "deposits": [
+        {
+          "typeId": 25277,
+          "quantity": 800,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 2217.0,
+            "z": 39978.80859375
+          }
+        },
+        {
+          "typeId": 25277,
+          "quantity": 600,
+          "radius": 100.0,
+          "position": {
+            "x": -12219.0,
+            "y": 0.0,
+            "z": 39978.80859375
+          }
+        },
+        {
+          "typeId": 25277,
+          "quantity": 600,
+          "radius": 100.0,
+          "position": {
+            "x": 6527.0,
+            "y": 0.0,
+            "z": 39978.80859375
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3404,
+      "nameId": 113132,
+      "name": "Crimson Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000054
+      ],
+      "deposits": [
+        {
+          "typeId": 25276,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 2217.0,
+            "z": 40795.125
+          }
+        },
+        {
+          "typeId": 25276,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": -12219.0,
+            "y": 0.0,
+            "z": 40795.125
+          }
+        },
+        {
+          "typeId": 25276,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 6527.0,
+            "y": 0.0,
+            "z": 40795.125
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3555,
+      "nameId": 111380,
+      "name": "Barren Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30370,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 81431.0,
+            "y": 5641.0,
+            "z": 251.0
+          }
+        },
+        {
+          "typeId": 30371,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": -96.0,
+            "y": -49935.0,
+            "z": -50650.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3556,
+      "nameId": 111381,
+      "name": "Token Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30371,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 79571.0,
+            "y": 21462.0,
+            "z": 127.0
+          }
+        },
+        {
+          "typeId": 30372,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3557,
+      "nameId": 111382,
+      "name": "Minor Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30372,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 100000.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30373,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3558,
+      "nameId": 113151,
+      "name": "Ordinary Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30373,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 100000.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30374,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": 27562.0,
+            "y": -3784.0,
+            "z": 11510.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3559,
+      "nameId": 111383,
+      "name": "Sizeable Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30374,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 66824.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30370,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3560,
+      "nameId": 111384,
+      "name": "Bountiful Frontier Reservoir",
+      "family": 2,
+      "difficulty": 4,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30375,
+          "quantity": 20000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 100000.0,
+            "z": -0.0
+          }
+        },
+        {
+          "typeId": 30376,
+          "quantity": 4000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "dungeonId": 3561,
+      "nameId": 111385,
+      "name": "Vast Frontier Reservoir",
+      "family": 2,
+      "difficulty": 4,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30376,
+          "quantity": 20000,
+          "radius": 100.0,
+          "position": {
+            "x": 93957.0,
+            "y": 46630.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30375,
+          "quantity": 4000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "dungeonId": 3562,
+      "nameId": 111386,
+      "name": "Instrumental Core Reservoir",
+      "family": 2,
+      "difficulty": 5,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30377,
+          "quantity": 24000,
+          "radius": 100.0,
+          "position": {
+            "x": 63757.0,
+            "y": 50678.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30378,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -9153.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        5,
+        6
+      ]
+    },
+    {
+      "dungeonId": 3563,
+      "nameId": 111387,
+      "name": "Vital Core Reservoir",
+      "family": 2,
+      "difficulty": 5,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30378,
+          "quantity": 24000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 100000.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30377,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        5,
+        6
+      ]
+    },
+    {
       "dungeonId": 5496,
       "nameId": 288481,
       "name": "Blue Ice Belt",

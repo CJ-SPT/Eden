@@ -113,14 +113,18 @@ internal sealed partial class PilotMarketStore(
             .Set<NpcMarketOrder>()
             .Where(o => o.StationId == station.Id && o.Kind == NpcMarketKind.Development)
             .ToDictionary(o => (o.TypeId, o.Bid));
-        var knownTypes = catalog.Definitions.Items.Keys.ToHashSet();
+        var knownTypes = catalog.Definitions.Items;
         var types = catalog.RecordsInSourceOrder(CatalogData.Client.Types);
         foreach (var record in types)
         {
             int id = checked((int)record.Key);
             var type = record.Value;
             int? group = type.MarketGroupID is > 0 and <= int.MaxValue ? (int)type.MarketGroupID : null;
-            if (!knownTypes.Contains(id) || !TestingMarketRules.IsEligible(new(id, type.Published == 1, group)))
+            if (
+                !knownTypes.TryGetValue(id, out var item)
+                || RegionalMarketRules.IsPlayerSuppliedIndustryInput(id, (InventoryCategory)item.CategoryId, item.GroupId)
+                || !TestingMarketRules.IsEligible(new(id, type.Published == 1, group))
+            )
             {
                 continue;
             }
@@ -134,7 +138,7 @@ internal sealed partial class PilotMarketStore(
             order.Entered = world.Settings.DevelopmentSupply.TestingStock;
             order.Issued = Now;
         }
-        foreach (var offer in s_offers.Where(o => o.BuyPriceCents.HasValue && knownTypes.Contains(o.TypeId)))
+        foreach (var offer in s_offers.Where(o => o.BuyPriceCents.HasValue && knownTypes.ContainsKey(o.TypeId)))
         {
             if (existing.ContainsKey((offer.TypeId, true)))
             {
@@ -208,6 +212,7 @@ internal sealed partial class PilotMarketStore(
             .Where(o =>
                 o.Kind == NpcMarketKind.Development
                 && !o.Bid
+                && o.Issued > 0
                 && !retiredSkills.Contains(o.TypeId)
                 && world.Set<MarketStation>().Any(s => s.StationId == o.StationId && s.SeedVersion == TestingMarketRules.SeedVersion)
             )

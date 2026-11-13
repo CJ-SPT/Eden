@@ -87,6 +87,10 @@ internal sealed class PilotSessionTick(
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
             report($"Ship {flight.Pilot.ShipId} jumped from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
+        if (flight.ConsumeWormholeJumpCancellation())
+        {
+            context.Notifications.Add(new Eden.Protocol.Exploration.WormholeJumpCancelled());
+        }
         DockedPilot? beforeAttack = null;
         using var destinationContext = context.Flight.UseSystem();
         void PrepareUpdates()

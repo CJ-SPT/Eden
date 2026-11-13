@@ -13,6 +13,7 @@ public static class StructureIndustryRules
             IndustryActivity.ResearchMaterial => StructureService.MaterialResearch,
             IndustryActivity.Copying => StructureService.Copying,
             IndustryActivity.Invention => StructureService.Invention,
+            IndustryActivity.Reaction => StructureService.CompositeReactions,
             IndustryActivity.Manufacturing when category == (int)InventoryCategory.Ship => (HullClass)group switch
             {
                 HullClass.Titan or HullClass.Supercarrier => StructureService.SupercapitalManufacturing,

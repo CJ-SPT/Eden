@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.PilotSessions;
 
@@ -9,7 +10,8 @@ internal sealed record GateDestination(
     long SourceId,
     StaticSpaceObject Exit,
     FlightSystem System,
-    IReadOnlyList<StaticSpaceObject> Objects
+    IReadOnlyList<StaticSpaceObject> Objects,
+    IWormholeTravel? Wormhole = null
 );
 
 internal sealed record GateTransit(GateDestination Destination, int TransferStamp);
@@ -43,6 +45,7 @@ internal sealed class FlightTravel
     internal bool Translocating => Translocation is not null;
     internal bool TranslocationArrival { get; private set; }
     internal GateArrivalContact? Arrival { get; private set; }
+    internal long? WormholeArrival { get; private set; }
     internal long? DepartureAt { get; private set; }
     private bool _awaitingArrival;
     private int? _arrivalStamp;
@@ -55,6 +58,7 @@ internal sealed class FlightTravel
         Translocation = null;
         TranslocationArrival = false;
         Arrival = null;
+        WormholeArrival = null;
         DepartureAt = null;
         _awaitingArrival = false;
         _arrivalStamp = null;
@@ -70,6 +74,7 @@ internal sealed class FlightTravel
     {
         _arrivalStamp = null;
         Arrival = null;
+        WormholeArrival = null;
         DepartureAt = departedAt;
         Gate = new(destination, stamp + JumpDurationTicks);
     }
@@ -112,11 +117,12 @@ internal sealed class FlightTravel
             : new(PilotCallResult.None, new(source.Id, exit, systems.GetSystem(systemId), destination));
     }
 
-    internal void CompleteGate(long arrivalGate, long arrivedAt)
+    internal void CompleteGate(long arrivalGate, long arrivedAt, bool wormhole = false)
     {
         Gate = null;
         DepartureAt = null;
-        Arrival = new(arrivalGate, arrivedAt);
+        Arrival = wormhole ? null : new(arrivalGate, arrivedAt);
+        WormholeArrival = wormhole ? arrivalGate : null;
         _awaitingArrival = true;
     }
 

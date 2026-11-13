@@ -3,6 +3,7 @@ using Eden.Data.World.Structures;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
+using Eden.World.Industry;
 using Eden.World.Storage;
 
 namespace Eden.World.Structures;
@@ -40,7 +41,11 @@ internal static class StructureIndustry
         foreach (var job in world.Set<IndustryJob>().Where(j => j.StationId == structure.Id && j.Status == IndustryJobStatus.Installed))
         {
             var type = catalog.RequireItem(job.ProductTypeId);
-            bool available = services.Contains(StructureIndustryRules.Required(job.Activity, type.CategoryId, type.GroupId));
+            var required =
+                job.Activity == IndustryActivity.Reaction
+                    ? ReactionCatalog.Service(job.BlueprintTypeId, catalog.RequireItem(job.BlueprintTypeId).GroupId)
+                    : StructureIndustryRules.Required(job.Activity, type.CategoryId, type.GroupId);
+            bool available = required is { } service && services.Contains(service);
             if (!available && job.SuspendedAt is null && job.EndTime > at)
             {
                 job.SuspendedAt = at;

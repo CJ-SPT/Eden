@@ -17,7 +17,7 @@ internal static class MiningCrystalCatalog
 
     private static bool ValidateSupport(CatalogDbContext catalog, int typeId, int group)
     {
-        if (group != MiningCrystalRules.Group)
+        if (group is not (MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup))
         {
             return false;
         }
