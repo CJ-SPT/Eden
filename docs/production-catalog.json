@@ -73628,6 +73628,10 @@
     29985,
     36966,
     19723,
+    28851,
+    28849,
+    28847,
+    28845,
     45705
   ],
   "fixtureTypes": [
@@ -75897,6 +75901,37 @@
       ]
     },
     {
+      "id": 3828,
+      "name": "Construction Blocks",
+      "groupId": 1034,
+      "categoryId": 43,
+      "definition": {
+        "descriptionID": 93066,
+        "typeID": 3828,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 104472,
+        "iconID": 26,
+        "published": 1,
+        "marketGroupID": 1335,
+        "volume": 0.75,
+        "mass": 0.0,
+        "basePrice": 500.0,
+        "portionSize": 1,
+        "groupID": 1034
+      },
+      "attributes": [
+        {
+          "id": 1640,
+          "value": 7200.0
+        },
+        {
+          "id": 1641,
+          "value": 7200.0
+        }
+      ]
+    },
+    {
       "id": 4051,
       "name": "Nitrogen Fuel Block",
       "groupId": 1136,
@@ -76125,6 +76160,67 @@
       ]
     },
     {
+      "id": 11445,
+      "name": "Minmatar Starship Engineering",
+      "groupId": 270,
+      "categoryId": 16,
+      "definition": {
+        "descriptionID": 87927,
+        "typeID": 11445,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "isDynamicType": 0,
+        "typeNameID": 77489,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 375,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 15000000.0,
+        "portionSize": 1,
+        "groupID": 270
+      },
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3402.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1982,
+          "value": -1.0
+        }
+      ]
+    },
+    {
       "id": 11446,
       "name": "Graviton Physics",
       "groupId": 270,
@@ -76259,6 +76355,67 @@
         "raceID": 4,
         "isDynamicType": 0,
         "typeNameID": 77493,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 375,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 15000000.0,
+        "portionSize": 1,
+        "groupID": 270
+      },
+      "attributes": [
+        {
+          "id": 180,
+          "value": 165.0
+        },
+        {
+          "id": 181,
+          "value": 166.0
+        },
+        {
+          "id": 182,
+          "value": 3402.0
+        },
+        {
+          "id": 183,
+          "value": 3392.0
+        },
+        {
+          "id": 275,
+          "value": 5.0
+        },
+        {
+          "id": 277,
+          "value": 5.0
+        },
+        {
+          "id": 278,
+          "value": 5.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 1982,
+          "value": -1.0
+        }
+      ]
+    },
+    {
+      "id": 11450,
+      "name": "Gallente Starship Engineering",
+      "groupId": 270,
+      "categoryId": 16,
+      "definition": {
+        "descriptionID": 87932,
+        "typeID": 11450,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "isDynamicType": 0,
+        "typeNameID": 77494,
         "iconID": 33,
         "published": 1,
         "marketGroupID": 375,
@@ -77475,6 +77632,1632 @@
       ]
     },
     {
+      "id": 20183,
+      "name": "Providence",
+      "groupId": 513,
+      "categoryId": 6,
+      "definition": {
+        "quoteID": 871165,
+        "raceID": 4,
+        "typeNameID": 72561,
+        "designerIDs": [
+          1000064
+        ],
+        "radius": 900.0,
+        "factionID": 500003,
+        "quoteAuthorID": 871166,
+        "typeID": 20183,
+        "graphicID": 2738,
+        "capacity": 435000.0,
+        "isDynamicType": 0,
+        "soundID": 20062,
+        "wreckTypeID": 26483,
+        "techLevel": 1,
+        "basePrice": 1815000000.0,
+        "marketGroupID": 767,
+        "volume": 18500000.0,
+        "portionSize": 1,
+        "descriptionID": 83518,
+        "metaLevel": 0,
+        "metaGroupID": 1,
+        "isisGroupID": 37,
+        "mass": 900000000.0,
+        "published": 1,
+        "certificateTemplate": 182,
+        "groupID": 513
+      },
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 120000.0
+        },
+        {
+          "id": 11,
+          "value": 3.0
+        },
+        {
+          "id": 12,
+          "value": 3.0
+        },
+        {
+          "id": 13,
+          "value": 0.0
+        },
+        {
+          "id": 14,
+          "value": 0.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 70.0
+        },
+        {
+          "id": 48,
+          "value": 1.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 230975.0
+        },
+        {
+          "id": 70,
+          "value": 0.0625
+        },
+        {
+          "id": 76,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 20342.0
+        },
+        {
+          "id": 183,
+          "value": 20524.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 0.0
+        },
+        {
+          "id": 208,
+          "value": 86.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 394.0
+        },
+        {
+          "id": 246,
+          "value": 394.0
+        },
+        {
+          "id": 263,
+          "value": 12000.0
+        },
+        {
+          "id": 265,
+          "value": 55200.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.8
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 310,
+          "value": -100.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 479,
+          "value": 6000000.0
+        },
+        {
+          "id": 482,
+          "value": 3750.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 10515.0
+        },
+        {
+          "id": 564,
+          "value": 0.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 849,
+          "value": 0.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 886,
+          "value": 5.0
+        },
+        {
+          "id": 887,
+          "value": 5.0
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1137,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.75
+        },
+        {
+          "id": 1259,
+          "value": 0.0
+        },
+        {
+          "id": 1261,
+          "value": 0.0
+        },
+        {
+          "id": 1262,
+          "value": 0.5
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1555,
+          "value": 2000.0
+        },
+        {
+          "id": 1768,
+          "value": 11313.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 20185,
+      "name": "Charon",
+      "groupId": 513,
+      "categoryId": 6,
+      "definition": {
+        "quoteID": 869640,
+        "raceID": 1,
+        "typeNameID": 72563,
+        "designerIDs": [
+          1000035,
+          1000010
+        ],
+        "radius": 800.0,
+        "factionID": 500001,
+        "quoteAuthorID": 869639,
+        "typeID": 20185,
+        "graphicID": 2740,
+        "capacity": 465000.0,
+        "isDynamicType": 0,
+        "soundID": 20069,
+        "wreckTypeID": 26505,
+        "techLevel": 1,
+        "basePrice": 1723000000.0,
+        "marketGroupID": 768,
+        "volume": 16250000.0,
+        "portionSize": 1,
+        "descriptionID": 83520,
+        "metaLevel": 0,
+        "metaGroupID": 1,
+        "isisGroupID": 37,
+        "mass": 960000000.0,
+        "published": 1,
+        "certificateTemplate": 182,
+        "groupID": 513
+      },
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 93000.0
+        },
+        {
+          "id": 11,
+          "value": 3.0
+        },
+        {
+          "id": 12,
+          "value": 3.0
+        },
+        {
+          "id": 13,
+          "value": 0.0
+        },
+        {
+          "id": 14,
+          "value": 0.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 60.0
+        },
+        {
+          "id": 48,
+          "value": 1.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 215577.0
+        },
+        {
+          "id": 70,
+          "value": 0.0625
+        },
+        {
+          "id": 76,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 20342.0
+        },
+        {
+          "id": 183,
+          "value": 20526.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 0.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 96.0
+        },
+        {
+          "id": 217,
+          "value": 395.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 60000.0
+        },
+        {
+          "id": 265,
+          "value": 18000.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.55
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 310,
+          "value": -100.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 479,
+          "value": 6000000.0
+        },
+        {
+          "id": 482,
+          "value": 3500.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 10660.0
+        },
+        {
+          "id": 564,
+          "value": 0.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 849,
+          "value": 0.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 888,
+          "value": 5.0
+        },
+        {
+          "id": 889,
+          "value": 5.0
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1137,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.75
+        },
+        {
+          "id": 1259,
+          "value": 0.0
+        },
+        {
+          "id": 1261,
+          "value": 0.0
+        },
+        {
+          "id": 1262,
+          "value": 0.5
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1555,
+          "value": 2000.0
+        },
+        {
+          "id": 1768,
+          "value": 11324.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 20187,
+      "name": "Obelisk",
+      "groupId": 513,
+      "categoryId": 6,
+      "definition": {
+        "quoteID": 732105,
+        "raceID": 8,
+        "typeNameID": 105394,
+        "designerIDs": [
+          1000109,
+          1000102
+        ],
+        "radius": 581.0,
+        "factionID": 500004,
+        "quoteAuthorID": 732106,
+        "typeID": 20187,
+        "graphicID": 2739,
+        "capacity": 440000.0,
+        "isDynamicType": 0,
+        "soundID": 20073,
+        "wreckTypeID": 26527,
+        "techLevel": 1,
+        "basePrice": 1943000000.0,
+        "marketGroupID": 769,
+        "volume": 17550000.0,
+        "portionSize": 1,
+        "descriptionID": 93915,
+        "metaLevel": 0,
+        "metaGroupID": 1,
+        "isisGroupID": 37,
+        "mass": 940000000.0,
+        "published": 1,
+        "certificateTemplate": 182,
+        "groupID": 513
+      },
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 132000.0
+        },
+        {
+          "id": 11,
+          "value": 3.0
+        },
+        {
+          "id": 12,
+          "value": 3.0
+        },
+        {
+          "id": 13,
+          "value": 0.0
+        },
+        {
+          "id": 14,
+          "value": 0.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 65.0
+        },
+        {
+          "id": 48,
+          "value": 1.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 215577.0
+        },
+        {
+          "id": 70,
+          "value": 0.0625
+        },
+        {
+          "id": 76,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 20342.0
+        },
+        {
+          "id": 183,
+          "value": 20527.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 0.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 91.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 394.0
+        },
+        {
+          "id": 246,
+          "value": 394.0
+        },
+        {
+          "id": 263,
+          "value": 16800.0
+        },
+        {
+          "id": 265,
+          "value": 48000.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.65
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 310,
+          "value": -100.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 479,
+          "value": 6000000.0
+        },
+        {
+          "id": 482,
+          "value": 3500.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 10605.0
+        },
+        {
+          "id": 564,
+          "value": 0.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 849,
+          "value": 0.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 890,
+          "value": 5.0
+        },
+        {
+          "id": 891,
+          "value": 5.0
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1137,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.75
+        },
+        {
+          "id": 1259,
+          "value": 0.0
+        },
+        {
+          "id": 1261,
+          "value": 0.0
+        },
+        {
+          "id": 1262,
+          "value": 0.5
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1555,
+          "value": 2000.0
+        },
+        {
+          "id": 1768,
+          "value": 11331.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 20189,
+      "name": "Fenrir",
+      "groupId": 513,
+      "categoryId": 6,
+      "definition": {
+        "quoteID": 870643,
+        "raceID": 2,
+        "typeNameID": 72562,
+        "designerIDs": [
+          1000048
+        ],
+        "radius": 700.0,
+        "factionID": 500002,
+        "quoteAuthorID": 870644,
+        "typeID": 20189,
+        "graphicID": 2737,
+        "capacity": 435000.0,
+        "isDynamicType": 0,
+        "soundID": 20077,
+        "wreckTypeID": 26549,
+        "techLevel": 1,
+        "basePrice": 1864000000.0,
+        "marketGroupID": 770,
+        "volume": 15500000.0,
+        "portionSize": 1,
+        "descriptionID": 83519,
+        "metaLevel": 0,
+        "metaGroupID": 1,
+        "isisGroupID": 37,
+        "mass": 820000000.0,
+        "published": 1,
+        "certificateTemplate": 182,
+        "groupID": 513
+      },
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 78000.0
+        },
+        {
+          "id": 11,
+          "value": 3.0
+        },
+        {
+          "id": 12,
+          "value": 3.0
+        },
+        {
+          "id": 13,
+          "value": 0.0
+        },
+        {
+          "id": 14,
+          "value": 0.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 81.0
+        },
+        {
+          "id": 48,
+          "value": 1.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 184780.0
+        },
+        {
+          "id": 70,
+          "value": 0.0625
+        },
+        {
+          "id": 76,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 20342.0
+        },
+        {
+          "id": 183,
+          "value": 20528.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 0.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 82.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 397.0
+        },
+        {
+          "id": 246,
+          "value": 397.0
+        },
+        {
+          "id": 263,
+          "value": 57600.0
+        },
+        {
+          "id": 265,
+          "value": 26400.0
+        },
+        {
+          "id": 267,
+          "value": 0.4
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 310,
+          "value": -100.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 479,
+          "value": 6000000.0
+        },
+        {
+          "id": 482,
+          "value": 3000.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 10385.0
+        },
+        {
+          "id": 564,
+          "value": 0.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 849,
+          "value": 0.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 892,
+          "value": 5.0
+        },
+        {
+          "id": 893,
+          "value": 5.0
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1137,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.75
+        },
+        {
+          "id": 1259,
+          "value": 0.0
+        },
+        {
+          "id": 1261,
+          "value": 0.0
+        },
+        {
+          "id": 1262,
+          "value": 0.5
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1555,
+          "value": 2000.0
+        },
+        {
+          "id": 1768,
+          "value": 11342.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
       "id": 20420,
       "name": "Datacore - Rocket Science",
       "groupId": 333,
@@ -78346,6 +80129,2750 @@
         {
           "id": 1139,
           "value": -10.0
+        }
+      ]
+    },
+    {
+      "id": 28844,
+      "name": "Rhea",
+      "groupId": 902,
+      "categoryId": 6,
+      "definition": {
+        "quoteID": 869632,
+        "raceID": 1,
+        "typeNameID": 72564,
+        "designerIDs": [
+          1000019
+        ],
+        "radius": 800.0,
+        "factionID": 500001,
+        "quoteAuthorID": 869631,
+        "typeID": 28844,
+        "graphicID": 20277,
+        "capacity": 144000.0,
+        "isDynamicType": 0,
+        "soundID": 20069,
+        "wreckTypeID": 29034,
+        "techLevel": 2,
+        "basePrice": 9020200000.0,
+        "marketGroupID": 1091,
+        "volume": 16250000.0,
+        "portionSize": 1,
+        "descriptionID": 83521,
+        "metaLevel": 5,
+        "metaGroupID": 2,
+        "isisGroupID": 38,
+        "mass": 960000000.0,
+        "variationParentTypeID": 20185,
+        "published": 1,
+        "certificateTemplate": 135,
+        "groupID": 902
+      },
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 93000.0
+        },
+        {
+          "id": 11,
+          "value": 3.0
+        },
+        {
+          "id": 12,
+          "value": 3.0
+        },
+        {
+          "id": 13,
+          "value": 0.0
+        },
+        {
+          "id": 14,
+          "value": 0.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 72.0
+        },
+        {
+          "id": 48,
+          "value": 5.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 474270.0
+        },
+        {
+          "id": 70,
+          "value": 0.055
+        },
+        {
+          "id": 76,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 20526.0
+        },
+        {
+          "id": 183,
+          "value": 29029.0
+        },
+        {
+          "id": 184,
+          "value": 21611.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 0.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 96.0
+        },
+        {
+          "id": 217,
+          "value": 395.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 60000.0
+        },
+        {
+          "id": 265,
+          "value": 18000.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.65625
+        },
+        {
+          "id": 270,
+          "value": 0.4125
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.525
+        },
+        {
+          "id": 274,
+          "value": 0.6
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 279,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 310,
+          "value": -100.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 479,
+          "value": 6000000.0
+        },
+        {
+          "id": 482,
+          "value": 35000.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 9930.0
+        },
+        {
+          "id": 564,
+          "value": 0.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 849,
+          "value": 0.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 861,
+          "value": 1.0
+        },
+        {
+          "id": 866,
+          "value": 17888.0
+        },
+        {
+          "id": 867,
+          "value": 5.0
+        },
+        {
+          "id": 868,
+          "value": 10000.0
+        },
+        {
+          "id": 869,
+          "value": 300000.0
+        },
+        {
+          "id": 888,
+          "value": -5.0
+        },
+        {
+          "id": 889,
+          "value": 5.0
+        },
+        {
+          "id": 898,
+          "value": 0.95
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1137,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.75
+        },
+        {
+          "id": 1259,
+          "value": 0.0
+        },
+        {
+          "id": 1261,
+          "value": 0.0
+        },
+        {
+          "id": 1262,
+          "value": 0.5
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1311,
+          "value": 10.0
+        },
+        {
+          "id": 1312,
+          "value": -10.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1549,
+          "value": 12000.0
+        },
+        {
+          "id": 1555,
+          "value": 4000.0
+        },
+        {
+          "id": 1768,
+          "value": 11413.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 3317,
+          "value": 343.0
+        },
+        {
+          "id": 3319,
+          "value": 0.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 28845,
+      "name": "Rhea Blueprint",
+      "groupId": 525,
+      "categoryId": 9,
+      "definition": {
+        "volume": 0.01,
+        "typeID": 28845,
+        "graphicID": 20277,
+        "capacity": 0.0,
+        "typeNameID": 71739,
+        "published": 1,
+        "radius": 1.0,
+        "metaGroupID": 2,
+        "mass": 0.0,
+        "basePrice": 2000000000.0,
+        "portionSize": 1,
+        "techLevel": 2,
+        "groupID": 525
+      },
+      "attributes": [
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 1955,
+          "value": 4000.0
+        }
+      ]
+    },
+    {
+      "id": 28846,
+      "name": "Nomad",
+      "groupId": 902,
+      "categoryId": 6,
+      "definition": {
+        "quoteID": 870685,
+        "raceID": 2,
+        "typeNameID": 72565,
+        "designerIDs": [
+          1000160
+        ],
+        "radius": 700.0,
+        "factionID": 500002,
+        "quoteAuthorID": 870686,
+        "typeID": 28846,
+        "graphicID": 3360,
+        "capacity": 132000.0,
+        "isDynamicType": 0,
+        "soundID": 20077,
+        "wreckTypeID": 29036,
+        "techLevel": 2,
+        "basePrice": 9875200000.0,
+        "marketGroupID": 1093,
+        "volume": 15500000.0,
+        "portionSize": 1,
+        "descriptionID": 83522,
+        "metaLevel": 5,
+        "metaGroupID": 2,
+        "isisGroupID": 38,
+        "mass": 820000000.0,
+        "variationParentTypeID": 20189,
+        "published": 1,
+        "certificateTemplate": 135,
+        "groupID": 902
+      },
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 78000.0
+        },
+        {
+          "id": 11,
+          "value": 3.0
+        },
+        {
+          "id": 12,
+          "value": 3.0
+        },
+        {
+          "id": 13,
+          "value": 0.0
+        },
+        {
+          "id": 14,
+          "value": 0.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 96.0
+        },
+        {
+          "id": 48,
+          "value": 5.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 406516.0
+        },
+        {
+          "id": 70,
+          "value": 0.055
+        },
+        {
+          "id": 76,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 20528.0
+        },
+        {
+          "id": 183,
+          "value": 29029.0
+        },
+        {
+          "id": 184,
+          "value": 21611.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 0.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 82.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 397.0
+        },
+        {
+          "id": 246,
+          "value": 397.0
+        },
+        {
+          "id": 263,
+          "value": 57600.0
+        },
+        {
+          "id": 265,
+          "value": 26400.0
+        },
+        {
+          "id": 267,
+          "value": 0.3
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.56875
+        },
+        {
+          "id": 271,
+          "value": 0.75
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.7
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 279,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 310,
+          "value": -100.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 479,
+          "value": 6000000.0
+        },
+        {
+          "id": 482,
+          "value": 30000.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 9700.0
+        },
+        {
+          "id": 564,
+          "value": 0.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 849,
+          "value": 0.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 861,
+          "value": 1.0
+        },
+        {
+          "id": 866,
+          "value": 17889.0
+        },
+        {
+          "id": 867,
+          "value": 5.0
+        },
+        {
+          "id": 868,
+          "value": 8200.0
+        },
+        {
+          "id": 869,
+          "value": 300000.0
+        },
+        {
+          "id": 892,
+          "value": -5.0
+        },
+        {
+          "id": 893,
+          "value": 5.0
+        },
+        {
+          "id": 898,
+          "value": 0.95
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1137,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.75
+        },
+        {
+          "id": 1259,
+          "value": 0.0
+        },
+        {
+          "id": 1261,
+          "value": 0.0
+        },
+        {
+          "id": 1262,
+          "value": 0.5
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1311,
+          "value": 10.0
+        },
+        {
+          "id": 1312,
+          "value": -10.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1549,
+          "value": 12000.0
+        },
+        {
+          "id": 1555,
+          "value": 4000.0
+        },
+        {
+          "id": 1768,
+          "value": 11425.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 3317,
+          "value": 343.0
+        },
+        {
+          "id": 3319,
+          "value": 0.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 28847,
+      "name": "Nomad Blueprint",
+      "groupId": 525,
+      "categoryId": 9,
+      "definition": {
+        "volume": 0.01,
+        "typeID": 28847,
+        "graphicID": 3360,
+        "capacity": 0.0,
+        "typeNameID": 71740,
+        "published": 1,
+        "radius": 1.0,
+        "metaGroupID": 2,
+        "mass": 0.0,
+        "basePrice": 1850000000.0,
+        "portionSize": 1,
+        "techLevel": 2,
+        "groupID": 525
+      },
+      "attributes": [
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 1955,
+          "value": 4000.0
+        }
+      ]
+    },
+    {
+      "id": 28848,
+      "name": "Anshar",
+      "groupId": 902,
+      "categoryId": 6,
+      "definition": {
+        "quoteID": 732073,
+        "raceID": 8,
+        "typeNameID": 105419,
+        "designerIDs": [
+          1000101
+        ],
+        "radius": 581.0,
+        "factionID": 500004,
+        "quoteAuthorID": 732074,
+        "typeID": 28848,
+        "graphicID": 3359,
+        "capacity": 137500.0,
+        "isDynamicType": 0,
+        "soundID": 20073,
+        "wreckTypeID": 29035,
+        "techLevel": 2,
+        "basePrice": 9038800000.0,
+        "marketGroupID": 1092,
+        "volume": 17550000.0,
+        "portionSize": 1,
+        "descriptionID": 93940,
+        "metaLevel": 5,
+        "metaGroupID": 2,
+        "isisGroupID": 38,
+        "mass": 940000000.0,
+        "variationParentTypeID": 20187,
+        "published": 1,
+        "certificateTemplate": 135,
+        "groupID": 902
+      },
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 132000.0
+        },
+        {
+          "id": 11,
+          "value": 3.0
+        },
+        {
+          "id": 12,
+          "value": 3.0
+        },
+        {
+          "id": 13,
+          "value": 0.0
+        },
+        {
+          "id": 14,
+          "value": 0.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 78.0
+        },
+        {
+          "id": 48,
+          "value": 5.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 474270.0
+        },
+        {
+          "id": 70,
+          "value": 0.055
+        },
+        {
+          "id": 76,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 20527.0
+        },
+        {
+          "id": 183,
+          "value": 29029.0
+        },
+        {
+          "id": 184,
+          "value": 21611.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 0.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 91.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 394.0
+        },
+        {
+          "id": 246,
+          "value": 394.0
+        },
+        {
+          "id": 263,
+          "value": 16800.0
+        },
+        {
+          "id": 265,
+          "value": 48000.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.4875
+        },
+        {
+          "id": 270,
+          "value": 0.56875
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.45
+        },
+        {
+          "id": 274,
+          "value": 0.7
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 279,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 310,
+          "value": -100.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 479,
+          "value": 6000000.0
+        },
+        {
+          "id": 482,
+          "value": 35000.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 9880.0
+        },
+        {
+          "id": 564,
+          "value": 0.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 849,
+          "value": 0.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 861,
+          "value": 1.0
+        },
+        {
+          "id": 866,
+          "value": 17887.0
+        },
+        {
+          "id": 867,
+          "value": 5.0
+        },
+        {
+          "id": 868,
+          "value": 9400.0
+        },
+        {
+          "id": 869,
+          "value": 300000.0
+        },
+        {
+          "id": 890,
+          "value": 5.0
+        },
+        {
+          "id": 891,
+          "value": -5.0
+        },
+        {
+          "id": 898,
+          "value": 0.95
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1137,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.75
+        },
+        {
+          "id": 1259,
+          "value": 0.0
+        },
+        {
+          "id": 1261,
+          "value": 0.0
+        },
+        {
+          "id": 1262,
+          "value": 0.5
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1311,
+          "value": 10.0
+        },
+        {
+          "id": 1312,
+          "value": -10.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1549,
+          "value": 12000.0
+        },
+        {
+          "id": 1555,
+          "value": 4000.0
+        },
+        {
+          "id": 1768,
+          "value": 11406.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 3317,
+          "value": 343.0
+        },
+        {
+          "id": 3319,
+          "value": 0.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 28849,
+      "name": "Anshar Blueprint",
+      "groupId": 525,
+      "categoryId": 9,
+      "definition": {
+        "volume": 0.01,
+        "typeID": 28849,
+        "graphicID": 3359,
+        "capacity": 0.0,
+        "typeNameID": 71741,
+        "published": 1,
+        "radius": 1.0,
+        "metaGroupID": 2,
+        "mass": 0.0,
+        "basePrice": 1950000000.0,
+        "portionSize": 1,
+        "techLevel": 2,
+        "groupID": 525
+      },
+      "attributes": [
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 1955,
+          "value": 4000.0
+        }
+      ]
+    },
+    {
+      "id": 28850,
+      "name": "Ark",
+      "groupId": 902,
+      "categoryId": 6,
+      "definition": {
+        "quoteID": 871075,
+        "raceID": 4,
+        "typeNameID": 72566,
+        "designerIDs": [
+          1000064
+        ],
+        "radius": 900.0,
+        "factionID": 500003,
+        "quoteAuthorID": 871076,
+        "typeID": 28850,
+        "graphicID": 3357,
+        "capacity": 135000.0,
+        "isDynamicType": 0,
+        "soundID": 20062,
+        "wreckTypeID": 29033,
+        "techLevel": 2,
+        "basePrice": 10990400000.0,
+        "marketGroupID": 1090,
+        "volume": 18500000.0,
+        "portionSize": 1,
+        "descriptionID": 83523,
+        "metaLevel": 5,
+        "metaGroupID": 2,
+        "isisGroupID": 38,
+        "mass": 900000000.0,
+        "variationParentTypeID": 20183,
+        "published": 1,
+        "certificateTemplate": 135,
+        "groupID": 902
+      },
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 120000.0
+        },
+        {
+          "id": 11,
+          "value": 3.0
+        },
+        {
+          "id": 12,
+          "value": 3.0
+        },
+        {
+          "id": 13,
+          "value": 0.0
+        },
+        {
+          "id": 14,
+          "value": 0.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 84.0
+        },
+        {
+          "id": 48,
+          "value": 5.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 508145.0
+        },
+        {
+          "id": 70,
+          "value": 0.055
+        },
+        {
+          "id": 76,
+          "value": 0.0
+        },
+        {
+          "id": 79,
+          "value": 6750.0
+        },
+        {
+          "id": 101,
+          "value": 0.0
+        },
+        {
+          "id": 102,
+          "value": 0.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 150.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 1.38e-08
+        },
+        {
+          "id": 182,
+          "value": 20524.0
+        },
+        {
+          "id": 183,
+          "value": 29029.0
+        },
+        {
+          "id": 184,
+          "value": 21611.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 0.0
+        },
+        {
+          "id": 208,
+          "value": 86.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 394.0
+        },
+        {
+          "id": 246,
+          "value": 394.0
+        },
+        {
+          "id": 263,
+          "value": 12000.0
+        },
+        {
+          "id": 265,
+          "value": 55200.0
+        },
+        {
+          "id": 267,
+          "value": 0.5
+        },
+        {
+          "id": 268,
+          "value": 0.6
+        },
+        {
+          "id": 269,
+          "value": 0.65625
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.375
+        },
+        {
+          "id": 273,
+          "value": 0.525
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 279,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 310,
+          "value": -100.0
+        },
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 479,
+          "value": 6000000.0
+        },
+        {
+          "id": 482,
+          "value": 37500.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 9800.0
+        },
+        {
+          "id": 564,
+          "value": 0.0
+        },
+        {
+          "id": 600,
+          "value": 1.5
+        },
+        {
+          "id": 633,
+          "value": 5.0
+        },
+        {
+          "id": 849,
+          "value": 0.0
+        },
+        {
+          "id": 853,
+          "value": 1.0
+        },
+        {
+          "id": 861,
+          "value": 1.0
+        },
+        {
+          "id": 866,
+          "value": 16274.0
+        },
+        {
+          "id": 867,
+          "value": 5.0
+        },
+        {
+          "id": 868,
+          "value": 8800.0
+        },
+        {
+          "id": 869,
+          "value": 300000.0
+        },
+        {
+          "id": 886,
+          "value": -5.0
+        },
+        {
+          "id": 887,
+          "value": 5.0
+        },
+        {
+          "id": 898,
+          "value": 0.95
+        },
+        {
+          "id": 1132,
+          "value": 0.0
+        },
+        {
+          "id": 1137,
+          "value": 0.0
+        },
+        {
+          "id": 1154,
+          "value": 0.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.75
+        },
+        {
+          "id": 1259,
+          "value": 0.0
+        },
+        {
+          "id": 1261,
+          "value": 0.0
+        },
+        {
+          "id": 1262,
+          "value": 0.5
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1311,
+          "value": 10.0
+        },
+        {
+          "id": 1312,
+          "value": -10.0
+        },
+        {
+          "id": 1547,
+          "value": 4.0
+        },
+        {
+          "id": 1549,
+          "value": 12000.0
+        },
+        {
+          "id": 1555,
+          "value": 4000.0
+        },
+        {
+          "id": 1768,
+          "value": 11350.0
+        },
+        {
+          "id": 1785,
+          "value": 1.0
+        },
+        {
+          "id": 1971,
+          "value": 0.1
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 2244,
+          "value": 1.0
+        },
+        {
+          "id": 3317,
+          "value": 343.0
+        },
+        {
+          "id": 3319,
+          "value": 0.0
+        },
+        {
+          "id": 5682,
+          "value": 0.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 28851,
+      "name": "Ark Blueprint",
+      "groupId": 525,
+      "categoryId": 9,
+      "definition": {
+        "volume": 0.01,
+        "typeID": 28851,
+        "graphicID": 3357,
+        "capacity": 0.0,
+        "typeNameID": 71742,
+        "published": 1,
+        "radius": 1.0,
+        "metaGroupID": 2,
+        "mass": 0.0,
+        "basePrice": 1900000000.0,
+        "portionSize": 1,
+        "techLevel": 2,
+        "groupID": 525
+      },
+      "attributes": [
+        {
+          "id": 422,
+          "value": 2.0
+        },
+        {
+          "id": 1955,
+          "value": 4000.0
+        }
+      ]
+    },
+    {
+      "id": 29039,
+      "name": "Capital Antimatter Reactor Unit",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90791,
+        "typeID": 29039,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 100550,
+        "iconID": 2196,
+        "published": 1,
+        "marketGroupID": 1884,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 217600.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29041,
+      "name": "Capital Crystalline Carbonide Armor Plate",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90792,
+        "typeID": 29041,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 100551,
+        "iconID": 2190,
+        "published": 1,
+        "marketGroupID": 1886,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29043,
+      "name": "Capital Deflection Shield Emitter",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90793,
+        "typeID": 29043,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 2,
+        "typeNameID": 100552,
+        "iconID": 2203,
+        "published": 1,
+        "marketGroupID": 1887,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 339200.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29045,
+      "name": "Capital Electrolytic Capacitor Unit",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90794,
+        "typeID": 29045,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 2,
+        "typeNameID": 100553,
+        "iconID": 2199,
+        "published": 1,
+        "marketGroupID": 1887,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 492800.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29049,
+      "name": "Capital Fernite Carbide Composite Armor Plate",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90795,
+        "typeID": 29049,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 2,
+        "typeNameID": 100554,
+        "iconID": 2191,
+        "published": 1,
+        "marketGroupID": 1887,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29051,
+      "name": "Capital Fusion Reactor Unit",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90796,
+        "typeID": 29051,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 100555,
+        "iconID": 2194,
+        "published": 1,
+        "marketGroupID": 1886,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 217600.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29053,
+      "name": "Capital Fusion Thruster",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90797,
+        "typeID": 29053,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 100556,
+        "iconID": 2180,
+        "published": 1,
+        "marketGroupID": 1884,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 166400.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29055,
+      "name": "Capital Gravimetric Sensor Cluster",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90798,
+        "typeID": 29055,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 100557,
+        "iconID": 2181,
+        "published": 1,
+        "marketGroupID": 1885,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 224000.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29059,
+      "name": "Capital Graviton Reactor Unit",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90800,
+        "typeID": 29059,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 100559,
+        "iconID": 2193,
+        "published": 1,
+        "marketGroupID": 1885,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 217600.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29061,
+      "name": "Capital Ion Thruster",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90801,
+        "typeID": 29061,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 100560,
+        "iconID": 2178,
+        "published": 1,
+        "marketGroupID": 1886,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 166400.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29065,
+      "name": "Capital Ladar Sensor Cluster",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 91146,
+        "typeID": 29065,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 2,
+        "typeNameID": 100939,
+        "iconID": 2183,
+        "published": 1,
+        "marketGroupID": 1887,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 224000.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29067,
+      "name": "Capital Linear Shield Emitter",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90803,
+        "typeID": 29067,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 100562,
+        "iconID": 2204,
+        "published": 1,
+        "marketGroupID": 1884,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 339200.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29069,
+      "name": "Capital Magnetometric Sensor Cluster",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90804,
+        "typeID": 29069,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 100563,
+        "iconID": 2182,
+        "published": 1,
+        "marketGroupID": 1886,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 224000.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29071,
+      "name": "Capital Magpulse Thruster",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90805,
+        "typeID": 29071,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 100564,
+        "iconID": 2177,
+        "published": 1,
+        "marketGroupID": 1885,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 166400.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29073,
+      "name": "Capital Nanoelectrical Microprocessor",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90806,
+        "typeID": 29073,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 100565,
+        "iconID": 2188,
+        "published": 1,
+        "marketGroupID": 1884,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 166400.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29075,
+      "name": "Capital Nanomechanical Microprocessor",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90807,
+        "typeID": 29075,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 2,
+        "typeNameID": 100566,
+        "iconID": 2187,
+        "published": 1,
+        "marketGroupID": 1887,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 166400.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29079,
+      "name": "Capital Nuclear Reactor Unit",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90809,
+        "typeID": 29079,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 2,
+        "typeNameID": 100568,
+        "iconID": 2195,
+        "published": 1,
+        "marketGroupID": 1887,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 217600.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29081,
+      "name": "Capital Oscillator Capacitor Unit",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90810,
+        "typeID": 29081,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 100569,
+        "iconID": 2198,
+        "published": 1,
+        "marketGroupID": 1886,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 492800.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29085,
+      "name": "Capital Photon Microprocessor",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90812,
+        "typeID": 29085,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 100571,
+        "iconID": 2186,
+        "published": 1,
+        "marketGroupID": 1886,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 166400.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29089,
+      "name": "Capital Plasma Thruster",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90814,
+        "typeID": 29089,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 2,
+        "typeNameID": 100573,
+        "iconID": 2179,
+        "published": 1,
+        "marketGroupID": 1887,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 166400.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29091,
+      "name": "Capital Pulse Shield Emitter",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90815,
+        "typeID": 29091,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 8,
+        "typeNameID": 100574,
+        "iconID": 2202,
+        "published": 1,
+        "marketGroupID": 1886,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 339200.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29093,
+      "name": "Capital Quantum Microprocessor",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90816,
+        "typeID": 29093,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 100575,
+        "iconID": 2185,
+        "published": 1,
+        "marketGroupID": 1885,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 166400.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29095,
+      "name": "Capital Radar Sensor Cluster",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90817,
+        "typeID": 29095,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 100576,
+        "iconID": 2184,
+        "published": 1,
+        "marketGroupID": 1884,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 224000.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29097,
+      "name": "Capital Scalar Capacitor Unit",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90818,
+        "typeID": 29097,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 100577,
+        "iconID": 2197,
+        "published": 1,
+        "marketGroupID": 1885,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 492800.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29101,
+      "name": "Capital Sustained Shield Emitter",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90820,
+        "typeID": 29101,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 100579,
+        "iconID": 2201,
+        "published": 1,
+        "marketGroupID": 1885,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 339200.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29103,
+      "name": "Capital Tesseract Capacitor Unit",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90821,
+        "typeID": 29103,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 100580,
+        "iconID": 2200,
+        "published": 1,
+        "marketGroupID": 1884,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 492800.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29107,
+      "name": "Capital Titanium Diborite Armor Plate",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90823,
+        "typeID": 29107,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 1,
+        "typeNameID": 100582,
+        "iconID": 2189,
+        "published": 1,
+        "marketGroupID": 1885,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 29109,
+      "name": "Capital Tungsten Carbide Armor Plate",
+      "groupId": 913,
+      "categoryId": 17,
+      "definition": {
+        "descriptionID": 90824,
+        "typeID": 29109,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "raceID": 4,
+        "typeNameID": 100583,
+        "iconID": 2192,
+        "published": 1,
+        "marketGroupID": 1884,
+        "volume": 10.0,
+        "mass": 1.0,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "groupID": 913
+      },
+      "attributes": [
+        {
+          "id": 726,
+          "value": 100.0
         }
       ]
     },

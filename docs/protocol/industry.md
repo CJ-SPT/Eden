@@ -238,6 +238,22 @@ build, both Python policy suites, formatting and audit reproduction passed.
 
 **Optional maintainer checks:** Inspect the Monitor blueprint offer and its copy run count in the native CONCORD LP store.
 
+## Jump-freighter manufacturing recipes
+
+The pinned production fixture now includes Ark, Anshar, Nomad and Rhea. The automated test installs each recipe with a
+licensed copy, verifies the exact material deductions, restarts the world, delivers one ship and rejects a duplicate
+delivery. This scenario begins with fixture stock and a licensed copy for each hull. The supply audit separately traces
+those materials and copies through reactions, exploration, and invention.
+
+**Automated validation.** The exact pinned-catalog manufacturing filter passed all 19 cases in 24.83 seconds, including
+the four jump freighters. The final affected filter passed 34 cases in 35.22 seconds across the manufacturing catalog,
+reaction jobs and wormhole travel. Tool and solution restore, the solution build, both Python policy suites, format
+verification and byte-for-byte reproduction of both catalog exports passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of

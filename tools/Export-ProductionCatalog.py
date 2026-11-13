@@ -12,7 +12,7 @@ SAMPLES = [
     "Miner II", "Hobgoblin I", "Hobgoblin II", "1400mm Howitzer Artillery I",
     "Mega Beam Laser I", "Scourge Heavy Missile", "Small Core Defense Field Extender I",
     "Titanium Diborite Armor Plate", "Capital Construction Parts", "Nitrogen Fuel Block",
-    "Raven", "Tengu", "Astrahus", "Naglfar",
+    "Raven", "Tengu", "Astrahus", "Naglfar", "Ark", "Anshar", "Nomad", "Rhea",
 ]
 
 
