@@ -52,6 +52,27 @@ internal static class TurretChargeCatalog
                 TurretChargeEffect.EntityFlyRange,
             ],
             AmmunitionDefinitions.HybridChargeGroup => [TurretChargeEffect.Range, TurretChargeEffect.Capacitor],
+            AmmunitionDefinitions.ExoticPlasmaGroup =>
+            [
+                TurretChargeEffect.Range,
+                TurretChargeEffect.Capacitor,
+                TurretChargeEffect.EntityFlyRange,
+            ],
+            AmmunitionDefinitions.AdvancedExoticPlasmaGroup =>
+            [
+                TurretChargeEffect.Range,
+                TurretChargeEffect.Tracking,
+                TurretChargeEffect.Capacitor,
+                TurretChargeEffect.EntityFlyRange,
+            ],
+            AmmunitionDefinitions.CondenserPackGroup => [TurretChargeEffect.Range, TurretChargeEffect.Capacitor],
+            AmmunitionDefinitions.AdvancedCondenserPackGroup =>
+            [
+                TurretChargeEffect.Range,
+                TurretChargeEffect.Capacitor,
+                TurretChargeEffect.EntityFlyRange,
+                TurretChargeEffect.ExplosionVelocity,
+            ],
             AmmunitionDefinitions.ProjectileChargeGroup =>
             [
                 TurretChargeEffect.Range,

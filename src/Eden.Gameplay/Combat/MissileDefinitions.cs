@@ -43,6 +43,8 @@ public enum MissileLauncherGroup
     HeavyAssault = 771,
     RapidHeavy = 1245,
     XlCruise = 1674,
+    RapidTorpedo = 1673,
+    BreacherPod = 4807,
 }
 
 public enum MissileChargeGroup
@@ -67,6 +69,7 @@ public enum MissileChargeGroup
     XlCruise = 1019,
     AdvancedXlTorpedo = 1677,
     AdvancedXlCruise = 1678,
+    BreacherPod = 4808,
 }
 
 public static class MissileDefinitions
@@ -95,10 +98,23 @@ public static class MissileDefinitions
     public static bool SupportedLauncher(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         LauncherGroups.Contains(group)
         && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) is 1 or 2
-        && !InventoryDefinitions.RequiresSpecificShip(attributes);
+        && (
+            group is (int)MissileLauncherGroup.RapidTorpedo or (int)MissileLauncherGroup.BreacherPod
+            || !InventoryDefinitions.RequiresSpecificShip(attributes)
+        );
 
-    public static bool CompatibleCharge(IReadOnlyDictionary<DogmaAttributeId, double> launcher, int group) =>
-        ChargeGroups.Contains(group) && ChargeGroupAttributes.Any(a => launcher.GetValueOrDefault(a) == group);
+    public static bool CompatibleCharge(
+        IReadOnlyDictionary<DogmaAttributeId, double> launcher,
+        int group,
+        IReadOnlyDictionary<DogmaAttributeId, double>? charge = null
+    ) =>
+        ChargeGroups.Contains(group)
+        && ChargeGroupAttributes.Any(a => launcher.GetValueOrDefault(a) == group)
+        && (
+            group != (int)MissileChargeGroup.BreacherPod
+            || charge is not null
+                && launcher.GetValueOrDefault(DogmaAttributeId.ChargeSize) == charge.GetValueOrDefault(DogmaAttributeId.ChargeSize)
+        );
 
     public static IReadOnlyList<DogmaAttributeId> ChargeGroupAttributes { get; } =
     [

@@ -646,6 +646,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
                     or SpatialModuleRules.CloakGroup
                     or SpatialModuleRules.MicroJumpGroup
             || FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.AssaultDamageControl)
+            || module.TypeId == BreacherRules.CounterType
         )
         {
             attributes[DogmaAttributeId.NextActivationTime] = world.Set<ModuleCooldown>().Find(module.Id)?.ReadyAt ?? 0;

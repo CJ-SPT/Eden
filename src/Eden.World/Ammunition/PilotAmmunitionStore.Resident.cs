@@ -245,7 +245,7 @@ internal sealed partial class PilotAmmunitionStore
                 : chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
                 : MissileDefinitions.ChargeGroups.Contains(chargeType.GroupId)
-                    ? MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId)
+                    ? MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId, chargeAttributes)
                 : AmmunitionDefinitions.CompatibleTurretCharge(attributes, chargeType.GroupId, chargeAttributes);
             if (!compatible)
             {

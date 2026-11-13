@@ -31,12 +31,24 @@ internal static class WeaponCatalog
         }
         if (
             group
-            is not (CombatDefinitions.EnergyWeaponGroup or CombatDefinitions.HybridWeaponGroup or CombatDefinitions.ProjectileWeaponGroup)
+            is not (
+                CombatDefinitions.EnergyWeaponGroup
+                or CombatDefinitions.HybridWeaponGroup
+                or CombatDefinitions.ProjectileWeaponGroup
+                or CombatDefinitions.DisintegratorGroup
+                or CombatDefinitions.VortonGroup
+            )
         )
         {
             return false;
         }
-        var firingEffect = group == CombatDefinitions.EnergyWeaponGroup ? DogmaEffect.LaserFired : DogmaEffect.ProjectileFired;
+        var firingEffect = group switch
+        {
+            CombatDefinitions.DisintegratorGroup => DogmaEffect.Disintegrator,
+            CombatDefinitions.VortonGroup => DogmaEffect.Vorton,
+            CombatDefinitions.EnergyWeaponGroup => DogmaEffect.LaserFired,
+            _ => DogmaEffect.ProjectileFired,
+        };
         var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         if (
             type?.Published != 1
@@ -71,8 +83,8 @@ internal static class WeaponCatalog
                 && e.RangeAttributeID == (int)DogmaAttributeId.MaxRange
                 && e.DurationAttributeID == (int)DogmaAttributeId.WeaponCycleTime
                 && e.DischargeAttributeID == (int)DogmaAttributeId.CapacitorNeed
-                && e.TrackingSpeedAttributeID == (int)DogmaAttributeId.TrackingSpeed
-                && e.FalloffAttributeID == (int)DogmaAttributeId.AccuracyFalloff
+                && e.TrackingSpeedAttributeID == (group == CombatDefinitions.VortonGroup ? null : (int?)DogmaAttributeId.TrackingSpeed)
+                && e.FalloffAttributeID == (CombatDefinitions.IsAdvancedTurret(group) ? null : (int?)DogmaAttributeId.AccuracyFalloff)
                 && e.IsWarpSafe == 0
             )
             && effects.All(e =>
@@ -82,7 +94,9 @@ internal static class WeaponCatalog
                     or (int)DogmaEffect.HighPower
                     or (int)DogmaEffect.TurretFitted
                     or (int)DogmaEffect.ProjectileFired
-                    or (int)DogmaEffect.LaserFired => (e.ModifierInfo ?? []).Length == 0,
+                    or (int)DogmaEffect.LaserFired
+                    or (int)DogmaEffect.Disintegrator
+                    or (int)DogmaEffect.Vorton => (e.ModifierInfo ?? []).Length == 0,
                     OverloadRate or OverloadDamage => e.EffectCategory == OverloadPhase,
                     HullResistanceOverride or ShieldArmorResistanceOverride => ValidOverride(e),
                     BarrageDamageDerivation => group == CombatDefinitions.ProjectileWeaponGroup

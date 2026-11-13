@@ -62,6 +62,7 @@ public static class ModuleFittingRules
             || Enum.IsDefined((InformationGroup)groupId)
                 && (InformationRules.Effect(groupId) is { } information ? effects.Contains(information) : true)
             || groupId == AssaultDamageControlRules.Group && effects.Contains(DogmaEffect.AssaultDamageControl)
+            || typeId == BreacherRules.CounterType && effects.Contains(DogmaEffect.BreachControl)
             || groupId == SignatureSuppressionRules.Group && effects.Contains(DogmaEffect.SignatureSuppression)
             || AncillaryRepairRules.Kind(groupId) is { } ancillary
                 && effects.Contains(AncillaryRepairRules.Effect(ancillary))
@@ -127,6 +128,10 @@ public static class ModuleFittingRules
                     groupId,
                     attributes
                 ) && effects.Contains(DogmaEffect.ProjectileFired),
+                CombatDefinitions.DisintegratorGroup => CombatDefinitions.IsSupportedAmmoTurret(groupId, attributes)
+                    && effects.Contains(DogmaEffect.Disintegrator),
+                CombatDefinitions.VortonGroup => CombatDefinitions.IsSupportedAmmoTurret(groupId, attributes)
+                    && effects.Contains(DogmaEffect.Vorton),
                 _ => typeId == (int)CombatWeaponType.CivilianGatlingRailgun && effects.Contains(DogmaEffect.LaserFired),
             };
         if ((!supported && !passive) || !effects.Contains(DogmaEffect.Online))

@@ -1,6 +1,7 @@
 using Eden.Data.World.Combat;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
@@ -22,7 +23,7 @@ namespace Eden.World.Defenses;
 [Injectable]
 internal sealed class PilotAssaultDamageControlStore(WorldDatabase database) : IPilotAssaultDamageControls
 {
-    public AssaultDamageControlActivation Activate(long pilotId, long moduleId, long now)
+    public AssaultDamageControlActivation Activate(long pilotId, long moduleId, long now, DogmaEffect? expectedEffect = null)
     {
         using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         var world = transaction.World;
@@ -36,6 +37,7 @@ internal sealed class PilotAssaultDamageControlStore(WorldDatabase database) : I
             || item.LocationId != pilot.ActiveShipId
             || !InventoryDefinitions.IsLowSlot(item.FlagId)
             || !AssaultDamageControlCatalog.Supported(catalog, item.TypeId, catalog.FittingType(item.TypeId)?.GroupId ?? 0)
+            || expectedEffect is not null && FittingCatalog.DefaultEffect(catalog, item.TypeId) != expectedEffect
             || !InventoryDefinitions.CanFitShip(
                 catalog.FittingAttributes(item.TypeId),
                 pilot.ActiveShip.TypeId,
@@ -62,7 +64,18 @@ internal sealed class PilotAssaultDamageControlStore(WorldDatabase database) : I
         {
             throw new InvalidDataException("Only one assault damage control can be active on a ship.");
         }
-        var module = AssaultDamageControlRules.Define(moduleId, item.TypeId, calculation.Graph.Attributes(moduleId));
+        var attributes = calculation.Graph.Attributes(moduleId);
+        var module =
+            item.TypeId == BreacherRules.CounterType
+                ? new AssaultDamageControl(
+                    moduleId,
+                    item.TypeId,
+                    attributes[DogmaAttributeId.Duration],
+                    attributes[DogmaAttributeId.CapacitorNeed],
+                    0,
+                    1
+                )
+                : AssaultDamageControlRules.Define(moduleId, item.TypeId, attributes);
         var schedule = AssaultDamageControlRules.Schedule(module, now);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (
@@ -78,6 +91,17 @@ internal sealed class PilotAssaultDamageControlStore(WorldDatabase database) : I
             throw new InvalidDataException("A destroyed ship cannot activate an assault damage control.");
         }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);
+        if (item.TypeId == BreacherRules.CounterType)
+        {
+            var condition = ModuleConditionPersistence.Read(world, catalog, item);
+            if (condition.BurnedOut)
+            {
+                throw new InvalidDataException("Repair the burned-out Breach Control before activating it.");
+            }
+            var saved =
+                world.Set<SavedModuleCondition>().Find(item.Id) ?? world.Add(new SavedModuleCondition { ModuleId = item.Id }).Entity;
+            saved.Damage = attributes[DogmaAttributeId.StructureHitPoints];
+        }
         var active =
             world.Set<ActiveFittedModule>().Find(moduleId)
             ?? world.Add(new ActiveFittedModule { ModuleId = moduleId, ShipId = pilot.ActiveShipId }).Entity;
@@ -133,9 +157,14 @@ internal sealed class PilotAssaultDamageControlStore(WorldDatabase database) : I
             return new Dictionary<DogmaAttributeId, double>();
         }
         // An old session's cleanup must not remove a later paid activation.
-        world.RemoveRange(
-            world.Set<ActiveFittedModule>().Where(a => a.ModuleId == moduleId && a.ShipId == shipId && a.ExpiresAt == expiresAt)
-        );
+        if (world.Set<ActiveFittedModule>().Find(moduleId) is { } active && active.ShipId == shipId && active.ExpiresAt == expiresAt)
+        {
+            world.Remove(active);
+            if (world.Set<OwnedItem>().Find(moduleId) is { TypeId: BreacherRules.CounterType } item)
+            {
+                item.Online = false;
+            }
+        }
         world.SaveChanges();
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var result = PilotFittingStore.ShipAttributes(world, catalog, pilot, world.Ships.Find(shipId)!);

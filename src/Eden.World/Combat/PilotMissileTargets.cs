@@ -78,18 +78,22 @@ internal sealed partial class PilotMissileStore
         MissilePayload payload,
         Pilot victim,
         PilotCombatPresence contact,
-        long time
+        long time,
+        DamageVector? rawDamage = null,
+        bool bypassResistances = false
     )
     {
         var attributes = PilotFittingStore.ShipAttributes(world, catalog, victim);
         var defense = ShipHealth.DefenseFrom(attributes);
-        double application = MissileRules.Application(
-            payload.Warhead,
-            attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
-            contact.Velocity.Length
-        );
-        var damage = payload.Warhead.Damage.Scale(application);
-        var result = PilotHealthStore.Apply(world, row.TargetId, defense, damage, time);
+        double application = rawDamage is null
+            ? MissileRules.Application(
+                payload.Warhead,
+                attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+                contact.Velocity.Length
+            )
+            : 1;
+        var damage = rawDamage ?? payload.Warhead.Damage.Scale(application);
+        var result = PilotHealthStore.Apply(world, row.TargetId, defense, damage, time, bypassResistances);
         var attacker = world.Pilots.Find(row.PilotId)!;
         var party = PilotInteractionHistoryStore.Player(world, attacker, row.SourceShipId, row.LauncherTypeId);
         PilotInteractionHistoryStore.Damage(world, row.TargetId, party, result.Applied);
@@ -112,6 +116,7 @@ internal sealed partial class PilotMissileStore
             null
         );
         row.Outcome = JsonSerializer.Serialize(outcome, MissileJson.Default.MissileImpact);
+        row.Reported = false;
         world.SaveChanges();
         var capsule = result.Remaining.Destroyed ? lookup.FindPilot(world, victim.AccountId, victim.Id)! : null;
         return new(

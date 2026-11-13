@@ -4,7 +4,7 @@ using Eden.Gameplay.Combat;
 
 namespace Eden.Data.World.Combat;
 
-internal sealed record MissilePayload(MissileFlight Flight, MissileWarhead Warhead);
+internal sealed record MissilePayload(MissileFlight Flight, MissileWarhead Warhead, BreacherPayload? Breacher = null);
 
 [JsonSerializable(typeof(MissilePayload))]
 [JsonSerializable(typeof(MissileImpact))]

@@ -118,7 +118,7 @@ internal sealed partial class ResidentEconomy
         }
         void Update(EconomyWorldMissile row, bool add)
         {
-            if (row.Status == MissileFlightStatus.Flying)
+            if (row.Status is MissileFlightStatus.Flying or MissileFlightStatus.Attached)
             {
                 if (row.SourceKind == MissileSourceKind.Pilot)
                 {
@@ -133,7 +133,7 @@ internal sealed partial class ResidentEconomy
             {
                 AdjustCount(_missileReportPilots, row.PilotId, add);
             }
-            if (row.Status == MissileFlightStatus.Impact)
+            if (row.Status is MissileFlightStatus.Impact or MissileFlightStatus.Attached)
             {
                 if (add)
                 {

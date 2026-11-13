@@ -114,7 +114,8 @@ internal sealed partial class LiveCombatRuntime
             }
             var type = catalog.RequireItem(module.TypeId);
             var baseAttributes = PilotFittingStore.ReadAttributes(catalog, module.TypeId);
-            bool ammoFed = CombatDefinitions.IsSupportedAmmoTurret(type.GroupId, baseAttributes);
+            bool ammoFed =
+                !CombatDefinitions.IsAdvancedTurret(type.GroupId) && CombatDefinitions.IsSupportedAmmoTurret(type.GroupId, baseAttributes);
             if (!ammoFed && module.TypeId != (int)CombatWeaponType.CivilianGatlingRailgun)
             {
                 continue;

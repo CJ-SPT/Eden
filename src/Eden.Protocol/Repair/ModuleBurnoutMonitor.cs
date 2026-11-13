@@ -93,7 +93,7 @@ internal sealed class ModuleBurnoutMonitor(
                             }
                         }
                     }
-                    if (previous?.Online != false)
+                    if (!module.Online && previous?.Online != false)
                     {
                         context.Notifications.Add(
                             new ShipEffectChanged(

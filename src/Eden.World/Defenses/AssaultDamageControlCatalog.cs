@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -39,6 +40,22 @@ internal static class AssaultDamageControlCatalog
     {
         var source = catalog.Read(CatalogData.Client.Types, (long)type);
         var attributes = catalog.FittingAttributes(type);
+        if (type == BreacherRules.CounterType)
+        {
+            return group == AssaultDamageControlRules.Group
+                && source?.Published == 1
+                && FittingCatalog.DefaultEffect(catalog, type) == DogmaEffect.BreachControl
+                && FittingCatalog
+                    .Effects(catalog, type)
+                    .SetEquals([
+                        DogmaEffect.LowPower,
+                        DogmaEffect.Online,
+                        (DogmaEffect)AssaultDamageControlRules.PassiveEffect,
+                        DogmaEffect.BreachControl,
+                    ])
+                && attributes.GetValueOrDefault(DogmaAttributeId.BreacherCounterPercent) is >= -100 and < 0
+                && attributes.GetValueOrDefault(DogmaAttributeId.Duration) > 0;
+        }
         if (
             group != AssaultDamageControlRules.Group
             || catalog.FittingType(type)?.CategoryId != (int)InventoryCategory.Module

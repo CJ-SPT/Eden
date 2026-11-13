@@ -106,14 +106,16 @@ internal sealed partial class LiveReadModels
                     ))
                     .ToArray();
                 return new(
-                    rows.Where(m => m.Source == MissileSourceKind.Pilot && m.Status == MissileFlightStatus.Flying)
+                    rows.Where(m =>
+                            m.Source == MissileSourceKind.Pilot && m.Status is MissileFlightStatus.Flying or MissileFlightStatus.Attached
+                        )
                         .Select(m => m.System)
                         .ToFrozenSet(),
                     rows.Where(m => m.Source == MissileSourceKind.Npc && m.Status == MissileFlightStatus.Flying)
                         .Select(m => m.Pilot)
                         .ToFrozenSet(),
                     rows.Where(m => m.Source == MissileSourceKind.Pilot && m.PendingReport).Select(m => m.Pilot).ToFrozenSet(),
-                    rows.Where(m => m.Status == MissileFlightStatus.Impact).Select(m => m.Id).ToFrozenSet(),
+                    rows.Where(m => m.Status is MissileFlightStatus.Impact or MissileFlightStatus.Attached).Select(m => m.Id).ToFrozenSet(),
                     rows.Where(m => m.Source == MissileSourceKind.Npc).Min(m => m.EndedAt)
                 );
             }
@@ -127,7 +129,9 @@ internal sealed partial class LiveReadModels
                     world
                         .Set<WorldMissile>()
                         .Any(row =>
-                            row.SourceKind == MissileSourceKind.Pilot && row.SystemId == system && row.Status == MissileFlightStatus.Flying
+                            row.SourceKind == MissileSourceKind.Pilot
+                            && row.SystemId == system
+                            && (row.Status == MissileFlightStatus.Flying || row.Status == MissileFlightStatus.Attached)
                         )
             )
             : Missiles().PilotSystems.Contains(system);
@@ -149,7 +153,7 @@ internal sealed partial class LiveReadModels
         CanReadResident
             ? ReadResidentGuard(
                 () => owner.Economy.MissileImpacted(id),
-                world => world.Set<WorldMissile>().Find(id)?.Status == MissileFlightStatus.Impact
+                world => world.Set<WorldMissile>().Find(id)?.Status is MissileFlightStatus.Impact or MissileFlightStatus.Attached
             )
             : Missiles().Impacts.Contains(id);
 

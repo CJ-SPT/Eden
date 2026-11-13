@@ -6,6 +6,45 @@ Targeting, health, weapons, NPC populations and behavior, losses, wrecks and rep
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Advanced weapons, November 12, 2026
+
+Disintegrators use strict optimal range and standard turret hit resolution. The first paid cycle uses base damage. Each
+uninterrupted paid cycle on the same target with the same charge raises the multiplier to the catalog cap. Restarting the
+activation or changing ammunition resets the multiplier. The catalog has 21 profiles, including three capital weapons.
+
+Vorton Projectors use missile-style damage application for the locked target and each selected secondary. Secondaries are
+chosen around the primary target within the fitted arc range. The primary counts toward the catalog target limit. Eden
+checks safety for secondary pilot ships and drone owners before applying damage. Each activation consumes one condenser.
+All 15 projector profiles, both families of passive damage upgrades and their matching charges use the fitted dogma graph.
+Vorton primary targets use Eden's ship and NPC targeting paths. Secondaries also include drones. Structures remain outside
+the arc target set.
+
+Breacher launchers accept size-matched pods and use single activations. A pod travels as a projectile, then attaches to an
+eligible target. Attached pods share a per-target one-second damage cadence. Only the strongest application contributes to
+each tick, and its capped damage bypasses the target's ordinary resistances. Breach Control costs capacitor, expends the
+module's condition on use and reduces Breacher damage by 90% during its paid 120-second interval. The server applies and
+reports damage through the combat paths. A dedicated attached-pod status indicator is still open.
+
+Five rapid torpedo launchers and 22 high-angle turret variants reuse the missile and turret paths with catalog hardpoint,
+ammunition and hull restrictions. These profiles and the three capital disintegrators depend on capital hull admission.
+
+Build 3662168 catalog rows identify the ammunition, fitting restrictions, weapon effects and attributes. Inert inspection of
+the available `code.ccp` found `triglavianBeam.pyj` consuming `mulitplierBonusPerCycle` and `multiplierBonusMax`,
+`turrets.pyj` reading `graphicInfo['targets']` for `ChainWeaponEffect`, and `breacherPodDamageControl.pyj` marking its
+module damaged after applying the timed buff. The archive SHA-256 is
+`051a2f027309aa9e806273200c9f5e969cad8675f49ef97313ff57a6b4549bb9`, which differs from the archived baseline.
+The Vorton size-specific graphics follow EveJS 261108.1. Its advanced weapon runtime provided a behavior reference.
+The pinned Breacher projection skill uses a 10% distance bonus per level.
+
+References include [EVE University Turrets](https://wiki.eveuniversity.org/Turrets),
+[Vorton Projectors](https://wiki.eveuniversity.org/Vorton_Projectors), [Breacher Pods](https://wiki.eveuniversity.org/Breacher_Pods)
+and [Carbon Destiny GetSurfaceDist](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Thunkers.cpp#L1798).
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe the disintegrator spool and Vorton arc graphics from a second client. Check the
+Breacher impact and Breach Control HUD presentation on the defending client.
+
 ## Smartbombs, November 12, 2026
 
 All 125 published static group-72 modules fit high slots without consuming hardpoints. Each paid pulse uses the fitted range,

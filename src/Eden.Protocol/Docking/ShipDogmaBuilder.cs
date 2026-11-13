@@ -152,6 +152,8 @@ internal sealed class ShipDogmaBuilder(
                 is CombatDefinitions.EnergyWeaponGroup
                     or CombatDefinitions.HybridWeaponGroup
                     or CombatDefinitions.ProjectileWeaponGroup
+                    or CombatDefinitions.DisintegratorGroup
+                    or CombatDefinitions.VortonGroup
                 ? combat.ModuleAttributes(pilot.PilotId, module)
             : InventoryDefinitions.IsMiningGroup(module.GroupId) ? mining.ModuleAttributes(pilot.PilotId, module)
             : fitting.ModuleAttributes(pilot.PilotId, module)

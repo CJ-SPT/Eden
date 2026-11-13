@@ -91,6 +91,10 @@ The [ship and module completion program](docs/feature-notes.md#ship-and-module-c
 [Smartbombs](docs/protocol/combat.md#smartbombs-november-12-2026) support all 125 published static profiles, including targetless
 area damage, capacitor-funded repeats and overload, friendly drone damage, missile interception and Crimewatch enforcement.
 
+[Advanced weapons](docs/protocol/combat.md#advanced-weapons-november-12-2026) support disintegrator spooling, Vorton chains,
+Breacher Pods and Breach Control. Rapid torpedo launchers and high-angle capital turrets have fitted combat profiles and
+depend on the separate capital hull admission milestone.
+
 [NPC bounty skill points](docs/protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026) award the killer an additional **0.25% of the gross ISK bounty as unallocated SP**, rounded down per kill. A **150,000 ISK** bounty grants **375 SP** alongside its normal ISK payment.
 
 Bounty SP gains are silent; refresh the skill window to read the updated total.

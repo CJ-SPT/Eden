@@ -90,7 +90,8 @@ internal sealed partial class PilotCombatStore(
         double Quality,
         double Capacitor,
         Magazine? Magazine,
-        IReadOnlyDictionary<DogmaAttributeId, double> TargetAttributes
+        IReadOnlyDictionary<DogmaAttributeId, double> TargetAttributes,
+        int SpoolCycles
     );
 
     public CombatShot Fire(
@@ -124,6 +125,17 @@ internal sealed partial class PilotCombatStore(
         WeaponActivation? activation = null
     ) => FireVolley(pilotId, moduleId, target.ShipId, velocity, now, roll, activation, null, true, target);
 
+    public CombatVolley FireAdvanced(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        PilotWeaponTarget? player,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        AdvancedWeaponCycle cycle
+    ) => FireVolley(pilotId, moduleId, targetId, velocity, now, roll, cycle.Activation, null, true, player, advanced: cycle);
+
     internal CombatVolley FireOverloadedBank(
         long pilotId,
         long moduleId,
@@ -151,15 +163,27 @@ internal sealed partial class PilotCombatStore(
         IReadOnlyDictionary<DogmaAttributeId, double> Attributes
     );
 
-    private TransactionParticipants VolleyParticipants(WorldAction world, long pilot, long target, PilotWeaponTarget? player)
+    private TransactionParticipants VolleyParticipants(
+        WorldAction world,
+        long pilot,
+        long target,
+        PilotWeaponTarget? player,
+        AdvancedWeaponCycle? advanced
+    )
     {
         long source = world.Pilots.Where(row => row.Id == pilot).Select(row => row.ActiveShipId).Single();
         var npcs = player is null
             ? NpcHostility.Participants(world, target)
             : ShipLossPersistence.LossNpcParticipants(world, database.Path, target);
+        var ships = (player is null ? new[] { source } : [source, target]).Concat(advanced?.Ships?.Select(s => s.Id) ?? []);
+        var drones = (advanced?.Drones ?? [])
+            .Select(id => world.Set<Eden.Data.World.Drones.WorldDrone>().Find(id))
+            .OfType<Eden.Data.World.Drones.WorldDrone>();
+        npcs = npcs.Concat((advanced?.Npcs ?? []).SelectMany(id => NpcHostility.Participants(world, id)));
+        ships = ships.Concat(drones.Select(drone => drone.ControllerShipId).Where(id => id != 0));
         return new(
-            pilots: [pilot],
-            ships: player is null ? [source] : [source, target],
+            pilots: drones.Select(drone => drone.PilotId).Append(pilot),
+            ships: ships,
             resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
         );
     }
@@ -175,12 +199,14 @@ internal sealed partial class PilotCombatStore(
         double? crystalRoll,
         bool banked,
         PilotWeaponTarget? playerTarget = null,
-        bool overloaded = false
+        bool overloaded = false,
+        AdvancedWeaponCycle? advanced = null
     )
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("bank.volley");
         if (
-            playerTarget is null
+            advanced is null
+            && playerTarget is null
             && LiveCombatRuntime
                 .Find(database.Path, pilotId)
                 ?.Fire(
@@ -202,7 +228,8 @@ internal sealed partial class PilotCombatStore(
             return resident;
         }
         if (
-            playerTarget is not null
+            advanced is null
+            && playerTarget is not null
             && LiveCombatRuntime
                 .Find(database.Path, pilotId)
                 ?.FirePilot(pilotId, moduleId, playerTarget, velocity, now, roll, activation, crystalRoll, banked, overloaded, damageEvents)
@@ -211,11 +238,18 @@ internal sealed partial class PilotCombatStore(
         {
             return residentPilot;
         }
-        using WorldActionScope transaction = new(database, select: world => VolleyParticipants(world, pilotId, targetId, playerTarget));
+        using WorldActionScope transaction = new(
+            database,
+            select: world => VolleyParticipants(world, pilotId, targetId, playerTarget, advanced)
+        );
         var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Find(pilotId)!;
+        if (advanced is not null)
+        {
+            world.RequireUncloaked(pilot.ActiveShipId);
+        }
         var npc = playerTarget is null ? world.Set<WorldNpc>().Find(targetId) : null;
         Pilot? victim = null;
         AggressionDecision? aggression = null;
@@ -268,7 +302,21 @@ internal sealed partial class PilotCombatStore(
                     : System.Security.Cryptography.RandomNumberGenerator.GetInt32(CrystalProbabilityResolution)
                         / (double)CrystalProbabilityResolution;
             paid.Add(
-                Prepare(world, catalog, pilot, pilotId, member, target, velocity, now, accuracy, activation, crystalRoll, overloadFit)
+                Prepare(
+                    world,
+                    catalog,
+                    pilot,
+                    pilotId,
+                    member,
+                    target,
+                    velocity,
+                    now,
+                    accuracy,
+                    activation,
+                    crystalRoll,
+                    overloadFit,
+                    advanced
+                )
             );
             if (overloadFit is not null)
             {
@@ -333,6 +381,10 @@ internal sealed partial class PilotCombatStore(
                 paid[0].Weapon.TypeId
             );
         }
+        var arcs =
+            advanced?.Activation == WeaponActivation.Vorton
+                ? VortonArcs(world, catalog, pilot, targetId, target, paid, advanced, now, cycleEnd, roll)
+                : new VortonHits([], []);
         world.SaveChanges();
         var replacement = settlement.Destroyed && victim is not null ? lookup.FindPilot(world, victim.AccountId, victim.Id)! : null;
         transaction.Commit();
@@ -341,7 +393,7 @@ internal sealed partial class PilotCombatStore(
         {
             WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
         }
-        if (settlement.Destroyed && victim is null)
+        if (settlement.Destroyed && victim is null || arcs.Shots.Any(shot => shot.Destroyed))
         {
             security.Publish();
         }
@@ -364,7 +416,8 @@ internal sealed partial class PilotCombatStore(
             paid[^1].Capacitor,
             settlement.Destroyed,
             settlement.Reward is null ? null : Read(settlement.Reward),
-            first.Magazine
+            first.Magazine,
+            first.SpoolCycles
         );
         if (victim is not null)
         {
@@ -387,7 +440,14 @@ internal sealed partial class PilotCombatStore(
                 }
             );
         }
-        return new(shot, paid.Select(p => p.Weapon).ToArray(), paid.Where(p => p.Magazine is not null).Select(p => p.Magazine!).ToArray());
+        foreach (var hit in arcs.Notifications)
+        {
+            damageEvents.Publish(hit);
+        }
+        return new(shot, paid.Select(p => p.Weapon).ToArray(), paid.Where(p => p.Magazine is not null).Select(p => p.Magazine!).ToArray())
+        {
+            SecondaryHits = arcs.Shots,
+        };
     }
 
     private static PaidShot Prepare(
@@ -402,7 +462,8 @@ internal sealed partial class PilotCombatStore(
         double roll,
         WeaponActivation? activation,
         double? crystalRoll,
-        FittingCalculation? overloadFit
+        FittingCalculation? overloadFit,
+        AdvancedWeaponCycle? advanced
     )
     {
         if (!double.IsFinite(roll) || roll is < 0 or >= 1)
@@ -430,8 +491,13 @@ internal sealed partial class PilotCombatStore(
         {
             throw new InvalidDataException("Use an online fitted supported turret on a locked ship while in space.");
         }
-        bool energy = catalog.RequireItem(module.TypeId).GroupId == CombatDefinitions.EnergyWeaponGroup;
-        if (activation is not null && activation != (ammoFed && !energy ? WeaponActivation.AmmoFed : WeaponActivation.Laser))
+        int group = catalog.RequireItem(module.TypeId).GroupId;
+        bool energy = group == CombatDefinitions.EnergyWeaponGroup;
+        var firingEffect = AdvancedWeaponRules.Effect(group, ammoFed);
+        if (
+            activation is not null && activation != AdvancedWeaponRules.Activation(firingEffect)
+            || advanced is null && CombatDefinitions.IsAdvancedTurret(group)
+        )
         {
             throw new InvalidDataException("Use the weapon's default firing effect.");
         }
@@ -531,18 +597,37 @@ internal sealed partial class PilotCombatStore(
             attributes.GetValueOrDefault(DogmaAttributeId.TrackingSpeed),
             attributes.GetValueOrDefault(DogmaAttributeId.WeaponSignatureResolution),
             attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
-            (int)(ammoFed && !energy ? DogmaEffect.ProjectileFired : DogmaEffect.LaserFired)
+            (int)firingEffect,
+            firingEffect == DogmaEffect.Disintegrator ? AdvancedWeaponRules.Spool(attributes) : null,
+            firingEffect == DogmaEffect.Vorton
+                ? AdvancedWeaponRules.Vorton(attributes, damage.Scale(attributes.GetValueOrDefault(DogmaAttributeId.DamageMultiplier)))
+                : null
         );
-        double chance = CombatDamage.HitChance(
-            distance,
-            CombatDamage.AngularVelocity(separation, velocity - target.Velocity),
-            target.Attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
-            weapon.Optimal,
-            weapon.Falloff,
-            weapon.Tracking,
-            weapon.SignatureResolution
-        );
-        double quality = CombatDamage.ShotQuality(chance, roll);
+        if (CombatDefinitions.IsAdvancedTurret(group) && distance > weapon.Optimal)
+        {
+            throw new InvalidDataException("The target is outside the weapon's maximum range.");
+        }
+        int spoolCycles = 0;
+        if (weapon.Spool is { } spool && advanced?.PreviousCharge == weapon.ChargeTypeId && cooldown?.Kind == ModuleCooldownKind.Cycle)
+        {
+            spoolCycles = advanced.PaidCycles;
+            weapon = weapon with { Damage = weapon.Damage.Scale(spool.Multiplier(spoolCycles)) };
+        }
+        double signature = target.Attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+        double chance = weapon.Vorton is not null
+            ? 1
+            : CombatDamage.HitChance(
+                distance,
+                CombatDamage.AngularVelocity(separation, velocity - target.Velocity),
+                signature,
+                weapon.Optimal,
+                weapon.Falloff,
+                weapon.Tracking,
+                weapon.SignatureResolution
+            );
+        double quality = weapon.Vorton is { } vorton
+            ? MissileRules.Application(vorton.Warhead, signature, target.Velocity.Length)
+            : CombatDamage.ShotQuality(chance, roll);
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, weapon.CapacitorNeed, now);
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
@@ -584,7 +669,7 @@ internal sealed partial class PilotCombatStore(
             }
         }
         world.SaveChanges();
-        return new(weapon, quality, capacitor, magazine, target.Attributes);
+        return new(weapon, quality, capacitor, magazine, target.Attributes, spoolCycles);
     }
 
     private static CombatReward Read(NpcBounty b) => NpcDamagePersistence.Read(b);

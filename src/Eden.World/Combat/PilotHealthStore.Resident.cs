@@ -60,10 +60,17 @@ internal sealed partial class PilotHealthStore
         return current;
     }
 
-    internal static DamageResult Apply(WorldAction world, long shipId, HullDefense defense, DamageVector damage, long now)
+    internal static DamageResult Apply(
+        WorldAction world,
+        long shipId,
+        HullDefense defense,
+        DamageVector damage,
+        long now,
+        bool bypassResistances = false
+    )
     {
         var current = Read(world, shipId, defense, now);
-        var result = CombatDamage.Apply(current.Remaining, defense, damage);
+        var result = CombatDamage.Apply(current.Remaining, bypassResistances ? CombatDamage.WithoutResistances(defense) : defense, damage);
         var saved = world.Set<ShipHealthState>().Find(shipId) ?? world.Set<ShipHealthState>().Add(new() { ShipId = shipId }).Entity;
         saved.ShieldCharge = result.Remaining.Shield;
         saved.ArmorDamage = defense.Armor - result.Remaining.Armor;

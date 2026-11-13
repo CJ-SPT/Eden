@@ -70,12 +70,23 @@ public static class CombatDefinitions
     public const int EnergyWeaponGroup = 53;
     public const int HybridWeaponGroup = 74;
     public const int ProjectileWeaponGroup = 55;
+    public const int DisintegratorGroup = 1986;
+    public const int VortonGroup = 4060;
+    public const int ZirnitraType = 52907;
+    private const int DreadnoughtGroup = 485;
+    private const int LancerDreadnoughtGroup = 4594;
+
+    public static bool IsAdvancedTurret(int group) => group is DisintegratorGroup or VortonGroup;
 
     public static bool IsSupportedAmmoTurret(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
-        group is EnergyWeaponGroup or HybridWeaponGroup or ProjectileWeaponGroup
+        (group is EnergyWeaponGroup or HybridWeaponGroup or ProjectileWeaponGroup || IsAdvancedTurret(group))
         && AmmunitionDefinitions.ValidSize(attributes.GetValueOrDefault(DogmaAttributeId.ChargeSize))
         && attributes.GetValueOrDefault(DogmaAttributeId.TechLevel) is AmmunitionDefinitions.TechOne or AmmunitionDefinitions.TechTwo
-        && !InventoryDefinitions.RequiresSpecificShip(attributes);
+        && (IsAdvancedTurret(group) || !InventoryDefinitions.RequiresSpecificShip(attributes) || IsDreadnoughtWeapon(attributes));
+
+    public static bool IsDreadnoughtWeapon(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        attributes.GetValueOrDefault(DogmaAttributeId.CanFitShipGroup1) == DreadnoughtGroup
+        && attributes.GetValueOrDefault(DogmaAttributeId.CanFitShipGroup2) == LancerDreadnoughtGroup;
 
     public const double WreckingChance = CombatDamage.WreckingChance;
     public const double WreckingMultiplier = CombatDamage.WreckingMultiplier;

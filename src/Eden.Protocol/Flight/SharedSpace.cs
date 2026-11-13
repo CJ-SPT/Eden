@@ -32,7 +32,9 @@ internal sealed record WeaponContact(
     long? Target,
     long StartedAt,
     double Duration,
-    string Graphic = "effects.Laser"
+    string Graphic = "effects.Laser",
+    IReadOnlyList<long>? ArcTargets = null,
+    DisintegratorSpool? Spool = null
 );
 
 internal sealed record LocalRepairContact(
@@ -431,7 +433,7 @@ internal sealed class SharedSpace(
         return RunMotion(pilot.SystemId, () => PeersOwned(pilot), nameof(Peers));
     }
 
-    internal SmartbombShip[] SmartbombShips(DockedPilot pilot)
+    internal SmartbombShip[] SmartbombShips(DockedPilot pilot, bool includeCloaked = true)
     {
         if (pilot.Position is not { } origin)
         {
@@ -451,9 +453,10 @@ internal sealed class SharedSpace(
                         && ship.Warp is null
                         && ship.DepartureGate is null
                         && !ship.Arriving
+                        && (includeCloaked || SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0)
                         && ship.Health?.Remaining.Destroyed != true
                     )
-                    .Select(ship => new SmartbombShip(ship.Pilot.ShipId, ship.Pilot.Position!));
+                    .Select(ship => new SmartbombShip(ship.Pilot.ShipId, ship.Pilot.Position!, ship.Velocity));
                 var offline =
                     crimewatch
                         ?.LoggedOff(pilot.SystemId)

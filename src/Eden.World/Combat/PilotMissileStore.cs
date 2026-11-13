@@ -171,13 +171,21 @@ internal sealed partial class PilotMissileStore(
         var charge =
             inputs.Snapshot?.Missiles!.Charges[loaded.Id]
             ?? (IReadOnlyDictionary<DogmaAttributeId, double>)calculation!.Graph.Attributes(loaded.Id);
+        bool breacher = chargeType.GroupId == (int)MissileChargeGroup.BreacherPod;
+        BreacherPayload? pod = null;
+        if (breacher)
+        {
+            world.RequireUncloaked(pilot.ActiveShipId);
+            (attributes, charge) = BreacherAttributes(world, catalog, pilotId, attributes, charge);
+            pod = MissileChargeCatalog.Breacher(catalog, loaded.TypeId, charge);
+        }
         int rounds = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate));
         double cycle = attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime);
         if (
             rounds <= 0
             || rounds != attributes.GetValueOrDefault(DogmaAttributeId.ChargeRate)
             || loaded.Quantity < rounds
-            || !MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId)
+            || !MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId, charge)
             || !double.IsFinite(cycle)
             || cycle <= 0
         )
@@ -268,26 +276,37 @@ internal sealed partial class PilotMissileStore(
             target = new(contact.Position, contact.Velocity, (float)(targetType.Radius ?? 0));
         }
         var sourceType = catalog.FittingType(pilot.ActiveShip.TypeId)!;
+        if (
+            breacher
+            && !CatalogTypeLists
+                .Read(catalog, BreacherRules.TargetTypeList)
+                .Contains(targetType.Id, targetType.GroupId, targetType.CategoryId)
+        )
+        {
+            throw new InvalidDataException("This target cannot receive a Breacher Pod.");
+        }
         double distance = Math.Max(0, origin.DistanceTo(target.Position) - (sourceType.Radius ?? 0) - (targetType.Radius ?? 0));
         if (distance > maximumRange || distance > NpcEncounterDefinitions.VisibilityRange)
         {
             throw new InvalidDataException("The target is outside missile targeting range.");
         }
         var drive = MissileChargeCatalog.Drive(catalog, loaded.TypeId, charge);
-        var warhead = MissileRules.Warhead(
-            charge,
-            inputs.Snapshot?.Missiles!.DamageMultiplier ?? calculation!.Graph.Read(pilotId, DogmaAttributeId.MissileDamageMultiplier)
-        );
+        var warhead = breacher
+            ? new MissileWarhead(DamageVector.None, 1, 1, 1)
+            : MissileRules.Warhead(
+                charge,
+                inputs.Snapshot?.Missiles!.DamageMultiplier ?? calculation!.Graph.Read(pilotId, DogmaAttributeId.MissileDamageMultiplier)
+            );
         var flight = MissileFlightRules.Launch(
             drive,
             new(origin, motion.Velocity, motion.MaximumSpeed, motion.RearDirection),
             target,
             charge.GetValueOrDefault(DogmaAttributeId.AimedMissileLaunch) != 0
         );
-        MissilePayload payload = new(flight, warhead);
+        MissilePayload payload = new(flight, warhead, pod);
         // Pilot contacts describe the launch instant. Rounding their birth down
         // would backdate moving targets and make interception depend on clock phase.
-        long launchBoundary = victim is null ? now - now % TimeSpan.TicksPerSecond : now;
+        long launchBoundary = victim is null && !breacher ? now - now % TimeSpan.TicksPerSecond : now;
         var projectile = world
             .Set<WorldMissile>()
             .Add(
@@ -338,7 +357,7 @@ internal sealed partial class PilotMissileStore(
                 ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, module.Id, now, cooldown.ReadyAt)
                 : null;
         world.SaveChanges();
-        return new(new(module.Id, module.TypeId, loaded.TypeId, cycle, automatic), projectile.Contact(payload), magazine);
+        return new(new(module.Id, module.TypeId, loaded.TypeId, cycle, automatic, !breacher), projectile.Contact(payload), magazine);
     }
 
     public void Advance(int systemId, long now)
@@ -358,7 +377,7 @@ internal sealed partial class PilotMissileStore(
         {
             return;
         }
-        foreach (var source in rows.GroupBy(m => (m.PilotId, m.SourceShipId)))
+        foreach (var source in rows.Where(m => m.Status == MissileFlightStatus.Flying).GroupBy(m => (m.PilotId, m.SourceShipId)))
         {
             var pilot = world.Pilots.Find(source.Key.PilotId)!;
             var position = pilot.ActiveShip.Position;
@@ -442,6 +461,13 @@ internal sealed partial class PilotMissileStore(
                 {
                     row.EndedAt = time;
                 }
+                if (row.Status == MissileFlightStatus.Impact && payload.Breacher is not null)
+                {
+                    // Settle owed ticks before replacing an application at this impact boundary.
+                    destroyed |= AdvanceBreacher(world, catalog, rows, systemId, time, pilotImpacts);
+                    AttachBreacher(row, payload, time, rows);
+                    continue;
+                }
                 if (row.Status == MissileFlightStatus.Impact && row.TargetKind == MissileTargetKind.Pilot)
                 {
                     var victim = FindVictim(world, catalog, systemId, row.TargetId, now);
@@ -496,6 +522,7 @@ internal sealed partial class PilotMissileStore(
                 }
             }
         }
+        destroyed |= AdvanceBreacher(world, catalog, rows, systemId, now, pilotImpacts);
         long oldest = now - HistorySeconds * TimeSpan.TicksPerSecond;
         world.RemoveRange(world.ExpiredMissileHistory(oldest, npcOnly: false));
         transaction.Commit();
@@ -543,7 +570,10 @@ internal sealed partial class PilotMissileStore(
         }
         return WorldActionScope.Inspect(
             database,
-            world => world.Set<WorldMissile>().Any(m => m.Id == projectileId && m.Status == MissileFlightStatus.Impact)
+            world =>
+                world
+                    .Set<WorldMissile>()
+                    .Any(m => m.Id == projectileId && (m.Status == MissileFlightStatus.Impact || m.Status == MissileFlightStatus.Attached))
         );
     }
 

@@ -1,4 +1,4 @@
-"""Export pinned smartbomb fitting definitions and their dogma dependencies."""
+"""Export pinned combat fixtures and their dogma dependencies."""
 
 import argparse
 import json
@@ -6,7 +6,7 @@ from pathlib import Path
 import sqlite3
 
 
-def export(path, output):
+def export(path, output, advanced=False):
     if path.resolve() == output.resolve():
         raise ValueError("The fixture must not overwrite the catalog")
     with sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True) as catalog:
@@ -18,15 +18,26 @@ def export(path, output):
         if build != 3662168:
             raise ValueError("Expected the pinned build-3662168 catalog")
         cohort = []
-        for (type_id,) in catalog.execute("SELECT Id FROM ItemType WHERE GroupId=72 ORDER BY Id"):
+        groups = (53, 55, 74, 1673, 1986, 1987, 1988, 1989, 4060, 4061, 4062, 4067, 4807, 4808) if advanced else (72,)
+        slots = ",".join("?" for _ in groups)
+        for type_id, group in catalog.execute(f"SELECT Id,GroupId FROM ItemType WHERE GroupId IN ({slots}) ORDER BY Id", groups):
             source = read("client/types", type_id)
-            if source.get("published") == 1:
-                cohort.append(type_id)
-        if len(cohort) != 137:
+            if source.get("published") != 1:
+                continue
+            if advanced and group in (53, 55, 74):
+                dogma = read("client/typedogma", type_id)
+                if not any(a["attributeID"] == 1298 and a["value"] == 485 for a in dogma.get("dogmaAttributes", [])):
+                    continue
+            cohort.append(type_id)
+        if not advanced and len(cohort) != 137:
             raise ValueError("Expected 125 static and 12 abyssal definitions")
 
         records, types, effects, attributes = {}, [], set(), set()
-        pending = set(cohort) | {210, 3421}
+        pending = set(cohort) | (
+            {85086, 85087, 54731, 47269, 95414, 86261, 86262, 86263, 86264, 54840, 54841, 55511} if advanced else {210, 3421}
+        )
+        if advanced:
+            records["client/typelist", 792] = read("client/typelist", 792)
         while pending:
             type_id = min(pending)
             pending.remove(type_id)
@@ -70,5 +81,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", required=True, type=Path)
     parser.add_argument("--output", type=Path, default=Path("tests/Eden.Protocol.Tests/Fixtures/SmartbombCatalog.json"))
+    parser.add_argument("--advanced", action="store_true")
     args = parser.parse_args()
-    export(args.catalog, args.output)
+    if args.advanced and args.output == Path("tests/Eden.Protocol.Tests/Fixtures/SmartbombCatalog.json"):
+        parser.error("--advanced requires a separate --output")
+    export(args.catalog, args.output, args.advanced)

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -16,6 +17,7 @@ internal sealed class AssaultDamageControlHandler(TimeProvider clock, IPilotAssa
         IDisposable
 {
     internal const string EffectName = "moduleBonusAssaultDamageControl";
+    internal const string BreachControlEffect = "moduleBonusBreacherPodDamageControl";
     internal const string Graphic = "effects.Invulnerability";
 
     private sealed record Cycle(long PilotId, long ShipId, AssaultDamageControl Module, AssaultDamageControlSchedule Schedule);
@@ -30,7 +32,7 @@ internal sealed class AssaultDamageControlHandler(TimeProvider clock, IPilotAssa
             cycle.PilotId,
             cycle.ShipId,
             null,
-            DogmaEffect.AssaultDamageControl,
+            cycle.Module.TypeId == BreacherRules.CounterType ? DogmaEffect.BreachControl : DogmaEffect.AssaultDamageControl,
             cycle.Schedule.StartedAt,
             cycle.Module.DurationMilliseconds,
             0
@@ -38,7 +40,7 @@ internal sealed class AssaultDamageControlHandler(TimeProvider clock, IPilotAssa
 
     public void CancelModule(PilotCallContext context, long module)
     {
-        if (_cycles.TryGetValue(module, out var cycle))
+        if (_cycles.TryGetValue(module, out var cycle) && cycle.Module.TypeId != BreacherRules.CounterType)
         {
             Stop(context, cycle);
         }
@@ -129,7 +131,7 @@ internal sealed class AssaultDamageControlHandler(TimeProvider clock, IPilotAssa
         if (
             service != "dogmaIM"
             || args.Length < 2
-            || BlueMarshal.Text(args[1]) != EffectName
+            || BlueMarshal.Text(args[1]) is not (EffectName or BreachControlEffect)
             || (method, args) is not ("Activate", [long, _, _, long]) and not ("Deactivate", [long, _])
         )
         {
@@ -158,7 +160,12 @@ internal sealed class AssaultDamageControlHandler(TimeProvider clock, IPilotAssa
             {
                 return PilotCallResult.None;
             }
-            var result = controls.Activate(context.Pilot.PilotId, module, Now());
+            var result = controls.Activate(
+                context.Pilot.PilotId,
+                module,
+                Now(),
+                BlueMarshal.Text(args[1]) == BreachControlEffect ? DogmaEffect.BreachControl : DogmaEffect.AssaultDamageControl
+            );
             Cycle cycle = new(context.Pilot.PilotId, context.Pilot.ShipId, result.Module, result.Schedule);
             _cycles[module] = cycle;
             Notify(context, cycle, true);

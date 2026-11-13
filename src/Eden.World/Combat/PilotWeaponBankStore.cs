@@ -66,6 +66,7 @@ internal sealed partial class PilotWeaponBankStore(WorldDatabase database, TimeP
             .Where(i =>
                 i.Online
                 && InventoryDefinitions.IsHighSlot(i.FlagId)
+                && catalog.FittingType(i.TypeId)?.GroupId != (int)MissileLauncherGroup.BreacherPod
                 && WeaponCatalog.Supported(catalog, i.TypeId, catalog.FittingType(i.TypeId)!.GroupId)
             )
             .Select(i => new GroupableWeapon(i.Id, i.TypeId))

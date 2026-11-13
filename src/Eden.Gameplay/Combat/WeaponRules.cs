@@ -31,7 +31,8 @@ public static class WeaponRules
         }
         foreach (
             var modifier in CombatDefinitions.SkillModifiers.Where(m =>
-                (
+                inputs.GroupId != CombatDefinitions.VortonGroup
+                && (
                     m.GroupId is int group
                         ? group == inputs.GroupId
                         : InventoryDefinitions.RequiredSkills.Any(pair => attributes.GetValueOrDefault(pair.Skill) == (int)m.RequiredSkill)
@@ -42,6 +43,11 @@ public static class WeaponRules
             attributes[modifier.Attribute] =
                 attributes.GetValueOrDefault(modifier.Attribute)
                 * (1 + modifier.PerLevel * inputs.Levels.GetValueOrDefault(modifier.Skill));
+        }
+        if (inputs.GroupId == CombatDefinitions.DisintegratorGroup)
+        {
+            attributes[DogmaAttributeId.DamageMultiplier] *=
+                1 + CombatDefinitions.SurgicalStrikeDamageBonus * inputs.Levels.GetValueOrDefault(CombatSkill.SurgicalStrike);
         }
         if (ammoFed)
         {

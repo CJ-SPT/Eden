@@ -390,6 +390,8 @@ public static class HullBonusRules
                     or HullCapability.HullAttributes
                     or HullCapability.Turrets
                     or HullCapability.Missiles
+                    or HullCapability.Disintegrators
+                    or HullCapability.VortonProjectors
                     or HullCapability.OreMining
                     or HullCapability.GasMining
                     or HullCapability.IceMining

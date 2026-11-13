@@ -59,7 +59,7 @@ internal static class FittingCatalog
         }
         if (
             type.GroupId == AssaultDamageControlRules.Group
-            && Effects(catalog, typeId).Contains(DogmaEffect.AssaultDamageControl)
+            && (Effects(catalog, typeId).Contains(DogmaEffect.AssaultDamageControl) || typeId == BreacherRules.CounterType)
             && !AssaultDamageControlCatalog.Supported(catalog, typeId, type.GroupId)
         )
         {
@@ -102,6 +102,8 @@ internal static class FittingCatalog
                     is CombatDefinitions.EnergyWeaponGroup
                         or CombatDefinitions.HybridWeaponGroup
                         or CombatDefinitions.ProjectileWeaponGroup
+                        or CombatDefinitions.DisintegratorGroup
+                        or CombatDefinitions.VortonGroup
                 || MissileDefinitions.LauncherGroups.Contains(type.GroupId)
             )
             && typeId != (int)CombatWeaponType.CivilianGatlingRailgun

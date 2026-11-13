@@ -9,6 +9,8 @@ public enum WeaponActivation
 {
     Laser,
     AmmoFed,
+    Disintegrator,
+    Vorton,
 }
 
 public sealed record CombatWeapon(
@@ -22,7 +24,9 @@ public sealed record CombatWeapon(
     double Tracking,
     double SignatureResolution,
     double CapacitorNeed,
-    int EffectId = (int)DogmaEffect.LaserFired
+    int EffectId = (int)DogmaEffect.LaserFired,
+    DisintegratorSpool? Spool = null,
+    VortonProfile? Vorton = null
 );
 
 public sealed record CombatReward(
@@ -45,13 +49,37 @@ public sealed record CombatShot(
     double Capacitor,
     bool Destroyed,
     CombatReward? Reward,
-    Magazine? Magazine = null
+    Magazine? Magazine = null,
+    int SpoolCycles = 0
 );
 
-public sealed record CombatVolley(CombatShot Shot, IReadOnlyList<CombatWeapon> Weapons, IReadOnlyList<Magazine> Magazines);
+public sealed record CombatVolley(CombatShot Shot, IReadOnlyList<CombatWeapon> Weapons, IReadOnlyList<Magazine> Magazines)
+{
+    public IReadOnlyList<CombatShot> SecondaryHits { get; init; } = [];
+}
+
+public sealed record AdvancedWeaponCycle(
+    WeaponActivation Activation,
+    int PaidCycles = 0,
+    int? PreviousCharge = null,
+    IReadOnlyList<SmartbombShip>? Ships = null,
+    IReadOnlyList<long>? Npcs = null,
+    IReadOnlyList<long>? Drones = null
+);
 
 public interface IPilotCombat
 {
+    CombatVolley FireAdvanced(
+        long pilotId,
+        long moduleId,
+        long targetId,
+        PilotWeaponTarget? player,
+        SpacePosition velocity,
+        long now,
+        double roll,
+        AdvancedWeaponCycle cycle
+    ) => throw new InvalidDataException("Advanced weapons are unavailable.");
+
     CombatVolley FirePlayerBank(
         long pilotId,
         long moduleId,

@@ -43,6 +43,12 @@ public sealed record DamageResult(HullDamage Remaining, double Applied);
 
 public static class CombatDamage
 {
+    public static HullDefense WithoutResistances(HullDefense defense)
+    {
+        DamageVector full = new(1, 1, 1, 1);
+        return defense with { ShieldResonance = full, ArmorResonance = full, StructureResonance = full };
+    }
+
     public const double WreckingChance = 0.01;
     public const double WreckingMultiplier = 3;
     public const double HitQualityOffset = 0.49;

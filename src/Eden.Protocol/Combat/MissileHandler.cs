@@ -130,7 +130,7 @@ internal sealed class MissileHandler(
             result.Projectile.TargetId,
             clock.GetTimestamp(),
             now,
-            repeats,
+            result.Launcher.Repeats ? repeats : 0,
             launches.Select(l => l.Launcher).ToArray()
         );
         _cycles[result.Launcher.ItemId] = cycle;

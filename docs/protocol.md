@@ -254,6 +254,7 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 - [Mining skill bonus configuration and search, November 9, 2026](protocol/characters.md#mining-skill-bonus-configuration-and-search--november-9-2026)
 
+- [Advanced weapons, November 12, 2026](protocol/combat.md#advanced-weapons-november-12-2026)
 - [Smartbombs, November 12, 2026](protocol/combat.md#smartbombs-november-12-2026)
 - [CONCORD overview color during attacks, November 9, 2026](protocol/combat.md#concord-overview-color-during-attacks--november-9-2026)
 

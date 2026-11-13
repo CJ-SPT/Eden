@@ -227,7 +227,7 @@ internal static class ShipContentAudit
             .ToDictionary(group => group.Key, group => bonuses && group.All(effect => effect.Operational));
         foreach (var role in HullBonusRules.DeferredRoles(type.Id, hullClass))
         {
-            roles[role] = false;
+            roles[role] = role == HullCapability.BreacherPods && admitted;
         }
         var attributes = catalog.FittingAttributes(type.Id);
         if (attributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity) > 0)
@@ -352,6 +352,25 @@ internal static class ShipContentAudit
             );
         }
         AddDroneConsumers(effects, checks);
+        var moduleAttributes = catalog.FittingAttributes(type.Id);
+        if (
+            type.GroupId == (int)MissileLauncherGroup.RapidTorpedo
+            || CombatDefinitions.IsSupportedAmmoTurret(type.GroupId, moduleAttributes)
+                && (
+                    CombatDefinitions.IsDreadnoughtWeapon(moduleAttributes)
+                    || moduleAttributes.GetValueOrDefault(DogmaAttributeId.CanFitShipType1) == CombatDefinitions.ZirnitraType
+                )
+        )
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    false,
+                    ShipContentMilestone.CapitalModes,
+                    "Fitting and firing are implemented. Eligible dreadnought hulls await capital hull admission."
+                )
+            );
+        }
         if (effects.Any(e => e.EffectID == (int)DogmaEffect.AssaultDamageControl))
         {
             checks.Add(

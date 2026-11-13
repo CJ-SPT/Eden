@@ -32,7 +32,9 @@ internal sealed class CombatHandler(
         long StartTime,
         long Repeats,
         IReadOnlyList<CombatWeapon> Weapons,
-        bool Stopping = false
+        bool Stopping = false,
+        int PaidCycles = 0,
+        IReadOnlyList<long>? ArcTargets = null
     );
 
     private readonly Dictionary<long, Cycle> _cycles = [];
@@ -96,7 +98,7 @@ internal sealed class CombatHandler(
                 try
                 {
                     var shot = Start(context, module, cycle.Target, cycle.Repeats - 1, previous: cycle, refreshContacts: false);
-                    refreshContacts = !shot.Destroyed;
+                    refreshContacts |= !shot.Destroyed;
                     continue;
                 }
                 catch (Exception error) when (error is InvalidDataException or OverflowException) { }
@@ -121,21 +123,48 @@ internal sealed class CombatHandler(
     {
         long started = clock.GetTimestamp();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var activation =
-            effectName is null ? (WeaponActivation?)null
-            : effectName == CombatWireDefinitions.AmmoWeaponEffect ? WeaponActivation.AmmoFed
-            : WeaponActivation.Laser;
+        var activation = effectName switch
+        {
+            CombatWireDefinitions.DisintegratorEffect => WeaponActivation.Disintegrator,
+            CombatWireDefinitions.VortonEffect => WeaponActivation.Vorton,
+            CombatWireDefinitions.AmmoWeaponEffect => WeaponActivation.AmmoFed,
+            CombatWireDefinitions.CivilianWeaponEffect => WeaponActivation.Laser,
+            _ => previous is null ? (WeaponActivation?)null : AdvancedWeaponRules.Activation((DogmaEffect)previous.Weapon.EffectId),
+        };
         double roll = RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution;
         var playerTarget = context.Flight.FindPilotWeaponTarget(target);
-        var volley = playerTarget is not null
-            ? combat.FirePlayerBank(context.Pilot.PilotId, module, playerTarget, context.Flight.Velocity, now, roll, activation)
+        var advanced = activation switch
+        {
+            WeaponActivation.Disintegrator => new AdvancedWeaponCycle(
+                WeaponActivation.Disintegrator,
+                previous is null ? 0 : previous.PaidCycles + 1,
+                previous?.Weapon.ChargeTypeId
+            ),
+            WeaponActivation.Vorton => context.Flight.VortonCandidates(),
+            _ => null,
+        };
+        var volley =
+            advanced is not null
+                ? combat.FireAdvanced(context.Pilot.PilotId, module, target, playerTarget, context.Flight.Velocity, now, roll, advanced)
+            : playerTarget is not null
+                ? combat.FirePlayerBank(context.Pilot.PilotId, module, playerTarget, context.Flight.Velocity, now, roll, activation)
             : combat.FireBank(context.Pilot.PilotId, module, target, context.Flight.Velocity, now, roll, activation);
         var result = volley.Shot;
-        if (result.Destroyed)
+        if (result.Destroyed || volley.SecondaryHits.Any(hit => hit.Destroyed))
         {
             history?.NotifyDestruction(context);
         }
-        var cycle = new Cycle(context.Pilot.ShipId, result.Weapon, target, started, now, repeats, volley.Weapons);
+        var cycle = new Cycle(
+            context.Pilot.ShipId,
+            result.Weapon,
+            target,
+            started,
+            now,
+            repeats,
+            volley.Weapons,
+            PaidCycles: result.SpoolCycles,
+            ArcTargets: activation == WeaponActivation.Vorton ? volley.SecondaryHits.Select(hit => hit.Health.ShipId).ToArray() : null
+        );
         _cycles[result.Weapon.ItemId] = cycle;
         context.NotificationsBeforeFlight.Add(
             new DamageMessageNotification(CombatMessages.Outgoing(result, target) with { Banked = volley.Weapons.Count > 1 })
@@ -156,7 +185,18 @@ internal sealed class CombatHandler(
             }
         }
         context.Flight.NotifyHealth(result.Health);
-        if (refreshContacts || result.Destroyed)
+        foreach (var hit in volley.SecondaryHits)
+        {
+            context.NotificationsBeforeFlight.Add(
+                new DamageMessageNotification(CombatMessages.Outgoing(hit, hit.Health.ShipId) with { Banked = volley.Weapons.Count > 1 })
+            );
+            context.Flight.NotifyHealth(hit.Health);
+        }
+        if (volley.SecondaryHits.Count != 0)
+        {
+            context.Flight.RefreshDrones();
+        }
+        if (refreshContacts || result.Destroyed || volley.SecondaryHits.Any(hit => hit.Destroyed))
         {
             RefreshContacts(context);
         }
@@ -171,7 +211,7 @@ internal sealed class CombatHandler(
                 ),
             ])
         );
-        if (result.Reward is { } reward)
+        if ((volley.SecondaryHits.LastOrDefault(hit => hit.Reward is not null)?.Reward ?? result.Reward) is { } reward)
         {
             context.Notifications.Add(
                 new AccountBalanceChanged(context.Pilot.PilotId, reward.BalanceCents / (double)MarketDefinitions.CentsPerIsk)
@@ -202,7 +242,20 @@ internal sealed class CombatHandler(
             cycle.Target,
             cycle.StartTime,
             cycle.Weapon.CycleMilliseconds,
-            cycle.Weapon.EffectId == (int)DogmaEffect.ProjectileFired ? "effects.ProjectileFired" : "effects.Laser"
+            (DogmaEffect)cycle.Weapon.EffectId switch
+            {
+                DogmaEffect.ProjectileFired => "effects.ProjectileFired",
+                DogmaEffect.Disintegrator => "effects.TriglavianBeam",
+                DogmaEffect.Vorton => cycle.Weapon.Vorton?.Size switch
+                {
+                    1 => "effects.UpwellChainWeaponSmall",
+                    2 => "effects.UpwellChainWeaponMedium",
+                    _ => "effects.UpwellChainWeaponLarge",
+                },
+                _ => "effects.Laser",
+            },
+            cycle.ArcTargets,
+            cycle.Weapon.Spool
         );
 
     private void Stop(PilotCallContext context, Cycle cycle)
@@ -264,7 +317,7 @@ internal sealed class CombatHandler(
             if (
                 method == "Activate"
                 && args is [long module, var effect, long target, long repeats]
-                && BlueMarshal.Text(effect) is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect
+                && CombatWireDefinitions.Handles(BlueMarshal.Text(effect))
                 && repeats is >= 0 and <= int.MaxValue
             )
             {
@@ -286,7 +339,7 @@ internal sealed class CombatHandler(
             if (
                 method == "Deactivate"
                 && args is [long item, var effectName]
-                && BlueMarshal.Text(effectName) is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect
+                && CombatWireDefinitions.Handles(BlueMarshal.Text(effectName))
             )
             {
                 // Turret damage is paid at cycle start; stop repeating after the

@@ -40,6 +40,7 @@ internal static class PassiveCatalog
             && effects.Count == FittingCatalog.Effects(catalog, typeId).Count
             && effects.All(e =>
                 e.EffectID == (int)DogmaEffect.Online
+                || typeId == BreacherRules.CounterType && e.EffectID == (int)DogmaEffect.BreachControl
                 || (
                     e.EffectCategory is (int)PassiveEffectPhase.Fitted or (int)PassiveEffectPhase.Online
                     && (e.ModifierInfo ?? []).All(m => Parse(m, e.EffectCategory!.Value) is not null)

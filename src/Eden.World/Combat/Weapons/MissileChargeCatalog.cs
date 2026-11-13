@@ -28,7 +28,11 @@ internal static class MissileChargeCatalog
             is (int)MissileChargeGroup.AutoTargetingLight
                 or (int)MissileChargeGroup.AutoTargetingHeavy
                 or (int)MissileChargeGroup.AutoTargetingCruise;
-        var effectId = automatic ? DogmaEffect.AutoTargetingMissile : DogmaEffect.MissileLaunching;
+        bool breacher = group == (int)MissileChargeGroup.BreacherPod;
+        var effectId =
+            breacher ? DogmaEffect.BreacherPodLaunch
+            : automatic ? DogmaEffect.AutoTargetingMissile
+            : DogmaEffect.MissileLaunching;
         if (
             type?.Published != 1
             || type.MetaGroupID == AbyssalMetaGroup
@@ -52,7 +56,14 @@ internal static class MissileChargeCatalog
         }
         try
         {
-            _ = MissileRules.Warhead(attributes);
+            if (breacher)
+            {
+                _ = Breacher(catalog, typeId, attributes);
+            }
+            else
+            {
+                _ = MissileRules.Warhead(attributes);
+            }
             MissileFlightRules.Validate(Drive(catalog, typeId, attributes));
             return true;
         }
@@ -60,6 +71,25 @@ internal static class MissileChargeCatalog
         {
             return false;
         }
+    }
+
+    internal static BreacherPayload Breacher(CatalogDbContext catalog, int typeId, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        var result = new BreacherPayload(
+            attributes.GetValueOrDefault(DogmaAttributeId.BreacherDuration),
+            attributes.GetValueOrDefault(DogmaAttributeId.BreacherMaxDamage),
+            attributes.GetValueOrDefault(DogmaAttributeId.BreacherMaxPercent)
+        );
+        if (
+            new[] { result.DurationMilliseconds, result.MaximumDamage, result.MaximumPercent }.Any(value =>
+                !double.IsFinite(value) || value <= 0
+            )
+            || catalog.FittingType(typeId)?.GroupId != (int)MissileChargeGroup.BreacherPod
+        )
+        {
+            throw new InvalidDataException("Invalid Breacher Pod attributes.");
+        }
+        return result;
     }
 
     internal static MissileDrive Drive(CatalogDbContext catalog, int typeId, IReadOnlyDictionary<DogmaAttributeId, double> attributes)

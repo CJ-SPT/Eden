@@ -357,6 +357,7 @@ internal sealed partial record FittingCalculation(
                 module.Item.Online
                 && module.GroupId == AssaultDamageControlRules.Group
                 && AssaultDamageControlCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
+                && module.Item.TypeId != BreacherRules.CounterType
             )
             {
                 var control = AssaultDamageControlRules.Define(module.Item.Id, module.Item.TypeId, moduleAttributes[module.Item.TypeId]);
@@ -475,6 +476,7 @@ internal sealed partial record FittingCalculation(
         var hullSkills = HullCatalog.Skills(catalog, ship.TypeId).Where(skill => !MiningDefinitions.OwnsYieldSkill(skill)).ToHashSet();
         var relevantSkills = PassiveModules
             .Skills.Concat(MissileDefinitions.Skills)
+            .Concat(AdvancedWeaponRules.Skills)
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
             .Concat([(int)MiningSkill.GasHarvesting, (int)MiningSkill.IceHarvesting])
             .Concat([Eden.Gameplay.Exploration.HackingRules.HackingSkill, Eden.Gameplay.Exploration.HackingRules.ArchaeologySkill])

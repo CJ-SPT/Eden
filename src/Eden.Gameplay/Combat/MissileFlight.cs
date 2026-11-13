@@ -18,6 +18,7 @@ public enum MissileFlightStatus
     Flying,
     Impact,
     Expired,
+    Attached,
 }
 
 public sealed record MissileFlight(

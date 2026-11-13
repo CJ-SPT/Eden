@@ -279,7 +279,7 @@ internal sealed class SmartbombStore(
             : null;
     }
 
-    private static SmartbombHit DamageDrone(WorldAction world, WorldDrone row, DroneContact contact, DamageVector damage)
+    internal static SmartbombHit DamageDrone(WorldAction world, WorldDrone row, DroneContact contact, DamageVector damage)
     {
         var defense = contact.Profile.Defense;
         var result = CombatDamage.Apply(contact.Health.Remaining, defense, damage);

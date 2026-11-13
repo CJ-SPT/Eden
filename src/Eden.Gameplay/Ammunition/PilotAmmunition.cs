@@ -58,6 +58,7 @@ public enum TurretChargeEffect
     Tracking = 600,
     Capacitor = 804,
     EntityFlyRange = 1173,
+    ExplosionVelocity = 8062,
 }
 
 public sealed record TurretChargeModifier(
@@ -79,6 +80,10 @@ public static class AmmunitionDefinitions
     public const int ProjectileChargeGroup = 83;
     public const int AdvancedAutocannonChargeGroup = 372;
     public const int AdvancedArtilleryChargeGroup = 376;
+    public const int ExoticPlasmaGroup = 1987;
+    public const int AdvancedExoticPlasmaGroup = 1989;
+    public const int CondenserPackGroup = 4062;
+    public const int AdvancedCondenserPackGroup = 4061;
     public const int SmallChargeSize = (int)ChargeSize.Small;
     public const int TechOne = 1;
     public const int TechTwo = 2;
@@ -96,7 +101,11 @@ public static class AmmunitionDefinitions
                 or AdvancedBlasterChargeGroup
                 or ProjectileChargeGroup
                 or AdvancedAutocannonChargeGroup
-                or AdvancedArtilleryChargeGroup;
+                or AdvancedArtilleryChargeGroup
+                or ExoticPlasmaGroup
+                or AdvancedExoticPlasmaGroup
+                or CondenserPackGroup
+                or AdvancedCondenserPackGroup;
 
     public static bool IsCrystalGroup(int group) =>
         group
@@ -137,6 +146,12 @@ public static class AmmunitionDefinitions
             DogmaOperation.PostMultiply
         ),
         new(TurretChargeEffect.Capacitor, DogmaAttributeId.CapacitorNeed, DogmaAttributeId.CapacitorNeedBonus, DogmaOperation.PostPercent),
+        new(
+            TurretChargeEffect.ExplosionVelocity,
+            DogmaAttributeId.ExplosionVelocity,
+            DogmaAttributeId.ExplosionVelocityBonus,
+            DogmaOperation.PostMultiply
+        ),
         new(
             TurretChargeEffect.EntityFlyRange,
             DogmaAttributeId.EntityFlyRange,

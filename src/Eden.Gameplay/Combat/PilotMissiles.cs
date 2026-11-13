@@ -13,7 +13,14 @@ public enum MissileTargetKind
 
 public sealed record MissileAggressor(long Id, SpacePosition Position);
 
-public sealed record MissileLauncher(long ItemId, int TypeId, int ChargeTypeId, double CycleMilliseconds, bool Automatic);
+public sealed record MissileLauncher(
+    long ItemId,
+    int TypeId,
+    int ChargeTypeId,
+    double CycleMilliseconds,
+    bool Automatic,
+    bool Repeats = true
+);
 
 public sealed record MissileLaunch(MissileLauncher Launcher, MissileContact Projectile, Magazine Magazine);
 

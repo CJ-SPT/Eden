@@ -141,6 +141,18 @@ internal sealed partial class FlightSession(
         );
     }
 
+    internal AdvancedWeaponCycle VortonCandidates()
+    {
+        Scene.RefreshNpcs(SceneContext);
+        Scene.RefreshDrones(SceneContext);
+        return new(
+            WeaponActivation.Vorton,
+            Ships: space.SmartbombShips(Pilot, includeCloaked: false),
+            Npcs: VisibleNpcs.Where(npc => npc.Warp is null).Select(npc => npc.Id).ToArray(),
+            Drones: VisibleDrones.Select(drone => drone.Id).ToArray()
+        );
+    }
+
     public void RefreshDrones() => Scene.RefreshDrones(SceneContext);
 
     private void PublishContact()

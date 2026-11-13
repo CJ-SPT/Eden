@@ -7,6 +7,7 @@ using Eden.Protocol.Defenses;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Propulsion;
 using Eden.Protocol.Repair;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
 
@@ -194,7 +195,11 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 active,
                 active,
                 effect.Duration,
-                effect.StartedAt
+                effect.StartedAt,
+                effect.ArcTargets is { } targets ? new() { ["targets"] = new BlueList<long>(targets) }
+                    : effect.Spool is { } spool
+                        ? new() { ["mulitplierBonusPerCycle"] = spool.PerCycle, ["multiplierBonusMax"] = spool.Maximum }
+                    : null
             )
         );
 
@@ -311,7 +316,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.Module.TypeId,
                 ship,
                 null,
-                AssaultDamageControlHandler.Graphic,
+                effect.Module.TypeId == BreacherRules.CounterType ? BreacherRules.CounterGraphic : AssaultDamageControlHandler.Graphic,
                 false,
                 active,
                 active,

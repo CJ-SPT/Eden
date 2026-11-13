@@ -56,7 +56,8 @@ internal sealed class ModuleActivationHandler(
         }
         string effectName = BlueMarshal.Text(args[1]);
         bool offensive =
-            effectName is CombatWireDefinitions.CivilianWeaponEffect or CombatWireDefinitions.AmmoWeaponEffect or MissileHandler.EffectName
+            CombatWireDefinitions.Handles(effectName)
+            || effectName == MissileHandler.EffectName
             || effectName == SmartbombHandler.EffectName
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
@@ -76,8 +77,12 @@ internal sealed class ModuleActivationHandler(
                 ?? PilotCallResult.Unsupported,
             var name when InformationWire.Effect(name) is not null => information?.CallModule(context, method, args)
                 ?? PilotCallResult.Unsupported,
-            AssaultDamageControlHandler.EffectName => assaultDamageControl?.Call(context, service, method, args)
-                ?? PilotCallResult.Unsupported,
+            AssaultDamageControlHandler.EffectName or AssaultDamageControlHandler.BreachControlEffect => assaultDamageControl?.Call(
+                context,
+                service,
+                method,
+                args
+            ) ?? PilotCallResult.Unsupported,
             SignatureSuppressionHandler.EffectName => signatureSuppression?.Call(context, service, method, args)
                 ?? PilotCallResult.Unsupported,
             MiningWireDefinitions.EffectName or MiningWireDefinitions.GasEffectName => mining.Call(
@@ -87,8 +92,7 @@ internal sealed class ModuleActivationHandler(
                 args,
                 keywords
             ),
-            CombatWireDefinitions.CivilianWeaponEffect => combat.Call(context, service, method, args, keywords),
-            CombatWireDefinitions.AmmoWeaponEffect => combat.Call(context, service, method, args, keywords),
+            var name when CombatWireDefinitions.Handles(name) => combat.Call(context, service, method, args, keywords),
             SmartbombHandler.EffectName => smartbombs?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,
             ShieldBoostWireDefinitions.EffectName or ShieldBoostWireDefinitions.AncillaryEffectName => shields.Call(

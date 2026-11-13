@@ -182,11 +182,12 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         bool Start,
         bool Active,
         double Duration,
-        long StartedAt
+        long StartedAt,
+        Dictionary<string, object?>? GraphicInfo = null
     ) : DestinyCommand("OnSpecialFX")
     {
         protected override object?[] Arguments =>
-            [Id, ModuleId, TypeId, TargetId, ChargeTypeId, Graphic, Offensive, Start, Active, Duration, 0, StartedAt, 0, null];
+            [Id, ModuleId, TypeId, TargetId, ChargeTypeId, Graphic, Offensive, Start, Active, Duration, 0, StartedAt, 0, GraphicInfo];
     }
 
     internal sealed record JumpOut(long Id, long GateId, int SystemId, int Duration) : DestinyCommand("OnSpecialFX")

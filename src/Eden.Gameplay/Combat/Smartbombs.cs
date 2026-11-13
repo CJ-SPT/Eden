@@ -12,7 +12,7 @@ public sealed record Smartbomb(
     DamageVector Damage
 );
 
-public sealed record SmartbombShip(long Id, SpacePosition Position);
+public sealed record SmartbombShip(long Id, SpacePosition Position, SpacePosition? Velocity = null);
 
 public sealed record SmartbombCandidates(
     IReadOnlyList<SmartbombShip> Ships,
