@@ -41,7 +41,8 @@ internal sealed partial class FlightSession(
     IHumanPresenceLease? humanPresenceLease = null,
     ICapsuleerPresentation? presentation = null,
     IPilotMissions? missions = null,
-    IPilotCommandBursts? commandBursts = null
+    IPilotCommandBursts? commandBursts = null,
+    IDedComplexTravel? dedComplexes = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -1038,6 +1039,15 @@ internal sealed partial class FlightSession(
     // SubwayService completes the gate transition. JumpIn supplies the ship flash.
     private void ArrivalEffect(long shipId) => Effects.ArrivalEffect(shipId);
 
+    private SpacePosition DeadspaceDestination(SpacePosition requested)
+    {
+        var origin = Pilot.Position!;
+        var destination = missions?.WarpDestination(Pilot.SystemId, origin, requested) ?? requested;
+        return destination == requested
+            ? dedComplexes?.WarpDestination(Pilot.SystemId, origin, requested, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? requested
+            : destination;
+    }
+
     private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null, bool accelerationGate = false)
     {
         if (!double.IsFinite(range) || range is < 0 or > NavigationState.MaximumWarpRange)
@@ -1062,16 +1072,16 @@ internal sealed partial class FlightSession(
         {
             return PilotCallResult.Unsupported;
         }
-        if (!accelerationGate && missions is not null)
+        if (!accelerationGate && (missions is not null || dedComplexes is not null))
         {
             try
             {
                 var requested = coordinates ?? CelestialWarpPoint.Resolve(body!, Pilot.Position!);
-                var destination = missions.WarpDestination(Pilot.SystemId, Pilot.Position!, requested);
+                var destination = DeadspaceDestination(requested);
                 if (destination == requested)
                 {
                     var landing = WarpCourse.LandingPoint(Pilot.ShipId, Pilot.Flight.ShipRadius, Pilot.Position!, requested, range);
-                    var checkedLanding = missions.WarpDestination(Pilot.SystemId, Pilot.Position!, landing);
+                    var checkedLanding = DeadspaceDestination(landing);
                     if (checkedLanding != landing)
                     {
                         destination = checkedLanding;
@@ -1102,7 +1112,10 @@ internal sealed partial class FlightSession(
         }
         if (accelerationGate)
         {
-            var activation = missions!.ActivateGate(Pilot.PilotId, target, coordinates!);
+            var activation =
+                DedComplexRules.IsGate(target) && dedComplexes is not null
+                    ? dedComplexes.ActivateGate(Pilot.PilotId, target, coordinates!, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                    : missions!.ActivateGate(Pilot.PilotId, target, coordinates!);
             _gateInventoryChanges.AddRange(activation.Items);
         }
         _navigation = navigation;
@@ -1193,14 +1206,18 @@ internal sealed partial class FlightSession(
         }
         switch (command)
         {
-            case FlightCommand.ActivateAccelerationGate gate when missions is not null:
+            case FlightCommand.ActivateAccelerationGate gate when missions is not null || dedComplexes is not null:
                 try
                 {
                     if (!CanTarget)
                     {
                         return new PilotCallResult.Failure("Wait until your ship can navigate before activating the gate.");
                     }
-                    var destination = missions.Gate(Pilot.PilotId, gate.GateId);
+                    var destination =
+                        DedComplexRules.IsGate(gate.GateId) && dedComplexes is not null
+                            ? dedComplexes.Gate(Pilot.PilotId, gate.GateId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                            : missions?.Gate(Pilot.PilotId, gate.GateId)
+                                ?? throw new InvalidDataException("This acceleration gate is unavailable.");
                     return StartWarp(gate.GateId, 0, destination.Destination, accelerationGate: true);
                 }
                 catch (InvalidDataException error)

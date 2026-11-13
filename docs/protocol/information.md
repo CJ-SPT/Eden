@@ -2,6 +2,86 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## DED complexes and Ghost Sites
+
+**DED complexes.** High- and low-security systems in the corresponding pirate regions can spawn Serpentis Drug Outlet
+(1/10, dungeon 116) and Guristas Scout Outpost (4/10, dungeon 2249). Resolve the combat signature and use the
+acceleration gates to move between shared pockets. Room coordinates use pinned placements relative to their entry
+beacons. Eden spaces the rooms 50,000 km apart. The entry lobby and later rooms spawn their saved encounters on arrival.
+Ordinary warps into inner pockets redirect to the lobby from outside the complex. Within the complex, use the gates.
+
+The Drug Outlet's room sequence is 4437, 4434, 4435, 4436. Gate objects 96282, 96198 and 96203 use pinned ship
+type list 482. The last gate requires clearing the retail pocket and a Drugdealer Passcard to Storage Area (17892)
+from the Drugstore Overseer (17890). A paid key unlock is saved per pilot until the next downtime boundary. The
+Scout Outpost's sequence is 18985, 18983, 18984. The entrance uses list 382 and the inner gate uses list 387 and
+requires clearing the perimeter. Rejected activations leave cargo unchanged.
+
+The Drugstore Overseer also drops sixth-tier effects (19405). The Financing Office (catalog type 18634, object 96261)
+has a Coreli C-type pool with a chance of a Shadow Serpentis module or licensed Daredevil copy. The Scout Officer
+(17284) drops seventh-tier effects (19406). The Radiating Telescope (type 18632, object 841471) drops eighth-tier
+effects (19407), a Pithum C-type module and a chance of a licensed Gila copy. Structure rewards drop in a cargo
+container and commit with the kill. Gate destinations, room-clear and key rules use encounter reports where the
+catalog supplies only the connection source. Exact NPC rosters and drop weights are server-side. Eden selects
+reported roster variants and uses deterministic loot rolls with an initial subset of the reported module pools.
+The other 48 DED templates still require encounter review. Escalation generation remains pending.
+
+**Ghost Sites.** All 20 Covert Research Facilities (5533–5552) use the pinned entry and cache positions. Lesser,
+Standard, Improved and Superior sites follow highsec, lowsec, nullsec and wormhole space respectively. There are
+four ordinary group-306 caches per room. Lesser and Standard also have one bonus cache. The pinned dogma
+hacking flags and difficulty values determine cache access and board difficulty. The first failure destroys
+the cache and applies explosive area damage through normal ship health and loss settlement. Entering uncloaked
+arms the site. After a hidden interval a pirate response spawns and the client receives the last 30 seconds of
+the countdown. Remaining ordinary caches detonate at expiry. The bonus cache survives the response and still
+requires a successful hack. Saved deadlines and outcomes prevent duplicate explosions and response fleets.
+
+Earned loot uses published research tools, Villard Wheels, capital control components and a subset of reported
+Ascendancy, depot and tractor-unit blueprints. Blueprint drops are singleton one-run copies. Hidden timer bounds,
+response rosters, drop weights and blueprint runs are Eden policy. Native timer values use the client's
+`OnEnteringDungeonRoom`, `OnDungeonValues` and `OnExitingDungeon` calls. Build-3662168 dungeon objectives 74,
+chain 115, objective type 68 and task type 30 map `destruction_timer` to `start_time` and `end_time`.
+Inert client inspection covered `dungeonTracking.pyj` and `objectives/client/objective_task/timer.pyj` from
+archive SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+
+**Reference verification.** The read-only [catalog exporter](../../tools/Export-DedAndGhostCatalog.py) compared the
+local evejs 261108.1 packs against Eden build 3662168. The packs contain geometry labeled build 3475087.
+Across all 50 DED and 20 Ghost Site references, room membership, entry and object IDs, object types, positions
+to within 1 cm and raw gate connection records matched. Runtime content comes from Eden's pinned catalog. Source hashes for
+`evejs-ded-rated-sites-1.0.2.json` and `evejs-ghost-sites-1.1.0.json` are
+`ea9b6f4292c4cfebbed0684fcbebc013364adca6cc6d28bb4883a9e5cbbca1a0` and
+`409efd28cb4bde88905c2e09bddca87b85ebc8438cf6208e40d4d93c334804d9`.
+Evejs's `dungeonTrackingRuntime.js` also served as a reference for dungeon notifications, SHA-256
+`c632edb39169c7b9a5e29c1722bd072648ed923e5daa68b482dfe478c1aac155`.
+World schema 153 adds Ghost Site phase fields and saved DED gate unlocks.
+
+Gameplay evidence includes [Serpentis Drug Outlet](https://wiki.eveuniversity.org/index.php?title=Serpentis_Drug_Outlet&oldid=225101),
+[Guristas Scout Outpost](https://wiki.eveuniversity.org/index.php?title=Guristas_Scout_Outpost&oldid=231931),
+[CCP DED Complexes](https://support.eveonline.com/hc/en-us/articles/203269661-DED-Complexes),
+[CCP Ghost Sites](https://support.eveonline.com/hc/en-us/articles/203209812-Ghost-Sites-Covert-Research-Facility-Besieged-Research-Facility),
+and [Ghost Sites](https://wiki.eveuniversity.org/Ghost_Sites).
+
+**Automated validation.** The final ordered sequence took 201.20 seconds. The solution built with zero warnings
+and errors. All 328 affected .NET cases passed in 171.17 seconds with zero failures or skips. The catalog and
+formatting policy suites passed 8 and 9 cases in 0.824 and 0.013 seconds. Formatting checked 2,023 files.
+The pinned test fixture reproduced byte-for-byte. No full .NET suite was requested or run.
+
+The first exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Exploration.DedAndGhostSiteTests.PinnedCatalogResolvesLayoutsRestrictionsAndCacheTypes`.
+It passed in 7.62 seconds after correcting the fixture reply accessor. Development also exercised saved passcard
+consumption, telescope settlement through SQL and resident combat, the response deadline across reopen, and
+licensed hack loot and first-failure ship loss. Initial fixture omissions and a file-backed site-cache invalidation
+bug were corrected before the final run.
+
+Final affected filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Exploration|FullyQualifiedName~MissionGate|FullyQualifiedName~MissionStructure|FullyQualifiedName~JettisonTests|FullyQualifiedName~WreckTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Confirm the inner DED gates and loot containers in the stock client. Confirm the Ghost
+Site countdown renders when the response arrives.
+
 ## Celestial Show Info resource reads — November 9, 2026
 
 The continued evejs comparison found a public-gateway dependency missing from Sun and Planet Show Info. In pinned

@@ -25,6 +25,7 @@ internal static class NpcPopulationSchedule
                 n.SystemId == system
                 && n.AnchorKind != NpcAnchorKind.Anomaly
                 && n.AnchorKind != NpcAnchorKind.Mission
+                && n.AnchorKind != NpcAnchorKind.GhostSite
                 && (n.Role == NpcRole.Navy || n.Role == NpcRole.Customs || !Enumerable.Contains(tracked, n.EncounterId))
             )
             .Select(n => new PopulationSlot(n.Id, n.EncounterId, n.BeltId, n.SpawnSlot, n.DestroyedAt, n.RetiredAt))
@@ -70,6 +71,7 @@ internal static class NpcPopulationSchedule
                 && n.RetiredAt == null
                 && n.AnchorKind != NpcAnchorKind.Anomaly
                 && n.AnchorKind != NpcAnchorKind.Mission
+                && n.AnchorKind != NpcAnchorKind.GhostSite
             )
             .ToArray();
         if (

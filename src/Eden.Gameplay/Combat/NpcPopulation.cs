@@ -23,6 +23,7 @@ public enum NpcAnchorKind
     Station,
     Anomaly,
     Mission,
+    GhostSite,
 }
 
 public static class NpcPopulationRules

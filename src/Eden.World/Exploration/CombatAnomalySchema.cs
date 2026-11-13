@@ -10,6 +10,15 @@ internal static class CombatAnomalySchema
     {
         model.Entity<WorldCombatAnomaly>().ToTable("WorldCombatAnomaly").HasKey(s => s.Id);
         model.Entity<WorldAnomalyMember>().ToTable("WorldAnomalyMember").HasKey(m => m.NpcId);
+        model
+            .Entity<SavedDedGateUnlock>()
+            .ToTable("WorldDedGateUnlock")
+            .HasKey(g => new
+            {
+                g.SiteId,
+                g.GateObjectId,
+                g.PilotId,
+            });
         model.Entity<WorldAnomalyMember>().HasIndex(m => new { m.SiteId, m.Wave });
         model
             .Entity<WorldCombatAnomaly>()
@@ -39,6 +48,9 @@ internal static class CombatAnomalySchema
                 Id INTEGER PRIMARY KEY, SystemId INTEGER NOT NULL, Wave INTEGER NOT NULL,
                 X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL, CompletedAt INTEGER, ReplaceAt INTEGER);
             CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_SystemId_CompletedAt ON WorldCombatAnomaly(SystemId,CompletedAt);
+            CREATE TABLE IF NOT EXISTS WorldDedGateUnlock (
+                SiteId INTEGER NOT NULL, GateObjectId INTEGER NOT NULL, PilotId INTEGER NOT NULL,
+                ResetAt INTEGER NOT NULL, PRIMARY KEY(SiteId,GateObjectId,PilotId));
             CREATE TABLE IF NOT EXISTS WorldAnomalyMember (
                 NpcId INTEGER PRIMARY KEY, SiteId INTEGER NOT NULL, Wave INTEGER NOT NULL, Trigger INTEGER NOT NULL,
                 Sentry INTEGER NOT NULL);

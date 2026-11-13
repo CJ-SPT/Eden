@@ -88,7 +88,7 @@ internal static class ProbeScanningWire
                             ? Eden.Gameplay.Mining.MiningSiteRules.GasStrengthAttribute
                             : result.Site.Exploration switch
                             {
-                                ExplorationKind.Data => HackingRules.DataStrengthAttribute,
+                                ExplorationKind.Data or ExplorationKind.Ghost => HackingRules.DataStrengthAttribute,
                                 ExplorationKind.Relic => HackingRules.RelicStrengthAttribute,
                                 _ => CombatAnomalyRules.CombatStrengthAttribute,
                             }
@@ -102,6 +102,7 @@ internal static class ProbeScanningWire
                             : result.Site.Exploration switch
                             {
                                 ExplorationKind.Data => HackingRules.DataArchetype,
+                                ExplorationKind.Ghost => GhostSiteRules.Archetype,
                                 ExplorationKind.Relic => HackingRules.RelicArchetype,
                                 _ => CombatAnomalyRules.CombatSiteArchetypeId,
                             }

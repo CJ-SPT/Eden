@@ -15,6 +15,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -62,6 +63,15 @@ internal sealed partial class PirateExplorationStore
             throw new InvalidDataException("This exploration container is unavailable in your current system.");
         }
         var body = Object(catalog, site, container);
+        if (
+            site.Kind == (int)ExplorationKind.Ghost
+            && site.ResponseAt is long response
+            && now >= response + GhostSiteRules.VisibleCountdown
+            && !GhostSiteRules.IsBonusCache(body.TypeId)
+        )
+        {
+            throw new InvalidDataException("This research cache has detonated.");
+        }
         if (
             new SpacePosition(position.X, position.Y, position.Z).DistanceTo(body.Position)
                 - (catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0)
@@ -124,7 +134,7 @@ internal sealed partial class PirateExplorationStore
             }
             var access = Access(world, catalog, pilot, targetId, module.Range, now);
             var kind = (ExplorationKind)access.Site.Kind;
-            int skill = kind == ExplorationKind.Data ? HackingRules.HackingSkill : HackingRules.ArchaeologySkill;
+            int skill = kind != ExplorationKind.Relic ? HackingRules.HackingSkill : HackingRules.ArchaeologySkill;
             if (!InventoryDefinitions.RequiredSkills.Any(p => catalog.FittingAttributes(item.TypeId).GetValueOrDefault(p.Skill) == skill))
             {
                 throw new InvalidDataException("Use the analyzer appropriate to this data or relic container.");
@@ -144,7 +154,7 @@ internal sealed partial class PirateExplorationStore
             {
                 throw new InvalidDataException("A destroyed ship cannot operate an analyzer.");
             }
-            var definition = Definition(access.Site).Containers[access.Container.Index];
+            var definition = Definition(catalog, access.Site).Containers[access.Container.Index];
             var board = HackingRules.Create(
                 access.Container.LootSeed ^ access.Container.Failures,
                 Math.Clamp(definition.Difficulty, 0, 5),
@@ -214,6 +224,7 @@ internal sealed partial class PirateExplorationStore
             {
                 throw new InvalidDataException("The original ship and online analyzer are required to continue hacking.");
             }
+            var worldAction = new SqlWorldAction(world);
             var next = HackingRules.Step(contact.Board, action);
             if (next.Outcome == HackingOutcome.Running)
             {
@@ -223,14 +234,13 @@ internal sealed partial class PirateExplorationStore
             {
                 if (next.Outcome == HackingOutcome.Won)
                 {
-                    GrantLoot(world, catalog, access.Container, Definition(access.Site), pilotId);
+                    GrantLoot(world, catalog, access.Container, Definition(catalog, access.Site), pilotId);
                     access.Container.Hacked = true;
                     access.Container.OwnerId = pilotId;
                 }
                 else
                 {
-                    access.Container.Failures++;
-                    access.Container.Destroyed = access.Container.Failures >= HackingRules.MaximumFailures;
+                    FailHack(world, worldAction, catalog, access.Site, access.Container, now);
                 }
                 ReleaseModule(world, attempt);
                 world.Remove(attempt);
@@ -238,6 +248,7 @@ internal sealed partial class PirateExplorationStore
             }
             world.SaveChanges();
             transaction.Commit();
+            worldAction.PublishActions();
             return new(contact, contact.Board, next, action);
         }
     }
@@ -259,16 +270,19 @@ internal sealed partial class PirateExplorationStore
             {
                 return;
             }
-            if (world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { Hacked: false, Destroyed: false } container)
-            {
-                container.Failures++;
-                container.Destroyed = container.Failures >= HackingRules.MaximumFailures;
-                CompleteIfEmpty(world, world.Set<SavedExplorationSite>().Find(container.SiteId)!, now);
-            }
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            var action = new SqlWorldAction(world);
             ReleaseModule(world, attempt);
             world.Remove(attempt);
+            if (world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { Hacked: false, Destroyed: false } container)
+            {
+                var site = world.Set<SavedExplorationSite>().Find(container.SiteId)!;
+                FailHack(world, action, catalog, site, container, now);
+                CompleteIfEmpty(world, site, now);
+            }
             world.SaveChanges();
             transaction.Commit();
+            action.PublishActions();
         }
     }
 

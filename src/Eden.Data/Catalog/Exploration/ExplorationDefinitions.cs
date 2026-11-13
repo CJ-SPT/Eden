@@ -14,6 +14,10 @@ public sealed record ExplorationDefinition(
     int Band,
     int Difficulty,
     IReadOnlyList<ExplorationContainerDefinition> Containers
-);
+)
+{
+    public int RoomId { get; init; }
+    public IReadOnlyList<StaticSpaceObject> Scenery { get; init; } = [];
+}
 
 public sealed record ExplorationDefinitions(int Build, IReadOnlyList<ExplorationDefinition> Sites);

@@ -16,7 +16,10 @@ public sealed record CombatAnomaly(
     bool IsSignature = false,
     ExplorationKind? Exploration = null,
     Eden.Gameplay.Mining.MiningFamily? Mining = null,
-    bool Wormhole = false
+    bool Wormhole = false,
+    bool Ded = false,
+    long? GhostCountdownEnd = null,
+    int GhostRoomId = 0
 );
 
 public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomaly> Sites);
@@ -26,6 +29,7 @@ public interface ICombatAnomalies
     IReadOnlyList<CombatAnomaly> List(int systemId, long now);
     IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now) => [];
     void Arrive(int systemId, SpacePosition position, long now);
+    void ArriveUncloaked(int systemId, SpacePosition position, long now) { }
     IReadOnlyList<AnomalySystemSites> Directory(long now);
 }
 

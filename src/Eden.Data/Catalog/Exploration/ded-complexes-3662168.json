@@ -1,0 +1,82 @@
+{
+  "build": 3662168,
+  "complexes": [
+    {
+      "dungeonId": 116,
+      "rating": 1,
+      "rewardStructureType": 18634,
+      "overseerType": 17890,
+      "overseerLoot": [{"typeId": 17892}, {"typeId": 19405}],
+      "guaranteedLoot": [],
+      "deadspaceModules": [18680, 18768, 18770, 18772, 18775, 18777, 18981, 19011, 19313],
+      "factionModules": [14069],
+      "blueprint": 17929,
+      "rooms": [
+        {"roomId": 4437, "entryObjectId": 96281, "gate": {"objectId": 96282}, "members": []},
+        {
+          "roomId": 4434, "entryObjectId": 96197, "gate": {"objectId": 96198},
+          "members": [{"anchorId": 96200, "typeId": 17117, "name": "Serpentis Rookie Gatekeeper"}]
+        },
+        {
+          "roomId": 4435, "entryObjectId": 96202,
+          "gate": {"objectId": 96203, "requiresClear": true, "key": {"typeId": 17892, "consume": true}},
+          "members": [
+            {"anchorId": 96205, "typeId": 17068, "count": 3, "factionId": 500019},
+            {"anchorId": 96208, "typeId": 17118, "count": 3},
+            {"anchorId": 96239, "typeId": 17117, "count": 3},
+            {"anchorId": 96241, "typeId": 17279, "count": 4},
+            {"anchorId": 96242, "typeId": 17117, "count": 4},
+            {"anchorId": 96244, "typeId": 17890}
+          ]
+        },
+        {
+          "roomId": 4436, "entryObjectId": 96259,
+          "members": [
+            {"anchorId": 96270, "typeId": 17118, "count": 6},
+            {"anchorId": 96272, "typeId": 17121, "count": 6},
+            {"anchorId": 96274, "typeId": 17117, "count": 5},
+            {"anchorId": 96278, "typeId": 17279, "count": 5},
+            {"anchorId": 96276, "typeId": 3827, "name": "Serpentis Outlet Crime Boss"},
+            {"anchorId": 96261, "typeId": 18634, "name": "Serpentis Financing Office", "structure": true}
+          ]
+        }
+      ]
+    },
+    {
+      "dungeonId": 2249,
+      "rating": 4,
+      "rewardStructureType": 18632,
+      "overseerType": 17284,
+      "overseerLoot": [{"typeId": 19406}],
+      "guaranteedLoot": [{"typeId": 19407}],
+      "deadspaceModules": [19187, 19213],
+      "factionModules": [],
+      "blueprint": 17716,
+      "rooms": [
+        {"roomId": 18985, "entryObjectId": 841484, "gate": {"objectId": 841485}, "members": []},
+        {
+          "roomId": 18983, "entryObjectId": 841415, "gate": {"objectId": 841416, "requiresClear": true},
+          "members": [
+            {"anchorId": 841417, "typeId": 16996, "count": 8},
+            {"anchorId": 841432, "typeId": 16997, "count": 8},
+            {"anchorId": 841435, "typeId": 16987, "count": 5},
+            {"anchorId": 841453, "typeId": 16991, "count": 7}
+          ]
+        },
+        {
+          "roomId": 18984, "entryObjectId": 841470,
+          "members": [
+            {"anchorId": 841473, "typeId": 16989, "count": 8},
+            {"anchorId": 841474, "typeId": 17002, "count": 5},
+            {"anchorId": 841475, "typeId": 16982},
+            {"anchorId": 841476, "typeId": 17003, "count": 3},
+            {"anchorId": 841478, "typeId": 16995, "count": 6},
+            {"anchorId": 841471, "typeId": 17284},
+            {"anchorId": 841477, "typeId": 13068},
+            {"anchorId": 841471, "typeId": 18632, "structure": true}
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
@@ -15,6 +16,9 @@ internal sealed class CombatAnomalyHandler(
 ) : ISelectedPilotCallHandler
 {
     private int? _system;
+    private long _ghostSite;
+    private int _ghostDungeon;
+    private long? _ghostCountdown;
     private IReadOnlyList<CombatAnomaly> _known = [];
     private IReadOnlyList<CombatAnomaly> _signatures = [];
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -75,11 +79,13 @@ internal sealed class CombatAnomalyHandler(
         if (context.Flight.CanTarget && context.Pilot.Position is { } arrival)
         {
             sites.Arrive(system, arrival, Now);
+            sites.ArriveUncloaked(system, arrival, Now);
             missions.Arrive(system, arrival);
         }
         var current = sites.List(system, Now);
         var signatures = sites.Signatures(system, Now);
         var position = context.Pilot.Position;
+        TrackGhostSite(context, position, signatures);
         context.Flight.RefreshAnomalies(
             current
                 .Concat(signatures)
@@ -117,5 +123,37 @@ internal sealed class CombatAnomalyHandler(
         }
         _signatures = signatures;
         _known = current;
+    }
+
+    private void TrackGhostSite(PilotCallContext context, SpacePosition? position, IReadOnlyList<CombatAnomaly> signatures)
+    {
+        var site =
+            position is null || !context.Flight.InBallpark || context.Flight.InWarp
+                ? null
+                : signatures.FirstOrDefault(s =>
+                    s.Exploration == ExplorationKind.Ghost
+                    && s.Position.DistanceTo(position) <= Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
+                );
+        if (site?.Id != _ghostSite && _ghostSite != 0)
+        {
+            context.Notifications.Add(new ExitingExplorationDungeon(_ghostDungeon));
+            _ghostSite = 0;
+            _ghostCountdown = null;
+        }
+        if (site is null)
+        {
+            return;
+        }
+        if (site.Id != _ghostSite)
+        {
+            context.Notifications.Add(new EnteringGhostDungeon(site));
+            _ghostSite = site.Id;
+            _ghostDungeon = site.DungeonId;
+        }
+        else if (site.GhostCountdownEnd != _ghostCountdown)
+        {
+            context.Notifications.Add(new GhostDungeonValues(site.DungeonId, site.GhostCountdownEnd));
+        }
+        _ghostCountdown = site.GhostCountdownEnd;
     }
 }

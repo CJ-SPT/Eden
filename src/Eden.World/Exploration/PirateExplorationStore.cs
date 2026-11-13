@@ -9,15 +9,23 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Combat;
+using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Exploration;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed partial class PirateExplorationStore(WorldDatabase database) : IPirateExploration, IPilotHacking
+internal sealed partial class PirateExplorationStore(
+    WorldDatabase database,
+    SqliteWorld lookup,
+    PilotLossSettlement losses,
+    IPilotDamageEvents damageEvents
+) : IPirateExploration, IPilotHacking
 {
     private sealed record View(long Catalog, long Deadline, bool Enabled, IReadOnlyList<CombatAnomaly> Sites);
 
@@ -42,7 +50,7 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
             using CatalogDbContext catalog = new(database.CatalogPath);
             var system = catalog.FindSystem(systemId);
             var faction = system is null ? null : NpcRegions.Pirates(system.RegionId);
-            if (faction is null || !enabled)
+            if (system is null || !enabled || faction is null && !WormholeRules.IsWormholeSystem(systemId))
             {
                 _views[systemId] = new(generation, long.MaxValue, enabled, []);
                 return _views[systemId].Sites;
@@ -56,8 +64,14 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
                 : 2;
             List<CombatAnomaly> sites = [];
             long deadline = long.MaxValue;
+            bool wormhole = WormholeRules.IsWormholeSystem(systemId);
+            var action = new SqlWorldAction(world);
             foreach (var kind in Enum.GetValues<ExplorationKind>())
             {
+                if (wormhole && kind != ExplorationKind.Ghost)
+                {
+                    continue;
+                }
                 var row = world
                     .Set<SavedExplorationSite>()
                     .Where(s => s.SystemId == systemId && s.Kind == (int)kind)
@@ -69,12 +83,15 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
                 }
                 if (row is null || row.ReplaceAt <= now)
                 {
-                    var eligible = HackingCatalog
-                        .Sites.Where(s =>
-                            s.FactionId == (int)faction
+                    var eligible = (kind == ExplorationKind.Ghost ? GhostSiteCatalog.Read(catalog) : HackingCatalog.Sites)
+                        .Where(s =>
+                            (wormhole || s.FactionId == (int?)faction)
                             && s.Kind == kind
-                            && s.Band == band
-                            && s.Containers.All(c => catalog.FittingType(c.TypeId)?.GroupId == HackingRules.ContainerGroup)
+                            && s.Band == (wormhole ? GhostSiteRules.WormholeBand : band)
+                            && s.Containers.All(c =>
+                                catalog.FittingType(c.TypeId)?.GroupId
+                                == (kind == ExplorationKind.Ghost ? GhostSiteRules.ContainerGroup : HackingRules.ContainerGroup)
+                            )
                         )
                         .ToArray();
                     if (eligible.Length == 0)
@@ -122,7 +139,11 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
                     deadline = Math.Min(deadline, due);
                     continue;
                 }
-                var profile = Definition(row);
+                var profile = Definition(catalog, row);
+                if (kind == ExplorationKind.Ghost)
+                {
+                    deadline = Math.Min(deadline, AdvanceGhostSite(world, action, catalog, row, profile, now));
+                }
                 var containers = world.Set<SavedHackingContainer>().Where(c => c.SiteId == row.Id).OrderBy(c => c.Index).ToArray();
                 if (containers.All(c => c.Destroyed || c.Hacked && c.Empty))
                 {
@@ -144,33 +165,55 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
                         profile.NameId,
                         profile.Difficulty,
                         new(row.X, row.Y, row.Z),
-                        false,
-                        containers.Where(c => !c.Destroyed).Select(c => Object(catalog, row, c, busy.Contains(c.Id))).ToArray(),
+                        row.ResponseAt is not null,
+                        containers
+                            .Where(c => !c.Destroyed)
+                            .Select(c => Object(catalog, row, c, busy.Contains(c.Id), profile))
+                            .Concat(
+                                profile.Scenery.Select(
+                                    (body, index) =>
+                                        body with
+                                        {
+                                            Id =
+                                                GhostSiteRules.FirstSceneryId
+                                                + (row.Id - HackingRules.FirstSiteId) * HackingRules.ContainersPerSite
+                                                + index,
+                                            Position = new SpacePosition(row.X, row.Y, row.Z) + body.Position,
+                                        }
+                                )
+                            )
+                            .ToArray(),
                         profile.FactionId,
                         true,
-                        kind
+                        kind,
+                        GhostCountdownEnd: row.ResponseSpawned && !row.Detonated ? row.ResponseAt + GhostSiteRules.VisibleCountdown : null,
+                        GhostRoomId: profile.RoomId
                     )
                 );
                 deadline = Math.Min(deadline, row.ExpiresAt);
             }
             world.SaveChanges();
             transaction.Commit();
+            action.PublishActions();
             _views[systemId] = new(generation, deadline, enabled, sites.ToArray());
             return _views[systemId].Sites;
         }
     }
 
-    private static ExplorationDefinition Definition(SavedExplorationSite site) =>
-        HackingCatalog.Sites.Single(d => d.DungeonId == site.DungeonId);
+    private static ExplorationDefinition Definition(CatalogDbContext catalog, SavedExplorationSite site) =>
+        site.Kind == (int)ExplorationKind.Ghost
+            ? GhostSiteCatalog.Find(catalog, site.DungeonId)
+            : HackingCatalog.Sites.Single(d => d.DungeonId == site.DungeonId);
 
     private static StaticSpaceObject Object(
         CatalogDbContext catalog,
         SavedExplorationSite site,
         SavedHackingContainer container,
-        bool busy = false
+        bool busy = false,
+        ExplorationDefinition? profile = null
     )
     {
-        var definition = Definition(site).Containers[container.Index];
+        var definition = (profile ?? Definition(catalog, site)).Containers[container.Index];
         var type =
             catalog.FittingType(definition.TypeId) ?? throw new InvalidDataException("The exploration container type is unavailable.");
         return new(
@@ -197,6 +240,7 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
     private void Retire(WorldDbContext world, SavedExplorationSite site, long now)
     {
         site.ReplaceAt = checked(now + HackingRules.ReplacementDelay);
+        RetireResponse(world, site, now);
         var ids = world.Set<SavedHackingContainer>().Where(c => c.SiteId == site.Id).Select(c => c.Id).ToArray();
         foreach (var attempt in world.Set<SavedHackingAttempt>().Where(a => ids.Contains(a.ContainerId)).ToArray())
         {
@@ -225,6 +269,52 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
         long pilotId
     )
     {
+        if (definition.Kind == ExplorationKind.Ghost)
+        {
+            int cache = definition.Containers[container.Index].TypeId;
+            foreach (var stack in GhostSiteRules.Loot(container.LootSeed, definition.Band, GhostSiteRules.IsBonusCache(cache)))
+            {
+                if (catalog.Read(CatalogData.Client.Types, (long)stack.TypeId)?.Published != 1)
+                {
+                    throw new InvalidDataException("The Covert Research Facility reward is unavailable.");
+                }
+                InventoryPersistence.MergeOutput(
+                    world,
+                    catalog,
+                    pilotId,
+                    container.Id,
+                    (int)InventoryFlag.Cargo,
+                    stack.TypeId,
+                    stack.Quantity
+                );
+            }
+            if (GhostSiteRules.Blueprint(container.LootSeed, definition.Band, cache) is int blueprint)
+            {
+                var type = catalog.Require(CatalogData.Client.Types, (long)blueprint);
+                var recipe = catalog.Read(
+                    CatalogData.Client.Blueprints,
+                    blueprint.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                );
+                if (type.Published != 1 || recipe?.Activities?.Manufacturing is null)
+                {
+                    throw new InvalidDataException("The Covert Research Facility blueprint is unavailable.");
+                }
+                world.Add(
+                    new OwnedItem
+                    {
+                        Id = InventoryPersistence.NextId(world),
+                        OwnerId = pilotId,
+                        LocationId = container.Id,
+                        FlagId = (int)InventoryFlag.Cargo,
+                        TypeId = blueprint,
+                        Singleton = true,
+                        Quantity = 1,
+                        BlueprintRuns = 1,
+                    }
+                );
+            }
+            return;
+        }
         var datacores = definition.Kind == ExplorationKind.Data ? HackingCatalog.Loot(catalog, HackingCatalog.DatacoreGroup) : [];
         var decryptors = definition.Kind == ExplorationKind.Data ? HackingCatalog.Loot(catalog, HackingCatalog.DecryptorGroup) : [];
         var loot = ExplorationLootRules.Roll(

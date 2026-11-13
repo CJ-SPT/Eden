@@ -7,6 +7,7 @@ public enum ExplorationKind
 {
     Data,
     Relic,
+    Ghost,
 }
 
 public enum HackingNode
@@ -117,6 +118,7 @@ public sealed record ExplorationContainerInventory(InventoryItem Container, IRea
 public interface IPirateExploration
 {
     IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now);
+    void ArriveUncloaked(int systemId, SpacePosition position, long now) { }
 }
 
 public interface IPilotHacking

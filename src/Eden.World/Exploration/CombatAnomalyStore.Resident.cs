@@ -6,14 +6,9 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
-using Eden.Gameplay.Mining;
-using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
-using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
-using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Exploration;
 
@@ -31,6 +26,15 @@ internal sealed partial class CombatAnomalyStore
         var site = world.Set<WorldCombatAnomaly>().Find(npc.EncounterId) ?? throw new InvalidDataException("Anomaly NPC has no site.");
         if (site.CompletedAt is not null)
         {
+            return;
+        }
+        if (site.Slot == DedComplexRules.SiteSlot)
+        {
+            if (DedKilled(world, catalog, site, npc, now))
+            {
+                Invalidate(world, site.SystemId);
+                Invalidate(world, -1);
+            }
             return;
         }
         var alive = world
