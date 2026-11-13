@@ -7,6 +7,7 @@ using Eden.Gameplay.Skills;
 using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -51,12 +52,15 @@ internal static class FreePointTestData
 
 public sealed class FreeSkillPointTests
 {
-    [Fact]
-    public async Task CompetingApplicationsCannotSpendTheSamePointsTwice()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CompetingApplicationsCannotSpendTheSamePointsTwice(bool resident)
     {
         var clock = CalendarTestData.Clock();
         using var db = FreePointTestData.Create(clock);
         FreePointTestData.Credit(db);
+        using LiveWorld? live = resident ? new(new(db.Path), clock, _ => { }) : null;
         var attempts = await Task.WhenAll(
             Enumerable
                 .Range(0, 2)
@@ -185,14 +189,17 @@ public sealed class FreeSkillPointTests
         Assert.Equal(250, Assert.Single(reopened.GetRequiredService<IPilotSkillReader>().ReadSkills(FreePointTestData.Pilot)).Points);
     }
 
-    [Fact]
-    public void PreviewDoesNotCommitOfflineCompletionsAndQueueApplicationPreservesElapsedTrainingOnce()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PreviewDoesNotCommitOfflineCompletionsAndQueueApplicationPreservesElapsedTrainingOnce(bool resident)
     {
         var clock = CalendarTestData.Clock();
         using var db = FreePointTestData.Create(clock);
         FreePointTestData.Credit(db);
         var training = FreePointTestData.Training(db);
         training.Save(FreePointTestData.Pilot, [new(3327, 1), new(3327, 2)], true);
+        using LiveWorld? live = resident ? new(new(db.Path), clock, _ => { }) : null;
         clock.AdvanceWallTime(TimeSpan.FromSeconds(2000));
         var points = FreePointTestData.Points(db);
         var preview = points.Preview(FreePointTestData.Pilot, new FreePointRequest.Queue());
@@ -237,14 +244,17 @@ public sealed class FreeSkillPointTests
         Assert.Single(training.History(FreePointTestData.Pilot, 100), h => h.EventId == 53);
     }
 
-    [Fact]
-    public void DirectCurrentTrainingAndOverspendingRejectWithThePoolQueueAndHistoryUnchanged()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DirectCurrentTrainingAndOverspendingRejectWithThePoolQueueAndHistoryUnchanged(bool resident)
     {
         var clock = CalendarTestData.Clock();
         using var db = FreePointTestData.Create(clock);
         FreePointTestData.Credit(db);
         var training = FreePointTestData.Training(db);
         var before = training.Save(FreePointTestData.Pilot, [new(3327, 1)], true);
+        using LiveWorld? live = resident ? new(new(db.Path), clock, _ => { }) : null;
         clock.AdvanceWallTime(TimeSpan.FromSeconds(120));
         var points = FreePointTestData.Points(db);
         Assert.Throws<InvalidTrainingQueue>(() => points.Apply(FreePointTestData.Pilot, new FreePointRequest.Single(3327, 100)));

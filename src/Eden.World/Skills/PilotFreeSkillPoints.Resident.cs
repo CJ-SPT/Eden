@@ -1,8 +1,7 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Skills;
-using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
-using Eden.World.Storage;
 
 namespace Eden.World.Skills;
 
@@ -29,7 +28,7 @@ internal sealed partial class PilotTrainingStore
 
     private static FreeSkillPointBalance ReadPointBalance(WorldAction world, long pilotId)
     {
-        if (!world.Pilots.Any(p => p.Id == pilotId))
+        if (!world.Filter<Pilot>(p => p.Id == pilotId).Any())
         {
             throw new InvalidDataException("Unknown skill point recipient.");
         }

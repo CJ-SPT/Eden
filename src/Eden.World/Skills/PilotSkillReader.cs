@@ -6,6 +6,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Skills;
@@ -75,12 +76,26 @@ internal sealed partial class PilotSkillReader(WorldDatabase database) : IPilotS
 
     public IReadOnlyList<TrainedSkill> ReadSkills(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        var points = world.Set<PilotSkill>().Where(s => s.PilotId == pilotId).ToDictionary(s => s.TypeId, s => s.Points);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var types = points.Keys.ToArray();
-        // Dogma attribute 275 is the skill's training time multiplier.
-        var ranks = types.ToDictionary(type => type, type => catalog.FittingAttributes(type)[DogmaAttributeId.SkillTimeConstant]);
-        return points.Select(p => new TrainedSkill(p.Key, p.Value, ranks[p.Key])).ToArray();
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(world =>
+                world
+                    .Filter<PilotSkill>(skill => skill.PilotId == pilotId)
+                    .AsEnumerable()
+                    .Select(skill => ReadSkill(catalog, skill))
+                    .ToArray()
+            );
+        }
+        using WorldDbContext world = new(database.Path);
+        return world
+            .Set<PilotSkill>()
+            .Where(skill => skill.PilotId == pilotId)
+            .AsEnumerable()
+            .Select(skill => ReadSkill(catalog, skill))
+            .ToArray();
     }
+
+    private static TrainedSkill ReadSkill(CatalogDbContext catalog, PilotSkill skill) =>
+        new(skill.TypeId, skill.Points, catalog.FittingAttributes(skill.TypeId)[DogmaAttributeId.SkillTimeConstant]);
 }

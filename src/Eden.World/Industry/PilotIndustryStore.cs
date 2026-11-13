@@ -18,6 +18,7 @@ using Eden.World.Docking;
 using Eden.World.Economy;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -304,7 +305,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
     private static int Level(WorldDbContext world, CatalogDbContext catalog, long pilotId, int typeId) =>
         PilotSkillReader.Level(world, catalog, pilotId, typeId);
 
-    private static IndustryCharacterBonus[] Bonuses(WorldDbContext world, CatalogDbContext catalog, long pilotId)
+    private static IndustryCharacterBonus[] Bonuses(WorldDbContext world, CatalogDbContext catalog, long pilotId) =>
+        Bonuses(new SqlWorldAction(world), catalog, pilotId);
+
+    private static IndustryCharacterBonus[] Bonuses(WorldAction world, CatalogDbContext catalog, long pilotId)
     {
         List<IndustryCharacterBonus> result = [];
         foreach (
@@ -361,7 +365,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             }
         )
         {
-            int level = Level(world, catalog, pilotId, (int)skill);
+            int level = PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
             double value = Attributes(catalog, (int)skill).GetValueOrDefault(source) * level;
             if (!double.IsFinite(value))
             {
@@ -378,9 +382,8 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
 
     public IReadOnlyList<IndustryCharacterBonus> CharacterBonuses(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return Bonuses(world, catalog, pilotId);
+        return WorldActionScope.Inspect(database, world => Bonuses(world, catalog, pilotId));
     }
 
     private IndustryJobDetails ReadJob(WorldDbContext world, CatalogDbContext catalog, IndustryJob job) =>

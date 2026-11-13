@@ -630,6 +630,36 @@ References: inert inspection of the pinned archive, SHA-256 **37FB2AF4FA0EC5C8FA
 
 **Optional maintainer checks.** Redeem a fixed SP reward and inspect the native free-point total. Apply SP to a skill and a running queue, then reconnect and compare remaining points/deadlines. Inspect the native display when an Alpha queue reaches its passive-training cap; rendering, prompts and perceived timing remain unverified.
 
+### Skill-point queue call latency, November 13, 2026
+
+Server logs showed `GetFreeSkillPointsAppliedToQueue` holding a world owner for 1,031.52 ms and
+`ApplyFreeSkillPointsToQueue` holding it for 1,673.38 ms. Session ticks reported waits of up to 1,291.45 ms
+on the transaction participants. Both calls opened an unclassified SQLite transaction, which projected dirty state
+and acquired every tracked system. The apply notifications could also project the just-written state through follow-up reads.
+
+Live preview now evaluates elapsed training in a private resident action and discards it. Apply commits the balance,
+skill rows, queue deadlines, history and training-start task progress together in a resident action scoped to the pilot.
+The confirmation and subsequent session updates read the committed resident skill, bonus and module-condition rows.
+Checkpoints persist those changes. File-backed worlds still execute the same rules inside a SQLite transaction.
+
+The pinned build 3662168 route audit and existing service tests supply the wire contract. The
+[EVE University training guide](https://wiki.eveuniversity.org/Skill_training#Training_skills) describes the native
+queue allocation flow. The local evejs reference also exposes both queue calls in `skillMgrService.js`
+(SHA-256 `64D7E60FC25C835CBB87C535BC10758AFADE4D17B23CE163BB8DED3C37451B5F`).
+
+**Automated validation.** The warmed bound-call fixture checks the preview allocation, confirmation reply, notifications,
+remaining balance, exact next deadline and history after checkpoint and reopen. Both calls assert zero SQLite commands
+and connections, with zero fitting calculations for preview and at most two for confirmation. Persistence cases cover
+discarded preview changes, rejected requests and concurrent spending in both resident and file-backed worlds.
+All 26 free-point cases passed in 69 seconds, and 233 immediate dependency cases passed in 93 seconds.
+The warmed fixture recorded 5 ms for preview and 130 ms for confirmation, including reply and notification encoding.
+It measured the checkpoint separately at 236 ms. The installed workload was not replayed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** On the reported workload, preview and apply points to an active queue while monitoring
+world-owner and session-tick latency.
+
 ## Persistent learning implants
 
 Inert inspection of build **3662168** `skillsvc.pyj`, `godma.pyj`, `menuSvcExtras/invItemFunctions.pyj`, `menucheckers/itemCheckers.pyj`, `charsheet/implantsBoostersPanel.pyj` and `entries/implant.pyj` establishes the native path. Plug In calls `godma.GetDogmaLM().InjectImplant(itemID)`; Unplug calls `DestroyImplant(itemID)` after the client's destructive-action confirmation. Both operations are owned by `dogmaIM`. Bound `@skills.GetImplants()` returns an item-ID dictionary whose values expose `itemID` and `typeID`. `OnServerImplantsChanged` accepts no arguments; it forces `GetCharacterAttributes(True)`, which in turn refreshes both implant and booster caches, then scatters local implant/queue events. Eden sends that notification together with effective character-attribute changes and rebased queue timestamps.

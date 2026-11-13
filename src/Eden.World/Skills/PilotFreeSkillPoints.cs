@@ -1,5 +1,6 @@
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Diagnostics;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -16,9 +17,9 @@ internal sealed partial class PilotTrainingStore
 
     public FreeSkillPointBalance Observe(long pilotId)
     {
-        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.freePoints");
-        return LiveReadModels.Find(database.Path) is { } resident
-            ? resident.Points(pilotId, () => ObserveSql(pilotId))
+        using var phase = SessionPerformance.Phase("read.freePoints");
+        return LiveWorld.Find(database.Path) is { SqlConnections: 0, Reads: { } reads } live
+            ? reads.Points(pilotId, () => live.Economy.Inspect(world => ReadPointBalance(world, pilotId)))
             : ObserveSql(pilotId);
     }
 
@@ -30,11 +31,11 @@ internal sealed partial class PilotTrainingStore
 
     public FreeSkillPointState Snapshot(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var result = UpdateCore(world, pilotId, null, false, false, null, null, false, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-        var balance = ReadPointBalance(world, pilotId);
-        transaction.Commit();
+        using WorldActionScope action = new(database, new(pilots: [pilotId]));
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var result = UpdateCore(action.World, pilotId, null, false, false, null, null, false, now);
+        var balance = ReadPointBalance(action.World, pilotId);
+        action.Commit();
         return new(balance.Points, balance.Revision, result.Training);
     }
 
@@ -69,13 +70,26 @@ internal sealed partial class PilotTrainingStore
             : throw new InvalidDataException("Invalid unallocated skill point balance.");
     }
 
-    public FreePointPlan Preview(long pilotId, FreePointRequest request) =>
-        Update(pilotId, null, false, false, points: new(request), preview: true).Points!;
+    public FreePointPlan Preview(long pilotId, FreePointRequest request) => Allocate(pilotId, request, preview: true).Points!;
 
     public FreePointChange Apply(long pilotId, FreePointRequest request)
     {
-        var result = Update(pilotId, null, false, false, points: new(request));
+        var result = Allocate(pilotId, request, preview: false);
         return new(result.Points!.Remaining, result.Training, result.Points.Allocations, result.PointRevision);
+    }
+
+    private TrainingUpdateResult Allocate(long pilotId, FreePointRequest request, bool preview)
+    {
+        using var phase = SessionPerformance.Phase(preview ? "skills.previewPoints" : "skills.applyPoints");
+        using WorldActionScope action = new(database, new(pilots: [pilotId]));
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var result = UpdateCore(action.World, pilotId, null, false, false, null, new(request), preview, now);
+        // A preview evaluates elapsed training in the private view and then discards it.
+        if (!preview)
+        {
+            action.Commit();
+        }
+        return result;
     }
 
     internal FreePointChange Credit(WorldDbContext world, long pilotId, long amount, long now)

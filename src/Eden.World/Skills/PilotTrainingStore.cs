@@ -9,6 +9,7 @@ using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -73,16 +74,21 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
 
     public IReadOnlyList<TrainingEvent> History(long pilotId, int count)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(world => ReadHistory(world.Filter<TrainingLog>(e => e.PilotId == pilotId), count));
+        }
         using WorldDbContext world = new(database.Path);
-        return world
-            .Set<TrainingLog>()
-            .Where(e => e.PilotId == pilotId)
+        return ReadHistory(world.Set<TrainingLog>().Where(e => e.PilotId == pilotId), count);
+    }
+
+    private static TrainingEvent[] ReadHistory(IQueryable<TrainingLog> events, int count) =>
+        events
             .OrderByDescending(e => e.Time)
             .ThenByDescending(e => e.Id)
             .Take(count)
             .Select(e => new TrainingEvent(e.Time, e.TypeId, e.Points, e.EventId))
             .ToArray();
-    }
 
     private TrainingUpdateResult Update(
         long pilotId,
@@ -90,18 +96,14 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         bool activate,
         bool pause,
         CharacterAttributes? attributes = null,
-        PointOperation? points = null,
-        bool preview = false
+        PointOperation? points = null
     )
     {
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var result = UpdateCore(world, pilotId, targets, activate, pause, attributes, points, preview, now);
-        if (!preview)
-        {
-            transaction.Commit();
-        }
+        var result = UpdateCore(world, pilotId, targets, activate, pause, attributes, points, false, now);
+        transaction.Commit();
         return result;
     }
 
@@ -216,6 +218,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             first = null;
         }
         FreePointPlan? pointPlan = null;
+        TrainingInputs? queueInputs = null;
         if (points is not null)
         {
             bool wasActive = first?.StartTime is not null;
@@ -239,10 +242,12 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 {
                     changed.Add(first!.Target.TypeId);
                 }
-                var inputs = ReadInputs(world, pilotId, queue.Select(e => e.Target).ToArray(), now);
+                queueInputs = ReadInputs(world, pilotId, queue.Select(e => e.Target).ToArray(), now);
                 targets = queue
                     .Select(e => e.Target)
-                    .Where(t => t.Level > new TrainedSkill(t.TypeId, inputs.Skills[t.TypeId].Points, inputs.Skills[t.TypeId].Rank).Level)
+                    .Where(t =>
+                        t.Level > new TrainedSkill(t.TypeId, queueInputs.Skills[t.TypeId].Points, queueInputs.Skills[t.TypeId].Rank).Level
+                    )
                     .ToArray();
                 activate = wasActive;
                 first = null;
@@ -276,7 +281,8 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 keepHead ? first : null,
                 now,
                 points is not null || changeAttributes is not null,
-                queue
+                queue,
+                queueInputs
             );
             activate = queue.FirstOrDefault()?.StartTime is not null;
             world.RemoveRange(world.Filter<QueuedLevel>(q => q.PilotId == pilotId).ToArray());
@@ -328,17 +334,17 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         bool activate,
         TrainingEntry? running,
         long now,
-        bool clampAlphaBudget = false,
-        IReadOnlyList<TrainingEntry>? priorQueue = null
+        bool clampAlphaBudget,
+        IReadOnlyList<TrainingEntry> priorQueue,
+        TrainingInputs? preparedInputs
     )
     {
         if (targets.Count == 0)
         {
             return [];
         }
-        var inputs = ReadInputs(world, pilotId, targets, now);
-        bool partial =
-            priorQueue?.Any(e => e.EndPoints < TrainedSkill.PointsForLevel(inputs.Skills[e.Target.TypeId].Rank, e.Target.Level)) == true;
+        var inputs = preparedInputs ?? ReadInputs(world, pilotId, targets, now);
+        bool partial = priorQueue.Any(e => e.EndPoints < TrainedSkill.PointsForLevel(inputs.Skills[e.Target.TypeId].Rank, e.Target.Level));
         return TrainingRules.Plan(targets, inputs, activate, running, now, clampAlphaBudget || partial);
     }
 
