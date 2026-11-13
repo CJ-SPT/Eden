@@ -27,11 +27,12 @@ public sealed class CelestialInfoGatewayTests
     [Fact]
     public void SunInfoCanPrimeTheStarResourceConfigurationInsteadOfFailingTheWindow()
     {
+        using TestWorld world = new();
         var request = new Request
         {
             Payload = new Any { TypeUrl = "type.googleapis.com/eve_public.sovereignty.resource.star.api.GetAllConfigurationsRequest" },
         };
-        var response = GatewayRequestsTests.Create().Handle(request);
+        var response = world.Services.GetRequiredService<GatewayRequests>().Handle(request);
         Assert.Equal(200u, response.StatusCode);
         Assert.Equal("type.googleapis.com/eve_public.sovereignty.resource.star.api.GetAllConfigurationsResponse", response.Payload.TypeUrl);
         Assert.Empty(response.Payload.Value);
@@ -134,7 +135,8 @@ public sealed class CelestialInfoGatewayTests
     [Fact]
     public void EmptyResourceCatalogStillPrimesAVersionAndAbsentVersionReadsReturnNotFound()
     {
-        var gateway = GatewayRequestsTests.Create();
+        using TestWorld world = new();
+        var gateway = world.Services.GetRequiredService<GatewayRequests>();
         var response = gateway.Handle(Request(PlanetApi + "GetAllDefinitionsRequest", new Planets.GetAllDefinitionsRequest()));
         Assert.Equal(200u, response.StatusCode);
         var definitions = response.Payload.Unpack<Planets.GetAllDefinitionsResponse>();
@@ -151,9 +153,10 @@ public sealed class CelestialInfoGatewayTests
     [InlineData(StarApi + "GetAllConfigurationsRequest")]
     public void MalformedResourcePayloadsReturnBadRequestWithoutBreakingOtherGatewayRoutes(string type)
     {
+        using TestWorld world = new();
         var request = Request(type, new Planets.GetAllDefinitionsRequest());
         request.Payload.Value = ByteString.CopyFrom(0x0a, 0xff);
-        var response = GatewayRequestsTests.Create().Handle(request);
+        var response = world.Services.GetRequiredService<GatewayRequests>().Handle(request);
         Assert.Equal(400u, response.StatusCode);
         Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
         Assert.Null(response.Payload);

@@ -1,30 +1,85 @@
-using Eden.Gameplay.Maps;
+using Eden.Gameplay.Corporations;
 using Eden.Protocol.Gateway;
 using Eden.Protocol.Gateway.Plans;
+using Eden.Protocol.Tests.PilotSessions;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Gateway;
 
 public sealed class GatewayRequestsTests
 {
-    internal static GatewayRequests Create() => new(TimeProvider.System, new EmptyCelestialResources());
+    private const string PaletteApi = "type.googleapis.com/eve_public.cosmetic.corporation.palette.api.";
 
-    private sealed class EmptyCelestialResources : ICelestialResourceDirectory
+    [Theory]
+    [InlineData("Get", 672, "0A0E0A08089601108001185918012801")]
+    [InlineData("GetOwn", 672, "0A0E0A08089601108001185918012801")]
+    [InlineData("GetOwn", null, "0A0F0A0908FF0110FF0118FF0118012801")]
+    public void PlayerCorporationShowInfoReceivesTheNativeBannerPalette(string route, int? logoColor, string expected)
     {
-        public CelestialResourceSnapshot Read() => new("empty", []);
+        using TestWorld world = new();
+        PlayerCorporationTests.Prepare(world);
+        var details = PlayerCorporationTests.Details() with { Logo = new(415, null, null, logoColor, null, null, null) };
+        var corporation = world.Services.GetRequiredService<IPlayerCorporations>().Create(90000001, details).Corporation;
+        Assert.Equal(CorporationRules.FirstCorporationId, corporation.Id);
+
+        // Build 3662168 descriptors encode the public corporation ID under identifier.corporation.sequential
+        // and the viewing pilot under authoritative_context.identity.character.sequential.
+        var request = Request.Parser.ParseFrom(
+            Convert.FromHexString(route == "GetOwn" ? "320952070A05088195F52A" : "320952070A05088295F52A")
+        );
+        request.ApplicationInstanceUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray());
+        request.CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray());
+        request.Payload = new Any
+        {
+            TypeUrl = PaletteApi + route + "Request",
+            Value = route == "GetOwn" ? ByteString.Empty : ByteString.CopyFrom(Convert.FromHexString("0A070A050880B9DD2E")),
+        };
+        var response = Response.Parser.ParseFrom(world.Services.GetRequiredService<GatewayRequests>().Handle(request).ToByteArray());
+        Assert.Equal(200u, response.StatusCode);
+        Assert.Equal(request.ApplicationInstanceUuid, response.ApplicationInstanceUuid);
+        Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
+        Assert.Equal(PaletteApi + route + "Response", response.Payload.TypeUrl);
+        Assert.Equal(Convert.FromHexString(expected), response.Payload.Value.ToByteArray());
+    }
+
+    [Theory]
+    [InlineData("Get", "0AFF", false, 400u)]
+    [InlineData("Get", "", false, 400u)]
+    [InlineData("Get", "0A070A050881B9DD2E", false, 404u)]
+    [InlineData("GetOwn", "", false, 400u)]
+    [InlineData("GetOwn", "", true, 404u)]
+    [InlineData("Set", "", true, 501u)]
+    public void PaletteReadsValidateTargetsAndLeaveWritesUnsupported(string route, string payload, bool activePilot, uint status)
+    {
+        using TestWorld world = new();
+        var request = new Request
+        {
+            AuthoritativeContext = activePilot
+                ? new AuthoritativeContext
+                {
+                    Identity = new ActiveIdentity { Character = new CharacterIdentifier { Sequential = 90000002 } },
+                }
+                : null,
+            Payload = new Any { TypeUrl = PaletteApi + route + "Request", Value = ByteString.CopyFrom(Convert.FromHexString(payload)) },
+        };
+        var response = world.Services.GetRequiredService<GatewayRequests>().Handle(request);
+        Assert.Equal(status, response.StatusCode);
+        Assert.Null(response.Payload);
     }
 
     [Fact]
     public void CorporationFreelanceTabReceivesAnEmptyNativeProjectCollection()
     {
+        using TestWorld world = new();
         var request = new Request
         {
             ApplicationInstanceUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
             CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
             Payload = new Any { TypeUrl = "type.googleapis.com/eve_public.freelance.project.api.GetAllActiveForCorporationRequest" },
         };
-        var response = Create().Handle(request);
+        var response = world.Services.GetRequiredService<GatewayRequests>().Handle(request);
         Assert.Equal(200u, response.StatusCode);
         Assert.Equal(request.ApplicationInstanceUuid, response.ApplicationInstanceUuid);
         Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
@@ -36,12 +91,13 @@ public sealed class GatewayRequestsTests
     [Fact]
     public void LocalPlexBalanceUsesTheNativeSuccessShapeInsteadOfWalletFailureCallback()
     {
+        using TestWorld world = new();
         var request = new Request
         {
             CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
             Payload = new Any { TypeUrl = "type.googleapis.com/eve_public.plex.vault.api.BalanceRequest" },
         };
-        var response = Create().Handle(request);
+        var response = world.Services.GetRequiredService<GatewayRequests>().Handle(request);
         Assert.Equal(200u, response.StatusCode);
         Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
         Assert.Equal("type.googleapis.com/eve_public.plex.vault.api.BalanceResponse", response.Payload.TypeUrl);
@@ -54,6 +110,7 @@ public sealed class GatewayRequestsTests
     [Fact]
     public void AmsenReportsNoPirateCorruptionToTheLocationPanel()
     {
+        using TestWorld world = new();
         var request = new Request
         {
             Payload = new Any
@@ -63,7 +120,7 @@ public sealed class GatewayRequestsTests
                 Value = ByteString.CopyFrom(0x0a, 0x05, 0x08, 0xf0, 0x91, 0xa7, 0x0e),
             },
         };
-        var response = Create().Handle(request);
+        var response = world.Services.GetRequiredService<GatewayRequests>().Handle(request);
         Assert.Equal(200u, response.StatusCode);
         var system = response.Payload.Unpack<Protocol.Gateway.Corruption.GetSystemInfoResponse>();
         Assert.Equal(0u, system.Stage);
@@ -80,7 +137,8 @@ public sealed class GatewayRequestsTests
     [Fact]
     public void SkillPlanResponsesCarryTheCorrectTypeAndRequestIdentity()
     {
-        var gateway = Create();
+        using TestWorld world = new();
+        var gateway = world.Services.GetRequiredService<GatewayRequests>();
         var request = new Request
         {
             ApplicationInstanceUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),

@@ -218,6 +218,8 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 ## Record index
 
+- [Player corporation banners in Character Show Info, November 13, 2026](protocol/characters.md#player-corporation-banners-in-character-show-info-november-13-2026)
+
 - [Celestial Show Info resource reads, November 9, 2026](protocol/information.md#celestial-show-info-resource-reads--november-9-2026)
   records sun/planet public-gateway replies, catalog values and the continued window audit.
 

@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Player corporation banners in Character Show Info, November 13, 2026](#player-corporation-banners-in-character-show-info-november-13-2026)
+
 - [Player-created portrait settings, November 12, 2026](#player-created-portrait-settings-november-12-2026)
 
 - [Neocom skill startup, November 11, 2026](#neocom-skill-startup-november-11-2026)
@@ -46,6 +48,51 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Player corporation banners in Character Show Info, November 13, 2026
+
+The reported Character Show Info window drew the pilot name, security status and corporation standing, then stopped
+before the membership section and tabs. Build **3662168** calls `CheckReconstructCorpBanner` at that point for a pilot
+in a player corporation. The banner synchronously requests the corporation palette through the public gateway.
+`corpColorsSvc.get_colors` uses `eve_public.cosmetic.corporation.palette.api.GetOwnRequest` when the viewer belongs to
+that corporation and `GetRequest` for other viewers. Eden returned 501 for both. The pinned
+`ResponseChannel.receive` raises a gateway exception for non-200 responses before the color messenger reaches its
+404 fallback.
+
+Both gateway reads now return the saved corporation's first logo color as 8-bit RGB, with the native default white
+for unset or unrecognized logo colors. The response explicitly marks secondary and tertiary colors absent. The
+same-corporation route reads the public corporation of the active pilot named in the request envelope. The request
+identity is used only to look up public data. This read-only compatibility reply requires no save migration and
+palette editing is outside its scope.
+
+Inert inspection used the pinned archive SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**. Relevant paths include
+`characterInfoWindow`, `infoContentBase`, `corp_color_banner_base`, `corpColorsSvc`, `corpColorsRequestMessenger`,
+`publicGateway/grpc/requestBroker`, `appConst` and the public gateway and palette protobuf descriptors. The local
+evejs **261108.1** reference `corpColorsGatewayService.js` (SHA-256
+**4C235140CA1A951328A46A868A53683DACF697C98F39135C1C716DB3EF19F019**) corroborates the two read routes.
+The [EVE University patch notes](https://wiki.eveuniversity.org/UniWiki%3APatch_Notes/Patch_Notes_-_Version_23.02)
+record the palette's addition to Character and Corporation Show Info.
+
+**Automated validation** — The exact
+`FullyQualifiedName=Eden.Protocol.Tests.Gateway.GatewayRequestsTests.PlayerCorporationShowInfoReceivesTheNativeBannerPalette`
+filter reproduced 501 in all three cases against the original handler (build 11.47s, tests 14.42s). All three passed
+with the fix (build 6.22s, tests 6.98s). The test sends the pinned nested request fields through protobuf decoding
+and checks the response type, correlation identifiers and color bytes.
+
+The focused filter below passed **113 tests in 58s**, including malformed and missing palette targets and the
+existing character, corporation and gateway reads. Tool and solution restore, the solution build with zero
+warnings or errors (6.07s), both Python policy suites (8 catalog and 9 formatting tests), and formatting
+verification passed in 122.44s total. The full .NET suite was outside the requested scope.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Gateway|FullyQualifiedName~CharacterSheetServiceTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~CorporationSelectionTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationContactsTests|FullyQualifiedName~PilotServicesTests
+```
+
+**Live acceptance** — Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks** — After updating the server, open Character Show Info for a player-corporation member
+from both a corp mate and an outside pilot. Confirm the corporation banner, membership and tabs render.
 
 ## Player-created portrait settings, November 12, 2026
 

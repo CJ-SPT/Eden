@@ -1,0 +1,45 @@
+syntax = "proto3";
+package eve_public.cosmetic.corporation.palette.api;
+option csharp_namespace = "Eden.Protocol.Gateway.CorporationPalette";
+
+// Wire projections of the public palette descriptors in build 3662168.
+// The API messages keep their native names for Any packing.
+message GetRequest {
+  PaletteIdentifier identifier = 1;
+}
+
+message GetOwnRequest {}
+
+message GetResponse {
+  Attributes attributes = 1;
+}
+
+message GetOwnResponse {
+  Attributes attributes = 1;
+}
+
+message PaletteIdentifier {
+  CorporationIdentifier corporation = 1;
+}
+
+message CorporationIdentifier {
+  uint32 sequential = 1;
+}
+
+message Attributes {
+  RGB main_color = 1;
+  oneof secondary {
+    RGB secondary_color = 2;
+    bool no_secondary_color = 3;
+  }
+  oneof tertiary {
+    RGB tertiary_color = 4;
+    bool no_tertiary_color = 5;
+  }
+}
+
+message RGB {
+  uint32 red = 1;
+  uint32 green = 2;
+  uint32 blue = 3;
+}

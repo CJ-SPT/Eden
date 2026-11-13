@@ -9,14 +9,12 @@ using Stars = Eden.Protocol.Gateway.CelestialResources.Stars;
 
 namespace Eden.Protocol.Gateway;
 
-internal sealed record CelestialResourceReply(HttpStatusCode Status, IMessage? Payload = null);
-
 internal static class CelestialResourceRequests
 {
     private const string PlanetApi = "eve_public.sovereignty.resource.planet.api.";
     private const string StarApi = "eve_public.sovereignty.resource.star.api.";
 
-    internal static CelestialResourceReply? Read(string type, ByteString payload, ICelestialResourceDirectory directory)
+    internal static GatewayReply? Read(string type, ByteString payload, ICelestialResourceDirectory directory)
     {
         try
         {

@@ -1,3 +1,6 @@
+using System.Net;
+using Eden.Gameplay.Characters;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Gateway.Plans;
@@ -6,8 +9,15 @@ using Google.Protobuf.WellKnownTypes;
 
 namespace Eden.Protocol.Gateway;
 
+internal sealed record GatewayReply(HttpStatusCode Status, IMessage? Payload = null);
+
 [Injectable(InjectionType.Singleton)]
-public sealed class GatewayRequests(TimeProvider clock, ICelestialResourceDirectory celestialResources)
+public sealed class GatewayRequests(
+    TimeProvider clock,
+    ICelestialResourceDirectory celestialResources,
+    ICharacterDirectory characters,
+    IPlayerCorporations corporations
+)
 {
     private readonly ByteString _instanceId = ByteString.CopyFrom(Guid.NewGuid().ToByteArray());
     private const string PersonalPlans = "eve_public.character.skill.plan.";
@@ -15,9 +25,12 @@ public sealed class GatewayRequests(TimeProvider clock, ICelestialResourceDirect
     public Response Handle(Request request)
     {
         string type = Any.GetTypeName(request.Payload?.TypeUrl ?? "");
-        var celestial = CelestialResourceRequests.Read(type, request.Payload?.Value ?? ByteString.Empty, celestialResources);
+        var payload = request.Payload?.Value ?? ByteString.Empty;
+        var reply =
+            CorporationPaletteRequests.Read(type, payload, request.AuthoritativeContext, characters, corporations)
+            ?? CelestialResourceRequests.Read(type, payload, celestialResources);
         IMessage? result =
-            celestial?.Payload
+            reply?.Payload
             ?? (
                 type switch
                 {
@@ -48,7 +61,7 @@ public sealed class GatewayRequests(TimeProvider clock, ICelestialResourceDirect
         var response = new Response
         {
             StatusCode =
-                celestial is not null ? (uint)celestial.Status
+                reply is not null ? (uint)reply.Status
                 : result is null ? 501u
                 : 200u,
             CorrelationUuid = request.CorrelationUuid,

@@ -10,6 +10,21 @@ message Request {
   bytes correlation_uuid = 2;
   google.protobuf.Any payload = 3;
   bytes application_instance_uuid = 5;
+  AuthoritativeContext authoritative_context = 6;
+}
+
+// Build 3662168 public_pb2.pyj. The client supplies the active pilot for public
+// read routing. This projection is not an authentication credential.
+message AuthoritativeContext {
+  ActiveIdentity identity = 10;
+}
+
+message ActiveIdentity {
+  CharacterIdentifier character = 1;
+}
+
+message CharacterIdentifier {
+  uint32 sequential = 1;
 }
 
 message Response {
