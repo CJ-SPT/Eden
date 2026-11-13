@@ -69,8 +69,8 @@ Gameplay references: [University distribution reports](https://wiki.eveuniversit
 Run from the repository root against the read-only catalog:
 
 ```powershell
-python tools/Export-MissionCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite"
-python tools/Export-MissionFixture.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite"
+python tools/Export-MissionCatalog.py --catalog src/Eden.Server/data/catalog.sqlite
+python tools/Export-MissionFixture.py --catalog src/Eden.Server/data/catalog.sqlite
 python tests/Eden.Protocol.Tests/Persistence/mission_content_test.py
 ```
 

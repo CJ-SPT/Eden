@@ -16,9 +16,12 @@ internal sealed class LoopbackServer(
     Eden.Server.Modding.ModRuntime? mods = null
 )
 {
-    public async Task RunAsync(long? startupStarted = null)
+    public async Task RunAsync(long? startupStarted = null, CancellationToken cancellationToken = default)
     {
-        using var shutdown = CancellationTokenSource.CreateLinkedTokenSource(mods?.FailureToken ?? CancellationToken.None);
+        using var shutdown = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken,
+            mods?.FailureToken ?? CancellationToken.None
+        );
         void OnCancel(object? sender, ConsoleCancelEventArgs args)
         {
             args.Cancel = true;
@@ -67,7 +70,7 @@ internal sealed class LoopbackServer(
         }
         catch (OperationCanceledException) when (shutdown.IsCancellationRequested)
         {
-            // Ctrl+C stops the listener and active connections.
+            // Shutdown stops the listener and active connections before the world is saved.
         }
         finally
         {

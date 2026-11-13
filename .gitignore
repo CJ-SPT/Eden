@@ -5,6 +5,11 @@
 .vs/
 artifacts/
 *.user
+/src/Eden.Server/data/
+/src/Eden.Server/data.copy-*/
+/deploy/
+/.env
+/.env.*
 
 # Local EVE catalog, save, and Python importer cache
 *.sqlite

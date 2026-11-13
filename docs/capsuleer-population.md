@@ -56,7 +56,7 @@ An optional local `traffic.sqlite` beside the world database supplies real pilot
 Create or refresh the snapshot from the repository root:
 
 ```powershell
-dotnet run --project src/Eden.Server --configuration Release -- --import-traffic "$env:LOCALAPPDATA\Eden\traffic.sqlite"
+dotnet run --project src/Eden.Server --configuration Release -- --import-traffic data/traffic.sqlite
 ```
 
 The default window is the latest **seven published complete UTC days** in zKill's archive totals. Publication can lag the UTC day boundary. `--from yyyy-MM-dd` and `--through yyyy-MM-dd` select an explicit range; both dates are inclusive. `--catalog <path>` selects the pinned catalog, defaulting to `catalog.sqlite` beside the output. Restart the server separately to adopt the new snapshot. Importing does not open or alter a saved world and may run while gameplay continues using the previous snapshot.

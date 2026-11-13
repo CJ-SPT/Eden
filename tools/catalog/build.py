@@ -255,8 +255,11 @@ def publish(destination, populate, validate):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("client", type=Path)
-    home = Path(os.environ["LOCALAPPDATA"]) / "Eden"
-    parser.add_argument("--archive", type=Path, default=home / "catalog-input" / ARCHIVE)
-    parser.add_argument("--output", type=Path, default=home / "catalog.sqlite")
+    server = HERE.parents[1] / "src/Eden.Server"
+    data = os.environ.get("EDEN_DATA_DIR", "")
+    directory = server / (data if data.strip() else "data")
+    archive_cache = Path(os.environ["LOCALAPPDATA"]) / "Eden/catalog-input"
+    parser.add_argument("--archive", type=Path, default=archive_cache / ARCHIVE)
+    parser.add_argument("--output", type=Path, default=directory / "catalog.sqlite")
     args = parser.parse_args()
     build(args.client.resolve(), args.archive.resolve(), args.output.resolve())

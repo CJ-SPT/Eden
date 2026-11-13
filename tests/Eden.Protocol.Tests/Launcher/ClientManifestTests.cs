@@ -1,11 +1,44 @@
 using System.Security.Cryptography;
+using System.Text;
+using Eden.Protocol.Tests.Administration;
 using Eden.Server.Authentication;
 using Eden.Server.Launcher;
+using Eden.World.Storage;
 
 namespace Eden.Protocol.Tests.Launcher;
 
 public sealed class ClientManifestTests
 {
+    [PinnedSkillClientFact]
+    public void LauncherSignsPinnedManifestWithItsEmbeddedVerificationKey()
+    {
+        string client = Environment.GetEnvironmentVariable("EDEN_TEST_CLIENT_ROOT")!;
+        byte[] source = File.ReadAllBytes(Path.Combine(client, "tq", "manifest.dat"));
+        Convert.FromHexString(ClientManifest.OriginalCodeHash).CopyTo(source, ClientManifest.CodeHashOffset);
+        byte[] prefix = ClientManifest.ReadOriginalPrefix(source);
+        var store = new LauncherStore(new WorldDatabase("unused.sqlite"), TimeProvider.System);
+        using var identity = new DevelopmentIdentity(TimeProvider.System, store, new LauncherOptions());
+
+        byte[] manifest = identity.SignManifest(Convert.ToBase64String(prefix));
+
+        using var reader = new BinaryReader(new MemoryStream(manifest));
+        Assert.Equal(prefix, reader.ReadBytes(prefix.Length));
+        string pem = Encoding.ASCII.GetString(reader.ReadBytes(reader.ReadInt32()));
+        int signedLength = (int)reader.BaseStream.Position;
+        byte[] signature = reader.ReadBytes(reader.ReadInt32());
+        Assert.Equal(manifest.Length, reader.BaseStream.Position);
+        using RSA verifier = RSA.Create();
+        verifier.ImportFromPem(pem);
+        Assert.True(
+            verifier.VerifyData(
+                SHA256.HashData(manifest.AsSpan(0, signedLength)),
+                signature,
+                HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1
+            )
+        );
+    }
+
     [Fact]
     public void ChatTrustChangesExactlyOneHashWithoutTouchingOtherEntriesOrTheOriginalPrefix()
     {

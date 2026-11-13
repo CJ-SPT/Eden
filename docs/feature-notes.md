@@ -278,7 +278,7 @@ The reproducible [ship content inventory](ship-content-coverage.json) records pu
 Generate both from the repository root with the installed catalog and an absolute output path. These commands do not open a saved world or start listeners:
 
 ```powershell
-$catalog = Join-Path $env:LOCALAPPDATA 'Eden\catalog.sqlite'
+$catalog = 'src/Eden.Server/data/catalog.sqlite'
 $coverage = Join-Path $PWD 'docs\ship-content-coverage.json'
 $hulls = Join-Path $PWD 'docs\tech-one-hulls.json'
 dotnet run --no-build --artifacts-path artifacts/feature-tests --project src/Eden.Server -- --export-ship-content-coverage $catalog $coverage

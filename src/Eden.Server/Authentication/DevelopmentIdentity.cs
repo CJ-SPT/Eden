@@ -12,8 +12,10 @@ namespace Eden.Server.Authentication;
 internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore accounts, LauncherOptions options) : ILoginIdentity, IDisposable
 {
     private const string KeyName = "Eden.LocalLogin.3662168";
+    private const int SigningKeySize = 3072;
 
-    private RSA? _key = OperatingSystem.IsWindows() ? Open() : null;
+    // Launcher manifests carry their own verification key. Legacy development tickets still use the Windows user key.
+    private RSA? _key = OperatingSystem.IsWindows() ? Open() : RSA.Create(SigningKeySize);
     public RSA Key => _key ?? throw new InvalidDataException("The local pilot session is unavailable.");
 
     public void Dispose() => Interlocked.Exchange(ref _key, null)?.Dispose();
@@ -28,7 +30,7 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
                 KeyName,
                 new CngKeyCreationParameters
                 {
-                    Parameters = { new CngProperty("Length", BitConverter.GetBytes(3072), CngPropertyOptions.None) },
+                    Parameters = { new CngProperty("Length", BitConverter.GetBytes(SigningKeySize), CngPropertyOptions.None) },
                 }
             );
         return new RSACng(key);
@@ -66,7 +68,7 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
         {
             return await accounts.ConsumeTicketAsync(ticket, cancellationToken);
         }
-        if (!options.DevelopmentLogin)
+        if (!OperatingSystem.IsWindows() || !options.DevelopmentLogin)
         {
             return null;
         }
@@ -118,15 +120,16 @@ internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore acco
         }
         prefix = ClientManifest.WithChatHash(prefix, chatBundleSha256);
         prefix = ClientManifest.WithCodeHash(prefix, skillCodeSha256);
-        lock (Key)
+        RSA key = Key;
+        lock (key)
         {
             using MemoryStream buffer = new();
             using BinaryWriter writer = new(buffer);
             writer.Write(prefix);
-            byte[] pem = Encoding.ASCII.GetBytes(Key.ExportSubjectPublicKeyInfoPem() + "\n");
+            byte[] pem = Encoding.ASCII.GetBytes(key.ExportSubjectPublicKeyInfoPem() + "\n");
             writer.Write(pem.Length);
             writer.Write(pem);
-            byte[] signature = Key.SignData(SHA256.HashData(buffer.ToArray()), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            byte[] signature = key.SignData(SHA256.HashData(buffer.ToArray()), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
             writer.Write(signature.Length);
             writer.Write(signature);
             return buffer.ToArray();

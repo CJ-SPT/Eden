@@ -118,7 +118,7 @@ anchors and fixed battery positions across the existing anomaly pool, correct 19
 [Mission layout corrections](docs/protocol/agents.md#mission-layout-corrections--november-9-2026) apply room-local NPC anchors,
 individual battery positions, restored scenery and corrected collision sizes to the 50 existing combat mission definitions.
 
-Eden uses Entity Framework Core 10 with two SQLite files under `%LOCALAPPDATA%\Eden`. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilot profiles and trained skill points, owned ships, their positions and health, item stacks in cargo or station hangars, asteroid fields, wallets, market orders, trade records and manufacturing jobs. Both files are generated locally.
+Eden stores its SQLite files in `src/Eden.Server/data` when run from source, or in `data` beside a published server executable. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilots, ships, inventory, wallets, and the persistent simulation. To keep an existing Windows save, [copy its data before starting the updated server](docs/development-client.md#moving-an-existing-server).
 
 On Windows, install 64-bit Python 3.11 or later and the pinned .NET SDK. Stage the matching client and resource cache, then run the setup command from the repository root.
 
@@ -168,6 +168,8 @@ To run the local server for play, use the following command separately from vali
 ```powershell
 dotnet run --no-build --project src/Eden.Server
 ```
+
+For container hosting, follow the [Docker deployment guide](docs/docker.md). Compose mounts the server data directory so the save persists across image updates.
 
 [Offline startup reconciliation](docs/protocol/performance.md#offline-startup-belt-renewal-november-9-2026) renews overdue belts in bounded SQL batches while preserving saved deposits and deadlines.
 

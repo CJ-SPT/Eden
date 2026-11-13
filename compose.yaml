@@ -1,0 +1,29 @@
+services:
+  eden:
+    build:
+      context: .
+      args:
+        EDEN_REVISION: ${EDEN_REVISION:-}
+    image: eden-server:local
+    restart: unless-stopped
+    stop_grace_period: 2m
+    environment:
+      EDEN_CERTIFICATE_PASSWORD: ${EDEN_CERTIFICATE_PASSWORD:-}
+      EDEN_DEVELOPER_INVITE_CODE: ${EDEN_DEVELOPER_INVITE_CODE:-}
+    ports:
+      - "${EDEN_BIND_IP:-127.0.0.1}:5222:5222"
+      - "${EDEN_BIND_IP:-127.0.0.1}:26000:26000"
+      - "${EDEN_BIND_IP:-127.0.0.1}:26001:26001"
+      - "${EDEN_BIND_IP:-127.0.0.1}:26002:26002"
+    volumes:
+      - type: bind
+        source: ${EDEN_HOST_DATA_DIR:-./src/Eden.Server/data}
+        target: /data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${EDEN_HOST_CONFIG_DIR:-./deploy}
+        target: /config
+        read_only: true
+        bind:
+          create_host_path: false

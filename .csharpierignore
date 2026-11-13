@@ -5,3 +5,6 @@
 **/obj/**
 **/TestResults/**
 artifacts/**
+src/Eden.Server/data/**
+src/Eden.Server/data.copy-*/**
+deploy/**

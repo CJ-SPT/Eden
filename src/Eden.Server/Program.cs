@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Diagnostics;
@@ -72,15 +73,19 @@ internal static class Program
             return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
         }
         long startupStarted = Stopwatch.GetTimestamp();
-        string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Eden");
-        string worldPath = Path.GetFullPath(Value("--world") ?? Path.Combine(directory, "world.sqlite"));
-        foreach (string option in new[] { "--set-admin-password", "--admin-port" })
+        foreach (string option in new[] { "--world", "--config", "--set-admin-password", "--admin-port" })
         {
             if (args.Contains(option) && (Value(option) is not { } value || value.StartsWith("--", StringComparison.Ordinal)))
             {
                 throw new InvalidDataException($"{option} requires a value.");
             }
         }
+        string worldPath = ServerDataPaths.WorldPath(
+            Value("--world"),
+            Environment.GetEnvironmentVariable("EDEN_DATA_DIR"),
+            Directory.GetCurrentDirectory(),
+            AppContext.BaseDirectory
+        );
         if (Value("--set-admin-password") is { } administrator)
         {
             Console.Write("Administrator password: ");
@@ -145,6 +150,17 @@ internal static class Program
             options.Validate();
         }
         string? preparationRoot = Value("--prepare-login");
+        using CancellationTokenSource shutdown = new();
+        using var termination = OperatingSystem.IsWindows()
+            ? null
+            : PosixSignalRegistration.Create(
+                PosixSignal.SIGTERM,
+                context =>
+                {
+                    context.Cancel = true;
+                    shutdown.Cancel();
+                }
+            );
         WorldDatabase database = new(worldPath);
         if (preparationRoot is null)
         {
@@ -161,7 +177,7 @@ internal static class Program
             bool preparePopulation = Value("--grant-redeem") is null && Value("--set-account-password") is null;
             if (preparePopulation)
             {
-                ServerLog.Console.Information("Loading saved world...");
+                ServerLog.Console.Information($"Loading saved world from {worldPath}...");
             }
             WorldInitialization.Initialize(database, economy: startingEconomy, economics: economicConfiguration);
             if (preparePopulation)
@@ -232,6 +248,10 @@ internal static class Program
         services.GetRequiredService<Eden.Server.Modding.ModRuntime>().Start();
         services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
         services.GetRequiredService<CatalogProvider>().PreloadCore();
+        if (shutdown.IsCancellationRequested)
+        {
+            return;
+        }
         int administrationPort = Value("--admin-port") is { } adminPort
             ? int.TryParse(adminPort, out int parsedPort) && parsedPort is > 0 and <= 65535
                 ? parsedPort
@@ -274,7 +294,7 @@ internal static class Program
         ServerLog.Console.Information($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
         try
         {
-            Task server = services.GetRequiredService<LoopbackServer>().RunAsync(startupStarted);
+            Task server = services.GetRequiredService<LoopbackServer>().RunAsync(startupStarted, shutdown.Token);
             if (!server.IsCompleted)
             {
                 services.GetRequiredService<CapsuleerPopulationMaintenance>().Start();

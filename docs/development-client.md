@@ -9,6 +9,7 @@ Prepare the pinned client, create local data and connect to Eden. Commands run f
 - [Agent testing policy](#agent-testing-policy)
 - [Stage the client](#stage-the-client)
 - [Creating and recreating the databases](#creating-and-recreating-the-databases)
+- [Moving an existing server](#moving-an-existing-server)
 - [Run the startup test](#run-the-startup-test)
 - [Local account login](#local-account-login)
 - [Developer travel](#developer-travel)
@@ -46,9 +47,11 @@ Optional [zKill-backed traffic snapshots](capsuleer-population.md#zkill-backed-t
 
 From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'` after staging the client. Use 64-bit Windows Python 3.11 or later with the standard library, PowerShell 7, the pinned .NET SDK, and at least 8 GB free for the catalog, temporary records, and an existing installation. The first run downloads the [CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip). To rebuild offline, reuse the cached export under `%LOCALAPPDATA%\Eden\catalog-input` or pass `-Archive` with a local copy.
 
-Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
+Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. By default, setup writes to `src/Eden.Server/data/catalog.sqlite`. Use `-Output` to write a catalog for another server. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
-Start the server with `dotnet run --no-build --project src/Eden.Server`. The first startup initializes the world with Eden Pilot and Eden Wing. Existing saves migrate to the current schema, preserving their assets and supported history. Normal startup loads the saved world into RAM; committed gameplay changes are checkpointed to `%LOCALAPPDATA%\Eden\world.sqlite` every 15 seconds. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning. Save failures remain visible by default; set `EDEN_VERBOSE_LOGGING=1` for routine checkpoint diagnostics.
+Start the server with `dotnet run --no-build --project src/Eden.Server`. The server uses `src/Eden.Server/data/world.sqlite` from source or `data/world.sqlite` beside the published executable. Set `EDEN_DATA_DIR` to choose a different data directory for the server and catalog setup. Relative values resolve from the server folder. An explicit `--world` path takes precedence and uses the catalog beside that save.
+
+The first startup initializes a new world with Eden Pilot and Eden Wing. Existing saves migrate to the current schema, preserving their assets and supported history. Normal startup loads the saved world into RAM and checkpoints committed gameplay changes every 15 seconds. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning. Save failures remain visible by default. Set `EDEN_VERBOSE_LOGGING=1` for routine checkpoint diagnostics.
 
 Live turret combat and health use typed objects in memory. The saver includes outstanding payments and damage before copying a checkpoint, and graceful shutdown projects final combat changes. The on-disk save still represents only the last completed checkpoint. See [combat object behavior and benchmark evidence](protocol/performance.md#live-combat-objects-and-ten-brutix-replay-november-5-2026).
 
@@ -63,8 +66,19 @@ World-opening maintenance commands, including `--grant-redeem` and `--set-accoun
 To recheck an installed catalog independently, run the following command.
 
 ```powershell
-dotnet run --no-build --project src/Eden.Server -- --verify-catalog "$env:LOCALAPPDATA\Eden\catalog.sqlite"
+dotnet run --no-build --project src/Eden.Server -- --verify-catalog data/catalog.sqlite
 ```
+
+## Moving an existing server
+
+Stop the old server, then copy the following from `%LOCALAPPDATA%\Eden` or your previous data directory into the new server's `data` directory before its first start:
+
+- `world.sqlite` and `catalog.sqlite`. Keep `world.sqlite.previous` if available. Include any SQLite `-wal` or `-journal` files alongside their matching databases.
+- `chat-tls.pfx` and `traffic.sqlite`, if present.
+- Any `world.sqlite.mods*`, `world.sqlite.skill-packages`, `world.sqlite.skills.sqlite`, and `world.sqlite.skills-active` files or directories. Include any SQLite journals for these databases too.
+- `world.sqlite.administrators.json` for an existing administrator. Windows administration cookies are scoped to the save path and their encryption keys are tied to Windows. Sign in again at the new path.
+
+Preserve the old directory as a backup. Startup logs the full path of the save it opens.
 
 ## Run the startup test
 
@@ -107,7 +121,7 @@ To enter character selection from the repository root, keep the server running i
 .\tools\DevelopmentClient.ps1 -DevelopmentRoot 'E:\EdenDev\3662168' -Login
 ```
 
-The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it to enter the Caldari Navy Assembly Plant. Open Inventory from the left sidebar and check the active ship. The server reports the selected pilot, station and ship item ID. For a restart check, close the client, stop and restart Eden, and log in again. The active ship and the logged item ID should match the first run. Eden stores the world in `%LOCALAPPDATA%\Eden\world.sqlite`. Each local account can have one authenticated session at a time.
+The pilot card shows **Eden Pilot**, **Ibis**, and **Jita**. Click it to enter the Caldari Navy Assembly Plant. Open Inventory from the left sidebar and check the active ship. The server reports the selected pilot, station and ship item ID. For a restart check, close the client, stop and restart Eden, and log in again. The active ship and the logged item ID should match the first run. Each local account can have one authenticated session at a time.
 
 After the source installation finishes downloading, run the preparation command again with the staged client closed. The ready marker checks the pinned binaries and successful copy. The main resource index can still have missing assets if the source was mid-download.
 
@@ -735,7 +749,7 @@ Switch back to the starting ship and verify its original cargo and fit. Restart 
 Reproduce the full 275-ID Tech I inventory and first-cohort fixtures with the following command.
 
 ```powershell
-python tools/Export-HullCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures
+python tools/Export-HullCatalog.py --catalog src/Eden.Server/data/catalog.sqlite --output tests/Eden.Protocol.Tests/Fixtures
 ```
 
 The first-cohort acceptance used a copied Perimeter save, racial Frigate III and trained test-equipment prerequisites. All four ships were bought at the existing 1 ISK offers and assembled, named, boarded and fitted through native controls. Each destroyed a belt Rookie and redocked. The native weapon context menus loaded cargo ammunition. The armor repairer displayed 113 HP per 4.5 seconds and visibly consumed capacitor. Returning to the original Ibis showed its empty 125 m³ hold. Restarting the host/client retained the named Rifter, three loaded guns, 20.1 DPS in Fitting and 400 spare rounds in Inventory. The [protocol acceptance record](protocol/hulls.md#tech-i-hull-expansion-milestone-1) separates exact automated checks from these observations and describes the copied-save ammunition preparation and the station-alignment limitation.
@@ -747,8 +761,8 @@ Use the copied-world procedure above. This cohort includes all 99 qualifying fri
 Reproduce the small-hull definitions and the coverage record from the pinned catalog:
 
 ```powershell
-python tools/Export-HullCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures --cohort small
-dotnet run --no-build --project src/Eden.Server -- --export-hull-coverage "$env:LOCALAPPDATA/Eden/catalog.sqlite" docs/tech-one-hulls.json
+python tools/Export-HullCatalog.py --catalog src/Eden.Server/data/catalog.sqlite --output tests/Eden.Protocol.Tests/Fixtures --cohort small
+dotnet run --no-build --project src/Eden.Server -- --export-hull-coverage data/catalog.sqlite ../../docs/tech-one-hulls.json
 ```
 
 For native acceptance, select Eden Pilot and verify the active hull in Inventory after each boarding. Exercise a no-rack shuttle, Zephyr's one-high/no-hardpoint layout, Echelon's one-medium layout, a destroyer and representative supported hull bonuses. Use legal CPU, power, slots and hardpoints. Compare fitted attributes with the operation that uses them: Leopard warp speed, Succubus afterburner speed, Daredevil web strength, projectile reload, missile flight/damage, Venture Consortium Issue's mining hold/yield/shield boost, Fleet Thrasher's MWD and Navy Catalyst's armor-plate mass. Keep each previously flown hull's inventory separate and reconnect to check persistence. Use the station's Board my Corvette recovery control as a regression.
@@ -760,8 +774,8 @@ The verified run flew eleven additional small hull types, recovered the racial I
 Use the same copied-world procedure and the 101-type combat cohort. Reproduce the definitions with:
 
 ```powershell
-python tools/Export-HullCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures --cohort combat
-dotnet run --no-build --project src/Eden.Server -- --export-hull-coverage "$env:LOCALAPPDATA/Eden/catalog.sqlite" docs/tech-one-hulls.json
+python tools/Export-HullCatalog.py --catalog src/Eden.Server/data/catalog.sqlite --output tests/Eden.Protocol.Tests/Fixtures --cohort combat
+dotnet run --no-build --project src/Eden.Server -- --export-hull-coverage data/catalog.sqlite ../../docs/tech-one-hulls.json
 ```
 
 Select Eden Pilot. Board representative cruiser, battlecruiser and battleship hulls and verify each active name in Inventory. Use actual fitting resources: medium guns on a cruiser, reduced-cost large guns on an attack battlecruiser and appropriately sized launchers. Check the fitted values against paid firing/reloads and actual flight. On a battleship, inspect the extender, plate and bulkhead role values and resulting defenses. Dock and change ships, then restart to verify cargo, modules, magazines and names.
@@ -775,8 +789,8 @@ The verified run flew Moa, Caracal, Oracle, Raven, Anhinga and Cenotaph, docked 
 Milestone 4 delivers 35 industrial/utility hulls, bringing assembly admission to 235. Its [acceptance record](protocol/hulls.md#tech-i-hull-expansion-milestone-4) separates the completed full baseline suite, focused final corrections, native observations and automated-only behavior. The duplicate final full rerun was stopped at the user's request to end extended testing; it is not reported as a completed run. Capital admission remains deferred. Reproduce the catalog and independent native inventory vectors with:
 
 ```powershell
-python tools/Export-HullCatalog.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --output tests/Eden.Protocol.Tests/Fixtures --cohort utility
-python tools/Export-ShipInventory.py --catalog "$env:LOCALAPPDATA/Eden/catalog.sqlite" --client E:/EdenDev/3662168 --output tests/Eden.Protocol.Tests/Fixtures/NativeShipInventory.json
+python tools/Export-HullCatalog.py --catalog src/Eden.Server/data/catalog.sqlite --output tests/Eden.Protocol.Tests/Fixtures --cohort utility
+python tools/Export-ShipInventory.py --catalog src/Eden.Server/data/catalog.sqlite --client E:/EdenDev/3662168 --output tests/Eden.Protocol.Tests/Fixtures/NativeShipInventory.json
 ```
 
 Use a copied save and select **Eden Pilot**. Exercise each distinct hold filter through native Inventory: Hoarder gas/ammunition, Kryos minerals/ice, Epithal command centers/planetary goods, a Quafe Miasmos, Squall infrastructure and Odysseus expedition cargo. On Orca, inspect personal Drone Bay, Fuel Bay, Mining Hold, Fleet Hangar and Ship Maintenance Bay. Fleet sharing, refitting and drone operations remain unavailable. Check both permitted and incompatible cargo, an over-capacity request, unloading at another station and reconnect persistence.

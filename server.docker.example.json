@@ -1,0 +1,8 @@
+{
+  "ServerId": "eden-docker",
+  "Name": "Eden Docker",
+  "ListenAddress": "0.0.0.0",
+  "GameAddress": "eden.example.com:26000",
+  "GatewayAddress": "https://eden.example.com:26001",
+  "CertificatePath": "/config/server.pfx"
+}

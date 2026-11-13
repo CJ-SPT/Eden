@@ -3,6 +3,7 @@
     <OutputType>Exe</OutputType>
     <ApplicationIcon>../../assets/icons/eden-server.ico</ApplicationIcon>
     <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
+    <DefaultItemExcludes>$(DefaultItemExcludes);data/**;data.copy-*/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Eden.Modding/Eden.Modding.csproj" />
