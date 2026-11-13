@@ -2,6 +2,33 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## The Blockade stasis tower and railgun falloff — November 13, 2026
+
+An existing client combat log for level-one Guristas **The Blockade** recorded 25 misses and one 3-point graze against the
+Minmatar Stasis Tower from a group of 75mm Gatling Rail I turrets. The log has no shot distances or charge type.
+Build 3662168 places tower type **17606**, dungeon object **490225** in dungeon **1938**, about **25.3 km** center-to-center
+from the entry point. The 75mm Gatling Rail I has **6 km base optimal** and **3 km base falloff**. Antimatter Charge S halves
+the base optimal. At **9 km** surface range, an unbonused fit with that charge has at most a **6.25%** chance per gun.
+[EVE University mission report](https://wiki.eveuniversity.org/The_Blockade_%28Guristas_Pirates%29_%28Level_1%29) ·
+[EVE University turret mechanics](https://wiki.eveuniversity.org/Turret_mechanics)
+
+The automated replay locks the tower from the entry point and spends a round on a miss. It uses the native follow command
+with a **2 km** stand-off, then lands a shot inside **2.5 km** and receives a Destiny shield-state update. Local evejs
+**261108.1** `server/src/space/combat/laserTurrets.js` also computes separate surface-range and angular penalties.
+Carbon Destiny's follow thrust adds both ball radii to the stand-off.
+[Carbon Destiny Ballpark.cpp, 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp#L995-L1023)
+
+**Automated validation.** The exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionLayoutTests.BlockadeStasisTowerTakesRailgunDamageInsideOptimalRange`
+passed both the file-backed and resident cases in 11.71 seconds. `MissionLayoutTests`, `MissionEncounterTests`,
+`CombatDamageTests`, and `AmmunitionTests` passed 52 cases in 50.96 seconds. The solution built with zero warnings and
+errors in 4.94 seconds. Both Python policy suites and formatting verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** In the existing mission, set Keep at Range to **2 km** and check the fitted railgun's optimal
+with the loaded charge.
+
 ## Mining missions - November 12, 2026
 
 Mining division 23 agents offer 23 reviewed, standalone missions across levels 1–4. The [content inventory](../missions.md#mining-content)

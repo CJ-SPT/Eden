@@ -1,13 +1,21 @@
 using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Skills;
+using Eden.Protocol.Flight;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Targeting;
 using Eden.Server;
 using Eden.World.Agents;
 using Eden.World.Catalog;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -18,8 +26,106 @@ namespace Eden.Protocol.Tests.Agents;
 public sealed class MissionLayoutTests
 {
     private const int InvisibleBeaconGroup = 4055;
+    private const int GuristasBlockade = 2924;
 
     private sealed record SavedPlacement(long Id, int TypeId, double X, double Y, double Z, double? AcquisitionRange);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void BlockadeStasisTowerTakesRailgunDamageInsideOptimalRange(bool resident)
+    {
+        const int towerType = 17606;
+        const int railgunType = (int)CombatWeaponType.GatlingRailgun75mm;
+        const int chargeType = (int)HybridChargeType.AntimatterSmall;
+        const long pilotId = MissionFixture.PilotId;
+        const int stationId = MissionFixture.StationId;
+        using MissionFixture f = Create(
+            GuristasBlockade,
+            1,
+            resident,
+            configure: catalog =>
+            {
+                PassiveCatalogFixture.LoadWeaponTiers(
+                    catalog.Database.GetDbConnection().DataSource,
+                    new HashSet<int> { railgunType, chargeType, (int)CombatSkill.Gunnery, (int)CombatSkill.SmallHybridTurret }
+                );
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT OR IGNORE INTO DogmaAttribute(Id,Name) VALUES (11,'powerOutput'),(14,'hiSlots'),(48,'cpuOutput'),
+                        (76,'maxTargetRange'),(192,'maxLockedTargets'),(564,'scanResolution');
+                    INSERT OR REPLACE INTO TypeAttribute VALUES (601,11,23),(601,14,2),(601,48,125),
+                        (601,76,50000),(601,192,4),(601,564,500);
+                    """
+                );
+            }
+        );
+        long gun;
+        long ammo;
+        using (WorldDbContext world = new(f.Db.Path))
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath))
+        {
+            foreach (var skill in new[] { CombatSkill.Gunnery, CombatSkill.SmallHybridTurret })
+            {
+                var trained =
+                    world.Set<PilotSkill>().Find(pilotId, (int)skill)
+                    ?? world.Add(new PilotSkill { PilotId = pilotId, TypeId = (int)skill }).Entity;
+                trained.Points = TrainedSkill.PointsForLevel(1, 1);
+            }
+            gun = InventoryPersistence.MergeOutput(world, catalog, pilotId, stationId, (int)InventoryFlag.Hangar, railgunType, 1).Item.Id;
+            ammo = InventoryPersistence.MergeOutput(world, catalog, pilotId, stationId, (int)InventoryFlag.Hangar, chargeType, 3).Item.Id;
+            world.SaveChanges();
+        }
+        var pilot = f.Context.Pilot;
+        var fitting = f.Services.GetRequiredService<IPilotFitting>();
+        fitting.Fit(pilotId, [gun], stationId, (int)InventoryFlag.AutoFit);
+        fitting.SetOnline(pilotId, pilot.ShipId, gun, true);
+        f.Services.GetRequiredService<IPilotAmmunition>().Load(pilotId, pilot.ShipId, [gun], [ammo], stationId, f.Clock.Now);
+        f.Clock.Seconds += 6;
+        var mission = f.Accept(f.Request());
+        f.Missions.Arrive(mission.SystemId, mission.Position);
+        var encounters = f.Services.GetRequiredService<INpcEncounters>();
+        var tower = Assert.Single(encounters.List(mission.SystemId, f.Clock.Now), npc => npc.TypeId == towerType);
+        Assert.InRange(mission.Position.DistanceTo(tower.Position), 25000, 26000);
+
+        f.Db.Store.SetPosition(pilot.ShipId, mission.Position, mission.SystemId);
+        f.Context.ChangeShip(f.Db.Store.FindPilot(1000001)!);
+        var flight = f.Context.Flight;
+        flight.Snapshot();
+        Assert.IsType<PilotCallResult.Success>(f.Call("dogmaIM", "AddTarget", [tower.Id]));
+        f.Clock.Seconds += 30;
+        var targeting = f.Handler<TargetingHandler>();
+        targeting.Advance(f.Context);
+        Assert.True(targeting.IsLocked(tower.Id));
+        var combat = f.Services.GetRequiredService<IPilotCombat>();
+        CombatShot Fire() => combat.Fire(pilotId, gun, tower.Id, SpacePosition.Zero, f.Clock.Now, 0.5, WeaponActivation.AmmoFed);
+
+        var miss = Fire();
+        Assert.Equal(0, miss.Applied);
+        Assert.Equal(tower.Health.Remaining, miss.Health.Remaining);
+        Assert.Equal(2, miss.Magazine!.Quantity);
+
+        const double keepAtRange = 2000;
+        Assert.Null(flight.CallWire("beyonce", "CmdFollowBall", [tower.Id, keepAtRange]));
+        double SurfaceRange() => flight.Pilot.Position!.DistanceTo(tower.Position) - tower.Radius - pilot.Flight.ShipRadius;
+        for (int second = 0; second < 180 && SurfaceRange() > 2500; second++)
+        {
+            f.Clock.Seconds++;
+            flight.Checkpoint();
+        }
+        Assert.InRange(SurfaceRange(), 0, 2500);
+        targeting.Advance(f.Context);
+        Assert.True(targeting.IsLocked(tower.Id));
+        var hit = Fire();
+        Assert.Equal(3000, hit.Weapon.Optimal, 8);
+        Assert.Equal(3000, hit.Weapon.Falloff, 8);
+        Assert.True(hit.Applied > 0, $"Quality {hit.Quality}, damage {hit.Weapon.Damage}, health {hit.Health.Remaining}");
+        Assert.Equal(tower.Health.Remaining.Shield - hit.Applied, hit.Health.Remaining.Shield, 8);
+        Assert.Equal(1, hit.Magazine!.Quantity);
+        flight.RefreshNpcs();
+        Assert.Equal(hit.Health, Assert.Single(flight.VisibleNpcs, npc => npc.Id == tower.Id).Health);
+        Assert.Contains(flight.Updates, update => update.Command is DestinyCommand.OnDamageStateChange damage && damage.Id == tower.Id);
+    }
 
     [Theory]
     [InlineData(892, 4)]
@@ -214,8 +320,7 @@ public sealed class MissionLayoutTests
     [Fact]
     public void RolledBackTriggerPreservesPositionsAndCommittedTriggerStartsReinforcements()
     {
-        const int guristasBlockade = 2924;
-        using MissionFixture f = Create(guristasBlockade, 1);
+        using MissionFixture f = Create(GuristasBlockade, 1);
         var mission = f.Accept(f.Request());
         var room = Assert.Single(f.Missions.Sites(mission.SystemId));
         f.Missions.Arrive(mission.SystemId, room.Position);
@@ -249,7 +354,7 @@ public sealed class MissionLayoutTests
             .ToArray();
     }
 
-    private static MissionFixture Create(int missionId, int level, bool live = false)
+    private static MissionFixture Create(int missionId, int level, bool live = false, Action<CatalogDbContext>? configure = null)
     {
         var fixture = new MissionFixture(
             level,
@@ -259,7 +364,9 @@ public sealed class MissionLayoutTests
             {
                 string key = missionId.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 catalog.Database.ExecuteSql($"DELETE FROM SourceRecord WHERE Dataset='client/missions' AND Key<>{key}");
-            }
+                configure?.Invoke(catalog);
+            },
+            combatScene: true
         );
         using WorldDbContext world = new(fixture.Db.Path);
         world.Add(
