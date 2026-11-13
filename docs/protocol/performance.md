@@ -3975,3 +3975,59 @@ revision and the reported multi-second skill stall remain unverified.
 
 After deploying, apply points to a queued skill with a fitted weapon and compare the first regional summary and
 item book call times in the Docker log.
+
+## Mining-fit skill-point stalls, November 13, 2026
+
+The follow-up Docker log reported 1,628.62 ms for `ApplyFreeSkillPointsToQueue`, including 1,624.23 ms in the handler,
+0.49 ms waiting for ownership and 3.44 ms of separately reported projection time. A replay used the same pilot, Venture,
+two Miner I modules and saved queue from the local November 12 copy. On `b73c1cdd`, the allocation took 53.49 ms.
+Refreshing the mining module attributes opened a world SQLite transaction, and its fallback projection took 882.69 ms.
+The fallback was inside the handler and was measured separately by the database trace.
+
+Mining module notifications now read through the existing pilot-scoped resident calculation. Drone control reads reuse
+the fitting snapshot's control limits and still compute current bandwidth from the live drone roster. Ship inventory and
+hangar reads use committed resident hulls and keep the owner, location and contract escrow checks. Slow checkpoint reports
+include the owner wait, resident capture, relational copy, detached projection and file write times at warning level.
+The [pinned skill-point route](characters.md#skill-point-queue-call-latency-november-13-2026) and the
+[EVE University training guide](https://wiki.eveuniversity.org/Skill_training#Training_skills) describe the queue flow.
+The older EveJS `skillMgrService.js` exposes the same queue entry point
+(SHA-256 `64D7E60FC25C835CBB87C535BC10758AFADE4D17B23CE163BB8DED3C37451B5F`).
+
+### Automated validation
+
+The matched Release replay through reply and notification encoding took 1,012.70 ms on `b73c1cdd` and 107.37 ms
+with resident mining attributes and shared drone control limits. World ownership fell from 985.68 to 88.24 ms.
+World SQLite projection dropped out of the updated call. The 41 remaining commands used one read-only catalog
+connection. Fitting calculations went from two to one. The reply bytes and seven-packet count matched.
+The updated bound ship inventory read took 31.74 ms with zero SQL commands, connection opens or fitting calculations.
+Three separate checkpoint captures of the 376 MiB relational image took 0.22–1.81 ms for resident capture and
+152.36–189.24 ms for SQLite copy. The local replay did not reproduce the Docker checkpoint holds.
+
+The exact development filter selected
+`FreeSkillPointServiceTests.WarmResidentQueueCallsSpendAndCheckpointWithoutWorldSql` and
+`PilotFleetTests.ResidentHullReadsUseCommittedMembershipWithoutSql`. Both cases passed in 7.35 seconds.
+The solution built with zero warnings and errors. The expanded filter below passed 463 of 464 cases in about
+five minutes. `FittingSnapshotTests.ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes`
+counted ten SQL commands against a limit of nine. The same assertion failed with ten commands on `72b6e91e`,
+and the tested offline fitting path was unchanged between `72b6e91e` and `b73c1cdd`. Both Python policy suites
+passed, as did .NET style, CSharpier, line-width and Git whitespace checks.
+
+```powershell
+$classes = @(
+    'FreeSkillPoint', 'PilotTrainingTests', 'Eden.Protocol.Tests.Mining.MiningTests', 'MiningTierTests',
+    'MiningCrystalTests', 'IceMiningTests', 'GasMiningTests', 'MiningSkillPointRewardTests', 'PilotFleetTests',
+    'PilotInventoryTests', 'ShipStorageTests', 'ContractAssetServiceTests', 'PilotDroneTests',
+    'ResidentDroneTests', 'DroneEquipmentTests', 'DroneHullTests', 'FittingSnapshotTests', 'CapsuleerFitRetentionTests',
+    'LiveWorldTests', 'DetachedCheckpointTests', 'CheckpointOwnershipTests', 'ServerLogTests'
+)
+$filter = ($classes | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled. The Docker host rejected SSH authentication.
+
+### Optional maintainer checks
+
+Apply points to a queued skill with mining lasers fitted after deployment. Compare the `World checkpoint`
+timing breakdown if checkpoint warnings continue.

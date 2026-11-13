@@ -23,6 +23,8 @@ using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -42,9 +44,13 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Read(world => ModuleAttributes(world, catalog, pilotId, module), new(pilots: [pilotId]));
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var result = ModuleAttributes(world, catalog, pilotId, module);
         transaction.Commit();
         return result;

@@ -41,6 +41,12 @@ public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
             weapon.LocationId = pilot.ShipId;
             weapon.FlagId = (int)InventoryFlag.HighSlot0;
             weapon.Online = true;
+            var miner = world
+                .Set<OwnedItem>()
+                .Single(item => item.OwnerId == pilotId && item.TypeId == InventoryDefinitions.CivilianMinerType);
+            miner.LocationId = pilot.ShipId;
+            miner.FlagId = (int)InventoryFlag.HighSlot1;
+            miner.Online = true;
             world.SaveChanges();
         }
         using (LiveWorld live = new(new(db.Path), clock, output.WriteLine))
@@ -94,7 +100,7 @@ public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
             {
                 services.GetRequiredService<PilotBrain>().Read(pilotId, context.Pilot.ShipId);
             }
-            Assert.Null(await Measure("ApplyFreeSkillPointsToQueue", expectedFits: 2));
+            Assert.Null(await Measure("ApplyFreeSkillPointsToQueue", expectedFits: 1));
             var notifications = packets
                 .Skip(1)
                 .Select(bytes =>

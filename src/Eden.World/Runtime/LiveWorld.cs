@@ -746,17 +746,23 @@ internal sealed partial class LiveWorld : IDisposable
                     _checkpoints.Dequeue();
                 }
             }
-            Report(
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"World checkpoint {completed.Generation}: wait={completed.Wait.TotalMilliseconds:F2} ms, "
-                        + $"capture={completed.Capture.TotalMilliseconds:F2} ms, copy={completed.Copy.TotalMilliseconds:F2} ms, "
-                        + $"project={projection.TotalMilliseconds:F2} ms, "
-                        + $"write={write.TotalMilliseconds:F2} ms, bytes={completed.Bytes}, copyBytes={completed.CopyBytes}, "
-                        + $"allocated capture/copy/project/write={completed.CaptureAllocatedBytes}/{completed.CopyAllocatedBytes}/"
-                        + $"{completed.ProjectionAllocatedBytes}/{completed.WriteAllocatedBytes}."
-                )
+            string timing = string.Create(
+                CultureInfo.InvariantCulture,
+                $"World checkpoint {completed.Generation}: wait={completed.Wait.TotalMilliseconds:F2} ms, "
+                    + $"capture={completed.Capture.TotalMilliseconds:F2} ms, copy={completed.Copy.TotalMilliseconds:F2} ms, "
+                    + $"project={projection.TotalMilliseconds:F2} ms, "
+                    + $"write={write.TotalMilliseconds:F2} ms, bytes={completed.Bytes}, copyBytes={completed.CopyBytes}, "
+                    + $"allocated capture/copy/project/write={completed.CaptureAllocatedBytes}/{completed.CopyAllocatedBytes}/"
+                    + $"{completed.ProjectionAllocatedBytes}/{completed.WriteAllocatedBytes}."
             );
+            if ((completed.Wait + completed.Capture + completed.Copy).TotalMilliseconds >= SlowOwnershipMilliseconds)
+            {
+                ServerLog.Console.Warning(timing);
+            }
+            else
+            {
+                Report(timing);
+            }
             return null;
         }
         catch (Exception exception)

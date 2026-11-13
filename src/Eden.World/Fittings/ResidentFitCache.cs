@@ -21,6 +21,8 @@ internal sealed record MissileFittingSnapshot(
 internal sealed record FittingSnapshot(
     FrozenDictionary<long, FrozenDictionary<DogmaAttributeId, double>> Modules,
     IReadOnlyList<FittingSkillBonus> SkillBonuses,
+    double DroneControlLimit,
+    double DroneControlDistance,
     MissileFittingSnapshot? Missiles
 )
 {
@@ -39,6 +41,8 @@ internal sealed record FittingSnapshot(
         return new(
             modules.ToFrozenDictionary(module => module.Item.Id, module => graph.Attributes(module.Item.Id).ToFrozenDictionary()),
             Array.AsReadOnly(bonuses),
+            graph.Read(pilot, DogmaAttributeId.MaxActiveDrones),
+            graph.Read(pilot, DogmaAttributeId.DroneControlDistance),
             missiles.Count == 0
                 ? null
                 : new(

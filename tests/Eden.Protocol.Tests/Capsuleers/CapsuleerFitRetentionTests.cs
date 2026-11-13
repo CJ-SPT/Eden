@@ -14,7 +14,7 @@ public sealed class CapsuleerFitRetentionTests
         const string revision = "current";
         using ResidentFitCache cache = new(new(Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".sqlite")));
         var attributes = new Dictionary<DogmaAttributeId, double> { [DogmaAttributeId.MaxVelocity] = 100 }.ToFrozenDictionary();
-        FittingSnapshot snapshot = new(FrozenDictionary<long, FrozenDictionary<DogmaAttributeId, double>>.Empty, [], null);
+        FittingSnapshot snapshot = new(FrozenDictionary<long, FrozenDictionary<DogmaAttributeId, double>>.Empty, [], 0, 0, null);
         cache.Pin(Enumerable.Range(1, profiles + 1).Select(pilot => (long)pilot));
         cache.Publish(Enumerable.Range(1, profiles).ToDictionary(pilot => Key(pilot), _ => new FitCacheEntry(revision, attributes)));
         cache.PublishSnapshots(

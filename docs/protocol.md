@@ -635,6 +635,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 - [Regional best-ask performance (November 12, 2026)](protocol/industry.md#regional-best-ask-performance-november-12-2026)
 - [Skill-point and market call latency (November 13, 2026)](protocol/performance.md#skill-point-and-market-call-latency-november-13-2026)
+- [Mining-fit skill-point stalls (November 13, 2026)](protocol/performance.md#mining-fit-skill-point-stalls-november-13-2026)
 
 - [Inventory estimates and reference market history (November 9, 2026)](protocol/industry.md#inventory-estimates-and-reference-market-history--november-9-2026)
 

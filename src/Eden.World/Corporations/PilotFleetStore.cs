@@ -14,6 +14,8 @@ using Eden.World.Combat;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -49,26 +51,35 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
 
     public IReadOnlyList<InventoryItem> Ships(long pilotId, long stationId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return world
-            .Ships.AsNoTracking()
-            .Include(s => s.Position)
-            .Where(s =>
-                s.OwnerId == pilotId && (s.StructureId ?? (long)s.StationId) == stationId && s.Position == null && s.StoredInId == null
-            )
-            .OrderBy(s => s.Id)
-            .AsEnumerable()
-            .Select(s => Read(catalog, s))
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<Ship>(s =>
+                        s.OwnerId == pilotId
+                        && (s.StructureId ?? (long)s.StationId) == stationId
+                        && s.Position == null
+                        && s.StoredInId == null
+                    )
+                    .OrderBy(s => s.Id)
+                    .AsEnumerable()
+                    .Select(s => Read(catalog, s))
+                    .ToArray()
+        );
     }
 
     public InventoryItem? Find(long pilotId, long shipId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var ship = world.Ships.AsNoTracking().Include(s => s.Position).SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
-        return ship is null ? null : Read(catalog, ship);
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(world => Owned(world.Ships.Find(shipId)), new(ships: [shipId]));
+        }
+        using WorldDbContext world = new(database.Path);
+        return Owned(world.Ships.AsNoTracking().Include(s => s.Position).SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId));
+
+        InventoryItem? Owned(Ship? ship) => ship?.OwnerId == pilotId ? Read(catalog, ship) : null;
     }
 
     public string Name(long pilotId, long shipId)

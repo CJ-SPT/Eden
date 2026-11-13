@@ -8,6 +8,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -16,6 +17,7 @@ using Eden.Protocol.Skills;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +27,30 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class PilotFleetTests
 {
+    [Fact]
+    public void ResidentHullReadsUseCommittedMembershipWithoutSql()
+    {
+        using TestWorld fixture = new();
+        var pilot = fixture.Store.FindPilot(1000001)!;
+        var fleet = fixture.Services.GetRequiredService<IPilotFleet>();
+        var docked = Assert.Single(fleet.Ships(pilot.PilotId, pilot.StationId));
+        using LiveWorld live = new(new(fixture.Path), TimeProvider.System, _ => { });
+        live.Economy.Warm();
+        using (var metrics = SessionPerformance.Begin("resident docked hull", _ => { }, force: true)!)
+        {
+            Assert.Equal(docked, fleet.Find(pilot.PilotId, pilot.ShipId));
+            Assert.Equal(docked, Assert.Single(fleet.Ships(pilot.PilotId, pilot.StationId)));
+            Assert.Null(fleet.Find(pilot.PilotId + 1, pilot.ShipId));
+            Assert.Null(fleet.Find(pilot.PilotId, long.MaxValue));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        fixture.Store.SetPosition(pilot.ShipId, SpacePosition.Zero, pilot.SystemId);
+        Assert.Equal(pilot.SystemId, fleet.Find(pilot.PilotId, pilot.ShipId)!.LocationId);
+        Assert.Empty(fleet.Ships(pilot.PilotId, pilot.StationId));
+    }
+
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();

@@ -93,17 +93,21 @@ internal sealed partial class PilotDroneStore(
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Find(pilotId)!;
         long ship = pilot.ActiveShipId;
-        var fitting = FittingCalculation.Read(world, catalog, pilot);
+        var snapshot = world.CachedFittingSnapshot(pilotId, ship, world.FitRevision(pilotId));
+        var limits = snapshot is not null
+            ? (Count: checked((int)snapshot.DroneControlLimit), Range: (int)snapshot.DroneControlDistance)
+            : CalculateLimits();
         double bandwidth = world
             .Filter<WorldDrone>(d => d.PilotId == pilotId && d.ControllerShipId == ship && d.SystemId != null)
             .AsEnumerable()
             .Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth);
-        return new(
-            DroneCatalog.ControlLimit(fitting),
-            (int)fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
-            bandwidth,
-            Settings(world, pilotId)
-        );
+        return new(limits.Count, limits.Range, bandwidth, Settings(world, pilotId));
+
+        (int Count, int Range) CalculateLimits()
+        {
+            var fitting = FittingCalculation.Read(world, catalog, pilot);
+            return (DroneCatalog.ControlLimit(fitting), (int)fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance));
+        }
     }
 
     public void ChangeSettings(long pilotId, bool? aggressive, bool? focusFire)
