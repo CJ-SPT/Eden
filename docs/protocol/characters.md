@@ -84,6 +84,8 @@ The focused filter below passed **113 tests in 58s**, including malformed and mi
 existing character, corporation and gateway reads. Tool and solution restore, the solution build with zero
 warnings or errors (6.07s), both Python policy suites (8 catalog and 9 formatting tests), and formatting
 verification passed in 122.44s total. The full .NET suite was outside the requested scope.
+After integrating main through `5b694773`, the same 113 tests passed in 1m 13s. The build, both Python suites,
+formatting and diff checks passed in 137.91s total, including tool and solution restore.
 
 ```text
 FullyQualifiedName~Eden.Protocol.Tests.Gateway|FullyQualifiedName~CharacterSheetServiceTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~CorporationSelectionTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationContactsTests|FullyQualifiedName~PilotServicesTests
