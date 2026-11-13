@@ -93,6 +93,15 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["unanchoring"] = structure.UnanchorAt;
             fields["hasCore"] = structure.HasCore;
         }
+        if (Body.Wormhole is { } wormhole)
+        {
+            fields["wormholeAge"] = 0;
+            fields["wormholeSize"] = 1d;
+            fields["maxShipJumpMass"] = (long)wormhole.MaximumShipMass;
+            fields["nebulaType"] = null;
+            fields["isDestTriglavian"] = 0;
+            fields["otherSolarSystemClass"] = wormhole.DestinationClass;
+        }
         if (Body.HackingState is { } hackingState)
         {
             fields["hackingSecurityState"] = hackingState;

@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 150;
+    internal const int CurrentVersion = 151;
 
     public static void Open(
         WorldDbContext world,
@@ -138,6 +138,7 @@ internal static class WorldMigration
             Eden.World.Economy.EconomicStore.ReconcileIndustryPrices(world, catalog);
         }
         Eden.World.Exploration.HackingSchema.Upgrade(world);
+        Eden.World.Exploration.WormholeTravelSchema.Upgrade(world);
         Eden.World.Mining.MiningSiteSchema.Upgrade(world);
         Eden.World.Propulsion.SpatialNavigationSchema.Upgrade(world);
         InventoryLookupSchema.Upgrade(world);

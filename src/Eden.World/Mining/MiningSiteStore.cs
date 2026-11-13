@@ -56,11 +56,18 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
         }
         double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(systemId, double.NaN);
         bool lowSecurity = security is > 0 and <= 1 && NpcSpawnRules.SecurityBand(security) == NpcSecurityBand.Low;
+        int wormholeClass = WormholeRules.IsWormholeSystem(systemId)
+            ? (int)(catalog.Read(CatalogData.Client.Systems, (long)systemId)?.WormholeClassID ?? 0)
+            : 0;
         var eligible = MiningSiteCatalog
             .Sites.Where(s =>
                 s.Family == family
                 && (!s.LowSecurityOnly || lowSecurity)
-                && (family == MiningFamily.Ice ? s.Systems!.Contains(systemId) : s.Regions.Contains(system.RegionId))
+                && (
+                    family == MiningFamily.Ice ? s.Systems!.Contains(systemId)
+                    : s.WormholeClasses is { } classes ? classes.Contains(wormholeClass)
+                    : s.Regions.Contains(system.RegionId)
+                )
                 && s.Deposits.All(d =>
                     catalog.FittingType(d.TypeId)?.GroupId
                     == (family == MiningFamily.Ice ? MiningDefinitions.IceGroup : MiningDefinitions.GasCloudGroup)
@@ -86,7 +93,12 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
         if (site is null || site.ReplaceAt <= now)
         {
             long id = Math.Max(MiningSiteRules.FirstSiteId, (world.Set<SavedMiningSite>().Max(s => (long?)s.Id) ?? 0) + 1);
-            var definition = eligible[(int)((id - MiningSiteRules.FirstSiteId + systemId) % eligible.Length)];
+            int prior =
+                site is not null && wormholeClass > 0
+                    ? Array.FindIndex(eligible, definition => definition.DungeonId == site.DungeonId)
+                    : -1;
+            long next = prior >= 0 ? prior + 1 : id - MiningSiteRules.FirstSiteId + systemId;
+            var definition = eligible[(int)(next % eligible.Length)];
             double offset =
                 CombatAnomalyRules.PlacementOffset
                 * (

@@ -5,6 +5,7 @@ using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -114,6 +115,15 @@ internal sealed partial class FlightSession(
     internal bool CanAcquireTargets => CanTarget && SpatialStatus.TargetingReadyAt <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     public bool InWarp => _navigation.Warp is not null;
+    private bool _wormholeJumpCancelled;
+
+    internal bool ConsumeWormholeJumpCancellation()
+    {
+        bool cancelled = _wormholeJumpCancelled;
+        _wormholeJumpCancelled = false;
+        return cancelled;
+    }
+
     internal bool PreparingWarp => _navigation.WarpDestination is not null;
     public bool MicrowarpdriveBlocked => ModuleEffects.MwdBlocked;
 
@@ -887,7 +897,13 @@ internal sealed partial class FlightSession(
             }
             else
             {
-                if (_travel.Arrival is { } arrival)
+                if (_travel.WormholeArrival is long wormhole)
+                {
+                    Update(
+                        new DestinyCommand.SpecialEffect(wormhole, null, null, null, null, "effects.WormholeActivity", false, true, false)
+                    );
+                }
+                else if (_travel.Arrival is { } arrival)
                 {
                     Effects.GateActivity(arrival.GateId, arriving: true);
                 }
@@ -941,6 +957,38 @@ internal sealed partial class FlightSession(
         return PilotCallResult.None;
     }
 
+    internal void StartWormholeJump(long entrance, IWormholeTravel travel, ISystemObjects systems)
+    {
+        Checkpoint();
+        if (!CanUseSelfModules || InWarp || PreparingWarp || MicroJumpSpooling)
+        {
+            throw new InvalidDataException("Wait until your ship is ready to enter the wormhole.");
+        }
+        var destination = travel.Prepare(Pilot.PilotId, Pilot.ShipId, entrance);
+        var objects = systems.Load(destination.System.Id);
+        _travel.BeginGate(
+            new(entrance, destination.Exit, destination.System, objects, travel),
+            Stamp,
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+        );
+        missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        drones?.Release(Pilot.PilotId, Pilot.ShipId);
+        tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
+        electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId, incoming: true);
+        SetAtRest();
+        Update(new DestinyCommand.Stop(Pilot.ShipId));
+        Update(
+            new DestinyCommand.WormholeJumpOut(
+                Pilot.ShipId,
+                entrance,
+                destination.DestinationClass,
+                destination.System.Id,
+                JumpDurationTicks * 1000
+            )
+        );
+        space.Publish(CreateContact());
+    }
+
     public bool CompleteJump()
     {
         if (_travel.GateDue(Stamp) is not { } jump)
@@ -948,7 +996,20 @@ internal sealed partial class FlightSession(
             return false;
         }
         var position = GateTravelRules.Arrival(Pilot.ShipId, jump.Exit.Position, jump.Exit.Radius, Pilot.Flight.ShipRadius);
-        if (gates is not null)
+        if (jump.Wormhole is { } wormhole)
+        {
+            try
+            {
+                position = wormhole.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
+            }
+            catch (InvalidDataException)
+            {
+                _travel.Reset();
+                _wormholeJumpCancelled = true;
+                return false;
+            }
+        }
+        else if (gates is not null)
         {
             position = gates.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
         }
@@ -958,8 +1019,12 @@ internal sealed partial class FlightSession(
         }
         LeaveSpace();
         Scene.ReplaceObjects(jump.Objects);
+        if (jump.Wormhole is not null)
+        {
+            Scene.RefreshAnomalies(SceneContext, [jump.Exit]);
+        }
         Pilot = Pilot with { Position = position, CurrentSystem = jump.System };
-        _travel.CompleteGate(jump.Exit.Id, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        _travel.CompleteGate(jump.Exit.Id, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), jump.Wormhole is not null);
         return true;
     }
 

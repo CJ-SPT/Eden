@@ -131,6 +131,40 @@ formatting and audit reproduction passed.
 
 **Optional maintainer checks:** Probe a low-security Cytoserocin site and compare the native Hybrid and Biochemical product lists.
 
+## Fullerite reservoirs and wormhole access
+
+Three stable, two-way signatures connect Tama to J125227 (C2), Aunenen to J114342 (C3), and Old Man Star to J152820 (C5).
+Players resolve the entrances with probes, warp to them, and use the native wormhole jump call. Eden checks the fitted ship mass,
+range, travel permissions and five-minute per-direction polarization. The saved polarization and ship movement commit together.
+The three connections use pinned wormhole types and jump mass limits. Stable connections provide repeatable access to the gas
+supply. Rolling connections, total-mass collapse and Sleeper waves in the reservoirs remain pending.
+
+The nine pinned reservoir templates supply all nine Fullerite gases through finite deposits. The template rotates after expiry
+or depletion and follows the documented C1–C6 restrictions for perimeter, frontier and core sites. The audit follows the
+implemented routes and reservoir templates. It models closed acquisition paths for 543 of 1,188 admitted Tech II recipes,
+including the Ark, Anshar, Nomad and Rhea. Its 412 remaining distinct blockers include missing legitimate blueprint price
+references and special loot or LP paths. Those items remain unavailable through NPC sell supply where no legitimate source
+exists. The model establishes recipe reachability. End-to-end production of each jump freighter remains unverified.
+
+The build-3662168 native routes were inspected in `movementFunctions.RealEnterWormhole`,
+`jumpPolarization.UpdatePolarizationAndBroadcast`, and the wormhole space object's `Assemble`.
+Local evejs build-3396210 references were `wormholeMgrService.js`
+(SHA-256 `92F88B40BE233B2CCE7A73E51460981F65F003EEB14361E3D1DE511409CBB258`)
+and `wormholeSignatureProvider.js`
+(SHA-256 `9FA665CE37FA930E92EB4530163BB8F34401C36C387C7061F8367A12F93FA631`).
+See [EVE University wormholes](https://wiki.eveuniversity.org/Wormholes) and
+[wormhole gas sites](https://wiki.eveuniversity.org/Wormhole_Gas_Sites).
+
+**Automated validation.** The exact saved-world scenario uses real probe launches and scan results, the wormhole RPC,
+space travel, a finite gas deposit, return transit and reopen-persistent polarization (8.49 seconds). The final affected
+filter passed 112 cases in 63.18 seconds across wormhole travel, probing, gas and ice mining, gate travel, anomalies,
+reactions and world initialization and migration. Tool and solution restore, solution build, both Python policy suites,
+formatting and audit reproduction passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Probe a wormhole, jump both ways and verify native effects and the polarization timer.
+
 ## Personal mining ledger â€” November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of

@@ -14,7 +14,8 @@ public sealed record MiningSiteDefinition(
     IReadOnlyList<int> Regions,
     IReadOnlyList<MiningDepositDefinition> Deposits,
     IReadOnlyList<int>? Systems = null,
-    bool LowSecurityOnly = false
+    bool LowSecurityOnly = false,
+    IReadOnlyList<int>? WormholeClasses = null
 );
 
 public sealed record MiningSiteDefinitions(int Build, IReadOnlyList<MiningSiteDefinition> Sites);

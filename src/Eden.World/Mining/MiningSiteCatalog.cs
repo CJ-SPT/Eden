@@ -28,6 +28,10 @@ internal static class MiningSiteCatalog
             || file.Sites.Any(s =>
                 s.Family is not (MiningFamily.Gas or MiningFamily.Ice)
                 || (s.Family == MiningFamily.Ice && s.Systems is not { Count: > 0 })
+                || (
+                    s.WormholeClasses is { } classes
+                    && (s.Family != MiningFamily.Gas || classes.Count == 0 || classes.Any(c => c is < 1 or > 6))
+                )
                 || s.Deposits.Count is < 1 or >= MiningSiteRules.DepositsPerSite
                 || s.Deposits.Any(d => d.Quantity <= 0 || !float.IsFinite(d.Radius) || d.Radius < 0)
             )

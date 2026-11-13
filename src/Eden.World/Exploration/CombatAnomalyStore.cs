@@ -20,7 +20,8 @@ namespace Eden.World.Exploration;
 internal sealed partial class CombatAnomalyStore(
     WorldDatabase database,
     IPirateExploration? exploration = null,
-    IMiningSites? mining = null
+    IMiningSites? mining = null,
+    IWormholeTravel? wormholes = null
 ) : ICombatAnomalies
 {
     private sealed record View(
@@ -90,6 +91,7 @@ internal sealed partial class CombatAnomalyStore(
             IReadOnlyList<CombatAnomaly> Combat,
             IReadOnlyList<CombatAnomaly> Exploration,
             IReadOnlyList<CombatAnomaly> Mining,
+            IReadOnlyList<CombatAnomaly> Wormholes,
             IReadOnlyList<CombatAnomaly> Combined
         )
     > _signatures = [];
@@ -105,23 +107,25 @@ internal sealed partial class CombatAnomalyStore(
         using (database.EnterMovement())
         {
             var combat = ListCore(systemId, now, true);
-            if (exploration is null && mining is null)
+            if (exploration is null && mining is null && wormholes is null)
             {
                 return combat;
             }
             var other = exploration?.Signatures(systemId, now) ?? Array.Empty<CombatAnomaly>();
             var resources = mining?.Signatures(systemId, now) ?? Array.Empty<CombatAnomaly>();
+            var connections = wormholes?.Signatures(systemId) ?? Array.Empty<CombatAnomaly>();
             if (
                 _signatures.TryGetValue(systemId, out var view)
                 && ReferenceEquals(view.Combat, combat)
                 && ReferenceEquals(view.Exploration, other)
                 && ReferenceEquals(view.Mining, resources)
+                && ReferenceEquals(view.Wormholes, connections)
             )
             {
                 return view.Combined;
             }
-            var combined = combat.Concat(other).Concat(resources).ToArray();
-            _signatures[systemId] = (combat, other, resources, combined);
+            var combined = combat.Concat(other).Concat(resources).Concat(connections).ToArray();
+            _signatures[systemId] = (combat, other, resources, connections, combined);
             return combined;
         }
     }

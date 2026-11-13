@@ -83,27 +83,30 @@ internal static class ProbeScanningWire
                 ["groupID"] = ProbeScanRules.SignatureGroup,
                 ["typeID"] = name ? ProbeScanRules.SignatureType : null,
                 ["strengthAttributeID"] = group
-                    ? result.Site.Mining == Eden.Gameplay.Mining.MiningFamily.Gas
-                        ? Eden.Gameplay.Mining.MiningSiteRules.GasStrengthAttribute
-                        : result.Site.Exploration switch
-                        {
-                            ExplorationKind.Data => HackingRules.DataStrengthAttribute,
-                            ExplorationKind.Relic => HackingRules.RelicStrengthAttribute,
-                            _ => CombatStrengthAttribute,
-                        }
+                    ? result.Site.Wormhole
+                        ? WormholeRules.StrengthAttribute
+                        : result.Site.Mining == Eden.Gameplay.Mining.MiningFamily.Gas
+                            ? Eden.Gameplay.Mining.MiningSiteRules.GasStrengthAttribute
+                            : result.Site.Exploration switch
+                            {
+                                ExplorationKind.Data => HackingRules.DataStrengthAttribute,
+                                ExplorationKind.Relic => HackingRules.RelicStrengthAttribute,
+                                _ => CombatStrengthAttribute,
+                            }
                     : null,
-                ["dungeonID"] = name ? result.Site.DungeonId : null,
-                ["dungeonNameID"] = name ? result.Site.NameId : null,
-                ["archetypeID"] = group
-                    ? result.Site.Mining == Eden.Gameplay.Mining.MiningFamily.Gas
-                        ? Eden.Gameplay.Mining.MiningSiteRules.GasArchetype
-                        : result.Site.Exploration switch
-                        {
-                            ExplorationKind.Data => HackingRules.DataArchetype,
-                            ExplorationKind.Relic => HackingRules.RelicArchetype,
-                            _ => CombatAnomalyRules.CombatSiteArchetypeId,
-                        }
-                    : null,
+                ["dungeonID"] = name && !result.Site.Wormhole ? result.Site.DungeonId : null,
+                ["dungeonNameID"] = name && !result.Site.Wormhole ? result.Site.NameId : null,
+                ["archetypeID"] =
+                    group && !result.Site.Wormhole
+                        ? result.Site.Mining == Eden.Gameplay.Mining.MiningFamily.Gas
+                            ? Eden.Gameplay.Mining.MiningSiteRules.GasArchetype
+                            : result.Site.Exploration switch
+                            {
+                                ExplorationKind.Data => HackingRules.DataArchetype,
+                                ExplorationKind.Relic => HackingRules.RelicArchetype,
+                                _ => CombatAnomalyRules.CombatSiteArchetypeId,
+                            }
+                        : null,
                 ["factionID"] = name ? result.Site.FactionId : null,
                 ["certainty"] = result.Certainty,
                 ["pos"] = Position(result.Position),

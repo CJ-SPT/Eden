@@ -85,7 +85,7 @@ def audit(db, production, market, mining):
     dataset_names = (
         "client/blueprints", "client/types", "client/typedogma", "client/typematerials", "client/schematics",
         "client/npccorporations", "client/asteroidcountbytypeidbeltid", "sde/mapMoons", "sde/npcCharacters",
-        "client/npccharacters", "client/stationoperations", "client/solarsystemcontent",
+        "client/npccharacters", "client/stationoperations", "client/solarsystemcontent", "client/systems",
     )
     fingerprints = dict(db.execute(
         "SELECT Name,Sha256 FROM SourceDataset ORDER BY Name"
@@ -167,6 +167,13 @@ def audit(db, production, market, mining):
         if system_id in reachable:
             region_systems[region_id].append(system_id)
     system_records = records(db, "client/solarsystemcontent")
+    # The three paired connections in WormholeTravelStore give access to C2, C3 and C5.
+    wormhole_routes = {30002813: 31000356, 30001398: 31000881, 30005000: 31001880}
+    wormhole_systems = records(db, "client/systems")
+    wormhole_classes = {
+        wormhole_systems.get(target, {}).get("wormholeClassID")
+        for source, target in wormhole_routes.items() if source in reachable
+    }
     for site in mining["sites"]:
         if site["family"] == 1 and any(system in reachable for system in site["systems"]):
             for deposit in site["deposits"]:
@@ -183,6 +190,9 @@ def audit(db, production, market, mining):
                 gas = deposit["typeId"]
                 if not paths.get(gas):
                     add(gas, "gas signature", site["dungeonId"], milestone=5 if site.get("lowSecurityOnly") else 1)
+        if wormhole_classes.intersection(site.get("wormholeClasses", ())):
+            for deposit in site["deposits"]:
+                add(deposit["typeId"], "wormhole gas site", site["dungeonId"], milestone=5)
 
     for type_id, data in types.items():
         if data.get("published") != 1:
@@ -190,8 +200,6 @@ def audit(db, production, market, mining):
         if groups.get(type_id) in MOON_ORE_GROUPS and data.get("variationParentTypeID", type_id) == type_id:
             if not names.get(type_id, "").startswith("Compressed "):
                 add(type_id, "moon extraction", groups[type_id], milestone=2)
-        if names.get(type_id, "").startswith("Fullerite-C"):
-            add(type_id, "wormhole gas site", None, milestone=5)
         if categories.get(groups.get(type_id)) == PLANETARY_RESOURCE_CATEGORY:
             add(type_id, "planetary extraction", None)
 

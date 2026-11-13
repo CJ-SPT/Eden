@@ -66,6 +66,14 @@ CYTO_REGIONS = {
 }
 
 
+# Native Fullerite reservoir templates, grouped by documented wormhole access.
+RESERVOIRS = {
+    **{dungeon: [1, 2, 3, 4] for dungeon in range(3555, 3560)},
+    **{dungeon: [3, 4, 5, 6] for dungeon in range(3560, 3562)},
+    **{dungeon: [5, 6] for dungeon in range(3562, 3564)},
+}
+
+
 def export(catalog_path, output, sites_output):
     if catalog_path.resolve() in (output.resolve(), sites_output.resolve()) or output.resolve() == sites_output.resolve():
         raise ValueError('The output must not overwrite the source catalog')
@@ -92,11 +100,13 @@ def export(catalog_path, output, sites_output):
             name = record('client/localization_fsd_en-us', name_id).get('text', '')
             ice = int(key) in ICE_SYSTEMS
             cyto = name in CYTO_REGIONS
-            if ((not ice and ((name not in MYKO_REGIONS and not cyto) or dungeon.get('archetypeID') != 30))
+            reservoir = RESERVOIRS.get(int(key))
+            if ((not ice and ((name not in MYKO_REGIONS and not cyto and reservoir is None)
+                              or dungeon.get('archetypeID') != 30))
                     or (ice and dungeon.get('archetypeID') != 28) or len(dungeon.get('rooms', {})) != 1):
                 continue
             objects = list(next(iter(dungeon['rooms'].values())).get('objects', {}).values())
-            if any(o.get('entities') for o in objects):
+            if reservoir is None and any(o.get('entities') for o in objects):
                 raise ValueError('Unexpected defenders in ' + name)
             entry = next(o['position'] for o in objects if o.get('objectID') == dungeon.get('entryObjectID'))
             deposits = []
@@ -105,7 +115,7 @@ def export(catalog_path, output, sites_output):
                 row = catalog.execute('SELECT Name,GroupId,Radius FROM ItemType WHERE Id=?', (type_id,)).fetchone()
                 if not row or row[1] != (465 if ice else 711):
                     continue
-                gas_kind = 'Cytoserocin' if cyto else 'Mykoserocin'
+                gas_kind = 'Fullerite' if reservoir else 'Cytoserocin' if cyto else 'Mykoserocin'
                 if (not ice and gas_kind not in row[0]) or obj.get('radius', 0) <= 0:
                     raise ValueError('Unexpected gas resource in ' + name)
                 quantity = int(obj['radius'])
@@ -118,14 +128,17 @@ def export(catalog_path, output, sites_output):
                 pending.add(type_id)
             site = dict(dungeonId=int(key), nameId=name_id, name=name, family=1 if ice else 2,
                         difficulty=dungeon.get('difficulty', 1),
-                        regions=[] if ice else [regions[r] for r in ([CYTO_REGIONS[name]] if cyto else MYKO_REGIONS[name])],
+                        regions=[] if ice or reservoir else
+                        [regions[r] for r in ([CYTO_REGIONS[name]] if cyto else MYKO_REGIONS[name])],
                         deposits=deposits)
             if cyto:
                 site['lowSecurityOnly'] = True
+            if reservoir:
+                site['wormholeClasses'] = reservoir
             if ice:
                 site['systems'] = [systems[s] for s in ICE_SYSTEMS[int(key)]]
             sites.append(site)
-        if len(sites) != len(MYKO_REGIONS) + len(CYTO_REGIONS) + len(ICE_SYSTEMS):
+        if len(sites) != len(MYKO_REGIONS) + len(CYTO_REGIONS) + len(ICE_SYSTEMS) + len(RESERVOIRS):
             raise ValueError('Missing or ambiguous mining site templates')
         types, records, attributes, effects = [], {}, set(), set()
         while pending:

@@ -999,6 +999,326 @@
       "lowSecurityOnly": true
     },
     {
+      "dungeonId": 3555,
+      "nameId": 111380,
+      "name": "Barren Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30370,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 81431.0,
+            "y": 5641.0,
+            "z": 251.0
+          }
+        },
+        {
+          "typeId": 30371,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": -96.0,
+            "y": -49935.0,
+            "z": -50650.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3556,
+      "nameId": 111381,
+      "name": "Token Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30371,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 79571.0,
+            "y": 21462.0,
+            "z": 127.0
+          }
+        },
+        {
+          "typeId": 30372,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3557,
+      "nameId": 111382,
+      "name": "Minor Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30372,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 100000.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30373,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3558,
+      "nameId": 113151,
+      "name": "Ordinary Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30373,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 100000.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30374,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": 27562.0,
+            "y": -3784.0,
+            "z": 11510.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3559,
+      "nameId": 111383,
+      "name": "Sizeable Perimeter Reservoir",
+      "family": 2,
+      "difficulty": 3,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30374,
+          "quantity": 12000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 66824.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30370,
+          "quantity": 6000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "dungeonId": 3560,
+      "nameId": 111384,
+      "name": "Bountiful Frontier Reservoir",
+      "family": 2,
+      "difficulty": 4,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30375,
+          "quantity": 20000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 100000.0,
+            "z": -0.0
+          }
+        },
+        {
+          "typeId": 30376,
+          "quantity": 4000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "dungeonId": 3561,
+      "nameId": 111385,
+      "name": "Vast Frontier Reservoir",
+      "family": 2,
+      "difficulty": 4,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30376,
+          "quantity": 20000,
+          "radius": 100.0,
+          "position": {
+            "x": 93957.0,
+            "y": 46630.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30375,
+          "quantity": 4000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "dungeonId": 3562,
+      "nameId": 111386,
+      "name": "Instrumental Core Reservoir",
+      "family": 2,
+      "difficulty": 5,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30377,
+          "quantity": 24000,
+          "radius": 100.0,
+          "position": {
+            "x": 63757.0,
+            "y": 50678.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30378,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -9153.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        5,
+        6
+      ]
+    },
+    {
+      "dungeonId": 3563,
+      "nameId": 111387,
+      "name": "Vital Core Reservoir",
+      "family": 2,
+      "difficulty": 5,
+      "regions": [],
+      "deposits": [
+        {
+          "typeId": 30378,
+          "quantity": 24000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 100000.0,
+            "z": 0.0
+          }
+        },
+        {
+          "typeId": 30377,
+          "quantity": 2000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": -50000.0,
+            "z": 0.0
+          }
+        }
+      ],
+      "wormholeClasses": [
+        5,
+        6
+      ]
+    },
+    {
       "dungeonId": 5496,
       "nameId": 288481,
       "name": "Blue Ice Belt",

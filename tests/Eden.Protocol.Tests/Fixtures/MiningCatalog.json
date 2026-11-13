@@ -5233,6 +5233,105 @@
       ]
     },
     {
+      "id": 30370,
+      "name": "Fullerite-C50",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 30371,
+      "name": "Fullerite-C60",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 30372,
+      "name": "Fullerite-C70",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 30373,
+      "name": "Fullerite-C72",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 30374,
+      "name": "Fullerite-C84",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 30375,
+      "name": "Fullerite-C28",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 30376,
+      "name": "Fullerite-C32",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 30377,
+      "name": "Fullerite-C320",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 30378,
+      "name": "Fullerite-C540",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 32880,
       "name": "Venture",
       "groupId": 25,
@@ -27576,6 +27675,51 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 30370,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 30371,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 30372,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 30373,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 30374,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 30375,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 30376,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 30377,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 30378,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 32880,
       "data": {
         "dogmaAttributes": [
@@ -40591,6 +40735,186 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 737
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30370,
+      "data": {
+        "descriptionID": 83995,
+        "typeID": 30370,
+        "graphicID": 3218,
+        "capacity": 0.0,
+        "typeNameID": 73055,
+        "iconID": 3218,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 1.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30371,
+      "data": {
+        "descriptionID": 83997,
+        "typeID": 30371,
+        "graphicID": 3218,
+        "capacity": 0.0,
+        "typeNameID": 73057,
+        "iconID": 3218,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 1.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30372,
+      "data": {
+        "descriptionID": 83998,
+        "typeID": 30372,
+        "graphicID": 3220,
+        "capacity": 0.0,
+        "typeNameID": 73058,
+        "iconID": 3220,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 1.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30373,
+      "data": {
+        "descriptionID": 84327,
+        "typeID": 30373,
+        "graphicID": 3223,
+        "capacity": 0.0,
+        "typeNameID": 73404,
+        "iconID": 3223,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 2.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30374,
+      "data": {
+        "descriptionID": 84326,
+        "typeID": 30374,
+        "graphicID": 3222,
+        "capacity": 0.0,
+        "typeNameID": 73403,
+        "iconID": 3222,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 2.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30375,
+      "data": {
+        "descriptionID": 84325,
+        "typeID": 30375,
+        "graphicID": 3222,
+        "capacity": 0.0,
+        "typeNameID": 73402,
+        "iconID": 3222,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 2.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30376,
+      "data": {
+        "descriptionID": 84328,
+        "typeID": 30376,
+        "graphicID": 3225,
+        "capacity": 0.0,
+        "typeNameID": 73405,
+        "iconID": 3225,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 5.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30377,
+      "data": {
+        "descriptionID": 84329,
+        "typeID": 30377,
+        "graphicID": 3224,
+        "capacity": 0.0,
+        "typeNameID": 73406,
+        "iconID": 3224,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 5.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 30378,
+      "data": {
+        "descriptionID": 83996,
+        "typeID": 30378,
+        "graphicID": 3224,
+        "capacity": 0.0,
+        "typeNameID": 73056,
+        "iconID": 3224,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 1859,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
       }
     },
     {

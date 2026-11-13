@@ -272,7 +272,10 @@ public sealed class GasMiningTests
         Assert.NotEqual(site.TargetId, replacement.TargetId);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.DoesNotContain(saved.Set<WorldAsteroid>(), a => deposits.Contains(a.Id));
-        Assert.Equal(16, MiningSiteCatalog.Sites.Count(s => s.Family == MiningFamily.Gas && !s.LowSecurityOnly));
+        Assert.Equal(
+            16,
+            MiningSiteCatalog.Sites.Count(s => s.Family == MiningFamily.Gas && !s.LowSecurityOnly && s.WormholeClasses is null)
+        );
     }
 
     [Theory]

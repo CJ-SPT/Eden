@@ -465,7 +465,8 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                 }
                 var results = authoritative
                     .Results.Where(r =>
-                        world
+                        r.Site.Wormhole && WormholeTravelStore.Exists(catalog, authoritative.SystemId, r.Site.Id)
+                        || world
                             .Set<WorldCombatAnomaly>()
                             .Any(s => s.Id == r.Site.Id && s.CompletedAt == null && s.IsSignature && s.SystemId == authoritative.SystemId)
                         || world
@@ -503,9 +504,13 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     public bool Resolved(long pilotId, long siteId, int systemId, long now)
     {
         using WorldDbContext world = new(database.Path);
+        using CatalogDbContext catalog = new(database.CatalogPath);
         return world.Set<SavedResolvedSignature>().Any(r => r.PilotId == pilotId && r.SiteId == siteId && r.SystemId == systemId)
             && (
-                world.Set<WorldCombatAnomaly>().Any(s => s.Id == siteId && s.SystemId == systemId && s.IsSignature && s.CompletedAt == null)
+                WormholeRules.IsEndpoint(siteId) && WormholeTravelStore.Exists(catalog, systemId, siteId)
+                || world
+                    .Set<WorldCombatAnomaly>()
+                    .Any(s => s.Id == siteId && s.SystemId == systemId && s.IsSignature && s.CompletedAt == null)
                 || world
                     .Set<SavedExplorationSite>()
                     .Any(s => s.Id == siteId && s.SystemId == systemId && s.ReplaceAt == null && s.ExpiresAt > now)
