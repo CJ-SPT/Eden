@@ -46,6 +46,21 @@ internal sealed class NpcGuardSeeder
 
     public NpcGuardSeeder() { }
 
+    internal static void WarmCatalog(CatalogDbContext catalog)
+    {
+        foreach (var faction in Enum.GetValues<NpcEmpireFaction>())
+        {
+            if (NpcGuardRules.Roster((int)faction) is not { } roster)
+            {
+                continue;
+            }
+            foreach (var type in new[] { roster.Frigate, roster.Cruiser, roster.Customs }.Distinct())
+            {
+                _ = Profile(catalog, (int)type, (int)faction);
+            }
+        }
+    }
+
     private void Report(string message)
     {
         if (_diagnostics.Add(message))

@@ -22,6 +22,15 @@ namespace Eden.World.Mining;
 [Injectable(InjectionType.Singleton)]
 internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
 {
+    internal void WarmCatalog(CatalogDbContext catalog)
+    {
+        _ = profiles.Owners;
+        foreach (int type in NpcMiningRules.Types)
+        {
+            _ = profiles.Hull(catalog, type);
+        }
+    }
+
     internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, ClientSystems system, double security, long now)
     {
         if (!NpcConvoyRules.Eligible(security) || system.FactionID is not long faction)

@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Active-mining session stalls and checkpoint copies](protocol/performance.md#active-mining-session-stalls-and-checkpoint-copies-november-13-2026)
+records resident cycle settlement and logoff reads, shared market encoding, NPC catalog preparation and native snapshot copies.
+
 [Launcher CA certificate downloads](protocol/startup.md#launcher-ca-certificate-downloads)
 records first-connection fingerprint verification and profile-local trust.
 

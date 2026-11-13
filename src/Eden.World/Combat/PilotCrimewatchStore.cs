@@ -8,6 +8,7 @@ using Eden.World.Characters;
 using Eden.World.Docking;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -180,8 +181,8 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
     public IReadOnlyList<LoggedOffPilot> LoggedOff(int systemId)
     {
         var saved = LiveReadModels.Find(database.Path) is { } resident
-            ? resident.LoggedOff(systemId, () => LoggedOffSql(systemId))
-            : LoggedOffSql(systemId);
+            ? resident.LoggedOff(systemId, () => LoadLoggedOff(systemId))
+            : LoadLoggedOff(systemId);
         var combat = LiveWorld.Find(database.Path)?.CombatForSystem(systemId);
         return saved
             .Select(s => s with { ExpiresAt = combat?.DroneLogoffDeadline(s.Pilot.PilotId, s.ExpiresAt) ?? s.ExpiresAt })
@@ -189,8 +190,12 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
             .ToArray();
     }
 
-    private IReadOnlyList<LoggedOffPilot> LoggedOffSql(int system)
+    private IReadOnlyList<LoggedOffPilot> LoadLoggedOff(int system)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Read(world => LoggedOff(world, system), new(systems: [system]));
+        }
         using WorldDbContext world = new(database.Path);
         var rows = world.Set<SavedLogoff>().AsNoTracking().Where(s => s.SystemId == system && s.ExpiresAt > Now).ToArray();
         List<LoggedOffPilot> result = [];
@@ -204,6 +209,28 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
                 && !world.Set<ShipLoss>().Any(s => s.ShipId == row.ShipId)
             )
             {
+                result.Add(new(pilot, row.ExpiresAt));
+            }
+        }
+        return result;
+    }
+
+    private IReadOnlyList<LoggedOffPilot> LoggedOff(WorldAction world, int system)
+    {
+        List<LoggedOffPilot> result = [];
+        var lookup = new SqliteWorld(database, clock);
+        foreach (var row in world.Filter<SavedLogoff>(s => s.SystemId == system))
+        {
+            var owner = world.Pilots.Find(row.PilotId);
+            if (
+                owner?.ActiveShipId == row.ShipId
+                && !world.Filter<ShipLoss>(s => s.ShipId == row.ShipId).Any()
+                && lookup.FindPilot(world, owner.AccountId, owner.Id) is { Position: not null } pilot
+                && pilot.SystemId == system
+            )
+            {
+                // Apply the current combat deadline after loading; resident drone
+                // aggression can extend an otherwise expired saved logoff timer.
                 result.Add(new(pilot, row.ExpiresAt));
             }
         }

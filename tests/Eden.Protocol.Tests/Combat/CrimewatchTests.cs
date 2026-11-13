@@ -37,6 +37,54 @@ public sealed class CrimewatchTests
     private const long WingPilot = 90000002;
     private const long WingShip = 1000000000002;
 
+    [Fact]
+    public void LoggedOffContactsRefreshDirtyPositionsWithoutSqlAndKeepExactDeadlines()
+    {
+        using Fixture f = new();
+        Space(f);
+        long ship = f.ShipId;
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using ResidentFitCache fits = new(new(f.Db.Path));
+        live.Economy.Warm();
+        var store = Store(f);
+        store.Disconnect(f.PilotId, ship);
+        var first = Assert.Single(store.LoggedOff(SystemId));
+        Assert.Empty(store.LoggedOff(SystemId + 1));
+        for (int frame = 1; frame <= 3; frame++)
+        {
+            long x = 10_000_000 + frame;
+            live.Economy.Read(
+                world =>
+                {
+                    world.Positions.Find(ship)!.X = x;
+                    PilotTrainingStore.CreditSilentFreePoints(world, WingPilot, 1);
+                    return true;
+                },
+                new(systems: [SystemId])
+            );
+            using var metrics = SessionPerformance.Begin("dirty logoff contact refresh", _ => { }, force: true)!;
+            var current = Assert.Single(store.LoggedOff(SystemId));
+            Assert.Equal(x, current.Pilot.Position!.X);
+            Assert.Equal(first.ExpiresAt, current.ExpiresAt);
+            Assert.Equal(10_000_000, first.Pilot.Position!.X);
+            Assert.Empty(store.LoggedOff(SystemId + 1));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        using (var transaction = live.Economy.Begin(new(systems: [SystemId])))
+        {
+            transaction.Set<SavedLogoff>().Find(f.PilotId)!.ExpiresAt += TimeSpan.TicksPerMinute;
+        }
+        Assert.Equal(first.ExpiresAt, Assert.Single(store.LoggedOff(SystemId)).ExpiresAt);
+        f.Clock.AdvanceWallTime(TimeSpan.FromTicks(first.ExpiresAt - f.Clock.Now - 1));
+        Assert.Single(store.LoggedOff(SystemId));
+        f.Clock.AdvanceWallTime(TimeSpan.FromTicks(1));
+        Assert.Empty(store.LoggedOff(SystemId));
+        store.Connect(f.PilotId);
+        Assert.Empty(store.LoggedOff(SystemId));
+    }
+
     private static void Security(Fixture f, double value)
     {
         using CatalogDbContext catalog = new(f.CatalogPath, writable: true);

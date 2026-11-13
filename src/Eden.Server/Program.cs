@@ -256,6 +256,8 @@ internal static class Program
             services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
             services.GetRequiredService<CatalogProvider>().PreloadCore();
             services.GetRequiredService<PilotMarketStore>().WarmMarketCatalog();
+            services.GetRequiredService<Eden.Protocol.Industry.EconomicPriceCache>().Warm();
+            services.GetRequiredService<Eden.World.Combat.Npcs.NpcPopulationSeeder>().WarmCatalog(database);
             if (shutdown.IsCancellationRequested)
             {
                 return;

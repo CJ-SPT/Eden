@@ -12,6 +12,26 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed class NpcCatalogSharingTests
 {
     [Fact]
+    public void StartupPopulationPreparationSharesCatalogProfilesWithoutCreatingNpcs()
+    {
+        using TestWorld world = new();
+        RegionalNpcTests.Prepare(world);
+        var database = new WorldDatabase(world.Path);
+        var seeder = world.Services.GetRequiredService<NpcPopulationSeeder>();
+        seeder.WarmCatalog(database);
+        Assert.NotEmpty(world.Services.GetRequiredService<NpcSpawnCatalog>().Profiles);
+        using (var metrics = SessionPerformance.Begin("prepared population catalog", _ => { }, force: true)!)
+        {
+            seeder.WarmCatalog(database);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        using WorldDbContext saved = new(world.Path);
+        Assert.Empty(saved.Set<Eden.Data.World.Combat.Npcs.WorldNpc>());
+    }
+
+    [Fact]
     public void IndependentNpcReadersShareImmutableProfilesAndCacheMissingMiningHulls()
     {
         using NpcCombatTests.Fixture fixture = new();

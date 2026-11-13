@@ -24,6 +24,7 @@ WORLD_TRANSPORT = {
     "src/Eden.World/Storage/WorldDbContext.cs": "World context and detached checkpoint connection plumbing.",
     "src/Eden.World/Runtime/LiveWorld.cs": "Owned world memory image and detached checkpoint transport.",
     "src/Eden.World/Runtime/WorldSnapshot.cs": "Detached world checkpoint image transport.",
+    "src/Eden.World/Runtime/WorldDatabaseCopy.cs": "Native detached copies of already-owned world connections.",
     "src/Eden.Server/Launcher/LauncherStore.cs": "Authentication persistence through the existing world connection owner.",
 }
 BOUNDARY_PREFIXES = {

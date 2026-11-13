@@ -23,6 +23,28 @@ internal sealed partial class NpcPopulationSeeder(
     NpcMiningSeeder mining
 ) : INpcPopulationSeeder
 {
+    internal void WarmCatalog(WorldDatabase database)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var policy = database.Settings.NpcPopulation;
+        if (policy.Pirates)
+        {
+            _ = profiles.Profiles;
+        }
+        if (policy.Guards)
+        {
+            NpcGuardSeeder.WarmCatalog(catalog);
+        }
+        if (policy.Convoys)
+        {
+            convoys.WarmCatalog();
+        }
+        if (policy.Mining)
+        {
+            mining.WarmCatalog(catalog);
+        }
+    }
+
     public long NextUpdate(WorldDbContext world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
 
     private readonly HashSet<string> _diagnostics = [];

@@ -1,6 +1,7 @@
 using Eden.Data.World.Economy;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Industry;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -14,6 +15,61 @@ namespace Eden.Protocol.Tests.Market;
 
 public sealed class MarketValuationTests
 {
+    [Fact]
+    public void EncodedPublicPricesReuseBytesAndRefreshAdjustmentsWithinTheSameTick()
+    {
+        using IndustryTests.Fixture f = new();
+        var prices = f.Db.Services.GetRequiredService<IMarketValuations>();
+        var cache = f.Db.Services.GetRequiredService<EconomicPriceCache>();
+        cache.Warm();
+        var first = cache.ReadReply();
+        byte[] original = first.EncodeReply();
+        Assert.Equal(
+            BlueMarshal.Encode(
+                new BlueMap<int, EconomicPriceReply>(prices.Prices().ToDictionary(p => p.TypeId, p => new EconomicPriceReply(p)))
+            ),
+            original
+        );
+        using (var metrics = SessionPerformance.Begin("encoded public prices", _ => { }, force: true)!)
+        {
+            var repeated = cache.ReadReply();
+            Assert.Same(first, repeated);
+            Assert.Same(original, repeated.EncodeReply());
+            // The policy remains a current read; only unchanged wire bytes are shared.
+            Assert.Equal(1, metrics.Commands);
+            Assert.Equal(1, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Add(new SavedAdjustedPrice { TypeId = 34, PriceIsk = 123.45m });
+            world.Set<SavedEconomicPolicy>().Single().ChargeServiceCosts = true;
+            world.SaveChanges();
+        }
+        var changed = cache.ReadReply();
+        Assert.NotSame(first, changed);
+        Assert.Equal(123.45, Adjusted(changed.EncodeReply()));
+        Assert.Null(Adjusted(original));
+        var request = IncomingMachoPacket.Read(
+            Eden.Protocol.Tests.PilotSessions.PilotServicesTests.Request("config", "GetAverageMarketPrices", [])
+        );
+        var packet = IncomingMachoPacket.Read(BlueMarshal.Decode(BlueMarshal.Encode(request.CallSucceeded(changed))));
+        Assert.Equal(changed.EncodeReply(), BlueRead.Bytes(BlueRead.Tuple(packet.Fields[4], 1)[0]));
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<SavedEconomicPolicy>().Single().ChargeServiceCosts = false;
+            world.SaveChanges();
+        }
+        Assert.Null(Adjusted(cache.ReadReply().EncodeReply()));
+        Assert.Equal(123.45, Adjusted(changed.EncodeReply()));
+
+        static object? Adjusted(byte[] bytes)
+        {
+            var feed = Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(bytes));
+            return BlueRead.Fields(Assert.IsType<BlueInstance>(feed[34]).State)["adjustedPrice"];
+        }
+    }
+
     [Fact]
     public void InventoryPricesExistWithoutServiceFeesOrProductionUnlocksAndPreserveAdjustedValues()
     {

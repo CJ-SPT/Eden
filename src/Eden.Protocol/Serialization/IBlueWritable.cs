@@ -12,6 +12,8 @@ public interface IBlueWritable
 public abstract record BlueModel : IBlueWritable
 {
     public abstract object? ToBlue();
+
+    internal virtual byte[] EncodeReply() => BlueMarshal.Encode(this);
 }
 
 internal sealed record BlueList<T>(IReadOnlyList<T> Items) : BlueModel

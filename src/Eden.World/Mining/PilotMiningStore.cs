@@ -245,10 +245,9 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
 
     public MiningStart Begin(long pilotId, long moduleId, long asteroidId, long now, DogmaEffect? effect = null)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var start = Begin(world, catalog, pilotId, moduleId, asteroidId, now, effect);
+        var start = Begin(transaction.World, catalog, pilotId, moduleId, asteroidId, now, effect);
         transaction.Commit();
         return start;
     }
@@ -326,10 +325,17 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
 
     public MiningYield Collect(long pilotId, long moduleId, long asteroidId, MiningCollection collection)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var result = Collect(world, catalog, pilotId, moduleId, asteroidId, collection, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        var result = Collect(
+            transaction.World,
+            catalog,
+            pilotId,
+            moduleId,
+            asteroidId,
+            collection,
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+        );
         transaction.Commit();
         return result;
     }
@@ -453,9 +459,8 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
 
     public void Stop(long pilotId, long moduleId, long expectedCompletesAt)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        Stop(world, pilotId, moduleId, expectedCompletesAt);
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        Stop(transaction.World, pilotId, moduleId, expectedCompletesAt);
         transaction.Commit();
     }
 

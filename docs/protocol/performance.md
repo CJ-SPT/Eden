@@ -4031,3 +4031,105 @@ Not performed. Agent client testing is disabled. The Docker host rejected SSH au
 
 Apply points to a queued skill with mining lasers fitted after deployment. Compare the `World checkpoint`
 timing breakdown if checkpoint warnings continue.
+
+## Active-mining session stalls and checkpoint copies, November 13, 2026
+
+The Docker screenshot separates a 1,993 ms skill-point call into 54 ms of handler work and 1,937 ms of updates.
+The player confirmed that mining was active. Public mining begin/collect/stop still entered legacy SQLite transactions,
+even though equivalent resident operations already served autonomous miners. Separately, target contact updates could
+reload logged-off pilots through SQL after position invalidation, forcing unrelated dirty economy state to project.
+Both paths now use the existing resident authority. Mining retains atomic cargo, crystal wear, rewards, ledger and
+cooldown changes; logoff contacts retain position changes, ownership checks and exact combat-extended expiry.
+
+The checkpoint warning spent 577–771 ms copying a 394,403,840-byte relational image while persistence was held.
+Capture now uses SQLite's native serialized image and transfers ownership of its buffer to a detached, growable
+in-memory database. Projection and file writing remain outside the owner. No managed image-sized byte array is created.
+The [serialize](https://www.sqlite.org/c3ref/serialize.html) and
+[deserialize](https://www.sqlite.org/c3ref/deserialize.html) contracts define buffer ownership and growth.
+
+Unchanged public average-price replies reuse their encoded Blue payload. Every request still reads current prices and
+compares the complete values, so policy and adjusted-price changes remain visible within the same tick. The per-call
+Macho envelope remains separate. Startup prepares that payload and enabled NPC catalog profiles before opening listeners.
+This moves cold shared metadata work out of player frames without creating NPCs early.
+
+References checked: [EVE University mining yield](https://wiki.eveuniversity.org/Mining_Yield),
+[skill training](https://wiki.eveuniversity.org/Skill_training), and
+[NPC mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations).
+Build 3662168's existing cycle, reward and reply definitions remain authoritative.
+Carbon Blue's `src/Marshal.cpp` was inspected at
+[`fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae`](https://github.com/carbonengine/blue/tree/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae).
+The older EveJS `server/src/services/_shared/averageMarketPrices.js` was checked as a behavioral reference
+(SHA-256 `06EBC75301592D4AC2069B950F305B3204FFE0A0349375BA8EE4D241D566415C`); no reference implementation code was copied.
+
+### Automated validation
+
+A matched Release replay used the same copied November 12 world, pilot 90001835, Venture, fitted Miner I, saved training
+queue and fixed clock. It selected the pilot, undocked, entered the ballpark, locked a nearby Veldspar asteroid, started
+mining, advanced twelve five-second maintenance frames and applied points with the mining cycle due. Calls included
+reply and notification encoding. The baseline retained `6513b08c` session paths; both session runs used the new checkpoint
+copier, which was compared separately against backup using exactly the same 376 MiB image.
+
+| Measurement | Baseline | Updated |
+| --- | ---: | ---: |
+| Complete active-mining skill-point call | 1,048.84 ms | 86.01 ms |
+| Its update phase | 975.77 ms | 17.06 ms |
+| SQL commands / connections in that call | 224 / 16 | 36 / 1 |
+| First public market-price call | 89.33 ms | 34.76 ms |
+| First NPC population work | 138.05 ms, 34 SQL | 64.16 ms, zero SQL |
+| Relational copy, four matched samples | 163.28–166.48 ms | 74.58–77.24 ms |
+
+The remaining skill-call reads used the cold catalog; two fitting calculations remained in this populated replay.
+The public-price payload hash, skill reply, ten-packet skill-call count and bound inventory payload matched.
+Market payload preparation added 47 ms and NPC profile preparation 883 ms before listeners. Character selection still
+took 409 ms and undocking 99 ms locally; this replay does not establish that every cold startup warning is eliminated.
+A legacy disconnect write still projected dirty state during replay cleanup. Native copy reduces the required pause;
+it does not remove the copy, checkpoint projection or disk-write costs.
+
+Focused regressions cover a warmed complete skill/mining frame with zero SQL commands or opens and at most one fitting
+calculation, duplicate and invalid cycle rejection, saved ore/rewards/ledger after reopening, populated and empty logoff
+contact reads with zero SQL/opens/fits after dirty position changes, rollback and exact expiry, market byte reuse and
+same-tick invalidation, and shared NPC preparation without population mutation. Snapshot tests verify foreign keys,
+indexes, triggers, detached mutation, growth, rollback, reopened integrity and bounded managed allocation. Existing
+checkpoint tests cover concurrent advancement and save failure/retry.
+
+Exact development filters used `FullyQualifiedName=` with these methods:
+
+- `Eden.Protocol.Tests.Mining.MiningTests.SkillPointCallWithDueMiningCycleKeepsUpdatesResidentAndCheckpointsOnce`
+- `Eden.Protocol.Tests.Combat.CrimewatchTests.LoggedOffContactsRefreshDirtyPositionsWithoutSqlAndKeepExactDeadlines`
+- `Eden.Protocol.Tests.Market.MarketValuationTests.EncodedPublicPricesReuseBytesAndRefreshAdjustmentsWithinTheSameTick`
+- `Eden.Protocol.Tests.Combat.NpcCatalogSharingTests.StartupPopulationPreparationSharesCatalogProfilesWithoutCreatingNpcs`
+- Both methods in `Eden.Protocol.Tests.Persistence.WorldDatabaseCopyTests`.
+
+The final focused selection combines the affected classes and immediate dependencies:
+
+```powershell
+$classes = @(
+    'Eden.Protocol.Tests.Mining', 'MiningMissionTests', 'FreeSkillPoint', 'PilotTrainingTests',
+    'MarketValuationTests', 'EconomicLifecycleTests', 'NpcCatalogSharingTests', 'NpcPopulationTests',
+    'NpcGuardTests', 'NpcConvoyTests', 'CrimewatchTests', 'CharacterLogoffTests', 'CapsuleCombatTests',
+    'PilotMissileTests', 'PilotDroneTests', 'PilotTurretTests', 'WorldDatabaseCopyTests', 'LiveWorldTests',
+    'DetachedCheckpointTests', 'CheckpointOwnershipTests', 'OwnershipTimingTests', 'BlueMarshalTests',
+    'Eden.Protocol.Tests.Hosting'
+)
+$filter = ($classes | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
+```
+
+Tool and solution restore passed; the solution built with zero warnings/errors in 6.67 seconds. The focused run
+passed 646 of 648 cases in 4 minutes 19 seconds. The two resident variants of
+`ResourceRenewalTests.OverdueRenewalUsesBatchSqlAndPreservesDepositsAcrossCheckpointAndRestart` counted seven and eight
+commands against a maximum of six. Both fail identically with the baseline assemblies, before checkpoint capture;
+the renewal path is unchanged. Both new session-stall regressions fail against those baseline assemblies and pass
+with the changes. The full .NET suite was not run. Catalog policy explicitly recognizes the native copier as world
+checkpoint transport; ordinary features retain their connection restrictions.
+Both Python policy suites passed (8 catalog checks and 9 formatting checks). .NET style, CSharpier, line-width
+verification and Git whitespace checks passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The Docker host rejected SSH authentication, so deployment and
+the screenshot host's timings were not verified.
+
+### Optional maintainer checks
+
+After deployment, compare skill-point calls while mining, first market/population calls and checkpoint timing
+breakdowns in the Docker log.

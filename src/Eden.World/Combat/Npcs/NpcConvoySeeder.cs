@@ -15,6 +15,8 @@ namespace Eden.World.Combat.Npcs;
 [Injectable(InjectionType.Singleton)]
 internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
 {
+    internal void WarmCatalog() => _ = profiles.Profiles;
+
     internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, double security, long now)
     {
         if (!NpcConvoyRules.Eligible(security))

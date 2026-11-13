@@ -84,7 +84,7 @@ internal sealed record IncomingMachoPacket(string Name, object?[] Fields)
 
     private BlueInstance Response(string name, int command, object? body) => PilotSessionWire.Response(Fields, name, command, body);
 
-    public BlueInstance CallSucceeded(BlueModel reply) => Response("CallRsp", 7, new object?[] { BlueMarshal.Encode(reply) });
+    public BlueInstance CallSucceeded(BlueModel reply) => Response("CallRsp", 7, new object?[] { reply.EncodeReply() });
 
     public BlueInstance InvalidArguments() => Response("ErrorResponse", 15, new object?[] { 6, 0, "Unsupported local call arguments" });
 

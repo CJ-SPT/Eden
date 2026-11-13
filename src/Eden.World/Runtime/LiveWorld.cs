@@ -407,7 +407,7 @@ internal sealed partial class LiveWorld : IDisposable
         _reportFailure = report ?? ServerLog.Console.Error;
         _reportTrace = report ?? ServerLog.Console.Trace;
         _persist = persist ?? PersistSnapshot;
-        _copy = copy ?? ((source, destination) => source.BackupDatabase(destination));
+        _copy = copy ?? WorldDatabaseCopy.Copy;
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         _ownership = new(_path + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         ConnectionString = new SqliteConnectionStringBuilder
