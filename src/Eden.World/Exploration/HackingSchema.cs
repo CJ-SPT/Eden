@@ -17,7 +17,8 @@ internal static class HackingSchema
         model.Entity<SavedHackingAttempt>().HasIndex(a => a.ContainerId).IsUnique();
     }
 
-    internal static void Upgrade(WorldDbContext world) =>
+    internal static void Upgrade(WorldDbContext world)
+    {
         world.Database.ExecuteSqlRaw(
             """
             CREATE TABLE IF NOT EXISTS WorldExplorationSite (
@@ -34,6 +35,18 @@ internal static class HackingSchema
             CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldHackingAttempt_ContainerId ON WorldHackingAttempt(ContainerId);
             """
         );
+        var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldExplorationSite')").ToHashSet();
+        if (!columns.Contains("ResponseAt"))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldExplorationSite ADD COLUMN ResponseAt INTEGER;
+                ALTER TABLE WorldExplorationSite ADD COLUMN ResponseSpawned INTEGER NOT NULL DEFAULT 0;
+                ALTER TABLE WorldExplorationSite ADD COLUMN Detonated INTEGER NOT NULL DEFAULT 0;
+                """
+            );
+        }
+    }
 
     internal static void Reconcile(WorldDbContext world)
     {
@@ -43,7 +56,8 @@ internal static class HackingSchema
             if (world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { Hacked: false, Destroyed: false } container)
             {
                 container.Failures++;
-                container.Destroyed = container.Failures >= HackingRules.MaximumFailures;
+                var site = world.Set<SavedExplorationSite>().Find(container.SiteId);
+                container.Destroyed = container.Failures >= GhostSiteRules.MaximumFailures((ExplorationKind?)site?.Kind);
             }
             world.Remove(attempt);
         }

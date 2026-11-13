@@ -6,6 +6,7 @@
     <InternalsVisibleTo Include="Eden.Server" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
     <EmbeddedResource Include="Catalog/Exploration/pirate-exploration-3662168.json" LogicalName="Eden.Data.PirateExploration.json" />
+    <EmbeddedResource Include="Catalog/Exploration/ded-complexes-3662168.json" LogicalName="Eden.Data.DedComplexes.json" />
     <EmbeddedResource Include="Catalog/CatalogSchema.g.json" LogicalName="Eden.Data.Catalog.Schema.json" />
   </ItemGroup>
 </Project>

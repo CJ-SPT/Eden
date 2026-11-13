@@ -35,7 +35,8 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
     // bounty debit rolls back the wreck and its contents along with the kill.
     internal static void Create(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, Pilot pilot, long now)
     {
-        if (npc.Role == NpcRole.MissionStructure)
+        var ded = Eden.World.Exploration.CombatAnomalyStore.DedLoot(new Eden.World.Runtime.Economy.SqlWorldAction(world), catalog, npc);
+        if (npc.Role == NpcRole.MissionStructure && ded is null)
         {
             return;
         }
@@ -43,10 +44,20 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
         var type = definition?.WreckTypeID is long wreckType
             ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)
             : null;
+        bool container = ded is not null && (npc.Role == NpcRole.MissionStructure || type is null);
+        if (container)
+        {
+            type = catalog.RequireItem(JetcanRules.TypeId);
+        }
         if (
             type is null
             && definition is { WreckTypeID: null }
-            && (npc.Role != NpcRole.Pirate || catalog.RequireItem(npc.TypeId).GroupId == NpcEncounterDefinitions.SentryGroup)
+            && (
+                npc.Role != NpcRole.Pirate
+                || catalog.RequireItem(npc.TypeId).GroupId
+                    is NpcEncounterDefinitions.SentryGroup
+                        or NpcEncounterDefinitions.OverseerSentryGroup
+            )
         )
         {
             // Several pinned customs officials have no wreck link. They leave
@@ -68,7 +79,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                     CorporationId = pilot.CorporationId,
                     TypeId = type.Id,
                     SystemId = npc.SystemId,
-                    Name = catalog.RequireItem(npc.TypeId).Name + " " + type.Name,
+                    Name = (npc.Name ?? catalog.RequireItem(npc.TypeId).Name) + " " + type.Name,
                     X = npc.X,
                     Y = npc.Y,
                     Z = npc.Z,
@@ -77,7 +88,30 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                 }
             )
             .Entity;
-        Eden.World.Information.SalvagePersistence.Seed(catalog, wreck);
+        if (!container)
+        {
+            Eden.World.Information.SalvagePersistence.Seed(catalog, wreck);
+        }
+        if (ded is not null)
+        {
+            foreach (var reward in ded)
+            {
+                world.Add(
+                    new OwnedItem
+                    {
+                        Id = InventoryPersistence.NextId(world),
+                        OwnerId = pilot.Id,
+                        TypeId = reward.TypeId,
+                        LocationId = wreck.Id,
+                        FlagId = (int)InventoryFlag.Cargo,
+                        Quantity = reward.BlueprintCopy ? 1 : reward.Quantity,
+                        Singleton = reward.BlueprintCopy,
+                        BlueprintRuns = reward.BlueprintCopy ? reward.Quantity : -1,
+                    }
+                );
+            }
+            return;
+        }
         foreach (var drop in Drops(world, catalog, npc).Concat(Eden.World.Agents.PilotMissionStore.KeyLoot(world, npc, now)))
         {
             _ = catalog.RequireItem(drop.TypeId);

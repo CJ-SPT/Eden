@@ -11,6 +11,9 @@ public sealed class SavedExplorationSite
     public double Z { get; set; }
     public long ExpiresAt { get; set; }
     public long? ReplaceAt { get; set; }
+    public long? ResponseAt { get; set; }
+    public bool ResponseSpawned { get; set; }
+    public bool Detonated { get; set; }
 }
 
 public sealed class SavedHackingContainer

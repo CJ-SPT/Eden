@@ -63,6 +63,7 @@
     <EmbeddedResource Include="Fixtures/StructureCatalog.json" />
     <EmbeddedResource Include="Fixtures/CompressionCatalog.json" />
     <EmbeddedResource Include="Fixtures/HackingCatalog.json" />
+    <EmbeddedResource Include="Fixtures/DedAndGhostCatalog.json" />
     <EmbeddedResource Include="Fixtures/PlanetaryCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/SmartbombCatalog.json" />

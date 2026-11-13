@@ -23,7 +23,35 @@ internal static class MissionGatePayment
     {
         var key = gate.Access.Key;
         var unlock = key is { Consume: true } ? world.Set<SavedMissionGateUnlock>().Find(missionId, gate.DungeonObjectId, pilotId) : null;
-        if (!MissionGateAccessRules.RequiresKey(key, unlock?.ResetAt > now))
+        var result = Pay(world, catalog, pilotId, shipId, key, unlock?.ResetAt > now);
+        if (result.Items.Count == 0)
+        {
+            return result;
+        }
+        unlock ??= world
+            .Add(
+                new SavedMissionGateUnlock
+                {
+                    MissionId = missionId,
+                    GateObjectId = gate.DungeonObjectId,
+                    PilotId = pilotId,
+                }
+            )
+            .Entity;
+        unlock.ResetAt = MissionGateAccessRules.NextDowntime(DateTimeOffset.FromFileTime(now)).UtcDateTime.ToFileTimeUtc();
+        return result;
+    }
+
+    internal static MissionGateActivation Pay(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        MissionGateKey? key,
+        bool unlocked
+    )
+    {
+        if (!MissionGateAccessRules.RequiresKey(key, unlocked))
         {
             return new([]);
         }
@@ -60,17 +88,6 @@ internal static class MissionGatePayment
                 world.Remove(stack);
             }
         }
-        unlock ??= world
-            .Add(
-                new SavedMissionGateUnlock
-                {
-                    MissionId = missionId,
-                    GateObjectId = gate.DungeonObjectId,
-                    PilotId = pilotId,
-                }
-            )
-            .Entity;
-        unlock.ResetAt = MissionGateAccessRules.NextDowntime(DateTimeOffset.FromFileTime(now)).UtcDateTime.ToFileTimeUtc();
         return new(changes);
     }
 }

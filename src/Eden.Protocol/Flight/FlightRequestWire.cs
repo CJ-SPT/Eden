@@ -59,6 +59,9 @@ internal static class FlightRequestWire
             ("CmdWarpToStuff", [string or byte[], long bookmark])
                 when BlueMarshal.Text(arguments[0]) == "bookmark" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long =>
                 new FlightCommand.WarpToBookmark(bookmark, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)),
+            ("CmdWarpToStuff", [string or byte[], long escalation])
+                when BlueMarshal.Text(arguments[0]) == "epinstance" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long =>
+                new FlightCommand.WarpToEscalation(escalation, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)),
             ("CmdWarpToStuff", [string or byte[], long target])
                 when BlueMarshal.Text(arguments[0]) is "item" or "launch"
                     && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long => new FlightCommand.WarpTo(

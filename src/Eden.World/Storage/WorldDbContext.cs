@@ -86,12 +86,45 @@ public sealed partial class WorldDbContext(string path) : DbContext
         options
             .AddInterceptors(
                 new FitTransactions(this),
+                new CommitActions(this),
                 new MarketPreparationTransactions(this),
                 new CombatPersistenceBridge(path),
                 new CombatTransactionBridge(path)
             )
             .TracePerformance()
             .UseSqlite(WorldConnections.Create(path, Participants, IsResidentProjection, CommittedSystems), contextOwnsConnection: true);
+    }
+
+    private readonly List<Action> _commitActions = [];
+
+    internal void AfterCommit(Action action)
+    {
+        if (Database.CurrentTransaction is null)
+        {
+            action();
+            return;
+        }
+        _commitActions.Add(action);
+    }
+
+    private sealed class CommitActions(WorldDbContext context) : Microsoft.EntityFrameworkCore.Diagnostics.DbTransactionInterceptor
+    {
+        public override void TransactionCommitted(
+            System.Data.Common.DbTransaction transaction,
+            Microsoft.EntityFrameworkCore.Diagnostics.TransactionEndEventData eventData
+        )
+        {
+            foreach (var action in context._commitActions)
+            {
+                action();
+            }
+            context._commitActions.Clear();
+        }
+
+        public override void TransactionRolledBack(
+            System.Data.Common.DbTransaction transaction,
+            Microsoft.EntityFrameworkCore.Diagnostics.TransactionEndEventData eventData
+        ) => context._commitActions.Clear();
     }
 
     protected override void OnModelCreating(ModelBuilder model)

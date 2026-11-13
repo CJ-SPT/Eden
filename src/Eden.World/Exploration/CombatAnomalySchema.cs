@@ -10,6 +10,15 @@ internal static class CombatAnomalySchema
     {
         model.Entity<WorldCombatAnomaly>().ToTable("WorldCombatAnomaly").HasKey(s => s.Id);
         model.Entity<WorldAnomalyMember>().ToTable("WorldAnomalyMember").HasKey(m => m.NpcId);
+        model
+            .Entity<SavedDedGateUnlock>()
+            .ToTable("WorldDedGateUnlock")
+            .HasKey(g => new
+            {
+                g.SiteId,
+                g.GateObjectId,
+                g.PilotId,
+            });
         model.Entity<WorldAnomalyMember>().HasIndex(m => new { m.SiteId, m.Wave });
         model
             .Entity<WorldCombatAnomaly>()
@@ -39,6 +48,9 @@ internal static class CombatAnomalySchema
                 Id INTEGER PRIMARY KEY, SystemId INTEGER NOT NULL, Wave INTEGER NOT NULL,
                 X REAL NOT NULL, Y REAL NOT NULL, Z REAL NOT NULL, CompletedAt INTEGER, ReplaceAt INTEGER);
             CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_SystemId_CompletedAt ON WorldCombatAnomaly(SystemId,CompletedAt);
+            CREATE TABLE IF NOT EXISTS WorldDedGateUnlock (
+                SiteId INTEGER NOT NULL, GateObjectId INTEGER NOT NULL, PilotId INTEGER NOT NULL,
+                ResetAt INTEGER NOT NULL, PRIMARY KEY(SiteId,GateObjectId,PilotId));
             CREATE TABLE IF NOT EXISTS WorldAnomalyMember (
                 NpcId INTEGER PRIMARY KEY, SiteId INTEGER NOT NULL, Wave INTEGER NOT NULL, Trigger INTEGER NOT NULL,
                 Sentry INTEGER NOT NULL);
@@ -66,6 +78,25 @@ internal static class CombatAnomalySchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN DefinitionVersion INTEGER NOT NULL DEFAULT 0");
         }
+        if (!columns.Contains("DedVisitedRooms"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN DedVisitedRooms INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!columns.Contains("EscalationPilotId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN EscalationPilotId INTEGER");
+        }
+        if (!columns.Contains("EscalationSourceDungeonId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN EscalationSourceDungeonId INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!columns.Contains("EscalationExpiresAt"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN EscalationExpiresAt INTEGER");
+        }
+        world.Database.ExecuteSqlRaw(
+            "CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_EscalationPilotId ON WorldCombatAnomaly(EscalationPilotId)"
+        );
         var npcColumns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpc')").ToHashSet();
         if (!npcColumns.Contains("AcquisitionRange"))
         {

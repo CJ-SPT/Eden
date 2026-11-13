@@ -60,6 +60,47 @@ public sealed class HackingWorldTests
         return null;
     }
 
+    [Fact]
+    public void GhostCacheWinDeliversLicensedLootAndFirstFailedHackExplodes()
+    {
+        using var f = Prepare();
+        PassiveCatalogFixture.LoadDedAndGhost(f.CatalogPath);
+        long module = f.Fit(22175);
+        var store = (PirateExplorationStore)f.Db.Services.GetRequiredService<IPirateExploration>();
+        int system = CombatAnomalyRules.SystemId;
+        var site = Assert.Single(store.Signatures(system, f.Clock.Now), s => s.Exploration == ExplorationKind.Ghost);
+        var caches = site.Objects.Where(c => GhostSiteRules.IsCache(c.TypeId) && !GhostSiteRules.IsBonusCache(c.TypeId)).ToArray();
+        var first = caches[0];
+        f.Db.Store.SetPosition(f.ShipId, first.Position, system);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var row = world.Set<SavedHackingContainer>().Find(first.Id)!;
+            row.LootSeed = Enumerable.Range(0, 100).First(seed => GhostSiteRules.Blueprint(seed, 0, first.TypeId).HasValue);
+            world.SaveChanges();
+        }
+        var contact = store.Begin(f.PilotId, module, first.Id, new HashSet<long> { first.Id }, f.Clock.Now);
+        Finish(store, f);
+        var rewards = Reopen(f).Read(f.PilotId, first.Id, f.Clock.Now).Items;
+        Assert.Contains(rewards, i => i.TypeId == 33577);
+        var blueprint = Assert.Single(rewards, i => i.TypeId is 33556 or 33562);
+        Assert.True(blueprint.Singleton);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Equal(1, world.Set<OwnedItem>().Find(blueprint.Id)!.BlueprintRuns);
+        }
+        var second = caches[1];
+        long ship = f.ShipId;
+        f.Db.Store.SetPosition(ship, second.Position, system);
+        store.Begin(f.PilotId, module, second.Id, new HashSet<long> { second.Id }, contact.ReadyAt);
+        store.Cancel(f.PilotId, contact.ReadyAt);
+        store.Cancel(f.PilotId, contact.ReadyAt);
+        using WorldDbContext saved = new(f.Db.Path);
+        var failed = saved.Set<SavedHackingContainer>().Find(second.Id)!;
+        Assert.True(failed.Destroyed);
+        Assert.Equal(1, failed.Failures);
+        Assert.Single(saved.Set<ShipLoss>().Where(l => l.ShipId == ship));
+    }
+
     private static Fixture Prepare()
     {
         Fixture f = new();
@@ -73,12 +114,20 @@ public sealed class HackingWorldTests
     )
     {
         long module = f.Fit(kind == ExplorationKind.Data ? 22175 : 22177);
-        PirateExplorationStore store = new(new(f.Db.Path));
+        var store = (PirateExplorationStore)f.Db.Services.GetRequiredService<IPirateExploration>();
         var site = store.Signatures(CombatAnomalyRules.SystemId, f.Clock.Now).Single(s => s.Exploration == kind);
         var container = site.Objects[0];
         f.Db.Store.SetPosition(f.ShipId, container.Position, site.SystemId);
         return (store, site, module, container);
     }
+
+    private static PirateExplorationStore Reopen(Fixture f) =>
+        new(
+            new(f.Db.Path),
+            f.Db.Store,
+            f.Db.Services.GetRequiredService<Eden.World.Combat.PilotLossSettlement>(),
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Combat.IPilotDamageEvents>()
+        );
 
     private static HackingBoard WinningBoard() =>
         new(
@@ -147,7 +196,7 @@ public sealed class HackingWorldTests
             store.Begin(f.PilotId, module, container.Id, new HashSet<long> { container.Id }, contact.ReadyAt)
         );
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
-        store = new(new(f.Db.Path));
+        store = Reopen(f);
         var reopened = store.Read(f.PilotId, container.Id, f.Clock.Now);
         Assert.Equal(total, reopened.Items.Sum(i => i.Quantity));
         var request = new InventoryMoveRequest(reopened.Items.Select(i => i.Id).ToArray(), container.Id, (int)InventoryFlag.Cargo, null);
@@ -177,7 +226,7 @@ public sealed class HackingWorldTests
             );
         }
         long module = f.Fit(22175);
-        PirateExplorationStore store = new(new(f.Db.Path));
+        var store = (PirateExplorationStore)f.Db.Services.GetRequiredService<IPirateExploration>();
         var site = store.Signatures(CombatAnomalyRules.SystemId, f.Clock.Now).Single(s => s.Exploration == ExplorationKind.Data);
         var container = site.Objects.First(c => c.TypeId == GuristasInfoShard);
         f.Db.Store.SetPosition(f.ShipId, container.Position, site.SystemId);
@@ -189,7 +238,7 @@ public sealed class HackingWorldTests
         store.Begin(f.PilotId, module, container.Id, new HashSet<long> { container.Id }, f.Clock.Now);
         Finish(store, f);
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
-        store = new(new(f.Db.Path));
+        store = Reopen(f);
         var condenser = Assert.Single(store.Read(f.PilotId, container.Id, f.Clock.Now).Items, i => i.TypeId is 57446 or 57447);
         Assert.InRange(condenser.Quantity, 4, 8);
         var request = new InventoryMoveRequest([condenser.Id], container.Id, (int)InventoryFlag.Cargo, null);
@@ -212,7 +261,7 @@ public sealed class HackingWorldTests
             Assert.Empty(world.Set<SavedHackingAttempt>());
             Assert.Equal(contact.ReadyAt, world.Set<ModuleCooldown>().Find(module)!.ReadyAt);
         }
-        store = new(new(f.Db.Path));
+        store = Reopen(f);
         store.Begin(f.PilotId, module, container.Id, new HashSet<long> { container.Id }, contact.ReadyAt);
         store.Cancel(f.PilotId, contact.ReadyAt);
         store.Cancel(f.PilotId, contact.ReadyAt);
@@ -274,7 +323,7 @@ public sealed class HackingWorldTests
             Assert.True(HackingCatalog.Supported(catalog, (int)type.Key, HackingRules.AnalyzerGroup), type.Key.ToString());
             Assert.NotNull(FittingCatalog.Definition(catalog, (int)type.Key));
         }
-        PirateExplorationStore store = new(new(f.Db.Path));
+        var store = (PirateExplorationStore)f.Db.Services.GetRequiredService<IPirateExploration>();
         var first = store.Signatures(CombatAnomalyRules.SystemId, f.Clock.Now);
         Assert.Equal(2, first.Count);
         using var metrics = SessionPerformance.Begin("warm exploration", _ => { }, force: true)!;
@@ -466,7 +515,7 @@ public sealed class HackingWorldTests
         }
         Assert.DoesNotContain(store.Signatures(site.SystemId, next), s => s.Id == site.Id);
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
-        store = new(new(f.Db.Path));
+        store = Reopen(f);
         Assert.DoesNotContain(store.Signatures(site.SystemId, next), s => s.Id == site.Id);
         var replacement = store
             .Signatures(site.SystemId, next + HackingRules.ReplacementDelay)
@@ -550,7 +599,7 @@ public sealed class HackingWorldTests
     {
         using var f = Prepare();
         long module = f.Fit(typeId);
-        PirateExplorationStore store = new(new(f.Db.Path));
+        var store = (PirateExplorationStore)f.Db.Services.GetRequiredService<IPirateExploration>();
         var site = store.Signatures(CombatAnomalyRules.SystemId, f.Clock.Now).Single(s => s.Exploration == kind);
         var container = site.Objects[0];
         f.Db.Store.SetPosition(f.ShipId, container.Position, site.SystemId);
@@ -574,7 +623,7 @@ public sealed class HackingWorldTests
     public void ExpiredSitesCatchUpFromTheirSavedReplacementDeadlineWithoutAnExtraWait()
     {
         using var f = Prepare();
-        PirateExplorationStore store = new(new(f.Db.Path));
+        var store = (PirateExplorationStore)f.Db.Services.GetRequiredService<IPirateExploration>();
         var original = store.Signatures(CombatAnomalyRules.SystemId, f.Clock.Now).ToArray();
         var replacement = store.Signatures(
             CombatAnomalyRules.SystemId,

@@ -195,6 +195,9 @@ diagnostics, indexed resupply inputs, batched resident movement projection and a
 [population diagnostics](protocol/capsuleers.md#population-diagnostics-and-local-membership--november-9-2026)
 correct dense simulated-pilot membership updates and distinguish saved, paused, scheduled and observed populations.
 
+[DED complexes and Ghost Sites](protocol/information.md#ded-complexes-and-ghost-sites) and
+[DED catalog expansion and escalations](protocol/information.md#ded-catalog-expansion-and-escalations)
+
 ## Topics
 
 [Tech II supply audit](protocol/industry.md#tech-ii-supply-audit-and-refinery-bootstrap),

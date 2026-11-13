@@ -23,7 +23,7 @@ public static class LiveNpcAcquisitionRules
                 || occupied.Contains(npc.Id)
                 || (
                     !npc.Attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay)
-                    && npc.GroupId != NpcEncounterDefinitions.SentryGroup
+                    && npc.GroupId is not (NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup)
                 )
             )
             {

@@ -18,7 +18,8 @@ internal sealed class FlightCallHandler(
     TimeProvider clock,
     IPilotProbeScanning? scanning = null,
     IPilotPlanetaryIndustry? planetary = null,
-    IWorldTuning? tuning = null
+    IWorldTuning? tuning = null,
+    IDedEscalations? escalations = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -134,6 +135,35 @@ internal sealed class FlightCallHandler(
             try
             {
                 command = fleets.MemberWarp(context, memberWarp);
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
+        }
+        if (command is FlightCommand.WarpToEscalation expedition)
+        {
+            try
+            {
+                long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+                var site =
+                    escalations?.Find(context.Pilot.PilotId, context.Pilot.SystemId, expedition.InstanceId, now)
+                    ?? throw new InvalidDataException("This expedition is unavailable in this solar system.");
+                if (keywords?.GetValueOrDefault("fleet") is not (null or false or 0L))
+                {
+                    throw new InvalidDataException("An expedition warp is available to its owner.");
+                }
+                var anchor = context.Pilot.Position is { } origin
+                    ? SiteWarpInRules.ResolveAnchor(
+                        context.Pilot.ShipId,
+                        context.Pilot.Flight.ShipRadius,
+                        origin,
+                        site.Position,
+                        expedition.Range,
+                        site.Objects
+                    )
+                    : site.Position;
+                command = new FlightCommand.WarpToPoint(site.Id, anchor, expedition.Range);
             }
             catch (InvalidDataException error)
             {

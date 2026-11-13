@@ -15,6 +15,10 @@ public sealed class WorldCombatAnomaly
     public long? NextWaveAt { get; set; }
     public long? CompletedAt { get; set; }
     public long? ReplaceAt { get; set; }
+    public long DedVisitedRooms { get; set; }
+    public long? EscalationPilotId { get; set; }
+    public int EscalationSourceDungeonId { get; set; }
+    public long? EscalationExpiresAt { get; set; }
 }
 
 public sealed class WorldAnomalyMember
