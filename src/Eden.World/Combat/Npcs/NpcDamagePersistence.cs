@@ -9,7 +9,6 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
-using Eden.Gameplay.Market;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -114,12 +113,7 @@ internal static partial class NpcDamagePersistence
                 loot
             );
             PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
-            double bounty = NpcPopulationRules.AwardsBounty(npc.Role) ? attributes.GetValueOrDefault(DogmaAttributeId.EntityKillBounty) : 0;
-            if (!double.IsFinite(bounty) || bounty < 0)
-            {
-                throw new InvalidDataException("Invalid NPC bounty.");
-            }
-            long originalCents = checked((long)Math.Round(bounty * MarketDefinitions.CentsPerIsk, MidpointRounding.ToEven));
+            long originalCents = NpcBountyRules.BaseCents(npc.Role, attributes);
             long cents = WorldTuningRules.Reward(originalCents, world.Settings.Rewards.BountyMultiplier);
             long skillPoints = NpcSkillPointRewards.FromBounty(originalCents, world.Settings.Progression.KillSkillPointMultiplier);
             if (skillPoints > 0)

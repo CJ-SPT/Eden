@@ -7,6 +7,7 @@ internal static class LoginClient
             "eden-login",
             "Eden.Protocol.Characters.portrait_client.py",
             "Eden.Protocol.Flight.concord_overview_client.py",
+            "Eden.Protocol.Flight.npc_bounty_client.py",
             "Eden.Protocol.Docking.presence_lists_client.py",
             "Eden.Protocol.Skills.free_points_client.py"
         )

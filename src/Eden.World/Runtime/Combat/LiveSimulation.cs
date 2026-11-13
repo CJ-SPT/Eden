@@ -5,6 +5,7 @@ using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -453,6 +454,7 @@ internal sealed partial class LiveCombatRuntime
         var effective = Effective(npcs);
         var aggression = Aggression();
         List<NpcContact> contacts = new(npcs.Length);
+        decimal bountyMultiplier = database.Settings.Rewards.BountyMultiplier;
         bool motionStamped = database.MotionStamps.TryGetValue(system, out int stamp);
         foreach (var npc in npcs)
         {
@@ -513,6 +515,7 @@ internal sealed partial class LiveCombatRuntime
                 AnchorKind = npc.AnchorKind,
                 AnchorId = npc.AnchorId,
                 StandingThresholds = npc.StandingThresholds,
+                BountyCents = WorldTuningRules.Reward(NpcBountyRules.BaseCents(npc.Role, npc.Attributes), bountyMultiplier),
             };
             contacts.Add(contact);
             if (motionStamped)

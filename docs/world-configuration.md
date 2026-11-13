@@ -44,7 +44,8 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 - Ore, ice and gas controls scale extraction volume after ordinary equipment and skill bonuses. Cargo space and remaining deposits
   still limit extraction, and existing critical/residue rules remain. Ice requires a completed cycle; its control changes blocks
   per completed cycle rather than cycle duration. Ore and gas retain proportional partial-cycle collection.
-- Bounty ISK scales the gross amount before corporation tax. Kill SP uses the original bounty independently: the default remains
+- Bounty ISK scales the gross amount before corporation tax. Selecting an NPC in space shows that gross amount.
+  Kill SP uses the original bounty independently. The default remains
   0.25% of original bounty ISK, multiplied by the kill-SP setting, then rounded down to whole points. For example, a 3,000 ISK NPC
   with a 2× kill-SP multiplier awards 15 SP. Bounty ISK set to zero can still award SP. These credits remain silent.
 - Mining SP uses the reference ISK value of units actually delivered to the hold: multiply that value by the mining-SP

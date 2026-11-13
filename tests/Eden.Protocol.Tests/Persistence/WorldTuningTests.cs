@@ -11,14 +11,19 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Reprocessing;
+using Eden.Protocol.Flight;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Agents;
 using Eden.Protocol.Tests.Combat;
 using Eden.Protocol.Tests.Industry;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.World.Configuration;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -204,6 +209,61 @@ public sealed class WorldTuningTests
         Assert.Equal(factor == 0 ? 0 : 1, saved.Set<NpcBounty>().Count());
         WorldConfigurationStore.LoadActive(new(f.Db.Path));
         Assert.Equal(factor, new WorldDatabase(f.Db.Path).Settings.Rewards.BountyMultiplier);
+    }
+
+    [Theory]
+    [InlineData(false, 0, 2, 0, 15)]
+    [InlineData(false, 1.125005, 3, 337502, 22)]
+    [InlineData(true, 1.125, 0, 337500, 0)]
+    [InlineData(true, 2, 1, 600000, 7)]
+    public void NpcBountyDisplayAndSettlementUseActivatedIskRateAndIndependentKillSkillPoints(
+        bool resident,
+        double bountyRate,
+        int skillPointRate,
+        long expectedBountyCents,
+        int expectedSkillPoints
+    )
+    {
+        using PilotCombatTests.Fixture f = new();
+        WorldDatabase database = new(f.Db.Path);
+        WorldConfigurationStore configuration = new(database, f.Clock);
+        var state = configuration.Read();
+        var settings = state.Active.Draft.Settings with
+        {
+            Rewards = new((decimal)bountyRate),
+            Progression = new(KillSkillPointMultiplier: skillPointRate),
+        };
+        configuration.Save(state.Generation, state.Active.Draft with { Settings = settings }, "test");
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        Assert.Equal(3000, BountyFromScene());
+
+        WorldConfigurationStore.Activate(database);
+        f.AlmostDefeated();
+        using (var live = resident ? new LiveWorld(database, f.Clock) : null)
+        {
+            Assert.Equal(expectedBountyCents / (double)MarketDefinitions.CentsPerIsk, BountyFromScene());
+            var shot = f.Fire();
+            Assert.True(shot.Destroyed);
+            Assert.Equal(expectedBountyCents, shot.Reward?.AmountCents ?? 0);
+            Assert.Throws<InvalidDataException>(() => f.Fire());
+        }
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(expectedSkillPoints, saved.Set<SavedFreeSkillPoints>().Sum(points => points.Points));
+        Assert.Equal(expectedBountyCents, saved.Set<PilotWallet>().Sum(wallet => wallet.Cents));
+
+        double BountyFromScene()
+        {
+            using FlightSession flight = new(f.Db.Store, pilot, f.Clock, new(), [], encounters: f.Encounters);
+            flight.Snapshot();
+            var state = Assert.IsType<DestinyCommand.SetState>(flight.Updates[0].Command);
+            var npc = state.Snapshot.Slims.OfType<NpcSlimItem>().Single(slim => slim.Npc.Id == f.Npc.Id);
+            var addition = Ballpark.AddNpcs([npc.Npc], flight.CurrentStamp);
+            var initialSlim = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(npc)));
+            var addedSlim = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(Assert.Single(addition.Slims))));
+            var amount = Assert.IsType<double>(BlueRead.Fields(initialSlim.State)["edenNpcBounty"]);
+            Assert.Equal(amount, BlueRead.Fields(addedSlim.State)["edenNpcBounty"]);
+            return amount;
+        }
     }
 
     [Fact]

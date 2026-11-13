@@ -23,8 +23,12 @@ assert hashlib.sha256(archive.read_bytes()).hexdigest() == (
     '37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368')
 with zipfile.ZipFile(archive) as source:
     native = zlib.decompress(source.read('spacecomponents/client/components/entitystandings.pyj'))
+    active_item = zlib.decompress(source.read('eve/client/script/ui/inflight/activeitem.pyj'))
+    selected_item = zlib.decompress(source.read('eve/client/script/ui/inflight/selectedItemWnd.pyj'))
 
-worker = r'''
+worker = 'NATIVE = %r\nEXPRESSION = %r\nACTIVE_ITEM = %r\nSELECTED_ITEM = %r\n' % (
+    native, expression, active_item, selected_item)
+worker += r'''
 import marshal, sys
 names = ['eve', 'eve.client', 'eve.client.script', 'eve.client.script.ui',
          'eve.client.script.ui.services', 'eve.client.script.ui.services.evePhotosvc',
@@ -38,6 +42,10 @@ names += ['os', 'os.path', 'blue', 'carbon', 'carbon.common', 'carbon.common.scr
           'eve.client.script.ui.shared.dockedUI.guests', 'eve.client.script.ui.station', 'eve.client.script.ui.station.base',
           'eve.client.script.ui.services.skillQueueSvc', 'eve.client.script.ui.services.skillsvc',
           'eve.client.script.ui.skilltrading', 'eve.client.script.ui.skilltrading.applySkillPointsWindow']
+names += ['npcs', 'npcs.client', 'npcs.client.components', 'npcs.client.components.entity_bounty',
+          'eve.client.script.ui.inflight', 'eve.client.script.ui.inflight.activeitem',
+          'eve.client.script.ui.inflight.selectedItemWnd', 'eve.client.script.ui.shared.info',
+          'eve.client.script.ui.shared.info.infoContentBase']
 for name in names:
     module = type(sys)(name)
     module.__path__ = []
@@ -75,6 +83,24 @@ friendly = ('native-blue', -1, 'friendly-hint')
 neutral = ('native-neutral', 0, 'neutral-hint')
 hostile = ('native-red', 1, 'hostile-hint')
 entity.ICON_SORT_ORDER_HINT_BY_STANDINGS_CLASS = {-1: hostile, 0: neutral, 1: friendly}
+bounty = sys.modules['npcs.client.components.entity_bounty']
+bounty.get_entity_bounty = lambda type_id, item_id: 3000
+active_item = sys.modules['eve.client.script.ui.inflight.activeitem']
+selected_item = sys.modules['eve.client.script.ui.inflight.selectedItemWnd']
+for module in (active_item, selected_item):
+    module.get_entity_bounty = bounty.get_entity_bounty
+del sys.modules['eve.client.script.ui.shared.info.infoContentBase']
+
+def walk(code):
+    yield code
+    for child in code.co_consts:
+        if hasattr(child, 'co_code'):
+            for nested in walk(child):
+                yield nested
+
+def native_method(blob, name, module):
+    code = next(c for c in walk(marshal.loads(blob[8:])) if c.co_name == name)
+    return type(lambda: None)(code, module.__dict__)
 
 class State(object):
     attacking = False
@@ -106,8 +132,13 @@ entity._get_icon_color_and_hint_from_entity_standing_response = original
 state.attacking = True
 assert original(Slim(301, 3885), 0)[0] == 'native-red'
 expression = marshal.loads(EXPRESSION)
+import __builtin__
+items = {}
+michelle = type('Michelle', (), {'GetItem': staticmethod(items.get)})()
+__builtin__.sm = type('Services', (), {'GetService': staticmethod(lambda name: {'michelle': michelle}[name])})()
 assert eval(expression, {}) == {}
 installed = entity._get_icon_color_and_hint_from_entity_standing_response
+bounty_lookup = bounty.get_entity_bounty
 assert callable(photo.EvePhoto.GetPortrait)
 for attacking in [False, True]:
     state.attacking = attacking
@@ -122,8 +153,30 @@ for attacking in [False, True]:
         assert installed(other, standing) == hostile
 assert eval(expression, {}) == {}
 assert entity._get_icon_color_and_hint_from_entity_standing_response is installed
+assert bounty.get_entity_bounty is bounty_lookup
+assert 'eve.client.script.ui.shared.info.infoContentBase' not in sys.modules
+from npcs.client.components.entity_bounty import get_entity_bounty as late_import
+assert late_import is bounty_lookup
+
+active_bounty = native_method(ACTIVE_ITEM, 'CheckBounty', active_item)
+selected_bounty = native_method(SELECTED_ITEM, '_GetBountyAmount', selected_item)
+get_npc_bounty = native_method(ACTIVE_ITEM, 'GetNpcBounty', active_item)
+widget = type('ItemWidget', (), {'GetNpcBounty': get_npc_bounty})()
+rat = Slim(999, 30380)
+items[rat.itemID] = rat
+for amount in (3375.01, 0.0):
+    rat.edenNpcBounty = amount
+    assert active_bounty(widget, rat.typeID, rat) == (amount or None, None, None)
+    assert selected_bounty(widget, rat.typeID, rat) == amount
+    assert late_import(rat.typeID, rat.itemID) == amount
+assert bounty_lookup(rat.typeID + 1, rat.itemID) == 3000
+assert bounty_lookup(rat.typeID, None) == 3000
+del rat.edenNpcBounty
+assert selected_bounty(widget, rat.typeID, rat) == 3000
+assert bounty_lookup(rat.typeID, rat.itemID + 1) == 3000
 print('CONCORD overview adapter assertions passed in the pinned Python 2 runtime')
-'''.replace('NATIVE', repr(native)).replace('EXPRESSION', repr(expression))
+print('NPC bounty display assertions passed in the pinned Python 2 runtime')
+'''
 
 with os.add_dll_directory(str(binaries)):
     runtime = ctypes.CDLL(str(runtime_path))

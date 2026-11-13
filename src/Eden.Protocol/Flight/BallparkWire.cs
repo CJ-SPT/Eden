@@ -3,6 +3,7 @@ using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
+using Eden.Gameplay.Market;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Drones;
 using Eden.Protocol.Serialization;
@@ -187,6 +188,8 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
         fields["corpID"] = Npc.CorporationId;
         fields["charID"] = null;
         fields["modules"] = new List<object?>();
+        // Build 3662168's NPC bounty display normally reads catalog dogma.
+        fields["edenNpcBounty"] = Npc.BountyCents / (double)MarketDefinitions.CentsPerIsk;
         if (Npc.Role is NpcRole.Navy or NpcRole.Customs or NpcRole.Concord)
         {
             fields["hostile_response_threshold"] = DefensivePatrolResponseThreshold;

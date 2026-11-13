@@ -32,6 +32,7 @@ public sealed record NpcContact(
     public NpcAnchorKind AnchorKind { get; init; }
     public long AnchorId { get; init; }
     public NpcStandingThresholds? StandingThresholds { get; init; }
+    public long BountyCents { get; init; }
 }
 
 public sealed record NpcStandingThresholds(double Hostile, double Friendly);

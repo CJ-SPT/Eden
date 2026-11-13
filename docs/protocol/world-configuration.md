@@ -2,6 +2,41 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## NPC bounty display, November 13, 2026
+
+The in-space Selected Item panel and Show Info for a visible NPC display the gross ISK bounty from the active world revision.
+The NPC scene snapshot and additions carry the same catalog base, role eligibility and cents rounding used at settlement.
+The signed login adapter makes the native bounty helper read that amount from the NPC's slim item. It accepts an explicit
+zero and falls back to the native helper for type-only lookups or items without an Eden bounty. Save the setting, restart the
+updated server and reconnect to receive the adapter. The NPC kill skill-point rate remains independent and uses the original
+catalog bounty. A 3,000 ISK pirate with 2× bounty and 1× kill SP shows and pays 6,000 ISK before tax and grants 7 unallocated SP.
+
+The original build 3662168 archive (SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`)
+shows that `ActiveItem.CheckBounty`, the alternate Selected Item panel and the Show Info header import `get_entity_bounty`.
+That helper reads catalog dogma attribute 481 and can apply a catalog owner multiplier. The build's native system bounty
+percentage uses a separate service. Evejs 261108.1 was consulted for its NPC slim payload and separate dynamic bounty reply.
+The [Carbon Destiny AddBall binding](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark_Blue.cpp)
+was consulted for the scene boundary. [EVE University ratting reference](https://wiki.eveuniversity.org/Ratting)
+
+**Automated validation.** Five exact cases passed in 14.44 seconds. They exercise pending versus activated rates, the wire
+amount in initial and added NPCs, gross settlement and independent silent SP in both file-backed and resident worlds, and the
+pinned client's two Selected Item methods in the headless Python 2 runtime. The encrypted login test was updated to use the
+session packet reader after the signed challenge exceeded the test's 16 KiB plaintext-handshake limit.
+
+The broader focused filter passed 471 tests in 300.72 seconds on the fitting update `c9a42c3b`. After integrating contract
+search update `db52fbb0`, 18 bounty, login and contract-search tests passed in 16.63 seconds. The final solution build reported
+zero warnings or errors. Both Python policy suites (8 catalog and 9 formatting checks) and formatting verification passed.
+
+```text
+FullyQualifiedName~WorldTuningTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~ConcordOverviewTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~NpcEncounterTests|FullyQualifiedName~NpcSceneReadTests|FullyQualifiedName~NpcCatalogSharingTests|FullyQualifiedName~LiveSimulationTests|FullyQualifiedName~LiveCombatObjectTests|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~MissileCombatTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~ApplyFittingTests|FullyQualifiedName~BlueMarshalTests
+FullyQualifiedName~WorldTuningTests.NpcBountyDisplayAndSettlementUseActivatedIskRateAndIndependentKillSkillPoints|FullyQualifiedName~ConcordOverviewTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~ContractSearchPerformanceTests|FullyQualifiedName~ContractSearchSessionTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After restarting and reconnecting, select a pirate in the overview and compare the displayed
+amount with its gross Wallet bounty. Reopen the skill queue to see the updated unallocated SP balance.
+
 ## Remote administration in Docker, November 13, 2026
 
 The Compose admin override publishes TCP 26003 on an explicit host address. Eden serves HTTPS using the deployment PFX and

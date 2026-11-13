@@ -384,6 +384,7 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 - [Local Blazor catalog and configuration editor, November 7, 2026](protocol/catalog.md#local-blazor-catalog-and-configuration-editor-november-7-2026)
 - [Administration save interactivity, November 11, 2026](protocol/world-configuration.md#administration-save-interactivity--november-11-2026)
 - [Remote administration in Docker, November 13, 2026](protocol/world-configuration.md#remote-administration-in-docker-november-13-2026)
+- [NPC bounty display, November 13, 2026](protocol/world-configuration.md#npc-bounty-display-november-13-2026)
 
 - [Versioned world configuration, November 7, 2026](protocol/catalog.md#versioned-world-configuration-november-7-2026)
 

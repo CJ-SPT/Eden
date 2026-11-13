@@ -46,14 +46,15 @@ public sealed class PilotLoginTests
         };
         await PacketStream.WriteAsync(wire, BlueMarshal.Encode(new object?[] { "test", keys }), timeout.Token);
         Assert.Equal("OK CC", BlueMarshal.Text(BlueMarshal.Decode(await PacketStream.ReadAsync(wire, timeout.Token))));
+        EncryptedPackets encrypted = new(wire, aes, timeout.Token);
 
         byte[] challenge = RandomNumberGenerator.GetBytes(64);
         var credentials = new Dictionary<string, object?> { ["user_sso_token"] = validTicket ? "fixture" : "invalid" };
         await SendEncrypted(new object?[] { challenge, credentials });
         if (validTicket)
         {
-            Assert.Equal(2L, await ReadEncrypted());
-            object?[] reply = BlueRead.Tuple(await ReadEncrypted(), 4);
+            Assert.Equal(2L, await encrypted.ReadAsync());
+            object?[] reply = BlueRead.Tuple(await encrypted.ReadAsync(), 4);
             object?[] signed = BlueRead.Tuple(reply[1], 2);
             Assert.Equal(LoginClient.Expression, BlueRead.Bytes(signed[0]));
             byte[] digest = SHA256.HashData(BlueMarshal.Encode(new object?[] { signed[0] }));
@@ -67,11 +68,6 @@ public sealed class PilotLoginTests
         async Task SendEncrypted(object? value)
         {
             await PacketStream.WriteAsync(wire, aes.EncryptCbc(BlueMarshal.Encode(value), aes.IV), timeout.Token);
-        }
-
-        async Task<object?> ReadEncrypted()
-        {
-            return BlueMarshal.Decode(aes.DecryptCbc(await PacketStream.ReadAsync(wire, timeout.Token), aes.IV));
         }
     }
 }

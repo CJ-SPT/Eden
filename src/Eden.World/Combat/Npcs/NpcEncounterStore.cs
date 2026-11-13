@@ -3,6 +3,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
@@ -212,6 +213,7 @@ internal sealed class NpcEncounterStore(
             }
         }
         world.SaveChanges();
+        decimal bountyMultiplier = database.Settings.Rewards.BountyMultiplier;
         NpcContact[] contacts = buildContacts
             ? npcs.Select(n =>
                 {
@@ -285,6 +287,7 @@ internal sealed class NpcEncounterStore(
                         AnchorKind = n.AnchorKind,
                         AnchorId = n.BeltId,
                         StandingThresholds = profiles[n.TypeId].StandingThresholds,
+                        BountyCents = WorldTuningRules.Reward(NpcBountyRules.BaseCents(n.Role, attributes), bountyMultiplier),
                     };
                 })
                 .ToArray()

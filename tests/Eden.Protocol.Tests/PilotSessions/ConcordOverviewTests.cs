@@ -20,12 +20,13 @@ public sealed class ConcordOverviewTests
         Assert.EndsWith(", 'eden-login', 'exec'), {}) or {}", expression);
         Assert.Contains("EvePhoto.GetPortrait = get_portrait", expression);
         Assert.Contains("install_concord_overview()", expression);
+        Assert.Contains("install_npc_bounty_display()", expression);
         Assert.Contains("install_presence_lists()", expression);
         Assert.Contains("install_free_point_preview()", expression);
     }
 
     [PinnedPortraitClientFact]
-    public async Task ConcordStaysBlueDuringNativeAttackingOverrideWithoutChangingOtherNpcColors()
+    public async Task NativeNpcOverviewKeepsConcordBlueAndUsesAdvertisedNpcBounties()
     {
         string path = Path.Combine(Path.GetTempPath(), "eden-concord-expression-" + Guid.NewGuid().ToString("N"));
         try
@@ -42,6 +43,7 @@ public sealed class ConcordOverviewTests
             await process.WaitForExitAsync(timeout.Token);
             Assert.True(process.ExitCode == 0, await output + await error);
             Assert.Contains("CONCORD overview adapter assertions passed", await output);
+            Assert.Contains("NPC bounty display assertions passed", await output);
         }
         finally
         {

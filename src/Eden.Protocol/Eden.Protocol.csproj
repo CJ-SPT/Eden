@@ -7,6 +7,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Characters/portrait_client.py" />
     <EmbeddedResource Include="Flight/concord_overview_client.py" />
+    <EmbeddedResource Include="Flight/npc_bounty_client.py" />
     <EmbeddedResource Include="Docking/presence_lists_client.py" />
     <EmbeddedResource Include="Skills/free_points_client.py" />
     <PackageReference Include="Google.Protobuf" Version="3.36.2" />
