@@ -251,5 +251,14 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
             }
             InventoryPersistence.MergeOutput(world, catalog, pilotId, container.Id, (int)InventoryFlag.Cargo, stack.TypeId, stack.Quantity);
         }
+        if (
+            definition.Kind == ExplorationKind.Data
+            && ExplorationLootRules.EncryptionSkillbook(container.LootSeed, (NpcPirateFaction)definition.FactionId) is int skillbook
+            && catalog.FittingType(skillbook)?.CategoryId == (int)InventoryCategory.Skill
+            && catalog.Read(CatalogData.Client.Types, (long)skillbook)?.Published == 1
+        )
+        {
+            InventoryPersistence.MergeOutput(world, catalog, pilotId, container.Id, (int)InventoryFlag.Cargo, skillbook, 1);
+        }
     }
 }

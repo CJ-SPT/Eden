@@ -123,6 +123,7 @@ internal sealed class RegionalMarketCatalog
         var definition = catalog.Read(CatalogData.Client.Types, (long)typeId);
         if (
             item is null
+            || RegionalMarketRules.IsPlayerSuppliedIndustryInput(typeId, (InventoryCategory)item.CategoryId, item.GroupId)
             || !RegionalMarketRules.CanUnlock(
                 (InventoryCategory)item.CategoryId,
                 item.GroupId,

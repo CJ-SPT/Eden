@@ -166,6 +166,18 @@ public sealed class HackingRuleTests
     }
 
     [Theory]
+    [InlineData(NpcPirateFaction.Guristas, 21790)]
+    [InlineData(NpcPirateFaction.Angels, 21791)]
+    [InlineData(NpcPirateFaction.BloodRaiders, 23087)]
+    [InlineData(NpcPirateFaction.Sansha, 23087)]
+    [InlineData(NpcPirateFaction.Serpentis, 23121)]
+    public void PirateDataSitesRollFactionEncryptionSkillbooksFromTheSavedSeed(NpcPirateFaction faction, int skillbook)
+    {
+        Assert.Equal(skillbook, ExplorationLootRules.EncryptionSkillbook(12, faction));
+        Assert.Null(ExplorationLootRules.EncryptionSkillbook(13, faction));
+    }
+
+    [Theory]
     [InlineData(NpcPirateFaction.Guristas, SalvageFamily.Caldari)]
     [InlineData(NpcPirateFaction.Angels, SalvageFamily.Minmatar)]
     [InlineData(NpcPirateFaction.Serpentis, SalvageFamily.Gallente)]

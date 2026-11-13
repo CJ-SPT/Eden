@@ -14,6 +14,7 @@ internal static class MarketProgressionStore
         long account = world.Pilots.Where(p => p.Id == job.PilotId).Select(p => p.AccountId).Single();
         if (
             account <= 0
+            || job.Activity != IndustryActivity.Manufacturing
             || job.Status != IndustryJobStatus.Delivered
             || job.CompletedAt is null
             || job.OutputQuantity <= 0

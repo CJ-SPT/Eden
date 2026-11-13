@@ -11,6 +11,21 @@ public static class ExplorationLootRules
     public const int MaximumQuantity = 3;
     public const int SpecialPoolDivisor = 3;
 
+    private const int EncryptionSkillbookRollDivisor = 12;
+
+    // The four pirate encryption books use the same saved container seed as its other rewards.
+    public static int? EncryptionSkillbook(int seed, NpcPirateFaction faction) =>
+        seed % EncryptionSkillbookRollDivisor == 0
+            ? faction switch
+            {
+                NpcPirateFaction.BloodRaiders or NpcPirateFaction.Sansha => 23087, // Amarr Encryption Methods
+                NpcPirateFaction.Guristas => 21790, // Caldari Encryption Methods
+                NpcPirateFaction.Serpentis => 23121, // Gallente Encryption Methods
+                NpcPirateFaction.Angels => 21791, // Minmatar Encryption Methods
+                _ => null,
+            }
+            : null;
+
     // Initial Eden distribution, rather than a claim of recovered retail drop weights.
     public static IReadOnlyList<ExplorationLootStack> Roll(
         int seed,

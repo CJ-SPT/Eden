@@ -1,4 +1,5 @@
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 
 namespace Eden.Gameplay.Market;
 
@@ -34,6 +35,23 @@ public static class RegionalMarketRules
     // Build 3662168 inventory groups: regular capitals deliberately remain eligible.
     private const int TitanGroup = 30;
     private const int SupercarrierGroup = 659;
+    private const int Morphite = 11399;
+    private const int MercoxitGroup = 468;
+    private const int MagmaticGasGroup = 4729;
+
+    private enum IndustrialGroup
+    {
+        ConstructionComponents = 334,
+        MoonMaterials = 427,
+        IntermediateMaterials = 428,
+        Composite = 429,
+        BiochemicalMaterial = 712,
+        AdvancedCapitalConstructionComponents = 913,
+        HybridPolymers = 974,
+        MolecularForgedMaterials = 4096,
+        UnrefinedMineral = 4932,
+    }
+
     private const int HubHullStock = 5;
     private const int HubChargeStock = 5000;
     private const int HubItemStock = 50;
@@ -43,6 +61,34 @@ public static class RegionalMarketRules
 
     public static bool CanUnlock(InventoryCategory category, int groupId, bool published, bool onMarket) =>
         published && onMarket && category != InventoryCategory.Blueprint && groupId is not (TitanGroup or SupercarrierGroup);
+
+    public static bool IsPlayerSuppliedIndustryInput(int typeId, InventoryCategory category, int groupId) =>
+        typeId == Morphite
+        || category switch
+        {
+            InventoryCategory.Asteroid => groupId == MercoxitGroup
+                || (MiningResourceGroup)groupId
+                    is MiningResourceGroup.UbiquitousMoonOre
+                        or MiningResourceGroup.CommonMoonOre
+                        or MiningResourceGroup.UncommonMoonOre
+                        or MiningResourceGroup.RareMoonOre
+                        or MiningResourceGroup.ExceptionalMoonOre,
+            InventoryCategory.Material => (IndustrialGroup)groupId
+                is IndustrialGroup.MoonMaterials
+                    or IndustrialGroup.IntermediateMaterials
+                    or IndustrialGroup.Composite
+                    or IndustrialGroup.BiochemicalMaterial
+                    or IndustrialGroup.HybridPolymers
+                    or IndustrialGroup.MolecularForgedMaterials
+                    or IndustrialGroup.UnrefinedMineral
+                || groupId == (int)HoldCargoGroup.Prismaticite,
+            InventoryCategory.Commodity => (IndustrialGroup)groupId
+                is IndustrialGroup.ConstructionComponents
+                    or IndustrialGroup.AdvancedCapitalConstructionComponents,
+            InventoryCategory.Celestial => groupId == (int)HoldCargoGroup.HarvestableCloud,
+            InventoryCategory.ColonyResource => groupId == MagmaticGasGroup,
+            _ => false,
+        };
 
     public static bool CanDemand(MarketDemandEligibility item) =>
         CanUnlock(item.Category, item.GroupId, item.Published, item.OnMarket)

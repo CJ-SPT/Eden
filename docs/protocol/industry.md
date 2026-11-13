@@ -7,6 +7,47 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Tech II supply audit and refinery bootstrap
+
+The [build-3662168 audit](../tech-two-supply-audit.json) traces the admitted Tech II manufacturing catalog and the first refinery's
+equipment to catalog recipes and acquisition paths. It checks material dependencies, reachable NPC suppliers, ore and ice sources,
+planetary schematics, R&D fields, and racial invention skillbooks. Regenerate it from the pinned catalog with
+`python tools/Audit-TechTwoSupply.py --catalog <catalog.sqlite>`. Future moon extraction, composite reactions, Mercoxit and
+Fullerite sources are marked with their planned milestone. The reported closure counts describe the modeled graph and require
+end-to-end gameplay verification. Missing loot, LP and other unmodeled sources are listed as unresolved.
+
+The pinned corporate offers include the originals for the Athanor, Tatara, their reprocessing facility, Moon Drill and both
+reactors, the Deep Core Mining Laser I original, and the Deep Core Mining skillbook. Eden uses the catalog base price as a fallback
+for these items when the saved market snapshot lacks a sell quote. A published type, a market group and a positive corporate sell
+offer are still required. The audit traces all four fuel blocks to ice and planetary commodities and the refinery and service
+modules to ordinary ore and P4 planetary goods. Pirate data containers can award one racial encryption skillbook from their saved
+loot seed. Eden uses one chance in twelve, with the Amarr book available from both Blood Raider and Sansha sites.
+
+NPC sells and production unlocks exclude moon ore and materials, Mercoxit and Morphite, raw reaction gases, reaction outputs and
+advanced construction components. Existing player orders and NPC buy eligibility use the ordinary market rules. The catalog has
+58 moon composite formulas, eight Prismaticite formulas in the same group, and nine hybrid formulas. The four jump freighters
+need both hybrid polymers and racial molecular-forged outputs through their T1 freighters. The latter require Mykoserocin,
+Cytoserocin and molecular condensers. Fullerite access alone leaves those chains open.
+
+Reference: EVE University [moon mining](https://wiki.eveuniversity.org/Moon_mining),
+[reactions](https://wiki.eveuniversity.org/Reactions) and [data site rewards](https://wiki.eveuniversity.org/Data_site), and CCP
+[Quantum Cores](https://support.eveonline.com/hc/en-us/articles/208289605-Structure-Management). Reviewed the local evejs
+build-3396210 `moonExtractionsService.js` (SHA-256 `B1661BE2D68E60DA6F2701A46D04D807A6D050A276E96B200CEACB7589479393`)
+and `industryRestrictions.js` (SHA-256 `35CE309015A6CC17368CC636AD151BE774BC5F8AAFE560AE75F910AABC0375EC`) as behavioral
+references for subsequent milestones.
+
+**Automated validation.** The exact-method filter for industrial originals, NPC material exclusion and encryption skillbook
+rolls passed 11 cases in 6.07 seconds. Tool and solution restore, solution build (zero warnings/errors), both Python policy
+suites (8 catalog and 9 formatting cases), format and width verification for 1,980 files, and byte-for-byte audit reproduction
+passed. A follow-up filter covering the affected market, hacking, production-catalog and starter-supply checks passed
+135 cases in 49 seconds. It omitted the three longer starter mine-to-replacement cases and the existing rollback test.
+The first broader run hit a checkpoint failure in `FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce`.
+The same payment-trigger failure and retained `world.sqlite.owner` handle reproduced on the unchanged parent checkout.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of

@@ -181,6 +181,9 @@ restored scenery, room-local coordinate transforms and saved-position compatibil
 ore/scenery collision spheres and non-interactable wreckage in Drone Assembly and Drone Cluster.
 [Hacking and archaeology](protocol/information.md#hacking-and-archaeology-november-9-2026) covers native analyzer minigames, persistent pirate exploration containers, earned industrial inputs and the pinned-build content export.
 
+[Tech II supply audit and refinery bootstrap](protocol/industry.md#tech-ii-supply-audit-and-refinery-bootstrap) records
+legitimate input sources and blockers across the moon, reaction and advanced manufacturing chains.
+
 [Catalog-wide station production](protocol/industry.md#catalog-wide-station-production-november-9-2026) records broad manufacturing, ancient-relic invention, facility restrictions and preserved material-source gaps. The [production catalog audit](production-catalog.json) records every manufacturing recipe and exclusion.
 
 [Combat-site layout corrections](protocol/combat.md#combat-site-layout-corrections--november-9-2026) cover native spawn anchors,

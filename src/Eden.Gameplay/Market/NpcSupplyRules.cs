@@ -26,6 +26,18 @@ public static class NpcSupplyRules
         }
     }
 
+    // These catalog-backed originals and skill are required to start the refinery and deep-core chains.
+    public static bool UsesIndustrialCatalogPrice(int typeId) =>
+        typeId
+            is 11395 // Deep Core Mining
+                or 12109 // Deep Core Mining Laser I Blueprint
+                or 36977 // Athanor Blueprint
+                or 36978 // Tatara Blueprint
+                or 37032 // Standup Reprocessing Facility I Blueprint
+                or 37034 // Standup Moon Drill I Blueprint
+                or 45540 // Standup Composite Reactor I Blueprint
+                or 45541; // Standup Hybrid Reactor I Blueprint
+
     public static long? Price(NpcSupplyType type)
     {
         if (
