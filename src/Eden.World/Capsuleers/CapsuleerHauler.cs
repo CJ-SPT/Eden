@@ -902,7 +902,7 @@ internal sealed partial class CapsuleerHauler(
         }
         if (!_background && !wasWarping && _navigation.Warp is not null)
         {
-            Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
+            Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
         }
         if (_navigation.Warp is not null || _navigation.WarpDestination is not null)
         {
@@ -943,7 +943,7 @@ internal sealed partial class CapsuleerHauler(
                     _target.DestinationSystemId
                 );
                 _navigation.SetAtRest();
-                Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
+                Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _work = Work with
                 {
                     Activity = HaulerActivity.Jumping,
@@ -960,7 +960,7 @@ internal sealed partial class CapsuleerHauler(
         else if (Pilot.Position!.DistanceTo(_target.Position) - Pilot.Flight.ShipRadius - _target.Radius <= DockingDefinitions.MaximumRange)
         {
             _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Work.DestinationStationId);
-            Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
+            Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
             _navigation.Dock();
             _operation.TravelChanged = true;
             var routine = TravelerRoutineRules.Arrive(Work.Routine ?? TravelerRoutineRules.Create(pilotId), Pilot.StationId);

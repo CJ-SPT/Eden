@@ -8,15 +8,23 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Operations;
+using Eden.Protocol.Exploration;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.World.Agents;
 using Eden.World.Catalog;
+using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +37,117 @@ public sealed class MissionLayoutTests
     private const int GuristasBlockade = 2924;
 
     private sealed record SavedPlacement(long Id, int TypeId, double X, double Y, double Z, double? AcquisitionRange);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WarpingOutOfTheBlockadeDisengagesTheStationaryTowerAndCompletesWarp(bool resident)
+    {
+        const int towerType = 17606;
+        const long accountId = 1000001;
+        const long clientId = 42;
+        using MissionFixture f = Create(GuristasBlockade, 1, resident);
+        var mission = f.Accept(f.Request());
+        f.Missions.Arrive(mission.SystemId, mission.Position);
+        using var scope = f.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var store = services.GetRequiredService<SqliteWorld>();
+        var pilot = store.FindPilot(accountId)!;
+        Assert.True(pilot.Flight.MaxSpeed > 0);
+        Assert.True(pilot.Flight.WarpSpeed > 0);
+        store.SetPosition(pilot.ShipId, mission.Position, mission.SystemId);
+        pilot = store.FindPilot(accountId)!;
+        using PilotCallContext context = new(
+            accountId,
+            pilot.Account,
+            [pilot],
+            services.GetRequiredService<FlightSessionFactory>().Create,
+            clientId,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        var updates = services.GetRequiredService<PilotUpdateCoordinator>();
+        updates.Enter(context);
+        var flight = context.Flight;
+        flight.Snapshot();
+        var tower = Assert.Single(flight.VisibleNpcs, npc => npc.TypeId == towerType);
+        Assert.Equal(0, tower.MaxSpeed);
+        Assert.Null(tower.Navigation);
+
+        var skills = services.GetRequiredService<SkillHandler>();
+        var operations = services.GetRequiredService<IPilotOperationScope>();
+        var anomalies = services.GetRequiredService<CombatAnomalyHandler>();
+        PilotSessionTick tick = new(
+            f.Clock,
+            updates,
+            skills,
+            services.GetRequiredService<IAsteroidField>(),
+            operations,
+            anomalies: anomalies
+        );
+        List<string> replies = [];
+        bool sentWarp = false;
+        PilotSessionOutput output = new(
+            context,
+            accountId,
+            clientId,
+            packet =>
+            {
+                replies.Add(Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(packet))).Name);
+                sentWarp |= flight.Updates.Any(u => u.Command is DestinyCommand.WarpTo warp && warp.Id == pilot.ShipId);
+                return Task.CompletedTask;
+            },
+            _ => { }
+        );
+        Task Advance() => tick.AdvanceAsync(context, output, _ => { }, accountId, clientId);
+        await Advance();
+        var combat = services.GetRequiredService<INpcCombat>();
+        Assert.Contains(tower.Id, combat.Aggressors(pilot.ShipId));
+        f.Clock.Seconds++;
+        await Advance();
+        combat.Disengage(pilot.ShipId, tower.Id);
+        flight.RefreshNpcs();
+        Assert.Null(Assert.Single(flight.VisibleNpcs, npc => npc.Id == tower.Id).Navigation);
+        var navigation = WorldActionScope.Inspect(
+            services.GetRequiredService<WorldDatabase>(),
+            world => world.Set<WorldNpc>().Find(tower.Id)!.Navigation
+        );
+        Assert.Equal(NpcNavigationState.Idle, navigation);
+        f.Clock.Seconds++;
+        await Advance();
+        Assert.Contains(tower.Id, combat.Aggressors(pilot.ShipId));
+
+        var router = services.GetRequiredService<PilotCallRouter>();
+        PilotSessionCalls calls = new(context, output, router, updates, skills, f.Clock, _ => { }, accountId, clientId, operations);
+        var reference = context.Reference("beyonce", PilotBindingLifetime.Location);
+        var request = PilotServicesTests.Request(null, "CmdWarpToStuff", ["item", (long)pilot.StationId], reference.Id);
+        await calls.ProcessAsync(BlueMarshal.Decode(BlueMarshal.Encode(request)));
+        Assert.Contains(replies, name => name.EndsWith(".CallRsp", StringComparison.Ordinal));
+        for (int second = 0; second < 240 && (flight.PreparingWarp || flight.InWarp); second++)
+        {
+            f.Clock.Seconds++;
+            await Advance();
+        }
+        Assert.True(sentWarp);
+        Assert.False(
+            flight.PreparingWarp || flight.InWarp,
+            $"Aligning={flight.PreparingWarp}, in warp={flight.InWarp}, hull={context.Pilot.Flight}"
+        );
+        Assert.Equal(pilot.ShipId, context.Pilot.ShipId);
+        Assert.InRange(context.Pilot.Position!.DistanceTo(pilot.Home.Position), 0, pilot.Flight.StationRadius + 2000);
+        Assert.DoesNotContain(tower.Id, combat.Aggressors(pilot.ShipId));
+        Assert.DoesNotContain(flight.VisibleNpcs, npc => npc.Id == tower.Id);
+        var encounters = services.GetRequiredService<INpcEncounters>();
+        var after = Assert.Single(encounters.List(mission.SystemId, f.Clock.Now), npc => npc.Id == tower.Id);
+        Assert.Equal(tower.Position, after.Position);
+        Assert.Null(after.Navigation);
+        if (resident)
+        {
+            await services.GetRequiredService<LiveWorld>().FlushAsync();
+        }
+        var persisted = store.FindPilot(accountId)!;
+        Assert.Equal(context.Pilot.Position, persisted.Position);
+    }
 
     [Theory]
     [InlineData(false)]

@@ -205,7 +205,7 @@ internal sealed class NpcEncounterStore(
             NpcRepairPersistence.Advance(npc, profiles[npc.TypeId].Attributes, now);
             if (NpcMotion.Engaged(npc) && !aggression.ContainsKey(npc.Id))
             {
-                NpcMotion.Return(npc);
+                NpcMotion.Return(npc, profiles[npc.TypeId].Type.GroupId);
             }
             if (npc.Navigation == NpcNavigationState.Returning && !database.MotionStamps.ContainsKey(systemId))
             {
@@ -248,6 +248,7 @@ internal sealed class NpcEncounterStore(
                         Weapon(n),
                         NpcMotion.Contact(
                             n,
+                            type.GroupId,
                             effective[n.Id],
                             aggression.GetValueOrDefault(n.Id)?.TargetShipId ?? 0,
                             NpcMotion.Home(n, catalog),

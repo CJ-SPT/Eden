@@ -23,7 +23,16 @@ internal static class NpcMotion
 
     internal static float Agility(IReadOnlyDictionary<DogmaAttributeId, double> attributes) => NpcMotionRules.Agility(attributes);
 
-    internal static void Return(WorldNpc npc) => npc.Navigation = NpcNavigationState.Returning;
+    internal static void Return(WorldNpc npc, int groupId)
+    {
+        if (NpcMotionRules.IsStationary(groupId, npc.Role))
+        {
+            npc.Navigation = NpcNavigationState.Idle;
+            npc.VelocityX = npc.VelocityY = npc.VelocityZ = 0;
+            return;
+        }
+        npc.Navigation = NpcNavigationState.Returning;
+    }
 
     internal static void Patrol(
         WorldNpc npc,
@@ -74,7 +83,7 @@ internal static class NpcMotion
         int destinyStamp
     )
     {
-        if (type.GroupId == NpcEncounterDefinitions.SentryGroup || npc.Role == NpcRole.MissionStructure)
+        if (NpcMotionRules.IsStationary(type.GroupId, npc.Role))
         {
             return;
         }
@@ -107,9 +116,10 @@ internal static class NpcMotion
         SpacePosition? orbitDirection = null
     )
     {
-        if (type.GroupId == NpcEncounterDefinitions.SentryGroup || npc.Role == NpcRole.MissionStructure)
+        if (NpcMotionRules.IsStationary(type.GroupId, npc.Role))
         {
             npc.Navigation = NpcNavigationState.Idle;
+            npc.VelocityX = npc.VelocityY = npc.VelocityZ = 0;
             return;
         }
         Save(
@@ -129,48 +139,51 @@ internal static class NpcMotion
 
     internal static NpcNavigationContact? Contact(
         WorldNpc npc,
+        int groupId,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         long target,
         SpacePosition home,
         long now = 0
     ) =>
-        npc.Navigation switch
-        {
-            NpcNavigationState.Warping => new(Velocity(npc), 1, 0, 0, home, NpcNavigationState.Warping),
-            NpcNavigationState.Travelling => new(
-                Velocity(npc),
-                NpcMotionRules.SpeedFraction(attributes),
-                0,
-                0,
-                home,
-                NpcNavigationState.Travelling
-            ),
-            NpcNavigationState.Patrolling => new(
-                Velocity(npc),
-                NpcMotionRules.SpeedFraction(attributes),
-                0,
-                0,
-                NpcGuardRules.PatrolDestination(home, npc.Id, now),
-                NpcNavigationState.Patrolling
-            ),
-            NpcNavigationState.Idle => Velocity(npc) == SpacePosition.Zero
-                ? null
-                : new(Velocity(npc), 0, 0, 0, State: NpcNavigationState.Idle),
-            NpcNavigationState.Pursuing or NpcNavigationState.Orbiting when target != 0 => new(
-                Velocity(npc),
-                NpcMotionRules.SpeedFraction(attributes),
-                target,
-                attributes.GetValueOrDefault(DogmaAttributeId.EntityFlyRange),
-                State: npc.Navigation
-            ),
-            NpcNavigationState.Returning => new(
-                Velocity(npc),
-                NpcMotionRules.SpeedFraction(attributes),
-                0,
-                0,
-                home,
-                NpcNavigationState.Returning
-            ),
-            _ => throw new InvalidDataException("Invalid NPC navigation state."),
-        };
+        NpcMotionRules.IsStationary(groupId, npc.Role)
+            ? null
+            : npc.Navigation switch
+            {
+                NpcNavigationState.Warping => new(Velocity(npc), 1, 0, 0, home, NpcNavigationState.Warping),
+                NpcNavigationState.Travelling => new(
+                    Velocity(npc),
+                    NpcMotionRules.SpeedFraction(attributes),
+                    0,
+                    0,
+                    home,
+                    NpcNavigationState.Travelling
+                ),
+                NpcNavigationState.Patrolling => new(
+                    Velocity(npc),
+                    NpcMotionRules.SpeedFraction(attributes),
+                    0,
+                    0,
+                    NpcGuardRules.PatrolDestination(home, npc.Id, now),
+                    NpcNavigationState.Patrolling
+                ),
+                NpcNavigationState.Idle => Velocity(npc) == SpacePosition.Zero
+                    ? null
+                    : new(Velocity(npc), 0, 0, 0, State: NpcNavigationState.Idle),
+                NpcNavigationState.Pursuing or NpcNavigationState.Orbiting when target != 0 => new(
+                    Velocity(npc),
+                    NpcMotionRules.SpeedFraction(attributes),
+                    target,
+                    attributes.GetValueOrDefault(DogmaAttributeId.EntityFlyRange),
+                    State: npc.Navigation
+                ),
+                NpcNavigationState.Returning => new(
+                    Velocity(npc),
+                    NpcMotionRules.SpeedFraction(attributes),
+                    0,
+                    0,
+                    home,
+                    NpcNavigationState.Returning
+                ),
+                _ => throw new InvalidDataException("Invalid NPC navigation state."),
+            };
 }

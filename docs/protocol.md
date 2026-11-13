@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Warping out of The Blockade](protocol/agents.md#warping-out-of-the-blockade)
+records the stationary-sentry disconnect and the mission departure replay.
+
 [The Blockade stasis tower and railgun falloff](protocol/agents.md#the-blockade-stasis-tower-and-railgun-falloff--november-13-2026)
 records the warp-in and close-range combat replay.
 

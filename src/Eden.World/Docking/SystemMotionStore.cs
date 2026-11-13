@@ -175,7 +175,7 @@ public sealed partial class SqliteWorld
             }
             else if (npc.Navigation == NpcNavigationState.Returning || NpcMotion.Engaged(npc))
             {
-                NpcMotion.Return(npc);
+                NpcMotion.Return(npc, type.GroupId);
                 NpcMotion.Advance(npc, NpcMotion.Home(npc, catalog), type, effective, now, returning: true);
             }
             else if (

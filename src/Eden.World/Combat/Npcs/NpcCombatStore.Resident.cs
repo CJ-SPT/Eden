@@ -58,7 +58,7 @@ internal sealed partial class NpcCombatStore
         return new(ships: ships, resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id)));
     }
 
-    internal static void Disengage(WorldAction world, long shipId, long? npcId = null)
+    internal static void Disengage(WorldAction world, CatalogDbContext catalog, long shipId, long? npcId = null)
     {
         var aggression = world
             .Set<NpcAggression>()
@@ -73,7 +73,7 @@ internal sealed partial class NpcCombatStore
             var npc in world.Set<WorldNpc>().Where(n => Enumerable.Contains(ids, n.Id) && n.DestroyedAt == null && n.RetiredAt == null)
         )
         {
-            NpcMotion.Return(npc);
+            NpcMotion.Return(npc, catalog.FittingType(npc.TypeId)?.GroupId ?? 0);
         }
         world.RemoveRange(aggression);
         foreach (

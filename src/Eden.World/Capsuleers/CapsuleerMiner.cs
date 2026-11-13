@@ -642,7 +642,7 @@ internal sealed class CapsuleerMiner(
         _pilot = Pilot with { Position = tick.Position };
         if (!wasWarping && _navigation.Warp is not null)
         {
-            Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
+            Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
         }
         if (_operation.HasWorld)
         {
@@ -670,7 +670,7 @@ internal sealed class CapsuleerMiner(
             if (Distance(_target!) <= DockingDefinitions.MaximumRange)
             {
                 _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Pilot.StationId);
-                Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, Pilot.ShipId);
+                Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
                 _operation.TravelChanged = true;
                 _work = Work with { Activity = MinerActivity.Docked, TargetId = 0 };

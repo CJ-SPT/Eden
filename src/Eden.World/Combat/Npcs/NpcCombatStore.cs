@@ -193,11 +193,12 @@ internal sealed partial class NpcCombatStore(
     {
         var sources = LiveWorld.Find(database.Path)?.CombatForShip(shipId)?.Aggressors(shipId) ?? [];
         using WorldActionScope transaction = new(database, select: world => DisengageParticipants(world, shipId, npcId, sources));
-        Disengage(transaction.World, shipId, npcId);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        Disengage(transaction.World, catalog, shipId, npcId);
         transaction.Commit();
     }
 
-    internal static void Disengage(WorldDbContext world, long shipId, long? npcId = null)
+    internal static void Disengage(WorldDbContext world, CatalogDbContext catalog, long shipId, long? npcId = null)
     {
         var aggression = world
             .Set<NpcAggression>()
@@ -210,7 +211,7 @@ internal sealed partial class NpcCombatStore(
         var ids = aggression.Select(a => a.NpcId).ToArray();
         foreach (var npc in world.Set<WorldNpc>().Where(n => ids.Contains(n.Id) && n.DestroyedAt == null && n.RetiredAt == null))
         {
-            NpcMotion.Return(npc);
+            NpcMotion.Return(npc, catalog.FittingType(npc.TypeId)?.GroupId ?? 0);
         }
         world.RemoveRange(aggression);
         world
@@ -293,7 +294,7 @@ internal sealed partial class NpcCombatStore(
         {
             if (npc is not null && !npc.DestroyedAt.HasValue)
             {
-                NpcMotion.Return(npc);
+                NpcMotion.Return(npc, source?.GroupId ?? 0);
             }
             world.Remove(aggression);
             world.SaveChanges();
@@ -305,7 +306,7 @@ internal sealed partial class NpcCombatStore(
         var targetPosition = new SpacePosition(position.X, position.Y, position.Z);
         if (targetPosition.DistanceTo(home) > leash || NpcMotion.Position(npc).DistanceTo(home) > leash)
         {
-            NpcMotion.Return(npc);
+            NpcMotion.Return(npc, source!.GroupId);
             world.Remove(aggression);
             world.SaveChanges();
             transaction.Commit();

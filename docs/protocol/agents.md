@@ -2,6 +2,34 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Warping out of The Blockade
+
+On November 13, 2026, build 3662168 on server revision `b56bbca3` disconnected the pilot twice at 09:47:38 and
+09:48:35 UTC. Both server logs reported `NPC movement needs a positive catalog maximum and cruise speed`.
+The level-one Guristas pocket includes Minmatar Stasis Tower type **17606**, group **383**. The pinned catalog has no
+maximum velocity or cruise speed for it. When the pilot entered warp, combat disengagement set the tower to Returning.
+Refreshing the grid before the next motion tick tried to publish a return course for the tower.
+[EVE University mission report](https://wiki.eveuniversity.org/The_Blockade_%28Guristas_Pirates%29_%28Level_1%29)
+
+Disengagement now leaves stationary sentries and mission structures idle. Contact reads also treat those objects as stationary
+if a saved navigation state predates the fix. Mobile NPCs retain their existing return courses. Local evejs **261108.1**
+also stops a sentry when releasing its combat controller in `empireSentryRuntime.js`. The client still uses the bound
+`beyonce.CmdWarpToStuff` call and the existing Destiny warp updates.
+[Carbon Destiny Ballpark.cpp, 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+
+**Automated validation.** The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionLayoutTests.WarpingOutOfTheBlockadeDisengagesTheStationaryTowerAndCompletesWarp`
+reproduced the server exception in both world modes before the fix. The corrected replay checks immediate post-disengagement
+contacts, a bound warp request, station arrival, the persisted ship position and the unchanged tower position. The final
+focused run passed 179 cases in 251.89 seconds. Its filter was
+`FullyQualifiedName~MissionLayoutTests|FullyQualifiedName~MissionGateTests|FullyQualifiedName~NpcAggressionTests|FullyQualifiedName~NpcEwarTests|FullyQualifiedName~ResidentNpcEffectTests|FullyQualifiedName~NpcPursuitTests|FullyQualifiedName~NpcMissileTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~CapsuleerHaulerTests|FullyQualifiedName~CapsuleerMinerTests`.
+The solution built with zero warnings and errors in 13.13 seconds. Both Python policy suites passed with 17 cases total,
+and formatting verification passed for 2,013 files.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Update the Docker deployment, log in and warp from the mission pocket to a station.
+
 ## The Blockade stasis tower and railgun falloff — November 13, 2026
 
 An existing client combat log for level-one Guristas **The Blockade** recorded 25 misses and one 3-point graze against the
