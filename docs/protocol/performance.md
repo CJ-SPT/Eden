@@ -3744,3 +3744,96 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare owner-list and People & Places search response times during a normal installed-world save.
+
+## Contract search page loading, November 13, 2026
+
+`contractProxy.SearchContracts` previously loaded items and bids with two separate queries per candidate,
+before applying item filters, sorting, the 1,000-result cap and the 100-result page. A read transaction also
+projected pending resident economy and combat state even though contract headers, items and bids are
+authoritative SQL tables without a resident overlay.
+
+Item constraints now use SQL existence/count predicates. All constraints must match the same offered item;
+requested items and nested items retain the existing trade and top-level-count semantics. Integer sort
+keys, ID tie-breaking and the normal 1,000-result cap run in SQL. Unicode description and catalog security
+filters run on headers before the cap; volume sorting retains the existing decimal rounding. Only the
+displayed page loads item and bid details, using two batched queries with the original ordering. The
+contract search transaction remains consistent and serializes through the existing persistence owner,
+but bypasses unrelated resident projection. Other contract transactions retain their previous behavior.
+
+The [EVE University contracts guide](https://wiki.eveuniversity.org/Contract) and
+[contract-search filter examples](https://wiki.eveuniversity.org/Flight_Deck) were consulted alongside
+the existing pinned-client adapters and tests. The reference engine's
+`server/src/services/contracts/contractRuntimeState.js`, `searchContracts`, was inspected
+(SHA-256 `cb0a86ab657edcaedcaada4bb7e2cf78bfb93948945b53f9b0914c45a0f8fe5d`).
+Its filter/page structure was informative; Eden retains its own supported availability rules and result
+cap. No reference implementation code was copied, and no new contract behavior or wire fields were added.
+
+### Automated validation
+
+Matched Debug probes use the audit's unchanged synthetic workload: public outstanding item-exchange
+contracts, one item per contract, no bids, default sorting and the first 100-result page. The saved
+installation contained one contract during the audit; the 1,000/2,000-candidate probes are scaling tests.
+Baseline `b56bbca3` used 2,002 SQL commands for 1,000 candidates and 4,002 for 2,000. Both now use three
+commands and one connection: headers, page items and page bids. Offline worlds add one pilot-existence
+query. Empty live-world results use one query. All probes report zero fitting calculations.
+
+Three warmed samples per workload produced these handler measurements:
+
+| Candidates | Baseline elapsed | Updated elapsed | Baseline allocated bytes | Updated allocated bytes |
+| --- | --- | --- | --- | --- |
+| 1,000 | 384.16–428.07 ms | 8.30–12.96 ms | 30,909,672–30,911,552 | 2,391,560–2,395,936 |
+| 2,000 | 343.15–513.19 ms | 8.06–9.70 ms | 60,156,080–61,021,352 | 2,391,560 |
+
+Fixture population and checkpoint timing are excluded from these handler measurements. Raw samples are
+retained locally under ignored `artifacts/call-performance-audit/`, including the original `results.json`
+and the optimized `bin/Debug/net10.0/audit-contracts.json`.
+
+Focused tests cover every sort key in both directions, stable ties, Unicode and security filters beyond
+the first 1,000 candidates, matching all item constraints on one item, trade/nested-item exclusions, empty
+filters, pagination, ordered bid/item details and unchanged pending resident state. Complete simulated
+sessions exercise proxy-addressed contract search in both live and offline worlds and inspect the native
+reply fields. An initial regression exposed that `TransactionParticipants.None` still flushes economic
+state; the corrected search uses the existing projection-bypass path, and its regression now passes.
+
+Contract searches still use SQLite and can wait behind a checkpoint copy. Header text/security filtering
+and volume sorting can still inspect more than 1,000 headers; page detail loading remains bounded. The
+handler microbenchmarks do not establish installed-server tail latency or client rendering performance.
+
+Exact-method development filters used `FullyQualifiedName=` with
+`Eden.Protocol.Tests.Persistence.ContractSearchTests.SearchSeparatesPublicAndAssignedContractsAndAppliesCatalogLocationPriceAndTypeFilters`,
+`Eden.Protocol.Tests.Persistence.ContractSearchPerformanceTests.SearchHydratesOnlyThePageWithConstantSql`, and
+`Eden.Protocol.Tests.Persistence.ContractSearchPerformanceTests.SearchDoesNotProjectUnrelatedPendingResidentChanges`.
+The final affected filter was constructed as follows:
+
+```powershell
+$filter = @(
+    'ContractSearchPerformanceTests', 'ContractSearchTests', 'ContractSearchSessionTests',
+    'ContractServiceTests', 'ContractTests', 'ContractAssetTests', 'ContractAssetServiceTests',
+    'AuctionContractTests', 'AuctionServiceTests', 'CourierContractTests', 'CourierServiceTests',
+    'BulkContractTests', 'BulkContractServiceTests', 'ResidentEconomyTests', 'TransactionParticipantTests'
+) | ForEach-Object { 'FullyQualifiedName~' + $_ }
+dotnet test --no-build --artifacts-path artifacts/feature-tests --filter ($filter -join '|')
+```
+
+Tool and solution restore passed. The final solution build passed with zero warnings/errors in 1.23 seconds;
+all 178 affected tests passed in 92 seconds. The Python suites passed eight catalog tests in 1.17 seconds
+and nine formatting-policy tests in 0.02 seconds. `.\tools\Format.ps1 -Check` passed .NET style,
+CSharpier and the 140-character width policy. The full .NET suite was not run. Final results are retained
+locally in `artifacts/feature-tests/results/contract-search-milestone/contract-search-milestone.trx`.
+
+After integration with upstream `c9a42c3b`, tool/solution restore and the combined build passed
+(10.46 seconds, zero warnings/errors). The same filter plus `FullyQualifiedName~BlueMarshalTests`,
+`FullyQualifiedName~ApplyFittingTests`, `FullyQualifiedName~OwnerDirectoryTests`,
+`FullyQualifiedName~UniversalSearchTests` and `FullyQualifiedName~CharacterSearchTests` passed 268 tests
+in 86 seconds. This also covers the upstream Blue reduction change alongside both call-performance
+milestones. Results are in `artifacts/feature-tests/results/contract-search-rebased/contract-search-rebased.trx`.
+Both Python policy suites passed again (eight tests in 1.55 seconds; nine in 0.02 seconds).
+Final formatting verification passed .NET style, 2,011 CSharpier files in 4.62 seconds, and the width policy.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare contract search response times with a large public-contract population and during a normal save.

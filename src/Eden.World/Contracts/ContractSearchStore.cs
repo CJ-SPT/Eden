@@ -1,9 +1,13 @@
 using System.Diagnostics;
-using System.Globalization;
+using System.Linq.Expressions;
 using Eden.Data.Catalog;
 using Eden.Data.World.Contracts;
 using Eden.Gameplay.Contracts;
+using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
+using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Contracts;
 
@@ -16,7 +20,13 @@ internal sealed partial class PilotContractStore
         var result = Read<ContractSearchResult>(
             (world, catalog) =>
             {
-                Pilot(world, pilotId);
+                bool known =
+                    LiveWorld.Find(database.Path)?.OwnerDirectory.Snapshot.Pilots.ContainsKey(pilotId)
+                    ?? world.Pilots.Any(pilot => pilot.Id == pilotId);
+                if (!known)
+                {
+                    throw new InvalidDataException("Unknown pilot.");
+                }
                 long now = Now;
                 if (
                     search.Type
@@ -28,11 +38,12 @@ internal sealed partial class PilotContractStore
                             or (int)ContractType.All
                         )
                     || search.Availability > 1
+                    || search.Hint == 2
                 )
                 {
                     return new([], 0, 0);
                 }
-                var rows = world.Set<SavedContract>().Where(c => c.Status == ContractStatus.Outstanding && c.Expires > now);
+                var rows = world.Set<SavedContract>().AsNoTracking().Where(c => c.Status == ContractStatus.Outstanding && c.Expires > now);
                 if (search.Type is (int)ContractType.ItemExchange or (int)ContractType.Auction or (int)ContractType.Courier)
                 {
                     rows = rows.Where(c => (int)c.Type == search.Type);
@@ -94,41 +105,78 @@ internal sealed partial class PilotContractStore
                 {
                     rows = rows.Where(c => c.Volume <= maxVolume);
                 }
-                var candidates = rows.AsEnumerable().Select(c => Details(world, c)).Where(c => Matches(catalog, c, search));
-                var ordered = search.Descending
-                    ? candidates.OrderByDescending(c => ContractSearchRules.SortKey(c, search.Sort))
-                    : candidates.OrderBy(c => ContractSearchRules.SortKey(c, search.Sort));
-                var found = ordered.ThenBy(c => c.Contract.Id).Take(ContractSearchRules.MaximumResults).ToArray();
-                return new(found.Skip(search.Offset).Take(ContractSearchRules.PageSize).ToArray(), found.Length, 0);
-            }
+                rows = FilterItems(world, catalog, rows, search);
+                bool managedFilter = search.Description is { Length: > 0 } || search.SecurityClasses is not null;
+                IEnumerable<SavedContract> candidates =
+                    search.Sort == ContractSort.Volume ? rows
+                    : managedFilter ? Order(rows, search)
+                    : Order(rows, search).Take(ContractSearchRules.MaximumResults);
+                if (search.Description is { Length: > 0 } description)
+                {
+                    // SQLite's built-in case folding is ASCII-only. Preserve the existing Unicode substring behavior.
+                    candidates = candidates.Where(c =>
+                        c.Title.Contains(description, StringComparison.OrdinalIgnoreCase)
+                        || c.Description.Contains(description, StringComparison.OrdinalIgnoreCase)
+                    );
+                }
+                if (search.SecurityClasses is { } security)
+                {
+                    Dictionary<int, bool> systems = [];
+                    candidates = candidates.Where(c =>
+                    {
+                        if (!systems.TryGetValue(c.SystemId, out bool allowed))
+                        {
+                            double level = catalog.Read(CatalogData.Client.Systems, (long)c.SystemId)?.SecurityStatus ?? 0;
+                            allowed = security.Contains((int)ContractSearchRules.SecurityClass(level));
+                            systems.Add(c.SystemId, allowed);
+                        }
+                        return allowed;
+                    });
+                }
+                if (search.Sort == ContractSort.Volume)
+                {
+                    // Retain decimal rounding and ID ties from the existing gameplay sort key.
+                    candidates = (
+                        search.Descending
+                            ? candidates.OrderByDescending(c => (decimal)c.Volume)
+                            : candidates.OrderBy(c => (decimal)c.Volume)
+                    ).ThenBy(c => c.Id);
+                }
+                var found = candidates.Take(ContractSearchRules.MaximumResults).ToArray();
+                var page = found.Skip(search.Offset).Take(ContractSearchRules.PageSize).ToArray();
+                return new(PageDetails(world, page), found.Length, 0);
+            },
+            // Contract headers/items/bids have no resident overlay. Identity validation uses the committed directory.
+            relationalOnly: true
         );
         return result with { Seconds = timer.Elapsed.TotalSeconds };
     }
 
-    private static bool Matches(CatalogDbContext catalog, ContractDetails details, ContractSearch search)
+    private static IQueryable<SavedContract> FilterItems(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        IQueryable<SavedContract> rows,
+        ContractSearch search
+    )
     {
-        if (
-            search.ExcludeNoBuyout && details.Contract.Type == ContractType.Auction && details.Contract.Auction!.BuyoutCents == 0
-            || details.Contract.Type is ContractType.ItemExchange or ContractType.Auction
-                && (
-                    search.ExcludeTrade && details.Items.Any(i => !i.Offered)
-                    || search.ExcludeMultiple && details.Items.Count(i => i.Offered && i.ParentId == null) > 1
-                )
-            || search.Hint == 2
-            || search.Description is { Length: > 0 } description
-                && !details.Contract.Title.Contains(description, StringComparison.OrdinalIgnoreCase)
-                && !details.Contract.Description.Contains(description, StringComparison.OrdinalIgnoreCase)
-        )
+        if (search.ExcludeNoBuyout)
         {
-            return false;
+            rows = rows.Where(c => c.Type != ContractType.Auction || c.BuyoutCents != 0);
         }
-        if (search.SecurityClasses is { } security)
+        var items = world.Set<SavedContractItem>().AsNoTracking();
+        if (search.ExcludeTrade)
         {
-            double value = catalog.Read(CatalogData.Client.Systems, (long)details.Contract.SystemId)?.SecurityStatus ?? 0;
-            if (!security.Contains((int)ContractSearchRules.SecurityClass(value)))
-            {
-                return false;
-            }
+            rows = rows.Where(c =>
+                (c.Type != ContractType.ItemExchange && c.Type != ContractType.Auction)
+                || !items.Any(i => i.ContractId == c.Id && !i.Offered)
+            );
+        }
+        if (search.ExcludeMultiple)
+        {
+            rows = rows.Where(c =>
+                (c.Type != ContractType.ItemExchange && c.Type != ContractType.Auction)
+                || items.Count(i => i.ContractId == c.Id && i.Offered && i.ParentId == null) <= 1
+            );
         }
         bool filtered =
             search.ItemTypes is not null
@@ -136,21 +184,83 @@ internal sealed partial class PilotContractStore
             || search.CategoryId is not null
             || search.GroupId is not null
             || search.Hint == 1;
-        if (details.Contract.Type == ContractType.Courier && filtered)
+        if (!filtered)
         {
-            return false;
+            return rows;
         }
-        return !filtered
-            || details.Items.Any(i =>
-                i.Offered
-                && (search.ItemTypes is null || search.ItemTypes.Contains(i.TypeId))
-                && (search.CategoryId is null || i.CategoryId == search.CategoryId)
-                && (search.GroupId is null || i.GroupId == search.GroupId)
-                && (search.Hint == 0 || i.CategoryId == (int)Eden.Gameplay.Inventory.InventoryCategory.Blueprint)
-                && (
-                    search.ItemTypeName is not { Length: > 0 } name
-                    || catalog.FittingType(i.TypeId)!.Name.Contains(name, StringComparison.OrdinalIgnoreCase)
-                )
-            );
+        var matching = items.Where(i => i.Offered);
+        if (search.ItemTypes is { } types)
+        {
+            matching = matching.Where(i => types.Contains(i.TypeId));
+        }
+        if (search.CategoryId is { } category)
+        {
+            matching = matching.Where(i => i.CategoryId == category);
+        }
+        if (search.GroupId is { } group)
+        {
+            matching = matching.Where(i => i.GroupId == group);
+        }
+        if (search.Hint == 1)
+        {
+            matching = matching.Where(i => i.CategoryId == (int)InventoryCategory.Blueprint);
+        }
+        if (search.ItemTypeName is { Length: > 0 } name)
+        {
+            var matchingTypes = catalog
+                .Definitions.Items.Values.Where(type => type.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
+                .Select(type => type.Id)
+                .ToArray();
+            matching = matching.Where(i => matchingTypes.Contains(i.TypeId));
+        }
+        return rows.Where(c => c.Type != ContractType.Courier && matching.Any(i => i.ContractId == c.Id));
+    }
+
+    private static IOrderedQueryable<SavedContract> Order(IQueryable<SavedContract> rows, ContractSearch search)
+    {
+        Expression<Func<SavedContract, long>> key = search.Sort switch
+        {
+            ContractSort.Id => c => c.Id,
+            ContractSort.Price => c => c.Type == ContractType.Auction && c.CurrentBidCents > 0 ? c.CurrentBidCents : c.PriceCents,
+            ContractSort.Expires => c => c.Expires,
+            ContractSort.Station => c => c.StationId,
+            ContractSort.System => c => c.SystemId,
+            ContractSort.Region => c => c.RegionId,
+            ContractSort.Constellation => c => c.ConstellationId,
+            ContractSort.Type => c => (long)c.Type,
+            ContractSort.Reward => c => c.RewardCents,
+            ContractSort.Collateral => c =>
+                c.Type == ContractType.Auction ? c.BuyoutCents
+                : c.Type == ContractType.Courier ? c.CollateralCents
+                : 0,
+            ContractSort.Assignee => c => c.AssigneeId ?? 0,
+            _ => throw new InvalidDataException("Unknown contract sort order."),
+        };
+        return (search.Descending ? rows.OrderByDescending(key) : rows.OrderBy(key)).ThenBy(c => c.Id);
+    }
+
+    private static IReadOnlyList<ContractDetails> PageDetails(WorldDbContext world, IReadOnlyList<SavedContract> page)
+    {
+        if (page.Count == 0)
+        {
+            return [];
+        }
+        var ids = page.Select(c => c.Id).ToArray();
+        var items = world
+            .Set<SavedContractItem>()
+            .AsNoTracking()
+            .Where(i => ids.Contains(i.ContractId))
+            .OrderBy(i => i.Id)
+            .AsEnumerable()
+            .ToLookup(i => i.ContractId, i => i.Snapshot());
+        var bids = world
+            .Set<SavedContractBid>()
+            .AsNoTracking()
+            .Where(b => ids.Contains(b.ContractId))
+            .OrderByDescending(b => b.AmountCents)
+            .ThenByDescending(b => b.Id)
+            .AsEnumerable()
+            .ToLookup(b => b.ContractId, b => b.Snapshot());
+        return page.Select(c => new ContractDetails(c.Snapshot(), items[c.Id].ToArray(), bids[c.Id].ToArray())).ToArray();
     }
 }

@@ -32,9 +32,9 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
     public long Revision => signal.Revision;
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    private T Read<T>(Func<WorldDbContext, CatalogDbContext, T> read)
+    private T Read<T>(Func<WorldDbContext, CatalogDbContext, T> read, bool relationalOnly = false)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path) { IsResidentProjection = relationalOnly };
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         return read(world, catalog);

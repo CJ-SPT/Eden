@@ -3,6 +3,9 @@
 [Owner lookup and character search calls](protocol/performance.md#owner-lookup-and-character-search-calls-november-13-2026)
 records batched owner resolution, committed identity snapshots, indexed names and checkpoint-independent warmed RPCs.
 
+[Contract search page loading](protocol/performance.md#contract-search-page-loading-november-13-2026)
+records SQL filtering, bounded page details and avoidance of unrelated resident projection during searches.
+
 [Orderly host shutdown](protocol/startup.md#orderly-host-shutdown) records final checkpoint ordering and fault handling.
 
 [Chat listener and log output failures](protocol/startup.md#chat-listener-and-log-output-failures) records supervision and bounded logging.
