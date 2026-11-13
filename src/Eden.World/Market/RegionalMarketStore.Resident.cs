@@ -34,19 +34,17 @@ internal sealed partial class RegionalMarketStore
         bool includeDemand = true
     )
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.advanceStation");
         long elapsed = world.ActiveTicks;
         var profiles = RegionalMarketCatalog.Read(catalog);
-        var profile = profiles.Stations.SingleOrDefault(s => s.Station.Id == stationId);
-        if (profile is null)
+        if (!profiles.StationsById.TryGetValue(stationId, out var profile))
         {
             return;
         }
-        var unlocked = world
-            .Set<SavedMarketUnlock>()
-            .AsNoTracking()
-            .Where(u => types == null || Enumerable.Contains(types, u.TypeId))
-            .Select(u => u.TypeId)
-            .ToHashSet();
+        var unlocks = world.Set<SavedMarketUnlock>();
+        var unlocked = types is null
+            ? unlocks.Select(u => u.TypeId).ToHashSet()
+            : types.Where(type => unlocks.Find(type) is not null).ToHashSet();
         var products = unlocked
             .Select(type => RegionalMarketCatalog.Product(catalog, type))
             .OfType<RegionalProduct>()
@@ -59,19 +57,18 @@ internal sealed partial class RegionalMarketStore
                 products.TryAdd(starter.TypeId, starter);
             }
         }
-        var orders = world
+        var stationOrders = world
             .Set<NpcMarketOrder>()
-            .Where(o =>
-                o.StationId == stationId
-                && o.Kind == NpcMarketKind.Regional
-                && (includeDemand || !o.Bid)
-                && (types == null || Enumerable.Contains(types, o.TypeId))
-            )
-            .ToDictionary(o => (o.TypeId, o.Bid));
+            .Where(o => o.StationId == stationId && o.Kind == NpcMarketKind.Regional && (includeDemand || !o.Bid));
+        if (types is not null)
+        {
+            stationOrders = stationOrders.Where(o => Enumerable.Contains(types, o.TypeId));
+        }
+        var orders = stationOrders.ToDictionary(o => (o.TypeId, o.Bid));
         var states = world.Set<SavedRegionalMarketStock>();
         IEnumerable<RegionalDemand> candidates =
             !includeDemand ? []
-            : types is not null ? types.Select(type => profiles.Demand.GetValueOrDefault(type)).OfType<RegionalDemand>()
+            : types is not null ? types.Select(type => profiles.DemandFor(catalog, type)).OfType<RegionalDemand>()
             : profiles.Demand.Values;
         var demand = candidates
             .Where(d => !d.RequiresUnlock || Enumerable.Contains(unlocked, d.TypeId))

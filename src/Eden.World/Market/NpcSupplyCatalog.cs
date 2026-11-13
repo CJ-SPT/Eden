@@ -19,35 +19,62 @@ internal sealed partial class PilotMarketStore
 
     private sealed record InstitutionalType(int TypeId, bool Bid);
 
+    private readonly record struct InstitutionalSupplier(int CorporationId, bool Hub);
+
     private static readonly ConditionalWeakTable<CatalogProvider, Lazy<int[]>> BlueprintSupplies = new();
 
     private static readonly ConditionalWeakTable<
         CatalogProvider,
-        ConcurrentDictionary<int, Lazy<IReadOnlyList<InstitutionalOffer>>>
+        ConcurrentDictionary<InstitutionalSupplier, Lazy<IReadOnlyList<InstitutionalOffer>>>
     > InstitutionalCatalogs = new();
 
     internal void PrepareInstitutional(CatalogDbContext catalog, int stationId) =>
         _ = InstitutionalOffers(catalog, catalog.RequireStation(stationId));
 
-    private IReadOnlyList<InstitutionalOffer> InstitutionalOffers(CatalogDbContext catalog, CatalogStationDefinition station) =>
-        InstitutionalCatalogs
-            .GetValue(catalog.Definitions, _ => new())
-            .GetOrAdd(station.Id, _ => new(() => LoadInstitutionalOffers(catalog, station)))
-            .Value;
-
-    private IReadOnlyList<InstitutionalOffer> LoadInstitutionalOffers(CatalogDbContext catalog, CatalogStationDefinition station)
+    internal void WarmMarketCatalog()
     {
-        var corporation = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId);
+        bool testing = Economy().TestingMarket;
+        bool progressive = database.Settings.Economy.ProgressiveMarkets ?? !testing;
+        if (testing && !progressive)
+        {
+            return;
+        }
+        using var operation = new CatalogReadScope().Begin();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var regional = RegionalMarketCatalog.Read(catalog);
+        foreach (var hub in regional.Hubs.Values)
+        {
+            _ = InstitutionalOffers(catalog, hub.Station);
+        }
+        if (progressive)
+        {
+            _ = regional.StarterProducts;
+        }
+    }
+
+    private IReadOnlyList<InstitutionalOffer> InstitutionalOffers(CatalogDbContext catalog, CatalogStationDefinition station)
+    {
+        bool hub = RegionalMarketCatalog.Read(catalog).Hubs.GetValueOrDefault(station.RegionId)?.Station.Id == station.Id;
+        InstitutionalSupplier supplier = new(station.OwnerId, hub);
+        return InstitutionalCatalogs
+            .GetValue(catalog.Definitions, _ => new())
+            .GetOrAdd(supplier, key => new(() => LoadInstitutionalOffers(catalog, key)))
+            .Value;
+    }
+
+    private IReadOnlyList<InstitutionalOffer> LoadInstitutionalOffers(CatalogDbContext catalog, InstitutionalSupplier supplier)
+    {
+        var definitions = catalog.Definitions;
+        var corporation = catalog.Read(CatalogData.Client.Npccorporations, (long)supplier.CorporationId);
         var trades = corporation?.CorporationTrades ?? [];
-        bool hub = RegionalMarketCatalog.Read(catalog).Stations.Any(s => s.Station.Id == station.Id && s.Role == RegionalMarketRole.Hub);
         // Hubs share the catalog's NPC blueprint sell assortment, regardless of
         // the local corporation. Other institutional goods retain their suppliers.
-        int[] suppliedBlueprints = hub ? HubBlueprints(catalog) : [];
+        int[] suppliedBlueprints = supplier.Hub ? HubBlueprints(catalog) : [];
         var offered = trades
             .Where(t => t.Value != 0)
             .Select(t => new InstitutionalType(int.Parse(t.Key, CultureInfo.InvariantCulture), t.Value < 0))
             .Union(
-                database
+                definitions
                     .PublishedSkills.Values.Where(skill => skill.UserCreated && !skill.Deleted && skill.Definition.Published)
                     .Select(skill => new InstitutionalType(
                         skill.Definition.TypeId,
@@ -60,13 +87,13 @@ internal sealed partial class PilotMarketStore
             .ToArray();
         var types = offered.Select(offer => offer.TypeId).Distinct().Select(catalog.FittingType).OfType<CatalogItemDefinition>().ToArray();
         var items = types.ToDictionary(type => type.Id);
-        var definitions = catalog.ReadMany(CatalogData.Client.Types, types.Select(type => (long)type.Id));
+        var typeDefinitions = catalog.ReadMany(CatalogData.Client.Types, types.Select(type => (long)type.Id));
         var blueprints = types.Where(type => type.CategoryId == (int)InventoryCategory.Blueprint).ToArray();
         var recipes = catalog.ReadMany(
             CatalogData.Client.Blueprints,
             blueprints.Select(type => type.Id.ToString(CultureInfo.InvariantCulture))
         );
-        _ = catalog.Definitions.AttributeSets(
+        var attributes = definitions.AttributeSets(
             blueprints
                 .Select(type => type.Id)
                 .Concat(
@@ -84,7 +111,8 @@ internal sealed partial class PilotMarketStore
             {
                 continue;
             }
-            var definition = definitions.GetValueOrDefault(typeId);
+            var definition = typeDefinitions.GetValueOrDefault(typeId);
+            var manufacturing = recipes.GetValueOrDefault(typeId.ToString(CultureInfo.InvariantCulture))?.Activities?.Manufacturing;
             bool bid = offer.Bid;
             if (
                 !RegionalMarketRules.CanUnlock((InventoryCategory)type.CategoryId, type.GroupId, true, true)
@@ -102,13 +130,11 @@ internal sealed partial class PilotMarketStore
             if (
                 type.CategoryId == (int)InventoryCategory.Blueprint
                 && (
-                    catalog.Definitions.Attributes(typeId).GetValueOrDefault(DogmaAttributeId.TechLevel) > 1
-                    || catalog
-                        .Definitions.ManufacturingRecipe(typeId)
-                        ?.Products?.Any(p =>
-                            p.TypeID is > 0 and <= int.MaxValue
-                            && catalog.Definitions.Attributes((int)p.TypeID.Value).GetValueOrDefault(DogmaAttributeId.TechLevel) > 1
-                        ) == true
+                    (attributes.GetValueOrDefault(typeId)?.GetValueOrDefault(DogmaAttributeId.TechLevel) ?? 0) > 1
+                    || manufacturing?.Products?.Any(p =>
+                        p.TypeID is > 0 and <= int.MaxValue
+                        && (attributes.GetValueOrDefault((int)p.TypeID.Value)?.GetValueOrDefault(DogmaAttributeId.TechLevel) ?? 0) > 1
+                    ) == true
                 )
             )
             {
@@ -120,11 +146,9 @@ internal sealed partial class PilotMarketStore
                     : quote.SellCents
                 : null;
             // Preserve catalog supplier eligibility when the snapshot lacks a sell quote for a manufacturing original.
-            bool isOriginal =
-                type.CategoryId == (int)InventoryCategory.Blueprint
-                && catalog.Definitions.ManufacturingRecipe(typeId)?.Products is { Length: > 0 };
+            bool isOriginal = manufacturing?.Products is { Length: > 0 };
             bool useCatalogPrice =
-                database.PublishedSkills.TryGetValue(typeId, out var editedSkill) && editedSkill.PriceChanged
+                definitions.PublishedSkills.TryGetValue(typeId, out var editedSkill) && editedSkill.PriceChanged
                 || !bid && price is null && (isOriginal || NpcSupplyRules.UsesIndustrialCatalogPrice(typeId));
             price = NpcSupplyRules.Price(
                 new(

@@ -215,35 +215,36 @@ internal sealed partial class PilotMarketStore
         var station = Station(catalog, pilot.ActiveShip.StationId);
         if (pilot.ActiveShip.Position is null && HasMarket(catalog, station))
         {
+            using var seed = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.seedLocal");
             Seed(world, catalog, station, typeId, includeDemand: scope is null);
         }
         int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
         int region = catalog.RequireSystem(system).RegionId;
-        var regionOrders = world.Set<NpcMarketOrder>().AsNoTracking().Where(o => o.RegionId == region);
         var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
             ? NpcMarketKind.Institutional
             : NpcMarketKind.Development;
         bool progressive = RegionalMarketStore.Enabled(world);
         if (progressive)
         {
+            using var advance = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.advanceRegion");
             var regional = new RegionalMarketStore(activity);
-            var knownStations = regionOrders
-                .Where(o => o.Kind == NpcMarketKind.Regional && (scope == null || !o.Bid) && (!typeId.HasValue || o.TypeId == typeId.Value))
+            var knownStations = world
+                .RegionalOrders(region, typeId)
+                .Where(o => o.Kind == NpcMarketKind.Regional && (scope is null || !o.Bid))
                 .Select(o => o.StationId)
                 .Distinct()
                 .ToArray();
-            var hub = RegionalMarketCatalog
-                .Read(catalog)
-                .Stations.SingleOrDefault(s => s.Station.RegionId == region && s.Role == RegionalMarketRole.Hub);
+            var hub = RegionalMarketCatalog.Read(catalog).Hubs.GetValueOrDefault(region);
             foreach (int known in knownStations.Append(hub?.Station.Id ?? station.Id).Distinct().Where(id => id != station.Id))
             {
                 SeedInstitutional(world, catalog, catalog.RequireStation(known));
                 regional.Advance(world, catalog, region, known, Now, typeId, includeDemand: scope is null);
             }
         }
-        var query = regionOrders.Where(o =>
-            progressive ? o.Kind == NpcMarketKind.Regional || o.Kind == NpcMarketKind.Institutional : o.Kind == kind
-        );
+        var query = world
+            .Set<NpcMarketOrder>()
+            .Where(o => o.RegionId == region)
+            .Where(o => progressive ? o.Kind == NpcMarketKind.Regional || o.Kind == NpcMarketKind.Institutional : o.Kind == kind);
         if (typeId.HasValue)
         {
             query = query.Where(o => o.TypeId == typeId.Value);
@@ -257,10 +258,16 @@ internal sealed partial class PilotMarketStore
             _ => throw new ArgumentOutOfRangeException(nameof(scope)),
         };
         Refresh(world, query);
+        using var select = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.selectOrders");
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
-        var npcOrders = query
-            .Where(o => o.Remaining > 0 && o.Issued > cutoff)
-            .AsEnumerable()
+        var npcOrders = world
+            .RegionalOrders(region, typeId)
+            .Where(o =>
+                o.Remaining > 0
+                && o.Issued > cutoff
+                && (progressive ? o.Kind is NpcMarketKind.Regional or NpcMarketKind.Institutional : o.Kind == kind)
+                && InScope(o)
+            )
             .Select(o => new MarketOrder(
                 o.Id,
                 o.StationId,
@@ -306,9 +313,9 @@ internal sealed partial class PilotMarketStore
         {
             long elapsed = world.ActiveTicks;
             var stock = world.Set<SavedRegionalMarketStock>();
-            long? recovery = regionOrders
+            long? recovery = world
+                .RegionalOrders(region)
                 .Where(o => !o.Bid && o.Kind == NpcMarketKind.Regional && o.Issued > 0)
-                .AsEnumerable()
                 .Min(o => stock.Find(o.Id)?.RefreshedTicks);
             activeUntil = RegionalMarketRules.NextCapacityChange(elapsed);
             if (recovery.HasValue)
@@ -318,6 +325,16 @@ internal sealed partial class PilotMarketStore
         }
         world.Commit();
         return new(pilotId, pilot.ActiveShipId, station.Id, system, region, Array.AsReadOnly(book), expires, activeUntil);
+
+        bool InScope(EconomyNpcMarketOrder order) =>
+            scope switch
+            {
+                MarketScope.Station => order.StationId == station.Id && !order.Bid,
+                MarketScope.System => order.SystemId == system && !order.Bid,
+                MarketScope.Region => !order.Bid,
+                null => true,
+                _ => throw new ArgumentOutOfRangeException(nameof(scope)),
+            };
     }
 
     private static IEnumerable<MarketOrder> BestAskPerType(IEnumerable<MarketOrder> orders)

@@ -44,11 +44,10 @@ internal sealed partial class PilotCombatStore(
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope action = new(database, new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var result = ModuleAttributes(world, catalog, pilotId, module);
-        transaction.Commit();
+        var result = ModuleAttributes(action.World, catalog, pilotId, module);
+        action.Commit();
         return result;
     }
 

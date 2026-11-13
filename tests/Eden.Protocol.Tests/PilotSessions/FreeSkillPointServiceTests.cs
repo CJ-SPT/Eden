@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using Eden.Data.World.Inventory;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Diagnostics;
@@ -20,7 +23,7 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
 {
     [Fact]
-    public async Task WarmResidentQueueCallsSpendAndCheckpointWithoutSql()
+    public async Task WarmResidentQueueCallsSpendAndCheckpointWithoutWorldSql()
     {
         const int skill = 3327;
         const long account = RedemptionTests.Account;
@@ -29,7 +32,17 @@ public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
         using var db = FreePointTestData.Create(clock);
         using ResidentFitCache fits = new(new(db.Path));
         FreePointTestData.Credit(db);
-        FreePointTestData.Training(db).Save(pilotId, [new(skill, 1), new(skill, 2)], true);
+        var pilot = db.Store.FindPilot(account, pilotId)!;
+        using (WorldDbContext world = new(db.Path))
+        {
+            var weapon = world
+                .Set<OwnedItem>()
+                .Single(item => item.OwnerId == pilotId && item.TypeId == (int)CombatWeaponType.CivilianGatlingRailgun);
+            weapon.LocationId = pilot.ShipId;
+            weapon.FlagId = (int)InventoryFlag.HighSlot0;
+            weapon.Online = true;
+            world.SaveChanges();
+        }
         using (LiveWorld live = new(new(db.Path), clock, output.WriteLine))
         {
             live.Economy.Warm();
@@ -65,6 +78,9 @@ public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
                 account,
                 services.GetRequiredService<IPilotOperationScope>()
             );
+            Dictionary<long, object?> queue = new() { [0] = new object?[] { (long)skill, 1L }, [1] = new object?[] { (long)skill, 2L } };
+            await Call("GetFreeSkillPointsAppliedToQueue");
+            Assert.Null(await Measure("SaveNewQueue", expectedFits: 0, [queue], new() { ["activate"] = true }));
             clock.AdvanceWallTime(TimeSpan.FromSeconds(120));
             await Call("GetFreeSkillPointsAppliedToQueue");
             var preview = Assert.IsType<Dictionary<long, object?>>(await Measure("GetFreeSkillPointsAppliedToQueue", expectedFits: 0));
@@ -92,27 +108,48 @@ public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
             Assert.Single(notifications, name => name == "OnServerSkillsChanged");
             Assert.Single(notifications, name => name == "OnServerBrainUpdated");
             Assert.Single(notifications, name => name == "OnNewSkillQueueSaved");
+            Assert.Contains("OnModuleAttributeChanges", notifications);
             Assert.Equal(0, FreePointTestData.Points(db).Balance(pilotId));
             Assert.Equal(clock.UtcNow.AddSeconds(1540).UtcDateTime.ToFileTimeUtc(), context.NextSkillCompletion);
             long started = Stopwatch.GetTimestamp();
             await live.FlushAsync();
             output.WriteLine($"Checkpoint took {Stopwatch.GetElapsedTime(started).TotalMilliseconds:F2} ms.");
 
-            async Task<object?> Call(string method)
+            async Task<object?> Call(string method, object?[]? arguments = null, Dictionary<string, object?>? options = null)
             {
                 packets.Clear();
-                await calls.ProcessAsync(PilotServicesTests.Request(null, method, [], reference.Id));
+                await calls.ProcessAsync(PilotServicesTests.Request(null, method, arguments ?? [], reference.Id, options));
                 var reply = IncomingMachoPacket.Read(BlueMarshal.Decode(packets[0]));
                 Assert.EndsWith(".CallRsp", reply.Name);
                 return BlueMarshal.Decode(BlueRead.Bytes(BlueRead.Tuple(reply.Fields[4], 1)[0]));
             }
 
-            async Task<object?> Measure(string method, int expectedFits)
+            async Task<object?> Measure(
+                string method,
+                int expectedFits,
+                object?[]? arguments = null,
+                Dictionary<string, object?>? options = null
+            )
             {
-                using var metrics = SessionPerformance.Begin(method, output.WriteLine, force: true)!;
-                var reply = await Call(method);
-                Assert.Equal(0, metrics.Commands);
-                Assert.Equal(0, metrics.Connections);
+                List<string> commands = [];
+                using var metrics = SessionPerformance.Begin(method, output.WriteLine, force: true, command: commands.Add)!;
+                var reply = await Call(method, arguments, options);
+                Assert.All(
+                    commands,
+                    sql =>
+                    {
+                        Assert.True(
+                            sql.Contains("SourceRecord", StringComparison.Ordinal)
+                                || sql.Contains("TypeAttribute", StringComparison.Ordinal),
+                            sql
+                        );
+                    }
+                );
+                if (method == "GetFreeSkillPointsAppliedToQueue")
+                {
+                    Assert.Empty(commands);
+                    Assert.Equal(0, metrics.Connections);
+                }
                 Assert.InRange(metrics.FittingCalculations, 0, expectedFits);
                 return reply;
             }

@@ -188,6 +188,27 @@ public sealed class IndustrialDemandTests
     }
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SingleTypeBookLoadsOnlyItsDemandProfile(bool resident)
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: resident);
+        using var operation = new CatalogReadScope().Begin();
+        using CatalogDbContext catalog = new(f.Database.CatalogPath);
+        var profile = RegionalMarketCatalog.Read(catalog);
+        var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+        var market = host.GetRequiredService<IPilotMarket>();
+        const int tritanium = 34;
+        var book = market.Orders(pilot.PilotId, tritanium);
+        Assert.Contains(book, order => order.Bid && order.TypeId == tritanium);
+        var demand = profile.DemandFor(catalog, tritanium);
+        Assert.False(profile.DemandLoaded);
+        Assert.Equal(profile.Demand[tritanium], demand);
+        Assert.Equal(book, market.Orders(pilot.PilotId, tritanium));
+    }
+
+    [Theory]
     [InlineData(0, 1, 0.01)]
     [InlineData(1, 0, 0.01)]
     [InlineData(1, 1, 0)]

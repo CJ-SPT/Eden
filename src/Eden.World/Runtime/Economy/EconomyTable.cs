@@ -465,6 +465,33 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
             .ToArray();
     internal override IReadOnlyCollection<TRow> Local => _local.Values;
 
+    internal IEnumerable<TState> IndexedSnapshots(string column, int value, (string Column, int Value)? alternate = null)
+    {
+        var keys = table.Indexed(column, value);
+        if (alternate is { } index)
+        {
+            var candidates = table.Indexed(index.Column, index.Value);
+            if (candidates.Count < keys.Count)
+            {
+                keys = candidates;
+            }
+        }
+        foreach (var key in keys)
+        {
+            if (!_local.ContainsKey(key) && table.Snapshot(key) is { } saved)
+            {
+                yield return saved;
+            }
+        }
+        foreach (var (key, row) in _local)
+        {
+            if (!_removed.Contains(key))
+            {
+                yield return table.Capture(row);
+            }
+        }
+    }
+
     internal override TRow? Find(EconomyKey id)
     {
         if (_removed.Contains(id))

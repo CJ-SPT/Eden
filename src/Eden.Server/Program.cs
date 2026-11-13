@@ -16,6 +16,7 @@ using Eden.Server.Logging;
 using Eden.Server.Maintenance;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
+using Eden.World.Market;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -254,6 +255,7 @@ internal static class Program
             mods.Start();
             services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
             services.GetRequiredService<CatalogProvider>().PreloadCore();
+            services.GetRequiredService<PilotMarketStore>().WarmMarketCatalog();
             if (shutdown.IsCancellationRequested)
             {
                 return;

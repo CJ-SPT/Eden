@@ -33,6 +33,11 @@ internal sealed partial class EconomyTransaction(
 
     internal override void Remember(InstitutionalPreparation preparation) => _preparations[preparation.StationId] = preparation;
 
+    internal IEnumerable<EconomyNpcMarketOrder> RegionalOrders(int region, int? typeId = null) =>
+        ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
+            .IndexedSnapshots(nameof(NpcMarketOrder.RegionId), region, typeId is int type ? (nameof(NpcMarketOrder.TypeId), type) : null)
+            .Where(o => o.RegionId == region && (typeId is null || o.TypeId == typeId));
+
     internal override long NextExpiry => store.NextExpiry;
 
     internal override long MarketHead(long pilot) => store.MarketHead(pilot);

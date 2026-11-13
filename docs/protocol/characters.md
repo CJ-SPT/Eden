@@ -662,6 +662,9 @@ It measured the checkpoint separately at 236 ms. The installed workload was not 
 **Optional maintainer checks.** On the reported workload, preview and apply points to an active queue while monitoring
 world-owner and session-tick latency.
 
+The [November 13 follow-up replay](performance.md#skill-point-and-market-call-latency-november-13-2026) covers queue
+saves and fitted weapon notifications on a copied world.
+
 ## Persistent learning implants
 
 Inert inspection of build **3662168** `skillsvc.pyj`, `godma.pyj`, `menuSvcExtras/invItemFunctions.pyj`, `menucheckers/itemCheckers.pyj`, `charsheet/implantsBoostersPanel.pyj` and `entries/implant.pyj` establishes the native path. Plug In calls `godma.GetDogmaLM().InjectImplant(itemID)`; Unplug calls `DestroyImplant(itemID)` after the client's destructive-action confirmation. Both operations are owned by `dogmaIM`. Bound `@skills.GetImplants()` returns an item-ID dictionary whose values expose `itemID` and `typeID`. `OnServerImplantsChanged` accepts no arguments; it forces `GetCharacterAttributes(True)`, which in turn refreshes both implant and booster caches, then scatters local implant/queue events. Eden sends that notification together with effective character-attribute changes and rebased queue timestamps.

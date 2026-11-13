@@ -325,9 +325,7 @@ internal sealed partial class PilotMarketStore(
                 .Select(o => o.StationId)
                 .Distinct()
                 .ToArray();
-            var hub = RegionalMarketCatalog
-                .Read(catalog)
-                .Stations.SingleOrDefault(s => s.Station.RegionId == region && s.Role == RegionalMarketRole.Hub);
+            var hub = RegionalMarketCatalog.Read(catalog).Hubs.GetValueOrDefault(region);
             foreach (int known in knownStations.Append(hub?.Station.Id ?? station.Id).Distinct().Where(id => id != station.Id))
             {
                 SeedInstitutional(world, catalog, catalog.RequireStation(known));

@@ -35,8 +35,7 @@ internal sealed partial class RegionalMarketStore(CapsuleerActivitySource? activ
     {
         long elapsed = activity?.Read().ElapsedTicks ?? world.Set<Eden.Data.World.Capsuleers.SavedCapsuleerClock>().Single().ElapsedTicks;
         var profiles = RegionalMarketCatalog.Read(catalog);
-        var profile = profiles.Stations.SingleOrDefault(s => s.Station.Id == stationId);
-        if (profile is null)
+        if (!profiles.StationsById.TryGetValue(stationId, out var profile))
         {
             return;
         }
@@ -82,7 +81,7 @@ internal sealed partial class RegionalMarketStore(CapsuleerActivitySource? activ
             .ToDictionary(s => s.OrderId);
         IEnumerable<RegionalDemand> candidates =
             !includeDemand ? []
-            : types is not null ? types.Select(type => profiles.Demand.GetValueOrDefault(type)).OfType<RegionalDemand>()
+            : types is not null ? types.Select(type => profiles.DemandFor(catalog, type)).OfType<RegionalDemand>()
             : profiles.Demand.Values;
         var demand = candidates
             .Where(d => !d.RequiresUnlock || unlocked.Contains(d.TypeId))

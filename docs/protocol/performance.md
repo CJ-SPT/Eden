@@ -3908,3 +3908,70 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare private memory on the administration Performance page after startup and during a routine save.
+
+## Skill-point and market call latency, November 13, 2026
+
+The Docker log showed four queue applications taking 1.74–1.91 seconds and regional summary and item book calls
+taking 419 and 470 ms. The reported calls spent most of their time in the handler. The Docker revision was unavailable.
+On main at `72b6e91e`, a copied-world replay reproduced the market stalls. The existing resident allocation took 17 ms,
+and the fitted-weapon notification opened a world SQLite transaction that brought other systems into scope.
+
+Queue saves and weapon attribute reads now use the same pilot-scoped resident path as skill allocation. File-backed
+worlds use the corresponding SQLite action. The host prepares immutable hub assortments and starter profiles at startup.
+Stations share NPC supply definitions by corporation and hub status. The market reconciles changed institutional listings
+and uses indexed resident orders for regional reads. An item book loads its requested demand profile and keeps the
+existing transaction, stock recovery and order visibility rules. Build 3662168 reply shapes were checked against the
+existing Eden route tests. The older EveJS reference scopes both calls by region and requests the order book by type
+in `marketProxyService.js` (SHA-256 `F457CB1B181CEB570A5FA346C718D71A7CE7B84B8734C88CEE7F2546A8CE175B`).
+See [EVE University skill training](https://wiki.eveuniversity.org/Skill_training#Training_skills) and
+[EVE University trading](https://wiki.eveuniversity.org/Trading).
+
+### Automated validation
+
+The Release replay used the same local November 12 save, pinned catalog, active skill package and fixed clock on both
+revisions. The save had 23,332 pilots and 191,476 NPC orders. Two selected simulated sessions encoded replies and
+notifications in process. Background maintenance, checkpoint timing, transport and the Docker workload were outside
+this comparison.
+
+| Call | Baseline | Updated | SQL commands and opens, baseline → updated |
+| --- | ---: | ---: | --- |
+| First `GetRegionBest` in The Forge | 759.11 ms | 197.08 ms | 206 / 1 → 0 / 0 |
+| First `GetOrders` for Tritanium | 421.03 ms | 15.58 ms | 1 / 1 → 1 / 1 |
+| Subsequent `GetOrders` across three types | 19.96–34.81 ms | 6.01–7.23 ms | 0 / 0 → 0 / 0 |
+| `SaveNewQueue` | 70.49 ms | 40.14 ms | 60 / 3 → 113 / 1 |
+| `ApplyFreeSkillPointsToQueue` | 112.29 ms | 78.84 ms | 19 / 1 → 7 / 1 |
+
+The updated queue and weapon fixtures allow cold catalog reads and reject world SQL during the calls. The updated
+first item book still queried a catalog attribute. Hub catalog preparation added 384 ms to startup in the replay.
+All 19 reply payloads and packet counts matched the baseline. The regional summary still took 166 ms of world ownership
+on its first read. Subsequent summary calls took 13.51–14.68 ms, including reply encoding.
+
+Tool and solution restore passed. The solution built in 6.53 seconds with zero warnings and errors.
+The focused .NET run passed 814 of 816 cases in 3 minutes 39 seconds. The two failures also reproduced on
+`72b6e91e`: `RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` and
+`NpcRestingOrderTests.MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback`.
+Both fixtures inject SQLite triggers, which surfaced during resident checkpoint projection or cleanup.
+The full-catalog market cases ran with the pinned local catalog. Both Python policy suites passed, with
+8 catalog and 9 formatting checks. Style, CSharpier, line width and Git whitespace verification passed.
+The final single-type profile assertion passed in both resident and file-backed worlds in a 7.05-second
+focused run. The full .NET suite was outside the focused selection.
+
+```powershell
+$classes = @(
+    'Eden.Protocol.Tests.Market', 'FreeSkillPoint', 'PilotTrainingTests', 'TrainingRulesTests',
+    'CharacterSheet', 'CloneGradeTests', 'SkillPurchaseTests', 'SkillInjector', 'SkillExtraction',
+    'BoosterTests', 'ImplantTests', 'WeaponBankTests', 'AdvancedWeaponTests', 'PilotFittingTests',
+    'EquipmentBonusTests', 'CheckpointOwnershipTests', 'Eden.Protocol.Tests.Hosting'
+)
+$filter = ($classes | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled. The Docker host rejected SSH authentication, so the deployed
+revision and the reported multi-second skill stall remain unverified.
+
+### Optional maintainer checks
+
+After deploying, apply points to a queued skill with a fitted weapon and compare the first regional summary and
+item book call times in the Docker log.

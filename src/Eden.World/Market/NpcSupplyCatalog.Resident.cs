@@ -8,24 +8,34 @@ namespace Eden.World.Market;
 
 internal sealed partial class PilotMarketStore
 {
+    private readonly record struct InstitutionalListing(long Id, int TypeId, bool Bid, long PriceCents, int Remaining, long Issued);
+
     private void SeedInstitutional(WorldAction world, CatalogDbContext catalog, CatalogStationDefinition station)
     {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.institutional");
         int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
         NpcSupplyRules.ValidateStock(stock);
         var preparation = new InstitutionalPreparation(station.Id, catalog.Definitions.Identity.Generation, stock);
-        var orders = world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id);
+        var market = world.Set<NpcMarketOrder>();
+        var orders = market.Where(o => o.StationId == station.Id);
         if (world.Prepared(preparation))
         {
             Refresh(world, orders);
             return;
         }
-        var existing = orders.Where(o => o.Kind == NpcMarketKind.Institutional).ToDictionary(o => (o.TypeId, o.Bid));
-        HashSet<(int TypeId, bool Bid)> eligible = [];
+        var existing = orders
+            .Where(o => o.Kind == NpcMarketKind.Institutional)
+            .Select(o => new InstitutionalListing(o.Id, o.TypeId, o.Bid, o.PriceCents, o.Remaining, o.Issued))
+            .ToDictionary(o => (o.TypeId, o.Bid));
         foreach (var offer in InstitutionalOffers(catalog, station))
         {
-            eligible.Add((offer.TypeId, offer.Bid));
-            if (existing.TryGetValue((offer.TypeId, offer.Bid), out var order))
+            if (existing.Remove((offer.TypeId, offer.Bid), out var listing))
             {
+                if (listing.Issued != 0 && listing.PriceCents == offer.PriceCents)
+                {
+                    continue;
+                }
+                var order = market.Find(listing.Id)!;
                 order.PriceCents = offer.PriceCents;
                 if (order.Issued == 0)
                 {
@@ -54,12 +64,13 @@ internal sealed partial class PilotMarketStore
                 );
             }
         }
-        foreach (var retired in existing.Where(p => !Enumerable.Contains(eligible, p.Key)).Select(p => p.Value))
+        foreach (var listing in existing.Values.Where(o => o.Remaining != 0 || o.Issued != 0))
         {
+            var retired = market.Find(listing.Id)!;
             retired.Remaining = 0;
             retired.Issued = 0;
         }
         world.Remember(preparation);
-        Refresh(world, world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id));
+        Refresh(world, orders);
     }
 }

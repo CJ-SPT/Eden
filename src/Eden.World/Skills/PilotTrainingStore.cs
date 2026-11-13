@@ -99,11 +99,10 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         PointOperation? points = null
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope action = new(database, new(pilots: [pilotId]));
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var result = UpdateCore(world, pilotId, targets, activate, pause, attributes, points, false, now);
-        transaction.Commit();
+        var result = UpdateCore(action.World, pilotId, targets, activate, pause, attributes, points, false, now);
+        action.Commit();
         return result;
     }
 
