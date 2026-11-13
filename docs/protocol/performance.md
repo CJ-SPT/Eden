@@ -4133,3 +4133,122 @@ the screenshot host's timings were not verified.
 
 After deployment, compare skill-point calls while mining, first market/population calls and checkpoint timing
 breakdowns in the Docker log.
+
+## Bounded checkpoints and populated player scaling, November 13, 2026
+
+Ordinary legacy transactions no longer flush every dirty economy, combat, heat, tractor and NPC routine table
+when they begin. Each SQL command synchronizes its referenced tables and foreign-key/trigger dependencies;
+declared participants continue to limit simulation projection to the relevant pilots, ships and systems.
+Projection joins the caller's transaction. Commit acknowledges the captured generation, while rollback and
+named savepoint rollback retain the resident changes for retry. Projection notifications preserve warmed
+observers; a later SQL mutation of the same row still invalidates them. Schema changes deliberately retain
+complete synchronization because they invalidate the corresponding caches. Initial hydration and unclassified
+simulation-table queries also remain conservative; this change does not remove every shared owner.
+Each simulation projection first synchronizes its economic dependencies, preventing a later table read from
+overwriting newer staged heat or combat state. Funded heat deadlines settle before the caller's SQL transaction
+begins, so burnout does not attempt a second writer inside an already active transaction.
+
+Checkpoint copying now uses 256-page SQLite backup steps, releasing persistence ownership between steps.
+At the usual 4 KiB page size this bounds each copy step to 1 MiB. The immutable resident capture is taken
+under ownership immediately before the successful final step, so both images describe the same generation.
+Projection and durable file writing remain outside the owner. `maxCopyPause` includes resident capture in the
+final batch; `copySteps` and total `copy` report work separately from individual pauses. This supersedes the
+default atomic native copy described in the preceding record; the atomic helper remains covered independently.
+
+SQLite restarts an incremental backup when another connection changes the source. Continuous SQL writes can
+therefore extend total save time, without restoring the previous whole-database owner hold. Resident capture,
+thread scheduling and individual atomic gameplay commands still have variable duration: the page limit is a
+work bound, not a hard real-time guarantee. See SQLite's [online backup documentation](https://www.sqlite.org/backup.html)
+and [backup API contract](https://www.sqlite.org/c3ref/backup_finish.html).
+
+Backlogged capsuleer maintenance now waits its normal 50 ms cadence between bounded turns instead of
+immediately scheduling another turn with `Task.Yield`. The existing ten-millisecond/64-action admission budget
+still releases ownership after individual jobs; an atomic job can exceed that budget. The cadence test proves
+that overdue work is retained and resumes on the next wake. Late movement publication also rejects retired
+ship identities, preventing a stale session from recreating an orphan position during checkpoint projection.
+
+### Automated validation
+
+The populated replay uses the frozen `artifacts/log-performance-20261113` save: 23,332 pilots, 23,323 autonomous
+capsuleers, 34,226 NPCs and 1,460,535 asteroids, before adding simulated players. The relational source is
+394,256,384 bytes. The same replay implementation runs with preserved `8869f597` baseline runtime binaries and
+the updated runtime based on `6056c7a4`, which also includes the independently committed NPC spawn-slot repair.
+Both configurations are Debug/.NET 10 on Windows 11 Pro, an i5-14600KF (14 cores/20 threads) and 32 GiB RAM.
+
+The [replay procedure](../testing.md#populated-player-scaling-replay) describes the workload and output fields.
+Each scale gets a fresh copy, three warmup cohorts and 24 measured cohorts, with mining, movement, docked calls,
+background actions and three durable checkpoints. Mining grids are isolated from hostile belts and supplied
+with one million ore units per rock. Earlier runs that depleted shared rocks were rejected and are not used
+as successful load measurements. The original save was not modified.
+
+Both baseline and final optimized replays passed all four cases: 6 minutes 25 seconds and 5 minutes 47 seconds
+respectively, including fixture preparation and cleanup. Every miner remained active and delivered ore; protocol,
+background and save failure counts were zero. Results are under ignored `artifacts/scaling-20261113/baseline-final`
+and `optimized-verified`, with a compact `comparison-final.json` alongside them.
+
+| Players | Completion p95, baseline → updated | Completion p99, baseline → updated | Frames/s, baseline → updated | Maximum copy/capture pause, baseline → updated |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 106.53 → 30.51 ms | 152.11 → 49.56 ms | 4.76 → 5.27 | 92.56 → 8.24 ms |
+| 10 | 95.81 → 73.82 ms | 152.76 → 118.10 ms | 47.14 → 48.78 | 97.38 → 9.60 ms |
+| 100 | 122.84 → 104.87 ms | 155.37 → 148.85 ms | 387.68 → 373.26 | 98.73 → 8.45 ms |
+| 1,000 | 1,522.06 → 1,324.36 ms | 1,838.50 → 1,726.13 ms | 712.18 → 714.52 | 78.39 → 81.67 ms |
+
+Baseline pause is capture plus its atomic copy; updated pause is the maximum measured copy/capture interval of
+one page batch, including the final resident capture. The updated copier used 376–379 batches per checkpoint.
+Total time inside copy calls increased to 124–242 ms, while ordinary small-load ownership pauses decreased sharply.
+The 81.67 ms outlier under 1,000-player saturation shows why the page budget is not a wall-clock guarantee.
+The replay waits for checkpoint writing between cohorts, so frames/second includes that barrier and should
+not be treated as the production server's network throughput.
+
+One sampled warmed cohort at every updated scale issued 20 SQL commands, opened one connection and performed
+zero fitting calculations in total across its player frames and periodic calls. This does not count all SQL
+over the complete replay; measured latency cohorts run without verbose SQL profiling. Allocation over the
+24 measured cohorts was 0.235, 0.244, 1.750 and 22.346 GiB respectively, including background/checkpoint work.
+At 1,000 players, traffic maintenance still held the shared owner for up to 197 ms. There is no meaningful
+1,000-player throughput improvement in this run, and it does not establish sustained live capacity.
+
+Final background backlogs were 0, 4, 39 and 39 jobs. The harness invokes one bounded maintenance turn per
+cohort and advances five simulation seconds each time; it does not reproduce the host's continuous 50 ms
+maintenance cadence. Admission time and wall time also affect simulation deadlines. Background action counts
+and backlog age are therefore diagnostic evidence, not a matched autonomous-world throughput benchmark.
+The deterministic cadence test separately verifies pacing without dropping overdue jobs. The tested mixture
+supports a few-client private-server target; busy combat, network transport and client rendering remain outside
+this replay's evidence.
+
+Deterministic coverage checks SQL command, connection and fitting counts alongside resident outcomes,
+foreign-key dependencies, named savepoint rollback, committed mutation visibility, warm observers, rejected
+heat/burnout writes, retired hulls, concurrent writes between checkpoint batches, and reopened saves.
+NPC routine admission and lazy restart restoration are also covered. Test fixtures now request the particular
+relational state they need instead of depending on an empty transaction to flush unrelated state. Snapshot
+tests release ownership before capture so writers can actually enter between page batches.
+
+The completed affected selection passed all **806 tests** in **5 minutes 2 seconds** (304.85 seconds including
+runner startup), with a 1.25-second incremental test build. The solution build took 6.44 seconds with zero warnings/errors.
+Tool and solution restores passed. Both Python policy suites passed (8 catalog and 9 formatting checks), as did
+.NET style, CSharpier and the 140-character line-width verification. Interrupted development runs are not counted:
+they exposed stale eager-flush assertions, a nested fixture connection, observer invalidation and heat settlement/projection ordering, all
+covered by the completed run. The full .NET suite was not run.
+
+```powershell
+$classes = @(
+    'ResidentEconomyTests', 'EconomicProjectionTests', 'LiveWorldTests', 'DetachedCheckpointTests',
+    'CheckpointOwnershipTests', 'IncrementalCheckpointTests', 'WorldDatabaseCopyTests',
+    'CapsuleerMaintenanceTests', 'TrafficPreparationTests', 'RetiredShipMotionTests',
+    'TransactionParticipantTests', 'LiveSimulationTests', 'ResidentCombatMonitoringTests',
+    'ResidentHandoffTests', 'ResidentBotEconomyTests', 'CapsuleerResidentRoutineTests',
+    'ResidentPopulationTests', 'ShipStorageTests', 'MiningTests', 'Thermal', 'PersonalMarketTests',
+    'PilotCombatTests', 'PilotHealthTests', 'ResidentDroneTests', 'CapsuleerSchedulingTests',
+    'CapsuleerHandoffTests', 'CapsuleerDeadlineTests', 'CapsuleerBackgroundPreparationTests'
+)
+$filter = ($classes | ForEach-Object { "FullyQualifiedName~$_" }) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The Docker host was not deployed or measured by this replay.
+
+### Optional maintainer checks
+
+After deployment, compare mining skill-point latency, checkpoint `maxCopyPause`, and capsuleer backlog age
+on the target server. The in-process replay does not establish client rendering or sustained network capacity.

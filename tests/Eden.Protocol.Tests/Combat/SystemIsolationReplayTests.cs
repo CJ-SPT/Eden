@@ -177,7 +177,7 @@ public sealed partial class ServerPerformanceReplayTests
     private static double Percentile(double[] values, double percentile) =>
         values.Length == 0 ? 0 : values[(int)Math.Ceiling(values.Length * percentile) - 1];
 
-    private sealed class ReplayPlayer : IDisposable
+    private sealed partial class ReplayPlayer : IDisposable
     {
         private readonly IServiceScope _scope;
         private readonly ConcurrentQueue<string> _reports;
@@ -188,8 +188,16 @@ public sealed partial class ServerPerformanceReplayTests
         private long _arrival;
         private double _reply;
         internal PilotCallContext Context { get; }
+        internal bool MeasureCounters { get; set; } = true;
 
-        internal ReplayPlayer(ServiceProvider host, TimeProvider clock, long pilot, long account, ConcurrentQueue<string> reports)
+        internal ReplayPlayer(
+            ServiceProvider host,
+            TimeProvider clock,
+            long pilot,
+            long account,
+            ConcurrentQueue<string> reports,
+            bool selected = true
+        )
         {
             _scope = host.CreateScope();
             _account = account;
@@ -204,7 +212,10 @@ public sealed partial class ServerPerformanceReplayTests
                 account,
                 SignedSettings.Empty
             );
-            Context.Select(provider.GetRequiredService<Eden.World.Docking.SqliteWorld>().FindPilot(account, pilot)!);
+            if (selected)
+            {
+                Context.Select(provider.GetRequiredService<Eden.World.Docking.SqliteWorld>().FindPilot(account, pilot)!);
+            }
             _output = new(
                 Context,
                 account,
@@ -217,7 +228,10 @@ public sealed partial class ServerPerformanceReplayTests
                     {
                         _reply = Stopwatch.GetElapsedTime(_arrival).TotalMilliseconds;
                     }
-                    Assert.False(packet is BlueInstance error && error.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+                    if (packet is BlueInstance error && error.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal))
+                    {
+                        Assert.Fail(JsonSerializer.Serialize(error));
+                    }
                     return Task.CompletedTask;
                 },
                 reports.Enqueue
@@ -252,38 +266,41 @@ public sealed partial class ServerPerformanceReplayTests
                 presentation: presentation,
                 structures: provider.GetRequiredService<Eden.Gameplay.Structures.IStructureContacts>()
             );
-            updates.Enter(Context);
+            if (selected)
+            {
+                updates.Enter(Context);
+            }
         }
 
         internal async Task<ReplaySample> Call(string service, string method, params object?[] arguments)
         {
             _arrival = Stopwatch.GetTimestamp();
             _reply = 0;
-            using var metrics = SessionPerformance.Begin($"player {service}.{method}", _reports.Enqueue, force: true)!;
+            using var metrics = SessionPerformance.Begin($"player {service}.{method}", _reports.Enqueue, force: MeasureCounters);
             await _calls.ProcessAsync(Request(service, method, arguments), _arrival);
             Assert.True(_reply > 0);
             return new(
                 method,
                 _reply,
                 Stopwatch.GetElapsedTime(_arrival).TotalMilliseconds,
-                metrics.Commands,
-                metrics.Connections,
-                metrics.FittingCalculations
+                metrics?.Commands ?? 0,
+                metrics?.Connections ?? 0,
+                metrics?.FittingCalculations ?? 0
             );
         }
 
         internal async Task<ReplaySample> Frame()
         {
             long started = Stopwatch.GetTimestamp();
-            using var metrics = SessionPerformance.Begin("player frame", _reports.Enqueue, force: true)!;
+            using var metrics = SessionPerformance.Begin("player frame", _reports.Enqueue, force: MeasureCounters);
             await _tick.AdvanceAsync(Context, _output, _reports.Enqueue, _account, _account);
             return new(
                 "frame",
                 0,
                 Stopwatch.GetElapsedTime(started).TotalMilliseconds,
-                metrics.Commands,
-                metrics.Connections,
-                metrics.FittingCalculations
+                metrics?.Commands ?? 0,
+                metrics?.Connections ?? 0,
+                metrics?.FittingCalculations ?? 0
             );
         }
 

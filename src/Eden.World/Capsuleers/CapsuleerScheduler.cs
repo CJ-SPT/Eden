@@ -252,6 +252,10 @@ internal sealed partial class CapsuleerScheduler(
     private void LoadSystem(WorldAction world, int system, long? pilot)
     {
         _systems.Register(system);
+        if (world.Set<SavedCapsuleerCoarseWork>().Find(system) is { } work)
+        {
+            Live?.CapsuleerRoutines.RestoreMissing(new(work.SystemId, work.Generation, work.Cursor, work.SettledTicks, work.NextTicks));
+        }
         if (pilot is { } founder)
         {
             Register(world, world.Set<SavedCapsuleerAgent>().Where(a => a.PilotId == founder).ToArray(), founderSystem: system);
@@ -300,6 +304,7 @@ internal sealed partial class CapsuleerScheduler(
                 if (world.Set<SavedCapsuleerCoarsePilot>().Find(pilot) is { } paused)
                 {
                     _paused[pilot] = new(paused.SettledTicks);
+                    Live?.CapsuleerRoutines.RestoreMissing(pilot, paused.SettledTicks);
                 }
                 if (founderSystem is null)
                 {

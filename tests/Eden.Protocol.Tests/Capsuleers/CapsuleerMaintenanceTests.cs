@@ -209,7 +209,7 @@ public sealed class CapsuleerMaintenanceTests
     }
 
     [Fact]
-    public async Task OneWakeDrainsMultipleBoundedTurnsWithoutWaitingForAnotherTimerTick()
+    public async Task BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs()
     {
         using CapsuleerHaulerTests.Fixture f = new();
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
@@ -225,7 +225,16 @@ public sealed class CapsuleerMaintenanceTests
             host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
         );
         maintenance.Start();
-        clock.Wake();
+        var initial = await clock.NextWake();
+        initial.Fire();
+        for (int completed = 1; completed < 3; completed++)
+        {
+            var next = await clock.NextWake();
+            Assert.Equal(completed, scheduler.Calls);
+            Assert.Equal(CapsuleerJobQueue.WakeInterval, next.Delay);
+            Assert.False(scheduler.Current.Task.IsCompleted);
+            next.Fire();
+        }
         await scheduler.Current.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Equal(3, scheduler.Calls);
     }
@@ -312,13 +321,16 @@ public sealed class CapsuleerMaintenanceTests
 
         public override long GetTimestamp() => Elapsed.Ticks;
 
-        private Action? _wake;
+        internal sealed record ScheduledWake(TimeSpan Delay, Action Fire);
 
-        public void Wake() => _wake!();
+        private readonly System.Threading.Channels.Channel<ScheduledWake> _wakes =
+            global::System.Threading.Channels.Channel.CreateUnbounded<ScheduledWake>();
+
+        internal async Task<ScheduledWake> NextWake() => await _wakes.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
 
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
         {
-            _wake = () => callback(state);
+            _wakes.Writer.TryWrite(new(dueTime, () => callback(state)));
             return new WakeTimer();
         }
 

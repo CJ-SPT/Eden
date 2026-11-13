@@ -22,7 +22,9 @@ internal sealed class WorldSnapshot(
     long copyAllocatedBytes = 0,
     long copyBytes = 0,
     Eden.World.Capsuleers.CapsuleerRoutineCheckpoint? routines = null,
-    Eden.World.Runtime.Economy.EconomyCheckpoint? economy = null
+    Eden.World.Runtime.Economy.EconomyCheckpoint? economy = null,
+    TimeSpan maximumCopyPause = default,
+    int copySteps = 1
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -33,6 +35,8 @@ internal sealed class WorldSnapshot(
     internal long CaptureAllocatedBytes => captureAllocatedBytes;
     internal long CopyAllocatedBytes => copyAllocatedBytes;
     internal long CopyBytes => copyBytes;
+    internal TimeSpan MaximumCopyPause => maximumCopyPause;
+    internal int CopySteps => copySteps;
     internal long ProjectionAllocatedBytes { get; private set; }
 
     internal TimeSpan Project()

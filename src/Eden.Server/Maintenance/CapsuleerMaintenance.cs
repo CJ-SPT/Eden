@@ -63,9 +63,9 @@ internal sealed class CapsuleerMaintenance(
                     Tick(out backlogged);
                     if (backlogged)
                     {
-                        // A bounded turn releases ownership before another catch-up
-                        // turn. Current work then sleeps until its next deadline or input change.
-                        await Task.Yield();
+                        // Yield alone immediately reschedules a permanent backlog. Keep
+                        // catch-up turns within the same cadence as ordinary maintenance.
+                        await Task.Delay(CapsuleerJobQueue.WakeInterval, clock, cancellationToken).ConfigureAwait(false);
                     }
                 } while (backlogged && !_stopping);
                 wake = scheduler.NextWake();

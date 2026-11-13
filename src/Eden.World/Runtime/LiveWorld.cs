@@ -27,12 +27,15 @@ internal sealed record WorldCheckpoint(
     long CopyAllocatedBytes = 0,
     long ProjectionAllocatedBytes = 0,
     long WriteAllocatedBytes = 0,
-    long CopyBytes = 0
+    long CopyBytes = 0,
+    TimeSpan MaximumCopyPause = default,
+    int CopySteps = 1
 );
 
 // The resident relational image preserves the existing transaction, constraint and trigger rules.
-// Checkpoints capture immutable state under system owners, then copy the SQL image
-// under persistence alone. Projection and file writing use the detached image.
+// Checkpoints copy bounded SQL page batches, releasing persistence between batches.
+// The successful final batch captures immutable state from the same generation.
+// Projection and file writing use the detached image.
 internal sealed partial class LiveWorld : IDisposable
 {
     internal static readonly TimeSpan SaveInterval = TimeSpan.FromSeconds(15);
@@ -46,6 +49,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal IDisposable ObserveOwnership(Action<OwnershipTiming> observer) => _ownershipMonitor.Subscribe(observer);
 
     private readonly object _scheduleGate = new();
+    private readonly object _captureGate = new();
     private readonly Queue<WorldCheckpoint> _checkpoints = new();
     private const int RetainedCheckpointReports = 32;
     private readonly string _path;
@@ -54,7 +58,8 @@ internal sealed partial class LiveWorld : IDisposable
     private readonly FileStream _ownership;
     private readonly TimeProvider _clock;
     private readonly Action<SqliteConnection, string> _persist;
-    private readonly Action<SqliteConnection, SqliteConnection> _copy;
+    private readonly Action<SqliteConnection, SqliteConnection>? _copy;
+    internal Action<int>? CheckpointStepCompleted { get; set; }
     private readonly Action<string> _report;
     private readonly Action<string> _reportFailure;
     private readonly Action<string> _reportTrace;
@@ -127,6 +132,12 @@ internal sealed partial class LiveWorld : IDisposable
         if (!resident)
         {
             Economy.Observe(changes);
+        }
+        if (changes.Any(change => change.Projection))
+        {
+            // Projection commits the already-published resident generation. Only
+            // later SQL mutations should evict its warmed simulation and views.
+            changes = changes.Where(change => !change.Projection).ToArray();
         }
         if (changes.Count == 0)
         {
@@ -407,7 +418,7 @@ internal sealed partial class LiveWorld : IDisposable
         _reportFailure = report ?? ServerLog.Console.Error;
         _reportTrace = report ?? ServerLog.Console.Trace;
         _persist = persist ?? PersistSnapshot;
-        _copy = copy ?? WorldDatabaseCopy.Copy;
+        _copy = copy;
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         _ownership = new(_path + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         ConnectionString = new SqliteConnectionStringBuilder
@@ -633,6 +644,18 @@ internal sealed partial class LiveWorld : IDisposable
 
     internal WorldSnapshot? CaptureSnapshot()
     {
+        if (IsEntered)
+        {
+            throw new InvalidOperationException("Release world ownership before capturing a checkpoint.");
+        }
+        lock (_captureGate)
+        {
+            return _copy is null ? CaptureIncrementalSnapshot() : CaptureAtomicSnapshot();
+        }
+    }
+
+    private WorldSnapshot? CaptureAtomicSnapshot()
+    {
         using var context = UseShared();
         long started = Stopwatch.GetTimestamp();
         using (EnterPersistence("checkpoint capture"))
@@ -663,7 +686,7 @@ internal sealed partial class LiveWorld : IDisposable
                 Interlocked.Increment(ref _checkpointCopies);
                 try
                 {
-                    _copy(_memory, database);
+                    _copy!(_memory, database);
                 }
                 finally
                 {
@@ -733,7 +756,9 @@ internal sealed partial class LiveWorld : IDisposable
                 snapshot.CopyAllocatedBytes,
                 snapshot.ProjectionAllocatedBytes,
                 writeAllocated,
-                snapshot.CopyBytes
+                snapshot.CopyBytes,
+                snapshot.MaximumCopyPause,
+                snapshot.CopySteps
             );
             using (Acquire())
             {
@@ -752,6 +777,7 @@ internal sealed partial class LiveWorld : IDisposable
                     + $"capture={completed.Capture.TotalMilliseconds:F2} ms, copy={completed.Copy.TotalMilliseconds:F2} ms, "
                     + $"project={projection.TotalMilliseconds:F2} ms, "
                     + $"write={write.TotalMilliseconds:F2} ms, bytes={completed.Bytes}, copyBytes={completed.CopyBytes}, "
+                    + $"maxCopyPause={completed.MaximumCopyPause.TotalMilliseconds:F2} ms, copySteps={completed.CopySteps}, "
                     + $"allocated capture/copy/project/write={completed.CaptureAllocatedBytes}/{completed.CopyAllocatedBytes}/"
                     + $"{completed.ProjectionAllocatedBytes}/{completed.WriteAllocatedBytes}."
             );
@@ -846,16 +872,19 @@ internal sealed partial class LiveWorld : IDisposable
             }
             throw;
         }
-        using (Acquire())
+        lock (_captureGate)
         {
-            if (_disposed)
+            using (Acquire())
             {
-                return;
+                if (_disposed)
+                {
+                    return;
+                }
+                _disposed = true;
+                s_worlds.TryRemove(_path, out _);
+                _memory.Dispose();
+                _ownership.Dispose();
             }
-            _disposed = true;
-            s_worlds.TryRemove(_path, out _);
-            _memory.Dispose();
-            _ownership.Dispose();
         }
         _timer.Dispose();
     }

@@ -457,6 +457,7 @@ public sealed class MobilityHeatTests
         // Retain a relational image of the paid state, then cancel in resident state.
         using (WorldDbContext baseline = new(f.Fit.Db.Path))
         {
+            Assert.NotNull(baseline.Set<SavedShipHeat>().Find(f.Ship));
             Assert.Equal(propulsion, baseline.Set<ActiveFittedModule>().Any(row => row.ModuleId == f.Module));
             Assert.Equal(!propulsion, baseline.Set<WorldTackle>().Any(row => row.ModuleId == f.Module));
         }

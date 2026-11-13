@@ -10,6 +10,7 @@ namespace Eden.World.Runtime.Economy;
 internal sealed partial class ResidentEconomy
 {
     private readonly ConcurrentDictionary<long, byte> _pilotIdentities = new();
+    private readonly ConcurrentDictionary<long, byte> _shipIdentities = new();
     private readonly ConcurrentDictionary<int, int> _pilotMissileSystems = new();
     private readonly ConcurrentDictionary<long, int> _npcMissilePilots = new();
     private readonly ConcurrentDictionary<long, int> _missileReportPilots = new();
@@ -28,6 +29,7 @@ internal sealed partial class ResidentEconomy
     private void ClearCombatIndexes()
     {
         _pilotIdentities.Clear();
+        _shipIdentities.Clear();
         _pilotMissileSystems.Clear();
         _npcMissilePilots.Clear();
         _missileReportPilots.Clear();
@@ -55,6 +57,20 @@ internal sealed partial class ResidentEconomy
             _pilotIdentities.TryRemove(before.Id, out _);
         }
     }
+
+    private void ShipIdentityChanged(EconomyShip? before, EconomyShip? after)
+    {
+        if (after is not null)
+        {
+            _shipIdentities.TryAdd(after.Id, 0);
+        }
+        else if (before is not null)
+        {
+            _shipIdentities.TryRemove(before.Id, out _);
+        }
+    }
+
+    internal bool IsShip(long ship) => _shipIdentities.ContainsKey(ship);
 
     internal bool HasPilotMissiles(int system) => _pilotMissileSystems.ContainsKey(system);
 

@@ -607,9 +607,9 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         participants.Includes(ship.PilotId, ship.ShipId, ship.SystemId)
         || owner.Combat?.Participates(participants, ship.PilotId, ship.ShipId) == true;
 
-    internal void Flush(TransactionParticipants? participants = null)
+    internal void Flush(TransactionParticipants? participants = null, WorldDbContext? target = null)
     {
-        if (_internal != 0)
+        if (_internal != 0 || target?.EconomicProjection.Residents.Contains(this) == true)
         {
             return;
         }
@@ -618,7 +618,7 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
             var missing = _ships.Values.Where(s => s.SystemId is null).Select(s => s.ShipId).ToArray();
             if (missing.Length > 0)
             {
-                using WorldDbContext locations = new(database.Path) { IsResidentProjection = true };
+                using WorldDbContext locations = target?.ProjectionContext() ?? new(database.Path) { IsResidentProjection = true };
                 foreach (
                     var row in locations
                         .Ships.Where(s => missing.Contains(s.Id))
@@ -635,7 +635,10 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                 }
             }
         }
-        Advance(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), participants);
+        if (target is null)
+        {
+            Advance(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), participants);
+        }
         if (_dirty.Count == 0)
         {
             return;
@@ -648,9 +651,17 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
             {
                 return;
             }
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+            using WorldDbContext world =
+                target?.ProjectionContext() ?? new(database.Path) { IsResidentProjection = true, SynchronizesEconomicProjection = true };
             new ShipHeatCheckpoint(ships.Select(id => new ShipHeatProjection(id, _ships[id].State)).ToArray()).Apply(world);
-            _dirty.ExceptWith(ships);
+            if (target is null)
+            {
+                _dirty.ExceptWith(ships);
+            }
+            else
+            {
+                target.EconomicProjection.AddResident(this, () => _dirty.ExceptWith(ships));
+            }
         }
         finally
         {

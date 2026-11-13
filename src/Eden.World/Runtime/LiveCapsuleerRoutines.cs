@@ -103,15 +103,15 @@ internal sealed class LiveCapsuleerRoutines(LiveWorld owner, string path)
         Settle(pilot, expected.ThroughTicks);
     }
 
-    internal void Flush(TransactionParticipants? participants = null)
+    internal void Flush(TransactionParticipants? participants = null, WorldDbContext? target = null)
     {
-        if (_projecting)
+        if (_projecting || target?.EconomicProjection.Residents.Contains(this) == true)
         {
             return;
         }
         using var ownership = owner.EnterTransactionSystems(participants);
         var pilots = owner.CapsuleerParticipants(participants);
-        var capture = Capture(participants, pilots);
+        var capture = Capture(participants, participants is null ? null : pilots);
         var jobs = new CapsuleerJobCheckpoint(
             pilots
                 .Select(id => owner.CapsuleerJobs.GetValueOrDefault(id))
@@ -146,14 +146,34 @@ internal sealed class LiveCapsuleerRoutines(LiveWorld owner, string path)
         try
         {
             // A newly provisioned pilot can still be resident when its routine first needs SQL projection.
-            owner.Economy.Flush();
-            using WorldDbContext world = new(path) { IsResidentProjection = true };
-            using var transaction = world.Database.BeginTransaction();
+            if (target is null)
+            {
+                owner.Economy.FlushTables(["WorldPilot"]);
+            }
+            using WorldDbContext world =
+                target?.ProjectionContext() ?? new(path) { IsResidentProjection = true, SynchronizesEconomicProjection = true };
+            using var transaction = target is null ? world.Database.BeginTransaction() : null;
             capture.Apply(world);
             jobs.Apply(world);
             MinerCheckpoint.Apply(world, miners);
             HaulerCheckpoint.Apply(world, haulers);
-            transaction.Commit();
+            transaction?.Commit();
+            if (target is not null)
+            {
+                target.EconomicProjection.AddResident(this, Accept);
+            }
+            else
+            {
+                Accept();
+            }
+        }
+        finally
+        {
+            _projecting = false;
+        }
+
+        void Accept()
+        {
             foreach (var activation in capture.Activations)
             {
                 _activations.Remove(activation.SystemId);
@@ -179,10 +199,6 @@ internal sealed class LiveCapsuleerRoutines(LiveWorld owner, string path)
             {
                 _dirtySettled.Remove(pilot.PilotId);
             }
-        }
-        finally
-        {
-            _projecting = false;
         }
     }
 

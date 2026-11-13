@@ -57,6 +57,7 @@ internal interface IEconomyTable
     string Name { get; }
     IReadOnlyList<string> Columns { get; }
     bool HasChanges { get; }
+    bool HasDeletes { get; }
     bool Contains(EconomyKey key);
     void Load(WorldDbContext world);
     IEconomyProjection Capture();
@@ -194,6 +195,7 @@ internal sealed class EconomyTable<TRow, TState>(
     internal string Name => name;
     string IEconomyTable.Name => name;
     public bool HasChanges => _sqlBaselines.Count != 0;
+    public bool HasDeletes => _sqlBaselines.Keys.Any(id => Snapshot(id) is null);
     public IReadOnlyList<string> Columns => columns.Split(',');
     internal IEnumerable<EconomyKey> Keys =>
         groupedRows?.Keys ?? (_integerRows is not null ? _integerRows.Keys.Select(static id => new EconomyKey(id)) : _rows!.Keys);

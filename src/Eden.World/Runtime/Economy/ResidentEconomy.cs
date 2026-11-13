@@ -254,6 +254,7 @@ internal sealed partial class ResidentEconomy
         _owner.ProjectShared(null);
         using WorldDbContext world = new(_database.Path) { IsResidentProjection = true };
         world.Database.OpenConnection();
+        LoadProjectionDependencies(world);
         _structures.Clear();
         _cloaked.Clear();
         _sequences.Clear();
@@ -380,7 +381,9 @@ internal sealed partial class ResidentEconomy
             _dirtySequences.Select(name => new EconomySequence(name, _sequences[name])).ToArray()
         );
 
-    internal void Flush()
+    internal void Flush() => FlushTables(_tables.Values.Select(table => table.Name));
+
+    internal void FlushTables(IEnumerable<string> names)
     {
         if (!_loaded || _projecting)
         {
@@ -390,7 +393,9 @@ internal sealed partial class ResidentEconomy
         {
             throw new InvalidOperationException("SQL cannot observe a speculative economic transaction.");
         }
-        var snapshot = Capture();
+        var selected = ProjectionTables(names, includeDependents: false);
+        var projections = selected.Select(table => new EconomyTableProjection(table, table.Capture())).ToArray();
+        var snapshot = ProjectionCheckpoint(projections, selected.Select(table => table.Name));
         if (snapshot.Count == 0)
         {
             return;
@@ -403,16 +408,17 @@ internal sealed partial class ResidentEconomy
             using var transaction = world.Database.BeginTransaction();
             snapshot.Apply(world);
             transaction.Commit();
-            foreach (var table in _tables.Values)
+            foreach (var table in projections)
             {
-                // Projection order and generic types are fixed by the registered mapping.
-                var projected = table.Capture();
-                if (projected.Count != 0)
+                if (table.Rows.Count != 0)
                 {
-                    table.Projected(world, projected);
+                    table.Table.Projected(world, table.Rows);
                 }
             }
-            _dirtySequences.Clear();
+            foreach (var sequence in snapshot.Sequences)
+            {
+                _dirtySequences.Remove(sequence.Name);
+            }
         }
         finally
         {

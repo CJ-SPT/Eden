@@ -62,6 +62,8 @@ public sealed class TransactionParticipantTests
             using (WorldDbContext world = new(db.Path) { Participants = classified ? new(ships: [first]) : null })
             using (var transaction = world.Database.BeginTransaction())
             {
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(classified ? 2 : 1, world.Positions.Single(position => position.ShipId == first).X);
                 transaction.Commit();
             }
             int projectionCommands = metrics.Commands;
@@ -78,7 +80,7 @@ public sealed class TransactionParticipantTests
         }
         int fallbackCommands = Measure(false);
         int participantCommands = Measure(true);
-        Assert.Equal(1, participantCommands);
+        Assert.Equal(2, participantCommands);
         Assert.True(fallbackCommands > participantCommands);
         Assert.Equal(population, live.Combat!.CaptureCheckpoint().Positions.Count);
     }
@@ -164,7 +166,8 @@ public sealed class TransactionParticipantTests
                 transaction.Rollback();
             }
             Assert.Equal(new SpacePosition(100, 0, 0), combat.InformationPosition(first));
-            Assert.Equal(second, Assert.Single(combat.CaptureCheckpoint().Positions).ShipId);
+            // Projection participates in the rolled-back transaction, so both positions remain dirty.
+            Assert.Equal(new[] { first, second }, combat.CaptureCheckpoint().Positions.Select(position => position.ShipId).Order());
             using var metrics = SessionPerformance.Begin("unrelated empty transaction", _ => { }, force: true)!;
             using (WorldDbContext world = new(db.Path) { Participants = TransactionParticipants.None })
             using (var transaction = world.Database.BeginTransaction())

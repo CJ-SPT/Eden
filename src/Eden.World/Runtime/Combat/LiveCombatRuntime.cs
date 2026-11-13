@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Combat;
 
-internal readonly record struct CombatRowChange(string Table, long Id, bool Resident = false);
+internal readonly record struct CombatRowChange(string Table, long Id, bool Resident = false, bool Projection = false);
 
 internal sealed partial class LiveCombatRuntime(
     LiveWorld owner,
@@ -540,9 +540,13 @@ internal sealed partial class LiveCombatRuntime(
         }
     }
 
-    internal void Flush(TransactionParticipants? participants = null, bool retainPositions = false)
+    internal void Flush(TransactionParticipants? participants = null, bool retainPositions = false, WorldDbContext? target = null)
     {
-        if (systemId is null && owner.CurrentSystem is null && _internal == 0)
+        if (target?.EconomicProjection.Residents.Contains(this) == true)
+        {
+            return;
+        }
+        if (target is null && systemId is null && owner.CurrentSystem is null && _internal == 0)
         {
             owner.ProjectSystems(participants);
         }
@@ -585,50 +589,61 @@ internal sealed partial class LiveCombatRuntime(
             {
                 return;
             }
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+            using WorldDbContext world =
+                target?.ProjectionContext() ?? new(database.Path) { IsResidentProjection = true, SynchronizesEconomicProjection = true };
             using var timing = SessionLatency.Measure(SessionLatencyPhase.Projection);
             checkpoint.Apply(world);
-            foreach (var change in checkpoint.Ships)
+            if (target is not null)
             {
-                long id = change.After.PilotId;
-                _savedShips[id] = change.After;
-                _dirtyShips.Remove(id);
+                target.EconomicProjection.AddResident(this, () => AcceptProjection(checkpoint));
+                return;
             }
-            foreach (var change in checkpoint.Npcs)
-            {
-                _savedNpcs[change.After.Id] = change.After;
-                _dirtyNpcs.Remove(change.After.Id);
-            }
-            foreach (var position in checkpoint.Positions)
-            {
-                _savedPositions[position.ShipId] = _positions[position.ShipId];
-                _dirtyPositions.Remove(position.ShipId);
-            }
-            _dirtyDrones.ExceptWith(checkpoint.Drones.Select(d => d.Contact.Id));
-            _dirtyDroneCombatTriggers.ExceptWith(checkpoint.DroneTriggers.Select(t => t.ShipId));
-            _dirtyAggressions.ExceptWith(checkpoint.Aggressions.Select(a => a.NpcId));
-            foreach (var timer in checkpoint.DroneTimers)
-            {
-                _droneTimers.Remove(timer.PilotId);
-                foreach (long ship in _dronePlayers.Where(p => p.Value?.PilotId == timer.PilotId).Select(p => p.Key).ToArray())
-                {
-                    _dronePlayers.Remove(ship);
-                }
-            }
-            foreach (var engagement in checkpoint.DroneEngagements)
-            {
-                _droneEngagements.Remove((engagement.LowerPilotId, engagement.HigherPilotId));
-            }
-            foreach (var hostility in checkpoint.DroneHostilities)
-            {
-                _droneHostilities.Remove((hostility.SourceShipId, hostility.TargetShipId));
-                _residentAttackers.GetValueOrDefault(hostility.TargetShipId)?.Remove(hostility.SourceShipId);
-                _droneAttackers.Remove(hostility.TargetShipId);
-            }
+            AcceptProjection(checkpoint);
         }
         finally
         {
             _internal--;
+        }
+    }
+
+    private void AcceptProjection(CombatCheckpoint checkpoint)
+    {
+        foreach (var change in checkpoint.Ships)
+        {
+            long id = change.After.PilotId;
+            _savedShips[id] = change.After;
+            _dirtyShips.Remove(id);
+        }
+        foreach (var change in checkpoint.Npcs)
+        {
+            _savedNpcs[change.After.Id] = change.After;
+            _dirtyNpcs.Remove(change.After.Id);
+        }
+        foreach (var position in checkpoint.Positions)
+        {
+            _savedPositions[position.ShipId] = _positions[position.ShipId];
+            _dirtyPositions.Remove(position.ShipId);
+        }
+        _dirtyDrones.ExceptWith(checkpoint.Drones.Select(d => d.Contact.Id));
+        _dirtyDroneCombatTriggers.ExceptWith(checkpoint.DroneTriggers.Select(t => t.ShipId));
+        _dirtyAggressions.ExceptWith(checkpoint.Aggressions.Select(a => a.NpcId));
+        foreach (var timer in checkpoint.DroneTimers)
+        {
+            _droneTimers.Remove(timer.PilotId);
+            foreach (long ship in _dronePlayers.Where(p => p.Value?.PilotId == timer.PilotId).Select(p => p.Key).ToArray())
+            {
+                _dronePlayers.Remove(ship);
+            }
+        }
+        foreach (var engagement in checkpoint.DroneEngagements)
+        {
+            _droneEngagements.Remove((engagement.LowerPilotId, engagement.HigherPilotId));
+        }
+        foreach (var hostility in checkpoint.DroneHostilities)
+        {
+            _droneHostilities.Remove((hostility.SourceShipId, hostility.TargetShipId));
+            _residentAttackers.GetValueOrDefault(hostility.TargetShipId)?.Remove(hostility.SourceShipId);
+            _droneAttackers.Remove(hostility.TargetShipId);
         }
     }
 

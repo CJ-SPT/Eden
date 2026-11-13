@@ -994,6 +994,7 @@ internal sealed partial class ResidentEconomy
                     new("StationId", row => row.StationId),
                     new("StoredInId", row => row.StoredInId),
                 ],
+                changed: ShipIdentityChanged,
                 primaryColumn: "Id"
             )
         );

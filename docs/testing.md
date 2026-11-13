@@ -44,6 +44,41 @@ The seed-cache comparison used the preserved pre-change binaries from `fc33779` 
 
 A separate first run against an empty cache took 3.96 seconds for `Fixtures.TestCatalogTests`. The comparison table uses the prepared cache. Changes to Eden binaries or dependency versions invalidate the seed, so the next feature run rebuilds it. EF model/query initialization and test-process startup still contribute to every fresh process. Two simultaneous processes also passed the isolation filter against one empty shared cache.
 
+## Populated player scaling replay
+
+`ServerPerformanceReplayTests.ReplayPopulatedWorldAtPlayerScale` is an opt-in automated replay for 1, 10, 100 and
+1,000 simulated sessions. Supply a frozen directory containing `world.sqlite`, its matching `catalog.sqlite`, and
+any traffic database and skill-package sidecars. The test copies these files into its private scratch directory;
+it never runs against the source save directly. The template pilot must own a fitted mining ship with trained skills.
+
+```powershell
+$env:EDEN_SCALE_SOURCE = 'F:\frozen-eden-save'
+$env:EDEN_SCALE_OUTPUT = 'F:\scale-results'
+$env:EDEN_SCALE_TEMPLATE_PILOT = '90001835'
+$env:EDEN_SCALE_SAMPLES = '24'
+.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName~ReplayPopulatedWorldAtPlayerScale'
+```
+
+The fixture retains the populated world, adds independent accounts and fitted ships, and uses up to ten systems.
+Ten percent of sessions mine, forty percent move, and fifty percent stay docked; the single-player case mines.
+Measured mining grids are moved away from hostile belts and given sufficient ore to preserve the workload.
+Three cohorts warm the sessions. Each measured cohort advances five simulation seconds and executes complete
+session frames, with skill-point, movement or station calls every fourth cohort, background work every cohort,
+and durable checkpoints every eighth cohort. Every miner must remain active and deliver ore; protocol errors,
+background failures and failed saves fail the test.
+
+Each `players-N.json` includes admission time, completion and execution latency, throughput, allocation,
+ownership timing, checkpoint stages, background backlog and individual samples. Completion latency includes
+the wait from scheduling the cohort through the frame and reply encoding. SQL, connection and fitting counts
+come from a separate warmed cohort, with verbose tracing disabled during measured throughput. The clock combines
+explicit advances with wall time so background CPU budgets work; executed background actions can therefore differ
+between builds. This is a closed-cohort in-process replay, not a TCP load test or a guarantee of sustained live-player
+capacity. An invocation without `EDEN_SCALE_SOURCE` does not run a load test.
+
+For comparisons, preserve the complete baseline runtime output and run the same test assembly with each runtime,
+sequentially on the same host and source save. Keep builds, unrelated tests and other substantial work out of the
+measurement window. Record runtime revisions, build configuration and machine details with the results.
+
 ## Reporting and publishing
 
 Agents perform **automated testing only**: no game launch, Computer Use, interactive gameplay acceptance, or extended manual server-testing substitute unless the user explicitly requests live testing. Report automated checks, results, elapsed time, and limitations separately from live acceptance: **"Not performed; agent client testing is disabled."** Provide at most three optional maintainer actions when visual or gameplay checks remain. Native rendering, input, and gameplay feel remain unverified until tested. Automated validation and confirmation that the milestone commit is on the remote branch establish completion; live acceptance is not required. See the [contributor testing policy](../AGENTS.md#testing).

@@ -6,89 +6,79 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Eden.World.Runtime;
 
-// Legacy operations synchronize at their transaction boundary. Read-only queries only
-// need the projection when they actually reference mutable combat tables.
-internal sealed class CombatPersistenceBridge(string path) : DbCommandInterceptor
+// Legacy SQL synchronizes the resident inputs its commands reference. A transaction
+// alone does not project the world; rollback keeps its captured resident state dirty.
+internal sealed class CombatPersistenceBridge(string path, WorldDbContext? projectionOwner = null) : DbCommandInterceptor
 {
+    private static readonly string[] SimulationTables =
+    [
+        "WorldItem",
+        "WorldPosition",
+        "WorldShip",
+        "WorldNpc",
+        "WorldCombatDamage",
+        "WorldNpcAggression",
+        "WorldDrone",
+        "WorldDroneCombatTriggers",
+        "WorldArmorRepair",
+        "WorldWeaponCooldown",
+        "WorldShipEnergy",
+        "WorldShipHealth",
+        "WorldWreck",
+        "WorldShipHeat",
+        "WorldModuleCondition",
+        "WorldNaniteRepair",
+    ];
+
     private void Before(DbCommand command, CommandEventData data)
     {
+        if (projectionOwner is not null)
+        {
+            LiveWorld.Find(path)?.Economy.BeforeSql(projectionOwner, command);
+            return;
+        }
         if (command.Connection is { } connection)
         {
             WorldConnections.FinalizeCommitted(connection);
         }
-        if (data.Context is WorldDbContext { IsResidentProjection: true })
+        if (data.Context is not WorldDbContext context || LiveWorld.Find(path) is not { } live)
         {
             return;
         }
-        if (
-            data.Context?.Database.CurrentTransaction is null
-            && LiveWorld.Find(path) is { } economicOwner
-            && economicOwner.Economy.ReferencesDirty(command.CommandText)
-        )
+        if (context.IsResidentProjection)
         {
-            economicOwner.Economy.Flush();
-        }
-        if (
-            data.Context is not WorldDbContext { UsesResidentCapsuleerRoutines: true }
-            && command.CommandText.Contains("WorldCapsuleer", StringComparison.Ordinal)
-            && data.Context?.Database.CurrentTransaction is null
-        )
-        {
-            LiveWorld.Find(path)?.CapsuleerRoutines.Flush();
-        }
-        if (data.Context is WorldDbContext { Participants: { } participants })
-        {
-            WorldConnections.HoldSimulation((WorldDbContext)data.Context);
-            if (data.Context.Database.CurrentTransaction is null)
+            if (context.SynchronizesEconomicProjection)
             {
-                CombatTransactionBridge.Project(path, participants);
+                live.Economy.BeforeSql(context, command);
             }
             return;
         }
-        // Directional reads overlay resident positions under the owner. They never read
-        // mutable combat resources, and must not force projection for a name/membership query.
-        if (
-            data.Context is WorldDbContext { ReadsDirectionalPositions: true }
-            && command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase)
-        )
+        string sql = command.CommandText;
+        bool schema = new[] { "CREATE ", "DROP ", "ALTER " }.Any(prefix =>
+            sql.TrimStart().StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+        );
+        live.Economy.BeforeSql(context, command);
+        WorldDbContext? target = context.Database.CurrentTransaction is null ? null : context;
+        if (schema || !context.UsesResidentCapsuleerRoutines && sql.Contains("WorldCapsuleer", StringComparison.Ordinal))
+        {
+            WorldConnections.HoldSimulation(context);
+            live.CapsuleerRoutines.Flush(context.Participants, target);
+        }
+        if (context.ReadsDirectionalPositions && sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
-        bool read = command.CommandText.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase);
-        string[] residentTables =
-        [
-            "WorldItem",
-            "WorldPosition",
-            "WorldShip",
-            "WorldNpc",
-            "WorldCombatDamage",
-            "WorldNpcAggression",
-            "WorldDrone",
-            "WorldDroneCombatTriggers",
-            "WorldArmorRepair",
-            "WorldWeaponCooldown",
-            "WorldShipEnergy",
-            "WorldShipHealth",
-            "WorldWreck",
-        ];
         bool timer =
-            data.Context is not WorldDbContext { ReadsResidentNpcTimer: true }
+            !context.ReadsResidentNpcTimer
             && new[] { "WorldCrimewatch", "WorldPilotHostility", "WorldEngagement", "WorldLogoff" }.Any(table =>
-                command.CommandText.Contains(table, StringComparison.Ordinal)
+                SqlTableReferences.Contains(sql, table)
             );
-        if (read && !timer && !residentTables.Any(table => SqlTableReferences.Contains(command.CommandText, table)))
+        bool pilotWrite =
+            !sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase) && SqlTableReferences.Contains(sql, "WorldPilot");
+        if (schema || timer || pilotWrite || SimulationTables.Any(table => SqlTableReferences.Contains(sql, table)))
         {
-            return;
-        }
-        if (data.Context?.Database.CurrentTransaction is null)
-        {
-            if (data.Context is WorldDbContext context)
-            {
-                WorldConnections.HoldSimulation(context);
-            }
-            LiveWorld.Find(path)?.Economy.Flush();
-            LiveWorld.Find(path)?.BeforeSystemsSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
-            LiveWorld.Find(path)?.BeforeSharedSql(command.CommandText, data.Context is WorldDbContext { ReadsResidentNpcTimer: true });
+            WorldConnections.HoldSimulation(context);
+            CombatTransactionBridge.Project(path, context.Participants, target);
         }
     }
 
@@ -154,13 +144,49 @@ internal sealed class CombatPersistenceBridge(string path) : DbCommandIntercepto
 
 internal sealed class CombatTransactionBridge(string path) : DbTransactionInterceptor
 {
-    internal static void Project(string path, TransactionParticipants? participants)
+    public override void TransactionCommitted(DbTransaction transaction, TransactionEndEventData eventData)
+    {
+        if (eventData.Context is WorldDbContext context && (!context.IsResidentProjection || context.SynchronizesEconomicProjection))
+        {
+            context.EconomicProjection.CommitResidents();
+            LiveWorld.Find(path)?.Economy.CompleteProjection(context);
+        }
+    }
+
+    public override Task TransactionCommittedAsync(
+        DbTransaction transaction,
+        TransactionEndEventData eventData,
+        CancellationToken cancellationToken = default
+    )
+    {
+        TransactionCommitted(transaction, eventData);
+        return Task.CompletedTask;
+    }
+
+    public override void TransactionRolledBack(DbTransaction transaction, TransactionEndEventData eventData)
+    {
+        if (eventData.Context is WorldDbContext context)
+        {
+            context.EconomicProjection.Clear();
+        }
+    }
+
+    public override Task TransactionRolledBackAsync(
+        DbTransaction transaction,
+        TransactionEndEventData eventData,
+        CancellationToken cancellationToken = default
+    )
+    {
+        TransactionRolledBack(transaction, eventData);
+        return Task.CompletedTask;
+    }
+
+    internal static void Project(string path, TransactionParticipants? participants, WorldDbContext? target = null)
     {
         using var phase = SessionPerformance.Phase(participants is null ? "projection.fallback" : "projection.participants");
         var live = LiveWorld.Find(path);
-        live?.Economy.Flush();
-        live?.ProjectSystems(participants);
-        live?.ProjectShared(participants);
+        live?.ProjectSystems(participants, target);
+        live?.ProjectShared(participants, target);
     }
 
     public override InterceptionResult<DbTransaction> TransactionStarting(
@@ -170,17 +196,19 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
     )
     {
         WorldConnections.FinalizeCommitted(connection);
-        if (eventData.Context is not WorldDbContext { IsResidentProjection: true })
+        if (eventData.Context is not WorldDbContext { IsResidentProjection: true, SynchronizesEconomicProjection: false })
         {
             if (eventData.Context is WorldDbContext context)
             {
-                WorldConnections.HoldSimulation(context);
+                if (!context.IsResidentProjection)
+                {
+                    // Burnout may require its own atomic write. Settle it before
+                    // SQLite begins the caller's transaction, without flushing state.
+                    LiveWorld.Find(path)?.SettleTransactionHeat(context.Participants);
+                }
+                context.EconomicProjection.Clear();
+                WorldConnections.TrackEconomicProjection(connection, context.EconomicProjection);
             }
-            if (eventData.Context is not WorldDbContext { UsesResidentCapsuleerRoutines: true })
-            {
-                LiveWorld.Find(path)?.CapsuleerRoutines.Flush((eventData.Context as WorldDbContext)?.Participants);
-            }
-            Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return result;
     }
@@ -193,17 +221,17 @@ internal sealed class CombatTransactionBridge(string path) : DbTransactionInterc
     )
     {
         WorldConnections.FinalizeCommitted(connection);
-        if (eventData.Context is not WorldDbContext { IsResidentProjection: true })
+        if (eventData.Context is not WorldDbContext { IsResidentProjection: true, SynchronizesEconomicProjection: false })
         {
             if (eventData.Context is WorldDbContext context)
             {
-                WorldConnections.HoldSimulation(context);
+                if (!context.IsResidentProjection)
+                {
+                    LiveWorld.Find(path)?.SettleTransactionHeat(context.Participants);
+                }
+                context.EconomicProjection.Clear();
+                WorldConnections.TrackEconomicProjection(connection, context.EconomicProjection);
             }
-            if (eventData.Context is not WorldDbContext { UsesResidentCapsuleerRoutines: true })
-            {
-                LiveWorld.Find(path)?.CapsuleerRoutines.Flush((eventData.Context as WorldDbContext)?.Participants);
-            }
-            Project(path, (eventData.Context as WorldDbContext)?.Participants);
         }
         return ValueTask.FromResult(result);
     }

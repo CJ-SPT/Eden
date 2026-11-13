@@ -30,6 +30,7 @@ public sealed class ResidentDroneTests
         f.Launch();
         f.Tick();
         var expected = f.Drones.List(30000144, f.Now).ToArray();
+        long ship = f.Ship;
         using (WorldDbContext world = new(f.Base.Db.Path) { Participants = TransactionParticipants.None })
         using (var transaction = world.Database.BeginTransaction())
         {
@@ -39,7 +40,7 @@ public sealed class ResidentDroneTests
                     Id = 8000000000001,
                     OwnerId = f.Pilot,
                     TypeId = 34,
-                    LocationId = world.Ships.Single(s => s.Id == f.Ship).StationId,
+                    LocationId = world.Ships.Single(s => s.Id == ship).StationId,
                     FlagId = (int)InventoryFlag.Hangar,
                     Quantity = 1,
                 }

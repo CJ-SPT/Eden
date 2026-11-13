@@ -78,6 +78,17 @@ internal static partial class WorldConnections
         }
     }
 
+    internal static void TrackEconomicProjection(System.Data.Common.DbConnection connection, EconomicProjectionState state)
+    {
+        if (connection is LiveConnection live)
+        {
+            live.EconomicProjection = state;
+        }
+    }
+
+    internal static IDisposable? Projecting(System.Data.Common.DbConnection connection) =>
+        connection is LiveConnection live ? live.Projecting() : null;
+
     internal static void SynchronizeCommitted(WorldDbContext context)
     {
         if (context.Database.GetDbConnection() is LiveConnection connection)
@@ -129,12 +140,93 @@ internal static partial class WorldConnections
         private readonly int? _projectionSystem = projection ? world.CurrentSystem : null;
         private IDisposable? _lease;
         private IDisposable? _simulation;
+        internal EconomicProjectionState? EconomicProjection { get; set; }
+        private int _projectionDepth;
+
+        internal IDisposable Projecting()
+        {
+            _projectionDepth++;
+            return new ProjectionScope(this);
+        }
+
+        private sealed class ProjectionScope(LiveConnection connection) : IDisposable
+        {
+            public void Dispose() => connection._projectionDepth--;
+        }
+
+        private void RecordChange(string table, long id)
+        {
+            CombatRowChange mutation = new(table, id);
+            CombatRowChange projection = new(table, id, Projection: true);
+            if (_projectionDepth == 0)
+            {
+                _pendingChanges.Remove(projection);
+                _pendingChanges.Add(mutation);
+            }
+            else if (!_pendingChanges.Contains(mutation))
+            {
+                _pendingChanges.Add(projection);
+            }
+        }
 
         internal void HoldSimulation(TransactionParticipants? participants) => _simulation ??= world.EnterTransactionSystems(participants);
 
         private readonly HashSet<CombatRowChange> _changes = [];
         private readonly HashSet<CombatRowChange> _pendingChanges = [];
         private readonly HashSet<CombatRowChange> _committingChanges = [];
+
+        private sealed record SavedChanges(
+            string Name,
+            IReadOnlyCollection<CombatRowChange> Pending,
+            IReadOnlyDictionary<int, PendingInstitutional> Preparations,
+            IReadOnlyDictionary<int, InstitutionalPreparation> CommittedPreparations,
+            bool SchemaWrite
+        );
+
+        private readonly List<SavedChanges> _savepoints = [];
+
+        private void Savepoint(string operation, string name)
+        {
+            EconomicProjection?.Savepoint(operation, name);
+            if (operation == "BEGIN")
+            {
+                _savepoints.Add(
+                    new(
+                        name,
+                        _pendingChanges.ToArray(),
+                        new Dictionary<int, PendingInstitutional>(_pendingInstitutional),
+                        new Dictionary<int, InstitutionalPreparation>(_committedInstitutional),
+                        _schemaWrite
+                    )
+                );
+                return;
+            }
+            int index = _savepoints.FindLastIndex(saved => saved.Name == name);
+            if (index < 0)
+            {
+                return;
+            }
+            if (operation == "RELEASE")
+            {
+                _savepoints.RemoveRange(index, _savepoints.Count - index);
+                return;
+            }
+            _pendingChanges.Clear();
+            var saved = _savepoints[index];
+            _pendingChanges.UnionWith(saved.Pending);
+            _pendingInstitutional.Clear();
+            foreach (var preparation in saved.Preparations)
+            {
+                _pendingInstitutional.Add(preparation.Key, preparation.Value);
+            }
+            _committedInstitutional.Clear();
+            foreach (var preparation in saved.CommittedPreparations)
+            {
+                _committedInstitutional.Add(preparation.Key, preparation.Value);
+            }
+            _schemaWrite = saved.SchemaWrite;
+            _savepoints.RemoveRange(index + 1, _savepoints.Count - index - 1);
+        }
 
         private sealed record PendingInstitutional(Guid Transaction, InstitutionalPreparation Preparation);
 
@@ -255,6 +347,7 @@ internal static partial class WorldConnections
                             FinalizeCommit();
                             _committingChanges.UnionWith(_pendingChanges);
                             _pendingChanges.Clear();
+                            _savepoints.Clear();
                             return 0;
                         },
                         null
@@ -266,6 +359,7 @@ internal static partial class WorldConnections
                             _pendingChanges.Clear();
                             _committingChanges.Clear();
                             _pendingInstitutional.Clear();
+                            _savepoints.Clear();
                         },
                         null
                     );
@@ -275,13 +369,13 @@ internal static partial class WorldConnections
                             (_, operation, _, table, id) =>
                             {
                                 FinalizeCommit();
-                                _pendingChanges.Add(new(table, id));
+                                RecordChange(table, id);
                                 if (
                                     (table is "WorldMarketOrder" or "WorldPersonalOrder")
                                     && (operation != SQLitePCL.raw.SQLITE_UPDATE || _marketDefinitionWrite)
                                 )
                                 {
-                                    _pendingChanges.Add(new("WorldMarketDefinition", id));
+                                    RecordChange("WorldMarketDefinition", id);
                                     if (_preparingStation is { } station)
                                     {
                                         _pendingInstitutional.Remove(station);
@@ -295,7 +389,7 @@ internal static partial class WorldConnections
                                 }
                                 if ((table is "WorldMarketOrder" or "WorldPersonalOrder") && _marketMembershipWrite)
                                 {
-                                    _pendingChanges.Add(new("WorldMarketMembership", id));
+                                    RecordChange("WorldMarketMembership", id);
                                 }
                                 if (
                                     string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
@@ -304,14 +398,14 @@ internal static partial class WorldConnections
                                 {
                                     // Corporation location roles depend on docking membership,
                                     // while ordinary coordinates stay in resident motion state.
-                                    _pendingChanges.Add(new("WorldPositionMembership", id));
+                                    RecordChange("WorldPositionMembership", id);
                                 }
                                 if (
                                     string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
                                     && (operation != SQLitePCL.raw.SQLITE_UPDATE || _itemMembershipWrite)
                                 )
                                 {
-                                    _pendingChanges.Add(new("WorldItemMembership", id));
+                                    RecordChange("WorldItemMembership", id);
                                 }
                             }
                         ),
@@ -322,6 +416,10 @@ internal static partial class WorldConnections
                         (SQLitePCL.strdelegate_authorizer)(
                             (_, action, table, column, _, _) =>
                             {
+                                if (action == SQLitePCL.raw.SQLITE_SAVEPOINT)
+                                {
+                                    Savepoint(table!, column!);
+                                }
                                 if (
                                     action == SQLitePCL.raw.SQLITE_UPDATE
                                     && table is "WorldMarketOrder" or "WorldPersonalOrder"
@@ -351,7 +449,7 @@ internal static partial class WorldConnections
                                 )
                                 {
                                     _schemaWrite = true;
-                                    _pendingChanges.Add(new("schema", 0));
+                                    RecordChange("schema", 0);
                                 }
                                 if (
                                     action == SQLitePCL.raw.SQLITE_UPDATE

@@ -171,9 +171,9 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
         }
     }
 
-    internal void Flush(TransactionParticipants? participants = null)
+    internal void Flush(TransactionParticipants? participants = null, WorldDbContext? target = null)
     {
-        if (_writing || _dirty.Count == 0)
+        if (_writing || _dirty.Count == 0 || target?.EconomicProjection.Residents.Contains(this) == true)
         {
             return;
         }
@@ -195,22 +195,33 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
             {
                 return;
             }
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-            using var transaction = world.Database.BeginTransaction();
+            using WorldDbContext world =
+                target?.ProjectionContext() ?? new(database.Path) { IsResidentProjection = true, SynchronizesEconomicProjection = true };
+            using var transaction = target is null ? world.Database.BeginTransaction() : null;
             new TractorCheckpoint(targets.Select(id => new TractorPosition(id, _positions[id])).ToArray()).Apply(world);
-            transaction.Commit();
-            _dirty.ExceptWith(targets);
-            var active = _cycles.Values.Select(c => c.Cycle.TargetId).ToHashSet();
-            foreach (long target in _positions.Keys.Where(id => !active.Contains(id) && !_dirty.Contains(id)).ToArray())
+            transaction?.Commit();
+            if (target is not null)
             {
-                _positions.Remove(target);
-                _owners.Remove(target);
-                _revision++;
+                target.EconomicProjection.AddResident(this, () => AcceptProjection(targets));
+                return;
             }
+            AcceptProjection(targets);
         }
         finally
         {
             _writing = false;
+        }
+    }
+
+    private void AcceptProjection(long[] targets)
+    {
+        _dirty.ExceptWith(targets);
+        var active = _cycles.Values.Select(c => c.Cycle.TargetId).ToHashSet();
+        foreach (long target in _positions.Keys.Where(id => !active.Contains(id) && !_dirty.Contains(id)).ToArray())
+        {
+            _positions.Remove(target);
+            _owners.Remove(target);
+            _revision++;
         }
     }
 

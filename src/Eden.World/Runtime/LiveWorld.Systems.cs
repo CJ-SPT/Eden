@@ -164,7 +164,8 @@ internal sealed partial class LiveWorld
         {
             return CapsuleerJobs.Keys.ToArray();
         }
-        HashSet<long> pilots = [.. participants.Pilots.Where(CapsuleerJobs.ContainsKey)];
+        // Admission and settlement may precede scheduler registration.
+        HashSet<long> pilots = [.. participants.Pilots];
         foreach (long ship in participants.Ships)
         {
             if (_shipOwners.TryGetValue(ship, out long pilot) && CapsuleerJobs.ContainsKey(pilot))
@@ -179,12 +180,12 @@ internal sealed partial class LiveWorld
         return pilots;
     }
 
-    internal void ProjectShared(TransactionParticipants? participants)
+    internal void ProjectShared(TransactionParticipants? participants, WorldDbContext? target = null)
     {
         using var context = UseShared();
-        _shared.Combat?.Flush(participants);
-        _shared.Heat.Flush(participants);
-        _shared.Tractors.Flush(participants);
+        _shared.Combat?.Flush(participants, target: target);
+        _shared.Heat.Flush(participants, target);
+        _shared.Tractors.Flush(participants, target);
     }
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<long, int> _pilotSystems = new();
@@ -536,17 +537,30 @@ internal sealed partial class LiveWorld
         }
     }
 
-    internal void ProjectSystems(TransactionParticipants? participants)
+    internal void ProjectSystems(TransactionParticipants? participants, WorldDbContext? target = null)
     {
         using var persistence = EnterPersistence("resident projection");
         foreach (var entry in ParticipantSystems(participants).Order().Select(_systems.Get))
         {
             using var context = UseSystem(entry.Id);
             using var ownership = entry.Enter("transaction projection");
-            entry.State.Combat?.Flush(participants);
-            entry.State.Heat.Flush(participants);
-            entry.State.Tractors.Flush(participants);
+            entry.State.Combat?.Flush(participants, target: target);
+            entry.State.Heat.Flush(participants, target);
+            entry.State.Tractors.Flush(participants, target);
         }
+    }
+
+    internal void SettleTransactionHeat(TransactionParticipants? participants)
+    {
+        var entries = ParticipantSystems(participants).Select(_systems.Get).Where(entry => entry.State.Heat.HasActive).ToArray();
+        using var ownership = _systems.Enter(entries.Select(entry => entry.Id), "transaction heat deadlines");
+        foreach (var entry in entries)
+        {
+            using var context = UseSystem(entry.Id);
+            entry.State.Heat.Advance(SimulationTime, participants);
+        }
+        using var shared = UseShared();
+        _shared.Heat.Advance(SimulationTime, participants);
     }
 
     internal IDisposable EnterTransactionSystems(TransactionParticipants? participants) =>

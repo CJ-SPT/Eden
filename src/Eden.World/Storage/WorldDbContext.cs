@@ -64,6 +64,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
     internal TransactionParticipants? Participants { get; init; }
     internal IReadOnlySet<int>? CommittedSystems { get; init; }
     internal bool IsResidentProjection { get; init; }
+    internal bool SynchronizesEconomicProjection { get; init; }
     internal bool UsesResidentCapsuleerRoutines { get; init; }
 
     private readonly SqliteConnection? _snapshot;
@@ -78,6 +79,10 @@ public sealed partial class WorldDbContext(string path) : DbContext
     {
         if (_snapshot is not null)
         {
+            if (_projectionOwner is not null)
+            {
+                options.AddInterceptors(new CombatPersistenceBridge(_projectionOwner.WorldPath, _projectionOwner));
+            }
             // Detached checkpoint projection uses the same model and SQLite rules,
             // without consulting or invalidating the advancing resident world.
             options.TracePerformance().UseSqlite(_snapshot, contextOwnsConnection: false);
@@ -85,11 +90,11 @@ public sealed partial class WorldDbContext(string path) : DbContext
         }
         options
             .AddInterceptors(
+                new CombatTransactionBridge(path),
                 new FitTransactions(this),
                 new CommitActions(this),
                 new MarketPreparationTransactions(this),
-                new CombatPersistenceBridge(path),
-                new CombatTransactionBridge(path)
+                new CombatPersistenceBridge(path)
             )
             .TracePerformance()
             .UseSqlite(WorldConnections.Create(path, Participants, IsResidentProjection, CommittedSystems), contextOwnsConnection: true);

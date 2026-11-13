@@ -313,6 +313,15 @@ internal sealed partial class LiveCombatRuntime
     private void PublishPilotPositionOwned(long id, int system, SpacePosition position)
     {
         using var ownership = owner.Enter();
+        // A queued frame or disconnect can arrive after the hull was destroyed.
+        // Its last motion must not recreate a position for a deleted ship.
+        if (owner.Economy.IsLoaded && !owner.Economy.IsShip(id))
+        {
+            _positions.Remove(id);
+            _savedPositions.Remove(id);
+            _dirtyPositions.Remove(id);
+            return;
+        }
         owner.TrackShip(id, system);
         if (_positions.TryGetValue(id, out var previous) && previous.Position != position)
         {

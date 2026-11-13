@@ -137,6 +137,7 @@ public sealed class CapsuleerResidentRoutineTests
             var live = host.GetRequiredService<LiveWorld>();
             var original = scheduler.Jobs().First();
             next = original.Next(TimeSpan.TicksPerHour, original.Action);
+            fixture.Clock.Milliseconds += 1000;
             using (live.EnterShared())
             {
                 var work = new CapsuleerCoarseWork(Home, 0, 0, 0, 0) { ThroughTicks = TimeSpan.TicksPerSecond };
@@ -168,6 +169,7 @@ public sealed class CapsuleerResidentRoutineTests
             await live.FlushAsync();
         }
         using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var returningHuman = reopened.GetRequiredService<IHumanPresence>().Select(Human, Home);
         var restored = reopened.GetRequiredService<CapsuleerScheduler>();
         Assert.Contains(next, restored.Jobs());
         var resident = reopened.GetRequiredService<LiveWorld>();
@@ -176,7 +178,7 @@ public sealed class CapsuleerResidentRoutineTests
     }
 
     [Fact]
-    public async Task ClassifiedMutationProjectsOnlyItsParticipatingRoutine()
+    public async Task ClassifiedRoutineQueryProjectsOnlyItsParticipatingRoutine()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(isolateRoute: true);
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
@@ -209,6 +211,11 @@ public sealed class CapsuleerResidentRoutineTests
                 {
                     using WorldDbContext world = new(fixture.Database.Path) { Participants = new(pilots: [original[0].PilotId]) };
                     using var transaction = world.Database.BeginTransaction();
+                    Assert.Equal(original[0], live.ProjectedCapsuleerJobs[original[0].PilotId]);
+                    Assert.Equal(
+                        original[0].Revision + 1,
+                        world.Set<SavedCapsuleerJob>().Single(j => j.PilotId == original[0].PilotId).Revision
+                    );
                     transaction.Commit();
                 })
                 .WaitAsync(TimeSpan.FromSeconds(5));
