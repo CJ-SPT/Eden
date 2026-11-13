@@ -264,12 +264,13 @@ internal static class Program
                     : throw new InvalidDataException("--admin-port requires a port between 1 and 65535.")
                 : AdministrationHost.DefaultPort;
             bool administrationEnabled = !args.Contains("--disable-admin") && new AdministratorAccounts(worldPath).Provisioned;
+            string? administrationOrigin = Environment.GetEnvironmentVariable("EDEN_ADMIN_ORIGIN");
             if (
                 administrationEnabled
                 && new[] { options.GamePort, options.GatewayPort, options.ApiPort, ChatServer.ClientPort }.Contains(administrationPort)
             )
             {
-                throw new InvalidDataException("Administration requires a separate local port.");
+                throw new InvalidDataException("Administration requires a separate port.");
             }
             var launcherMaintenance = services.GetRequiredService<LauncherMaintenance>();
             lifetime.OnStop(nameof(LauncherMaintenance), launcherMaintenance.DisposeAsync);
@@ -306,11 +307,25 @@ internal static class Program
             await api.StartAsync();
             if (administrationEnabled)
             {
-                var administration = AdministrationHost.Create(services, worldPath, administrationPort);
+                var administration = AdministrationHost.Create(
+                    services,
+                    worldPath,
+                    administrationPort,
+                    administrationOrigin,
+                    IPAddress.Parse(options.ListenAddress),
+                    options.CertificatePath
+                );
                 lifetime.OnStop("administration", administration.DisposeAsync);
                 lifetime.OnStop("administration listener", () => new ValueTask(administration.StopAsync()));
                 await administration.StartAsync();
-                ServerLog.Console.Information($"Local administration listening on http://127.0.0.1:{administrationPort}.");
+                string address = string.IsNullOrEmpty(administrationOrigin)
+                    ? $"http://127.0.0.1:{administrationPort}"
+                    : administrationOrigin;
+                ServerLog.Console.Information($"Administration available at {address}.");
+            }
+            else if (!args.Contains("--disable-admin") && !string.IsNullOrEmpty(administrationOrigin))
+            {
+                ServerLog.Console.Information("Provision an administrator with --set-admin-password to start the administration listener.");
             }
             ServerLog.Console.Information($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
             ServerLog.Console.Information($"Gateway listening on {options.ListenAddress}:{options.GatewayPort}.");

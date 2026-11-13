@@ -101,13 +101,15 @@ public sealed partial class AdministrationTests
         internal WebApplication App { get; }
         internal HttpClient Client { get; }
 
-        private Fixture(bool liveWorld)
+        internal Fixture(bool liveWorld, string? publicOrigin = null, string? certificatePath = null, HttpClientHandler? handler = null)
         {
             World = new(liveWorld: liveWorld);
             Accounts = new(World.Path);
             Accounts.SetPassword("Corey", Password);
-            App = AdministrationHost.Create(World.Services, World.Path, 0);
-            Client = new(new HttpClientHandler { AllowAutoRedirect = false });
+            App = AdministrationHost.Create(World.Services, World.Path, 0, publicOrigin, IPAddress.Any, certificatePath);
+            handler ??= new();
+            handler.AllowAutoRedirect = false;
+            Client = new(handler);
         }
 
         internal static async Task<Fixture> Start(bool liveWorld = false)
@@ -241,7 +243,7 @@ public sealed partial class AdministrationTests
         Assert.Contains("href=\"/population\"", html);
         Assert.Contains("Active population settings", html);
         Assert.Contains("Saved pilots", html);
-        Assert.Contains("Recent system returns", html);
+        Assert.DoesNotContain("Recent system returns", html);
         Assert.DoesNotContain("Forgone remote seconds on return", html);
         Assert.Contains("Paused pilots", html);
         Assert.Contains("Enabled pilots", html);

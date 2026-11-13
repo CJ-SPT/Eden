@@ -2,6 +2,31 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Remote administration in Docker, November 13, 2026
+
+The Compose admin override publishes TCP 26003 on an explicit host address. Eden serves HTTPS using the deployment PFX and
+checks the configured browser scheme, hostname and port, including the Origin header when supplied. The admin login uses
+secure cookies and retains the separate credentials, rate limit, antiforgery checks and credential-stamp validation.
+The default listener still requires a loopback peer and local Host. [Docker setup](../docker.md#remote-administration)
+
+**Automated validation.** The exact remote HTTPS test passed in 6.10 seconds including runner startup. The final focused run
+passed 102 tests in 26.73 seconds with four opt-in mod or packaging scenarios skipped. It covered HTTPS login and cookies,
+Host and Origin rejection, Blazor negotiation and the existing Firefox and Chromium interactivity checks. A stale test
+expectation for the removed population panel was corrected after the first focused run. Tool and solution restore, the
+warning-free build, both Python policy suites (8 catalog and 9 formatting checks) and formatting verification passed.
+Docker Compose 5.7.1 resolved the base and opt-in configurations with the expected port mappings. The full .NET suite was
+outside the focused selection.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Administration|FullyQualifiedName~Eden.Protocol.Tests.Launcher.LauncherApiTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerLifetimeTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.ServerDataPathsTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled. This workstation has no Docker Engine for a container
+deployment check.
+
+**Optional maintainer checks.** Open the configured HTTPS address from another machine and sign in to verify the deployed
+certificate, port mapping and interactive connection.
+
 ## Administration save interactivity — November 11, 2026
 
 Saving settings in an interactive administration connection could commit a pending revision and its checkpoint while leaving

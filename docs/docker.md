@@ -33,4 +33,31 @@ docker compose run --rm eden --config /config/server.json --set-account-password
 docker compose up -d
 ```
 
-The administration interface remains bound to the container's loopback address. Windows development tickets and compiling client packages from the Windows client runtime require a native Windows host. The container can load and serve existing compatible packages from the mounted data directory.
+Windows development tickets and compiling client packages from the Windows client runtime require a native Windows host. The container can load and serve existing compatible packages from the mounted data directory.
+
+## Remote administration
+
+Include `compose.admin.yaml` to publish the administration page over HTTPS on TCP 26003. Add these values to the deployment's `.env`, using your Docker host's LAN or VPN address and the hostname covered by `CertificatePath` in `deploy/server.json`.
+
+```dotenv
+EDEN_ADMIN_BIND_IP=192.168.1.10
+EDEN_ADMIN_ORIGIN=https://eden.example.com:26003
+```
+
+The browser must trust the deployment certificate and resolve the hostname to the published address. Permit TCP 26003 from the networks that need administrator access. `EDEN_ADMIN_BIND_IP` controls only the admin port. `EDEN_ADMIN_ORIGIN` must match the scheme, hostname and port that administrators enter in the browser.
+
+If the world already has an administrator, use the existing credentials. Otherwise provision one while the service is stopped. The command prompts for the password and confirmation.
+
+```sh
+docker compose stop eden
+docker compose run --build --rm eden --config /config/server.json --set-admin-password Corey
+```
+
+Build and recreate the service with both Compose files, then open `EDEN_ADMIN_ORIGIN` on the remote machine.
+
+```sh
+docker compose -f compose.yaml -f compose.admin.yaml config --quiet
+docker compose -f compose.yaml -f compose.admin.yaml up --build -d
+```
+
+Include both files when recreating the service. The base Compose file by itself publishes only the game, launcher, gateway and chat ports. [Docker Compose file merging](https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/)

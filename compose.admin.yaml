@@ -1,0 +1,6 @@
+services:
+  eden:
+    environment:
+      EDEN_ADMIN_ORIGIN: ${EDEN_ADMIN_ORIGIN:?Set EDEN_ADMIN_ORIGIN to the browser-facing HTTPS origin}
+    ports:
+      - "${EDEN_ADMIN_BIND_IP:?Set EDEN_ADMIN_BIND_IP to the Docker host address}:26003:26003"

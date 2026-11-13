@@ -28,12 +28,29 @@ internal static class AdministrationHost
     internal const int DefaultPort = 26003;
     internal const string CsrfHeader = "X-Eden-Admin-Csrf";
 
-    internal static WebApplication Create(IServiceProvider worldServices, string worldPath, int port = DefaultPort)
+    internal static WebApplication Create(
+        IServiceProvider worldServices,
+        string worldPath,
+        int port = DefaultPort,
+        string? publicOrigin = null,
+        IPAddress? listenAddress = null,
+        string? certificatePath = null
+    )
     {
         if (port is < 0 or > 65535)
         {
-            throw new InvalidDataException("Invalid local administration port.");
+            throw new InvalidDataException("Invalid administration port.");
         }
+        Uri? httpsOrigin = null;
+        if (!string.IsNullOrEmpty(publicOrigin))
+        {
+            httpsOrigin = ParseOrigin(publicOrigin);
+            if (httpsOrigin?.Scheme != Uri.UriSchemeHttps || listenAddress is null || string.IsNullOrWhiteSpace(certificatePath))
+            {
+                throw new InvalidDataException("Remote administration requires an HTTPS origin, a listen address, and a TLS certificate.");
+            }
+        }
+        var secureCookies = httpsOrigin is null ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
         AdministratorAccounts administrators = new(worldPath);
         if (!administrators.Provisioned)
         {
@@ -53,7 +70,18 @@ internal static class AdministrationHost
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Limits.MaxRequestBodySize = 8 * 1024 * 1024;
-            options.Listen(IPAddress.Loopback, port);
+            if (httpsOrigin is null)
+            {
+                options.Listen(IPAddress.Loopback, port);
+            }
+            else
+            {
+                options.Listen(
+                    listenAddress!,
+                    port,
+                    endpoint => endpoint.UseHttps(certificatePath!, Environment.GetEnvironmentVariable("EDEN_CERTIFICATE_PASSWORD"))
+                );
+            }
         });
         builder.Services.AddSingleton(administrators);
         builder.Services.ConfigureHttpJsonOptions(options =>
@@ -97,7 +125,7 @@ internal static class AdministrationHost
                     options.Cookie.Name = ".Eden.Admin." + administrators.Realm;
                     options.Cookie.HttpOnly = true;
                     options.Cookie.SameSite = SameSiteMode.Strict;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                    options.Cookie.SecurePolicy = secureCookies;
                     options.LoginPath = "/login";
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
                     options.SlidingExpiration = false;
@@ -138,6 +166,10 @@ internal static class AdministrationHost
             options.HeaderName = CsrfHeader;
             options.Cookie.Name = ".Eden.Admin.Csrf." + administrators.Realm;
             options.Cookie.SameSite = SameSiteMode.Strict;
+            if (httpsOrigin is not null)
+            {
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            }
         });
         builder.Services.AddRazorComponents().AddInteractiveServerComponents();
         builder.Services.AddCascadingAuthenticationState();
@@ -148,7 +180,7 @@ internal static class AdministrationHost
                 "administrator-login",
                 _ =>
                     RateLimitPartition.GetFixedWindowLimiter(
-                        "local",
+                        "administration",
                         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }
                     )
             );
@@ -157,7 +189,7 @@ internal static class AdministrationHost
         app.Use(
             async (context, next) =>
             {
-                if (!LocalRequest(context))
+                if (!AllowedRequest(context, httpsOrigin))
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     return;
@@ -189,7 +221,7 @@ internal static class AdministrationHost
                 }
                 catch (Exception error)
                 {
-                    ServerLog.Console.Error($"Local administration request failed: {error}");
+                    ServerLog.Console.Error($"Administration request failed: {error}");
                     throw;
                 }
             }
@@ -317,19 +349,47 @@ internal static class AdministrationHost
         return app;
     }
 
-    private static bool LocalRequest(HttpContext context)
+    private static bool AllowedRequest(HttpContext context, Uri? httpsOrigin)
     {
-        string host = context.Request.Host.Host;
-        bool localHost =
-            host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-            || IPAddress.TryParse(host, out var address) && IPAddress.IsLoopback(address);
-        if (!localHost || context.Connection.RemoteIpAddress is not { } remote || !IPAddress.IsLoopback(remote))
+        var request = context.Request;
+        if (httpsOrigin is not null)
         {
-            return false;
+            if (!MatchesOrigin(request, httpsOrigin))
+            {
+                return false;
+            }
         }
-        return !context.Request.Headers.TryGetValue("Origin", out var origin)
-            || Uri.TryCreate(origin.ToString(), UriKind.Absolute, out var uri)
-                && uri.Scheme == context.Request.Scheme
-                && uri.Authority.Equals(context.Request.Host.Value, StringComparison.OrdinalIgnoreCase);
+        else
+        {
+            string host = request.Host.Host;
+            bool localHost =
+                host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                || IPAddress.TryParse(host, out var address) && IPAddress.IsLoopback(address);
+            if (!localHost || context.Connection.RemoteIpAddress is not { } remote || !IPAddress.IsLoopback(remote))
+            {
+                return false;
+            }
+        }
+        return !request.Headers.TryGetValue("Origin", out var origin)
+            || ParseOrigin(origin.ToString()) is { } uri && MatchesOrigin(request, uri);
+    }
+
+    private static Uri? ParseOrigin(string value) =>
+        Uri.TryCreate(value, UriKind.Absolute, out var uri)
+        && uri.IsWellFormedOriginalString()
+        && uri.Scheme is "http" or "https"
+        && uri.UserInfo.Length == 0
+        && uri.AbsolutePath == "/"
+        && uri.Query.Length == 0
+        && uri.Fragment.Length == 0
+            ? uri
+            : null;
+
+    private static bool MatchesOrigin(HttpRequest request, Uri origin)
+    {
+        var host = HostString.FromUriComponent(origin);
+        return origin.Scheme == request.Scheme
+            && (request.Host.Port is { } port ? port == origin.Port : origin.IsDefaultPort)
+            && host.Host.Equals(request.Host.Host, StringComparison.OrdinalIgnoreCase);
     }
 }

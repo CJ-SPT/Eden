@@ -14,6 +14,6 @@ COPY --from=build /publish/ ./
 RUN install -d -o app -g app /data
 USER $APP_UID
 ENV EDEN_DATA_DIR=/data
-EXPOSE 5222 26000 26001 26002
+EXPOSE 5222 26000 26001 26002 26003
 ENTRYPOINT ["dotnet", "Eden.Server.dll"]
 CMD ["--config", "/config/server.json"]
