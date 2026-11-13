@@ -576,6 +576,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Inventory and ship ownership
 
+- [Cargo jettison, November 13, 2026](protocol/inventory.md#cargo-jettison-november-13-2026)
 - [Personal Assets window (November 8, 2026)](protocol/inventory.md#personal-assets-window-november-8-2026)
 
 - [Production stack consolidation and repackaging (November 6, 2026)](protocol/inventory.md#production-stack-consolidation-and-repackaging-november-6-2026)

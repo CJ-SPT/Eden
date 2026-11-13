@@ -45,6 +45,7 @@ public enum InventoryCategory
 public enum InventoryFlag
 {
     AutoFit = 0,
+    None = AutoFit,
     Hangar = 4,
     Cargo = 5,
     LowSlot0 = 11,
@@ -80,6 +81,7 @@ public enum InventoryFlag
     CorpseBay = 174,
     FrigateEscapeBay = 179,
     IceHold = 181,
+    AsteroidHold = 182,
     MobileDepotHold = 183,
     InfrastructureHold = 185,
     ExpeditionHold = 188,

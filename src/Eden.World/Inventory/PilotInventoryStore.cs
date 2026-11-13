@@ -299,28 +299,11 @@ internal sealed partial class PilotInventoryStore(WorldDatabase database, TimePr
     )
     {
         var previous = Read(catalog, stack);
-        var split = InventoryStackRules.Split(previous, quantity);
         if (world.Set<OwnedItem>().Any(item => item.LocationId == stack.Id) || world.Ships.Any(ship => ship.StoredInId == stack.Id))
         {
             throw new InvalidDataException("A container with contents cannot be divided.");
         }
-        stack.Quantity = split.Remainder;
-        var separated = world
-            .Add(
-                new OwnedItem
-                {
-                    Id = InventoryPersistence.NextId(world),
-                    OwnerId = stack.OwnerId,
-                    TypeId = stack.TypeId,
-                    LocationId = stack.LocationId,
-                    FlagId = stack.FlagId,
-                    Quantity = split.Quantity,
-                    CrystalDamage = stack.CrystalDamage,
-                    VolumeOverride = stack.VolumeOverride,
-                }
-            )
-            .Entity;
-        return [new(Read(catalog, stack), previous), new(Read(catalog, separated), null)];
+        return InventoryPersistence.SplitTransfer(world, catalog, stack, previous, stack.LocationId, stack.FlagId, quantity);
     }
 
     internal static InventoryItem Read(CatalogDbContext catalog, OwnedItem item)

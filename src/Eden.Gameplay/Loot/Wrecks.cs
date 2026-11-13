@@ -20,7 +20,7 @@ public sealed record WreckContact(
     int? PlanetId = null
 );
 
-public sealed record WreckInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items);
+public sealed record WreckInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items, double? Capacity = null);
 
 public interface IWrecks
 {

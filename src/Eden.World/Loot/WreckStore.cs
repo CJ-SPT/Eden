@@ -224,6 +224,15 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        // Remove expired jetcans and their contents together. An empty system cache
+        // reaches this path at its first read and at the next container deadline.
+        if (world.Set<SavedJetcan>().Any(c => c.SystemId == systemId && c.ExpiresAt <= now))
+        {
+            using WorldDbContext cleanup = new(database.Path) { Participants = new(systems: [systemId]) };
+            using var transaction = cleanup.Database.BeginTransaction();
+            JetcanStore.Expire(cleanup, now, systemId);
+            transaction.Commit();
+        }
         // Expired containers cannot be opened, even before this lazy cleanup.
         world
             .Set<OwnedItem>()
@@ -269,6 +278,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                     type.GroupId
                 );
             })
+            .Concat(JetcanStore.Contacts(world, catalog, systemId, now))
             .Concat(Eden.World.Planetary.PlanetaryOrbitStore.Contacts(world, catalog, systemId, now))
             .ToArray();
     }
@@ -311,6 +321,10 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        if (JetcanRules.IsJetcan(wreckId))
+        {
+            return JetcanStore.Read(world, catalog, pilotId, wreckId, now);
+        }
         if (Eden.Gameplay.Planetary.PlanetaryRules.IsOffice(wreckId) || Eden.Gameplay.Planetary.PlanetaryRules.IsLaunch(wreckId))
         {
             var orbit = Eden.World.Planetary.PlanetaryOrbitStore.Read(world, catalog, pilotId, wreckId, now);
@@ -344,7 +358,10 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
         InventoryFlag destinationFlag = InventoryFlag.Cargo
     )
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldDbContext world = new(database.Path)
+        {
+            Participants = JetcanRules.IsJetcan(wreckId) ? new(pilots: [pilotId], ships: [shipId]) : null,
+        };
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var changes = Take(world, catalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);
@@ -381,6 +398,18 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
             );
             world.SaveChanges();
             return orbitChanges;
+        }
+        if (JetcanRules.IsJetcan(wreckId))
+        {
+            var (owner, can) = JetcanStore.Access(world, catalog, pilotId, wreckId, now);
+            var taken = SpaceLootTransfer.Take(world, catalog, owner, shipId, wreckId, itemIds, quantity, destinationFlag);
+            world.SaveChanges();
+            if (!world.Set<OwnedItem>().Any(i => i.LocationId == wreckId))
+            {
+                world.Remove(can);
+                world.SaveChanges();
+            }
+            return taken;
         }
         var (pilot, _) = Access(world, catalog, pilotId, wreckId, now);
         var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, wreckId, itemIds, quantity, destinationFlag);

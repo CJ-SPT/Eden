@@ -218,7 +218,7 @@ internal sealed class FlightScene(
                         wreck.Id,
                         wreck.TypeId,
                         wreck.GroupId,
-                        WreckDefinitions.Category,
+                        wreck.CategoryId,
                         checked((int)wreck.OwnerId),
                         wreck.Position,
                         wreck.Radius

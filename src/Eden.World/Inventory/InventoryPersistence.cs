@@ -85,6 +85,36 @@ internal static partial class InventoryPersistence
         return new(PilotInventoryStore.Read(catalog, stack), previous);
     }
 
+    internal static IReadOnlyList<InventoryChange> SplitTransfer(
+        WorldDbContext world,
+        CatalogDbContext catalog,
+        OwnedItem stack,
+        InventoryItem previous,
+        long destination,
+        int flag,
+        int quantity
+    )
+    {
+        var split = InventoryStackRules.Split(previous, quantity);
+        stack.Quantity = split.Remainder;
+        var separated = world
+            .Add(
+                new OwnedItem
+                {
+                    Id = NextId(world),
+                    OwnerId = stack.OwnerId,
+                    TypeId = stack.TypeId,
+                    LocationId = destination,
+                    FlagId = flag,
+                    Quantity = split.Quantity,
+                    CrystalDamage = stack.CrystalDamage,
+                    VolumeOverride = stack.VolumeOverride,
+                }
+            )
+            .Entity;
+        return [new(PilotInventoryStore.Read(catalog, stack), previous), new(PilotInventoryStore.Read(catalog, separated), null)];
+    }
+
     internal static long NextId(WorldDbContext world)
     {
         // Items can become ships or installed implants without changing identity.

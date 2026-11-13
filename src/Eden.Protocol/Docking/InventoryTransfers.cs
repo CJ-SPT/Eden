@@ -72,7 +72,8 @@ internal sealed class InventoryTransfers(
                 && destination == context.Pilot.ShipId
                 && ShipHoldRules.IsHold(flag)
                 && (
-                    context.Flight.VisibleWrecks.Any(w => w.Id == source)
+                    JetcanRules.IsJetcan(source)
+                    || context.Flight.VisibleWrecks.Any(w => w.Id == source)
                     || MissionContainerRules.IsContainer(source)
                     || Eden.Gameplay.Exploration.HackingRules.IsContainer(source)
                 );

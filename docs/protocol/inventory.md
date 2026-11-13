@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Cargo jettison, November 13, 2026](#cargo-jettison-november-13-2026)
 - [Targeted stack merging, November 9, 2026](#targeted-stack-merging-november-9-2026)
 
 - [Trashing personal items and ships (November 8, 2026)](#trashing-personal-items-and-ships-november-8-2026)
@@ -21,6 +22,51 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Cargo jettison, November 13, 2026
+
+The native Inventory **Jettison** action sends the selected item IDs to the location-bound `ship.Jettison`.
+The response is a tuple of two Python lists. The first contains the original IDs moved into the cargo
+container. The second is reserved for standalone launches. The client reports any IDs missing from both
+lists. Each successful call creates one type-23 **Cargo Container** within 2,500 m of the active ship.
+The pinned catalog supplies its 55,000 m³ capacity. A pilot can create another container after three
+minutes and can add cargo to an existing one during that interval.
+
+Schema 146 saves the container, expiry, and pilot cooldown. The container and inventory changes commit
+together. Nearby pilots see the container in space, and it appears on directional scan. Its owner can open
+it, add stacks, and recover partial or full stacks within transfer range. An emptied container disappears
+immediately. At two hours, the container becomes inaccessible and its remaining contents are deleted
+during system contact refresh or world startup. The transfer policy follows Eden's owner-only wreck loot
+rights. Standalone deployable launches, theft, and Crimewatch consequences are outside this implementation.
+
+Inert inspection of build 3662168 used the original archive with SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The relevant client entries are `invItemFunctions.Jettison`, `eveMoniker.GetShipAccess`,
+`inventorycommon.const.jettisonableFlags`, and `invControllers.BaseCelestialContainer`. The local evejs
+reference had no Git metadata. Its inspected `shipService.js` had SHA-256
+`c34c3573c11cbaeca041d2cdc4791e19db7db6759a94f73125ad71e6b62848f1`.
+The wire adapter uses Eden's existing tuple/list and free-ball encoding.
+[Carbon Blue af0d65b](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+[EVE University mining guide](https://wiki.eveuniversity.org/Mining#Jetcan_and_GSC_mining)
+[CCP jettison cooldown](https://www.eveonline.com/de/news/view/new-features-config-changes-and-bug-fixes-6)
+
+**Automated validation** — Tool and solution restore, build with zero warnings and errors, 86 focused
+.NET tests, both Python policy suites (8 catalog and 9 formatting cases), and formatting verification
+passed in 89 seconds. The .NET run took 51 seconds. Tests covered the bound ship RPC, cargo notification,
+observer spawn and removal, partial deposit and pickup, capacity, ownership, transfer range, persisted
+cooldown and expiry, concurrent jettison, and durable checkpoint contents. The full suite was not run.
+
+The initial exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Loot.JettisonTests.BoundShipJettisonPublishesTheContainerAndSupportsNativeDepositAndLootAll`.
+The final filter joined `FullyQualifiedName~` clauses for `Eden.Protocol.Tests.Loot.JettisonTests`,
+`Eden.Protocol.Tests.Loot.WreckTests`, `Eden.Protocol.Tests.Persistence.InventoryStackSplitTests`,
+`Eden.Protocol.Tests.Information.InformationTests`, `Eden.Protocol.Tests.Persistence.ResidentReadTests`,
+and `Eden.Protocol.Tests.Planetary.PlanetaryProtocolTests` with `|`.
+
+**Live acceptance** — Not performed; agent client testing is disabled.
+
+**Optional maintainer check** — Undock with a cargo stack, select **Jettison**, then open the new cargo
+container from the overview and use **Loot All**.
 
 ## Trashing personal items and ships (November 8, 2026)
 

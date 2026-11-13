@@ -7,6 +7,7 @@ using Eden.World.Drones;
 using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Inventory;
+using Eden.World.Loot;
 using Eden.World.Repair;
 using Eden.World.Storage.Migrations;
 using Eden.World.Thermal;
@@ -16,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 145;
+    internal const int CurrentVersion = 146;
 
     public static void Open(
         WorldDbContext world,
@@ -159,7 +160,9 @@ internal static class WorldMigration
         Eden.World.Mining.MiningLedgerSchema.Upgrade(world);
         CorporationContactSchema.Upgrade(world);
         Eden.World.Bookmarks.SharedBookmarkSchema.Upgrade(world, catalog);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=145");
+        JetcanSchema.Upgrade(world);
+        JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        world.Database.ExecuteSqlRaw("PRAGMA user_version=146");
         history.Commit();
     }
 }

@@ -177,6 +177,9 @@ internal static class TestCatalog
             INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES (40009087,30000142,52673,8,1620000,0,0,0);
             INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES (30000144,20000020,'Perimeter');
             INSERT INTO ItemCategory(Id,Name) VALUES (2,'Celestial');
+            INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (12,'Cargo Container',2);
+            INSERT INTO ItemType(Id,Name,GroupId,Mass,Radius,Capacity) VALUES (23,'Cargo Container',12,10000,14,55000);
+            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','23','{{"volume":55000.0}}');
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (8,'Moon',2);
             INSERT INTO ItemType(Id,Name,GroupId) VALUES (52673,'Moon',8);
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (10,'Stargate',2);

@@ -25,6 +25,7 @@ internal sealed partial class LiveReadModels
         var wrecks = changes.Where(c => c.Table == "WorldWreck").Select(c => c.Id).ToArray();
         var launches = changes.Where(c => c.Table == "WorldPlanetaryLaunch").Select(c => c.Id).ToArray();
         var offices = changes.Where(c => c.Table == "WorldPlanetaryOffice").Select(c => c.Id).ToArray();
+        var jetcans = changes.Where(c => c.Table == "WorldJetcan").Select(c => c.Id).ToArray();
         var drones = changes
             .Where(c => c.Table == "WorldDrone" || c.Table == "WorldItem" && !c.Resident)
             .Select(c => c.Id)
@@ -127,6 +128,13 @@ internal sealed partial class LiveReadModels
             foreach (var launch in world.Set<Eden.Data.World.Planetary.SavedPlanetaryLaunch>().Where(l => launches.Contains(l.Id)))
             {
                 locations[launch.Id] = launch.SystemId;
+            }
+        }
+        if (jetcans.Length > 0)
+        {
+            foreach (var can in world.Set<SavedJetcan>().Where(c => jetcans.Contains(c.Id)).Select(c => new { c.Id, c.SystemId }))
+            {
+                locations[can.Id] = can.SystemId;
             }
         }
         if (offices.Length > 0)

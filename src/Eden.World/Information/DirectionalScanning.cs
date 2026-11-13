@@ -8,6 +8,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
+using Eden.Gameplay.Loot;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
@@ -124,6 +125,11 @@ internal sealed partial class PilotInformationStore
                     wreck.ExpiresAt
                 )
             );
+        }
+        foreach (var can in world.Set<SavedJetcan>().AsNoTracking().Where(c => c.SystemId == system))
+        {
+            var type = catalog.RequireItem(JetcanRules.TypeId);
+            contacts.Add(new(new(can.Id, type.Id, type.GroupId, type.Name, new(can.X, can.Y, can.Z)), can.ExpiresAt));
         }
         var drones =
             from drone in world.Set<WorldDrone>().AsNoTracking()
