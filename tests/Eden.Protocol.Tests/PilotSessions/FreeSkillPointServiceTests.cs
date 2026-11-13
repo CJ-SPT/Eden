@@ -1,19 +1,128 @@
+using System.Diagnostics;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Redemption;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Persistence;
+using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
-public sealed class FreeSkillPointServiceTests
+public sealed class FreeSkillPointServiceTests(ITestOutputHelper output)
 {
+    [Fact]
+    public async Task WarmResidentQueueCallsSpendAndCheckpointWithoutSql()
+    {
+        const int skill = 3327;
+        const long account = RedemptionTests.Account;
+        const long pilotId = FreePointTestData.Pilot;
+        var clock = CalendarTestData.Clock();
+        using var db = FreePointTestData.Create(clock);
+        using ResidentFitCache fits = new(new(db.Path));
+        FreePointTestData.Credit(db);
+        FreePointTestData.Training(db).Save(pilotId, [new(skill, 1), new(skill, 2)], true);
+        using (LiveWorld live = new(new(db.Path), clock, output.WriteLine))
+        {
+            live.Economy.Warm();
+            using CourierServiceTests.Client client = new(db, clock, account);
+            using var scope = db.Services.CreateScope();
+            var services = scope.ServiceProvider;
+            var updates = services.GetRequiredService<PilotUpdateCoordinator>();
+            client.Refresh();
+            var context = client.Context;
+            updates.Enter(context);
+            var reference = context.Reference("@skills");
+            List<byte[]> packets = [];
+            PilotSessionOutput sessionOutput = new(
+                context,
+                account,
+                account,
+                packet =>
+                {
+                    packets.Add(BlueMarshal.Encode(packet));
+                    return Task.CompletedTask;
+                },
+                _ => { }
+            );
+            PilotSessionCalls calls = new(
+                context,
+                sessionOutput,
+                services.GetRequiredService<PilotCallRouter>(),
+                updates,
+                services.GetRequiredService<SkillHandler>(),
+                clock,
+                _ => { },
+                account,
+                account,
+                services.GetRequiredService<IPilotOperationScope>()
+            );
+            clock.AdvanceWallTime(TimeSpan.FromSeconds(120));
+            await Call("GetFreeSkillPointsAppliedToQueue");
+            var preview = Assert.IsType<Dictionary<long, object?>>(await Measure("GetFreeSkillPointsAppliedToQueue", expectedFits: 0));
+            Assert.Equal(1000L, preview[skill]);
+            Assert.Single(packets);
+            Assert.Equal(1000, FreePointTestData.Points(db).Balance(pilotId));
+            Assert.Single(FreePointTestData.Training(db).History(pilotId, 10));
+
+            // Warm catalog records used only by the notification path before measuring.
+            using (var operation = services.GetRequiredService<IPilotOperationScope>().Begin())
+            {
+                services.GetRequiredService<PilotBrain>().Read(pilotId, context.Pilot.ShipId);
+            }
+            Assert.Null(await Measure("ApplyFreeSkillPointsToQueue", expectedFits: 2));
+            var notifications = packets
+                .Skip(1)
+                .Select(bytes =>
+                {
+                    var packet = IncomingMachoPacket.Read(BlueMarshal.Decode(bytes));
+                    Assert.EndsWith(".Notification", packet.Name);
+                    return BlueMarshal.Text(packet.Destination()[1]);
+                })
+                .ToArray();
+            Assert.Single(notifications, name => name == "OnFreeSkillPointsChanged");
+            Assert.Single(notifications, name => name == "OnServerSkillsChanged");
+            Assert.Single(notifications, name => name == "OnServerBrainUpdated");
+            Assert.Single(notifications, name => name == "OnNewSkillQueueSaved");
+            Assert.Equal(0, FreePointTestData.Points(db).Balance(pilotId));
+            Assert.Equal(clock.UtcNow.AddSeconds(1540).UtcDateTime.ToFileTimeUtc(), context.NextSkillCompletion);
+            long started = Stopwatch.GetTimestamp();
+            await live.FlushAsync();
+            output.WriteLine($"Checkpoint took {Stopwatch.GetElapsedTime(started).TotalMilliseconds:F2} ms.");
+
+            async Task<object?> Call(string method)
+            {
+                packets.Clear();
+                await calls.ProcessAsync(PilotServicesTests.Request(null, method, [], reference.Id));
+                var reply = IncomingMachoPacket.Read(BlueMarshal.Decode(packets[0]));
+                Assert.EndsWith(".CallRsp", reply.Name);
+                return BlueMarshal.Decode(BlueRead.Bytes(BlueRead.Tuple(reply.Fields[4], 1)[0]));
+            }
+
+            async Task<object?> Measure(string method, int expectedFits)
+            {
+                using var metrics = SessionPerformance.Begin(method, output.WriteLine, force: true)!;
+                var reply = await Call(method);
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+                Assert.InRange(metrics.FittingCalculations, 0, expectedFits);
+                return reply;
+            }
+        }
+        using LiveWorld reopened = new(new(db.Path), clock, _ => { });
+        Assert.Equal(0, FreePointTestData.Points(db).Balance(pilotId));
+        Assert.Equal(1030, Assert.Single(db.Services.GetRequiredService<IPilotSkillReader>().ReadSkills(pilotId)).Points);
+        Assert.Single(FreePointTestData.Training(db).History(pilotId, 10), entry => entry.EventId == FreeSkillPointRules.UsedEvent);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

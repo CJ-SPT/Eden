@@ -52,12 +52,14 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         return station;
     }
 
-    private static JumpCloneSkills Skills(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    private static JumpCloneSkills Skills(WorldDbContext world, CatalogDbContext catalog, Pilot pilot) =>
+        Skills(new SqlWorldAction(world), catalog, pilot);
+
+    private static JumpCloneSkills Skills(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
         if (
             !world
-                .Set<PilotSkill>()
-                .Any(s =>
+                .Filter<PilotSkill>(s =>
                     s.PilotId == pilot.Id
                     && s.Points > 0
                     && (
@@ -67,6 +69,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
                         || s.TypeId == (int)InfomorphSkill.Synchronizing
                     )
                 )
+                .Any()
         )
         {
             return new(0, 0, 0, 0);
@@ -92,9 +95,16 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
 
     public JumpCloneSkills ReadCloneSkills(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return Skills(world, catalog, Pilot(world, pilotId));
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                Skills(
+                    world,
+                    catalog,
+                    world.Filter<Pilot>(p => p.Id == pilotId).SingleOrDefault() ?? throw new InvalidDataException("Unknown pilot.")
+                )
+        );
     }
 
     public JumpCloneSnapshot Read(long pilotId)

@@ -6,6 +6,7 @@ using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,46 +24,58 @@ internal sealed class PilotModuleConditionStore(WorldDatabase database) : IPilot
     {
         var live = LiveWorld.Find(database.Path);
         using var ownership = live?.Enter();
-        var view = live?.Reads is { } resident ? resident.ModuleConditions(pilot, ship, () => ReadSql(pilot, ship)) : ReadSql(pilot, ship);
+        var view = live?.Reads is { } resident
+            ? resident.ModuleConditions(pilot, ship, () => ReadBaseline(pilot, ship))
+            : ReadBaseline(pilot, ship);
         return live?.Heat.Conditions(ship, view) ?? view;
     }
 
-    private IReadOnlyList<FittedModuleCondition> ReadSql(long pilot, long ship)
+    private IReadOnlyList<FittedModuleCondition> ReadBaseline(long pilot, long ship)
     {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(world => ReadConditions(world, catalog, pilot, ship), new(pilots: [pilot], ships: [ship]));
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        if (!world.Ships.Any(s => s.Id == ship && s.OwnerId == pilot))
+        var result = ReadConditions(new SqlWorldAction(world), catalog, pilot, ship);
+        transaction.Commit();
+        return result;
+    }
+
+    private static IReadOnlyList<FittedModuleCondition> ReadConditions(WorldAction world, CatalogDbContext catalog, long pilot, long ship)
+    {
+        if (!world.Filter<Ship>(s => s.Id == ship && s.OwnerId == pilot).Any())
         {
             throw new InvalidDataException("Read module conditions only on an owned ship.");
         }
+        var modules = world
+            .Filter<OwnedItem>(i => i.OwnerId == pilot && i.LocationId == ship)
+            .OrderBy(i => i.Id)
+            .AsEnumerable()
+            .Where(i =>
+                InventoryDefinitions.IsLowSlot(i.FlagId)
+                || InventoryDefinitions.IsMediumSlot(i.FlagId)
+                || InventoryDefinitions.IsHighSlot(i.FlagId)
+            )
+            .ToArray();
+        long[] ids = modules.Select(module => module.Id).ToArray();
         var saved = world
-            .Set<SavedModuleCondition>()
-            .Where(c => world.Set<OwnedItem>().Any(i => i.Id == c.ModuleId && i.OwnerId == pilot && i.LocationId == ship))
+            .Filter<SavedModuleCondition>(c => Enumerable.Contains(ids, c.ModuleId))
             .ToDictionary(c => c.ModuleId, c => c.Damage);
-        var result = Array.AsReadOnly(
-            world
-                .Set<OwnedItem>()
-                .Where(i => i.OwnerId == pilot && i.LocationId == ship)
-                .OrderBy(i => i.Id)
-                .AsEnumerable()
-                .Where(i =>
-                    InventoryDefinitions.IsLowSlot(i.FlagId)
-                    || InventoryDefinitions.IsMediumSlot(i.FlagId)
-                    || InventoryDefinitions.IsHighSlot(i.FlagId)
+        return Array.AsReadOnly(
+            modules
+                .Where(module =>
+                    saved.ContainsKey(module.Id)
+                    || catalog.FittingAttributes(module.TypeId).GetValueOrDefault(DogmaAttributeId.StructureHitPoints) > 0
                 )
-                .Where(i =>
-                    saved.ContainsKey(i.Id)
-                    || catalog.FittingAttributes(i.TypeId).GetValueOrDefault(DogmaAttributeId.StructureHitPoints) > 0
-                )
-                .Select(i => new FittedModuleCondition(
-                    ModuleConditionPersistence.Read(catalog, i, saved.GetValueOrDefault(i.Id)),
-                    i.Online,
-                    OverloadCatalog.Definition(catalog, i.TypeId)?.EffectId ?? 0
+                .Select(module => new FittedModuleCondition(
+                    ModuleConditionPersistence.Read(catalog, module, saved.GetValueOrDefault(module.Id)),
+                    module.Online,
+                    OverloadCatalog.Definition(catalog, module.TypeId)?.EffectId ?? 0
                 ))
                 .ToArray()
         );
-        transaction.Commit();
-        return result;
     }
 }
