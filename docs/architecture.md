@@ -99,6 +99,22 @@ Set `EDEN_TRACE_PERFORMANCE=1` before startup for request/tick timings, database
 
 Calculated ship and turret fits stay in a bounded per-world memory cache, with transactionally versioned invalidation in world schema 69. See [resident fit behavior and validation](protocol/performance.md#resident-ship-and-turret-fits-november-5-2026).
 
+Use `EDEN_VERBOSE_LOGGING=1` for routine service, connection and checkpoint diagnostics.
+Use `EDEN_TRACE_MOTION=1` for motion traces. The performance and motion switches work independently of verbose logging.
+See the [console logging record](protocol/compatibility.md#console-logging-cleanup-november-5-2026) for output routing.
+
+Run isolated encoding or scene-filter benchmarks from the repository root.
+
+```powershell
+dotnet run --project tools/Benchmarks/Eden.Benchmarks.csproj -c Release -- --filter '*SerializationBenchmarks*' --job short
+dotnet run --project tools/Benchmarks/Eden.Benchmarks.csproj -c Release -- --filter '*SceneFilteringBenchmarks*' --job short
+```
+
+BenchmarkDotNet writes to `artifacts/library-benchmarks` by default. Use `--artifacts <directory>` for separate comparisons.
+The [performance record](protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026) includes
+the corresponding full-session replay and its measurement limits. Use `tools/Measure-NpcCapacity.ps1` for
+[population comparisons](protocol/performance.md#npc-and-player-capacity-november-6-2026).
+
 ### Resident world and background saves
 
 Capsuleer maintenance uses one-shot waits for the earliest job plus owner-coordinated input-change signals.

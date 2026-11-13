@@ -1,155 +1,54 @@
 # Eden
 
-[Capsuleer encounters](docs/capsuleer-population.md) bring persistent ships to stations and gates across New Eden. A busy hub can support five or six home travelers, while a quiet branch can have none. An optional local zKill snapshot supplies real pilot names, varied supported hulls and complete victim fits. Travelers use real station and gate routes, including stationless transit systems. High-security miners work real deposits. Observers share ship identities, movement, damage and losses. Eligible distant residents share minute-scale updates, while detailed simulation follows players and unfinished interactions. Regional markets develop independently.
-
-[Production-driven regional markets](docs/protocol/industry.md#production-driven-market-progression--november-8-2026) start with catalog NPC offers. A player's claimed manufacturing output permanently unlocks that product for the whole world. Real market snapshots price generated buy/sell orders; each eligible region has one high-security hub, with smaller selections at secondary factories. New server worlds use this market by default; existing development saves can select it in local administration.
-
-Every seeded regional hub stocks the [full NPC blueprint assortment](docs/protocol/industry.md#blueprint-supply-at-every-regional-hub-november-11-2026),
-so eligible originals are available across hub regions regardless of the station owner's usual suppliers.
-
-
-
-Eden is a C# server emulator for EVE Online 24.01, Windows build **3662168**. It supports persistent local worlds and multiple pilots using separate Windows clients. Supply the matching EVE installation and resource cache separately.
+Eden is a self-hosted C# server emulator for **EVE Online 24.01, Windows build 3662168**. Play solo or connect multiple
+pilots to the same persistent world. You’ll need to supply the matching Windows client and resource cache separately.
 
 ## Start here
 
-| I want to… | Read |
-| --- | --- |
-| Build and start the server | [Build and run](#build-and-run) |
-| Prepare a Windows client and local data | [Windows client setup](docs/development-client.md) |
-| Connect accounts or host a remote server | [Launcher hosting](docs/launcher.md) |
-| Browse all documentation | [Documentation index](docs/README.md) |
-| Contribute or validate a change | [Contributor guide](AGENTS.md) and [automated validation](docs/testing.md) |
-| Find the code for a feature | [Project boundaries and feature layout](docs/architecture.md#projects-and-conventions) |
-| Investigate native behavior or prior milestones | [Protocol records by topic](docs/protocol.md) |
-
-## Current status
-
-[Planetary industry](docs/protocol/planetary.md) supports persistent colonies on the eight ordinary planet types,
-extraction, all 68 processing schematics, routing, command-center launches and NPC customs import/export.
-Resource geography uses an Eden simulation. Player-owned customs offices remain unavailable; native presentation
-is unverified. The implementation record describes the scope and source evidence.
-
-[Player Upwell structures](docs/protocol/structures.md) now have a shared foundation for all 20 published hulls:
-deployment, cores, saved timers, service fuel, dockable hangars and supported personal industry/reprocessing.
-The Settings page includes anchoring, onlining and decommissioning speeds. Specialized navigation, moon mining,
-reactions, structure combat and asset safety remain pending; native presentation is unverified.
-
-[The Agency](docs/protocol/agency.md#native-agency-directories--november-10-2026) now lists saved signature counts
-and known/undiscovered ice fields with depletion-aware availability. Activities without an Eden simulation return
-native empty directories. Client rendering and interactions remain unverified.
-
-[Cloaking and standard micro-jump drives](docs/protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026) support 14 static cloaks and four standard drives, with hidden contacts, covert warp, persisted delays and scrambler-interrupted spools. Native presentation remains unverified.
-
-[Map navigation support](docs/protocol/navigation.md#native-map-navigation-support-november-9-2026) now supplies the route planner’s cached history baseline and roaming-weather reads. Activity history remains empty; native map interaction is unverified.
-
-[Native search](docs/protocol/characters.md#universal-native-search-november-9-2026) now finds catalog locations, agents, NPCs, corporations, factions and published items alongside local pilots and player corporations. Mixed-category map searches are supported; native presentation remains unverified.
-
-[Celestial Show Info](docs/protocol/information.md#celestial-show-info-resource-reads--november-9-2026) now serves the
-sun/planet resource reads needed by the Attributes tab, including catalog planetary values and native cache versions.
-Stellar power remains absent where authoritative data is unavailable; client rendering remains unverified.
-
-[Ice harvesting](docs/protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026) supports six static tools and four public
-ice-field layouts across 117 documented high-security systems, with finite saved stock and six-hour replacement after depletion.
-
-[Gas harvesting](docs/protocol/industry.md#gas-harvesting-and-mykoserocin-nebulae-november-9-2026) supports eight static tools and 16
-Mykoserocin nebula templates, with finite saved clouds, probe discovery and gas hull bonuses. Hazardous gas and reactions remain pending.
-
-[Modulated ore mining](docs/protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026) supports the three static modulated miners
-and 66 ordinary mining crystals, with matching ore lists, fitted bonuses, persistent wear and native shattering updates.
-
-| Area | Implemented scope and limits |
-| --- | --- |
-| World configuration | Seven activity tabs with saved-world gathering, reward, kill-SP, industry and structure timing multipliers, revision history and restart activation. See the [administrator guide](docs/world-configuration.md#world-tuning). |
-| Accounts and characters | Launcher registration/login, three character slots, persistent biomass preparation/cancellation and final deletion, profiles, skill training, [direct skill purchasing](docs/protocol/characters.md#direct-skill-purchasing-november-11-2026), remapping, learning implants/boosters, skill injectors/extraction, redemption and personal clones. |
-| Combat anomalies | Shared regional pirate and rogue-drone encounters across known space, covering 199 catalog layouts with report-backed waves and four labeled reconstructions. Scanner discovery, warp, scenery, trigger/timed waves, bounties, wrecks and replacement persist. Major Threat tiers require an administrator override. Escalations and exact script fidelity remain pending. See [coverage and limitations](docs/protocol/combat.md#known-space-combat-anomalies-november-8-2026). |
-| Agent missions | 334 authored definitions across levels 1–4, including 50 combat encounters, 177 ordinary deliveries, 84 delivery storylines and 23 mining missions. Mining agents offer private ore, ice and gas pockets with saved depletion and station turn-in. Includes multi-room encounters, keyed gates, combat retrieval, mission containers, destructible warehouses, standing-based access and exactly-once rewards. Level-five combat, special-agent chains, unverified encounter rosters and additional scripts remain pending. See the [content inventory and complete catalog audit](docs/missions.md) and [implementation record](docs/protocol/agents.md). |
-| Shared world and travel | Multi-pilot flight, docking, alignment, native autopilot with configurable gate landings, warp, gates, collision motion, personal/shared bookmarks with access lists, maps and developer translocation to catalog destinations, pilots, ships, NPCs, wrecks, asteroids and deployed drones. See [aligning and autopilot](docs/protocol/navigation.md#aligning-and-native-autopilot-november-11-2026) and [TR destination support](docs/protocol/navigation.md#runtime-tr-destinations-november-8-2026). |
-| Directional scanning | Native cone/range scans, scans during warp, off-grid names, hull immunity and a pinned 1.5-second cooldown. Shared resident contacts avoid SQL on warmed world reads. Active module cloaks are excluded. See [scanner behavior and validation](docs/protocol/information.md#directional-scanning-completion-november-8-2026). |
-| Probe scanning | Owned probes, native formations/range steps, fitted bonuses, timed progressive results, recovery and persistent combat signatures. First sites are explicit Eden variants of existing combat layouts. A Heron/core-launcher/core-probe production chain is supported. Combat-probe ship hunting and wormholes remain pending. See [scope and validation](docs/protocol/information.md#probe-scanning-and-combat-signatures-november-9-2026). |
-| Hacking and archaeology | Native analyzer minigames, fitted skill/hull/rig bonuses, 209 catalog-backed pirate data/relic definitions, persistent shared containers and earned datacore/decryptor/salvage loot. Board generation and loot distributions use documented Eden approximations. Special sites and mission hacking remain pending. See [scope and validation](docs/protocol/information.md#hacking-and-archaeology-november-9-2026). |
-| Personal assets | Native station/structure directory, remote item lists and client-side search over personal assets and supported container contents. Available while docked or in space. Upwell personal hangars use the actual structure identity; asset safety transfers remain unsupported. |
-| Ships and fitting | Persistent hulls/holds, personal saved fitting plans, supported Tech I hulls and all 130 published T2 subcapital hulls, catalog-backed modules, T1/T2 ship rigs with calibration and skill-reduced drawbacks, saved weapon groups and 76 static light/medium/heavy/sentry combat drones across 231 admitted hulls with drone bays, including earned hull bonuses, effective control limits, static drone equipment, scripted tracking links, combat-drone rig effects and fleet assist/guard with owner safety and range checks. Installed rigs are destroyed on removal or ship loss. Lost drones can be reconnected or scooped into a drone bay or cargo. Assault damage control mechanics are implemented; their eligible T2 hulls are admitted. Missing specialist modules remain unavailable. Market availability does not imply gameplay support. |
-| Combat and NPCs | Pilot turret, missile and combat-drone damage, player ECM/dampeners/weapon disruptors/target painters and ECM amplifiers, player remote shield/armor/hull repairs, local and remote ancillary armor/shield repairs with real fuel and reloads, ramping mutadaptive remote armor repairs, battleship signature suppression with saved cooldowns, player capacitor transfers, NOS/neutralizers against pilots and NPCs, remote tracking/sensor assistance, shared ship-loss settlement, capsule destruction with home-station respawn, enforced safety, saved aggression timers and timed logout presence; regional belt pirates, defensive empire guards, passive high-security station convoys, high-security NPC mining/hauling and response fleets, NPC turrets/missiles, declared electronic warfare and local repairs, bounties, security/standing history, ship losses and wrecks. |
-| Scanners and salvage | Cargo/ship scans, upgraded mining surveys, directional scans, passive/automatic targeting, resident tractors and persistent salvage with authorized Eden drop distributions. Noctis and Salvage Tackle bonuses apply. Exact ship-scan sampling/falloff and capital tractor hull consumers remain pending; see [scope and evidence](docs/protocol/information.md). |
-| R&D agents | Station research projects accrue persistent RP and redeem catalog datacores for 100 RP and 10,000 ISK each. Native field/quantity/cancel dialogs, journal and Show Info are supported. Science, standings and project limits apply; daily bonus missions remain pending. See [scope and validation](docs/protocol/agents.md#rd-agents-and-datacores--november-11-2026). |
-| Science and industry | Personal station-local manufacturing across 4,049 valid published recipes, material/time research, blueprint copying, Tech II invention and ancient-relic Tech III invention. Exact components, skills, blueprint efficiency/runs, fees and station restrictions are enforced. Missing material sources stay unobtainable. Corporate/remote jobs, reaction facilities and supercapital construction remain unavailable. Manufacturing does not add flight/fitting support. See [production scope and validation](docs/protocol/industry.md#catalog-wide-station-production-november-9-2026). |
-| Economy | Renewable belts, mining, priced economy-world reprocessing and Merlin/Venture/Badger starter production, [beginner ship/equipment supply](docs/protocol/industry.md#beginner-market-supply--november-11-2026), persistent station-local personal market orders, the optional testing market, personal wallets, insurance and personal item-exchange/courier/auction contracts. NPC loyalty stores offer supported physical rewards using personal or authorized corporate LP/ISK, plus personal CONCORD LP conversion. LP-store blueprint-copy rewards, cosmetics and Analysis Kredit offers remain unsupported; see [LP-store scope](docs/protocol/industry.md#loyalty-point-stores-november-8-2026). |
-| Social features | Cooperative fleets with invitations, command hierarchy, broadcasts, fleet chat and point fleet warps; TLS Local/corporation/private chat, automatic destination Local membership through developer translocation, personal mail and mailing lists, contacts, calendar, notifications, station guests and public pilot information. |
-| Player corporations | Creation/membership, administration, roles/titles, shared wallets, bounty tax, LP/EverMarks and share transfers. Rented offices, seven permission-checked shared hangars and office asset reports are implemented; recurring rental bills, impound recovery and governance remain pending; see the [corporation roadmap](docs/corporations.md). |
-
-See [feature implementation notes](docs/feature-notes.md) for catalog coverage, restrictions and examples, and [protocol records](docs/protocol.md) for milestone evidence. Agent validation is automated; native rendering, input and gameplay feel remain unverified unless a record explicitly documents live acceptance for that change. Historical observations do not establish acceptance of later changes.
-
-[Character portraits](docs/protocol/characters.md#character-portraits-across-the-client--november-9-2026) use the native scene renderer and cache across character selection, the character sheet, chat, station guests and Neocom. Created pilots retain their submitted appearance; seeded pilots and simulated capsuleers without creator data use catalog defaults matched to their bloodline and gender. Restart the server and client to install the signed login adapter.
-
-[Local and station list refreshes](docs/protocol/social.md#local-and-station-list-rebuild-races-november-11-2026)
-serialize native list rebuilds with arrivals/departures so yielding name lookups cannot overwrite visible rows.
-Rebuild/restart the server and fully reopen the client to install the signed login correction.
-
-The [ship and module completion program](docs/feature-notes.md#ship-and-module-completion-program) tracks remaining ordinary static content by operational role, with a reproducible inventory separating fitting admission, missing capabilities and external dependencies. [Milestone 6 heating](docs/protocol/fitting.md#complete-overheating-and-native-controls-november-8-2026) implements native module/rack controls, paid overload cycles for all 1,826 admitted heatable profiles, adjacent heat damage, burnout cancellation, saved module condition, station repairs and cargo-funded nanite repairs with partial material settlement. Burnout preserves shield and capacitor charge fractions. Automated validation establishes this scope; native presentation remains unverified.
-
-[Smartbombs](docs/protocol/combat.md#smartbombs-november-12-2026) support all 125 published static profiles, including targetless
-area damage, capacitor-funded repeats and overload, friendly drone damage, missile interception and Crimewatch enforcement.
-
-[Advanced weapons](docs/protocol/combat.md#advanced-weapons-november-12-2026) support disintegrator spooling, Vorton chains,
-Breacher Pods and Breach Control. Rapid torpedo launchers and high-angle capital turrets have fitted combat profiles and
-depend on the separate capital hull admission milestone.
-
-[NPC bounty skill points](docs/protocol/combat.md#npc-bounty-skill-point-rewards-november-9-2026) award the killer an additional **0.25% of the gross ISK bounty as unallocated SP**, rounded down per kill. A **150,000 ISK** bounty grants **375 SP** alongside its normal ISK payment.
-
-Bounty SP gains are silent; refresh the skill window to read the updated total.
-[Mining skill points](docs/protocol/industry.md#mining-skill-point-rewards-november-11-2026) use the same rate for the reference
-value of collected ore, ice and gas. Yield multipliers affect the collected amount; Settings → Progression adds a separate
-mining-SP multiplier. One ice unit is valued as a whole block. Mining SP credits are also silent.
-
-[CONCORD criminal response](docs/protocol/combat.md#concord-criminal-response--november-9-2026) now enforces supported high-security criminal offenses with persistent response deadlines, catalog Captains/Commanders, capsule escape and no insurance payout. Baseline response times approximate a fresh live response; existing-squad timing and pulling remain unsupported. CONCORD overview icons remain blue during attacks through the signed login adapter; restart the server and fully reopen the client after updating.
-
-[Simulation scaling milestones 3-5](docs/protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
-separate system simulation from persistence and release system owners before checkpoint copying.
-
-[Occupied-system capsuleer simulation](docs/protocol/capsuleers.md#occupied-system-simulation---november-12-2026) advances
-NPC pilots only where a connected player has selected a character. Empty systems pause pilot routines and retain saved work.
-
-## Local game data
-
-[Combat-site layout corrections](docs/protocol/combat.md#combat-site-layout-corrections--november-9-2026) use native initial/reinforcement
-anchors and fixed battery positions across the existing anomaly pool, correct 19 physical variant bindings, and preserve started encounters.
-
-[Mission layout corrections](docs/protocol/agents.md#mission-layout-corrections--november-9-2026) apply room-local NPC anchors,
-individual battery positions, restored scenery and corrected collision sizes to the 50 existing combat mission definitions.
-
-Eden stores its SQLite files in `src/Eden.Server/data` when run from source, or in `data` beside a published server executable. The read-only `catalog.sqlite` holds build 3662168 game definitions. The writable `world.sqlite` holds accounts, pilots, ships, inventory, wallets, and the persistent simulation. To keep an existing Windows save, [copy its data before starting the updated server](docs/development-client.md#moving-an-existing-server).
-
-On Windows, install 64-bit Python 3.11 or later and the pinned .NET SDK. Stage the matching client and resource cache, then run the setup command from the repository root.
+For local setup on Windows, install PowerShell 7, 64-bit Python 3.11 or later, and the .NET SDK pinned in
+[global.json](global.json). Run these commands from the repository root, replacing the example paths with your EVE
+installation and a separate staging directory. Catalog setup builds the server and downloads the matching CCP data export
+on its first run.
 
 ```powershell
 .\tools\DevelopmentClient.ps1 -PrepareFrom 'E:\Eve' -DevelopmentRoot 'E:\EdenDev\3662168'
 .\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'
+dotnet run --no-build --project src/Eden.Server
 ```
 
-Setup downloads and verifies CCP's exact-build export on the first run, decodes the staged client, and checks the replacement catalog before installing it. Normal play uses the installed catalog and save offline. See the [Windows client guide](docs/development-client.md#creating-and-recreating-the-databases) for offline setup, save migration, and verification.
+- [Windows client setup](docs/development-client.md) covers staging, offline catalog rebuilds and development login.
+- [Launcher and remote hosting](docs/launcher.md) covers account setup, connecting with Eden Launcher and configuring TLS.
+- [Docker deployment](docs/docker.md) covers hosting in Linux containers with persistent data.
+- [Documentation index](docs/README.md) lists setup, gameplay, modding and developer guides.
 
-All 442 catalog datasets have generated typed keys and payloads in `Eden.Data`; see the [schema and provenance report](src/Eden.Data/Catalog/CatalogSchema.g.json). The [shared catalog provider](docs/protocol/catalog.md#shared-catalog-provider-november-7-2026) preloads core definitions and caches other records within a bounded budget. [Industry and economic inputs](docs/protocol/catalog.md#industry-and-economic-catalog-adoption-november-7-2026) use the shared definitions. [Fitting, inventory and skill inputs](docs/protocol/catalog.md#fitting-inventory-and-skill-catalog-adoption-november-7-2026) also share typed definitions. [Combat and simulation readers](docs/protocol/catalog.md#combat-and-simulation-catalog-adoption-november-7-2026) share immutable profiles and support decisions. [Geography access](docs/protocol/catalog.md#typed-geography-access-november-7-2026) shares indexed locations and static scene definitions. [Reference services](docs/protocol/catalog.md#shared-item-facts-in-reference-services-november-7-2026) reuse shared item facts and typed records. [Location and directory consumers](docs/protocol/catalog.md#shared-location-and-directory-consumers-november-7-2026) also use shared definitions. [Saved configuration](docs/world-configuration.md) supports typed policies, economic overrides and immutable revisions pending restart. The [local Blazor editor](docs/world-configuration.md#local-graphical-editor) browses every dataset, stages settings and displays live process/checkpoint diagnostics in a dark theme through a separate loopback administrator login. [Adoption checks and remaining constants](docs/catalog-adoption.md) describe the final access boundary and build policy.
+## Current status
 
-The native Insider [Type Browser](docs/development-client.md#developer-type-browser) can create persistent items, original blueprints and packaged ships in a developer pilot's station hangar or load cargo within its capacity. Existing assembly/fitting support remains authoritative.
+| Area | What you can do |
+| --- | --- |
+| Flight and fitting | Fly, dock, use gates and autopilot, save bookmarks, and fit supported ships and modules, including all published Tech II subcapital hulls. Specialist module support varies by hull. [Feature notes](docs/feature-notes.md#fitting-weapons-and-modules) |
+| Combat and exploration | Fight other pilots or NPCs, run anomalies and level 1–4 combat, delivery and mining missions, or scan down exploration sites and hack their containers. [Combat](docs/protocol/combat.md), [mission inventory](docs/missions.md), [scanning and hacking](docs/protocol/information.md) |
+| Industry and trade | Mine ore, ice and gas, run planetary colonies, research blueprints, manufacture, and place market orders. In progressive regional markets, claiming manufactured output unlocks generated NPC sell orders for eligible products. [Industry and markets](docs/protocol/industry.md), [planetary industry](docs/protocol/planetary.md), [market settings](docs/world-configuration.md#progressive-regional-markets) |
+| Persistent capsuleers | Encounter simulated travelers, miners, haulers and ratters. Their routines advance while a connected player has a character in the system and resume from saved state when players return. [Population guide](docs/capsuleer-population.md), [simulation rules](docs/protocol/capsuleers.md#occupied-system-simulation---november-12-2026) |
+| Fleets, corporations and structures | Fly in fleets, use chat and mail, manage player corporations and shared hangars, and deploy Upwell structures with supported docking and industry services. Specialized structure systems such as moon extraction and structure combat remain pending. [Fleets](docs/protocol/fleets.md), [corporations](docs/corporations.md), [structures](docs/protocol/structures.md) |
+| World settings and mods | Tune gathering, rewards, progression, industry and structure timers through local administration. Install skill mods, C# server plugins and Python client extensions. [World settings](docs/world-configuration.md), [modding guide](docs/modding.md) |
 
-Insider's [Skill Tool](docs/development-client.md#developer-skill-tool) grants published skill profiles. Type Browser creation includes
-skill injectors and more physical categories; fixed SP/currency rewards go to Redeem Items. Server restart recovers misplaced personal
-reward stacks. Command discovery, native redemption arguments and the batch-SP training-queue crash are
-[corrected](docs/protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026).
+The [feature notes](docs/feature-notes.md) detail supported content and limits. The [protocol records](docs/protocol.md)
+document automated coverage and any live client observations.
 
-The native [Trash Item action](docs/protocol/inventory.md#trashing-personal-items-and-ships-november-8-2026) permanently removes personal station items, containers and inactive ships with their contents, including remote personal assets. Active ships, space inventory and assets committed to contracts or industry are protected.
+## Local game data
 
-The [mod loader and Avalonia SDK](docs/modding.md) support portable skill mods, generated C# server plugins, Python client extensions and verified launcher installation.
+- `catalog.sqlite` contains game definitions for build 3662168. The setup script generates it locally.
+- `world.sqlite` contains accounts, characters, assets and simulation state. The server creates it on first startup.
+
+The default data directory is `src/Eden.Server/data` when running from source and `data` beside a published executable.
+If you’re keeping an existing world, stop the old server and copy its data before starting the updated server.
+[Save migration guide](docs/development-client.md#moving-an-existing-server)
 
 ## Build and run
 
-Author skills in the separate [Eden Modding SDK](docs/modding.md), including fixed or per-level bonuses, prerequisites,
-original restoration and revision history. Install and stage packages through local administration's **Mods** page
-or host commands. The updated launcher installs the required signed client archive before login. Only custom skills
-can be retired; existing skill points and assets are retained.
-
-Use the SDK pinned in [global.json](global.json), 64-bit Python 3.11 or later, and PowerShell 7 on Windows. Run from the repository root. After a code milestone is stable, validate in this order; select a .NET filter for the affected behavior and immediate dependencies, and stop to investigate a failed step.
+Use the Windows commands in [Start here](#start-here) to prepare data and run a local server. For code milestones, run
+the following checks from the repository root in order. Replace the example hosting filter with the affected behavior and
+its immediate dependencies.
 
 ```powershell
 dotnet tool restore
@@ -161,109 +60,28 @@ python tests/Eden.Protocol.Tests/Formatting/formatting_policy_test.py
 .\tools\Format.ps1 -Check
 ```
 
-The hosting filter is an example. Record the filter, results, elapsed time and limitations; see [automated validation](docs/testing.md) for focused test selection and infrastructure. Run the full .NET suite **only when the user explicitly requests a regression check**. Documentation-only changes use documentation checks. Agents do not launch the game or conduct interactive acceptance unless explicitly requested. See the [testing policy](AGENTS.md#testing).
+Stop at the first failure and record the test filter, results, elapsed time and limitations. Run the full .NET suite only
+for an explicitly requested regression check. Documentation-only changes use documentation checks.
+[Contributor guide](AGENTS.md) · [Automated validation](docs/testing.md)
 
-To run the local server for play, use the following command separately from validation:
-
-```powershell
-dotnet run --no-build --project src/Eden.Server
-```
-
-For container hosting, follow the [Docker deployment guide](docs/docker.md). Compose mounts the server data directory so the save persists across image updates.
-
-[Offline startup reconciliation](docs/protocol/performance.md#offline-startup-belt-renewal-november-9-2026) renews overdue belts in bounded SQL batches while preserving saved deposits and deadlines.
-
-Normal server startup prints a bordered ASCII EDEN banner with a four-space left margin, the compiled version and full Git revision before world reconciliation. The border expands to fit the build identity. Build identity comes from the assembly's informational version, so published servers do not need Git installed. Builds without source revision metadata show `Revision: unknown`. Maintenance commands keep their existing output.
-
-Live NPC population preparation runs for occupied systems, committing one founder per step. Entry registers pilots
-currently in the system, including saved visitors. Gate visitor preparation requires players on both sides of the gate.
-
-The console shows startup reconciliation and host timings, timestamped startup/shutdown and account/character session summaries, warnings and failures by default. Routine service calls, notifications, gateway requests, handshakes, movement and successful world checkpoints are quiet. Warnings and errors go to standard error. Set `$env:EDEN_VERBOSE_LOGGING = '1'` before starting the server to include routine diagnostics; remove it with `Remove-Item Env:EDEN_VERBOSE_LOGGING` to return to quiet output. The existing `EDEN_TRACE_PERFORMANCE=1` and `EDEN_TRACE_MOTION=1` switches still enable their targeted traces independently of verbose logging. Checkpoint failures always remain visible and pending changes retain the existing save/retry behavior.
-
-The [Windows client setup](docs/development-client.md) contains optional maintainer procedures. The [protocol notes](docs/protocol.md) retain historical exchange, flight, and two-pilot observations; they do not establish acceptance of later changes.
+For project boundaries and server diagnostics, see the [architecture and runtime guide](docs/architecture.md).
 
 ## Formatting
 
-Run `.\tools\Format.ps1` to apply formatting after restoring tools and the solution. Run `.\tools\Format.ps1 -Check` to verify without editing files. Both commands run .NET style rules, CSharpier, then strict line-width validation.
+After restoring tools and the solution, run `.\tools\Format.ps1` to apply formatting or
+`.\tools\Format.ps1 -Check` to verify it. The script runs .NET style rules, CSharpier 1.3.0 and strict line-width
+validation. Use `dotnet format style --no-restore --severity warn` for style-only fixes and CSharpier for whitespace.
 
-The root `.editorconfig` is the source of truth. CSharpier 1.3.0 is pinned in the local tool manifest and owns layout; .NET analyzers enforce required braces, file-scoped namespaces and import placement. Do not run the full `dotnet format` command, whose whitespace formatter can disagree with CSharpier. Use `dotnet format style --no-restore --severity warn` for style-only cleanup.
+Follow [EditorConfig](.editorconfig) and the [contributor guide](AGENTS.md#code-style). Authored C# uses four-space
+indentation and Allman braces. Project and configuration files use two spaces. The 140-character limit covers authored
+C#, project and solution files, `global.json`, JSON under `.config` and `.vscode`, and
+`appsettings*.json` and `launchSettings.json`. Generated code, build outputs and runtime data are excluded.
 
-Follow Microsoft's C# conventions with four spaces, Allman braces and a maximum line width of **140 characters**, including indentation. Expand nonempty executable brace bodies. Auto-properties, empty bodies, initializers, patterns and expression-bodied members may remain compact. Prefer expression-bodied trivial accessors because CSharpier otherwise places their statements beside their braces. Project/configuration files use two spaces. Preserve existing line endings.
-
-The strict width check covers authored C#, `.csproj`, `.props`, `.targets`, `.slnx`, root `global.json`, JSON under `.config` and `.vscode`, and `appsettings*.json`/`launchSettings.json`. Generated C# (including the catalog models), SDK outputs, build artifacts and runtime/data JSON are excluded. Documentation and development scripts retain the basic UTF-8, final-newline and trailing-whitespace rules without a width limit.
-
-Wrap long code first. Split literals only when their runtime value remains identical. For content that cannot safely be split, add an entry to `tools/formatting-exceptions.json` with its repository-relative `path` (forward slashes), exact full `line` (including indentation), and a specific `reason`. The checker rejects duplicate or unused exceptions, including exceptions whose content changes or no longer exceeds the limit. The allowlist itself is data and is excluded from width checking.
-
-For format-on-save in Visual Studio, VS Code or Rider, install the CSharpier editor integration and select the repository-local tool. Keep EditorConfig support enabled and avoid running a second whitespace formatter on save. Restore with `dotnet tool restore` after cloning or changing the pinned formatter version.
-
-## Projects and conventions
-
-| Project | Responsibility |
-| --- | --- |
-| [Eden.Gameplay](src/Eden.Gameplay) | Typed gameplay rules, state, commands and persistence interfaces. |
-| [Eden.Data](src/Eden.Data) | Generated catalog models and saved database entities; contexts and operations remain in World. |
-| [Eden.Protocol](src/Eden.Protocol) | Native wire formats, service dispatch, replies and notifications. |
-| [Eden.World](src/Eden.World) | Authoritative state, shared catalog access and SQLite world persistence. |
-| [Eden.Infrastructure](src/Eden.Infrastructure) | Shared registration, operation scopes, logging and diagnostics. |
-| [Eden.Server](src/Eden.Server) | Startup, listeners and background scheduling. |
-| [Eden.Protocol.Tests](tests/Eden.Protocol.Tests) | Automated protocol, gameplay and persistence coverage. |
-| [tools](tools) | Development, catalog, auditing and formatting tools. |
-
-Follow the [contributor guide](AGENTS.md) for code style, dependency direction, service ownership and milestones. See [architecture and runtime](docs/architecture.md) for the implementation boundaries and examples.
-
-## Architecture
-
-Gameplay builds independently of Protocol, Server, EF Core and the host container. Server loads and commits typed inputs; Protocol adapts requests and results to the native client. See [architecture and runtime](docs/architecture.md#architecture).
-
-### Session performance diagnostics
-
-The host uses pooled protocol buffers and buffered console logging. See the
-[library evaluation and measurements](docs/protocol/performance.md#pooled-protocol-buffers-and-selective-libraries-november-9-2026)
-for the dependency choices, compatibility coverage and limits of the measurements.
-
-Run isolated encoding or scene-filter comparisons from the repository root:
-
-```powershell
-dotnet run --project tools/Benchmarks/Eden.Benchmarks.csproj -c Release -- --filter '*SerializationBenchmarks*' --job short
-dotnet run --project tools/Benchmarks/Eden.Benchmarks.csproj -c Release -- --filter '*SceneFilteringBenchmarks*' --job short
-```
-
-BenchmarkDotNet writes reports under ignored `artifacts/library-benchmarks` by default. Use `--artifacts <directory>` to retain
-separate comparisons. These small benchmarks complement the complete-session replays below; they do not establish player capacity.
-
-Bound-call warnings now identify their embedded method. Fitting and brain primes share committed fitting snapshots and operation-local catalog reads; see the [dogma and ship-call latency record](docs/protocol/performance.md#bound-dogma-and-ship-call-latency-november-7-2026).
-
-Unchanged player-frame polling and stable NPC observer records now share resident inputs; see the [multi-player frame comparison](docs/protocol/performance.md#shared-work-across-player-frames-november-7-2026).
-
-Compare NPC and connected-player populations with `.\tools\Measure-NpcCapacity.ps1`; see the [capacity measurements](docs/protocol/performance.md#npc-and-player-capacity-november-6-2026) and [implemented NPC optimizations](docs/protocol/performance.md#indexed-npc-scene-updates-november-6-2026).
-
-Use `EDEN_TRACE_PERFORMANCE=1` for targeted timings and database counters. See [diagnostic settings](docs/architecture.md#session-performance-diagnostics) and [performance records](docs/protocol/performance.md) for replay evidence.
-
-[Shared-owner stall relief](docs/protocol/performance.md#shared-owner-stall-relief-november-10-2026) adds ordered
-admission, grouped frame updates and a frozen two-player traffic replay. Later
-[system ownership changes](docs/protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
-separate simulation owners and move checkpoint copies outside their holds.
-
-The live host loads the immutable NPC/agent directory before admitting clients. Its name lookup uses one collection parameter so catalog initialization does not bind thousands of individual SQLite parameters; see the [agent directory latency record](docs/protocol/performance.md#agent-directory-first-request-latency-november-6-2026).
-
-### Resident world and background saves
-
-The server runs an authoritative world in memory and checkpoints committed state to disk every 15 seconds. Drone flight, shared observer contacts and nonfatal direct combat use resident objects; see the [drone performance record](docs/protocol/performance.md#resident-drone-flight-and-combat-november-6-2026). Checkpoint SQL projection now runs on a detached image outside the world owner; see the [checkpoint pause comparison](docs/protocol/performance.md#detached-checkpoint-projection-november-7-2026). Graceful shutdown flushes pending changes. Stop the host before editing, backing up or restoring its save; a crash can lose progress since the last completed checkpoint. See [resident state and checkpoint behavior](docs/architecture.md#resident-world-and-background-saves).
+Wrap long lines first. For unavoidable exceptions, record the repository-relative path with forward slashes, the exact
+line and a specific reason in [formatting-exceptions.json](tools/formatting-exceptions.json). For format-on-save in
+Visual Studio, VS Code or Rider, select the repository-local CSharpier tool and keep EditorConfig enabled.
 
 ## License
 
-Eden's original source and documentation are available under the [MIT License](LICENSE). Supply the EVE client and its resource cache separately. See the [Carbon licensing notes](docs/carbon-license.md) for reference-source attribution.
-
-[Persistent traveler routines](docs/protocol/capsuleers.md#persistent-traveler-routines--november-9-2026) give simulated pilots saved travel habits, shelter and temporary attack memory.
-[Simulated-pilot retaliation](docs/protocol/capsuleers.md#simulated-pilot-retaliation--november-9-2026) adds actual fitted defenses, shared locks, retreat and finite starter supplies.
-[Belt ratting and paid resupply](docs/protocol/capsuleers.md#belt-ratting-resupply-and-ship-variety--november-9-2026) give suitable combat travelers pirate encounters, owned loot, shopping trips and more varied hull selection.
-
-Progression markets have [industrial NPC buyers](docs/protocol/industry.md#industrial-npc-demand--november-9-2026)
-for resources and non-faction Tech I goods before supply unlocks. Advanced products require a production claim for demand. Finite demand grows with active play;
-manufacturing a product remains necessary before generated NPC sell orders appear.
-NPC buyers also consume competitively priced personal sell listings as finite demand recovers during active play;
-see [resting-order purchases](docs/protocol/industry.md#npc-purchases-from-resting-sell-orders--november-9-2026).
-
-[Inventory estimated values and market history](docs/protocol/industry.md#inventory-estimates-and-reference-market-history--november-9-2026)
-use existing snapshot prices and simulated reference history for fresh-world ticker data, without a history download.
-Industrial fee overrides remain separate.
+Eden’s original source and documentation are available under the [MIT License](LICENSE).
+See the [Carbon licensing notes](docs/carbon-license.md) for reference-source attribution.
