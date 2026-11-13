@@ -75,40 +75,57 @@ public sealed class BufferedServerLogTests
     }
 
     [Fact]
-    public async Task FullBoundedQueueRetainsMessagesAfterTheOutputResumes()
+    public async Task FullQueueDropsLogsWithoutBlockingWorldWorkOrCheckpointing()
     {
+        using TestWorld world = new(liveWorld: true);
         using DelayedOutput output = new();
+        using MemoryStream errors = new();
         ServerLog log = new(false);
-        var buffered = new BufferedServerLog(log, output, new MemoryStream(), capacity: 1);
-        Task producer = Task.CompletedTask;
-        TaskCompletionSource queued = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        const int entries = 12;
+        await using var buffered = new BufferedServerLog(log, output, errors, capacity: 1);
         try
         {
             log.Information("Start.");
-            await output.Writing.Task.WaitAsync(TimeSpan.FromSeconds(10));
-            producer = Task.Run(() =>
-            {
-                for (int index = 0; index < entries; index++)
+            await output.Writing.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Task.Run(async () =>
                 {
-                    log.Information($"Queued entry {index}.");
-                    queued.TrySetResult();
-                }
-            });
-            await queued.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                    for (int index = 0; index < 12; index++)
+                    {
+                        log.Information($"Queued entry {index}.");
+                    }
+                    var pilot = world.Store.FindPilot(1000001)!;
+                    world.Store.SetPosition(pilot.ShipId, new(1000, 2000, 3000), 30000142);
+                    await Eden.World.Runtime.LiveWorld.Find(world.Path)!.FlushAsync();
+                })
+                .WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(11, buffered.DroppedMessages);
         }
         finally
         {
             output.Release.Set();
-            await producer.WaitAsync(TimeSpan.FromSeconds(10));
-            await buffered.DisposeAsync();
         }
+        await buffered.DisposeAsync();
         string text = Encoding.UTF8.GetString(output.ToArray());
-        var lines = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(entries + 1, lines.Length);
-        for (int index = 0; index < entries; index++)
+        Assert.Contains("Queued entry 0.", text);
+        Assert.Contains("Dropped 11 server log messages", text);
+    }
+
+    [Fact]
+    public async Task ShutdownStopsWaitingForBlockedOutput()
+    {
+        using DelayedOutput output = new();
+        using MemoryStream errors = new();
+        ServerLog log = new(false);
+        await using var buffered = new BufferedServerLog(log, output, errors, drainTimeout: TimeSpan.FromMilliseconds(50));
+        try
         {
-            Assert.EndsWith($"[INFO] Queued entry {index}.", lines[index + 1]);
+            log.Information("Blocked entry.");
+            await output.Writing.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await buffered.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.True(buffered.DrainTimedOut);
+        }
+        finally
+        {
+            output.Release.Set();
         }
     }
 

@@ -333,6 +333,11 @@ internal static class Program
             {
                 population.Start();
             }
+            if (await Task.WhenAny(server, chat.Completion) == chat.Completion)
+            {
+                await chat.Completion;
+                throw new InvalidOperationException("Chat stopped before the game listener.");
+            }
             joined = true;
             await server;
         });

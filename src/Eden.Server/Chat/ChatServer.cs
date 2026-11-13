@@ -27,20 +27,38 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
     private long _nextConnection;
     private int _disposed;
     public IPEndPoint? Endpoint => _listener?.LocalEndpoint as IPEndPoint;
+    internal Task Completion => _accept ?? throw new InvalidOperationException("Chat has not started.");
 
-    public Task StartAsync(IPEndPoint endpoint)
+    public Task StartAsync(IPEndPoint endpoint) => StartListenerAsync(new TcpListener(endpoint));
+
+    internal Task StartListenerAsync(TcpListener listener)
     {
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
         if (_listener is not null)
         {
             throw new InvalidOperationException("Chat is already listening.");
         }
-        _listener = new(endpoint);
+        _listener = listener;
         _listener.Start();
         _accept = AcceptAsync();
         return Task.CompletedTask;
     }
 
     private async Task AcceptAsync()
+    {
+        try
+        {
+            await AcceptConnectionsAsync();
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+        catch (Exception error)
+        {
+            ServerLog.Console.Error($"Chat listener failed: {error}");
+            throw;
+        }
+    }
+
+    private async Task AcceptConnectionsAsync()
     {
         while (!_stop.IsCancellationRequested)
         {
@@ -137,23 +155,31 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
         {
             return;
         }
-        await _stop.CancelAsync();
-        _listener?.Stop();
-        foreach (var client in _clients.Values)
+        try
         {
-            client.Dispose();
+            await _stop.CancelAsync();
         }
-        if (_accept is not null)
+        finally
         {
             try
             {
-                await _accept;
+                if (_accept is not null)
+                {
+                    // Completion exposes accept failures to the host. Disposal still drains the sessions.
+                    await _accept.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                }
+                _listener?.Stop();
+                foreach (var client in _clients.Values)
+                {
+                    client.Dispose();
+                }
+                await Task.WhenAll(_sessions.Values).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
             }
-            catch (OperationCanceledException) { }
-            catch (SocketException) when (_stop.IsCancellationRequested) { }
+            finally
+            {
+                _stop.Dispose();
+            }
         }
-        await Task.WhenAll(_sessions.Values);
-        _stop.Dispose();
     }
 
     public void Dispose() => DisposeAsync().AsTask().GetAwaiter().GetResult();

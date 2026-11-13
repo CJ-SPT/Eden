@@ -9,6 +9,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 ## Contents
 
 - [Orderly host shutdown](#orderly-host-shutdown)
+- [Chat listener and log output failures](#chat-listener-and-log-output-failures)
 
 - [Concurrent account login (November 12, 2026)](#concurrent-account-login-november-12-2026)
 - [Launcher Omega account default (November 4, 2026)](#launcher-omega-account-default-november-4-2026)
@@ -29,6 +30,16 @@ Eden drains the game listener, HTTP services and chat, then stops maintenance an
 checkpoint. Shutdown collects failures across those steps and reports them after attempting the checkpoint.
 One failed mod stop callback does not prevent later callbacks from running. An automated test injects listener
 and mod failures and reopens the saved world to verify that the later callback's position change survived.
+
+## Chat listener and log output failures
+
+The host monitors native chat alongside the game listener. An unexpected chat accept failure is logged and triggers
+orderly shutdown. Chat disposal still closes and joins accepted sessions after a fault. Normal cancellation completes
+the accept loop successfully. Chat retains build 3662168's direct TLS connection on port 5222.
+
+Standard output and error each have a bounded queue. A full queue drops new entries, counts them, and reports losses
+when the writer can make progress. Host shutdown waits up to two seconds for the writers. A stalled-stream test checks
+that world work and checkpointing can still finish with a saturated queue.
 
 ## Concurrent account login (November 12, 2026)
 
