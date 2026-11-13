@@ -203,6 +203,23 @@ reprocessing. Tool and solution restore, solution build, both Python policy suit
 
 **Optional maintainer checks:** Install the same chain from the native Industry window and compare its quotes and delivery.
 
+## Player-supplied inputs in development worlds
+
+The development market now applies the same player-input exclusion as institutional and regional markets. World version
+152 retires existing NPC asks for those inputs by clearing their available stock and issued time. Their order IDs and
+trade history remain intact. Both market refresh paths skip retired rows. Ordinary development stock and player orders
+continue to use their existing rules.
+
+**Automated validation.** Three exact cases passed in 6.82 seconds across fresh disk and resident development worlds and a
+version-151 save with an existing Morphite ask. The upgrade scenario reopens twice and verifies that the ask cannot be
+bought or refreshed. The final affected filter passed 68 cases in 26.18 seconds across development, institutional,
+blueprint and personal markets and world migration and initialization. Tool and solution restore, solution build, both
+Python policy suites and formatting verification passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of

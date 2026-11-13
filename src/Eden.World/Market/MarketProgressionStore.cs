@@ -1,6 +1,8 @@
 using Eden.Data.World.Industry;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.World.Catalog;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +38,20 @@ internal static class MarketProgressionStore
                 ClaimedAt = job.CompletedAt.Value,
             }
         );
+    }
+
+    internal static void RetirePlayerSuppliedInputs(WorldDbContext world, CatalogDbContext catalog)
+    {
+        var inputs = catalog
+            .Definitions.Items.Values.Where(item =>
+                RegionalMarketRules.IsPlayerSuppliedIndustryInput(item.Id, (InventoryCategory)item.CategoryId, item.GroupId)
+            )
+            .Select(item => item.Id)
+            .ToArray();
+        world
+            .Set<NpcMarketOrder>()
+            .Where(order => !order.Bid && order.Issued > 0 && inputs.Contains(order.TypeId))
+            .ExecuteUpdate(setters => setters.SetProperty(o => o.Remaining, 0).SetProperty(o => o.Issued, 0));
     }
 
     internal static void Upgrade(WorldDbContext world, CatalogDbContext catalog)

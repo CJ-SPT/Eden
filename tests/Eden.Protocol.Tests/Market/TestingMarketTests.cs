@@ -77,6 +77,94 @@ public sealed class TestingMarketTests
         Assert.Equal(2, saved.Set<MarketExecution>().Count());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PlayerSuppliedInputsNeverRefreshOrSeedOnDevelopmentMarket(bool resident)
+    {
+        const int Morphite = 11399;
+        const int Condenser = 57445;
+        using TestWorld db = new(emptyWallets: false, liveWorld: resident);
+        WorldDatabase database = new(db.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemCategory VALUES (4,'Material'),(17,'Commodity');
+                INSERT OR IGNORE INTO ItemGroup VALUES (18,'Mineral',4),(526,'Commodities',17);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (11399,'Morphite',18),(57445,'Molecular Condenser',526);
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/stationoperations','14','{{"services":[7]}}'),
+                    ('client/types','11399','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                    ('client/types','57445','{{"published":1,"marketGroupID":1,"volume":0.01}}');
+                """
+            );
+        }
+        var market = db.Services.GetRequiredService<IPilotMarket>();
+        Assert.DoesNotContain(market.Orders(PilotId, Morphite), o => !o.Bid);
+        Assert.DoesNotContain(market.Orders(PilotId, Condenser), o => !o.Bid);
+        Assert.Contains(market.Orders(PilotId, 3651), o => !o.Bid && o.Remaining > 0);
+    }
+
+    [Fact]
+    public void UpgradeRetiresExistingDevelopmentAsksAndPreservesTheirOrderIdentity()
+    {
+        const int Morphite = 11399;
+        TestClock clock = new();
+        using TestWorld db = new(emptyWallets: false, clock: clock);
+        WorldDatabase database = new(db.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemCategory VALUES (4,'Material');
+                INSERT OR IGNORE INTO ItemGroup VALUES (18,'Mineral',4);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (11399,'Morphite',18);
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/stationoperations','14','{{"services":[7]}}'),
+                    ('client/types','11399','{{"published":1,"marketGroupID":1,"volume":0.01}}');
+                """
+            );
+        }
+        long id;
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Database.ExecuteSqlRaw("PRAGMA user_version=151");
+            world.Add(
+                new MarketStation
+                {
+                    StationId = StationId,
+                    SeedVersion = TestingMarketRules.SeedVersion,
+                    CreatedAt = clock.Now,
+                }
+            );
+            var order = world
+                .Add(
+                    new NpcMarketOrder
+                    {
+                        TypeId = Morphite,
+                        StationId = StationId,
+                        SystemId = 30000142,
+                        RegionId = 10000002,
+                        OwnerId = 1000035,
+                        PriceCents = 100,
+                        Entered = 5000,
+                        Remaining = 5000,
+                        Issued = clock.Now,
+                    }
+                )
+                .Entity;
+            world.SaveChanges();
+            id = order.Id;
+        }
+        WorldInitialization.Initialize(database, clock);
+        WorldInitialization.Initialize(database, clock);
+        var market = db.Services.GetRequiredService<IPilotMarket>();
+        Assert.DoesNotContain(market.Orders(PilotId, Morphite), o => !o.Bid);
+        Assert.Throws<InvalidDataException>(() => market.Buy(PilotId, StationId, [new(Morphite, 100, 1)]));
+        using WorldDbContext saved = new(db.Path);
+        var retired = saved.Set<NpcMarketOrder>().Find(id)!;
+        Assert.Equal((5000, 0, 0L), (retired.Entered, retired.Remaining, retired.Issued));
+    }
+
     [Fact]
     public void VersionTwentySevenAddsOneGrantToExistingMoneyWithoutSeedingOrders()
     {
