@@ -7,6 +7,7 @@ import sqlite3
 
 
 BUILD = 3662168
+MERCOXIT = {11396, 17869, 17870}
 GROUPS = {54, 464, 483, 482, 663, 737, 4138}
 
 # Positive high-security locations from the four UniWiki ice-belt pages, November 9, 2026.
@@ -66,6 +67,9 @@ def export(catalog_path, output, sites_output):
         pending = {type_id for type_id, group in catalog.execute('SELECT Id,GroupId FROM ItemType')
                    if group in GROUPS and record('client/types', type_id).get('published') == 1}
         pending.update({601, 1230, 1223, 17478, 17480, 17476, 32880, 32918, 3410, 90727, 90728, 25268, 91174, 33697, 28444})
+        pending.update(MERCOXIT)
+        for ore in MERCOXIT:
+            pending.update(material['materialTypeID'] for material in record('client/typematerials', ore)['materials'])
         regions = {name: region_id for region_id, name in catalog.execute('SELECT Id,Name FROM Region')}
         systems = {name: system_id for system_id, name in catalog.execute('SELECT Id,Name FROM SolarSystem')}
         sites = []
@@ -126,6 +130,8 @@ def export(catalog_path, output, sites_output):
                     records['client/typelist', int(v)] = record('client/typelist', int(v))
             for dataset in ('client/types', 'client/typedogma'):
                 records[dataset, type_id] = record(dataset, type_id)
+            if type_id in MERCOXIT:
+                records['client/typematerials', type_id] = record('client/typematerials', type_id)
             effects.update(e['effectID'] for e in records['client/typedogma', type_id].get('dogmaEffects', []))
         for effect in sorted(effects):
             data = record('client/dogmaeffects', effect)

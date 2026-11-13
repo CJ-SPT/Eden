@@ -100,11 +100,14 @@ public static class ModuleFittingRules
                             || MiningDefinitions.Family(groupId, attributes) == MiningFamily.Ice
                             || (
                                 groupId == InventoryDefinitions.StripMinerGroup
-                                    ? MiningDefinitions.IsOrdinaryStripMiner(attributes)
+                                    ? MiningDefinitions.IsOreStripMiner(attributes)
                                     : !InventoryDefinitions.RequiresSpecificShip(attributes)
                             )
                         )
-                        && attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) == 0,
+                        && (
+                            attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) == 0
+                            || MiningDefinitions.IsDeepCore(attributes)
+                        ),
                 ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
                 CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)
                     && effects.Contains(DogmaEffect.CapacitorBoosting),

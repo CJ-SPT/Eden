@@ -26,7 +26,7 @@ internal static class MiningLaserCatalog
             !InventoryDefinitions.IsMiningGroup(group)
             || (
                 group == InventoryDefinitions.StripMinerGroup
-                && !MiningDefinitions.IsOrdinaryStripMiner(attributes)
+                && !MiningDefinitions.IsOreStripMiner(attributes)
                 && MiningDefinitions.Family(group, attributes) != MiningFamily.Ice
             )
             || type?.Published != 1
@@ -41,8 +41,7 @@ internal static class MiningLaserCatalog
                 && InventoryDefinitions.RequiresSpecificShip(attributes)
                 && MiningDefinitions.Family(group, attributes) != MiningFamily.Ice
             )
-            // Deep-core lasers need Mercoxit cloud hazards before being enabled.
-            || attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) != 0
+            || (attributes.GetValueOrDefault(DogmaAttributeId.MiningDamageCloudChance) != 0 && !MiningDefinitions.IsDeepCore(attributes))
         )
         {
             return false;

@@ -73,6 +73,31 @@ Tool and solution restore, the solution build and both Python policy suites pass
 
 **Optional maintainer checks:** In the native Industry window, quote and deliver a composite job at a fueled refinery.
 
+## Deep-core mining and Morphite
+
+The three Mercoxit variants in the pinned belt catalog require a deep-core module. The static Deep Core Mining Laser I,
+ORE Deep Core Mining Laser, ORE Deep Core Strip Miner, Modulated Deep Core Miner II and Modulated Deep Core Strip Miner II
+can mine Mercoxit. The two modulated tools accept all six published Mercoxit crystals and check the fitted crystal's
+target type list at activation and collection. Deep-core equipment retains its ordinary ore capability and its
+catalog skill and hull requirements. Existing reprocessing uses the 100-unit ore portions and variant-specific Morphite
+yields. Mercoxit and Morphite stay outside NPC sell supply.
+
+The pinned catalog defines a mining pollution cloud. Its damage, persistence and native display remain unimplemented.
+The local evejs build-3396210 mining resource distribution was used as a behavioral reference
+(`miningRuntimeState.js`, SHA-256 `613E77ACFCF7B3FBFB17551EBF35BCDC41DD9E612917CA2CF13DA5C8C863EC06`).
+See [EVE University mining yield](https://wiki.eveuniversity.org/Mining_Yield).
+
+**Automated validation.** The exact `DeepCoreMiningProducesOreThatRefinesToMorphite` test passed in 11.85 seconds and
+exercised paid mining cycles, docking, unloading and reprocessing. The first affected run exposed obsolete assertions
+that static ice and modulated ore equipment should be unavailable. Their positive coverage already exists in
+`IceMiningTests` and `MiningCrystalTests`. The final affected filter passed 182 cases in 117.70 seconds and covered mining tiers, crystals, extraction, asteroid fields,
+utility hull operations, ship content, reprocessing and reactions. Tool and solution restore, build, both Python policy
+suites and formatting verification passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Mine a Mercoxit rock with a loaded deep-core tool and compare native cargo and reprocessing quotes.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of

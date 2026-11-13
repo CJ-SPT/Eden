@@ -141,7 +141,7 @@ public sealed partial class MiningCrystalTests
     }
 
     [Fact]
-    public void CatalogAdmitsStaticModulatedMinersAndEveryPublishedOrdinaryCrystal()
+    public void CatalogAdmitsStaticModulatedMinersAndEveryPublishedMiningCrystal()
     {
         using MiningFixture f = new();
         using CatalogDbContext catalog = new(f.F.CatalogPath);
@@ -151,10 +151,10 @@ public sealed partial class MiningCrystalTests
         }
         var crystals = catalog
             .Records(Eden.World.Catalog.CatalogData.Client.Types)
-            .Where(p => p.Value.Published == 1 && p.Value.GroupID == MiningCrystalRules.Group)
+            .Where(p => p.Value.Published == 1 && p.Value.GroupID is MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup)
             .ToArray();
-        Assert.Equal(66, crystals.Length);
-        Assert.All(crystals, p => Assert.True(MiningCrystalCatalog.Supported(catalog, checked((int)p.Key), MiningCrystalRules.Group)));
+        Assert.Equal(72, crystals.Length);
+        Assert.All(crystals, p => Assert.True(MiningCrystalCatalog.Supported(catalog, checked((int)p.Key), (int)p.Value.GroupID!.Value)));
         Assert.Null(FittingCatalog.Definition(catalog, 90474));
         var coverage = ShipContentAudit.Read(catalog);
         Assert.Equal(ContentSupportState.Complete, coverage.Entries.Single(e => e.TypeId == 17912).State);
@@ -183,7 +183,7 @@ public sealed partial class MiningCrystalTests
     }
 
     [Fact]
-    public void UnsupportedCrystalLoadPreservesTheExistingCrystalAndSourceStack()
+    public void IncompatibleCrystalLoadPreservesTheExistingCrystalAndSourceStack()
     {
         using MiningFixture f = new();
         f.Load();

@@ -132,15 +132,11 @@ public sealed class UtilityHullOperationTests
         Assert.Equal(f.StationId, Assert.Single(f.Inventory.List(f.PilotId, f.StationId), item => item.Id == miner).LocationId);
     }
 
-    [Theory]
-    [InlineData(16278)]
-    [InlineData(17912)]
-    [InlineData(87562)]
-    [InlineData(90493)]
-    public void IceCrystalsDeepCoreAndMutatedProfilesRemainUnavailableInsteadOfMiningTheWrongResource(int type)
+    [Fact]
+    public void MutatedStripMinerProfilesRemainUnavailable()
     {
         using Fixture f = HullHoldTests.Prepare(17478, HullClass.MiningBarge);
         using CatalogDbContext catalog = new(f.CatalogPath);
-        Assert.Null(FittingCatalog.Definition(catalog, type));
+        Assert.Null(FittingCatalog.Definition(catalog, 90493));
     }
 }

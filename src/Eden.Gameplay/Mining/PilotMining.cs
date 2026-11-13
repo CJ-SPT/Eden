@@ -76,6 +76,7 @@ public sealed record MiningSkillModifier(MiningSkill Skill, DogmaAttributeId Att
 public static class MiningDefinitions
 {
     public const int DeepCoreMiningSkill = 11395;
+    public const int MercoxitGroup = 468;
     public const int GasCloudGroup = 711;
     public const int GasCloudCategory = 2;
     public const int IceGroup = 465;
@@ -92,9 +93,14 @@ public static class MiningDefinitions
 
     public static bool OwnsYieldSkill(int skill) => skill is (int)MiningSkill.Mining or (int)MiningSkill.Astrogeology;
 
-    public static bool IsOrdinaryStripMiner(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
-        InventoryDefinitions.RequiredSkills.Any(pair => attributes.GetValueOrDefault(pair.Skill) == (int)MiningSkill.Mining)
-        && InventoryDefinitions.RequiredSkills.All(pair => attributes.GetValueOrDefault(pair.Skill) != DeepCoreMiningSkill);
+    public static bool IsDeepCore(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        InventoryDefinitions.RequiredSkills.Any(pair => attributes.GetValueOrDefault(pair.Skill) == DeepCoreMiningSkill);
+
+    public static bool IsOreStripMiner(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        InventoryDefinitions.RequiredSkills.Any(pair => attributes.GetValueOrDefault(pair.Skill) == (int)MiningSkill.Mining);
+
+    public static bool MatchesOre(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        group == MercoxitGroup ? IsDeepCore(attributes) : Enum.IsDefined((MiningResourceGroup)group);
 
     public const double YieldBonusPerSkillLevel = 0.05;
     public const double CriticalChanceBonusPerSkillLevel = 0.10;

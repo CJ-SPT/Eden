@@ -5,6 +5,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Reprocessing;
 using Eden.Gameplay.Ships;
 using Eden.Protocol.Mining;
 using Eden.Protocol.Serialization;
@@ -94,15 +95,16 @@ public sealed class MiningTierTests
     }
 
     [Fact]
-    public void OrdinaryOreAndStaticIceProfilesFitWhileDeepCoreAndMutatedProfilesRemainExplicitlyPending()
+    public void OrdinaryOreDeepCoreAndStaticIceProfilesFitWhileMutatedProfilesRemainPending()
     {
         using Fixture f = new();
-        PassiveCatalogFixture.LoadActiveTiers(f.CatalogPath);
+        PassiveCatalogFixture.LoadMining(f.CatalogPath);
         using CatalogDbContext catalog = new(f.CatalogPath);
         var types = catalog.Set<ItemType>().Where(t => t.GroupId == InventoryDefinitions.MiningLaserGroup).ToArray();
         var supported = types.Where(t => MiningLaserCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
-        Assert.Equal(18, types.Length);
-        Assert.Equal(13, supported.Length);
+        Assert.Contains(supported, t => t.Id == 12108);
+        Assert.Contains(supported, t => t.Id == 28748);
+        Assert.NotNull(FittingCatalog.Definition(catalog, 87562));
         Assert.All(
             supported,
             t =>
@@ -117,6 +119,71 @@ public sealed class MiningTierTests
             .Select(t => catalog.Set<SourceRecord>().Find("client/types", PassiveCatalog.Key(t.Id))!.Read<ClientTypes>().MetaGroupID)
             .ToHashSet();
         Assert.All(new long?[] { null, 1, 2, 3, 4 }, tier => Assert.Contains(tier, tiers));
+    }
+
+    [Fact]
+    public void DeepCoreMiningProducesOreThatRefinesToMorphite()
+    {
+        const int DeepCoreLaser = 87562;
+        const int Mercoxit = 11396;
+        const int Morphite = 11399;
+        using Fixture f = Eden.Protocol.Tests.Persistence.HullHoldTests.Prepare(17478, HullClass.MiningBarge);
+        PassiveCatalogFixture.LoadMining(f.CatalogPath);
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR REPLACE INTO SourceRecord VALUES
+                    ('sde/npcStations','60003760','{{"operationID":14,"reprocessingEfficiency":0.5,"reprocessingStationsTake":0.05}}'),
+                    ('client/stationoperations','14','{{"services":[5,17]}}');
+                """
+            );
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Add(
+                new WorldAsteroid
+                {
+                    Id = Asteroid,
+                    BeltId = 40009087,
+                    SystemId = f.Db.Store.FindPilot(1000001)!.SystemId,
+                    TypeId = Mercoxit,
+                    Quantity = 10000,
+                    X = 1500,
+                    Radius = 100,
+                }
+            );
+            world.SaveChanges();
+        }
+        long ordinary = f.Fit(17482);
+        long deepCore = f.Fit(DeepCoreLaser);
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        f.Db.Store.SetPosition(f.ShipId, SpacePosition.Zero);
+        var mining = Store(f);
+        Assert.Throws<InvalidDataException>(() => mining.Begin(f.PilotId, ordinary, Asteroid, f.Clock.Now));
+
+        int total = 0;
+        while (total < 100)
+        {
+            var start = mining.Begin(f.PilotId, deepCore, Asteroid, f.Clock.Now);
+            Assert.Equal(DeepCoreLaser, start.Laser.TypeId);
+            f.Clock.Milliseconds += (long)Math.Ceiling(start.Laser.DurationMilliseconds);
+            var yield = mining.Collect(f.PilotId, deepCore, Asteroid, new(1, true, QuietRolls));
+            Assert.Equal(Mercoxit, yield.TypeId);
+            Assert.True(yield.Extracted > 0);
+            total += yield.Extracted + yield.CriticalBonus;
+        }
+
+        long stationId = pilot.StationId;
+        var station = f.Db.Services.GetRequiredService<ISystemObjects>().Load(pilot.SystemId).Single(o => o.Id == stationId);
+        f.Db.Store.SetPosition(f.ShipId, station.Position + new SpacePosition(station.Radius + 500, 0, 0));
+        f.Db.Store.Dock(f.PilotId, f.ShipId, stationId);
+        var stack = Assert.Single(f.Inventory.List(f.PilotId, f.ShipId), item => item.TypeId == Mercoxit);
+        long oreId = Assert.Single(f.Inventory.Move(f.PilotId, [stack.Id], f.ShipId, stationId, (int)InventoryFlag.Hangar, null)).Item.Id;
+        var refinery = f.Db.Services.GetRequiredService<IPilotReprocessing>();
+        var result = refinery.Reprocess(f.PilotId, stationId, [oreId], stationId, f.PilotId, stationId, (int)InventoryFlag.Hangar);
+        Assert.Equal(70, result.Output[Morphite]);
+        Assert.Single(f.Inventory.List(f.PilotId, stationId), item => item.TypeId == Morphite);
     }
 
     [Theory]
@@ -238,7 +305,7 @@ public sealed class MiningTierTests
 
     [Theory]
     [InlineData(465)] // Ice.
-    [InlineData(468)] // Mercoxit needs deep-core tools and clouds.
+    [InlineData(MiningDefinitions.MercoxitGroup)] // Ordinary lasers cannot mine Mercoxit.
     [InlineData(711)] // Gas.
     [InlineData(4714)] // Non-interactable asteroid.
     public void WrongResourcesCannotSpendCapacitorOrProduceOre(int group)

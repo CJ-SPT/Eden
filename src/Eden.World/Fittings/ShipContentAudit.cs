@@ -288,19 +288,14 @@ internal static class ShipContentAudit
         {
             return false;
         }
-        if (
-            type.GroupId == InventoryDefinitions.ModulatedMinerGroup
-            && InventoryDefinitions.RequiredSkills.Any(p =>
-                catalog.FittingAttributes(type.Id).GetValueOrDefault(p.Skill) == MiningDefinitions.DeepCoreMiningSkill
-            )
-        )
+        if (InventoryDefinitions.IsMiningGroup(type.GroupId) && MiningDefinitions.IsDeepCore(catalog.FittingAttributes(type.Id)))
         {
             checks.Add(
                 new(
                     ContentOperation.ConsumerCoverage,
                     false,
                     ShipContentMilestone.Mining,
-                    "Ordinary ore and crystals work; Mercoxit extraction and cloud hazards remain unavailable.",
+                    "Mercoxit extraction and crystals work. Pollution cloud hazards remain unavailable.",
                     HullCapability.DeepCoreMining
                 )
             );

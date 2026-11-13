@@ -145,7 +145,7 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
                         family == MiningFamily.Ice
                             ? ore.GroupId == MiningDefinitions.IceGroup
                                 && PilotInventoryStore.Volume(catalog, ore.Id) == MiningDefinitions.IceBlockVolume
-                            : Enum.IsDefined((MiningResourceGroup)ore.GroupId)
+                            : MiningDefinitions.MatchesOre(ore.GroupId, moduleAttributes)
                     );
         if (!compatible)
         {
