@@ -1,5 +1,8 @@
 using System.Net;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.RateLimiting;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Transport;
 using Eden.Server.Administration;
 using Eden.Server.Authentication;
@@ -23,6 +26,7 @@ internal static class LauncherApi
     )
     {
         settings.Validate();
+        byte[]? certificateAuthority = LoadCertificateAuthority(settings.CertificateAuthorityPath);
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
         builder.WebHost.ConfigureKestrel(options =>
@@ -82,6 +86,11 @@ internal static class LauncherApi
             }
         );
         app.UseRateLimiter();
+        if (certificateAuthority is not null)
+        {
+            app.MapGet("/api/v1/ca-certificate", () => Results.Bytes(certificateAuthority, "application/pkix-cert"));
+            ServerLog.Console.Information($"Launcher CA SHA-256 fingerprint: {Convert.ToHexString(SHA256.HashData(certificateAuthority))}");
+        }
         app.MapGet(
             "/api/v1/server",
             () =>
@@ -177,6 +186,27 @@ internal static class LauncherApi
             }
         );
         return app;
+    }
+
+    private static byte[]? LoadCertificateAuthority(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+        try
+        {
+            using var certificate = X509CertificateLoader.LoadCertificateFromFile(path);
+            if (!certificate.Extensions.OfType<X509BasicConstraintsExtension>().Any(extension => extension.CertificateAuthority))
+            {
+                throw new InvalidDataException("CertificateAuthorityPath must point to the public CA certificate.");
+            }
+            return certificate.RawData;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or CryptographicException)
+        {
+            throw new InvalidDataException("Could not load the public CA certificate from CertificateAuthorityPath.", error);
+        }
     }
 
     private static string Access(HttpContext context)

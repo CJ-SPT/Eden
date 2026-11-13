@@ -15,6 +15,7 @@ public sealed record LauncherOptions
     public string GameAddress { get; init; } = "127.0.0.1:26000";
     public string GatewayAddress { get; init; } = "http://127.0.0.1:26001";
     public string? CertificatePath { get; init; }
+    public string? CertificateAuthorityPath { get; init; }
     public bool DevelopmentLogin { get; init; }
     public int MaximumActiveSessions { get; init; } = 8;
     public int MaximumPendingLogins { get; init; } = 16;
@@ -50,6 +51,10 @@ public sealed record LauncherOptions
         if (DevelopmentLogin && !local)
         {
             throw new InvalidDataException("Development login requires a loopback listener.");
+        }
+        if (!string.IsNullOrWhiteSpace(CertificateAuthorityPath) && string.IsNullOrWhiteSpace(CertificatePath))
+        {
+            throw new InvalidDataException("Publishing a launcher CA certificate requires HTTPS on the launcher API.");
         }
         if (
             new[] { GamePort, GatewayPort, ApiPort }.Any(port => port is < 1 or > 65535)

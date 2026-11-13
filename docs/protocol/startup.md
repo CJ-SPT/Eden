@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Launcher CA certificate downloads](#launcher-ca-certificate-downloads)
 - [Orderly host shutdown](#orderly-host-shutdown)
 - [Chat listener and log output failures](#chat-listener-and-log-output-failures)
 - [Encrypted reply size limits](#encrypted-reply-size-limits)
@@ -308,3 +309,17 @@ Automated validation: pinned tool/solution restore and build passed (zero warnin
 Live acceptance: Not performed; agent client testing is disabled. Optional maintainer checks: none; this milestone changes server-side retention only.
 
 Both Python policy suites passed (3 catalog cases in 0.23 seconds, 9 formatting cases in 0.02 seconds). Formatting verification checked 798 files; line-width and diff checks passed.
+## Launcher CA certificate downloads
+
+The optional launcher endpoint `GET /api/v1/ca-certificate` returns a DER certificate loaded from the operator's configured public
+CA file. It is available over HTTPS before sign-in and returns HTTP 404 when unconfigured. Existing metadata and API versions
+stay compatible. The server logs the SHA-256 fingerprint of the DER certificate. The launcher compares it with the value the player
+received independently, then validates the API connection with the matched CA before saving it to the selected server profile.
+See [launcher hosting](../launcher.md#ca-certificate-downloads).
+
+Automated validation exercised the configured and unconfigured HTTPS endpoint, checked the returned bytes and content type, and
+covered rejection of a mismatched fingerprint and a matching fingerprint for an unrelated CA in the launcher. The launcher
+test verified a successful download, profile-local persistence, and connection after reopening.
+
+Live game acceptance was not performed. On a deployed host, verify that a fresh launcher profile can connect using only the
+API address and the fingerprint from the server log.

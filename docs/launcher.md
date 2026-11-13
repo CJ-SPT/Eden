@@ -9,6 +9,7 @@ The separate [Eden Launcher](https://github.com/CJ-SPT/Eden-Launcher) uses API v
 - [Existing accounts](#existing-accounts)
 - [Developer accounts](#developer-accounts)
 - [Remote hosting](#remote-hosting)
+- [CA certificate downloads](#ca-certificate-downloads)
 - [Authentication](#authentication)
 - [Native chat trust](#native-chat-trust)
 
@@ -43,7 +44,24 @@ Pass `--config C:\Eden\server.json` to the server, optionally alongside `--world
 
 Supply a PFX password through `EDEN_CERTIFICATE_PASSWORD` if needed. Certificate subject alternative names must match the advertised API/gateway host. Configure the host/network to allow the three selected ports. Enter `https://eden.example.com:26002` in the launcher.
 
-For a private CA, set `EDEN_LAUNCHER_CA_FILE` to its DER certificate before opening the launcher. Trust is scoped to that process; hostname, chain, validity and server-authentication verification remain required. Windows trust is unchanged. Unencrypted remote API/gateway connections are rejected. The launcher relays the native client's cleartext loopback gateway connection over HTTP/2 TLS upstream and must remain running while games are open.
+For a private CA, select its public certificate in the launcher server profile. Existing setups can still use `EDEN_LAUNCHER_CA_FILE`.
+Hostname, chain, validity and server-authentication verification remain required. The launcher relays the native client's cleartext
+loopback gateway connection over HTTP/2 TLS upstream and must remain running while games are open.
+
+### CA certificate downloads
+
+To let players download a private CA, add `"CertificateAuthorityPath": "/config/ca.cer"` to the hosting configuration and put the
+public CA certificate at that path. The file can be DER or PEM. Keep `CertificatePath` pointing to the server's separate PFX.
+Restart Eden and get the **Launcher CA SHA-256 fingerprint** from its startup log. Share the fingerprint with players through a
+channel they already trust.
+
+In Launcher Settings, players enter the HTTPS API address, choose **Download CA**, paste the fingerprint they got from the
+operator, and choose **Verify and connect**. The launcher checks the fingerprint and validates the HTTPS API with the CA before
+saving it to the selected server profile. To rotate the CA, update the hosting files, restart Eden, and share the new fingerprint.
+
+When configured, the launcher API serves the public CA in DER form at `GET /api/v1/ca-certificate` with media type
+`application/pkix-cert`. The request is anonymous and needs no existing launcher session. Fingerprints are SHA-256 of the DER
+certificate, even when the server reads it from a PEM file.
 
 ## Authentication
 

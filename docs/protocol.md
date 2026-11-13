@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Launcher CA certificate downloads](protocol/startup.md#launcher-ca-certificate-downloads)
+records first-connection fingerprint verification and profile-local trust.
+
 [Warping out of The Blockade](protocol/agents.md#warping-out-of-the-blockade)
 records the stationary-sentry disconnect and the mission departure replay.
 

@@ -24,6 +24,10 @@ docker compose logs -f eden
 
 Once Eden logs that its listeners are ready, use `https://eden.example.com:26002` in the launcher with the host name from your certificate. For a private CA, configure launcher trust using the [remote hosting guide](launcher.md#remote-hosting). Set `EDEN_REVISION` to the Git commit SHA before building to include it in the startup banner.
 
+To offer CA downloads, place the public CA certificate at `deploy/ca.cer` and add `"CertificateAuthorityPath": "/config/ca.cer"`
+to `deploy/server.json`. After restarting Eden, use `docker compose logs eden` to get the CA fingerprint to share with players.
+See [CA certificate downloads](launcher.md#ca-certificate-downloads).
+
 Use `docker compose stop` before backing up data or running commands that open the saved world. Docker sends SIGTERM and gives Eden two minutes to drain connections and finish its checkpoint before enforcing the stop. See the [Compose stop settings](https://docs.docker.com/reference/compose-file/services/#stop_grace_period).
 
 For example, to set the existing Eden account's launcher password with the service stopped:

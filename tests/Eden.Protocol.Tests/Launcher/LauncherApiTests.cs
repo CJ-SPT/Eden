@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Eden.Gameplay.Docking;
 using Eden.Server.Authentication;
 using Eden.Server.Launcher;
@@ -11,6 +13,65 @@ namespace Eden.Protocol.Tests.Launcher;
 
 public sealed class LauncherApiTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HttpsPublishesOnlyTheConfiguredPublicCaCertificate(bool publish)
+    {
+        using TestWorld world = new();
+        using var rootKey = RSA.Create(2048);
+        var rootRequest = new CertificateRequest("CN=Eden Test CA", rootKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        rootRequest.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+        var now = DateTimeOffset.UtcNow;
+        using var root = rootRequest.CreateSelfSigned(now.AddDays(-2), now.AddDays(2));
+        using var leafKey = RSA.Create(2048);
+        var leafRequest = new CertificateRequest("CN=localhost", leafKey, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var subjectAlternativeName = new SubjectAlternativeNameBuilder();
+        subjectAlternativeName.AddDnsName("localhost");
+        leafRequest.CertificateExtensions.Add(subjectAlternativeName.Build());
+        using var leaf = leafRequest.Create(root, now.AddDays(-1), now.AddDays(1), [1]);
+        using var serverCertificate = leaf.CopyWithPrivateKey(leafKey);
+
+        var directory = Directory.CreateTempSubdirectory("eden-ca-api-");
+        try
+        {
+            string caPath = Path.Combine(directory.FullName, "ca.pem");
+            string pfxPath = Path.Combine(directory.FullName, "server.pfx");
+            File.WriteAllText(caPath, root.ExportCertificatePem());
+            File.WriteAllBytes(pfxPath, serverCertificate.Export(X509ContentType.Pfx));
+            var options = new LauncherOptions
+            {
+                ApiPort = AvailablePort(),
+                CertificatePath = pfxPath,
+                CertificateAuthorityPath = publish ? caPath : null,
+            };
+            var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
+            using var identity = new DevelopmentIdentity(TimeProvider.System, store, options);
+            await using var api = LauncherApi.Create(options, store, identity, TimeProvider.System);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await api.StartAsync(timeout.Token);
+            using var client = new HttpClient(
+                new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (_, certificate, _, _) => certificate?.Thumbprint == leaf.Thumbprint,
+                }
+            );
+            using var response = await client.GetAsync($"https://localhost:{options.ApiPort}/api/v1/ca-certificate", timeout.Token);
+            Assert.Equal(publish ? HttpStatusCode.OK : HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal("no-store", response.Headers.CacheControl!.ToString());
+            if (publish)
+            {
+                Assert.Equal("application/pkix-cert", response.Content.Headers.ContentType!.MediaType);
+                Assert.Equal(root.RawData, await response.Content.ReadAsByteArrayAsync(timeout.Token));
+            }
+            await api.StopAsync(timeout.Token);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
     [Fact]
     public async Task HttpContractRegistersSignsInAndRevokesWithoutCreatingPilots()
     {
