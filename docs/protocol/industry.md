@@ -186,6 +186,23 @@ Tool and solution restore, solution build, both Python policy suites, formatting
 
 **Optional maintainer checks:** None.
 
+## Tech II manufacturing integration
+
+A saved-world fixture produces Crystallite Alloy and Carbon Polymers from moon materials, combines them into Crystalline
+Carbonide, and transports the output from an Athanor to a station. The station consumes that carbonide to produce Photon
+Microprocessors. A separate copying and invention sequence creates the licensed Miner II copy. A manufacturing install
+with missing Morphite rejects without spending the copy's runs. The completed job consumes the microprocessors and one
+licensed run and delivers one Miner II. The fixture supplies the remaining inputs, including Morphite, and controls the
+invention roll. The separate deep-core scenario covers mining and reprocessing Morphite.
+
+**Automated validation.** The exact manufacturing integration passed in 8.31 seconds. The final affected filter passed
+97 cases in 46.82 seconds across reactions, science jobs, the production catalog, moon extraction, mining tiers and
+reprocessing. Tool and solution restore, solution build, both Python policy suites and formatting verification passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Install the same chain from the native Industry window and compare its quotes and delivery.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of
