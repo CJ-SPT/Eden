@@ -11,6 +11,9 @@ internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken
     internal const int CompressionThreshold = 64 * 1024;
     internal const int MaximumOutgoingBytes = 16 * 1024 * 1024;
 
+    // Build 3662168 SocketGPS sets a 10 MiB packet limit. Reserve the four-byte frame header.
+    internal const int MaximumOutgoingCiphertextBytes = 10 * 1024 * 1024 - sizeof(uint);
+
     public async Task<object?> ReadAsync()
     {
         byte[] ciphertext = await PacketStream.ReadAsync(stream, cancellationToken, PacketStream.MaxSessionBytes);
@@ -35,7 +38,7 @@ internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken
         BlueMarshal.Encode(plain, value);
         if (plain.WrittenCount > MaximumOutgoingBytes)
         {
-            throw new InvalidDataException("Oversized outgoing session message.");
+            throw new OutgoingPacketSizeException("Encoded session message", plain.WrittenCount, MaximumOutgoingBytes);
         }
         if (plain.WrittenCount > CompressionThreshold)
         {
@@ -54,8 +57,17 @@ internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken
 
     private async Task WriteEncryptedAsync(ReadOnlyMemory<byte> plain)
     {
-        using var ciphertext = MemoryOwner<byte>.Allocate(aes.GetCiphertextLengthCbc(plain.Length));
+        int length = aes.GetCiphertextLengthCbc(plain.Length);
+        if (length > MaximumOutgoingCiphertextBytes)
+        {
+            throw new OutgoingPacketSizeException("Encrypted session frame", length, MaximumOutgoingCiphertextBytes);
+        }
+        using var ciphertext = MemoryOwner<byte>.Allocate(length);
         int written = aes.EncryptCbc(plain.Span, aes.IV, ciphertext.Span);
-        await PacketStream.WriteAsync(stream, ciphertext.Memory[..written], cancellationToken, PacketStream.MaxSessionBytes);
+        await PacketStream.WriteAsync(stream, ciphertext.Memory[..written], cancellationToken, MaximumOutgoingCiphertextBytes);
     }
 }
+
+// Raised only before the first byte is sent, so a call can safely send a smaller error instead.
+internal sealed class OutgoingPacketSizeException(string stage, int size, int limit)
+    : IOException($"{stage} is {size} bytes and exceeds the {limit}-byte limit.");

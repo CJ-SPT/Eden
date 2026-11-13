@@ -199,7 +199,7 @@ internal sealed class PilotSessionCalls(
         }
         else
         {
-            await output.WriteAsync(packet.CallSucceeded(reply));
+            await output.WriteCallReplyAsync(packet, reply);
             latency.ReplyWritten();
         }
         if (

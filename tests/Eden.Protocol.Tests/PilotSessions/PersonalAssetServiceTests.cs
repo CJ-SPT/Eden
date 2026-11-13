@@ -212,8 +212,6 @@ public sealed class PersonalAssetServiceTests
         using CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true);
         catalog.Database.ExecuteSqlRaw(
             """
-            INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (2,'Celestial');
-            INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (12,'Cargo Container',2);
             INSERT INTO ItemType(Id,Name,GroupId) VALUES (3293,'Small Standard Container',12);
             INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3293','{{"volume":100}}');
             """

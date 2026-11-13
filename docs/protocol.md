@@ -4,6 +4,8 @@
 
 [Chat listener and log output failures](protocol/startup.md#chat-listener-and-log-output-failures) records supervision and bounded logging.
 
+[Encrypted reply size limits](protocol/startup.md#encrypted-reply-size-limits) records frame sizing and oversized RPC replies.
+
 [Mining missions](protocol/agents.md#mining-missions---november-12-2026)
 records Mining division offers, private deposits, native objectives and durable ore turn-in.
 

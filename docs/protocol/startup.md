@@ -10,6 +10,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 - [Orderly host shutdown](#orderly-host-shutdown)
 - [Chat listener and log output failures](#chat-listener-and-log-output-failures)
+- [Encrypted reply size limits](#encrypted-reply-size-limits)
 
 - [Concurrent account login (November 12, 2026)](#concurrent-account-login-november-12-2026)
 - [Launcher Omega account default (November 4, 2026)](#launcher-omega-account-default-november-4-2026)
@@ -31,6 +32,15 @@ checkpoint. Shutdown collects failures across those steps and reports them after
 One failed mod stop callback does not prevent later callbacks from running. An automated test injects listener
 and mod failures and reopens the saved world to verify that the later callback's position change survived.
 
+**Automated validation.** The exact shutdown regression passed in 6.30 seconds of test wall time. The focused
+hosting, `LiveWorldTests` and `ModRuntimeTests` selection passed 49 tests in 7 seconds of runner-reported duration.
+The optional mod packaging test passed separately with the pinned client data configured.
+Restore, build, both Python policy suites and formatting verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Chat listener and log output failures
 
 The host monitors native chat alongside the game listener. An unexpected chat accept failure is logged and triggers
@@ -40,6 +50,41 @@ the accept loop successfully. Chat retains build 3662168's direct TLS connection
 Standard output and error each have a bounded queue. A full queue drops new entries, counts them, and reports losses
 when the writer can make progress. Host shutdown waits up to two seconds for the writers. A stalled-stream test checks
 that world work and checkpointing can still finish with a saturated queue.
+
+**Automated validation.** The exact stalled-output and chat accept regressions passed in 5.98 seconds of test
+wall time. The focused hosting, chat, `LiveWorldTests` and `TranslocationTests` selection passed 153 tests
+in 58 seconds of runner-reported duration. Restore, build, both Python policy suites and formatting verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Verify chat reconnection after an orderly server restart.
+
+## Encrypted reply size limits
+
+Static inspection of the pinned build 3662168 archive (SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`) found that
+`SocketGPS.pyj` sets `MaxPacketSize` to 10,485,760 and applies it to the native socket during connect.
+The older evejs transport also budgets the four-byte prefix within that setting.
+[Carbon IO's frame header at 8d8f339f](https://github.com/carbonengine/io/blob/8d8f339fd19f2e8095fcd90ad5415cb4ca00c331/src/protocol.h)
+defines the length and flag bits.
+
+Eden budgets 10 MiB including the header and AES padding for outgoing frames and retains a separate 16 MiB
+encoded reply budget. Incoming frames and decompressed requests retain their 1 MiB limits. Replies that exceed
+either outgoing limit are rejected before the first byte is written. A successful RPC result that cannot fit
+is replaced with a native `CustomInfo` error, and the session can process the next call. An unrepresentable
+server notification still ends its session so the client can resynchronize on reconnect.
+
+**Automated validation.** The final selection passed 79 tests in 23 seconds of runner-reported duration.
+It covered transport, `PilotServicesTests`, `PilotLoginTests`, `TargetLockSessionTests`, `PersonalAssetServiceTests`,
+`MarketCatalogPerformanceTests`, `MarketReadCompatibilityTests` and `ConnectionOwnershipTests`. It included the
+installed catalog valuation feed, ciphertext padding boundaries, the exact encoded limit and a second encrypted
+call after an oversized reply. A wider pilot-session run was stopped after two asset tests failed at fixture setup
+because the shared catalog already seeded their group. Both cases passed in the final selection after removing
+the duplicate insert. Restore, build, both Python policy suites and formatting verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Verify a large reply and the oversized-reply error in build 3662168.
 
 ## Concurrent account login (November 12, 2026)
 

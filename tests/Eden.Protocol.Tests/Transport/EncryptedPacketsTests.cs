@@ -12,7 +12,7 @@ public sealed class EncryptedPacketsTests
     [Fact]
     public async Task IncompressibleRepliesKeepTheirOriginalPayloadAcrossRepeatedPoolReuse()
     {
-        byte[] data = new byte[EncryptedPackets.CompressionThreshold * 2];
+        byte[] data = new byte[2 * PacketStream.MaxSessionBytes];
         new Random(42).NextBytes(data);
         using Aes aes = Aes.Create();
         using MemoryStream stream = new();
@@ -22,10 +22,8 @@ public sealed class EncryptedPacketsTests
             stream.SetLength(0);
             await packets.WriteAsync(data);
             stream.Position = 0;
-            byte[] ciphertext = await PacketStream.ReadAsync(stream, default, PacketStream.MaxSessionBytes);
+            byte[] ciphertext = await PacketStream.ReadAsync(stream, default, EncryptedPackets.MaximumOutgoingCiphertextBytes);
             Assert.Equal(BlueMarshal.Encode(data), aes.DecryptCbc(ciphertext, aes.IV));
-            stream.Position = 0;
-            Assert.Equal(data, Assert.IsType<byte[]>(await packets.ReadAsync()));
         }
     }
 
@@ -124,7 +122,45 @@ public sealed class EncryptedPacketsTests
         await packets.WriteAsync(42L);
         stream.Position = 0;
         Assert.Equal(42L, await packets.ReadAsync());
-        await Assert.ThrowsAsync<InvalidDataException>(() => packets.WriteAsync(new byte[EncryptedPackets.MaximumOutgoingBytes]));
+        long before = stream.Length;
+        await Assert.ThrowsAsync<OutgoingPacketSizeException>(() => packets.WriteAsync(new byte[EncryptedPackets.MaximumOutgoingBytes]));
+        Assert.Equal(before, stream.Length);
+    }
+
+    [Fact]
+    public async Task CiphertextLimitIncludesPaddingAndRejectsBeforeWriting()
+    {
+        using Aes aes = Aes.Create();
+        int blockSize = aes.BlockSize / 8;
+        int limit = EncryptedPackets.MaximumOutgoingCiphertextBytes;
+        int lastBlock = limit - limit % blockSize;
+        int blueOverhead = BlueMarshal.Encode(new byte[256]).Length - 256;
+        byte[] data = new byte[lastBlock - blueOverhead];
+        new Random(42).NextBytes(data);
+
+        using MemoryStream stream = new();
+        EncryptedPackets packets = new(stream, aes, default);
+        await packets.WriteAsync(data[..^1]);
+        Assert.Equal(lastBlock + sizeof(uint), stream.Length);
+        stream.SetLength(0);
+        await Assert.ThrowsAsync<OutgoingPacketSizeException>(() => packets.WriteAsync(data));
+        Assert.Empty(stream.ToArray());
+    }
+
+    [Fact]
+    public async Task EncodedLimitAllowsAnExactlySizedCompressibleReply()
+    {
+        int blueOverhead = BlueMarshal.Encode(new byte[256]).Length - 256;
+        byte[] data = new byte[EncryptedPackets.MaximumOutgoingBytes - blueOverhead];
+        using Aes aes = Aes.Create();
+        using MemoryStream stream = new();
+        await new EncryptedPackets(stream, aes, default).WriteAsync(data);
+        stream.Position = 0;
+        byte[] ciphertext = await PacketStream.ReadAsync(stream, default, EncryptedPackets.MaximumOutgoingCiphertextBytes);
+        using ZLibStream inflater = new(new MemoryStream(aes.DecryptCbc(ciphertext, aes.IV)), CompressionMode.Decompress);
+        using MemoryStream decoded = new();
+        await inflater.CopyToAsync(decoded);
+        Assert.Equal(EncryptedPackets.MaximumOutgoingBytes, decoded.Length);
     }
 
     [Fact]

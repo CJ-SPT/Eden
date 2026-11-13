@@ -1,6 +1,8 @@
 using Eden.Gameplay.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
+using Eden.Protocol.Transport;
 using static Eden.Protocol.PilotSessions.PilotSessionWire;
 
 namespace Eden.Protocol.PilotSessions;
@@ -22,6 +24,19 @@ internal sealed class PilotSessionOutput(
         _targetReplies.Add(new(request, completion));
 
     public Task WriteAsync(object? packet) => write(packet);
+
+    internal async Task WriteCallReplyAsync(IncomingMachoPacket request, BlueModel reply)
+    {
+        try
+        {
+            await write(request.CallSucceeded(reply));
+        }
+        catch (OutgoingPacketSizeException error)
+        {
+            (diagnostics?.Warning ?? report)($"Call reply exceeded its transport limit: {error.Message}");
+            await write(request.UserError(new("CustomInfo", new InformationErrorValues("The server response is too large to send."))));
+        }
+    }
 
     public async Task AnnounceTransitionAsync(DockedPilot previous)
     {
@@ -120,13 +135,17 @@ internal sealed class PilotSessionOutput(
         foreach (var pending in _targetReplies.Where(p => p.Completion.IsCompleted).ToArray())
         {
             var result = await pending.Completion;
-            var packet = result switch
+            switch (result)
             {
-                PilotCallResult.Success success => pending.Request.CallSucceeded(success.Reply),
-                PilotCallResult.NamedFailure failure => pending.Request.UserError(failure),
-                _ => throw new InvalidOperationException("Invalid target scan completion."),
-            };
-            await write(packet);
+                case PilotCallResult.Success success:
+                    await WriteCallReplyAsync(pending.Request, success.Reply);
+                    break;
+                case PilotCallResult.NamedFailure failure:
+                    await write(pending.Request.UserError(failure));
+                    break;
+                default:
+                    throw new InvalidOperationException("Invalid target scan completion.");
+            }
             _targetReplies.Remove(pending);
         }
     }

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Eden.Data.Catalog;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
@@ -10,6 +11,7 @@ using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Transport;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Storage;
@@ -295,6 +297,71 @@ public sealed class PilotServicesTests
         Assert.All(packets.Skip(1), packet => Assert.EndsWith(".Notification", Assert.IsType<BlueInstance>(packet).Name));
         Assert.Empty(context.NotificationsBeforeFlight);
         Assert.Empty(context.Notifications);
+    }
+
+    [Fact]
+    public async Task OversizedCallReturnsAnErrorAndKeepsTheEncryptedSessionUsable()
+    {
+        using TestWorld world = new();
+        using var scope = world.Services.CreateScope();
+        var pilot = world.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            scope.ServiceProvider.GetRequiredService<FlightSessionFactory>().Create,
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        using Aes aes = Aes.Create();
+        using MemoryStream stream = new();
+        EncryptedPackets packets = new(stream, aes, default);
+        PilotSessionOutput output = new(context, 1000001, 42, packets.WriteAsync, _ => { });
+        PilotSessionCalls calls = new(
+            context,
+            output,
+            new PilotCallRouter([], [new LargeReplyHandler()]),
+            scope.ServiceProvider.GetRequiredService<PilotUpdateCoordinator>(),
+            scope.ServiceProvider.GetRequiredService<SkillHandler>(),
+            TimeProvider.System,
+            _ => { },
+            1000001,
+            42
+        );
+        await calls.ProcessAsync(Request("test", "LargeReply", []));
+        await calls.ProcessAsync(Request("test", "SmallReply", []));
+
+        stream.Position = 0;
+        var error = Assert.IsType<BlueInstance>(await packets.ReadAsync());
+        AssertUserError(error, "CustomInfo", new() { ["info"] = "The server response is too large to send." });
+        Assert.Equal(42L, Result(Assert.IsType<BlueInstance>(await packets.ReadAsync())));
+        Assert.Equal(stream.Length, stream.Position);
+    }
+
+    private sealed record LargeReply(byte[] Data) : BlueModel
+    {
+        public override object ToBlue() => Data;
+    }
+
+    private sealed class LargeReplyHandler : ISelectedPilotCallHandler
+    {
+        public PilotCallResult Call(
+            PilotCallContext context,
+            string service,
+            string method,
+            object?[] args,
+            Dictionary<string, object?>? keywords = null
+        )
+        {
+            if (method != "LargeReply")
+            {
+                return 42L;
+            }
+            byte[] data = new byte[EncryptedPackets.MaximumOutgoingCiphertextBytes + 1];
+            new Random(42).NextBytes(data);
+            return new PilotCallResult.Success(new LargeReply(data));
+        }
     }
 
     [Fact]
@@ -698,8 +765,8 @@ public sealed class PilotServicesTests
     {
         Assert.EndsWith(".ErrorResponse", packet.Name);
         var body = BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3);
-        Assert.Equal(6, body[0]);
-        Assert.Equal(2, body[1]);
+        Assert.Equal(6L, Convert.ToInt64(body[0], System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal(2L, Convert.ToInt64(body[1], System.Globalization.CultureInfo.InvariantCulture));
         byte[] exception = BlueRead.Bytes(Assert.Single(BlueRead.Tuple(body[2], 1)));
         Assert.Equal(BlueMarshal.Encode(new BlueConstructor("exceptions.UserError", [name, values])), exception);
     }
