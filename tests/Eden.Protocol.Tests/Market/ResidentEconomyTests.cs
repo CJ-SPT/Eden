@@ -73,28 +73,95 @@ public sealed class ResidentEconomyTests
     }
 
     [Fact]
-    public void CompactSkillIndexPreservesPilotIdentityWhenABucketShrinksAndGrows()
+    public async Task CompactSkillRowsPreservePilotIdentityAndCommittedCheckpointGenerations()
     {
         const long otherPilot = 90000002;
         const int firstSkill = 3300;
         const int secondSkill = 3301;
-        var index = new EconomyIndex<PilotSkill>(nameof(PilotSkill.PilotId), row => row.PilotId, member: EconomyIndexMember.SkillTypeId);
-        PilotSkill first = new() { PilotId = Human, TypeId = firstSkill };
-        PilotSkill second = new() { PilotId = Human, TypeId = secondSkill };
-        PilotSkill other = new() { PilotId = otherPilot, TypeId = firstSkill };
-        EconomyKey firstKey = new(Human, firstSkill);
-        EconomyKey secondKey = new(Human, secondSkill);
-        EconomyKey otherKey = new(otherPilot, firstSkill);
+        const long largeBalance = (long)int.MaxValue + 1;
+        using TestWorld fixture = new(liveWorld: true);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Database.ExecuteSql($"DELETE FROM WorldPilotSkill WHERE PilotId IN ({Human}, {otherPilot})");
+            world.AddRange(
+                new PilotSkill
+                {
+                    PilotId = Human,
+                    TypeId = firstSkill,
+                    Points = 10,
+                },
+                new PilotSkill
+                {
+                    PilotId = otherPilot,
+                    TypeId = firstSkill,
+                    Points = 30,
+                }
+            );
+            world.SaveChanges();
+        }
 
-        index.Add(firstKey, first);
-        index.Add(secondKey, second);
-        index.Add(otherKey, other);
-        Assert.Equal(new[] { firstKey, secondKey }, index.Find(Human));
-        index.Remove(firstKey, first);
-        Assert.Equal(secondKey, Assert.Single(index.Find(Human)));
-        index.Add(firstKey, first);
-        Assert.Equal(new[] { secondKey, firstKey }, index.Find(Human));
-        Assert.Equal(otherKey, Assert.Single(index.Find(otherPilot)));
+        Assert.Equal(new[] { 10L }, Balances(Human));
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            var skills = action.Set<PilotSkill>();
+            skills.Remove(skills.Find(Human, firstSkill)!);
+            skills.Add(
+                new PilotSkill
+                {
+                    PilotId = Human,
+                    TypeId = secondSkill,
+                    Points = largeBalance,
+                }
+            );
+            Assert.Equal(largeBalance, skills.Where(s => s.PilotId == Human).Select(s => s.Points).Single());
+        }
+        Assert.Equal(new[] { 10L }, Balances(Human));
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            var skills = action.Set<PilotSkill>();
+            skills.Remove(skills.Find(Human, firstSkill)!);
+            skills.Add(
+                new PilotSkill
+                {
+                    PilotId = Human,
+                    TypeId = secondSkill,
+                    Points = largeBalance,
+                }
+            );
+            action.Commit();
+        }
+        using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            Assert.Equal(largeBalance, world.Set<PilotSkill>().Where(s => s.PilotId == Human).Select(s => s.Points).Single());
+            world.Set<PilotSkill>().Where(s => s.PilotId == Human).ExecuteUpdate(update => update.SetProperty(s => s.Points, 50));
+            world.Set<PilotSkill>().Where(s => s.PilotId == otherPilot).ExecuteDelete();
+        }
+        using (var metrics = SessionPerformance.Begin("compacted skill reads", _ => { }, force: true)!)
+        {
+            Assert.Equal(new[] { 50L }, Balances(Human));
+            Assert.Empty(Balances(otherPilot));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+
+        snapshot.Project();
+        using (WorldDbContext earlier = new(snapshot.Database))
+        {
+            Assert.Null(earlier.Set<PilotSkill>().Find(Human, firstSkill));
+            Assert.Equal(largeBalance, earlier.Set<PilotSkill>().Find(Human, secondSkill)!.Points);
+            Assert.Equal(30, earlier.Set<PilotSkill>().Find(otherPilot, firstSkill)!.Points);
+        }
+        await live.FlushAsync();
+        using SqliteConnection disk = new($"Data Source={fixture.Path};Mode=ReadOnly;Pooling=False");
+        using WorldDbContext saved = new(disk);
+        Assert.Equal(50, saved.Set<PilotSkill>().Find(Human, secondSkill)!.Points);
+        Assert.Null(saved.Set<PilotSkill>().Find(otherPilot, firstSkill));
+
+        long[] Balances(long pilot) =>
+            live.Economy.Inspect(world => world.Set<PilotSkill>().Where(skill => skill.PilotId == pilot).Select(s => s.Points).ToArray());
     }
 
     [Fact]

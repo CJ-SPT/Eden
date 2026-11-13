@@ -64,6 +64,16 @@ internal interface IEconomyTable
     void Observe(WorldDbContext world, IReadOnlyList<long> rowIds);
 }
 
+internal interface IEconomyRows<TState>
+    where TState : class
+{
+    IEnumerable<EconomyKey> Keys { get; }
+    TState? Read(EconomyKey key);
+    IReadOnlyCollection<EconomyKey>? Candidates(string column, object? value);
+    void Set(EconomyKey key, TState? row);
+    void Clear();
+}
+
 internal sealed class EconomyTable<TRow, TState>(
     string name,
     Func<TRow, EconomyKey> key,
@@ -78,12 +88,13 @@ internal sealed class EconomyTable<TRow, TState>(
     IReadOnlyList<EconomyIndex<TState>>? indexes = null,
     Action<TState?, TState?>? changed = null,
     string? primaryColumn = "Id",
-    bool rowIdIsKey = false
+    bool rowIdIsKey = false,
+    IEconomyRows<TState>? groupedRows = null
 ) : IEconomyTable<TRow>
     where TRow : class
     where TState : class
 {
-    private readonly Dictionary<EconomyKey, TState>? _rows = rowIdIsKey ? null : [];
+    private readonly Dictionary<EconomyKey, TState>? _rows = rowIdIsKey || groupedRows is not null ? null : [];
     private readonly Dictionary<long, TState>? _integerRows = rowIdIsKey ? [] : null;
 
     // Keep the SQLite baseline only until a resident change is projected or reverted.
@@ -125,28 +136,24 @@ internal sealed class EconomyTable<TRow, TState>(
                 : null;
             return id is long known && Contains(new(known)) ? [new(known)] : [];
         }
-        return _indexes.TryGetValue(column, out var index) ? index.Find(value) : null;
+        return _indexes.TryGetValue(column, out var index) ? index.Find(value) : groupedRows?.Candidates(column, value);
     }
 
-    private TState? Replace(EconomyKey id, TState? state)
+    private void Replace(EconomyKey id, TState? state, TState? before)
     {
-        var before = Snapshot(id);
-        if (state is null)
+        if (groupedRows is not null)
         {
-            if (before is not null)
+            groupedRows.Set(id, state);
+        }
+        else if (state is null)
+        {
+            if (_integerRows is not null)
             {
-                if (_integerRows is not null)
-                {
-                    _integerRows.Remove(id.Id);
-                }
-                else
-                {
-                    _rows!.Remove(id);
-                }
-                foreach (var index in _indexes.Values)
-                {
-                    index.Remove(id, before);
-                }
+                _integerRows.Remove(id.Id);
+            }
+            else
+            {
+                _rows!.Remove(id);
             }
         }
         else
@@ -159,28 +166,37 @@ internal sealed class EconomyTable<TRow, TState>(
             {
                 _rows![id] = state;
             }
-            foreach (var index in _indexes.Values)
+        }
+        foreach (var index in _indexes.Values)
+        {
+            if (state is null)
             {
-                if (before is null)
+                if (before is not null)
                 {
-                    index.Add(id, state);
+                    index.Remove(id, before);
                 }
-                else
-                {
-                    index.Replace(id, before, state);
-                }
+            }
+            else if (before is null)
+            {
+                index.Add(id, state);
+            }
+            else
+            {
+                index.Replace(id, before, state);
             }
         }
         changed?.Invoke(before, state);
-        return before;
     }
+
+    private void ReplaceFromSql(EconomyKey id, TState? state) =>
+        Replace(id, state, _indexes.Count != 0 || changed is not null ? Snapshot(id) : null);
 
     internal string Name => name;
     string IEconomyTable.Name => name;
     public bool HasChanges => _sqlBaselines.Count != 0;
     public IReadOnlyList<string> Columns => columns.Split(',');
     internal IEnumerable<EconomyKey> Keys =>
-        _integerRows is not null ? _integerRows.Keys.Select(static id => new EconomyKey(id)) : _rows!.Keys;
+        groupedRows?.Keys ?? (_integerRows is not null ? _integerRows.Keys.Select(static id => new EconomyKey(id)) : _rows!.Keys);
 
     internal IReadOnlyCollection<EconomyKey> Indexed(string column, object? value) => _indexes[column].Find(value);
 
@@ -194,6 +210,10 @@ internal sealed class EconomyTable<TRow, TState>(
 
     internal TState? Snapshot(EconomyKey id)
     {
+        if (groupedRows is not null)
+        {
+            return groupedRows.Read(id);
+        }
         if (_integerRows is null)
         {
             return _rows!.TryGetValue(id, out var row) ? row : null;
@@ -220,7 +240,8 @@ internal sealed class EconomyTable<TRow, TState>(
 
     internal void Publish(EconomyKey id, TState? state)
     {
-        var before = Replace(id, state);
+        var before = Snapshot(id);
+        Replace(id, state, before);
         bool dirty = _sqlBaselines.TryGetValue(id, out var saved);
         if (Same(dirty ? saved : before, state))
         {
@@ -234,6 +255,7 @@ internal sealed class EconomyTable<TRow, TState>(
 
     public void Load(WorldDbContext world)
     {
+        groupedRows?.Clear();
         _rows?.Clear();
         _integerRows?.Clear();
         foreach (var index in _indexes.Values)
@@ -268,7 +290,7 @@ internal sealed class EconomyTable<TRow, TState>(
             {
                 _rowIds[reader.GetInt64(0)] = id;
             }
-            Replace(id, state);
+            ReplaceFromSql(id, state);
             if (_sqlBaselines.Count != 0)
             {
                 _sqlBaselines.Remove(id);
@@ -284,7 +306,7 @@ internal sealed class EconomyTable<TRow, TState>(
             EconomyKey id = new(rowId);
             if (_rowIds is null || _rowIds.Remove(rowId, out id))
             {
-                Replace(id, null);
+                ReplaceFromSql(id, null);
                 _sqlBaselines.Remove(id);
             }
         }

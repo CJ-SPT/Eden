@@ -753,6 +753,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Session performance and resident state
 
+- [Resident skill memory and fitting cache limits, November 13, 2026](protocol/performance.md#resident-skill-memory-and-fitting-cache-limits-november-13-2026)
 - [Docked RPC latency during checkpoints, November 12, 2026](protocol/performance.md#docked-rpc-latency-during-checkpoints-november-12-2026)
 - [Compact economy indexes, November 12, 2026](protocol/performance.md#compact-economy-indexes-november-12-2026)
 - [Resident economy memory, November 12, 2026](protocol/performance.md#resident-economy-memory-november-12-2026)

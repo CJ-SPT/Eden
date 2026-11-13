@@ -105,38 +105,29 @@ internal sealed class ResidentFitCache : IDisposable
         }
     }
 
-    private void EvictEntry()
+    private bool MakeRoom<TKey, TValue>(Dictionary<TKey, TValue> entries, Queue<TKey> order, Func<TKey, long> pilotId, long incomingPilot)
+        where TKey : notnull
     {
-        for (int remaining = _order.Count; remaining > 0; remaining--)
+        for (int remaining = order.Count; remaining > 0; remaining--)
         {
-            var key = _order.Dequeue();
-            if (_pinned.Contains(key.PilotId))
+            var key = order.Dequeue();
+            if (_pinned.Contains(pilotId(key)))
             {
-                _order.Enqueue(key);
+                order.Enqueue(key);
             }
             else
             {
-                _entries.Remove(key);
-                return;
+                entries.Remove(key);
+                return true;
             }
         }
-    }
-
-    private void EvictSnapshot()
-    {
-        for (int remaining = _snapshotOrder.Count; remaining > 0; remaining--)
+        // Under pressure from detailed pilots, admit new detailed work within the same limit.
+        if (_pinned.Contains(incomingPilot))
         {
-            var key = _snapshotOrder.Dequeue();
-            if (_pinned.Contains(key.Pilot))
-            {
-                _snapshotOrder.Enqueue(key);
-            }
-            else
-            {
-                _snapshots.Remove(key);
-                return;
-            }
+            entries.Remove(order.Dequeue());
+            return true;
         }
+        return false;
     }
 
     internal ResidentFitCache(WorldDatabase database)
@@ -164,9 +155,9 @@ internal sealed class ResidentFitCache : IDisposable
             {
                 if (!_entries.ContainsKey(pair.Key))
                 {
-                    if (_entries.Count >= MaximumEntries)
+                    if (_entries.Count >= MaximumEntries && !MakeRoom(_entries, _order, static key => key.PilotId, pair.Key.PilotId))
                     {
-                        EvictEntry();
+                        continue;
                     }
                     _order.Enqueue(pair.Key);
                 }
@@ -191,9 +182,12 @@ internal sealed class ResidentFitCache : IDisposable
             {
                 if (!_snapshots.ContainsKey(pair.Key))
                 {
-                    if (_snapshots.Count >= MaximumSnapshots)
+                    if (
+                        _snapshots.Count >= MaximumSnapshots
+                        && !MakeRoom(_snapshots, _snapshotOrder, static key => key.Pilot, pair.Key.Pilot)
+                    )
                     {
-                        EvictSnapshot();
+                        continue;
                     }
                     _snapshotOrder.Enqueue(pair.Key);
                 }

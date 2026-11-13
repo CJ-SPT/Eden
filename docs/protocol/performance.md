@@ -3837,3 +3837,74 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare contract search response times with a large public-contract population and during a normal save.
+
+## Resident skill memory and fitting cache limits, November 13, 2026
+
+The copied save contained 2,377,385 skill rows across 23,332 pilots and 1,460,535 asteroid rows. Resident skill
+storage now keeps one dictionary of type IDs and 64-bit point balances per pilot. Direct skill lookup and
+per-pilot enumeration share that dictionary. The SQLite update hook still resolves row IDs to composite keys,
+and the existing transaction and checkpoint paths reconstruct immutable skill snapshots as needed.
+
+The resident fitting cache now enforces its limits of 8,192 attribute profiles and 512 fitting snapshots when
+all cached entries are pinned. It continues to evict unpinned entries first. At full pinned capacity, an incoming
+pinned entry evicts the oldest entry and an incoming unpinned entry skips admission.
+
+### Automated validation
+
+The Release startup probe used fresh copies of the same installed save and active skill catalog, a fixed
+clock and server GC. Baseline `bb55b4f1` has the same production code as `60521bf8`, which adds mission tests
+and notes. Memory samples were taken after a forced collection. The probe opened no listeners. The table
+reports medians of three fresh processes per build.
+
+| Measurement | Baseline | Updated |
+| --- | ---: | ---: |
+| Retained managed memory after economy hydration | 1,130.8 MiB | 959.8 MiB |
+| Working set after catalog preload | 2,117.4 MiB | 1,890.8 MiB |
+| Working set holding the detached checkpoint | 2,501.5 MiB | 2,251.2 MiB |
+| Economy hydration | 4.61 s | 4.38 s |
+| Detached checkpoint copy | 156.4 ms | 157.5 ms |
+| Checkpoint write | 1,238.1 ms | 1,290.3 ms |
+
+The 400 warmed skill and asteroid read pairs returned 59,900 rows in both builds with zero SQL commands,
+connection opens or fitting calculations. The median of the three runs' median 40-pair batches rose from
+5.34 to 5.86 ms. Median total batch allocation rose from 63.73 to 65.78 MB as the new layout reconstructs
+skill rows on demand. One updated run took 8.59 s to hydrate and 14.07 ms per median batch while formatting
+verification ran on the same host. Both builds copied 375.98 MiB of SQLite pages per checkpoint.
+The detached copy remains a substantial native memory cost. The previous November 12 probe measured a
+file-backed copy taking about 134 ms longer under persistence admission, so this change keeps the existing
+checkpoint storage.
+
+Two Release replays per build ran 30 warmed frames for four player sessions and eight combat NPCs. Mean
+allocation was 2.056 MiB per frame in both builds, with zero SQL commands, connection opens or fitting
+calculations. Median frame time was 3.96–4.13 ms on the baseline and 3.68–4.06 ms after the change. Frame
+p95 was 7.15–9.62 ms and 5.73–7.73 ms, respectively. Checkpoint copy / projection / write ran separately
+and ranged from 0.36–0.69 / 2.39–4.50 / 11.91–15.09 ms on the baseline and
+0.37–1.04 / 2.18–3.61 / 12.42–14.73 ms after the change. These fixture timings show run-to-run variation.
+
+The warning-free solution build took 7.42 seconds. The two exact regressions passed, covering skill rollback,
+private edits, SQL projection and observation, detached and reopened checkpoints, and fully pinned caches.
+The cache regression reproduced over-capacity admission on the baseline.
+The focused selection passed 171 of 172 tests in 67.52 seconds. The sole failure,
+`FittingSnapshotTests.ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes`, counted
+10 SQL commands against a limit of nine. The baseline reproduced the same count in 6.68 seconds.
+
+The focused filter joined `FullyQualifiedName~.<class>.` clauses for the following classes.
+
+```text
+ResidentEconomyTests, CapsuleerFitRetentionTests, PilotTrainingTests, PilotSkillBookTests,
+SkillPurchaseTests, SkillExtractionLifecycleTests, SkillInjectorLifecycleTests, FreeSkillPointTests,
+FreeSkillPointServiceTests, CharacterDeletionTests, FittingSnapshotTests, ResidentFitTests,
+DetachedCheckpointTests, CheckpointOwnershipTests, TransactionParticipantTests
+```
+
+Both Python policy suites passed (8 catalog tests in 0.96 seconds and 9 formatting tests in 0.014 seconds).
+`Format.ps1 -Check` passed .NET style, CSharpier and line width in 29.47 seconds. The full .NET suite was
+outside the focused selection.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare private memory on the administration Performance page after startup and during a routine save.

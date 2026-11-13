@@ -1512,9 +1512,8 @@ internal sealed partial class ResidentEconomy
                 "PilotId,TypeId,Points",
                 reader => new(reader.GetInt64(1), reader.GetInt32(2), reader.GetInt64(3)),
                 state => new(state.PilotId, state.TypeId),
-                readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId, member: EconomyIndexMember.SkillTypeId)],
-                primaryColumn: null
+                primaryColumn: null,
+                groupedRows: new EconomySkillRows()
             )
         );
         Register(

@@ -7,7 +7,6 @@ internal enum EconomyIndexMember
 {
     FullKey,
     RowId,
-    SkillTypeId,
 }
 
 internal sealed class EconomyIndex<T>(
@@ -37,7 +36,6 @@ internal sealed class EconomyIndex<T>(
                 member switch
                 {
                     EconomyIndexMember.RowId => new Bucket<long, RowId>(id),
-                    EconomyIndexMember.SkillTypeId => new Bucket<int, SkillTypeId>(id),
                     _ => new Bucket<EconomyKey, FullKey>(id),
                 }
             );
@@ -91,14 +89,6 @@ internal sealed class EconomyIndex<T>(
         public static long Pack(EconomyKey key) => key.Id;
 
         public static EconomyKey Unpack(EconomyKey first, long member) => new(member);
-    }
-
-    // Every skill in a pilot's bucket shares that pilot ID.
-    private readonly struct SkillTypeId : IMember<int>
-    {
-        public static int Pack(EconomyKey key) => checked((int)key.Part);
-
-        public static EconomyKey Unpack(EconomyKey first, int member) => new(first.Id, member);
     }
 
     // Allocate a set only when more than one row shares a membership value.
