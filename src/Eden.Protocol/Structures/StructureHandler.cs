@@ -8,8 +8,11 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Structures;
 
 [Injectable]
-internal sealed class StructureHandler(IPilotStructures structures, Eden.Gameplay.Corporations.IPlayerCorporations corporations)
-    : ISelectedPilotCallHandler
+internal sealed class StructureHandler(
+    IPilotStructures structures,
+    Eden.Gameplay.Corporations.IPlayerCorporations corporations,
+    TimeProvider clock
+) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -89,6 +92,12 @@ internal sealed class StructureHandler(IPilotStructures structures, Eden.Gamepla
                 throw new InvalidDataException("Unexpected structure arguments.");
             }
             long pilot = context.Pilot.PilotId;
+            if (service == "structureDirectory" && method == "GetStructureMapData")
+            {
+                return args is [long systemId] && systemId is > 0 and <= int.MaxValue
+                    ? new StructureMapReply(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                    : new PilotCallResult.Failure("Choose a valid solar system for structure map data.");
+            }
             if (service == "structureDeployment")
             {
                 StructureResult result = (method, args) switch

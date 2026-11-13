@@ -3,6 +3,23 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Structures;
 
+internal sealed record StructureMapReply(long VersionTime) : BlueModel
+{
+    // Build 3662168 iterates this result to append dynamic structures to the local map rows.
+    private static readonly byte[] s_emptyRows = BlueMarshal.Encode(BlueEmpty.List);
+
+    public override object ToBlue() =>
+        new BlueInstance(
+            "carbon.common.script.net.objectCaching.CachedMethodCallResult",
+            new object?[]
+            {
+                new Dictionary<string, object?> { ["versionCheck"] = "5 minutes", ["sessionInfo"] = "charid" },
+                s_emptyRows,
+                new object?[] { VersionTime, 0L },
+            }
+        );
+}
+
 internal sealed record StructureInfoReply(StructureSnapshot Structure, bool Access, bool NativeInstance = true) : BlueModel
 {
     public override object ToBlue()

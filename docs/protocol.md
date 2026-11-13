@@ -483,6 +483,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Navigation and travel
 
+- [Empty-space context menu latency](protocol/navigation.md#empty-space-context-menu-latency)
 - [Aligning and native autopilot, November 11, 2026](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026)
 - [Direct station-to-space TR, November 8, 2026](protocol/navigation.md#direct-station-to-space-tr-november-8-2026)
 - [Station-origin TR camera sequencing, November 8, 2026](protocol/navigation.md#station-origin-tr-camera-sequencing-november-8-2026)

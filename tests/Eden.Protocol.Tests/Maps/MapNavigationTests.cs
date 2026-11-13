@@ -1,4 +1,5 @@
 using Eden.Gameplay.Flight;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
@@ -9,6 +10,49 @@ namespace Eden.Protocol.Tests.Maps;
 
 public sealed class MapNavigationTests
 {
+    [Fact]
+    public void StructureMapCacheUsesCurrentFileTimeOnEveryRefresh()
+    {
+        var clock = CalendarTestData.Clock();
+        using TestWorld world = new(clock: clock);
+        using var scope = world.Services.CreateScope();
+        var pilot = world.Store.FindPilot(1000001)!;
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(world.Store, p, clock, new(), world.Objects),
+            42,
+            SignedSettings.Empty
+        );
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        Assert.Same(PilotCallResult.Unsupported, Call([30000142L]));
+        context.Select(pilot);
+
+        var first = Assert.IsType<PilotCallResult.Success>(Call([30000142L]));
+        AssertStructureMap(BlueMarshal.Decode(BlueMarshal.Encode(first.Reply)), clock.Now);
+        clock.AdvanceWallTime(TimeSpan.FromMinutes(5));
+        using (var metrics = SessionPerformance.Begin("structure-map-cache-refresh", _ => { }, force: true)!)
+        {
+            long firstVersion = clock.Now - TimeSpan.FromMinutes(5).Ticks;
+            var refreshed = Assert.IsType<PilotCallResult.Success>(
+                Call([30000142L], new() { ["machoVersion"] = new object?[] { firstVersion, 0L } })
+            );
+            AssertStructureMap(BlueMarshal.Decode(BlueMarshal.Encode(refreshed.Reply)), clock.Now);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+
+        Assert.IsType<PilotCallResult.Failure>(Call([]));
+        Assert.IsType<PilotCallResult.Failure>(Call([0L]));
+        Assert.IsType<PilotCallResult.Failure>(Call([long.MaxValue]));
+        Assert.Equal(pilot, world.Store.FindPilot(1000001));
+
+        PilotCallResult Call(object?[] args, Dictionary<string, object?>? keywords = null) =>
+            router.Call(context, "structureDirectory", "GetStructureMapData", args, _ => { }, keywords);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -83,7 +127,8 @@ public sealed class MapNavigationTests
     [InlineData(true)]
     public async Task NativeMapSearchAndRoutePreparationPacketsHaveResolvableResults(bool inSpace)
     {
-        using TestWorld world = new(clock: CalendarTestData.Clock());
+        var clock = CalendarTestData.Clock();
+        using TestWorld world = new(clock: clock);
         if (inSpace)
         {
             world.Store.SetPosition(world.Store.FindPilot(1000001)!.ShipId, new SpacePosition(1_000_000, 0, 0));
@@ -140,11 +185,23 @@ public sealed class MapNavigationTests
         var groups = Assert.IsType<Dictionary<long, object?>>(replies[7]);
         Assert.Equal(new List<object?> { 30000142L }, groups[7]);
         Assert.Contains(60003760L, Assert.IsType<List<object?>>(groups[9]));
-        Assert.Empty(Assert.IsType<List<object?>>(replies[8]));
+        AssertStructureMap(replies[8], clock.Now);
         var station = BlueRead.Fields(Assert.IsType<BlueInstance>(replies[9]).State);
         Assert.Equal(60003760L, station["stationID"]);
         Assert.Equal(30000142L, station["solarSystemID"]);
         Assert.Equal(before, world.Store.FindPilot(1000001));
+    }
+
+    private static void AssertStructureMap(object? reply, long timestamp)
+    {
+        var cached = Assert.IsType<BlueInstance>(reply);
+        Assert.Equal("carbon.common.script.net.objectCaching.CachedMethodCallResult", cached.Name);
+        var state = BlueRead.Tuple(cached.State, 3);
+        var details = BlueRead.Fields(state[0]);
+        Assert.Equal("5 minutes", BlueMarshal.Text(details["versionCheck"]));
+        Assert.Equal("charid", BlueMarshal.Text(details["sessionInfo"]));
+        Assert.Equal(new object?[] { timestamp, 0L }, BlueRead.Tuple(state[2], 2));
+        Assert.Empty(Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueRead.Bytes(state[1]))));
     }
 
     private static void AssertHistory(object? reply)

@@ -125,8 +125,7 @@ internal sealed class DockedCompatibilityHandler(
 
             ("securityMgr", "get_modified_systems") => BlueEmpty.Dictionary,
 
-            ("structureDirectory", "GetMyDockableStructures" or "GetStructureMapData")
-            or ("insurgencySolarsystem", "GetAllVisibleCampaigns") => BlueEmpty.List,
+            ("structureDirectory", "GetMyDockableStructures") or ("insurgencySolarsystem", "GetAllVisibleCampaigns") => BlueEmpty.List,
             _ => PilotCallResult.Unsupported,
         };
     }

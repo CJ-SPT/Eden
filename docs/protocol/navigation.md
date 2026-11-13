@@ -787,3 +787,45 @@ $filter = @(
 **Live acceptance:** Not performed; agent client testing is disabled. Native render effects, HUD presentation and flight feel remain unverified.
 
 **Optional maintainer checks:** inspect a cloak/decloak from a second pilot and compare d-scan; try the cloak/MWD pulse and covert warp; complete an MJD and interrupt one with a scrambler.
+
+## Empty-space context menu latency
+
+The maintainer reported about two seconds to open the context menu on empty space, including immediate reopens in the
+same system. Overview and ship menus opened promptly.
+Build 3662168's `InflightLayer.GetMenu` uses `ListSurroundingsBtn.GetMenu` for empty space. `MapSvc.GetSolarsystemItems`
+waits for both local celestial data and `structureDirectory.GetStructureMapData(systemID)` before the menu is built.
+The menu also reads bookmarks and mission journal data through their own caches.
+
+`GetStructureMapData` now wraps the existing empty structure list in a native `CachedMethodCallResult`. The pinned
+`ServiceCallGPCS` and `objectCaching` modules reuse it for five minutes, keyed by character and the requested system.
+The version carries the current server FILETIME because the client measures the cache age from that field. The first
+lookup for a character and system and the first lookup after expiry still use the normal session path. Eden's structure
+map payload remains empty. The client builds the ordinary celestial and station entries from its local data.
+
+The inert client archive SHA-256 was `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+The local evejs `structureDirectoryService.js` supplied the five-minute and character-scope reference. Blue encoding
+follows the existing [Carbon Blue reference](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+The [EVE University Overview guide](https://wiki.eveuniversity.org/Overview#Right-click_Menu) describes the separate Overview menu.
+
+**Automated validation.** The exact `MapNavigationTests.StructureMapCacheUsesCurrentFileTimeOnEveryRefresh` check initially
+hit Eden's receive-side reduction allowlist while decoding a proposed CRowset. The corrected reply preserves the existing
+empty list, which the pinned map client iterates. The focused build and test then took 10.87 and 10.55 seconds.
+The final build had zero warnings and errors. All 97 tests matched by the following filter passed in 74 seconds.
+The refresh regression verifies zero SQL commands, connections and fitting calculations in the handler. Simulated sessions
+verify the serialized reply during docked and in-space map requests. Both Python policy suites passed (8 catalog, 9 formatting).
+Tool restore, solution restore, and formatting verification passed.
+
+```powershell
+$filter = @(
+    'FullyQualifiedName~Eden.Protocol.Tests.Maps.MapNavigationTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Docking.StructureServiceTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.BookmarkServiceTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionProtocolTests'
+) -join '|'
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled. The reported two-second delay has no matching server trace.
+
+**Optional maintainer checks.** After updating the server, right-click empty space twice in the same system and compare
+opening times. If reopens are still slow, capture the client RPC timing and the matching server log around a click.
