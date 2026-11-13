@@ -260,5 +260,27 @@ internal sealed partial class PirateExplorationStore(WorldDatabase database) : I
         {
             InventoryPersistence.MergeOutput(world, catalog, pilotId, container.Id, (int)InventoryFlag.Cargo, skillbook, 1);
         }
+        if (
+            definition.Kind == ExplorationKind.Data
+            && ExplorationLootRules.MolecularCondenser(
+                container.LootSeed,
+                (NpcPirateFaction)definition.FactionId,
+                definition.Containers[container.Index].TypeId
+            )
+                is { } condenser
+            && catalog.FittingType(condenser.TypeId)?.CategoryId == (int)InventoryCategory.Commodity
+            && catalog.Read(CatalogData.Client.Types, (long)condenser.TypeId)?.Published == 1
+        )
+        {
+            InventoryPersistence.MergeOutput(
+                world,
+                catalog,
+                pilotId,
+                container.Id,
+                (int)InventoryFlag.Cargo,
+                condenser.TypeId,
+                condenser.Quantity
+            );
+        }
     }
 }

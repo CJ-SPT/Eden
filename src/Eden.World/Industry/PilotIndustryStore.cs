@@ -11,6 +11,7 @@ using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -70,8 +71,17 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         station.StructureServices is null ? 1 : catalog.FittingAttributes(station.TypeId).GetValueOrDefault((DogmaAttributeId)attribute, 1);
 
     private static IReadOnlyList<int>? ReactionProducts(CatalogDbContext catalog, IndustryStation station) =>
-        station.StructureServices?.Contains(Eden.Gameplay.Structures.StructureService.CompositeReactions) == true
-            ? ReactionCatalog.Recipes(catalog).Values.Select(recipe => recipe.Output).Distinct().Order().ToArray()
+        station.StructureServices is { } services
+        && services.Any(s =>
+            s is StructureService.CompositeReactions or StructureService.HybridReactions or StructureService.BiochemicalReactions
+        )
+            ? ReactionCatalog
+                .Recipes(catalog)
+                .Values.Where(recipe => services.Contains(recipe.Service))
+                .Select(recipe => recipe.Output)
+                .Distinct()
+                .Order()
+                .ToArray()
             : null;
 
     private static bool HasService(

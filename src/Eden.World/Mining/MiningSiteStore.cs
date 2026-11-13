@@ -1,5 +1,6 @@
 using Eden.Data.Catalog.Mining;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
@@ -53,9 +54,12 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
         {
             return new(long.MaxValue, []);
         }
+        double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(systemId, double.NaN);
+        bool lowSecurity = security is > 0 and <= 1 && NpcSpawnRules.SecurityBand(security) == NpcSecurityBand.Low;
         var eligible = MiningSiteCatalog
             .Sites.Where(s =>
                 s.Family == family
+                && (!s.LowSecurityOnly || lowSecurity)
                 && (family == MiningFamily.Ice ? s.Systems!.Contains(systemId) : s.Regions.Contains(system.RegionId))
                 && s.Deposits.All(d =>
                     catalog.FittingType(d.TypeId)?.GroupId

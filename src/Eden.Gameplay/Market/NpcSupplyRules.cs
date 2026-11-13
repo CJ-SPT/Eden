@@ -36,7 +36,8 @@ public static class NpcSupplyRules
                 or 37032 // Standup Reprocessing Facility I Blueprint
                 or 37034 // Standup Moon Drill I Blueprint
                 or 45540 // Standup Composite Reactor I Blueprint
-                or 45541; // Standup Hybrid Reactor I Blueprint
+                or 45541 // Standup Hybrid Reactor I Blueprint
+                or 45542; // Standup Biochemical Reactor I Blueprint
 
     public static long? Price(NpcSupplyType type)
     {

@@ -53,6 +53,19 @@ MYKO_REGIONS = {
 }
 
 
+# Positive low-security locations for the eight undefended nebula templates.
+CYTO_REGIONS = {
+    'Bandit Nebula': 'The Forge',
+    'Rapture Nebula': 'Molden Heath',
+    'Profiteer Nebula': 'Lonetrek',
+    'Forgotten Nebula': 'Placid',
+    'Phoenix Nebula': 'Solitude',
+    'Saintly Nebula': 'Heimatar',
+    'Emerald Nebula': 'Derelik',
+    'Crimson Nebula': 'Aridia',
+}
+
+
 def export(catalog_path, output, sites_output):
     if catalog_path.resolve() in (output.resolve(), sites_output.resolve()) or output.resolve() == sites_output.resolve():
         raise ValueError('The output must not overwrite the source catalog')
@@ -78,7 +91,8 @@ def export(catalog_path, output, sites_output):
             name_id = dungeon.get('dungeonNameID', 0)
             name = record('client/localization_fsd_en-us', name_id).get('text', '')
             ice = int(key) in ICE_SYSTEMS
-            if ((not ice and (name not in MYKO_REGIONS or dungeon.get('archetypeID') != 30))
+            cyto = name in CYTO_REGIONS
+            if ((not ice and ((name not in MYKO_REGIONS and not cyto) or dungeon.get('archetypeID') != 30))
                     or (ice and dungeon.get('archetypeID') != 28) or len(dungeon.get('rooms', {})) != 1):
                 continue
             objects = list(next(iter(dungeon['rooms'].values())).get('objects', {}).values())
@@ -91,7 +105,8 @@ def export(catalog_path, output, sites_output):
                 row = catalog.execute('SELECT Name,GroupId,Radius FROM ItemType WHERE Id=?', (type_id,)).fetchone()
                 if not row or row[1] != (465 if ice else 711):
                     continue
-                if (not ice and 'Mykoserocin' not in row[0]) or obj.get('radius', 0) <= 0:
+                gas_kind = 'Cytoserocin' if cyto else 'Mykoserocin'
+                if (not ice and gas_kind not in row[0]) or obj.get('radius', 0) <= 0:
                     raise ValueError('Unexpected gas resource in ' + name)
                 quantity = int(obj['radius'])
                 if not ice and quantity != obj['radius']:
@@ -103,12 +118,15 @@ def export(catalog_path, output, sites_output):
                 pending.add(type_id)
             site = dict(dungeonId=int(key), nameId=name_id, name=name, family=1 if ice else 2,
                         difficulty=dungeon.get('difficulty', 1),
-                        regions=[] if ice else [regions[r] for r in MYKO_REGIONS[name]], deposits=deposits)
+                        regions=[] if ice else [regions[r] for r in ([CYTO_REGIONS[name]] if cyto else MYKO_REGIONS[name])],
+                        deposits=deposits)
+            if cyto:
+                site['lowSecurityOnly'] = True
             if ice:
                 site['systems'] = [systems[s] for s in ICE_SYSTEMS[int(key)]]
             sites.append(site)
-        if len(sites) != len(MYKO_REGIONS) + len(ICE_SYSTEMS):
-            raise ValueError('Missing or ambiguous Mykoserocin templates')
+        if len(sites) != len(MYKO_REGIONS) + len(CYTO_REGIONS) + len(ICE_SYSTEMS):
+            raise ValueError('Missing or ambiguous mining site templates')
         types, records, attributes, effects = [], {}, set(), set()
         while pending:
             type_id = min(pending)

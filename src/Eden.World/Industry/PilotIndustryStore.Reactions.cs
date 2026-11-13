@@ -5,6 +5,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Economy;
 using Eden.World.Storage;
@@ -23,14 +24,6 @@ internal sealed partial class PilotIndustryStore
         PilotStructureStore.Advance(world, catalog, now);
         var station = CurrentStation(world, catalog, pilotId, request.FacilityId, null);
         double security = ManufacturingCatalog.Security(catalog, station.SolarSystemId);
-        if (
-            station.StructureServices?.Contains(Eden.Gameplay.Structures.StructureService.CompositeReactions) != true
-            || !double.IsFinite(security)
-            || security >= Eden.Gameplay.Structures.StructureRules.HighSecurityBoundary
-        )
-        {
-            throw new InvalidDataException("Use an online composite reactor in a low- or null-security refinery.");
-        }
         var item = world.Set<OwnedItem>().Find(request.BlueprintId);
         var recipe = ReactionCatalog.Recipes(catalog).GetValueOrDefault(request.BlueprintTypeId);
         if (
@@ -47,6 +40,14 @@ internal sealed partial class PilotIndustryStore
         )
         {
             throw new InvalidDataException("Use an available reaction formula in this refinery's Item Hangar.");
+        }
+        if (
+            station.StructureServices?.Contains(recipe.Service) != true
+            || !double.IsFinite(security)
+            || security >= StructureRules.HighSecurityBoundary
+        )
+        {
+            throw new InvalidDataException("Use the formula's online reactor in a low- or null-security refinery.");
         }
         foreach (var skill in recipe.Skills)
         {

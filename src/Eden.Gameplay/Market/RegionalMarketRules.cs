@@ -36,7 +36,8 @@ public static class RegionalMarketRules
     private const int TitanGroup = 30;
     private const int SupercarrierGroup = 659;
     private const int Morphite = 11399;
-    private const int MercoxitGroup = 468;
+    private const int FirstMolecularCondenser = 57445;
+    private const int LastMolecularCondenser = 57448;
     private const int MagmaticGasGroup = 4729;
 
     private enum IndustrialGroup
@@ -63,10 +64,10 @@ public static class RegionalMarketRules
         published && onMarket && category != InventoryCategory.Blueprint && groupId is not (TitanGroup or SupercarrierGroup);
 
     public static bool IsPlayerSuppliedIndustryInput(int typeId, InventoryCategory category, int groupId) =>
-        typeId == Morphite
+        typeId is Morphite or >= FirstMolecularCondenser and <= LastMolecularCondenser
         || category switch
         {
-            InventoryCategory.Asteroid => groupId == MercoxitGroup
+            InventoryCategory.Asteroid => groupId == MiningDefinitions.MercoxitGroup
                 || (MiningResourceGroup)groupId
                     is MiningResourceGroup.UbiquitousMoonOre
                         or MiningResourceGroup.CommonMoonOre

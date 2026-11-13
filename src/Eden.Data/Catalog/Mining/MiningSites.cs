@@ -13,7 +13,8 @@ public sealed record MiningSiteDefinition(
     int Difficulty,
     IReadOnlyList<int> Regions,
     IReadOnlyList<MiningDepositDefinition> Deposits,
-    IReadOnlyList<int>? Systems = null
+    IReadOnlyList<int>? Systems = null,
+    bool LowSecurityOnly = false
 );
 
 public sealed record MiningSiteDefinitions(int Build, IReadOnlyList<MiningSiteDefinition> Sites);

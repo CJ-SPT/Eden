@@ -695,6 +695,310 @@
       ]
     },
     {
+      "dungeonId": 3394,
+      "nameId": 111305,
+      "name": "Bandit Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000002
+      ],
+      "deposits": [
+        {
+          "typeId": 25268,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 29488.0,
+            "y": 10364.0,
+            "z": -17406.0
+          }
+        },
+        {
+          "typeId": 25268,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 20524.0,
+            "y": 0.0,
+            "z": 13374.0
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3395,
+      "nameId": 113129,
+      "name": "Rapture Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000028
+      ],
+      "deposits": [
+        {
+          "typeId": 25279,
+          "quantity": 600,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 2217.0,
+            "z": 39993.28125
+          }
+        },
+        {
+          "typeId": 25279,
+          "quantity": 700,
+          "radius": 100.0,
+          "position": {
+            "x": -12219.0,
+            "y": 0.0,
+            "z": 39993.28125
+          }
+        },
+        {
+          "typeId": 25279,
+          "quantity": 700,
+          "radius": 100.0,
+          "position": {
+            "x": 6527.0,
+            "y": 0.0,
+            "z": 39993.28125
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3396,
+      "nameId": 111306,
+      "name": "Profiteer Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000016
+      ],
+      "deposits": [
+        {
+          "typeId": 25273,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 29488.0,
+            "y": 10364.0,
+            "z": -17406.0
+          }
+        },
+        {
+          "typeId": 25273,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 20524.0,
+            "y": 0.0,
+            "z": 13374.0
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3397,
+      "nameId": 111307,
+      "name": "Forgotten Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000048
+      ],
+      "deposits": [
+        {
+          "typeId": 25274,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 29488.0,
+            "y": 10364.0,
+            "z": -17406.0
+          }
+        },
+        {
+          "typeId": 25274,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 20524.0,
+            "y": 0.0,
+            "z": 13374.0
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3398,
+      "nameId": 111308,
+      "name": "Phoenix Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000044
+      ],
+      "deposits": [
+        {
+          "typeId": 25275,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 29488.0,
+            "y": 10364.0,
+            "z": -17406.0
+          }
+        },
+        {
+          "typeId": 25275,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 20524.0,
+            "y": 0.0,
+            "z": 13374.0
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3399,
+      "nameId": 113130,
+      "name": "Saintly Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000030
+      ],
+      "deposits": [
+        {
+          "typeId": 25278,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": -593.7537841796875,
+            "y": 2217.0,
+            "z": 38486.21484375
+          }
+        },
+        {
+          "typeId": 25278,
+          "quantity": 750,
+          "radius": 100.0,
+          "position": {
+            "x": -12812.753784179688,
+            "y": 0.0,
+            "z": 38486.21484375
+          }
+        },
+        {
+          "typeId": 25278,
+          "quantity": 750,
+          "radius": 100.0,
+          "position": {
+            "x": 5933.2462158203125,
+            "y": 0.0,
+            "z": 38486.21484375
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3403,
+      "nameId": 113131,
+      "name": "Emerald Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000001
+      ],
+      "deposits": [
+        {
+          "typeId": 25277,
+          "quantity": 800,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 2217.0,
+            "z": 39978.80859375
+          }
+        },
+        {
+          "typeId": 25277,
+          "quantity": 600,
+          "radius": 100.0,
+          "position": {
+            "x": -12219.0,
+            "y": 0.0,
+            "z": 39978.80859375
+          }
+        },
+        {
+          "typeId": 25277,
+          "quantity": 600,
+          "radius": 100.0,
+          "position": {
+            "x": 6527.0,
+            "y": 0.0,
+            "z": 39978.80859375
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
+      "dungeonId": 3404,
+      "nameId": 113132,
+      "name": "Crimson Nebula",
+      "family": 2,
+      "difficulty": 2,
+      "regions": [
+        10000054
+      ],
+      "deposits": [
+        {
+          "typeId": 25276,
+          "quantity": 1000,
+          "radius": 100.0,
+          "position": {
+            "x": 0.0,
+            "y": 2217.0,
+            "z": 40795.125
+          }
+        },
+        {
+          "typeId": 25276,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": -12219.0,
+            "y": 0.0,
+            "z": 40795.125
+          }
+        },
+        {
+          "typeId": 25276,
+          "quantity": 500,
+          "radius": 100.0,
+          "position": {
+            "x": 6527.0,
+            "y": 0.0,
+            "z": 40795.125
+          }
+        }
+      ],
+      "lowSecurityOnly": true
+    },
+    {
       "dungeonId": 5496,
       "nameId": 288481,
       "name": "Blue Ice Belt",

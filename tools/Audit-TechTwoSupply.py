@@ -19,8 +19,13 @@ ICE_GROUP = 465
 MERCOXIT_GROUP = 468
 MOON_ORE_GROUPS = {1884, 1920, 1921, 1922, 1923}
 PLANETARY_RESOURCE_CATEGORY = 42
-INDUSTRIAL_CATALOG_PRICES = {11395, 12109, 36977, 36978, 37032, 37034, 45540, 45541}
+INDUSTRIAL_CATALOG_PRICES = {11395, 12109, 36977, 36978, 37032, 37034, 45540, 45541, 45542}
 ENCRYPTION_LOOT_FACTIONS = {21790: (500010,), 21791: (500011,), 23087: (500012, 500019), 23121: (500020,)}
+CONDENSER_LOOT_FACTIONS = {
+    57445: (500012, 500019), 57446: (500010, 500019),
+    57447: (500010, 500011, 500020), 57448: (500011, 500020),
+}
+RACIAL_MOLECULAR_FORMULAS = set(range(57496, 57500)) | set(range(57503, 57507))
 COMPOSITE_FORMULAS = 1888
 HYBRID_FORMULAS = 1889
 COMPRESSED_PRISMATICITE = 90307
@@ -31,6 +36,7 @@ TECH_LEVEL = 422
 BOOTSTRAP_NAMES = (
     "Athanor", "Tatara", "Athanor Upwell Quantum Core", "Tatara Upwell Quantum Core",
     "Standup Reprocessing Facility I", "Standup Moon Drill I", "Standup Composite Reactor I",
+    "Standup Hybrid Reactor I", "Standup Biochemical Reactor I",
     "Survey Probe Launcher I", "Discovery Survey Probe I", "Deep Core Mining Laser I",
     "Helium Fuel Block", "Hydrogen Fuel Block", "Oxygen Fuel Block", "Nitrogen Fuel Block",
     "Deep Core Mining", "Reactions", "Mass Reactions", "Advanced Mass Reactions",
@@ -79,7 +85,7 @@ def audit(db, production, market, mining):
     dataset_names = (
         "client/blueprints", "client/types", "client/typedogma", "client/typematerials", "client/schematics",
         "client/npccorporations", "client/asteroidcountbytypeidbeltid", "sde/mapMoons", "sde/npcCharacters",
-        "client/npccharacters", "client/stationoperations",
+        "client/npccharacters", "client/stationoperations", "client/solarsystemcontent",
     )
     fingerprints = dict(db.execute(
         "SELECT Name,Sha256 FROM SourceDataset ORDER BY Name"
@@ -140,6 +146,11 @@ def audit(db, production, market, mining):
             for faction in factions:
                 add(skillbook, "pirate data site", faction)
 
+    for condenser, factions in CONDENSER_LOOT_FACTIONS.items():
+        if types[condenser].get("published") == 1:
+            for faction in factions:
+                add(condenser, "pirate data Info Shard", faction, milestone=5)
+
     ore_systems = dict(db.execute("SELECT Id,SolarSystemId FROM Celestial WHERE GroupId=9"))
     for belt, deposits in records(db, "client/asteroidcountbytypeidbeltid").items():
         if ore_systems.get(belt) not in reachable:
@@ -149,12 +160,29 @@ def audit(db, production, market, mining):
             group = groups.get(ore)
             if count > 0 and (group in ORE_GROUPS or group == MERCOXIT_GROUP) and not paths.get(ore):
                 add(ore, "asteroid belt", belt, milestone=4 if group == MERCOXIT_GROUP else 1)
+    region_systems = defaultdict(list)
+    for system_id, region_id in db.execute(
+        "SELECT s.Id,c.RegionId FROM SolarSystem s JOIN Constellation c ON c.Id=s.ConstellationId"
+    ):
+        if system_id in reachable:
+            region_systems[region_id].append(system_id)
+    system_records = records(db, "client/solarsystemcontent")
     for site in mining["sites"]:
         if site["family"] == 1 and any(system in reachable for system in site["systems"]):
             for deposit in site["deposits"]:
                 ore = deposit["typeId"]
                 if groups.get(ore) == ICE_GROUP and not paths.get(ore):
                     add(ore, "ice field", site["dungeonId"])
+        if site["family"] == 2 and any(
+            system_id in system_records and (
+                not site.get("lowSecurityOnly") or 0 < system_records[system_id].get("security", 1) < 0.45
+            )
+            for region in site["regions"] for system_id in region_systems[region]
+        ):
+            for deposit in site["deposits"]:
+                gas = deposit["typeId"]
+                if not paths.get(gas):
+                    add(gas, "gas signature", site["dungeonId"], milestone=5 if site.get("lowSecurityOnly") else 1)
 
     for type_id, data in types.items():
         if data.get("published") != 1:
@@ -211,6 +239,9 @@ def audit(db, production, market, mining):
         elif group == HYBRID_FORMULAS:
             milestone = 5
             label = "hybrid reaction"
+        elif blueprint in RACIAL_MOLECULAR_FORMULAS:
+            milestone = 5
+            label = "racial molecular-forged reaction"
         else:
             milestone = 6
             label = "Prismaticite reaction" if COMPRESSED_PRISMATICITE in required else "other reaction"

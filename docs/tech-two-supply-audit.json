@@ -13,13 +13,15 @@
     "sde/mapMoons": "dfa244b97409d06036606ef5d1c3cc54bd45509dbf565590795d00d36146a08f",
     "sde/npcCharacters": "adb6d55ec8db5570acc17b0a95f18f222cf932930cc8265e7bd64a6edbf7de36",
     "client/npccharacters": "5ec4b6982ee14d88d6380cc25ec556bfc226599779b0b281fccee7d71b6a0a30",
-    "client/stationoperations": "716264638dd525ee7f4c3224a6919d6112285516a08f26c086e2410e57a81317"
+    "client/stationoperations": "716264638dd525ee7f4c3224a6919d6112285516a08f26c086e2410e57a81317",
+    "client/solarsystemcontent": "164d379f46e87f0544050f9b1e4bcca3757827b800f5c72a35023fb23f9d62ad"
   },
   "reactionCounts": {
     "Prismaticite reaction": 8,
     "hybrid reaction": 9,
     "moon composite reaction": 58,
-    "other reaction": 44
+    "other reaction": 36,
+    "racial molecular-forged reaction": 8
   },
   "reachableSystems": 5228,
   "techTwoProducts": 1188,
@@ -29,7 +31,7 @@
     "2": 1,
     "3": 33,
     "4": 539,
-    "5": 539
+    "5": 543
   },
   "bootstrap": [
     {
@@ -71,6 +73,18 @@
     {
       "typeId": 45537,
       "name": "Standup Composite Reactor I",
+      "closed": true,
+      "blockers": []
+    },
+    {
+      "typeId": 45538,
+      "name": "Standup Hybrid Reactor I",
+      "closed": true,
+      "blockers": []
+    },
+    {
+      "typeId": 45539,
+      "name": "Standup Biochemical Reactor I",
       "closed": true,
       "blockers": []
     },
@@ -163,62 +177,26 @@
     {
       "typeId": 28850,
       "name": "Ark",
-      "closedAfterMilestone": null,
-      "blockers": [
-        {
-          "typeId": 57459,
-          "name": "Hypnagogic Neurolink Enhancer"
-        },
-        {
-          "typeId": 57466,
-          "name": "Ultradian-Cycling Neurolink Stabilizer"
-        }
-      ]
+      "closedAfterMilestone": 5,
+      "blockers": []
     },
     {
       "typeId": 28848,
       "name": "Anshar",
-      "closedAfterMilestone": null,
-      "blockers": [
-        {
-          "typeId": 57461,
-          "name": "Cogni-Emotive Neurolink Enhancer"
-        },
-        {
-          "typeId": 57468,
-          "name": "Stress-Responding Neurolink Stabilizer"
-        }
-      ]
+      "closedAfterMilestone": 5,
+      "blockers": []
     },
     {
       "typeId": 28846,
       "name": "Nomad",
-      "closedAfterMilestone": null,
-      "blockers": [
-        {
-          "typeId": 57462,
-          "name": "Sense-Heuristic Neurolink Enhancer"
-        },
-        {
-          "typeId": 57469,
-          "name": "Goal-Orienting Neurolink Stabilizer"
-        }
-      ]
+      "closedAfterMilestone": 5,
+      "blockers": []
     },
     {
       "typeId": 28844,
       "name": "Rhea",
-      "closedAfterMilestone": null,
-      "blockers": [
-        {
-          "typeId": 57460,
-          "name": "Axosomatic Neurolink Enhancer"
-        },
-        {
-          "typeId": 57467,
-          "name": "Reaction-Orienting Neurolink Stabilizer"
-        }
-      ]
+      "closedAfterMilestone": 5,
+      "blockers": []
     }
   ],
   "remainingBlockers": [
@@ -1749,38 +1727,6 @@
     {
       "typeId": 57147,
       "name": "Low-grade Rapture Omega Blueprint"
-    },
-    {
-      "typeId": 57459,
-      "name": "Hypnagogic Neurolink Enhancer"
-    },
-    {
-      "typeId": 57460,
-      "name": "Axosomatic Neurolink Enhancer"
-    },
-    {
-      "typeId": 57461,
-      "name": "Cogni-Emotive Neurolink Enhancer"
-    },
-    {
-      "typeId": 57462,
-      "name": "Sense-Heuristic Neurolink Enhancer"
-    },
-    {
-      "typeId": 57466,
-      "name": "Ultradian-Cycling Neurolink Stabilizer"
-    },
-    {
-      "typeId": 57467,
-      "name": "Reaction-Orienting Neurolink Stabilizer"
-    },
-    {
-      "typeId": 57468,
-      "name": "Stress-Responding Neurolink Stabilizer"
-    },
-    {
-      "typeId": 57469,
-      "name": "Goal-Orienting Neurolink Stabilizer"
     },
     {
       "typeId": 60363,
@@ -3790,14 +3736,14 @@
     {"typeId": 24703, "name": "Hurricane Blueprint", "paths": [{"source": "institutional sell offer", "reference": 60004744, "inputs": [], "milestone": 1}]},
     {"typeId": 25266, "name": "Gas Cloud Scoop I", "paths": [{"source": "manufacturing", "reference": 25267, "inputs": [34, 35, 36, 38, 40, 3380, 25267], "milestone": 1}]},
     {"typeId": 25267, "name": "Gas Cloud Scoop I Blueprint", "paths": [{"source": "institutional sell offer", "reference": 60012583, "inputs": [], "milestone": 1}]},
-    {"typeId": 25268, "name": "Amber Cytoserocin", "paths": []},
-    {"typeId": 25273, "name": "Golden Cytoserocin", "paths": []},
-    {"typeId": 25274, "name": "Viridian Cytoserocin", "paths": []},
-    {"typeId": 25275, "name": "Celadon Cytoserocin", "paths": []},
-    {"typeId": 25276, "name": "Malachite Cytoserocin", "paths": []},
-    {"typeId": 25277, "name": "Lime Cytoserocin", "paths": []},
-    {"typeId": 25278, "name": "Vermillion Cytoserocin", "paths": []},
-    {"typeId": 25279, "name": "Azure Cytoserocin", "paths": []},
+    {"typeId": 25268, "name": "Amber Cytoserocin", "paths": [{"source": "gas signature", "reference": 3394, "inputs": [], "milestone": 5}]},
+    {"typeId": 25273, "name": "Golden Cytoserocin", "paths": [{"source": "gas signature", "reference": 3396, "inputs": [], "milestone": 5}]},
+    {"typeId": 25274, "name": "Viridian Cytoserocin", "paths": [{"source": "gas signature", "reference": 3397, "inputs": [], "milestone": 5}]},
+    {"typeId": 25275, "name": "Celadon Cytoserocin", "paths": [{"source": "gas signature", "reference": 3398, "inputs": [], "milestone": 5}]},
+    {"typeId": 25276, "name": "Malachite Cytoserocin", "paths": [{"source": "gas signature", "reference": 3404, "inputs": [], "milestone": 5}]},
+    {"typeId": 25277, "name": "Lime Cytoserocin", "paths": [{"source": "gas signature", "reference": 3403, "inputs": [], "milestone": 5}]},
+    {"typeId": 25278, "name": "Vermillion Cytoserocin", "paths": [{"source": "gas signature", "reference": 3399, "inputs": [], "milestone": 5}]},
+    {"typeId": 25279, "name": "Azure Cytoserocin", "paths": [{"source": "gas signature", "reference": 3395, "inputs": [], "milestone": 5}]},
     {"typeId": 25544, "name": "Gas Cloud Harvesting", "paths": [{"source": "institutional sell offer", "reference": 60012184, "inputs": [], "milestone": 1}]},
     {"typeId": 25561, "name": "Signal Distortion Amplifier I", "paths": [{"source": "manufacturing", "reference": 25562, "inputs": [34, 36, 37, 39, 40, 3380, 25562], "milestone": 1}]},
     {"typeId": 25562, "name": "Signal Distortion Amplifier I Blueprint", "paths": [{"source": "institutional sell offer", "reference": 60001525, "inputs": [], "milestone": 1}]},
@@ -4145,14 +4091,14 @@
     {"typeId": 28662, "name": "Kronos Blueprint", "paths": [{"source": "invention", "reference": 995, "inputs": [995, 11433, 11450, 20410, 20411, 23121], "milestone": 1}]},
     {"typeId": 28665, "name": "Vargur", "paths": [{"source": "manufacturing", "reference": 28666, "inputs": [639, 3380, 3398, 3828, 11399, 11445, 11452, 11478, 11530, 11536, 11538, 11542, 11548, 11551, 11555, 28666], "milestone": 1}]},
     {"typeId": 28666, "name": "Vargur Blueprint", "paths": [{"source": "invention", "reference": 693, "inputs": [693, 11433, 11445, 20172, 20411, 21791], "milestone": 1}]},
-    {"typeId": 28694, "name": "Amber Mykoserocin", "paths": []},
-    {"typeId": 28695, "name": "Azure Mykoserocin", "paths": []},
-    {"typeId": 28696, "name": "Celadon Mykoserocin", "paths": []},
-    {"typeId": 28697, "name": "Golden Mykoserocin", "paths": []},
-    {"typeId": 28698, "name": "Lime Mykoserocin", "paths": []},
-    {"typeId": 28699, "name": "Malachite Mykoserocin", "paths": []},
-    {"typeId": 28700, "name": "Vermillion Mykoserocin", "paths": []},
-    {"typeId": 28701, "name": "Viridian Mykoserocin", "paths": []},
+    {"typeId": 28694, "name": "Amber Mykoserocin", "paths": [{"source": "gas signature", "reference": 2529, "inputs": [], "milestone": 1}]},
+    {"typeId": 28695, "name": "Azure Mykoserocin", "paths": [{"source": "gas signature", "reference": 2528, "inputs": [], "milestone": 1}]},
+    {"typeId": 28696, "name": "Celadon Mykoserocin", "paths": [{"source": "gas signature", "reference": 2534, "inputs": [], "milestone": 1}]},
+    {"typeId": 28697, "name": "Golden Mykoserocin", "paths": [{"source": "gas signature", "reference": 2530, "inputs": [], "milestone": 1}]},
+    {"typeId": 28698, "name": "Lime Mykoserocin", "paths": [{"source": "gas signature", "reference": 2531, "inputs": [], "milestone": 1}]},
+    {"typeId": 28699, "name": "Malachite Mykoserocin", "paths": [{"source": "gas signature", "reference": 2532, "inputs": [], "milestone": 1}]},
+    {"typeId": 28700, "name": "Vermillion Mykoserocin", "paths": [{"source": "gas signature", "reference": 2527, "inputs": [], "milestone": 1}]},
+    {"typeId": 28701, "name": "Viridian Mykoserocin", "paths": [{"source": "gas signature", "reference": 2533, "inputs": [], "milestone": 1}]},
     {"typeId": 28710, "name": "Golem", "paths": [{"source": "manufacturing", "reference": 28711, "inputs": [638, 3380, 3398, 3828, 11399, 11452, 11454, 11478, 11533, 11534, 11540, 11544, 11550, 11552, 11558, 28711], "milestone": 1}]},
     {"typeId": 28711, "name": "Golem Blueprint", "paths": [{"source": "invention", "reference": 688, "inputs": [688, 11433, 11454, 20411, 21790, 25887], "milestone": 1}]},
     {"typeId": 28844, "name": "Rhea", "paths": [{"source": "manufacturing", "reference": 28845, "inputs": [3380, 3828, 11399, 11454, 11478, 11529, 20185, 21025, 22242, 28845, 29055, 29059, 29071, 29093, 29097, 29101, 29107], "milestone": 1}]},
@@ -5689,7 +5635,11 @@
     {"typeId": 45534, "name": "Monitor", "paths": [{"source": "manufacturing", "reference": 45535, "inputs": [34, 35, 36, 37, 38, 39, 40, 3380, 3397, 3828, 11399, 11442, 11443, 11452, 11478, 11530, 11534, 11541, 11543, 11548, 11554, 11558, 45535], "milestone": 1}]},
     {"typeId": 45535, "name": "Monitor Blueprint", "paths": []},
     {"typeId": 45537, "name": "Standup Composite Reactor I", "paths": [{"source": "manufacturing", "reference": 45540, "inputs": [34, 35, 36, 37, 38, 39, 40, 2867, 2868, 2869, 2870, 2871, 2872, 2875, 2876, 3400, 45540], "milestone": 1}]},
+    {"typeId": 45538, "name": "Standup Hybrid Reactor I", "paths": [{"source": "manufacturing", "reference": 45541, "inputs": [34, 35, 36, 37, 38, 39, 40, 2867, 2868, 2869, 2870, 2871, 2872, 2875, 2876, 3400, 45541], "milestone": 1}]},
+    {"typeId": 45539, "name": "Standup Biochemical Reactor I", "paths": [{"source": "manufacturing", "reference": 45542, "inputs": [34, 35, 36, 37, 38, 39, 40, 2867, 2868, 2869, 2870, 2871, 2872, 2875, 2876, 3400, 45542], "milestone": 1}]},
     {"typeId": 45540, "name": "Standup Composite Reactor I Blueprint", "paths": [{"source": "institutional sell offer at catalog price", "reference": 60000310, "inputs": [], "milestone": 1}]},
+    {"typeId": 45541, "name": "Standup Hybrid Reactor I Blueprint", "paths": [{"source": "institutional sell offer at catalog price", "reference": 60000310, "inputs": [], "milestone": 1}]},
+    {"typeId": 45542, "name": "Standup Biochemical Reactor I Blueprint", "paths": [{"source": "institutional sell offer at catalog price", "reference": 60000310, "inputs": [], "milestone": 1}]},
     {"typeId": 45746, "name": "Reactions", "paths": [{"source": "institutional sell offer", "reference": 60004420, "inputs": [], "milestone": 1}]},
     {"typeId": 45748, "name": "Mass Reactions", "paths": [{"source": "institutional sell offer", "reference": 60004420, "inputs": [], "milestone": 1}]},
     {"typeId": 45749, "name": "Advanced Mass Reactions", "paths": [{"source": "institutional sell offer", "reference": 60004420, "inputs": [], "milestone": 1}]},
@@ -6276,23 +6226,23 @@
     {"typeId": 57145, "name": "High-grade Rapture Epsilon Blueprint", "paths": []},
     {"typeId": 57146, "name": "High-grade Rapture Omega Blueprint", "paths": []},
     {"typeId": 57147, "name": "Low-grade Rapture Omega Blueprint", "paths": []},
-    {"typeId": 57445, "name": "LM-Composite Molecular Condenser", "paths": []},
-    {"typeId": 57446, "name": "AG-Composite Molecular Condenser", "paths": []},
-    {"typeId": 57447, "name": "CV-Composite Molecular Condenser", "paths": []},
-    {"typeId": 57448, "name": "AV-Composite Molecular Condenser", "paths": []},
+    {"typeId": 57445, "name": "LM-Composite Molecular Condenser", "paths": [{"source": "pirate data Info Shard", "reference": 500012, "inputs": [], "milestone": 5}, {"source": "pirate data Info Shard", "reference": 500019, "inputs": [], "milestone": 5}]},
+    {"typeId": 57446, "name": "AG-Composite Molecular Condenser", "paths": [{"source": "pirate data Info Shard", "reference": 500010, "inputs": [], "milestone": 5}, {"source": "pirate data Info Shard", "reference": 500019, "inputs": [], "milestone": 5}]},
+    {"typeId": 57447, "name": "CV-Composite Molecular Condenser", "paths": [{"source": "pirate data Info Shard", "reference": 500010, "inputs": [], "milestone": 5}, {"source": "pirate data Info Shard", "reference": 500011, "inputs": [], "milestone": 5}, {"source": "pirate data Info Shard", "reference": 500020, "inputs": [], "milestone": 5}]},
+    {"typeId": 57448, "name": "AV-Composite Molecular Condenser", "paths": [{"source": "pirate data Info Shard", "reference": 500011, "inputs": [], "milestone": 5}, {"source": "pirate data Info Shard", "reference": 500020, "inputs": [], "milestone": 5}]},
     {"typeId": 57453, "name": "Carbon Fiber", "paths": [{"source": "moon composite reaction", "reference": 57490, "inputs": [4246, 16633, 16635, 45746, 57490], "milestone": 3}]},
     {"typeId": 57454, "name": "Oxy-Organic Solvents", "paths": [{"source": "moon composite reaction", "reference": 57491, "inputs": [4312, 16633, 16634, 45746, 57491], "milestone": 3}]},
     {"typeId": 57455, "name": "Thermosetting Polymer", "paths": [{"source": "moon composite reaction", "reference": 57494, "inputs": [4312, 16634, 16636, 45746, 57494], "milestone": 3}]},
     {"typeId": 57456, "name": "Pressurized Oxidizers", "paths": [{"source": "moon composite reaction", "reference": 57492, "inputs": [16659, 16661, 45746, 57454, 57492], "milestone": 3}]},
     {"typeId": 57457, "name": "Reinforced Carbon Fiber", "paths": [{"source": "moon composite reaction", "reference": 57493, "inputs": [45746, 57453, 57454, 57455, 57493], "milestone": 3}]},
-    {"typeId": 57459, "name": "Hypnagogic Neurolink Enhancer", "paths": [{"source": "other reaction", "reference": 57496, "inputs": [4247, 28698, 28699, 45746, 57445, 57496], "milestone": 6}]},
-    {"typeId": 57460, "name": "Axosomatic Neurolink Enhancer", "paths": [{"source": "other reaction", "reference": 57497, "inputs": [4051, 28694, 28697, 45746, 57446, 57497], "milestone": 6}]},
-    {"typeId": 57461, "name": "Cogni-Emotive Neurolink Enhancer", "paths": [{"source": "other reaction", "reference": 57498, "inputs": [4312, 28696, 28701, 45746, 57447, 57498], "milestone": 6}]},
-    {"typeId": 57462, "name": "Sense-Heuristic Neurolink Enhancer", "paths": [{"source": "other reaction", "reference": 57499, "inputs": [4246, 28695, 28700, 45746, 57448, 57499], "milestone": 6}]},
-    {"typeId": 57466, "name": "Ultradian-Cycling Neurolink Stabilizer", "paths": [{"source": "other reaction", "reference": 57503, "inputs": [4247, 25276, 25277, 45746, 57445, 57503], "milestone": 6}]},
-    {"typeId": 57467, "name": "Reaction-Orienting Neurolink Stabilizer", "paths": [{"source": "other reaction", "reference": 57504, "inputs": [4051, 25268, 25273, 45746, 57446, 57504], "milestone": 6}]},
-    {"typeId": 57468, "name": "Stress-Responding Neurolink Stabilizer", "paths": [{"source": "other reaction", "reference": 57505, "inputs": [4312, 25274, 25275, 45746, 57447, 57505], "milestone": 6}]},
-    {"typeId": 57469, "name": "Goal-Orienting Neurolink Stabilizer", "paths": [{"source": "other reaction", "reference": 57506, "inputs": [4246, 25278, 25279, 45746, 57448, 57506], "milestone": 6}]},
+    {"typeId": 57459, "name": "Hypnagogic Neurolink Enhancer", "paths": [{"source": "racial molecular-forged reaction", "reference": 57496, "inputs": [4247, 28698, 28699, 45746, 57445, 57496], "milestone": 5}]},
+    {"typeId": 57460, "name": "Axosomatic Neurolink Enhancer", "paths": [{"source": "racial molecular-forged reaction", "reference": 57497, "inputs": [4051, 28694, 28697, 45746, 57446, 57497], "milestone": 5}]},
+    {"typeId": 57461, "name": "Cogni-Emotive Neurolink Enhancer", "paths": [{"source": "racial molecular-forged reaction", "reference": 57498, "inputs": [4312, 28696, 28701, 45746, 57447, 57498], "milestone": 5}]},
+    {"typeId": 57462, "name": "Sense-Heuristic Neurolink Enhancer", "paths": [{"source": "racial molecular-forged reaction", "reference": 57499, "inputs": [4246, 28695, 28700, 45746, 57448, 57499], "milestone": 5}]},
+    {"typeId": 57466, "name": "Ultradian-Cycling Neurolink Stabilizer", "paths": [{"source": "racial molecular-forged reaction", "reference": 57503, "inputs": [4247, 25276, 25277, 45746, 57445, 57503], "milestone": 5}]},
+    {"typeId": 57467, "name": "Reaction-Orienting Neurolink Stabilizer", "paths": [{"source": "racial molecular-forged reaction", "reference": 57504, "inputs": [4051, 25268, 25273, 45746, 57446, 57504], "milestone": 5}]},
+    {"typeId": 57468, "name": "Stress-Responding Neurolink Stabilizer", "paths": [{"source": "racial molecular-forged reaction", "reference": 57505, "inputs": [4312, 25274, 25275, 45746, 57447, 57505], "milestone": 5}]},
+    {"typeId": 57469, "name": "Goal-Orienting Neurolink Stabilizer", "paths": [{"source": "racial molecular-forged reaction", "reference": 57506, "inputs": [4246, 25278, 25279, 45746, 57448, 57506], "milestone": 5}]},
     {"typeId": 57470, "name": "U-C Trigger Neurolink Conduit", "paths": [{"source": "manufacturing", "reference": 57507, "inputs": [3380, 57456, 57457, 57459, 57466, 57507], "milestone": 1}]},
     {"typeId": 57471, "name": "R-O Trigger Neurolink Conduit", "paths": [{"source": "manufacturing", "reference": 57508, "inputs": [3380, 57456, 57457, 57460, 57467, 57508], "milestone": 1}]},
     {"typeId": 57472, "name": "S-R Trigger Neurolink Conduit", "paths": [{"source": "manufacturing", "reference": 57509, "inputs": [3380, 57456, 57457, 57461, 57468, 57509], "milestone": 1}]},

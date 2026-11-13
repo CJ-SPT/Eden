@@ -4304,6 +4304,83 @@
       "attributes": []
     },
     {
+      "id": 25273,
+      "name": "Golden Cytoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 25274,
+      "name": "Viridian Cytoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 25275,
+      "name": "Celadon Cytoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 25276,
+      "name": "Malachite Cytoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 25277,
+      "name": "Lime Cytoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 25278,
+      "name": "Vermillion Cytoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 25279,
+      "name": "Azure Cytoserocin",
+      "groupId": 711,
+      "groupName": "Harvestable Cloud",
+      "categoryId": 2,
+      "mass": 0.0,
+      "radius": 100.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 25540,
       "name": "'Crop' Gas Cloud Scoop",
       "groupId": 737,
@@ -26553,6 +26630,41 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 25273,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 25274,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 25275,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 25276,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 25277,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 25278,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 25279,
+      "data": {}
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 25540,
       "data": {
         "dogmaAttributes": [
@@ -39932,6 +40044,146 @@
         "capacity": 0.0,
         "typeNameID": 76116,
         "iconID": 3225,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 25273,
+      "data": {
+        "descriptionID": 86882,
+        "typeID": 25273,
+        "graphicID": 3224,
+        "capacity": 0.0,
+        "typeNameID": 76121,
+        "iconID": 3224,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 25274,
+      "data": {
+        "descriptionID": 86886,
+        "typeID": 25274,
+        "graphicID": 3221,
+        "capacity": 0.0,
+        "typeNameID": 76125,
+        "iconID": 3221,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 25275,
+      "data": {
+        "descriptionID": 86879,
+        "typeID": 25275,
+        "graphicID": 3219,
+        "capacity": 0.0,
+        "typeNameID": 76118,
+        "iconID": 3219,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 25276,
+      "data": {
+        "descriptionID": 86884,
+        "typeID": 25276,
+        "graphicID": 3223,
+        "capacity": 0.0,
+        "typeNameID": 76123,
+        "iconID": 3223,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 25277,
+      "data": {
+        "descriptionID": 86883,
+        "typeID": 25277,
+        "graphicID": 3222,
+        "capacity": 0.0,
+        "typeNameID": 76122,
+        "iconID": 3222,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 25278,
+      "data": {
+        "descriptionID": 86885,
+        "typeID": 25278,
+        "graphicID": 3218,
+        "capacity": 0.0,
+        "typeNameID": 76124,
+        "iconID": 3218,
+        "published": 1,
+        "radius": 100.0,
+        "marketGroupID": 983,
+        "volume": 10.0,
+        "mass": 0.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 25279,
+      "data": {
+        "descriptionID": 86878,
+        "typeID": 25279,
+        "graphicID": 3220,
+        "capacity": 0.0,
+        "typeNameID": 76117,
+        "iconID": 3220,
         "published": 1,
         "radius": 100.0,
         "marketGroupID": 983,

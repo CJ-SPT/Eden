@@ -195,16 +195,21 @@ public sealed class GasMiningTests
     }
 
     [Fact]
-    public void HazardousGasRemainsUnavailableAndExpiredSitesCannotFundAnotherCycle()
+    public void EmptyDepositsAndExpiredSitesCannotFundAnotherCycle()
     {
         using Fixture f = Create();
         long module = f.Fit(Scoop);
-        CloudAtShip(f, type: 25268);
+        CloudAtShip(f);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<WorldAsteroid>().Find(Cloud)!.Quantity = 0;
+            world.SaveChanges();
+        }
         var mining = f.Db.Services.GetRequiredService<IPilotMining>();
         Assert.Throws<InvalidDataException>(() => mining.Begin(f.PilotId, module, Cloud, f.Clock.Now));
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Set<WorldAsteroid>().Find(Cloud)!.TypeId = Gas;
+            world.Set<WorldAsteroid>().Find(Cloud)!.Quantity = 100;
             world.Add(
                 new SavedMiningSite
                 {
@@ -267,7 +272,58 @@ public sealed class GasMiningTests
         Assert.NotEqual(site.TargetId, replacement.TargetId);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.DoesNotContain(saved.Set<WorldAsteroid>(), a => deposits.Contains(a.Id));
-        Assert.Equal(16, MiningSiteCatalog.Sites.Count(s => s.Family == MiningFamily.Gas));
+        Assert.Equal(16, MiningSiteCatalog.Sites.Count(s => s.Family == MiningFamily.Gas && !s.LowSecurityOnly));
+    }
+
+    [Theory]
+    [InlineData(0.4, true)]
+    [InlineData(0.5, false)]
+    [InlineData(-0.1, false)]
+    public void CytoserocinSiteUsesRegionalLowSecurityAndCanBeHarvested(double security, bool expected)
+    {
+        using Fixture f = Create();
+        int system = f.Db.Store.FindPilot(1000001)!.SystemId;
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            string key = system.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            string systemRecord = System.Text.Json.JsonSerializer.Serialize(new { security });
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/solarsystemcontent',{key},{systemRecord})");
+        }
+        const int banditNebula = 3394;
+        const int amberCytoserocin = 25268;
+        var gasSites = MiningSiteCatalog.Sites.Where(s => s.LowSecurityOnly).ToArray();
+        Assert.Equal(8, gasSites.Length);
+        Assert.All(gasSites, s => Assert.Single(s.Regions));
+        Assert.Equal(
+            new[] { 25268, 25273, 25274, 25275, 25276, 25277, 25278, 25279 },
+            gasSites.SelectMany(s => s.Deposits).Select(d => d.TypeId).Distinct().Order()
+        );
+
+        long module = f.Fit(Scoop);
+        var sites = f.Db.Services.GetRequiredService<IMiningSites>();
+        var first = Assert.Single(sites.Signatures(system, f.Clock.Now));
+        if (!expected)
+        {
+            Assert.NotEqual(banditNebula, first.DungeonId);
+            return;
+        }
+        // Rotate the existing finite resource signature through eligible templates.
+        for (int i = 0; i < MiningSiteCatalog.Sites.Count && first.DungeonId != banditNebula; i++)
+        {
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(MiningSiteRules.Lifetime + MiningSiteRules.ReplacementDelay));
+            first = Assert.Single(sites.Signatures(system, f.Clock.Now));
+        }
+        Assert.Equal(banditNebula, first.DungeonId);
+        WorldAsteroid cloud;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            cloud = world.Set<WorldAsteroid>().First(a => a.TypeId == amberCytoserocin && a.SystemId == system);
+        }
+        f.Db.Store.SetPosition(f.ShipId, new SpacePosition(cloud.X, cloud.Y, cloud.Z));
+        var mining = f.Db.Services.GetRequiredService<IPilotMining>();
+        var start = mining.Begin(f.PilotId, module, cloud.Id, f.Clock.Now);
+        Assert.Equal(MiningFamily.Gas, start.Laser.Family);
+        Assert.Equal(amberCytoserocin, mining.Collect(f.PilotId, module, cloud.Id, new(1, true, Rolls)).Cargo!.Item.TypeId);
     }
 
     [Fact]

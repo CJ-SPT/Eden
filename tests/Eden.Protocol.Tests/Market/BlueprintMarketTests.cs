@@ -48,18 +48,21 @@ public sealed class BlueprintMarketTests
     {
         const int athanorBlueprint = 36977;
         const int moonMaterial = 16633;
+        const int molecularCondenser = 57445;
         using TestWorld fixture = CreateWorld(Hub);
         using (CatalogDbContext catalog = new(new WorldDatabase(fixture.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(
                 """
-                INSERT OR IGNORE INTO ItemCategory VALUES(4,'Material');
-                INSERT OR IGNORE INTO ItemGroup VALUES(427,'Moon Materials',4);
-                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES(36977,'Athanor Blueprint',134),(16633,'Hydrocarbons',427);
+                INSERT OR IGNORE INTO ItemCategory VALUES(4,'Material'),(17,'Commodity');
+                INSERT OR IGNORE INTO ItemGroup VALUES(427,'Moon Materials',4),(526,'Commodities',17);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId)
+                VALUES(36977,'Athanor Blueprint',134),(16633,'Hydrocarbons',427),(57445,'Molecular Condenser',526);
                 INSERT OR REPLACE INTO SourceRecord VALUES
                     ('client/types','36977','{{"published":1,"marketGroupID":1,"basePrice":5500000000}}'),
                     ('client/types','16633','{{"published":1,"marketGroupID":1,"volume":1}}'),
-                    ('client/npccorporations','1000035','{{"corporationTrades":{{"36977":1,"16633":1}}}}');
+                    ('client/types','57445','{{"published":1,"marketGroupID":1,"volume":1}}'),
+                    ('client/npccorporations','1000035','{{"corporationTrades":{{"36977":1,"16633":1,"57445":1}}}}');
                 """
             );
         }
@@ -69,6 +72,7 @@ public sealed class BlueprintMarketTests
         var original = Assert.Single(market.Orders(Pilot, athanorBlueprint), o => o.StationId == Hub && !o.Bid);
         Assert.Equal(550_000_000_000L, original.PriceCents);
         Assert.DoesNotContain(market.Orders(Pilot, moonMaterial), o => !o.Bid);
+        Assert.DoesNotContain(market.Orders(Pilot, molecularCondenser), o => !o.Bid);
     }
 
     [Fact]

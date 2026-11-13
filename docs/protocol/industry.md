@@ -98,6 +98,39 @@ suites and formatting verification passed.
 
 **Optional maintainer checks:** Mine a Mercoxit rock with a loaded deep-core tool and compare native cargo and reprocessing quotes.
 
+## Racial molecular-forged reactions and Cytoserocin
+
+Standup Biochemical Reactors run the four racial Neurolink Enhancer formulas and the four racial Neurolink Stabilizer
+formulas. Standup Hybrid Reactors run the nine polymer formulas. The native facility lists the products supported by
+its online services, and each job pauses on outage of its own reactor family. The Biochemical Reactor original is available
+at its pinned NPC suppliers using catalog pricing when the snapshot has no quote. World version 150 adds adjusted prices for
+the newly admitted formulas and preserves existing overrides.
+
+Eight undefended Cytoserocin signatures rotate alongside existing Mykoserocin sites in the documented low-security regions.
+Their cloud geometry and finite deposits come from the pinned dungeon templates. The Saintly Nebula has an unknown damage
+profile in the gameplay reference. This cohort treats its pinned undefended layout as non-damaging pending hazard verification.
+Pirate Info Shard data containers can drop one faction-appropriate stack of four to eight molecular condensers using the
+saved loot seed. Eden uses one chance in eight. Gas, condensers and outputs remain excluded from NPC sell supply.
+
+The local evejs build-3396210 loot and placement references were `containerLootTables.js`
+(SHA-256 `342E97409455CB083FE4229F49B0FE4222470678C94B6FAC1A2FFEDA571513F3`) and `kspaceGasPlacementAuthority.js`
+(SHA-256 `75914D7B6623D68F36399DC1BC099516908AFF952D24B0BF31E47D63057C2C6E`).
+See [CCP reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions) and
+[EVE University gas cloud harvesting](https://wiki.eveuniversity.org/Gas_cloud_harvesting).
+
+The audit projects all four jump-freighter supply paths once wormhole gas is accessible. Fullerite acquisition remains
+pending at this checkpoint. The model still lists unrelated loot, LP and blueprint-price gaps across the wider Tech II catalog.
+
+**Automated validation.** Exact filters passed for the three reactor families (10.69 seconds), condenser hacking and
+looting across reopen (9.97 seconds), and regional gas placement and harvesting (three cases in 9.43 seconds).
+The final affected filter passed 175 cases in 65.44 seconds across industry, structure services, gas and ice mining,
+exploration loot, NPC supply and world migration. Tool and solution restore, build, both Python policy suites,
+formatting and audit reproduction passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Probe a low-security Cytoserocin site and compare the native Hybrid and Biochemical product lists.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of
