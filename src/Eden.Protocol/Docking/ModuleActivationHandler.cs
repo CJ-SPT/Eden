@@ -3,6 +3,7 @@ using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Defenses;
+using Eden.Protocol.Fleets;
 using Eden.Protocol.Information;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -39,7 +40,8 @@ internal sealed class ModuleActivationHandler(
     Eden.Protocol.Exploration.ProbeScanningHandler? probes = null,
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null,
-    SmartbombHandler? smartbombs = null
+    SmartbombHandler? smartbombs = null,
+    CommandBurstHandler? commandBursts = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -93,6 +95,8 @@ internal sealed class ModuleActivationHandler(
                 keywords
             ),
             var name when CombatWireDefinitions.Handles(name) => combat.Call(context, service, method, args, keywords),
+            var name when CommandBurstHandler.Effect(name) is { } burst => commandBursts?.Call(context, method, burst, args)
+                ?? PilotCallResult.Unsupported,
             SmartbombHandler.EffectName => smartbombs?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,
             ShieldBoostWireDefinitions.EffectName or ShieldBoostWireDefinitions.AncillaryEffectName => shields.Call(

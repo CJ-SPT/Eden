@@ -7,6 +7,7 @@ using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Repair;
@@ -18,6 +19,7 @@ using Eden.World.Combat;
 using Eden.World.Combat.Weapons;
 using Eden.World.Exploration;
 using Eden.World.Fittings;
+using Eden.World.Fleets;
 using Eden.World.Inventory;
 using Eden.World.Mining;
 using Eden.World.Repair;
@@ -144,6 +146,7 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
                     && MiningLaserCatalog.Supported(catalog, module.TypeId, group)
                     && InventoryDefinitions.IsHighSlot(module.FlagId)
                 )
+                && !(CommandBurstCatalog.Module(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(ProbeCatalog.Launcher(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
@@ -295,6 +298,7 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
             bool compatible =
                 chargeType.GroupId is MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup
                     ? MiningCrystalRules.Compatible(attributes, chargeType.GroupId)
+                : CommandBurstRules.IsCharge(chargeType.GroupId) ? CommandBurstRules.Compatible(moduleGroup, chargeType.GroupId, attributes)
                 : chargeType.GroupId == ProbeScanRules.ProbeGroup ? ProbeCatalog.Compatible(attributes, chargeAttributes)
                 : AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
                     ? AncillaryRepairRules.Compatible(ancillary, chargeType.GroupId, attributes, chargeAttributes)

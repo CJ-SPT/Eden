@@ -1,4 +1,5 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
@@ -17,6 +18,8 @@ internal sealed record BallparkSnapshot(
     IReadOnlyList<DroneState>? Drones = null
 ) : BlueModel
 {
+    internal IReadOnlyList<CommandBurstBoost>? Boosts { get; init; }
+
     public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
@@ -29,7 +32,7 @@ internal sealed record BallparkSnapshot(
                 ["droneState"] = Drones is null ? new List<object?>() : new BlueList<DroneState>(Drones),
                 ["damageState"] = new BlueMap<long, ShipDamageState>(Damage),
                 ["effectStates"] = new List<object?>(),
-                ["dbuffState"] = new Dictionary<long, object?>(),
+                ["dbuffState"] = DbuffEntry.List(Boosts ?? []),
                 ["industryLevel"] = 0,
                 ["researchLevel"] = 0,
             }

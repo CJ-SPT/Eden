@@ -385,6 +385,7 @@ public static class HullBonusRules
         || equipmentGroup != (int)HullBonusEquipmentGroup.BurstJammer
             && capability
                 is HullCapability.Overheating
+                    or HullCapability.CommandBursts
                     or HullCapability.Cloaking
                     or HullCapability.MicroJumpDrives
                     or HullCapability.HullAttributes

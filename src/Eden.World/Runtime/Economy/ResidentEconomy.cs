@@ -260,6 +260,7 @@ internal sealed partial class ResidentEconomy
         _prepared.Clear();
         _openOrders.Clear();
         ClearTimedModules();
+        ClearCommandBursts();
         ClearCombatIndexes();
         _marketHeads.Clear();
         _staleHeads.Clear();

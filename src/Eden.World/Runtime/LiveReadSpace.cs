@@ -262,6 +262,17 @@ internal sealed partial class LiveReadModels
             ? ReadResidentGuard(() => owner.Economy.HasPlayerEwarRows, world => world.Set<WorldPlayerEwar>().Any())
             : PlayerEwar().Count > 0;
 
+    private readonly ResidentSnapshot<
+        long,
+        (IReadOnlyList<Eden.Gameplay.Fleets.CommandBurstBoost> Boosts, long NextExpiry)
+    > _commandBursts = new("resident.commandBursts", "WorldCommandBurst", "CommandBurstRecipient");
+
+    internal IReadOnlyList<Eden.Gameplay.Fleets.CommandBurstBoost> CommandBursts(
+        long ship,
+        long now,
+        Func<long, long, (IReadOnlyList<Eden.Gameplay.Fleets.CommandBurstBoost> Boosts, long NextExpiry)> load
+    ) => Read(_commandBursts, ship, () => load(ship, now), now, result => result.NextExpiry).Boosts;
+
     private readonly record struct EwarModuleKey(long Pilot, long Ship, long Module);
 
     private readonly ResidentSnapshot<EwarModuleKey, long> _signatureSuppression = new(

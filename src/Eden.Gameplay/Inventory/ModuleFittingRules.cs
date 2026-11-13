@@ -2,6 +2,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -52,7 +53,8 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            groupId == SmartbombRules.Group && effects.Contains(DogmaEffect.Smartbomb)
+            groupId == CommandBurstRules.Group && effects.Any(CommandBurstRules.IsBurst)
+            || groupId == SmartbombRules.Group && effects.Contains(DogmaEffect.Smartbomb)
             || groupId == SpatialModuleRules.CloakGroup && effects.Any(SpatialModuleRules.IsCloak)
             || groupId == SpatialModuleRules.MicroJumpGroup && effects.Contains(DogmaEffect.MicroJumpDrive)
             || groupId is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup

@@ -86,6 +86,8 @@ internal static class PassiveCatalogFixture
     internal static void LoadCapacitorModules(string path, IReadOnlySet<int>? types = null) =>
         Load(path, "CapacitorModuleCatalog.json", types);
 
+    internal static void LoadCommandBursts(string path) => Load(path, "CommandBurstCatalog.json", null);
+
     internal static void LoadSmartbombs(string path, IReadOnlySet<int>? types = null) => Load(path, "SmartbombCatalog.json", types);
 
     internal static void LoadAdvancedWeapons(string path) => Load(path, "AdvancedWeaponCatalog.json", null);
@@ -244,7 +246,7 @@ internal static class PassiveCatalogFixture
                 continue;
             }
             string key = record.Key.ToString(CultureInfo.InvariantCulture);
-            if (record.Dataset == "client/blueprints")
+            if (record.Dataset is "client/blueprints" or "client/dbuffcollections")
             {
                 key = JsonSerializer.Serialize(key);
             }

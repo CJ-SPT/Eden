@@ -127,7 +127,11 @@ internal sealed partial class EconomyTransaction
             case Eden.Data.World.Structures.SavedStructure removed:
                 RemoveRange(Set<Eden.Data.World.Structures.SavedStructureAccess>().Where(child => child.StructureId == removed.Id));
                 break;
+            case Eden.Data.World.Docking.FlightPosition removed:
+                Eden.World.Fleets.CommandBurstStore.Clear(this, removed.ShipId);
+                break;
             case Eden.Data.World.Inventory.Ship removed:
+                Eden.World.Fleets.CommandBurstStore.Clear(this, removed.Id);
                 if (Set<Eden.Data.World.Characters.Pilot>().Any(child => child.ActiveShipId == removed.Id && child.Id == removed.OwnerId))
                 {
                     throw new InvalidDataException("The resident Ship still has Pilot references.");

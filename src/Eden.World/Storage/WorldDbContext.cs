@@ -428,6 +428,9 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<PendingLocalRepair>().HasOne<OwnedItem>().WithMany().HasForeignKey(r => r.ModuleId);
         model.Entity<PendingLocalRepair>().HasOne<Ship>().WithMany().HasForeignKey(r => r.ShipId);
         model.Entity<PendingLocalRepair>().HasIndex(r => new { r.ShipId, r.CompletesAt });
+        var commandBursts = model.Entity<Eden.Data.World.Fleets.WorldCommandBurst>().ToTable("WorldCommandBurst");
+        commandBursts.HasKey(b => b.Id);
+        commandBursts.HasOne<Ship>().WithMany().HasForeignKey(b => b.ShipId).OnDelete(DeleteBehavior.Cascade);
         model.Entity<ActiveFittedModule>().ToTable("WorldActiveModule").HasKey(h => h.ModuleId);
         model.Entity<ActiveFittedModule>().Property(h => h.ExpiresAt).HasDefaultValue(0L);
         model.Entity<ActiveFittedModule>().HasIndex(h => h.ExpiresAt).HasFilter("ExpiresAt>0");

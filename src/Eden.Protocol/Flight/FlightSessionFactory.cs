@@ -3,6 +3,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
@@ -31,7 +32,8 @@ internal sealed class FlightSessionFactory(
     IPilotGateTravel? gates = null,
     IHumanPresence? presence = null,
     ICapsuleerPresentation? presentation = null,
-    IPilotMissions? missions = null
+    IPilotMissions? missions = null,
+    IPilotCommandBursts? commandBursts = null
 )
 {
     public FlightSession Create(DockedPilot pilot)
@@ -65,7 +67,8 @@ internal sealed class FlightSessionFactory(
                 gates,
                 humanPresenceLease: selected,
                 presentation: presentation,
-                missions: missions
+                missions: missions,
+                commandBursts: commandBursts
             );
         }
         catch

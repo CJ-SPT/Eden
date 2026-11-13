@@ -109,6 +109,7 @@ public interface ICooperativeFleets
 {
     void Update(Guid session, FleetPilot? pilot);
     FleetIdentity? Identity(long actor);
+    IReadOnlySet<long> MembersInFleet(long actor, IReadOnlyList<long> candidates);
     FleetMembership? Membership(long actor);
     IReadOnlyList<FleetDelivery> Drain(long actor);
     CooperativeFleet Create(long actor);

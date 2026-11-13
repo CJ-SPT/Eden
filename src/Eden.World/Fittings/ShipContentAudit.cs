@@ -227,7 +227,8 @@ internal static class ShipContentAudit
             .ToDictionary(group => group.Key, group => bonuses && group.All(effect => effect.Operational));
         foreach (var role in HullBonusRules.DeferredRoles(type.Id, hullClass))
         {
-            roles[role] = role == HullCapability.BreacherPods && admitted;
+            roles[role] =
+                admitted && (role == HullCapability.BreacherPods || role == HullCapability.CommandBursts && roles.GetValueOrDefault(role));
         }
         var attributes = catalog.FittingAttributes(type.Id);
         if (attributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity) > 0)

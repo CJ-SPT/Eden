@@ -127,6 +127,7 @@ public static class WorldInitialization
         // Live module bonuses belong to a connection. A restart retains paid
         // capacitor/cooldowns but never leaves an orphaned active bonus.
         world.Set<ActiveFittedModule>().ExecuteDelete();
+        world.Set<Eden.Data.World.Fleets.WorldCommandBurst>().ExecuteDelete();
         PilotSpatialModuleStore.Reconcile(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         world.Set<WorldTackle>().ExecuteDelete();
         Eden.World.Exploration.HackingSchema.Reconcile(world);

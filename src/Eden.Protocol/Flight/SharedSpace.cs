@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
@@ -220,6 +221,7 @@ internal sealed class SharedSpace(
             DestinyCommand.SetBallMass command => command.Id,
             DestinyCommand.SetMaxSpeed command => command.Id,
             DestinyCommand.MicroJumpVisual command => command.Id,
+            DestinyCommand.CommandBurstVisual command => command.TargetId ?? command.Id,
             _ => null,
         };
         if (target != shipId)
@@ -432,6 +434,30 @@ internal sealed class SharedSpace(
     {
         return RunMotion(pilot.SystemId, () => PeersOwned(pilot), nameof(Peers));
     }
+
+    internal CommandBurstCandidate[] CommandBurstCandidates(DockedPilot pilot) =>
+        RunMotion(
+            pilot.SystemId,
+            () =>
+            {
+                using var motion = EnterMotion(systemId: pilot.SystemId);
+                return _ships
+                    .Values.Where(ship =>
+                        ship.Pilot.SystemId == pilot.SystemId
+                        && ship.Pilot.ShipId != pilot.ShipId
+                        && ship.Pilot.Position is not null
+                        && ship.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup
+                        && ship.Warp is null
+                        && ship.DepartureGate is null
+                        && !ship.Arriving
+                        && ship.Health?.Remaining.Destroyed != true
+                        && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
+                    )
+                    .Select(ship => new CommandBurstCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId, ship.Pilot.Position!))
+                    .ToArray();
+            },
+            nameof(CommandBurstCandidates)
+        );
 
     internal SmartbombShip[] SmartbombShips(DockedPilot pilot, bool includeCloaked = true)
     {

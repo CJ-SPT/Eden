@@ -56,7 +56,10 @@ internal sealed partial class EconomyTransaction
             Row(before);
             Row(after);
         }
-        return pilots.Where(store.IsPilot).Select(pilot => new CombatRowChange("WorldFitRevision", pilot, Resident: true)).ToArray();
+        var changes = pilots.Where(store.IsPilot).Select(pilot => new CombatRowChange("WorldFitRevision", pilot, Resident: true));
+        return (before ?? after) is Eden.Data.World.Fleets.WorldCommandBurst burst
+            ? [.. changes, new("CommandBurstRecipient", burst.ShipId, Resident: true)]
+            : changes.ToArray();
 
         void Item(OwnedItem? item)
         {
@@ -113,6 +116,9 @@ internal sealed partial class EconomyTransaction
                     break;
                 case WorldTackle tackle:
                     Ship(tackle.TargetId);
+                    break;
+                case Eden.Data.World.Fleets.WorldCommandBurst burst:
+                    Ship(burst.ShipId);
                     break;
                 case WorldRemoteAssistance assistance:
                     Ship(assistance.TargetId);

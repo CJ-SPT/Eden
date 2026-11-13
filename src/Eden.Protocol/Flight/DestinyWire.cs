@@ -1,4 +1,5 @@
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.Combat;
 using Eden.Protocol.PilotSessions;
@@ -171,6 +172,25 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         protected override object?[] Arguments => [Id, ModuleId, TypeId, TargetId, ChargeTypeId, Graphic, Offensive, Start, Active];
     }
 
+    internal sealed record DbuffUpdated(long Id, IReadOnlyList<CommandBurstBoost> Boosts) : DestinyCommand("OnDbuffUpdated")
+    {
+        protected override object?[] Arguments => [Id, DbuffEntry.List(Boosts)];
+    }
+
+    internal sealed record CommandBurstVisual(
+        long Id,
+        long ModuleId,
+        int TypeId,
+        long? TargetId,
+        int ChargeTypeId,
+        string Graphic,
+        Dictionary<string, object?>? GraphicInfo
+    ) : DestinyCommand("OnSpecialFX")
+    {
+        protected override object?[] Arguments =>
+            [Id, ModuleId, TypeId, TargetId, ChargeTypeId, Graphic, false, true, false, -1, 0, null, 0, GraphicInfo];
+    }
+
     internal sealed record TimedSpecialEffect(
         long Id,
         long? ModuleId,
@@ -209,4 +229,12 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         protected override object?[] Arguments =>
             [Id, null, null, null, null, "effects.JumpDriveOut", false, true, false, Duration, 0, null, 0, new object?[] { SystemId }];
     }
+}
+
+internal sealed record DbuffEntry(CommandBurstBoost Boost) : BlueModel
+{
+    internal static BlueList<DbuffEntry> List(IReadOnlyList<CommandBurstBoost> boosts) =>
+        new(boosts.Select(boost => new DbuffEntry(boost)).ToArray());
+
+    public override object ToBlue() => new object?[] { Boost.CollectionId, new object?[] { Boost.Value, Boost.ExpiresAt } };
 }

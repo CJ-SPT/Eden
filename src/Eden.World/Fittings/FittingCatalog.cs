@@ -4,6 +4,7 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
@@ -13,6 +14,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Weapons;
 using Eden.World.Defenses;
+using Eden.World.Fleets;
 using Eden.World.Information;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
@@ -32,6 +34,10 @@ internal static class FittingCatalog
     {
         var type = catalog.FittingType(typeId);
         if (type is null)
+        {
+            return null;
+        }
+        if (type.GroupId == CommandBurstRules.Group && !CommandBurstCatalog.Module(catalog, typeId, type.GroupId))
         {
             return null;
         }

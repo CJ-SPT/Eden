@@ -2,6 +2,60 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Command Bursts, November 13, 2026
+
+Eden implements 18 published Command Burst modules and 19 charges from build 3662168. The six families are Armor, Shield,
+Information, Skirmish, Mining Foreman and Expedition. Normal fitting and loading enforce catalog hull, slot, skill, charge and
+online limits. Leadership, Wing Command, Fleet Command, family skills, admitted hull bonuses and Command Processor rigs
+enter the existing fitting graph. Command Bursts require Omega to activate.
+
+Each pulse consumes one loaded charge and pays the fitted capacitor cost. It starts a weapons timer and saves the module
+cycle deadline. The source ship and eligible fleetmates inside the fitted surface-distance radius receive independently timed
+dogma effects. Recipients are selected when each pulse fires. A received effect lasts through later range or fleet changes
+and same-system warp. Docking and system changes clear it. High-security pulses skip fleetmates engaged with a third party
+under the implemented limited-engagement rule.
+
+The fitting graph uses the strongest active value per catalog collection and falls back to a weaker unexpired value when
+that stronger effect ends. Collection modifiers affect the ship, selected fitted modules, probe profiles and mining-crystal
+wear. These modifiers use the catalog's stacking rules alongside ordinary equipment. The resident world indexes deadlines
+and invalidates the recipient's fitting cache at expiry. Checkpoints retain payments and cooldowns. Startup reconciliation
+clears timed bonuses and repeat state.
+
+The native route uses `dogmaIM.Activate` and `Deactivate`, effects 6732–6736, charge effect 6737, and the pinned
+`client/dbuffcollections` selectors and aggregation. SetState and `OnDbuffUpdated` carry collection/value/expiry state.
+The sender receives `OnFleetBoosted`, charge quantity and capacitor updates. The flight stream carries the range-scaled
+`OnSpecialFX` pulse and the individual recipient effects.
+
+Inert inspection of the installed V24.02 client archive
+(`2DBC29987D01515F4F40C319F89F0276F05AC3D175D79776A03F1F8E2BAB5C6A`) found the five graphic families in
+`dbuff/common/baseBurstEffect.pyj`, the update consumer in `dbuff/client/incomingDbuffTracker.pyj`, and the source
+notification in `eve/client/script/parklife/dbuffClient.pyj`. The archive differs from the recorded pinned client baseline.
+The build-3662168 catalog establishes module and charge values. EveJS 261108.1 was consulted for recipient selection,
+pulse behavior and client state. Its local command-burst runtime has SHA-256
+`FA64CC42ACF5361EFD96E41C3579739E60ABD7CB44857DEB886B57B90F319B49`.
+[CCP Command Burst](https://support.eveonline.com/hc/en-us/articles/213817305-Command-Burst),
+[CCP fleet boosting](https://www.eveonline.com/news/view/command-bursts),
+[EVE University Command Bursts](https://wiki.eveuniversity.org/Command_Bursts),
+[Carbon Destiny surface distance](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Thunkers.cpp#L1798).
+
+Mindlink installation, tether and starbase force-field rules depend on their owning systems. Fleet hangars, ship
+maintenance bays, micro-jump fields and titan Phenomena Generators retain their own milestones.
+
+**Automated validation.** Tool and solution restore passed. The final build completed in 7.98 seconds with zero warnings
+or errors. The rebased affected run passed 307 tests in 232.80 seconds and skipped one launcher fixture that requires
+`EDEN_TEST_CLIENT_ROOT`. After the final visual and warp-safety changes, the focused `CommandBurstTests`, `TypedFlightTests`
+and `CooperativeFleetTests` selection passed all 37 cases in 17.47 seconds. The burst cases cover real Ferox fitting,
+charge compatibility, capacitor payment, fleet eligibility and range, exact expiry, fallback selection, checkpoint reopening,
+and zero SQL commands, connection opens or fitting calculations across 12 warmed recipient reads. Both Python policy
+suites passed (8 catalog and 9 formatting cases). Formatting verification passed across 1,977 files in 23.39 seconds.
+The pinned fixture matched the Git blob byte-for-byte, and the refreshed
+coverage entries came from offline production catalog exports. The full .NET suite was outside this validation.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Fire a burst with a second pilot in the fleet. Verify the sphere graphic, both ships'
+status indicators, and the indicator's expiry after the receiving pilot warps.
+
 ## Cooperative fleet foundation, November 7, 2026
 
 Eden now supports invitation-based cooperative fleets through the pinned client's ordinary fleet interface. This is independent of `Docking.FleetHandler` and `IPilotFleet`, which still manage personal assembled ships.

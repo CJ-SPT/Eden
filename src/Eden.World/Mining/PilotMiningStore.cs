@@ -364,7 +364,9 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
         Magazine? crystalState = null;
         if (PilotAmmunitionStore.Contents(world, moduleId) is { } crystal)
         {
-            var wear = CrystalRules.Use(catalog.FittingAttributes(crystal.TypeId), crystal.CrystalDamage, collection.Rolls.Crystal);
+            var crystalAttributes = catalog.FittingAttributes(crystal.TypeId);
+            double volatility = attributes.GetValueOrDefault(DogmaAttributeId.CrystalVolatilityChance, 1);
+            var wear = CrystalRules.Use(crystalAttributes, crystal.CrystalDamage, collection.Rolls.Crystal, volatility);
             crystal.CrystalDamage = wear.Damage;
             crystal.Quantity = wear.Destroyed ? 0 : 1;
             var module = world.Set<OwnedItem>().Find(moduleId)!;

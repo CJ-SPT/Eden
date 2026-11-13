@@ -39,7 +39,8 @@ internal sealed partial class FlightSession(
     IHumanPresence? presence = null,
     IHumanPresenceLease? humanPresenceLease = null,
     ICapsuleerPresentation? presentation = null,
-    IPilotMissions? missions = null
+    IPilotMissions? missions = null,
+    IPilotCommandBursts? commandBursts = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -72,7 +73,7 @@ internal sealed partial class FlightSession(
 
     private FlightEffects Effects => _effects ??= new(Update);
     private FlightScene Scene =>
-        _scene ??= new(space, clock, objects, Effects, Update, Updates.Add, health, encounters, wrecks, missiles, drones);
+        _scene ??= new(space, clock, objects, Effects, Update, Updates.Add, health, encounters, wrecks, missiles, drones, commandBursts);
     private FlightSceneContext SceneContext => new(Pilot, InBallpark, CanTarget, _simulatedStamp);
     private FlightModuleEffects ModuleEffects => _moduleEffects ??= new(_initialFlight, modules, Effects);
     private int Stamp => space.Stamp(clock);
@@ -126,6 +127,48 @@ internal sealed partial class FlightSession(
     public IReadOnlyList<NpcContact> VisibleNpcs => Scene.VisibleNpcs;
     public IReadOnlyList<WreckContact> VisibleWrecks => Scene.VisibleWrecks;
     public IReadOnlyList<MissileContact> VisibleMissiles => Scene.VisibleMissiles;
+
+    internal CommandBurstCandidate[] CommandBurstCandidates() => space.CommandBurstCandidates(Pilot);
+
+    internal void NotifyCommandBursts(IReadOnlyList<CommandBurstBoost> boosts) =>
+        Update(new DestinyCommand.DbuffUpdated(Pilot.ShipId, boosts));
+
+    internal void NotifyCommandBurstPulse(CommandBurstPulse pulse)
+    {
+        string family = pulse.Module.Effect switch
+        {
+            DogmaEffect.ArmorCommandBurst => "Armor",
+            DogmaEffect.ShieldCommandBurst => "Shield",
+            DogmaEffect.SkirmishCommandBurst => "Skirmish",
+            DogmaEffect.MiningForemanBurst => "Mining",
+            _ => "Information",
+        };
+        Emit(
+            Pilot.ShipId,
+            null,
+            "effects.WarfareLinkSphere" + family,
+            new() { ["graphicRadius"] = pulse.Module.Radius, ["radius"] = pulse.Module.Radius }
+        );
+        foreach (long recipient in pulse.Recipients)
+        {
+            Emit(recipient, Pilot.ShipId, "effects.WarfareLink" + family, null);
+        }
+
+        void Emit(long ship, long? target, string graphic, Dictionary<string, object?>? info)
+        {
+            var command = new DestinyCommand.CommandBurstVisual(
+                ship,
+                pulse.Module.Id,
+                pulse.Module.TypeId,
+                target,
+                pulse.Magazine.TypeId,
+                graphic,
+                info
+            );
+            // Publish the source and recipient visuals together in the emitting ship's flight stream.
+            Update(command);
+        }
+    }
 
     internal SmartbombCandidates SmartbombCandidates()
     {

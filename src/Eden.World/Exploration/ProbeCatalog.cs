@@ -80,8 +80,11 @@ internal static class ProbeCatalog
                 )
             );
         var equipment = Evaluate(modules);
-        return Profile(fitting.Graph.Attributes(target)) with
+        var profile = Profile(fitting.Graph.Attributes(target));
+        return profile with
         {
+            Strength = profile.Strength * (1 + fitting.Graph.Read(fitting.PilotId, DogmaAttributeId.BurstProbeStrength) / 100),
+            DeviationAu = profile.DeviationAu * (1 + fitting.Graph.Read(fitting.PilotId, DogmaAttributeId.BurstProbeDeviation) / 100),
             Bonuses = new(ship.Strength, ship.Deviation, equipment.Strength, equipment.Deviation),
         };
 

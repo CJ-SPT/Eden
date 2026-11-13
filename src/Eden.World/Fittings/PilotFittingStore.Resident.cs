@@ -9,6 +9,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -87,6 +88,7 @@ internal sealed partial class PilotFittingStore
         {
             long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             world.RemoveRange(world.Set<ActiveFittedModule>().Where(m => m.ExpiresAt > 0 && m.ExpiresAt <= now));
+            Eden.World.Fleets.CommandBurstStore.Expire(world, null, now);
         }
     }
 
@@ -496,7 +498,10 @@ internal sealed partial class PilotFittingStore
         {
             attributes[DogmaAttributeId.NextActivationTime] = world.Set<ModuleCooldown>().Find(module.Id)?.ReadyAt ?? 0;
         }
-        if (module.GroupId == CapacitorBoosterDefinitions.Group || MissileDefinitions.LauncherGroups.Contains(module.GroupId))
+        if (
+            module.GroupId is CapacitorBoosterDefinitions.Group or CommandBurstRules.Group
+            || MissileDefinitions.LauncherGroups.Contains(module.GroupId)
+        )
         {
             var cooldown = world.Set<ModuleCooldown>().Find(module.Id);
             attributes[DogmaAttributeId.NextActivationTime] = cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0;

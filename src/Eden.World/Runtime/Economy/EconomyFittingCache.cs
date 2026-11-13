@@ -21,7 +21,7 @@ internal sealed partial class ResidentEconomy
         if (
             changes.Any(c =>
                 c.Table is "WorldConfigurationState" or "schema"
-                || !c.Resident && c.Table is "WorldNpcEwar" or "WorldPlayerEwar" or "WorldRemoteAssistance"
+                || !c.Resident && c.Table is "WorldNpcEwar" or "WorldPlayerEwar" or "WorldRemoteAssistance" or "WorldCommandBurst"
             )
         )
         {

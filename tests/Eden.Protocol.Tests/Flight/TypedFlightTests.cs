@@ -181,7 +181,7 @@ public sealed class TypedFlightTests
                     ["droneState"] = new List<object?>(),
                     ["damageState"] = new Dictionary<long, object?> { [10] = new object?[] { new object?[] { 1d, 172000d }, 1d, 1d } },
                     ["effectStates"] = new List<object?>(),
-                    ["dbuffState"] = new Dictionary<long, object?>(),
+                    ["dbuffState"] = new List<object?>(),
                     ["industryLevel"] = 0,
                     ["researchLevel"] = 0,
                 }

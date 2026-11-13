@@ -8,10 +8,15 @@ public static class CrystalRules
 {
     // The catalog expresses volatility as a probability, not a percentage.
     // Wear is independent of the hit roll, including missed paid shots.
-    public static CrystalWear Use(IReadOnlyDictionary<DogmaAttributeId, double> attributes, double damage, double roll)
+    public static CrystalWear Use(
+        IReadOnlyDictionary<DogmaAttributeId, double> attributes,
+        double damage,
+        double roll,
+        double volatilityMultiplier = 1
+    )
     {
         double hitPoints = attributes.GetValueOrDefault(DogmaAttributeId.StructureHitPoints);
-        double chance = attributes.GetValueOrDefault(DogmaAttributeId.CrystalVolatilityChance);
+        double chance = attributes.GetValueOrDefault(DogmaAttributeId.CrystalVolatilityChance) * volatilityMultiplier;
         double increment = attributes.GetValueOrDefault(DogmaAttributeId.CrystalVolatilityDamage);
         double enabled = attributes.GetValueOrDefault(DogmaAttributeId.CrystalsGetDamaged);
         if (

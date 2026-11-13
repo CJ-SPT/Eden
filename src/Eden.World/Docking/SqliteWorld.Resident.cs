@@ -53,6 +53,7 @@ public sealed partial class SqliteWorld
         if (transfer)
         {
             ShipHeatPersistence.CancelForTravel(world, shipId);
+            Eden.World.Fleets.CommandBurstStore.Clear(world, shipId);
         }
         if (
             position is not null

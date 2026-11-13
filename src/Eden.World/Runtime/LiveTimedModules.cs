@@ -1,4 +1,5 @@
 using Eden.Data.World.Fittings;
+using Eden.Data.World.Fleets;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -9,11 +10,61 @@ namespace Eden.World.Runtime;
 internal sealed class LiveTimedModules(WorldDatabase database, int? system = null)
 {
     private readonly ResidentSnapshot<int, long> _deadline = new("resident.timedModules", "WorldActiveModule", "schema");
+    private readonly ResidentSnapshot<int, long> _burstDeadline = new("resident.burstDeadline", "WorldCommandBurst", "schema");
 
-    internal void Observe(IReadOnlyCollection<CombatRowChange> changes) => _deadline.Observe(changes);
+    internal void Observe(IReadOnlyCollection<CombatRowChange> changes)
+    {
+        _deadline.Observe(changes);
+        _burstDeadline.Observe(changes);
+    }
+
+    private void ExpireBursts(long now)
+    {
+        if (LiveWorld.Find(database.Path) is { } live && live.Economy.IsLoaded && live.SqlConnections == 0)
+        {
+            if (live.Economy.HasActiveAction && live.HasPersistenceOwnership)
+            {
+                return;
+            }
+            var due = live.Economy.DueCommandBursts(system, now);
+            if (due.Length == 0)
+            {
+                return;
+            }
+            var ships = live.Economy.Inspect(world =>
+                due.Select(id => world.Set<WorldCommandBurst>().Find(id)?.ShipId).OfType<long>().Distinct().ToArray()
+            );
+            using var action = live.Economy.Begin(new(ships: ships));
+            foreach (long id in due)
+            {
+                if (action.Set<WorldCommandBurst>().Find(id) is { } burst && burst.ExpiresAt <= now)
+                {
+                    action.Remove(burst);
+                }
+            }
+            action.Commit();
+            return;
+        }
+        if (!_burstDeadline.TryRead(0, 0, out long deadline))
+        {
+            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
+            deadline =
+                world.Set<WorldCommandBurst>().Where(b => system == null || b.SystemId == system).Min(b => (long?)b.ExpiresAt)
+                ?? long.MaxValue;
+            _burstDeadline.Publish(0, deadline, 0, long.MaxValue);
+        }
+        if (deadline <= now)
+        {
+            using WorldDbContext world = new(database.Path);
+            using var transaction = world.Database.BeginTransaction();
+            world.Set<WorldCommandBurst>().Where(b => b.ExpiresAt <= now && (system == null || b.SystemId == system)).ExecuteDelete();
+            transaction.Commit();
+        }
+    }
 
     internal void Expire(long now)
     {
+        ExpireBursts(now);
         if (LiveWorld.Find(database.Path) is { } live && live.Economy.IsLoaded && live.SqlConnections == 0)
         {
             if (live.Economy.HasActiveAction && live.HasPersistenceOwnership || live.Economy.NextModuleExpiry(system) > now)

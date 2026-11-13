@@ -11,6 +11,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -24,6 +25,7 @@ using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
 using Eden.World.Defenses;
+using Eden.World.Fleets;
 using Eden.World.Inventory;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
@@ -240,6 +242,16 @@ internal sealed partial record FittingCalculation(
                 );
             }
         }
+        foreach (var charge in charges.Where(c => CommandBurstRules.IsCharge(c.GroupId)))
+        {
+            var parent = modules.Single(m => m.Item.Id == charge.Item.LocationId);
+            if (!CommandBurstRules.Compatible(parent.GroupId, charge.GroupId, moduleAttributes[parent.Item.TypeId]))
+            {
+                throw new InvalidDataException("Invalid loaded command burst charge.");
+            }
+            modifiers.AddRange(CommandBurstCatalog.ChargeModifiers(parent.Item.Id, charge.Item.Id));
+        }
+        modifiers.AddRange(CommandBurstStore.Modifiers(world, catalog, ship.Id, pilot.Id, modules));
         bool catalogHull = HullCatalog.UsesCatalogBonuses(catalog, ship.TypeId);
         foreach (var role in catalogHull ? [] : FittingRules.RookieResistanceModifiers)
         {
@@ -454,6 +466,7 @@ internal sealed partial record FittingCalculation(
                 !PassiveCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
                 && !Eden.World.Information.InformationCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
                 && !Eden.World.Exploration.ProbeCatalog.Launcher(catalog, module.Item.TypeId, module.GroupId)
+                && !CommandBurstCatalog.Module(catalog, module.Item.TypeId, module.GroupId)
             )
             {
                 continue;
@@ -477,6 +490,7 @@ internal sealed partial record FittingCalculation(
         var relevantSkills = PassiveModules
             .Skills.Concat(MissileDefinitions.Skills)
             .Concat(AdvancedWeaponRules.Skills)
+            .Concat(modules.Any(m => m.GroupId == CommandBurstRules.Group) ? CommandBurstCatalog.Skills : [])
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
             .Concat([(int)MiningSkill.GasHarvesting, (int)MiningSkill.IceHarvesting])
             .Concat([Eden.Gameplay.Exploration.HackingRules.HackingSkill, Eden.Gameplay.Exploration.HackingRules.ArchaeologySkill])

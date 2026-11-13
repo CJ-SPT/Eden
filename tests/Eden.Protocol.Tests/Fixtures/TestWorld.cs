@@ -36,6 +36,9 @@ internal sealed class TestWorld : IDisposable
     internal const string DropSafetySchema = DropCloneGradeSchema + "ALTER TABLE WorldPilot DROP COLUMN SafetyLevel; ";
 
     internal const string DropRemoteAssistanceSchema = """
+        DROP TRIGGER IF EXISTS Clear_CommandBurst_Position;
+        DROP TRIGGER IF EXISTS Clear_CommandBurst_System;
+        DROP TABLE IF EXISTS WorldCommandBurst;
         DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Item;
         DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Active;
         DROP TRIGGER IF EXISTS Clear_RemoteAssistance_Marker;

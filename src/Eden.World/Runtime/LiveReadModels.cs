@@ -344,6 +344,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _concordOffline.Observe(changes);
         _loggedOff.Observe(changes);
         ObserveSpace(changes);
+        _commandBursts.Observe(changes, (ship, change) => change.Table == "WorldCommandBurst" ? !change.Resident : ship == change.Id);
         ObservePolling(changes);
     }
 
@@ -385,6 +386,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _concordOffline.Clear();
         _loggedOff.Clear();
         ClearSpace();
+        _commandBursts.Clear();
         ClearPolling();
     }
 }

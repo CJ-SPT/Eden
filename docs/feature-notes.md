@@ -304,7 +304,7 @@ Milestone 3 implements combat drones across its admitted hull cohort. Its first 
 | 9. Probes | Probe lifecycle, formations, scan resolution, recovery, upgrades and native results. |
 | 10. Exploration | Catalog-backed targets, data/relic analyzers and authoritative hacking attempts. |
 | 11. Cloaks/micro jumps | [Implemented for 14 static cloaks and four standard drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026): visibility, covert warp, persisted delays, paid spools and scrambler interruption. |
-| 12. Fleet services | Bursts, shared ship bays, in-space refitting/boarding, frigate escape and micro-jump fields. |
+| 12. Fleet services | [Command Bursts](protocol/fleets.md#command-bursts-november-13-2026) implemented. Shared ship bays, in-space refitting/boarding, frigate escape and micro-jump fields remain. |
 | 13. Area/interdiction | [125 static smartbombs](protocol/combat.md#smartbombs-november-12-2026) implemented. Burst jams, bombs/defenders, probes/bubbles, focused scripts, grapplers and nullifiers remain. |
 | 14. Weapons | [Disintegrators, Vorton chains, Breacher Pods, Breach Control, and their ammunition and upgrades](protocol/combat.md#advanced-weapons-november-12-2026). Capital disintegrators, rapid torpedo launchers and high-angle turrets depend on capital hull admission. |
 | 15. T2 subcapitals | Complete ordinary subcapital cohorts, real-budget fits and role/equipment verification. |

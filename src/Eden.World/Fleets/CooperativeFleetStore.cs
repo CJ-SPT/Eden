@@ -32,6 +32,13 @@ internal sealed class CooperativeFleetStore(TimeProvider clock) : ICooperativeFl
 
     public FleetIdentity? Identity(long actor) => Read(() => _world.Identity(actor));
 
+    public IReadOnlySet<long> MembersInFleet(long actor, IReadOnlyList<long> candidates) =>
+        Read<IReadOnlySet<long>>(() =>
+            _world.Identity(actor) is { FleetId: var fleet }
+                ? candidates.Where(candidate => _world.Identity(candidate)?.FleetId == fleet).ToHashSet()
+                : new HashSet<long>()
+        );
+
     public FleetMembership? Membership(long actor) => Read(() => _world.Membership(actor));
 
     public IReadOnlyList<FleetDelivery> Drain(long actor) => Read(() => _world.Drain(actor));

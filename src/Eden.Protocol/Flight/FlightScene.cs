@@ -2,6 +2,7 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
@@ -24,7 +25,8 @@ internal sealed class FlightScene(
     INpcEncounters? encounters,
     IWrecks? wrecks,
     IPilotMissiles? missiles,
-    IPilotDrones? drones
+    IPilotDrones? drones,
+    IPilotCommandBursts? commandBursts = null
 )
 {
     private FlightNpcScene? _npcScene;
@@ -415,7 +417,10 @@ internal sealed class FlightScene(
             new(
                 stamp,
                 new DestinyCommand.SetState(
-                    Ballpark.Snapshot(own, stamp, visible, peers, Npcs.Contacts, _wrecks, _missiles, Drones.Contacts)
+                    Ballpark.Snapshot(own, stamp, visible, peers, Npcs.Contacts, _wrecks, _missiles, Drones.Contacts) with
+                    {
+                        Boosts = commandBursts?.Incoming(own.Pilot.ShipId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+                    }
                 )
             )
         );
@@ -526,7 +531,14 @@ internal sealed class FlightScene(
             {
                 foreach (var order in space.Orders(ship.Pilot.ShipId, after))
                 {
-                    send(order.Update);
+                    if (
+                        order.Update.Command is not DestinyCommand.CommandBurstVisual visual
+                        || visual.Id == context.Pilot.ShipId
+                        || current.Any(peer => peer.Pilot.ShipId == visual.Id)
+                    )
+                    {
+                        send(order.Update);
+                    }
                 }
             }
             _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);

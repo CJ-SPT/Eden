@@ -6,12 +6,12 @@
     {
       "category": "Ship",
       "state": "Complete",
-      "count": 185
+      "count": 193
     },
     {
       "category": "Ship",
       "state": "Partial",
-      "count": 180
+      "count": 172
     },
     {
       "category": "Ship",
@@ -26,7 +26,7 @@
     {
       "category": "Module",
       "state": "Complete",
-      "count": 3481
+      "count": 3499
     },
     {
       "category": "Module",
@@ -36,7 +36,7 @@
     {
       "category": "Module",
       "state": "Planned",
-      "count": 244
+      "count": 226
     },
     {
       "category": "Module",
@@ -61,12 +61,12 @@
     {
       "category": "Charge",
       "state": "Complete",
-      "count": 873
+      "count": 892
     },
     {
       "category": "Charge",
       "state": "Planned",
-      "count": 86
+      "count": 67
     },
     {
       "category": "Charge",
@@ -19941,7 +19941,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -22035,7 +22035,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -83945,7 +83945,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -84014,7 +84014,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -84084,7 +84084,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -84150,7 +84150,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -119988,7 +119988,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2251,
         5572,
@@ -120033,7 +120033,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -120050,7 +120050,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2155,
         2156,
@@ -120099,7 +120099,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -120116,7 +120116,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2251,
         5334,
@@ -120168,7 +120168,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -120185,7 +120185,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2157,
         2251,
@@ -120236,7 +120236,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -120512,7 +120512,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2160,
         2251,
@@ -120561,7 +120561,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -120578,7 +120578,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2251,
         5496,
@@ -120629,7 +120629,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -120646,7 +120646,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2251,
         5335,
@@ -120701,7 +120701,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -120718,7 +120718,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2251,
         3331,
@@ -120772,7 +120772,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -129925,7 +129925,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -129998,7 +129998,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -130061,7 +130061,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -130123,7 +130123,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -141422,7 +141422,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -163755,7 +163755,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -163825,7 +163825,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -163888,7 +163888,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -163950,7 +163950,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -174401,7 +174401,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -174492,7 +174492,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -174585,7 +174585,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -174676,7 +174676,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -187657,7 +187657,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -187898,8 +187898,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -187909,9 +187909,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -187925,8 +187932,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -187936,9 +187943,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -187952,8 +187966,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -187963,9 +187977,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -187979,8 +188000,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -187990,9 +188011,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -188006,8 +188034,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -188017,9 +188045,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -188098,15 +188133,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188122,15 +188157,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188146,15 +188181,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188170,15 +188205,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188194,15 +188229,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188218,15 +188253,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188242,15 +188277,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188266,15 +188301,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188290,15 +188325,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188314,15 +188349,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188338,15 +188373,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188362,15 +188397,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188386,15 +188421,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188410,15 +188445,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188434,15 +188469,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -188484,8 +188519,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -188495,9 +188530,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -188511,8 +188553,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -188522,9 +188564,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -188538,8 +188587,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -188549,9 +188598,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -188565,8 +188621,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -188576,9 +188632,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -188592,8 +188655,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -188603,9 +188666,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -202596,7 +202666,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -203734,7 +203804,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -208646,7 +208716,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -208717,7 +208787,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -208798,7 +208868,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -208871,7 +208941,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -210619,7 +210689,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -210753,7 +210823,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -215163,7 +215233,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -215983,8 +216053,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -215994,9 +216064,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -216051,8 +216128,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -216062,9 +216139,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -216839,7 +216923,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -216876,8 +216960,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -216887,9 +216971,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -216903,15 +216994,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -216927,15 +217018,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -216951,15 +217042,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -216975,8 +217066,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -216986,9 +217077,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -217002,8 +217100,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -217013,9 +217111,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -217249,7 +217354,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "CommandBursts"
@@ -217958,15 +218063,15 @@
       "category": "Charge",
       "techLevel": null,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         6737
       ],
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -218744,8 +218849,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -218755,9 +218860,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -218771,8 +218883,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -218782,9 +218894,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -218798,8 +218917,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -218809,9 +218928,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "FleetServices",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "FleetServices",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],

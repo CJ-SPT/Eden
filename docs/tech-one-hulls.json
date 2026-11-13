@@ -3869,13 +3869,12 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
         "MiningDrones",
         "Probes",
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -4071,7 +4070,7 @@
         {
           "effectId": 1387,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4821,
@@ -4100,7 +4099,6 @@
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -4769,11 +4767,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -4827,11 +4824,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -4890,11 +4886,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -4968,11 +4963,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -7450,7 +7444,7 @@
     },
     {
       "typeId": 21097,
-      "name": "Goru\u0027s Shuttle",
+      "name": "Goru's Shuttle",
       "class": "Shuttle",
       "acquisition": "market",
       "fitting": {
@@ -7845,11 +7839,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -7923,11 +7916,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -7986,11 +7978,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -8044,11 +8035,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -8264,7 +8254,7 @@
         {
           "effectId": 2251,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3739,
@@ -8279,17 +8269,17 @@
         {
           "effectId": 3744,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6786,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6789,
@@ -8309,7 +8299,7 @@
         {
           "effectId": 8264,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8278,
@@ -8339,7 +8329,6 @@
       ],
       "deferred": [
         "MiningDrones",
-        "CommandBursts",
         "IndustrialCores",
         "FleetAccess",
         "FleetRefitting"
@@ -9692,11 +9681,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -9750,7 +9738,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7031,
@@ -9794,7 +9782,6 @@
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -9848,7 +9835,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12296,
@@ -9857,7 +9844,6 @@
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -9911,11 +9897,10 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -11277,7 +11262,7 @@
         {
           "effectId": 2251,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3739,
@@ -11292,12 +11277,12 @@
         {
           "effectId": 3744,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6214,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6789,
@@ -11312,7 +11297,7 @@
         {
           "effectId": 8264,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8278,
@@ -11342,7 +11327,6 @@
       ],
       "deferred": [
         "MiningDrones",
-        "CommandBursts",
         "FleetAccess"
       ]
     },
@@ -11838,7 +11822,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7092,
@@ -11894,7 +11878,6 @@
       "deferred": [
         "Smartbombs",
         "Disintegrators",
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -12390,7 +12373,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11055,
@@ -12409,7 +12392,6 @@
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -12458,7 +12440,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11057,
@@ -12477,7 +12459,6 @@
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -12541,7 +12522,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11060,
@@ -12561,7 +12542,6 @@
       ],
       "deferred": [
         "UtilityDrones",
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -12615,7 +12595,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11063,
@@ -12639,7 +12619,6 @@
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -13304,7 +13283,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7184,
@@ -13363,7 +13342,6 @@
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -13504,7 +13482,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7117,
@@ -13528,7 +13506,6 @@
         }
       ],
       "deferred": [
-        "CommandBursts",
         "MicroJumpDrives"
       ]
     },
@@ -13747,7 +13724,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12189,
@@ -13772,7 +13749,6 @@
       ],
       "deferred": [
         "Cloaking",
-        "CommandBursts",
         "BreacherPods",
         "MicroJumpDrives"
       ]
@@ -13969,7 +13945,7 @@
         {
           "effectId": 2251,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 2252,
@@ -13994,7 +13970,7 @@
         {
           "effectId": 6783,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12249,
@@ -14024,12 +14000,12 @@
         {
           "effectId": 12539,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12540,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12541,
@@ -14039,7 +14015,7 @@
         {
           "effectId": 12543,
           "capability": "CommandBursts",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
@@ -14047,7 +14023,6 @@
         "Cloaking",
         "GasMining",
         "Hacking",
-        "CommandBursts",
         "MicroJumpDrives",
         "FleetAccess",
         "FleetRefitting"
