@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Owner lookup and character search calls](protocol/performance.md#owner-lookup-and-character-search-calls-november-13-2026)
+records batched owner resolution, committed identity snapshots, indexed names and checkpoint-independent warmed RPCs.
+
 [Orderly host shutdown](protocol/startup.md#orderly-host-shutdown) records final checkpoint ordering and fault handling.
 
 [Chat listener and log output failures](protocol/startup.md#chat-listener-and-log-output-failures) records supervision and bounded logging.

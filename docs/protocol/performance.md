@@ -3663,3 +3663,84 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare `GetGuests` and `GetRegionBest` reply times during an installed-world save with several sessions online.
+
+## Owner lookup and character search calls, November 13, 2026
+
+`config.GetMultiOwnersEx` previously queried every requested ID as a possible player corporation, including
+IDs already resolved as characters. Resolving 100 saved characters took 101 SQL commands and connections
+on the first call. Warm calls still queried all character identities, and an unrelated pilot change
+invalidated corporation misses, restoring the 101-query cost. Character searches loaded every saved name
+and repeatedly normalized both the query and each candidate.
+
+Public character and corporation identities now share an immutable directory initialized from two narrow
+startup queries. SQL and resident commits update only affected identities; rolled-back changes stay private.
+Owner resolution batches unresolved corporation IDs and preserves NPC, faction, gender, ticker and logo
+reply fields. Warm live-world reads acquire neither persistence nor system ownership. Offline worlds retain
+batched SQL reads. Name indexes are rebuilt lazily only after actual name or membership changes, while
+gender, corporation-balance and other non-name updates retain the existing search index.
+
+The typed search index stores normalized names and word candidates, retaining all four native matching
+modes, the short-term wildcard fallback, Unicode, NPC filtering, name/ID ordering, deduplication and the
+500-result cap. Static catalog names use the same index and retain catalog-generation invalidation.
+Exact owner IDs use direct lookups. Arbitrary query results are not retained in an unbounded cache.
+
+Behavior references remain the pinned build-3662168 search constants and `searchUtil.IsMatch`, with the
+[EVE University Neocom guide](https://wiki.eveuniversity.org/Neocom) for search entry points. The local
+reference engine's `server/src/services/_other/searchService.js` was inspected for indexed-name behavior
+(SHA-256 `611c1dbd05f782e2f38a2cc2cea64349328c062d8af8505d71a25b2d57e647c8`);
+the implementation is independently written against Eden's existing matching rules. No transport or Blue
+encoding behavior changed. No new live observations were made.
+
+### Automated validation
+
+Matched Debug probes compared baseline `b56bbca3` with this implementation. Owner probes used the same
+100-character fixture and unrelated pilot-name update. The saved-name probe read the same 23,332 names
+without modifying the installed world, searched for `Eden`, and verified identical result IDs.
+
+| Workload | Baseline | Indexed/batched implementation |
+| --- | --- | --- |
+| First 100-character owner handler | 86.32 ms; 101 SQL commands/opens | 12.33 ms; zero SQL commands/opens |
+| Warm 100-character owner handler, two samples | 2.69–7.79 ms; one SQL command/open | 0.08–0.35 ms; zero SQL commands/opens |
+| Owner handler after unrelated pilot rename | 68.07 ms; 101 SQL commands/opens | 0.17 ms; zero SQL commands/opens |
+| Warm local search, 100 matching characters, three samples | 0.85–1.90 ms; one SQL command/open | 0.02–0.27 ms; zero SQL commands/opens |
+| Saved-name matching only, three samples | 4.94–8.12 ms; 9,242,816–9,242,952 allocated bytes | 0.02–0.40 ms; 1,480–1,592 allocated bytes |
+
+The name-matching probe excludes index construction, SQL loading, protocol output and session updates.
+These short local probes establish work reduction, not installed-server p95 or client latency. Raw baseline
+and updated samples are retained locally under ignored `artifacts/call-performance-audit/`.
+
+Complete warmed `GetMultiOwnersEx` and `search.QuickQuery` session frames also finish during a deliberately
+paused checkpoint copy, with zero SQL commands, connections or fitting calculations and identical encoded
+replies before and during the pause. Checkpoint copying is separate from the frame measurement; the
+deliberate pause is not a measured save duration. Regression tests cover committed SQL/resident changes,
+rollback, creation, deletion, stable non-name updates, retained old snapshots and reopened checkpoint data.
+
+The exact-method development filters were
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.UniversalSearchTests.SavedNamesAreFreshAcrossCreationRenameAndReopen`,
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.OwnerDirectoryTests.PublicNamesFollowCommitsButNeverExposeRolledBackNames`
+and `FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.OwnerDirectoryTests.CorporationNamesAndLogosFollowCreationCommitRollbackAndDeletion`;
+all passed. Final focused validation used this filter construction:
+
+```powershell
+$filter = @(
+    'OwnerDirectoryTests', 'SearchNameIndexTests', 'UniversalSearchTests', 'CharacterSearchTests',
+    'ContactsServiceTests', 'PlayerCorporationTests', 'CorporationMembershipTests', 'CharacterCreationTests',
+    'CharacterDeletionTests', 'CheckpointOwnershipTests', 'ResidentEconomyTests', 'ResidentReadTests'
+) | ForEach-Object { 'FullyQualifiedName~' + $_ }
+dotnet test --no-build --artifacts-path artifacts/feature-tests --filter ($filter -join '|')
+```
+
+Tool restore and solution restore passed. The solution built with zero warnings/errors in 8.64 seconds;
+all 151 affected tests passed in 46 seconds. The catalog Python suite passed eight tests in 1.02 seconds,
+and formatting-policy Python passed nine in 0.02 seconds. `.\tools\Format.ps1 -Check` passed .NET style,
+CSharpier's 2,005-file check (4.47 seconds), and the 140-character width policy. `git diff --check` passed.
+The full .NET suite was not run. Final test results are retained locally in
+`artifacts/feature-tests/results/owner-search-milestone/owner-search-milestone.trx`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare owner-list and People & Places search response times during a normal installed-world save.

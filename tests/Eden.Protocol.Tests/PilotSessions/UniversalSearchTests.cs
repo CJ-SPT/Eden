@@ -15,10 +15,12 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class UniversalSearchTests
 {
-    [Fact]
-    public void MixedNativeSearchFindsEveryAvailableCategoryAndResolvesOwners()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MixedNativeSearchFindsEveryAvailableCategoryAndResolvesOwners(bool liveWorld)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: liveWorld);
         Prepare(db);
         PlayerCorporationTests.Prepare(db);
         int corporation = db

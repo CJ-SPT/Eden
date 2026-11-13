@@ -31,6 +31,8 @@ public sealed class CheckpointOwnershipTests(ITestOutputHelper report)
     [Theory]
     [InlineData("station", "GetGuests")]
     [InlineData("marketProxy", "GetRegionBest")]
+    [InlineData("config", "GetMultiOwnersEx")]
+    [InlineData("search", "QuickQuery")]
     public async Task WarmDockedCallsCompleteDuringCheckpointCopyOnFirstPeriodicPoll(string service, string method)
     {
         TestClock clock = new();
@@ -80,7 +82,13 @@ public sealed class CheckpointOwnershipTests(ITestOutputHelper report)
             handoff: services.GetRequiredService<ICapsuleerHandoff>(),
             presentation: services.GetRequiredService<ICapsuleerPresentation>()
         );
-        var request = PilotServicesTests.Request(service, method, []);
+        object?[] arguments = method switch
+        {
+            "GetMultiOwnersEx" => [new List<object?> { 90000001L, 90000002L, 1000044L }],
+            "QuickQuery" => ["Eden", new List<object?> { 2L }],
+            _ => [],
+        };
+        var request = PilotServicesTests.Request(service, method, arguments);
         await calls.ProcessAsync(request);
         Assert.NotEmpty(Assert.Single(replies));
         clock.Seconds++;

@@ -78,6 +78,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal Eden.World.Capsuleers.CapsuleerActivity CapsuleerActivity { get; }
     internal bool MeasureCheckpoints { get; set; }
     internal LiveMarketSummaries MarketSummaries { get; } = new();
+    internal LiveOwnerDirectory OwnerDirectory { get; }
     internal LiveTrafficGeometry TrafficGeometry { get; } = new();
     internal long PreparationRevision { get; private set; }
     internal long TrafficTemplateRevision { get; private set; }
@@ -132,6 +133,11 @@ internal sealed partial class LiveWorld : IDisposable
             return;
         }
         ObserveWalletBalances(changes);
+        if (changes.Any(change => change.Table is "WorldPilot" or "WorldCorporation" or "schema"))
+        {
+            using WorldDbContext directory = new(_memory);
+            OwnerDirectory.Observe(directory, Economy, changes);
+        }
         var marketLocations = residentMarketLocations ?? MarketLocations(changes);
         MarketSummaries.Observe(changes, marketLocations);
         if (
@@ -435,6 +441,10 @@ internal sealed partial class LiveWorld : IDisposable
                 disk.BackupDatabase(_memory);
             }
             _observedDataVersion = DataVersion();
+            using (WorldDbContext directory = new(_memory))
+            {
+                OwnerDirectory = new(directory);
+            }
             if (!s_worlds.TryAdd(_path, this))
             {
                 throw new InvalidOperationException("This world already has a resident owner.");

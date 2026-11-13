@@ -18,6 +18,11 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
 {
     public int? Corporation(long characterId)
     {
+        if (LiveWorld.Find(database.Path) is { } live)
+        {
+            return live.OwnerDirectory.Snapshot.Pilots.GetValueOrDefault(characterId)?.CorporationId
+                ?? npcs.Character(characterId)?.CorporationId;
+        }
         using WorldDbContext world = new(database.Path);
         return world.Pilots.Where(p => p.Id == characterId).Select(p => (int?)p.CorporationId).SingleOrDefault()
             ?? npcs.Character(characterId)?.CorporationId;
@@ -26,12 +31,17 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
     public IReadOnlyList<long> Search(string query, CharacterSearchMatch match)
     {
         CharacterSearchRules.Check(query, match);
+        if (LiveWorld.Find(database.Path) is { } live)
+        {
+            return live.OwnerDirectory.Snapshot.CharacterSearch.Value.Select(new(query, match)).Select(entry => entry.Id).ToArray();
+        }
         using WorldDbContext world = new(database.Path);
+        CharacterSearchQuery prepared = new(query, match);
         return world
             .Pilots.AsNoTracking()
             .Select(p => new { p.Id, p.Name })
             .AsEnumerable()
-            .Where(p => CharacterSearchRules.Matches(query, p.Name, match))
+            .Where(p => prepared.Matches(new(p.Name)))
             .OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(p => p.Id)
             .Take(CharacterSearchRules.MaximumResults)
@@ -41,6 +51,21 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
 
     public IReadOnlyList<CharacterIdentity> Read(IReadOnlyList<long> ids)
     {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+        if (LiveWorld.Find(database.Path) is { } live)
+        {
+            var snapshot = live.OwnerDirectory.Snapshot;
+            return ids.Distinct()
+                .Select(id => snapshot.Pilots.GetValueOrDefault(id)?.Identity)
+                .OfType<CharacterIdentity>()
+                .Concat(npcs.Characters(ids).Select(npc => npc.Identity))
+                .DistinctBy(character => character.Id)
+                .OrderBy(character => character.Id)
+                .ToArray();
+        }
         using WorldDbContext world = new(database.Path);
         return world
             .Pilots.Where(p => ids.Contains(p.Id))

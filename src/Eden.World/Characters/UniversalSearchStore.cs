@@ -4,6 +4,7 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,36 +13,65 @@ namespace Eden.World.Characters;
 [Injectable]
 internal sealed class UniversalSearchStore(WorldDatabase database) : IUniversalSearch
 {
-    private static readonly CatalogDefinition<ImmutableDictionary<SearchCategory, ImmutableArray<SearchEntry>>> s_index = new(
+    private static readonly CatalogDefinition<ImmutableDictionary<SearchCategory, SearchNameIndex>> s_index = new(
         "search/universe",
         (catalog, _) => Load(catalog),
-        Estimate: index => 1024 + index.Values.Sum(entries => entries.Sum(entry => 96L + entry.Name.Length * 2L))
+        Estimate: index => 1024 + index.Values.Sum(entries => entries.EstimatedBytes)
     );
 
     public IReadOnlyList<SearchGroup> Search(SearchRequest request)
     {
         UniversalSearchRules.Check(request);
+        if (request.OnlyAlternateName)
+        {
+            return request.Categories.Select(category => new SearchGroup(category, [])).ToArray();
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var index = catalog.Definition(s_index, 0);
-        using WorldDbContext world = new(database.Path);
+        var resident = LiveWorld.Find(database.Path)?.OwnerDirectory.Snapshot;
+        CharacterSearchQuery query = new(request.Query, request.Match);
+        using WorldDbContext? world = resident is null ? new(database.Path) : null;
         List<SearchGroup> groups = [];
         foreach (var category in request.Categories)
         {
-            IEnumerable<SearchEntry> entries = index.GetValueOrDefault(category, []);
+            IEnumerable<SearchEntry> entries = index.GetValueOrDefault(category)?.Select(query, request.HideNpc) ?? [];
             if (category == SearchCategory.Character)
             {
-                entries = entries.Concat(world.Pilots.AsNoTracking().Select(pilot => new SearchEntry(category, pilot.Id, pilot.Name)));
+                entries = entries.Concat(
+                    resident is not null
+                        ? resident.CharacterSearch.Value.Select(query)
+                        : world!
+                            .Pilots.AsNoTracking()
+                            .Select(pilot => new SearchEntry(category, pilot.Id, pilot.Name))
+                            .AsEnumerable()
+                            .Where(entry => query.Matches(new(entry.Name)))
+                );
             }
             if (category == SearchCategory.Corporation)
             {
                 entries = entries.Concat(
-                    world
-                        .Set<SavedCorporation>()
-                        .AsNoTracking()
-                        .Select(corporation => new SearchEntry(category, corporation.Id, corporation.Name))
+                    resident is not null
+                        ? resident.CorporationSearch.Value.Select(query)
+                        : world!
+                            .Set<SavedCorporation>()
+                            .AsNoTracking()
+                            .Select(corporation => new SearchEntry(category, corporation.Id, corporation.Name))
+                            .AsEnumerable()
+                            .Where(entry => query.Matches(new(entry.Name)))
                 );
             }
-            groups.Add(new(category, UniversalSearchRules.Select(request, entries)));
+            groups.Add(
+                new(
+                    category,
+                    entries
+                        .OrderBy(entry => entry.Name, StringComparer.OrdinalIgnoreCase)
+                        .ThenBy(entry => entry.Id)
+                        .DistinctBy(entry => entry.Id)
+                        .Take(CharacterSearchRules.MaximumResults)
+                        .Select(entry => entry.Id)
+                        .ToArray()
+                )
+            );
         }
         return groups;
     }
@@ -54,15 +84,14 @@ internal sealed class UniversalSearchStore(WorldDatabase database) : IUniversalS
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var index = catalog.Definition(s_index, 0);
-        var requested = ids.ToHashSet();
         return new[] { SearchCategory.Corporation, SearchCategory.Faction }
-            .SelectMany(category => index.GetValueOrDefault(category, []))
-            .Where(entry => requested.Contains(entry.Id))
+            .SelectMany(category => ids.Distinct().Select(id => index.GetValueOrDefault(category)?.Find(id)))
+            .OfType<SearchEntry>()
             .OrderBy(entry => entry.Id)
             .ToArray();
     }
 
-    private static ImmutableDictionary<SearchCategory, ImmutableArray<SearchEntry>> Load(CatalogDbContext catalog)
+    private static ImmutableDictionary<SearchCategory, SearchNameIndex> Load(CatalogDbContext catalog)
     {
         var definitions = catalog.Definitions;
         List<SearchEntry> entries = [];
@@ -125,6 +154,6 @@ internal sealed class UniversalSearchStore(WorldDatabase database) : IUniversalS
                 entries.Add(new(SearchCategory.Faction, id, name, true));
             }
         }
-        return entries.GroupBy(entry => entry.Category).ToImmutableDictionary(group => group.Key, group => group.ToImmutableArray());
+        return entries.GroupBy(entry => entry.Category).ToImmutableDictionary(group => group.Key, group => new SearchNameIndex(group));
     }
 }

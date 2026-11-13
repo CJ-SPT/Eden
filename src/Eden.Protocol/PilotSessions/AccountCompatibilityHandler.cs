@@ -13,7 +13,7 @@ internal sealed class AccountCompatibilityHandler(
     SharedStationGuests guests,
     ICharacterDirectory directory,
     INpcCorporationDirectory corporations,
-    IPlayerCorporations players,
+    IPlayerCorporationDirectory players,
     IUniversalSearch search
 ) : IPilotCallHandler
 {
@@ -58,10 +58,7 @@ internal sealed class AccountCompatibilityHandler(
         var ids = values.OfType<long>().Where(id => id is > 0 and <= int.MaxValue).Select(id => (int)id).Distinct().ToArray();
         // Pilot contacts carry only a ticker. Read saved corporations first so
         // roster/visible-pilot shortcuts cannot discard their logo layers.
-        var known = ids.Select(players.Read)
-            .OfType<PlayerCorporation>()
-            .Select(c => new CorporationTickerRow(c.Id, c.Details.Ticker, c.Details.Logo))
-            .ToArray();
+        var known = players.Read(ids).Select(c => new CorporationTickerRow(c.Id, c.Ticker, c.Logo)).ToArray();
         known = known
             .Concat(
                 KnownPilots(context)
@@ -93,12 +90,15 @@ internal sealed class AccountCompatibilityHandler(
             rows.Add(new(pilot.Id, pilot.Name, pilot.Gender, pilot.NameId, pilot.IsNpc));
         }
 
-        foreach (long id in ids.OfType<long>().Where(id => id is > 0 and <= int.MaxValue).Distinct())
+        var characterIds = rows.Select(row => row.Id).ToHashSet();
+        var corporationIds = ids.OfType<long>()
+            .Where(id => id is > 0 and <= int.MaxValue && !characterIds.Contains(id))
+            .Select(id => (int)id)
+            .Distinct()
+            .ToArray();
+        foreach (var corporation in players.Read(corporationIds))
         {
-            if (players.Read((int)id) is { } corporation)
-            {
-                rows.Add(new(id, corporation.Details.Name, 0, TypeId: CorporationRules.CorporationType));
-            }
+            rows.Add(new(corporation.Id, corporation.Name, 0, TypeId: CorporationRules.CorporationType));
         }
         // Search can return catalog corporations/factions outside the client's primed owner cache.
         // Build 3662168 inventorycommon.const typeFaction is distinct from the corporation type.
