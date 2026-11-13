@@ -9,7 +9,6 @@ internal static class ProbeScanningWire
 {
     internal const int IdleState = 1;
     private const int ScanningState = 4;
-    private const int CombatStrengthAttribute = 1136;
 
     internal static object[] Position(SpacePosition p) => [p.X, p.Y, p.Z];
 
@@ -91,7 +90,7 @@ internal static class ProbeScanningWire
                             {
                                 ExplorationKind.Data => HackingRules.DataStrengthAttribute,
                                 ExplorationKind.Relic => HackingRules.RelicStrengthAttribute,
-                                _ => CombatStrengthAttribute,
+                                _ => CombatAnomalyRules.CombatStrengthAttribute,
                             }
                     : null,
                 ["dungeonID"] = name && !result.Site.Wormhole ? result.Site.DungeonId : null,

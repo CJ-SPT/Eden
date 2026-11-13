@@ -21,6 +21,9 @@ internal static class LocalGateway
         builder.Logging.ClearProviders();
         var settings = configuration ?? new LauncherOptions();
         builder.WebHost.ConfigureKestrel(options =>
+        {
+            // The native client uses cleartext HTTP/2 to the launcher relay, which forwards the same headers over TLS.
+            options.AllowAlternateSchemes = settings.CertificatePath is not null;
             options.Listen(
                 IPAddress.Parse(settings.ListenAddress),
                 settings.GatewayPort,
@@ -32,11 +35,26 @@ internal static class LocalGateway
                         endpoint.UseHttps(certificate, Environment.GetEnvironmentVariable("EDEN_CERTIFICATE_PASSWORD"));
                     }
                 }
-            )
-        );
+            );
+        });
         builder.Services.AddGrpc();
         builder.Services.AddSingleton(requests);
         var app = builder.Build();
+        if (settings.CertificatePath is not null)
+        {
+            app.Use(
+                (context, next) =>
+                {
+                    if (context.Request.Scheme is not ("http" or "https"))
+                    {
+                        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                        return Task.CompletedTask;
+                    }
+                    context.Request.Scheme = "https";
+                    return next(context);
+                }
+            );
+        }
         app.MapGrpcService<RequestStream>();
         app.MapGrpcService<NoticeStream>();
         app.MapGrpcService<EventStream>();

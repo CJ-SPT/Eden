@@ -11,6 +11,36 @@ namespace Eden.Protocol.Tests.Gateway;
 public sealed class GatewayRequestsTests
 {
     private const string PaletteApi = "type.googleapis.com/eve_public.cosmetic.corporation.palette.api.";
+    private const string MercenaryDenActivityApi = "type.googleapis.com/eve_public.sovereignty.mercenaryden.activity.api.";
+
+    [Fact]
+    public void EmptySpaceMenuReceivesASuccessfulEmptyMercenaryDenActivityList()
+    {
+        using TestWorld world = new();
+        var gateway = world.Services.GetRequiredService<GatewayRequests>();
+        var request = new Request
+        {
+            ApplicationInstanceUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
+            CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
+            AuthoritativeContext = new AuthoritativeContext
+            {
+                Identity = new ActiveIdentity { Character = new CharacterIdentifier { Sequential = 90000001 } },
+            },
+            Payload = new Any { TypeUrl = MercenaryDenActivityApi + "GetAllRequest" },
+        };
+
+        var response = Response.Parser.ParseFrom(gateway.Handle(request).ToByteArray());
+        Assert.Equal(200u, response.StatusCode);
+        Assert.Equal(request.ApplicationInstanceUuid, response.ApplicationInstanceUuid);
+        Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
+        Assert.Equal(MercenaryDenActivityApi + "GetAllResponse", response.Payload.TypeUrl);
+        Assert.Empty(response.Payload.Unpack<Protocol.Gateway.MercenaryDenActivity.GetAllResponse>().ToByteArray());
+
+        request.Payload.TypeUrl = MercenaryDenActivityApi + "StartRequest";
+        var unsupported = gateway.Handle(request);
+        Assert.Equal(501u, unsupported.StatusCode);
+        Assert.Null(unsupported.Payload);
+    }
 
     [Theory]
     [InlineData("Get", 672, "0A0E0A08089601108001185918012801")]

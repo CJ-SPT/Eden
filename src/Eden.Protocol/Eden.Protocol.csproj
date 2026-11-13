@@ -20,6 +20,7 @@
     />
     <Protobuf Include="Gateway/plex.proto;Gateway/plex_vault.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf Include="Gateway/freelance_project.proto;Gateway/freelance_requests.proto" ProtoRoot="Gateway" GrpcServices="None" />
+    <Protobuf Include="Gateway/mercenary_den_activity.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf Include="Gateway/corporation_palette.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf Include="Gateway/semanticversion.proto;Gateway/celestial_resource_values.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf

@@ -39,6 +39,7 @@ public sealed class AgencyTests
         Assert.Equal(site.Id, fields["instanceID"]);
         Assert.Equal(site.TargetId, BlueMarshal.Text(fields["targetID"]));
         Assert.Equal((long)MiningSiteRules.IceArchetype, fields["archetypeID"]);
+        Assert.Equal(211L, fields["scanStrengthAttribute"]);
         Assert.Equal((long)site.DungeonId, fields["dungeonID"]);
         Assert.Equal((long)site.NameId, fields["dungeonNameID"]);
         Assert.Equal(new object?[] { site.Position.X, site.Position.Y, site.Position.Z }, Assert.IsType<object?[]>(fields["position"]));

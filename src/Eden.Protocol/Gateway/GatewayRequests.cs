@@ -55,6 +55,8 @@ public sealed class GatewayRequests(
                     // no projects, so the repository receives a successful empty collection.
                     "eve_public.freelance.project.api.GetAllActiveForCorporationRequest" =>
                         new Freelance.GetAllActiveForCorporationResponse(),
+                    // The empty-space menu primes the activity cache synchronously until this read succeeds.
+                    "eve_public.sovereignty.mercenaryden.activity.api.GetAllRequest" => new MercenaryDenActivity.GetAllResponse(),
                     _ => null,
                 }
             );

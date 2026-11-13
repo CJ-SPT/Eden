@@ -829,3 +829,58 @@ $filter = @(
 
 **Optional maintainer checks.** After updating the server, right-click empty space twice in the same system and compare
 opening times. If reopens are still slow, capture the client RPC timing and the matching server log around a click.
+
+### Mercenary Den activity and Anomalies submenu follow-up
+
+The maintainer still observed the delay after the structure-map change and reported an empty Anomalies submenu. The
+running client's MachoNet cache contained the new `GetStructureMapData` result and cache policy. This confirms receipt
+and storage of the reply. It does not measure where the remaining time was spent.
+
+Pinned build 3662168 also calls `_GetMercenaryDenActivitiesMenu` before displaying the top-level menu. The client
+repository's `activity_cache` calls `load_activities_now` while the cache is uninitialized. Its public gateway
+`eve_public.sovereignty.mercenaryden.activity.api.GetAllRequest` waits up to two seconds and runs once per attempted
+load. The cache becomes initialized only after a successful load. Eden previously returned its unsupported response.
+The local evejs 261108.1 `mercenaryDenGatewayService.js` returns HTTP-status value 200 with the activity collection.
+Eden now returns 200 and the matching `GetAllResponse` type with an empty payload, the native protobuf encoding of
+an empty repeated field. This gives the client a successful cache load for a world with no Mercenary Den activities.
+
+A read-only request through the running launcher's gateway relay received an HTTP/2 `PROTOCOL_ERROR`. The relay
+copies the native cleartext HTTP/2 stream into TLS, retaining `:scheme: http`. Kestrel normally requires the
+header to match the TLS transport. Eden's TLS gateway now accepts both HTTP schemes and exposes `https` to the
+application on that encrypted listener. The launcher API and administration listeners have separate Kestrel
+configuration. [Kestrel scheme validation](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.server.kestrel.core.kestrelserveroptions.allowalternateschemes?view=aspnetcore-10.0)
+
+The native `ListSurroundingsBtn.GetMenu` adds Anomalies when the local Sensor Suite cache has entries. It defers
+`_GetAnomaliesMenu` until expansion. `_GetAnomaliesMenuGroup` indexes `mapMarkerUtil.ICONS_BY_SCANGROUP` directly
+using each site's `scanStrengthAttribute`. Eden supplied `None`, which has no entry in the icon table. Public combat
+anomalies now use `attributeScanAllStrength` (1136) and ice belts use `attributeScanGravimetricStrength` (211).
+These values come from pinned `dogma/const.pyj` and `probescanning/explorationSites.pyj`. The local evejs
+`dungeonUniverseSiteService.js` also documents the failing icon lookup and uses the Ore group for ice. This change
+uses the existing Blue encoding and preserves the pinned client archive and Carbon reference recorded above.
+For context on the native menu, see the [EVE University Bookmarks guide](https://wiki.eveuniversity.org/Bookmarks#Use).
+
+**Automated validation.** Exact development checks passed for the Mercenary Den reply, the relayed TLS gateway, the
+combat signal tracker and the ice discovery response. The TLS test sends a cleartext HTTP/2 request over an actual TLS
+connection to Kestrel and verifies the framed gRPC response, including status, correlation and native protobuf type.
+The scanner tests decode serialized replies and notifications and verify the pinned attribute IDs.
+The rebased solution built in 6.93 seconds without warnings or errors. All 161 focused tests passed in 50 seconds.
+Tool and solution restore, both Python policy suites (8 catalog and 9 formatting tests), and formatting checks passed.
+
+```powershell
+$filter = @(
+    'FullyQualifiedName~Eden.Protocol.Tests.Gateway'
+    'FullyQualifiedName~Eden.Protocol.Tests.Maps.MapNavigationTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Exploration.CombatAnomalyTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Exploration.AgencyTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Exploration.ProbeScanning'
+    'FullyQualifiedName~Eden.Protocol.Tests.Exploration.WormholeTravelTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Mining.IceMiningTests'
+    'FullyQualifiedName~Eden.Protocol.Tests.Hosting'
+    'FullyQualifiedName~Eden.Protocol.Tests.Launcher.LauncherApiTests'
+) -join '|'
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled. The updated server has not been measured in the client.
+
+**Optional maintainer checks.** After updating the server, open the empty-space menu and expand Anomalies in a system
+with combat anomalies or ice belts.

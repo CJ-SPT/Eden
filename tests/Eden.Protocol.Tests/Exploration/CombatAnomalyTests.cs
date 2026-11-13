@@ -193,11 +193,15 @@ public sealed class CombatAnomalyTests
         var state = Assert.IsType<object[]>(new SignalTrackerState(sites.List(context.Pilot.SystemId, f.Clock.Now)).ToBlue());
         Assert.Equal(4, state.Length);
         Assert.IsType<AnomalyMap>(state[0]);
+        var site = Assert.Single(sites.List(context.Pilot.SystemId, f.Clock.Now));
+        var wireState = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(state)), 4);
+        var map = Assert.IsType<Dictionary<long, object?>>(wireState[0]);
+        var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(map[site.Id]).State);
+        Assert.Equal(1136L, fields["scanStrengthAttribute"]);
         Assert.IsType<PilotCallResult.Success>(handler.Call(context, "scanMgr", "GetSystemScanMgr", []));
         Assert.Equal("@systemScan", context.ResolveReference(context.Reference("@systemScan", PilotBindingLifetime.Location).Id));
         context.ReleaseLocationReferences();
         Assert.IsType<PilotCallResult.Success>(handler.Call(context, "@systemScan", "GetFullState", []));
-        var site = Assert.Single(sites.List(context.Pilot.SystemId, f.Clock.Now));
         context.Notifications.Clear();
         using (WorldDbContext world = new(f.Db.Path))
         {
@@ -421,6 +425,7 @@ public sealed class CombatAnomalyTests
             var fields = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(sites[site.Id]).State);
             Assert.Equal(site.Id, fields["instanceID"]);
             Assert.Equal(site.TargetId, BlueMarshal.Text(fields["targetID"]));
+            Assert.Equal(1136L, fields["scanStrengthAttribute"]);
         }
     }
 }

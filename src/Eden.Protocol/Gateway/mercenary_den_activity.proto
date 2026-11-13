@@ -1,0 +1,6 @@
+syntax = "proto3";
+package eve_public.sovereignty.mercenaryden.activity.api;
+option csharp_namespace = "Eden.Protocol.Gateway.MercenaryDenActivity";
+
+// Eden has no activities to publish. The native repeated activities field is absent in an empty response.
+message GetAllResponse {}

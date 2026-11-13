@@ -32,6 +32,7 @@ public interface ICombatAnomalies
 public static class CombatAnomalyRules
 {
     public const int CombatSiteArchetypeId = 24;
+    public const int CombatStrengthAttribute = 1136;
     public const double PlacementOffset = 10_000_000_000;
     public const int PithiArrogator = 16981;
     public const int PithiImputor = 16994;

@@ -20,6 +20,7 @@ public static class MiningSiteRules
     public const int GasArchetype = 30;
     public const int IceArchetype = 28;
     public const int GasStrengthAttribute = 209;
+    public const int OreStrengthAttribute = 211;
     public const int DepositsPerSite = 1000;
     public const long FirstSiteId = 8_200_000_000_000;
     public const long FirstDepositId = 8_300_000_000_000;
