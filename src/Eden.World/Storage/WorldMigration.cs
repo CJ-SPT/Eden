@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 147;
+    internal const int CurrentVersion = 148;
 
     public static void Open(
         WorldDbContext world,
@@ -163,7 +163,7 @@ internal static class WorldMigration
         JetcanSchema.Upgrade(world);
         JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Eden.World.Fleets.CommandBurstSchema.Upgrade(world);
-        world.Database.ExecuteSqlRaw("PRAGMA user_version=147");
+        world.Database.ExecuteSqlRaw($"PRAGMA user_version={CurrentVersion}");
         history.Commit();
     }
 }

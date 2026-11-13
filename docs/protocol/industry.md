@@ -40,7 +40,8 @@ references for subsequent milestones.
 rolls passed 11 cases in 6.07 seconds. Tool and solution restore, solution build (zero warnings/errors), both Python policy
 suites (8 catalog and 9 formatting cases), format and width verification for 1,980 files, and byte-for-byte audit reproduction
 passed. A follow-up filter covering the affected market, hacking, production-catalog and starter-supply checks passed
-135 cases in 49 seconds. It omitted the three longer starter mine-to-replacement cases and the existing rollback test.
+135 cases in 49 seconds. The broader follow-up, including all three starter mine-to-replacement cases, passed
+138 cases in 471.98 seconds. Both follow-ups excluded the existing rollback test.
 The first broader run hit a checkpoint failure in `FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce`.
 The same payment-trigger failure and retained `world.sqlite.owner` handle reproduced on the unchanged parent checkout.
 

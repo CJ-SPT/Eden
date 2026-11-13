@@ -42,3 +42,19 @@ public sealed class SavedStructureAccess
     public long MemberId { get; set; }
     public bool Allowed { get; set; }
 }
+
+public sealed class SavedMoonExtraction
+{
+    public long Id { get; set; }
+    public long StructureId { get; set; }
+    public int MoonId { get; set; }
+    public int SystemId { get; set; }
+    public int CorporationId { get; set; }
+    public long StartedAt { get; set; }
+    public long ReadyAt { get; set; }
+    public long AutoFractureAt { get; set; }
+    public long? FracturedAt { get; set; }
+    public long? FieldExpiresAt { get; set; }
+    public bool Ended { get; set; }
+    public string Composition { get; set; } = "";
+}

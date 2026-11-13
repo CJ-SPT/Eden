@@ -4,8 +4,10 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Storage;
+using Eden.World.Structures;
 
 namespace Eden.World.Catalog;
 
@@ -38,7 +40,8 @@ internal sealed class SystemObjects(
     public IReadOnlyList<StaticSpaceObject> Load(int systemId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return [.. catalog.Definition(s_objects, systemId), .. asteroids.List(systemId), .. structures.Contacts(systemId)];
+        var structureContacts = structures.Contacts(systemId);
+        return [.. catalog.Definition(s_objects, systemId), .. asteroids.List(systemId), .. structureContacts];
     }
 
     internal static IReadOnlyList<StaticSpaceObject> Load(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
@@ -105,6 +108,23 @@ internal sealed class SystemObjects(
             {
                 AddSystemObject(int.Parse(key, CultureInfo.InvariantCulture), gate.TypeID, gate.Position);
             }
+        }
+        foreach (var point in MoonMiningCatalog.Points(catalog, systemId))
+        {
+            objects.Add(
+                new StaticSpaceObject(
+                    MoonMiningCatalog.BeaconId(point.MoonId),
+                    MoonMiningRules.BeaconType,
+                    MoonMiningRules.BeaconGroup,
+                    (int)Eden.Gameplay.Inventory.InventoryCategory.Celestial,
+                    1,
+                    point.Position,
+                    0
+                )
+                {
+                    Solid = false,
+                }
+            );
         }
         return objects.ToImmutableArray();
 

@@ -11,6 +11,7 @@ internal sealed partial class LiveReadModels
     private readonly ResidentSnapshot<(int System, long Catalog), StructureContactView> _structures = new(
         "resident.structures",
         "WorldStructure",
+        "WorldMoonExtraction",
         "WorldShip",
         "WorldItemMembership"
     );
@@ -22,7 +23,10 @@ internal sealed partial class LiveReadModels
 
     private void ObserveStructures(IReadOnlyCollection<Combat.CombatRowChange> changes)
     {
-        _structures.ObserveValues(changes, (_, view, change) => change.Table == "WorldStructure" || view.WaitingForAssets);
+        _structures.ObserveValues(
+            changes,
+            (_, view, change) => change.Table is "WorldStructure" or "WorldMoonExtraction" || view.WaitingForAssets
+        );
         _structureNames.Observe(changes, (id, change) => id == change.Id);
     }
 }

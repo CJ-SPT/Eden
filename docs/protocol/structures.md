@@ -2,6 +2,43 @@
 
 [Protocol index](../protocol.md) · [Documentation index](../README.md)
 
+## Manual moon extraction
+
+Build 3662168 supplies the mining-beacon coordinates in `client/solarsystemcontent`. A refinery placed within 250 km binds to
+the nearest eligible moon. Deployment checks the saved occupancy before consuming the hull. Moon Drill onlining requires
+a bound refinery. The version-one Eden composition assigns a stable primary ore and optional ubiquitous ore by moon identity.
+Systems displayed as 0.5 receive ubiquitous ore. Low and null security provide all five tiers. Both survey probes and the
+refinery planner use this composition.
+
+The `moonExtractions` service reads a refinery's composition and current extraction and lets its managers schedule, cancel,
+and fracture a pull. An extraction lasts 6 to 56 days. Fuel interruption before arrival ends the pull. A ready chunk
+fractures automatically after three hours, and its finite ore field expires two days after fracture. Extraction deadlines
+and composition are saved in schema 148. A committed fracture creates ordinary asteroid records at stable identities.
+Moon ore uses existing mining tools and fixed-material reprocessing. Personal mining logs and the refinery corporation's
+observer ledger record the completed mining quantity and waste.
+
+The native survey launcher consumes a fitted charge, resolves the ship's heading against the moon's catalog radius,
+and reports the composition after the charge's scan time. Outstanding survey notifications are connection-scoped.
+The structure service supports direct native scheduling calls. The full structure-control view, chunk movement and effects,
+calendar events, and notifications to other corporation members are follow-up work.
+
+Inert inspection of the installed build-3662168 archive used `moonmining/miningBeacons.pyj`, `moonmining/const.pyj`,
+`schedulingSvc.pyj` and `ledgerSvc.pyj`. The archive SHA-256 is
+`2DBC29987D01515F4F40C319F89F0276F05AC3D175D79776A03F1F8E2BAB5C6A`. The local evejs build-3396210
+`moonExtractionsService.js`, `moonMiningSpaceRuntime.js`, and `surveyProbeRuntime.js` informed deadline, site, and wire behavior.
+References include [CCP Moon Mining](https://support.eveonline.com/hc/en-us/articles/115005404229-Moon-Mining) and
+[CCP Mining Ledger](https://support.eveonline.com/hc/en-us/articles/115005402265-Mining-Ledger).
+
+**Automated validation.** The final affected filter covered MoonExtractionTests, StructureTests, StructureRulesTests,
+StructureFuelRulesTests, ProbeScanningTests, ReprocessingTests and PersonalMiningLedgerTests. All 133 cases passed in
+124.79 seconds after correcting the world-version write. The exact extraction and migration filter passed five cases
+in 16.43 seconds. The solution built without warnings or errors. Both Python policy suites and format verification passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect the beacon and placement preview at a catalog moon, align a survey launcher and inspect
+the delayed result, and check the scheduling and ledger views on a copied save.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,

@@ -9,6 +9,18 @@ internal static class MiningLedgerSchema
 {
     internal static void Configure(ModelBuilder model)
     {
+        model.Entity<SavedMoonMiningLog>().ToTable("WorldMoonMiningLog").HasKey(l => l.Id);
+        model
+            .Entity<SavedMoonMiningLog>()
+            .HasIndex(l => new
+            {
+                l.StructureId,
+                l.Day,
+                l.PilotId,
+                l.CorporationId,
+                l.TypeId,
+            })
+            .IsUnique();
         model.Entity<SavedPersonalMiningLog>().ToTable("WorldPersonalMiningLog").HasKey(l => l.Id);
         model.Entity<SavedPersonalMiningLog>().HasOne<Pilot>().WithMany().HasForeignKey(l => l.PilotId).OnDelete(DeleteBehavior.Cascade);
         model
@@ -27,6 +39,13 @@ internal static class MiningLedgerSchema
     internal static void Upgrade(WorldDbContext world) =>
         world.Database.ExecuteSqlRaw(
             """
+            CREATE TABLE IF NOT EXISTS WorldMoonMiningLog(
+                Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, StructureId INTEGER NOT NULL,
+                PilotId INTEGER NOT NULL, Day INTEGER NOT NULL, CorporationId INTEGER NOT NULL,
+                SystemId INTEGER NOT NULL, TypeId INTEGER NOT NULL,
+                Quantity INTEGER NOT NULL, Critical INTEGER NOT NULL, Wasted INTEGER NOT NULL);
+            CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldMoonMiningLog_ObserverDayPilotCorpType
+                ON WorldMoonMiningLog(StructureId,Day,PilotId,CorporationId,TypeId);
             CREATE TABLE IF NOT EXISTS WorldPersonalMiningLog(
                 Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                 PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,

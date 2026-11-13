@@ -234,7 +234,9 @@ internal sealed partial class PilotAmmunitionStore
                 chargeType.GroupId is MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup
                     ? MiningCrystalRules.Compatible(attributes, chargeType.GroupId)
                 : CommandBurstRules.IsCharge(chargeType.GroupId) ? CommandBurstRules.Compatible(moduleGroup, chargeType.GroupId, attributes)
-                : chargeType.GroupId == ProbeScanRules.ProbeGroup ? ProbeCatalog.Compatible(attributes, chargeAttributes)
+                : chargeType.GroupId is ProbeScanRules.ProbeGroup or (int)HoldCargoGroup.SurveyProbe
+                    ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
+                        && ProbeCatalog.Compatible(attributes, chargeAttributes)
                 : AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
                     ? AncillaryRepairRules.Compatible(ancillary, chargeType.GroupId, attributes, chargeAttributes)
                 : RemoteRepairRules.AncillaryKind(moduleGroup) is { } remoteAncillary
