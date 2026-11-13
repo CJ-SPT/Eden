@@ -8,11 +8,43 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [In-game text for routine rejections](#in-game-text-for-routine-rejections)
 - [Client RPC backlog inventory (November 5, 2026)](#client-rpc-backlog-inventory-november-5-2026)
 - [Localization QA wrap compatibility (November 5, 2026)](#localization-qa-wrap-compatibility-november-5-2026)
 - [Console logging cleanup (November 5, 2026)](#console-logging-cleanup-november-5-2026)
 - [Placeholder route implementation (November 4, 2026)](#placeholder-route-implementation-november-4-2026)
 - [Gameplay rejection dialogs, November 2, 2026](#gameplay-rejection-dialogs-november-2-2026)
+
+## In-game text for routine rejections
+
+Routine service rejections after pilot selection use the native `CustomNotify` message with a Unicode `notify` value.
+This covers commonplace refusals in flight, module operation, targeting, inventory and station services, including failures
+returned by the first call inside `MachoBindObject`. Both direct and bound callers still receive the Macho code-2
+`UserError`, so a rejection follows the client's normal error-handling path. The reply precedes queued updates.
+
+Build **3662168** gives `CustomNotify` the `notify` dialog type and body ID **259599** (`{notify}`). It gives `CustomInfo`
+the `info` dialog type and body ID **259687** (`{info}`). The pinned client's
+`player_messaging.client.dialog_handler._handle_player_fsd_dialog` routes `notify` through its text-message handler.
+The original client archive has SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**.
+See also [EVE University's Log and Messages reference](https://wiki.eveuniversity.org/Neocom#Log_and_Messages).
+
+EveJs **261108.1** (client build **3396210**) was checked for module operation, station access and warp refusals. Its
+`dogmaService.js`, `corpStationMgrService.js` and `warpFailureUserError.js` use `CustomNotify` for those routine cases.
+The explicit Information paths cover character selection, market and contract errors that need a dialog, crimewatch warp
+restrictions, the pending agent-dialog limit and oversized replies. Named client errors such as the cargo quantity retry
+and targeting cleanup keep their message keys and parameters. Agent questions keep their client callbacks and redemption
+keeps its per-token reports. The wire models use existing Carbon serialization support.
+[Carbon Blue reference at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+
+**Automated validation** covers direct and nested module refusals, unavailable warp and station-market checks, Unicode
+message text, notification order, the retained Information and named-error replies, and successful calls after a rejection.
+All **334 focused .NET tests** passed in **3m 34s**. Tool restore, solution restore, the build, both Python policy suites
+and formatting verification passed. The first exact-method run stopped during Windows test-seed publication with an
+access-denied error. Using `EDEN_TEST_TEMP_DIRECTORY` on the repository drive resolved it, and all four cases passed.
+
+**Live acceptance** was not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Try to take a module offline in space and confirm that the refusal appears as on-screen text.
 
 ## Client RPC backlog inventory (November 5, 2026)
 

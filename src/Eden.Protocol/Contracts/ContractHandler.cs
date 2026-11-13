@@ -248,11 +248,11 @@ internal sealed class ContractHandler(IPilotContracts contracts, IPilotWalletRea
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallResult.Failure(error.Message);
+            return new PilotCallResult.Failure(error.Message, ShowInformationDialog: true);
         }
         catch (OverflowException)
         {
-            return new PilotCallResult.Failure("This contract amount or identifier is too large.");
+            return new PilotCallResult.Failure("This contract amount or identifier is too large.", ShowInformationDialog: true);
         }
     }
 

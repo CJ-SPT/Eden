@@ -164,7 +164,7 @@ public sealed class PilotServicesTests
         );
         Assert.False(Assert.IsType<bool>(Result(packets[0])));
         Assert.Single(packets, p => p.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal));
-        AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "Character logoff does not accept arguments." });
+        AssertNotifyError(packets[^2], "Character logoff does not accept arguments.");
         Assert.Equal(90000001L, BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[^1])).State)["characterID"]);
     }
 
@@ -249,7 +249,7 @@ public sealed class PilotServicesTests
         {
             context.NotificationsBeforeFlight.Add(new AccountBalanceChanged(context.Pilot.PilotId, 1));
             context.Notifications.Add(new AccountBalanceChanged(context.Pilot.PilotId, 2));
-            return new PilotCallResult.Failure("Rejected after notifications were queued.");
+            return new PilotCallResult.Failure("Accès refusé.");
         }
     }
 
@@ -293,7 +293,7 @@ public sealed class PilotServicesTests
         );
         await calls.ProcessAsync(Request("test", "Reject", []));
         Assert.Equal(3, packets.Count);
-        Assert.EndsWith(".ErrorResponse", Assert.IsType<BlueInstance>(packets[0]).Name);
+        AssertNotifyError(Assert.IsType<BlueInstance>(packets[0]), "Accès refusé.");
         Assert.All(packets.Skip(1), packet => Assert.EndsWith(".Notification", Assert.IsType<BlueInstance>(packet).Name));
         Assert.Empty(context.NotificationsBeforeFlight);
         Assert.Empty(context.Notifications);
@@ -365,7 +365,7 @@ public sealed class PilotServicesTests
     }
 
     [Fact]
-    public async Task FailedBoundMarketCheckReturnsAnErrorAndKeepsTheSessionUsable()
+    public async Task FailedBoundMarketCheckShowsTextAndKeepsTheSessionUsable()
     {
         using TestWorld world = new();
         var packets = await ExchangeAsync(
@@ -387,8 +387,7 @@ public sealed class PilotServicesTests
             ),
             Request("account", "GetCashBalance", [0L])
         );
-        Assert.EndsWith(".ErrorResponse", packets[^2].Name);
-        AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "This station does not provide a market." });
+        AssertNotifyError(packets[^2], "This station does not provide a market.");
         Assert.EndsWith(".CallRsp", packets[^1].Name);
         Assert.Equal(0d, Result(packets[^1]));
     }
@@ -398,7 +397,7 @@ public sealed class PilotServicesTests
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public async Task GameplayRejectionExplainsTheReasonAndKeepsTheModuleAndSessionIntact(bool bound, bool native)
+    public async Task GameplayRejectionShowsTextAndKeepsTheModuleAndSessionIntact(bool bound, bool native)
     {
         using TestWorld world = new();
         const long ship = 1000000000001L;
@@ -426,7 +425,7 @@ public sealed class PilotServicesTests
             rejection,
             Request("account", "GetCashBalance", [0L])
         );
-        AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "Change module online state on your docked active ship." });
+        AssertNotifyError(packets[^2], "Change module online state on your docked active ship.");
         Assert.EndsWith(".CallRsp", packets[^1].Name);
         Assert.Equal(0d, Result(packets[^1]));
         using WorldDbContext persisted = new(world.Path);
@@ -434,6 +433,48 @@ public sealed class PilotServicesTests
         Assert.Equal(ship, retained.LocationId);
         Assert.Equal((int)InventoryFlag.HighSlot0, retained.FlagId);
         Assert.True(retained.Online);
+    }
+
+    [Fact]
+    public async Task UnavailableWarpDestinationShowsTextAndLeavesTheShipInPlace()
+    {
+        using TestWorld world = new();
+        var position = new SpacePosition(1_000_000, 0, 0);
+        var pilot = world.Store.FindPilot(1000001)!;
+        world.Store.SetPosition(pilot.ShipId, position);
+        var packets = await ExchangeAsync(
+            world,
+            42,
+            Request("charUnboundMgr", "SelectCharacterID", [pilot.PilotId]),
+            Request("beyonce", "CmdWarpToStuffAutopilot", [long.MaxValue]),
+            Request("account", "GetCashBalance", [0L])
+        );
+
+        AssertNotifyError(packets[^2], "This autopilot destination is unavailable in this solar system.");
+        Assert.Equal(0d, Result(packets[^1]));
+        Assert.Equal(position, world.Store.FindPilot(1000001)!.Position);
+    }
+
+    [Fact]
+    public async Task MarketAndContractRejectionsCanStillUseInformationDialogs()
+    {
+        using TestWorld world = new();
+        var packets = await ExchangeAsync(
+            world,
+            42,
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("marketProxy", "PlaceBuyOrder", [60003760L, 34L, 100d, 1L, -1L, 2L, 1L, false, null]),
+            Request("contractProxy", "GetContract", [long.MaxValue]),
+            Request("account", "GetCashBalance", [0L])
+        );
+
+        AssertUserError(
+            packets[^3],
+            "CustomInfo",
+            new() { ["info"] = "Choose personal station orders, station range and a minimum volume of one." }
+        );
+        AssertUserError(packets[^2], "CustomInfo", new() { ["info"] = "This contract is unavailable." });
+        Assert.Equal(0d, Result(packets[^1]));
     }
 
     [Fact]
@@ -532,7 +573,7 @@ public sealed class PilotServicesTests
         var packets = await ExchangeAsync("charUnboundMgr", "SelectCharacterID", [characterId, null, false], 42);
         if (!expected)
         {
-            Assert.EndsWith(".ErrorResponse", Assert.Single(packets).Name);
+            AssertUserError(Assert.Single(packets), "CustomInfo", new() { ["info"] = "Unknown pilot for this account" });
             return;
         }
 
@@ -760,6 +801,9 @@ public sealed class PilotServicesTests
         var home = BlueRead.Fields(Assert.IsType<BlueInstance>(Result(packets[^1])).State);
         Assert.Equal((long)Persistence.HomeStationTestData.Origin, home["id"]);
     }
+
+    private static void AssertNotifyError(BlueInstance packet, string message) =>
+        AssertUserError(packet, "CustomNotify", new() { ["notify"] = new BlueUnicode(message) });
 
     private static void AssertUserError(BlueInstance packet, string name, Dictionary<string, object?> values)
     {

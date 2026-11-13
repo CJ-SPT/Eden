@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[In-game text for routine rejections](protocol/compatibility.md#in-game-text-for-routine-rejections)
+records the native text-message path for routine service refusals.
+
 [Bounded checkpoints and populated player scaling](protocol/performance.md#bounded-checkpoints-and-populated-player-scaling-november-13-2026)
 records demand-driven transaction projection, paced background work and the populated-world scale replay.
 

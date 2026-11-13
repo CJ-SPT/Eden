@@ -276,7 +276,10 @@ internal sealed class MarketHandler(
                 case "BuyMultipleItems":
                 case "ModifyCharOrder":
                 case "CancelCharOrder":
-                    return new PilotCallResult.Failure("Choose personal station orders, station range and a minimum volume of one.");
+                    return new PilotCallResult.Failure(
+                        "Choose personal station orders, station range and a minimum volume of one.",
+                        ShowInformationDialog: true
+                    );
                 case "GetPlexOldPriceHistory" or "GetPlexNewPriceHistory":
                     return new PilotCallResult.Failure("PLEX price history does not accept arguments.");
                 default:
@@ -285,11 +288,11 @@ internal sealed class MarketHandler(
         }
         catch (InvalidDataException error)
         {
-            return new PilotCallResult.Failure(error.Message);
+            return new PilotCallResult.Failure(error.Message, ShowInformationDialog: !check);
         }
         catch (OverflowException)
         {
-            return new PilotCallResult.Failure("This market quantity or amount is too large.");
+            return new PilotCallResult.Failure("This market quantity or amount is too large.", ShowInformationDialog: true);
         }
     }
 }

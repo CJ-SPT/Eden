@@ -10,7 +10,7 @@ internal abstract record PilotCallResult
 
     internal sealed record UnsupportedCall : PilotCallResult;
 
-    internal sealed record Failure(string Message) : PilotCallResult;
+    internal sealed record Failure(string Message, bool ShowInformationDialog = false) : PilotCallResult;
 
     internal sealed record NamedFailure(string Name, BlueModel Values) : PilotCallResult;
 

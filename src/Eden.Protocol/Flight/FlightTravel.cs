@@ -190,7 +190,7 @@ internal sealed class FlightTravel
         }
         catch (InvalidDataException error)
         {
-            return new(error.Message);
+            return new(error.Message, ShowInformationDialog: action == CrimewatchTravel.Warp);
         }
     }
 }

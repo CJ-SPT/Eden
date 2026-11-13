@@ -152,9 +152,12 @@ internal sealed class PilotSessionCalls(
         }
         if (result is PilotCallResult.Failure validationError)
         {
-            // The pinned fitting service uses CustomInfo/info for a readable
-            // gameplay rejection. Macho error code 0 means a bad destination.
-            result = new PilotCallResult.NamedFailure("CustomInfo", new InformationErrorValues(validationError.Message));
+            // The in-game client presents CustomNotify through its text overlay.
+            // Character selection and explicit information prompts use CustomInfo.
+            result =
+                !selected || validationError.ShowInformationDialog
+                    ? new PilotCallResult.NamedFailure("CustomInfo", new InformationErrorValues(validationError.Message))
+                    : new PilotCallResult.NamedFailure("CustomNotify", new NotificationErrorValues(validationError.Message));
         }
         if (result is PilotCallResult.NamedFailure userError)
         {
