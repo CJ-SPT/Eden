@@ -47,8 +47,15 @@ def compare(db, evejs, family):
                         or all(has_position) and math.dist(xyz(before), xyz(after)) > 0.01)
         gate_difference = (reference.get('connections') or []) != (pinned.get('connections') or [])
         entry_difference = reference.get('entryObjectID') != pinned.get('entryObjectID')
-        if reference_objects.keys() != pinned_objects.keys() or changed or gate_difference or entry_difference:
-            mismatches.append((dungeon_id, len(shared), len(pinned_objects), changed, gate_difference, entry_difference))
+        metadata = ('entryTypeID', 'archetypeID', 'difficulty', 'factionID')
+        metadata_difference = any(reference.get(key) != pinned.get(key) for key in metadata)
+        room_offsets = lambda data: {room_id: tuple(room.get(axis) for axis in 'xyz')
+                                     for room_id, room in data['rooms'].items()}
+        room_difference = room_offsets(reference) != room_offsets(pinned)
+        if (reference_objects.keys() != pinned_objects.keys() or changed or gate_difference or entry_difference
+                or metadata_difference or room_difference):
+            mismatches.append((dungeon_id, len(shared), len(pinned_objects), changed, gate_difference, entry_difference,
+                               metadata_difference, room_difference))
     print(f'{family}: {len(templates)} dungeon IDs. Differences: {mismatches}')
     if mismatches:
         raise ValueError('Reference differs from the pinned build')
@@ -70,12 +77,19 @@ def fixture(db, manifest, output):
     for blueprint in GHOST_BLUEPRINTS:
         add('client/blueprints', blueprint)
     for definition in definitions:
-        needed.update(definition['deadspaceModules'] + definition['factionModules'] + [definition['blueprint']])
+        needed.update(definition['deadspaceModules'] + definition['factionModules'])
         needed.update(item['typeId'] for item in definition['overseerLoot'] + definition['guaranteedLoot'])
+        needed.update(item['typeId'] for reward in definition.get('secondaryRewards', []) for item in reward['loot'])
         needed.update(member['typeId'] for room in definition['rooms'] for member in room['members'])
-        add('client/blueprints', definition['blueprint'])
+        needed.update(gate['requiredSkill'] for room in definition['rooms'] for gate in room.get('gates', [])
+                      if 'requiredSkill' in gate)
+        if definition['blueprint']:
+            needed.add(definition['blueprint'])
+            add('client/blueprints', definition['blueprint'])
+        verify_definition(db, definition)
     add('client/systems', 30000144)
     add('client/systems', 30002659)
+    add('client/factions', 500025)
     needed.update([16874, 16875, 24007, 16935, 16929, 24011, 17001, 16991, 24015, 17068, 17075, 24023, 17118, 17114, 24025])
 
     for dungeon_id in [d['dungeonId'] for d in definitions] + list(GHOST_IDS):
@@ -123,6 +137,55 @@ def fixture(db, manifest, output):
         '\n  ],\n  "records": [\n' + rows('records') + '\n  ]\n}\n', encoding='utf-8'
     )
     print(f'Exported {len(types)} types and {len(records)} records')
+
+
+def verify_definition(db, definition):
+    dungeon_id = definition['dungeonId']
+    source = catalog_record(db, 'client/dungeons', dungeon_id)
+    rooms = definition['rooms']
+    assert rooms[0]['entryObjectId'] == source['entryObjectID'], dungeon_id
+    assert {str(room['roomId']) for room in rooms} == source['rooms'].keys(), dungeon_id
+    gates = {}
+    for index, room in enumerate(rooms):
+        objects_by_id = {obj['objectID']: obj for obj in source['rooms'][str(room['roomId'])]['objects'].values()}
+        assert not room.get('entryObjectId') or room['entryObjectId'] in objects_by_id, (dungeon_id, room['roomId'])
+        for member in room['members']:
+            anchor = objects_by_id[member['anchorId']]
+            assert anchor.get('typeID') == member['typeId'] or anchor.get('entities'), (dungeon_id, member)
+            hp = db.execute('SELECT Value FROM TypeAttribute WHERE ItemTypeId=? AND AttributeId=9',
+                            (member['typeId'],)).fetchone()
+            assert hp and hp[0] > 0, (dungeon_id, member)
+        for gate in room.get('gates', [room['gate']] if 'gate' in room else []):
+            assert gate['objectId'] in objects_by_id and gate['objectId'] not in gates, (dungeon_id, gate)
+            destination = gate['destinationRoomId'] if 'destinationRoomId' in gate else rooms[index + 1]['roomId']
+            gates[gate['objectId']] = room['roomId'], destination
+            if key := gate.get('key'):
+                assert catalog_record(db, 'client/types', key['typeId'])['groupID'] == 474, (dungeon_id, key)
+    assert gates.keys() == {gate['fromObjectID'] for gate in source.get('connections', [])}, dungeon_id
+    reachable = {rooms[0]['roomId']}
+    for _ in rooms:
+        reachable.update(destination for origin, destination in gates.values() if origin in reachable)
+    assert reachable == {room['roomId'] for room in rooms}, (dungeon_id, reachable)
+    rewards_by_source = {r['typeId']: r['loot'] for r in definition.get('secondaryRewards', [])}
+    rewards_by_source[definition['overseerType']] = definition['overseerLoot']
+    accessible_rooms, acquired_keys = {rooms[0]['roomId']}, {28260}  # Zbikoki's card comes from a mission.
+    for _ in rooms:
+        for room in rooms:
+            if room['roomId'] not in accessible_rooms:
+                continue
+            for member in room['members']:
+                acquired_keys.update(item['typeId'] for item in rewards_by_source.get(member['typeId'], []))
+            for gate in room.get('gates', [room['gate']] if 'gate' in room else []):
+                if 'key' not in gate or gate['key']['typeId'] in acquired_keys:
+                    accessible_rooms.add(gates[gate['objectId']][1])
+    assert accessible_rooms == reachable, (dungeon_id, reachable - accessible_rooms)
+    members = {member['typeId'] for room in rooms for member in room['members']}
+    assert not definition['rewardStructureType'] or definition['rewardStructureType'] in members, dungeon_id
+    assert all(reward['typeId'] in members for reward in definition.get('secondaryRewards', [])), dungeon_id
+    rewards = (definition['deadspaceModules'] + definition['factionModules']
+               + [reward['typeId'] for reward in definition['overseerLoot'] + definition['guaranteedLoot']]
+               + [item['typeId'] for reward in definition.get('secondaryRewards', []) for item in reward['loot']])
+    assert all(catalog_record(db, 'client/types', item)['published'] == 1 for item in rewards), dungeon_id
 
 
 if __name__ == '__main__':

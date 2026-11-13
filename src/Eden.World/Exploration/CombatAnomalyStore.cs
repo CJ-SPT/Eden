@@ -23,7 +23,7 @@ internal sealed partial class CombatAnomalyStore(
     IPirateExploration? exploration = null,
     IMiningSites? mining = null,
     IWormholeTravel? wormholes = null
-) : ICombatAnomalies, IDedComplexTravel
+) : ICombatAnomalies, IDedComplexTravel, IDedEscalations
 {
     private sealed record View(
         long Version,
@@ -201,6 +201,7 @@ internal sealed partial class CombatAnomalyStore(
                     s.SystemId == systemId
                     && s.IsSignature == signature
                     && s.Slot != DedComplexRules.SiteSlot
+                    && s.Slot != DedComplexRules.EscalationSlot
                     && !world
                         .Set<WorldCombatAnomaly>()
                         .Any(n => n.SystemId == systemId && n.Slot == s.Slot && n.IsSignature == signature && n.Id > s.Id)
@@ -328,7 +329,10 @@ internal sealed partial class CombatAnomalyStore(
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            ArriveDed(systemId, position, now);
+            if (DedSignatures(systemId, now).SingleOrDefault() is { } ded)
+            {
+                ArriveDed(ded, _dedViews[systemId].Profile!, position, now);
+            }
             var nearby = List(systemId, now)
                 .Concat(Signatures(systemId, now))
                 .Where(s =>
@@ -361,66 +365,11 @@ internal sealed partial class CombatAnomalyStore(
         }
     }
 
-    internal static void Killed(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, long now)
+    internal static void Killed(WorldDbContext world, CatalogDbContext catalog, WorldNpc npc, long now, long pilot = 0)
     {
-        if (npc.AnchorKind != NpcAnchorKind.Anomaly)
-        {
-            return;
-        }
-        var site = world.Set<WorldCombatAnomaly>().Find(npc.EncounterId) ?? throw new InvalidDataException("Anomaly NPC has no site.");
-        if (site.CompletedAt is not null)
-        {
-            return;
-        }
-        if (site.Slot == DedComplexRules.SiteSlot)
-        {
-            if (DedKilled(new SqlWorldAction(world), catalog, site, npc, now))
-            {
-                Invalidate(world, site.SystemId);
-                Invalidate(world, -1);
-            }
-            return;
-        }
-        var alive = world
-            .Set<WorldNpc>()
-            .Where(n => n.EncounterId == site.Id && n.Id != npc.Id && n.DestroyedAt == null && n.RetiredAt == null)
-            .ToArray()
-            .Where(n => n.DestroyedAt is null && n.RetiredAt is null)
-            .ToArray();
-        var definition =
-            CombatAnomalyCatalog.Find(catalog, site.DungeonId)
-            ?? throw new InvalidDataException($"Anomaly definition {site.DungeonId} is missing.");
-        var member = world.Set<WorldAnomalyMember>().Find(npc.Id);
-        if (site.DefinitionVersion == 0)
-        {
-            if (alive.Length == 0)
-            {
-                NextWave(world, catalog, site, now);
-            }
-        }
-        else if (member?.Wave == site.Wave)
-        {
-            var members = world.Set<WorldAnomalyMember>().Where(m => m.SiteId == site.Id && m.Wave == site.Wave).ToArray();
-            bool triggers = members.Any(m => m.Trigger);
-            var blocking = members.Where(m => triggers ? m.Trigger : !m.Sentry).Select(m => m.NpcId).ToHashSet();
-            if (!site.NextWaveAt.HasValue && !alive.Any(n => blocking.Contains(n.Id)))
-            {
-                NextWave(world, catalog, site, now);
-            }
-        }
-        if (
-            site.Wave >= definition.WavesFor(site.DefinitionVersion).Length - 1
-            && alive.Length == 0
-            && !world.Set<WorldNpc>().Local.Any(n => n.EncounterId == site.Id && n.DestroyedAt is null && n.RetiredAt is null)
-        )
-        {
-            Complete(site, now);
-        }
-        Invalidate(world, site.SystemId);
-        if (site.CompletedAt.HasValue)
-        {
-            Invalidate(world, -1);
-        }
+        var action = new SqlWorldAction(world);
+        Killed(action, catalog, npc, now, pilot);
+        world.AfterCommit(action.PublishActions);
     }
 
     public IReadOnlyList<AnomalySystemSites> Directory(long now)

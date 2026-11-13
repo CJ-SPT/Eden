@@ -12,7 +12,8 @@ internal sealed class CombatAnomalyHandler(
     ICombatAnomalies sites,
     Eden.Gameplay.Agents.IPilotMissions missions,
     TimeProvider clock,
-    ProbeScanningHandler? probes = null
+    ProbeScanningHandler? probes = null,
+    IDedEscalations? escalations = null
 ) : ISelectedPilotCallHandler
 {
     private int? _system;
@@ -21,6 +22,7 @@ internal sealed class CombatAnomalyHandler(
     private long? _ghostCountdown;
     private IReadOnlyList<CombatAnomaly> _known = [];
     private IReadOnlyList<CombatAnomaly> _signatures = [];
+    private IReadOnlyList<DedEscalation>? _journal;
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     public PilotCallResult Call(
@@ -31,6 +33,15 @@ internal sealed class CombatAnomalyHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
+        if (service == "dungeonExplorationMgr" && method == "GetMyEscalatingPathDetails")
+        {
+            if (args.Length != 0 || keywords is { Count: > 0 })
+            {
+                return new PilotCallResult.Failure("The escalation journal does not accept arguments.");
+            }
+            _journal = escalations?.Journal(context.Pilot.PilotId, Now) ?? [];
+            return new DedEscalationJournal(_journal);
+        }
         if (service == "dungeonInstanceCacheMgr" && method is "GetCombatAnomalyInstances" or "GetCombatAnomaliesCount")
         {
             if (args.Length != 0 || keywords is { Count: > 0 })
@@ -76,12 +87,23 @@ internal sealed class CombatAnomalyHandler(
         }
         probes?.Advance(context);
         int system = context.Pilot.SystemId;
+        long now = Now;
         if (context.Flight.CanTarget && context.Pilot.Position is { } arrival)
         {
             sites.Arrive(system, arrival, Now);
             sites.ArriveUncloaked(system, arrival, Now);
             missions.Arrive(system, arrival);
+            escalations?.Arrive(context.Pilot.PilotId, system, arrival, now);
         }
+        var journal = escalations?.Journal(context.Pilot.PilotId, now);
+        if (_journal is not null && journal is not null && !ReferenceEquals(journal, _journal))
+        {
+            foreach (var item in journal.ExceptBy(_journal.Select(e => e.InstanceId), e => e.InstanceId))
+            {
+                context.Notifications.Add(new EscalatingPathMessage(item.InstanceId));
+            }
+        }
+        _journal = journal;
         var current = sites.List(system, Now);
         var signatures = sites.Signatures(system, Now);
         var position = context.Pilot.Position;
@@ -89,6 +111,7 @@ internal sealed class CombatAnomalyHandler(
         context.Flight.RefreshAnomalies(
             current
                 .Concat(signatures)
+                .Concat(escalations?.Sites(context.Pilot.PilotId, system, now) ?? [])
                 .SelectMany(s => s.Objects)
                 .Concat(missions.Sites(system).Where(s => !s.Private || s.PilotId == context.Pilot.PilotId).SelectMany(s => s.Objects))
                 .Where(o =>

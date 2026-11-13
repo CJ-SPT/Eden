@@ -8,6 +8,8 @@ public abstract record FlightCommand
 
     public sealed record WarpToScan(string TargetId, double Range) : FlightCommand;
 
+    public sealed record WarpToEscalation(long InstanceId, double Range) : FlightCommand;
+
     public sealed record WarpTo(long TargetId, double Range) : FlightCommand;
 
     public sealed record WarpToBookmark(long BookmarkId, double Range) : FlightCommand;

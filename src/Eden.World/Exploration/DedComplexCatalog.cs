@@ -13,13 +13,21 @@ namespace Eden.World.Exploration;
 
 internal sealed record DedMember(DedRoomMember Binding, SpacePosition Position, double AcquisitionRange);
 
-internal sealed record DedGate(long ObjectId, StaticSpaceObject Body, bool RequiresClear, MissionGateAccess Access);
+internal sealed record DedGate(
+    int Slot,
+    int Destination,
+    StaticSpaceObject Body,
+    bool RequiresClear,
+    MissionGateAccess Access,
+    int RequiredSkill,
+    int RequiredLevel
+);
 
 internal sealed record DedRoom(
     SpacePosition Offset,
     ImmutableArray<StaticSpaceObject> Objects,
     ImmutableArray<DedMember> Members,
-    DedGate? Gate
+    ImmutableArray<DedGate> Gates
 );
 
 internal sealed record DedComplex(
@@ -50,7 +58,15 @@ internal static class DedComplexCatalog
 
     internal static ImmutableArray<DedComplex> Read(CatalogDbContext catalog) => catalog.Definition(s_definitions, 0);
 
-    internal static bool IsOverseer(int type) => s_content.Value.Complexes.Any(c => c.OverseerType == type);
+    private static readonly Lazy<HashSet<int>> s_rewardTypes = new(() =>
+        s_content
+            .Value.Complexes.SelectMany(c =>
+                (c.SecondaryRewards ?? []).Select(r => r.TypeId).Append(c.OverseerType).Append(c.RewardStructureType)
+            )
+            .ToHashSet()
+    );
+
+    internal static bool HasReward(int type) => s_rewardTypes.Value.Contains(type);
 
     internal static DedComplex Find(CatalogDbContext catalog, int dungeon) => Read(catalog).Single(d => d.Binding.DungeonId == dungeon);
 
@@ -65,17 +81,21 @@ internal static class DedComplexCatalog
                 continue;
             }
             if (
-                dungeon.ArchetypeID != CombatAnomalyRules.CombatSiteArchetypeId
-                || dungeon.EntryTypeID != ProbeScanRules.SignatureType
+                dungeon.ArchetypeID
+                    != (binding.SecurityBands == 0 ? DedComplexRules.EscalationArchetype : CombatAnomalyRules.CombatSiteArchetypeId)
+                || binding.SecurityBands != 0 && dungeon.EntryTypeID != ProbeScanRules.SignatureType
                 || dungeon.EntryObjectID != binding.Rooms[0].EntryObjectId
                 || dungeon.Rooms?.Count != binding.Rooms.Count
-                || dungeon.Connections?.Length != binding.Rooms.Count - 1
-                || dungeon.Difficulty != binding.Rating
+                || binding.Rooms.Count > DedComplexRules.RoomsPerSite
             )
             {
                 throw new InvalidDataException($"Pinned DED complex metadata differs for {binding.DungeonId}.");
             }
             int faction = checked((int)dungeon.FactionID!.Value);
+            if (faction == DedComplexRules.DroneRegionFaction)
+            {
+                faction = (int)NpcPirateFaction.RogueDrones;
+            }
             int corporation = checked((int)catalog.Require(CatalogData.Client.Factions, (long)faction).CorporationID!.Value);
             foreach (
                 int loot in binding
@@ -83,7 +103,8 @@ internal static class DedComplexCatalog
                     .Concat(binding.OverseerLoot.Select(l => l.TypeId))
                     .Concat(binding.DeadspaceModules)
                     .Concat(binding.FactionModules)
-                    .Append(binding.Blueprint)
+                    .Concat((binding.SecondaryRewards ?? []).SelectMany(r => r.Loot.Select(l => l.TypeId)))
+                    .Concat(binding.Blueprint == 0 ? [] : new[] { binding.Blueprint })
             )
             {
                 if (catalog.Require(CatalogData.Client.Types, (long)loot).Published != 1)
@@ -91,22 +112,58 @@ internal static class DedComplexCatalog
                     throw new InvalidDataException($"DED loot type {loot} is unavailable in the pinned build.");
                 }
             }
-            _ = catalog.Require(
-                CatalogData.Client.Blueprints,
-                binding.Blueprint.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            if (binding.Blueprint != 0)
+            {
+                _ = catalog.Require(
+                    CatalogData.Client.Blueprints,
+                    binding.Blueprint.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                );
+            }
+            var roomIndices = binding.Rooms.Select((room, index) => (room.RoomId, index)).ToDictionary(r => r.RoomId, r => r.index);
+            int extraGateSlot = binding.Rooms.Count;
+            var rooms = binding
+                .Rooms.Select((room, index) => LoadRoom(catalog, dungeon, room, index, corporation, roomIndices, ref extraGateSlot))
+                .ToImmutableArray();
+            var gates = rooms.SelectMany(r => r.Gates).Select(g => g.Body.Id).ToArray();
+            if (
+                extraGateSlot > DedComplexRules.GatesPerSite
+                || !gates.Order().SequenceEqual((dungeon.Connections ?? []).Select(g => g.FromObjectID!.Value).Order())
+            )
+            {
+                throw new InvalidDataException($"Pinned DED acceleration gates differ for {binding.DungeonId}.");
+            }
+            complexes.Add(
+                new(
+                    binding,
+                    checked((int)dungeon.DungeonNameID!.Value),
+                    checked((int)dungeon.Difficulty!.Value),
+                    faction,
+                    corporation,
+                    rooms
+                )
             );
-            var rooms = binding.Rooms.Select((room, index) => LoadRoom(catalog, dungeon, room, index, corporation)).ToImmutableArray();
-            complexes.Add(new(binding, checked((int)dungeon.DungeonNameID!.Value), binding.Rating, faction, corporation, rooms));
         }
         return complexes.ToImmutableArray();
     }
 
-    private static DedRoom LoadRoom(CatalogDbContext catalog, ClientDungeons dungeon, DedRoomBinding binding, int index, int corporation)
+    private static DedRoom LoadRoom(
+        CatalogDbContext catalog,
+        ClientDungeons dungeon,
+        DedRoomBinding binding,
+        int index,
+        int corporation,
+        IReadOnlyDictionary<int, int> roomIndices,
+        ref int extraGateSlot
+    )
     {
         var items = dungeon
             .Rooms![binding.RoomId.ToString(System.Globalization.CultureInfo.InvariantCulture)]
             .Objects!.Values.ToDictionary(o => o.ObjectID!.Value);
-        var origin = Position(items[binding.EntryObjectId]);
+        var origin = binding.EntryObjectId == 0 ? SpacePosition.Zero : Position(items[binding.EntryObjectId]);
+        if (binding.Members.Sum(m => m.Count) > AnomalyEncounterRules.MembersPerWave || binding.Members.Any(m => m.Stage < 0))
+        {
+            throw new InvalidDataException($"Invalid NPC sequence in DED room {binding.RoomId}.");
+        }
         var offset = new SpacePosition(index * MissionGateRules.RoomSpacing, 0, 0);
         var structures = binding.Members.Where(m => m.Structure).Select(m => m.AnchorId).ToHashSet();
         var members = binding
@@ -139,7 +196,7 @@ internal static class DedComplexCatalog
             .Where(o =>
                 o.TypeID is not null
                 && o.Position is not null
-                && o.ObjectID != binding.EntryObjectId
+                && (o.ObjectID != binding.EntryObjectId || dungeon.Connections?.Any(g => g.FromObjectID == o.ObjectID) == true)
                 && !structures.Contains(o.ObjectID!.Value)
             )
             .Select(o => (Object: o, Type: catalog.RequireItem(checked((int)o.TypeID!.Value))))
@@ -168,8 +225,9 @@ internal static class DedComplexCatalog
                 };
             })
             .ToImmutableArray();
-        DedGate? gate = null;
-        if (binding.Gate is { } authored)
+        List<DedGate> gates = [];
+        var authoredGates = binding.Gates ?? (binding.Gate is { } single ? [single] : []);
+        foreach (var authored in authoredGates)
         {
             var connection = dungeon.Connections!.Value.Single(g => g.FromObjectID == authored.ObjectId);
             var body = objects.Single(o => o.Id == authored.ObjectId && o.GroupId == MissionGateRules.AccelerationGateGroup);
@@ -179,9 +237,20 @@ internal static class DedComplexCatalog
                 connection.DisallowedFittedTypesList is long forbidden ? CatalogTypeLists.Read(catalog, forbidden) : null,
                 authored.Key
             );
-            gate = new(authored.ObjectId, body, authored.RequiresClear, access);
+            int destination = authored.DestinationRoomId == 0 ? index + 1 : roomIndices[authored.DestinationRoomId];
+            gates.Add(
+                new(
+                    gates.Count == 0 ? index : extraGateSlot++,
+                    destination,
+                    body,
+                    authored.RequiresClear,
+                    access,
+                    authored.RequiredSkill,
+                    authored.RequiredLevel
+                )
+            );
         }
-        return new(offset, objects, members, gate);
+        return new(offset, objects, members, gates.ToImmutableArray());
     }
 
     private static SpacePosition Position(ClientDungeonsRoomsValueObjectsValue value) =>

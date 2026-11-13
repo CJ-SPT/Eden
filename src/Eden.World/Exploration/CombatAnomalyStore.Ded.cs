@@ -15,6 +15,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
+using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -52,9 +53,19 @@ internal sealed partial class CombatAnomalyStore
         var definitions = DedComplexCatalog.Read(catalog);
         var summary = definitions.IsEmpty ? null : catalog.FindSystem(system);
         var faction = summary is null ? null : NpcRegions.Pirates(summary.RegionId);
-        var security = faction is null ? null : catalog.Read(CatalogData.Client.Systems, (long)system)?.SecurityStatus;
-        var definition = security is > 0 ? definitions.FirstOrDefault(d => d.FactionId == (int?)faction) : null;
-        if (!pirates || definition is null)
+        var security =
+            summary is null || WormholeRules.IsWormholeSystem(system)
+                ? null
+                : catalog.Read(CatalogData.Client.Systems, (long)system)?.SecurityStatus;
+        var eligible = security is double status
+            ? definitions
+                .Where(d =>
+                    (d.Binding.SecurityBands & DedComplexRules.SecurityBand(status)) != 0
+                    && (d.FactionId == (int?)faction || d.FactionId == (int)NpcPirateFaction.RogueDrones)
+                )
+                .ToArray()
+            : [];
+        if (!pirates || eligible.Length == 0)
         {
             _dedViews[system] = new(version, generation, long.MaxValue, pirates, null, []);
             return _dedViews[system].Sites;
@@ -66,23 +77,27 @@ internal sealed partial class CombatAnomalyStore
             .Where(s => s.SystemId == system && s.Slot == DedComplexRules.SiteSlot)
             .OrderByDescending(s => s.Id)
             .FirstOrDefault();
-        if (site is null || site.ReplaceAt <= now)
+        var definition = site is null ? null : definitions.FirstOrDefault(d => d.Binding.DungeonId == site.DungeonId);
+        if (site is null || site.ReplaceAt <= now || definition is null || !eligible.Contains(definition))
         {
+            long? previousId = site?.Id;
             var anchor = catalog.CelestialsInSystem(system).OrderBy(c => c.Id).FirstOrDefault();
             if (anchor is null)
             {
                 _dedViews[system] = new(version, generation, long.MaxValue, pirates, null, []);
                 return _dedViews[system].Sites;
             }
-            long id = Math.Max(
-                CombatAnomalyRules.FirstSiteId,
-                (world.Set<WorldCombatAnomaly>().Max(s => (long?)s.Id) ?? CombatAnomalyRules.FirstSiteId - 1) + 1
-            );
+            int previous = Array.IndexOf(eligible, definition);
+            int next =
+                previous < 0
+                    ? (int)(NpcSpawnRules.Seed(system, DedComplexRules.SiteSlot) % eligible.Length)
+                    : (previous + 1) % eligible.Length;
+            definition = eligible[next];
             const int placementSlot = 20;
             double offset = placementSlot * CombatAnomalyRules.PlacementOffset;
             site = new()
             {
-                Id = id,
+                Id = NextSiteId(new SqlWorldAction(world)),
                 DungeonId = definition.Binding.DungeonId,
                 SystemId = system,
                 IsSignature = true,
@@ -93,6 +108,10 @@ internal sealed partial class CombatAnomalyStore
             };
             world.Add(site);
             world.SaveChanges();
+            if (previousId is long replaced)
+            {
+                _dedStarted.TryRemove(replaced, out _);
+            }
             Invalidate(world, -1);
         }
         transaction.Commit();
@@ -115,13 +134,12 @@ internal sealed partial class CombatAnomalyStore
                     room.Objects.Select(body =>
                         body with
                         {
-                            Id =
-                                body.Id == room.Gate?.ObjectId
-                                    ? DedGateId(site.Id, index)
-                                    : CombatAnomalyRules.FirstObjectId
-                                        + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.ObjectsPerSite
-                                        + profile.Rooms.Take(index).Sum(r => r.Objects.Length)
-                                        + room.Objects.IndexOf(body),
+                            Id = room.Gates.FirstOrDefault(g => g.Body.Id == body.Id) is { } gate
+                                ? DedGateId(site.Id, gate.Slot)
+                                : CombatAnomalyRules.FirstObjectId
+                                    + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.ObjectsPerSite
+                                    + profile.Rooms.Take(index).Sum(r => r.Objects.Length)
+                                    + room.Objects.IndexOf(body),
                             Position = origin + body.Position,
                         }
                     )
@@ -143,14 +161,8 @@ internal sealed partial class CombatAnomalyStore
         );
     }
 
-    private void ArriveDed(int system, SpacePosition position, long now)
+    private void ArriveDed(CombatAnomaly contact, DedComplex profile, SpacePosition position, long now)
     {
-        var contact = DedSignatures(system, now).SingleOrDefault();
-        if (contact is null)
-        {
-            return;
-        }
-        var profile = _dedViews[system].Profile!;
         int index = -1;
         for (int room = 0; room < profile.Rooms.Length; room++)
         {
@@ -160,7 +172,7 @@ internal sealed partial class CombatAnomalyStore
                 break;
             }
         }
-        if (index < 0 || _dedStarted.TryGetValue(system, out var started) && started.Site == contact.Id && index <= started.Room)
+        if (index < 0 || _dedStarted.TryGetValue(contact.Id, out long started) && (started & (1L << index)) != 0)
         {
             return;
         }
@@ -168,36 +180,54 @@ internal sealed partial class CombatAnomalyStore
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         var site = world.Set<WorldCombatAnomaly>().Find(contact.Id)!;
-        if (site.CompletedAt is null && index == site.Wave + 1)
+        long visited = Visited(site);
+        if (site.CompletedAt is null && (visited & (1L << index)) == 0)
         {
-            SpawnDedRoom(world, catalog, site, profile, index, now);
-            site.Wave = index;
+            SpawnDedRoom(new SqlWorldAction(world), catalog, site, profile, index, now);
+            site.Wave = Math.Max(site.Wave, index);
+            site.DedVisitedRooms = visited | (1L << index);
             world.SaveChanges();
+            Invalidate(world, site.SystemId);
         }
         transaction.Commit();
-        _dedStarted[system] = (site.Id, site.Wave);
-        if (site.Wave == index)
-        {
-            Invalidate(world, system);
-        }
+        _dedStarted[contact.Id] = Visited(site);
     }
 
-    private readonly ConcurrentDictionary<int, (long Site, int Room)> _dedStarted = [];
+    private readonly ConcurrentDictionary<long, long> _dedStarted = [];
+
+    private static long Visited(WorldCombatAnomaly site) =>
+        site.DedVisitedRooms == 0 && site.Wave >= 0 ? (1L << (site.Wave + 1)) - 1 : site.DedVisitedRooms;
+
+    private static long NextSiteId(WorldAction world)
+    {
+        long saved =
+            world.Filter<WorldCombatAnomaly>(s => s.Id >= CombatAnomalyRules.FirstSiteId).Max(s => (long?)s.Id)
+            ?? CombatAnomalyRules.FirstSiteId - 1;
+        long staged = world.Set<WorldCombatAnomaly>().Local.Select(s => s.Id).DefaultIfEmpty().Max();
+        return Math.Max(saved, staged) + 1;
+    }
 
     private static void SpawnDedRoom(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         WorldCombatAnomaly site,
         DedComplex profile,
         int index,
-        long now
+        long now,
+        int stage = 0
     )
     {
         int slot = 0;
         foreach (var member in profile.Rooms[index].Members)
         {
             var binding = member.Binding;
+            if (binding.Stage != stage)
+            {
+                slot += binding.Count;
+                continue;
+            }
             var hull = new NpcProfileCatalog().Read(catalog, binding.TypeId);
+            bool sentry = hull.Type.GroupId is NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup;
             int faction = binding.FactionId == 0 ? profile.FactionId : binding.FactionId;
             int corporation =
                 faction == profile.FactionId
@@ -220,7 +250,7 @@ internal sealed partial class CombatAnomalyStore
                         Name = binding.Name,
                         FactionId = faction,
                         CorporationId = corporation,
-                        Role = binding.Structure ? NpcRole.MissionStructure : NpcRole.Pirate,
+                        Role = binding.Structure && !sentry ? NpcRole.MissionStructure : NpcRole.Pirate,
                         AnchorKind = NpcAnchorKind.Anomaly,
                         EncounterId = site.Id,
                         SpawnSlot = slot++,
@@ -242,6 +272,7 @@ internal sealed partial class CombatAnomalyStore
                         NpcId = id,
                         SiteId = site.Id,
                         Wave = index,
+                        Sentry = sentry,
                     }
                 );
             }
@@ -258,7 +289,7 @@ internal sealed partial class CombatAnomalyStore
                 using var movement = database.EnterMovement();
                 using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                return ValidateDedGate(world, catalog, pilotId, gateId).Gate;
+                return ValidateDedGate(world, catalog, pilotId, gateId, now).Gate;
             },
             nameof(Gate)
         );
@@ -274,7 +305,7 @@ internal sealed partial class CombatAnomalyStore
                 using WorldDbContext world = new(database.Path);
                 using var transaction = world.Database.BeginTransaction();
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                var (site, pilot, gate) = ValidateDedGate(world, catalog, pilotId, gateId);
+                var (site, pilot, gate) = ValidateDedGate(world, catalog, pilotId, gateId, now);
                 if (gate.Destination != destination)
                 {
                     throw new InvalidDataException("The acceleration gate destination changed.");
@@ -307,7 +338,8 @@ internal sealed partial class CombatAnomalyStore
         WorldDbContext world,
         CatalogDbContext catalog,
         long pilotId,
-        long gateId
+        long gateId,
+        long now
     )
     {
         if (!DedComplexRules.IsGate(gateId))
@@ -316,13 +348,15 @@ internal sealed partial class CombatAnomalyStore
         }
         long sequence = gateId - DedComplexRules.FirstGateId;
         long id = CombatAnomalyRules.FirstSiteId + sequence / DedComplexRules.GatesPerSite;
-        int room = (int)(sequence % DedComplexRules.GatesPerSite);
+        int slot = (int)(sequence % DedComplexRules.GatesPerSite);
         var site = world.Set<WorldCombatAnomaly>().Find(id);
         var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
         if (
-            site is not { Slot: DedComplexRules.SiteSlot, CompletedAt: null }
-            || site.Wave < room
+            site is null
+            || !DedComplexRules.IsSite(site.Slot)
+            || site.CompletedAt is not null
+            || site.EscalationPilotId is long owner && (owner != pilotId || site.EscalationExpiresAt <= now)
             || ship.Position is not { } position
             || (position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId) != site.SystemId
         )
@@ -330,21 +364,30 @@ internal sealed partial class CombatAnomalyStore
             throw new InvalidDataException("The DED acceleration gate is unavailable in your current room.");
         }
         var profile = DedComplexCatalog.Find(catalog, site.DungeonId);
-        if (room >= profile.Rooms.Length - 1 || profile.Rooms[room].Gate is not { } source)
+        var gateRoom = profile.Rooms.Select((room, index) => (room, index)).FirstOrDefault(r => r.room.Gates.Any(g => g.Slot == slot));
+        int room = gateRoom.index;
+        if (gateRoom.room is null || (Visited(site) & (1L << room)) == 0)
         {
             throw new InvalidDataException("The DED acceleration gate is unavailable.");
+        }
+        var source = profile.Rooms[room].Gates.Single(g => g.Slot == slot);
+        if (source.RequiredSkill != 0 && PilotSkillReader.Level(world, catalog, pilotId, source.RequiredSkill) < source.RequiredLevel)
+        {
+            throw new InvalidDataException(
+                $"This acceleration gate requires {catalog.RequireItem(source.RequiredSkill).Name} level {source.RequiredLevel}."
+            );
         }
         var origin = DedOrigin(site);
         MissionGate gate = new(
             gateId,
             origin + source.Body.Position,
             source.Body.Radius,
-            origin + profile.Rooms[room + 1].Offset,
+            origin + profile.Rooms[source.Destination].Offset,
             source.RequiresClear
         )
         {
             Access = source.Access,
-            DungeonObjectId = source.ObjectId,
+            DungeonObjectId = source.Body.Id,
         };
         var type = catalog.RequireItem(ship.TypeId);
         var item = new InventoryItem(
@@ -380,29 +423,55 @@ internal sealed partial class CombatAnomalyStore
                 .Any(m =>
                     m.SiteId == site.Id
                     && m.Wave == room
-                    && world.Set<WorldNpc>().Any(n => n.Id == m.NpcId && n.DestroyedAt == null && n.RetiredAt == null)
+                    && !m.Sentry
+                    && world
+                        .Set<WorldNpc>()
+                        .Any(n => n.Id == m.NpcId && n.Role == NpcRole.Pirate && n.DestroyedAt == null && n.RetiredAt == null)
                 );
         MissionGateRules.Validate(new(position.X, position.Y, position.Z), type.Radius ?? 0, type.GroupId, gate, cleared);
         return (site, pilot, gate);
     }
 
-    public SpacePosition WarpDestination(int systemId, SpacePosition origin, SpacePosition destination, long now)
+    public SpacePosition WarpDestination(int systemId, SpacePosition origin, SpacePosition destination, long now, long pilotId = 0)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using var movement = database.EnterMovement();
-        var contact = DedSignatures(systemId, now).SingleOrDefault();
-        if (contact is null)
+        foreach (var contact in DedSignatures(systemId, now))
         {
-            return destination;
+            if (RedirectDedWarp(contact, _dedViews[systemId].Profile!, origin, destination) is { } entry)
+            {
+                return entry;
+            }
         }
-        var profile = _dedViews[systemId].Profile!;
+        var privateSites = pilotId == 0 ? [] : Escalations(pilotId, now).Sites;
+        if (privateSites.Any(s => s.SystemId == systemId))
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            foreach (var site in privateSites.Where(s => s.SystemId == systemId))
+            {
+                if (RedirectDedWarp(site, DedComplexCatalog.Find(catalog, site.DungeonId), origin, destination) is { } entry)
+                {
+                    return entry;
+                }
+            }
+        }
+        return destination;
+    }
+
+    private static SpacePosition? RedirectDedWarp(
+        CombatAnomaly contact,
+        DedComplex profile,
+        SpacePosition origin,
+        SpacePosition destination
+    )
+    {
         if (
             !profile
                 .Rooms.Skip(1)
                 .Any(r => (contact.Position + r.Offset).DistanceTo(destination) <= NpcEncounterDefinitions.VisibilityRange)
         )
         {
-            return destination;
+            return null;
         }
         if (profile.Rooms.Any(r => (contact.Position + r.Offset).DistanceTo(origin) <= NpcEncounterDefinitions.VisibilityRange))
         {
@@ -414,29 +483,89 @@ internal sealed partial class CombatAnomalyStore
     private static bool DedKilled(WorldAction world, CatalogDbContext catalog, WorldCombatAnomaly site, WorldNpc npc, long now)
     {
         var profile = DedComplexCatalog.Find(catalog, site.DungeonId);
-        if (npc.Role != NpcRole.MissionStructure || npc.TypeId != profile.Binding.RewardStructureType)
+        var binding = profile.Binding;
+        if (site.EscalationExpiresAt <= now)
         {
-            return false;
+            Complete(site, now);
+            RetireDedMembers(world, site, now, npc.Id);
+            return true;
+        }
+        var member = world.Set<WorldAnomalyMember>().Find(npc.Id);
+        if (member is { Sentry: false } && profile.Rooms[member.Wave].Members.Any(m => m.Binding.Stage != 0))
+        {
+            AdvanceDedStages(world, catalog, site, npc, profile, member.Wave, now);
+        }
+        if (npc.TypeId != binding.RewardStructureType)
+        {
+            if (
+                binding.ClearRoomId == 0
+                || member is null
+                || binding.Rooms[member.Wave].RoomId != binding.ClearRoomId
+                || world
+                    .Filter<WorldAnomalyMember>(m => m.SiteId == site.Id && m.Wave == member.Wave && m.NpcId != npc.Id && !m.Sentry)
+                    .ToArray()
+                    .Any(m => world.Set<WorldNpc>().Find(m.NpcId) is { DestroyedAt: null, RetiredAt: null })
+            )
+            {
+                return false;
+            }
         }
         Complete(site, now);
+        RetireDedMembers(world, site, now, npc.Id);
+        return true;
+    }
+
+    private static void AdvanceDedStages(
+        WorldAction world,
+        CatalogDbContext catalog,
+        WorldCombatAnomaly site,
+        WorldNpc killed,
+        DedComplex profile,
+        int room,
+        long now
+    )
+    {
+        var members = world
+            .Filter<WorldAnomalyMember>(m => m.SiteId == site.Id && m.Wave == room && !m.Sentry)
+            .AsEnumerable()
+            .UnionBy(world.Set<WorldAnomalyMember>().Local.Where(m => m.SiteId == site.Id && m.Wave == room && !m.Sentry), m => m.NpcId)
+            .ToArray();
+        if (members.Any(m => m.NpcId != killed.Id && world.Set<WorldNpc>().Find(m.NpcId) is { DestroyedAt: null, RetiredAt: null }))
+        {
+            return;
+        }
+        int lastSlot = members.Max(m => world.Set<WorldNpc>().Find(m.NpcId)?.SpawnSlot ?? 0);
+        int firstSlot = 0;
+        foreach (var member in profile.Rooms[room].Members)
+        {
+            if (firstSlot > lastSlot)
+            {
+                SpawnDedRoom(world, catalog, site, profile, room, now, member.Binding.Stage);
+                return;
+            }
+            firstSlot += member.Binding.Count;
+        }
+    }
+
+    private static void RetireDedMembers(WorldAction world, WorldCombatAnomaly site, long now, long killed = 0)
+    {
         foreach (
             var member in world
-                .Set<WorldNpc>()
-                .Where(n => n.EncounterId == site.Id && n.Id != npc.Id && n.DestroyedAt == null && n.RetiredAt == null)
+                .Filter<WorldNpc>(n => n.EncounterId == site.Id && n.Id != killed && n.DestroyedAt == null && n.RetiredAt == null)
                 .ToArray()
         )
         {
             member.RetiredAt = now;
         }
-        return true;
     }
 
     internal static IReadOnlyList<DedLootSource>? DedLoot(WorldAction world, CatalogDbContext catalog, WorldNpc npc)
     {
         if (
             npc.AnchorKind != NpcAnchorKind.Anomaly
-            || npc.Role != NpcRole.MissionStructure && !DedComplexCatalog.IsOverseer(npc.TypeId)
-            || world.Set<WorldCombatAnomaly>().Find(npc.EncounterId) is not { Slot: DedComplexRules.SiteSlot } site
+            || !DedComplexCatalog.HasReward(npc.TypeId)
+            || world.Set<WorldCombatAnomaly>().Find(npc.EncounterId) is not { } site
+            || !DedComplexRules.IsSite(site.Slot)
         )
         {
             return null;
@@ -446,18 +575,26 @@ internal sealed partial class CombatAnomalyStore
         {
             return binding.OverseerLoot;
         }
+        if ((binding.SecondaryRewards ?? []).FirstOrDefault(r => r.TypeId == npc.TypeId) is { } secondary)
+        {
+            return secondary.Loot;
+        }
         if (npc.TypeId != binding.RewardStructureType)
         {
             return null;
         }
         // Exact retail rates are server-side. A stable kill identity selects Eden's loot.
         Random random = new(unchecked((int)NpcSpawnRules.Seed(npc.SystemId, npc.Id)));
-        List<DedLootSource> loot = [.. binding.GuaranteedLoot, new(binding.DeadspaceModules[random.Next(binding.DeadspaceModules.Count)])];
+        List<DedLootSource> loot = [.. binding.GuaranteedLoot];
+        if (binding.DeadspaceModules.Count > 0 && (binding.Revision == 0 || random.Next(2) == 0))
+        {
+            loot.Add(new(binding.DeadspaceModules[random.Next(binding.DeadspaceModules.Count)]));
+        }
         if (binding.FactionModules.Count > 0 && random.Next(5) == 0)
         {
             loot.Add(new(binding.FactionModules[random.Next(binding.FactionModules.Count)]));
         }
-        if (random.Next(20) == 0)
+        if (binding.Blueprint != 0 && random.Next(20) == 0)
         {
             loot.Add(new(binding.Blueprint, BlueprintCopy: true));
         }

@@ -17,7 +17,11 @@ internal sealed record EconomyWorldCombatAnomaly(
     int Wave,
     double X,
     double Y,
-    double Z
+    double Z,
+    long DedVisitedRooms,
+    long? EscalationPilotId,
+    int EscalationSourceDungeonId,
+    long? EscalationExpiresAt
 );
 
 internal sealed partial class ResidentEconomy
@@ -46,7 +50,8 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldCombatAnomaly(
-                        Id,CompletedAt,DefinitionVersion,DungeonId,IsSignature,NextWaveAt,ReplaceAt,Slot,SystemId,Wave,X,Y,Z
+                        Id,CompletedAt,DefinitionVersion,DungeonId,IsSignature,NextWaveAt,ReplaceAt,Slot,SystemId,Wave,X,Y,Z,
+                        DedVisitedRooms,EscalationPilotId,EscalationSourceDungeonId,EscalationExpiresAt
                     )
                     SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.CompletedAt'),
@@ -54,13 +59,16 @@ internal sealed partial class ResidentEconomy
                         json_extract(value,'$.IsSignature'),json_extract(value,'$.NextWaveAt'),
                         json_extract(value,'$.ReplaceAt'),json_extract(value,'$.Slot'),json_extract(value,'$.SystemId'),
                         json_extract(value,'$.Wave'),json_extract(value,'$.X'),json_extract(value,'$.Y'),
-                        json_extract(value,'$.Z')
+                        json_extract(value,'$.Z'),json_extract(value,'$.DedVisitedRooms'),json_extract(value,'$.EscalationPilotId'),
+                        json_extract(value,'$.EscalationSourceDungeonId'),json_extract(value,'$.EscalationExpiresAt')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET
                         CompletedAt=excluded.CompletedAt,DefinitionVersion=excluded.DefinitionVersion,
                         DungeonId=excluded.DungeonId,IsSignature=excluded.IsSignature,NextWaveAt=excluded.NextWaveAt,
                         ReplaceAt=excluded.ReplaceAt,Slot=excluded.Slot,SystemId=excluded.SystemId,Wave=excluded.Wave,
-                        X=excluded.X,Y=excluded.Y,Z=excluded.Z
+                        X=excluded.X,Y=excluded.Y,Z=excluded.Z,DedVisitedRooms=excluded.DedVisitedRooms,
+                        EscalationPilotId=excluded.EscalationPilotId,EscalationSourceDungeonId=excluded.EscalationSourceDungeonId,
+                        EscalationExpiresAt=excluded.EscalationExpiresAt
                     """
                 );
             }

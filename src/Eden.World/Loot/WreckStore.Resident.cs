@@ -88,14 +88,20 @@ internal sealed partial class WreckStore
         var type = definition?.WreckTypeID is long wreckType
             ? (catalog.FittingType(wreckType) is { GroupId: WreckDefinitions.Group } wreckDefinition ? wreckDefinition : null)
             : null;
-        if (npc.Role == NpcRole.MissionStructure && ded is not null)
+        bool container = ded is not null && (npc.Role == NpcRole.MissionStructure || type is null);
+        if (container)
         {
             type = catalog.RequireItem(JetcanRules.TypeId);
         }
         if (
             type is null
             && definition is { WreckTypeID: null }
-            && (npc.Role != NpcRole.Pirate || catalog.RequireItem(npc.TypeId).GroupId == NpcEncounterDefinitions.SentryGroup)
+            && (
+                npc.Role != NpcRole.Pirate
+                || catalog.RequireItem(npc.TypeId).GroupId
+                    is NpcEncounterDefinitions.SentryGroup
+                        or NpcEncounterDefinitions.OverseerSentryGroup
+            )
         )
         {
             // Several pinned customs officials have no wreck link. They leave
@@ -126,7 +132,7 @@ internal sealed partial class WreckStore
                 }
             )
             .Entity;
-        if (npc.Role != NpcRole.MissionStructure)
+        if (!container)
         {
             Eden.World.Information.SalvagePersistence.Seed(catalog, wreck);
         }

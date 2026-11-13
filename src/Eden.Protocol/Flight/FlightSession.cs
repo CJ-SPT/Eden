@@ -1044,7 +1044,8 @@ internal sealed partial class FlightSession(
         var origin = Pilot.Position!;
         var destination = missions?.WarpDestination(Pilot.SystemId, origin, requested) ?? requested;
         return destination == requested
-            ? dedComplexes?.WarpDestination(Pilot.SystemId, origin, requested, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? requested
+            ? dedComplexes?.WarpDestination(Pilot.SystemId, origin, requested, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), Pilot.PilotId)
+                ?? requested
             : destination;
     }
 

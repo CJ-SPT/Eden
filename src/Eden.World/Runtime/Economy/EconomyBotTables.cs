@@ -2146,7 +2146,11 @@ internal sealed partial class ResidentEconomy
                         row.Wave,
                         row.X,
                         row.Y,
-                        row.Z
+                        row.Z,
+                        row.DedVisitedRooms,
+                        row.EscalationPilotId,
+                        row.EscalationSourceDungeonId,
+                        row.EscalationExpiresAt
                     ),
                 state => new Eden.Data.World.Exploration.WorldCombatAnomaly
                 {
@@ -2163,9 +2167,14 @@ internal sealed partial class ResidentEconomy
                     X = state.X,
                     Y = state.Y,
                     Z = state.Z,
+                    DedVisitedRooms = state.DedVisitedRooms,
+                    EscalationPilotId = state.EscalationPilotId,
+                    EscalationSourceDungeonId = state.EscalationSourceDungeonId,
+                    EscalationExpiresAt = state.EscalationExpiresAt,
                 },
                 ProjectWorldCombatAnomaly,
-                "Id,CompletedAt,DefinitionVersion,DungeonId,IsSignature,NextWaveAt,ReplaceAt,Slot,SystemId,Wave,X,Y,Z",
+                "Id,CompletedAt,DefinitionVersion,DungeonId,IsSignature,NextWaveAt,ReplaceAt,Slot,SystemId,Wave,X,Y,Z,"
+                    + "DedVisitedRooms,EscalationPilotId,EscalationSourceDungeonId,EscalationExpiresAt",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -2180,7 +2189,11 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt32(10),
                         reader.GetDouble(11),
                         reader.GetDouble(12),
-                        reader.GetDouble(13)
+                        reader.GetDouble(13),
+                        reader.GetInt64(14),
+                        reader.IsDBNull(15) ? null : reader.GetInt64(15),
+                        reader.GetInt32(16),
+                        reader.IsDBNull(17) ? null : reader.GetInt64(17)
                     ),
                 state => new(state.Id),
                 indexes: [new("Id", row => row.Id), new("DungeonId", row => row.DungeonId), new("SystemId", row => row.SystemId)],

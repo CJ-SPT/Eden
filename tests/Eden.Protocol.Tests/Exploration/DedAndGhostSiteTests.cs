@@ -8,6 +8,8 @@ using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Exploration;
+using Eden.Protocol.Flight;
+using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Exploration;
@@ -29,17 +31,32 @@ public sealed class DedAndGhostSiteTests
         PassiveCatalogFixture.LoadDedAndGhost(f.CatalogPath);
         using CatalogDbContext catalog = new(f.CatalogPath);
         var ded = DedComplexCatalog.Read(catalog);
-        Assert.Equal(new[] { 116, 2249 }, ded.Select(d => d.Binding.DungeonId));
-        var outlet = ded[0];
+        Assert.Equal(52, ded.Length);
+        var outlet = ded.Single(d => d.Binding.DungeonId == 116);
         Assert.Equal(4, outlet.Rooms.Length);
-        Assert.Equal(96282, outlet.Rooms[0].Gate!.ObjectId);
-        Assert.Equal(17892, outlet.Rooms[2].Gate!.Access.Key!.TypeId);
-        Assert.True(outlet.Rooms[2].Gate!.RequiresClear);
-        Assert.True(outlet.Rooms[2].Gate!.Access.Key!.Consume);
+        Assert.Equal(96282, outlet.Rooms[0].Gates.Single().Body.Id);
+        Assert.Equal(17892, outlet.Rooms[2].Gates.Single().Access.Key!.TypeId);
+        Assert.True(outlet.Rooms[2].Gates.Single().RequiresClear);
+        Assert.True(outlet.Rooms[2].Gates.Single().Access.Key!.Consume);
         Assert.Equal(18634, Assert.Single(outlet.Rooms[3].Members, m => m.Binding.Structure).Binding.TypeId);
-        Assert.Equal(3, ded[1].Rooms.Length);
-        Assert.Equal(841485, ded[1].Rooms[0].Gate!.ObjectId);
-        Assert.Equal(18632, Assert.Single(ded[1].Rooms[2].Members, m => m.Binding.Structure).Binding.TypeId);
+        var scout = ded.Single(d => d.Binding.DungeonId == 2249);
+        Assert.Equal(3, scout.Rooms.Length);
+        Assert.Equal(841485, scout.Rooms[0].Gates.Single().Body.Id);
+        Assert.Equal(18632, Assert.Single(scout.Rooms[2].Members, m => m.Binding.Structure).Binding.TypeId);
+        var maze = ded.Single(d => d.Binding.DungeonId == 2257);
+        Assert.Equal(36, maze.Rooms.Length);
+        Assert.Equal(61, maze.Rooms.Sum(r => r.Gates.Length));
+        Assert.Equal(5, maze.Difficulty);
+        Assert.Equal(10, maze.Binding.Rating);
+        Assert.Equal(19421, Assert.Single(maze.Binding.GuaranteedLoot).TypeId);
+        var switchback = maze.Rooms[1].Gates.Single(g => g.Body.Id == 842137);
+        Assert.Equal(19002, maze.Binding.Rooms[switchback.Destination].RoomId);
+        Assert.Equal(19014, maze.Binding.Rooms[Assert.Single(maze.Rooms[switchback.Destination].Gates).Destination].RoomId);
+        var assembly = ded.Single(d => d.Binding.DungeonId == 2258);
+        Assert.Equal(19954, assembly.Rooms.SelectMany(r => r.Gates).Single(g => g.Body.Id == 842611).Access.Key!.TypeId);
+        Assert.Contains(assembly.Binding.SecondaryRewards!, r => r.TypeId == 19960 && r.Loot.Any(l => l.TypeId == 19954));
+        var mine = ded.Single(d => d.Binding.DungeonId == DedEscalationRules.DroneInfestedMine);
+        Assert.Equal(5, Assert.Single(mine.Rooms).Members.Select(m => m.Binding.Stage).Distinct().Count());
 
         var ghosts = GhostSiteCatalog.Read(catalog);
         Assert.Equal(20, ghosts.Length);
@@ -55,6 +72,101 @@ public sealed class DedAndGhostSiteTests
         var depot = angel.Containers.First(c => c.TypeId == 33530);
         Assert.Equal(10_668.1489, depot.Position.X, 3);
         Assert.Equal(-11_864.2109, depot.Position.Z, 3);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExpeditionGrantIsPrivatePersistentAndExpires(bool resident)
+    {
+        using Fixture f = new();
+        PassiveCatalogFixture.LoadDedAndGhost(f.CatalogPath);
+        int system = CombatAnomalyRules.SystemId;
+        long sourceId = CombatAnomalyRules.FirstSiteId + 1000;
+        long npcId = CombatAnomalyRules.FirstNpcId;
+        using (WorldDbContext db = new(f.Db.Path))
+        {
+            db.Add(
+                new WorldCombatAnomaly
+                {
+                    Id = sourceId,
+                    SystemId = system,
+                    Slot = DedComplexRules.SiteSlot,
+                    DungeonId = 2455,
+                    Wave = 3,
+                }
+            );
+            db.Add(
+                new WorldNpc
+                {
+                    Id = npcId,
+                    SystemId = system,
+                    EncounterId = sourceId,
+                    TypeId = 17118,
+                    FactionId = 500020,
+                    AnchorKind = NpcAnchorKind.Anomaly,
+                    Role = NpcRole.Pirate,
+                    DestroyedAt = f.Clock.Now,
+                }
+            );
+            db.Add(
+                new WorldAnomalyMember
+                {
+                    NpcId = npcId,
+                    SiteId = sourceId,
+                    Wave = 3,
+                }
+            );
+            db.SaveChanges();
+        }
+        var dbInfo = new WorldDatabase(f.Db.Path);
+        var store = new CombatAnomalyStore(dbInfo);
+        using (var live = resident ? new LiveWorld(dbInfo, f.Clock, _ => { }) : null)
+        {
+            Assert.Empty(store.Journal(f.PilotId, f.Clock.Now));
+            using CatalogDbContext catalog = new(f.CatalogPath);
+            using (var action = new WorldActionScope(dbInfo))
+            {
+                var world = action.World;
+                CombatAnomalyStore.Killed(world, catalog, world.Set<WorldNpc>().Find(npcId)!, f.Clock.Now, f.PilotId);
+            }
+            Assert.Empty(store.Journal(f.PilotId, f.Clock.Now));
+            using (var action = new WorldActionScope(dbInfo))
+            {
+                var world = action.World;
+                var defeated = world.Set<WorldNpc>().Find(npcId)!;
+                CombatAnomalyStore.Killed(world, catalog, defeated, f.Clock.Now, f.PilotId);
+                CombatAnomalyStore.Killed(world, catalog, defeated, f.Clock.Now, f.PilotId);
+                action.Commit();
+            }
+            var grant = Assert.Single(store.Journal(f.PilotId, f.Clock.Now));
+            Assert.Equal(2507, grant.DungeonId);
+            Assert.Equal(f.Clock.Now + TimeSpan.TicksPerDay, grant.ExpiresAt);
+            Assert.Empty(store.Journal(f.PilotId + 1, f.Clock.Now));
+            Assert.Throws<InvalidDataException>(() => store.Find(f.PilotId + 1, grant.SystemId, grant.InstanceId, f.Clock.Now));
+            Assert.DoesNotContain(store.Signatures(grant.SystemId, f.Clock.Now), s => s.Id == grant.InstanceId);
+            var warp = FlightRequestWire.Read("beyonce", "CmdWarpToStuff", ["epinstance", grant.InstanceId]).Command;
+            Assert.Equal(grant.InstanceId, Assert.IsType<FlightCommand.WarpToEscalation>(warp).InstanceId);
+            var wire = Assert.IsType<BlueInstance>(new DedEscalationJournal([grant]).ToBlue());
+            Assert.Equal("eve.common.script.sys.rowset.Rowset", wire.Name);
+            var row = Assert.IsType<object?[]>(new DedEscalationJournalRow(grant).ToBlue());
+            var address = Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(row[1]).State);
+            Assert.Equal(grant.InstanceId, address["instanceID"]);
+            Assert.Equal(grant.DungeonId, address["destDungeonID"]);
+            var site = store.Find(f.PilotId, grant.SystemId, grant.InstanceId, f.Clock.Now);
+            store.Arrive(f.PilotId + 1, grant.SystemId, site.Position, f.Clock.Now);
+            store.Arrive(f.PilotId, grant.SystemId, site.Position, f.Clock.Now);
+        }
+        var reopened = new CombatAnomalyStore(dbInfo);
+        var saved = Assert.Single(reopened.Journal(f.PilotId, f.Clock.Now));
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Contains(world.Set<WorldNpc>(), n => n.EncounterId == saved.InstanceId && n.RetiredAt == null);
+        }
+        Assert.Empty(reopened.Journal(f.PilotId, saved.ExpiresAt));
+        Assert.Throws<InvalidDataException>(() => reopened.Find(f.PilotId, saved.SystemId, saved.InstanceId, saved.ExpiresAt));
+        using WorldDbContext check = new(f.Db.Path);
+        Assert.DoesNotContain(check.Set<WorldNpc>(), n => n.EncounterId == saved.InstanceId && n.RetiredAt == null);
     }
 
     [Fact]
@@ -123,6 +235,7 @@ public sealed class DedAndGhostSiteTests
             world.SaveChanges();
         }
         var store = (CombatAnomalyStore)f.Db.Services.GetRequiredService<ICombatAnomalies>();
+        SeedDed(f, system, 116);
         var site = Assert.Single(store.Signatures(system, f.Clock.Now), s => s.Ded);
         Assert.Equal(116, site.DungeonId);
         var gates = site.Objects.Where(o => DedComplexRules.IsGate(o.Id)).OrderBy(o => o.Id).ToArray();
@@ -175,6 +288,7 @@ public sealed class DedAndGhostSiteTests
         }
         int system = CombatAnomalyRules.SystemId;
         var store = (CombatAnomalyStore)f.Db.Services.GetRequiredService<ICombatAnomalies>();
+        SeedDed(f, system, 2249);
         var site = Assert.Single(store.Signatures(system, f.Clock.Now), s => s.Ded);
         Assert.Equal(2249, site.DungeonId);
         var gates = site.Objects.Where(o => DedComplexRules.IsGate(o.Id)).OrderBy(o => o.Id).ToArray();
@@ -241,5 +355,24 @@ public sealed class DedAndGhostSiteTests
         Assert.Contains(items, i => i.TypeId == 19407);
         Assert.Single(items, i => i.TypeId is 19187 or 19213);
         Assert.DoesNotContain(store.Signatures(system, f.Clock.Now), s => s.Id == site.Id);
+    }
+
+    private static void SeedDed(Fixture fixture, int system, int dungeon)
+    {
+        using WorldDbContext world = new(fixture.Db.Path);
+        world.Add(
+            new WorldCombatAnomaly
+            {
+                Id = CombatAnomalyRules.FirstSiteId + 1000,
+                SystemId = system,
+                DungeonId = dungeon,
+                Slot = DedComplexRules.SiteSlot,
+                IsSignature = true,
+                X = 1e11,
+                Y = 2e11,
+                Z = 3e11,
+            }
+        );
+        world.SaveChanges();
     }
 }

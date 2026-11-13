@@ -23,7 +23,8 @@ effects (19407), a Pithum C-type module and a chance of a licensed Gila copy. St
 container and commit with the kill. Gate destinations, room-clear and key rules use encounter reports where the
 catalog supplies only the connection source. Exact NPC rosters and drop weights are server-side. Eden selects
 reported roster variants and uses deterministic loot rolls with an initial subset of the reported module pools.
-The other 48 DED templates still require encounter review. Escalation generation remains pending.
+The validation below records the initial two-complex milestone. The expanded catalog and expedition flow are documented under
+[DED catalog expansion and escalations](#ded-catalog-expansion-and-escalations).
 
 **Ghost Sites.** All 20 Covert Research Facilities (5533–5552) use the pinned entry and cache positions. Lesser,
 Standard, Improved and Superior sites follow highsec, lowsec, nullsec and wormhole space respectively. There are
@@ -81,6 +82,66 @@ FullyQualifiedName~Eden.Protocol.Tests.Exploration|FullyQualifiedName~MissionGat
 
 **Optional maintainer checks.** Confirm the inner DED gates and loot containers in the stock client. Confirm the Ghost
 Site countdown renders when the response arrives.
+
+## DED catalog expansion and escalations
+
+Eden loads all 50 DED layouts in the evejs reference pack and the pinned Angel Mineral Acquisition Outpost and
+Serpentis Logistical Outpost follow-ups (2485 and 2507). The 52 definitions cover 275 rooms and 258 gate connections.
+Public signatures rotate among the applicable regional and security-band sites. The client scan difficulty comes
+from the pinned dungeon record, so The Maze scans at difficulty 5 and retains its 10/10 encounter rating. Gates keep
+the pinned hull and fitting restrictions. A saved room mask permits alternate branches and return gates without
+respawning visited pockets and preserves progress in saves from the first milestone.
+
+The exporter compared build 3662168 against evejs 261108.1 across all 50 DED and 20 Ghost Site entries. Entry objects,
+room membership, object IDs, types and coordinates within 1 cm, and all raw connection records matched. It also
+checks reachability, pinned NPC anchors, gate key identities, published rewards and blueprint records. Build 3662168
+supplies gate sources and restrictions. Encounter reports supply gate destinations and locks, overseer effects,
+deadspace grades and blueprint candidates. The Maze's forward route follows the reported gate positions. The
+assignment of its other gates to the intermediate return pockets is inferred. Site reports and pinned faction hulls
+fill NPC groupings that the client does not publish. Some sites use combined reinforcements, and loot probabilities,
+quantities and faction module pools are Eden reconstructions. Lootable overseer structures and supply cans currently
+settle through destroy-and-loot containers. [EVE University DED index](https://wiki.eveuniversity.org/Template:DED_Complexes)
+[The Maze](https://wiki.eveuniversity.org/index.php?title=The_Maze&oldid=232574)
+[Angel outpost encounter report](https://gamingwithdaopa.ellatha.com/eveonline/angel-mineral-acquisition-outpost/)
+[Serpentis outpost encounter report](https://wiki.eveuniversity.org/index.php?title=Serpentis_Logistical_Outpost_Part_2&oldid=231535)
+
+Supported anomaly completions roll once in the same transaction as the kill, and both outpost first parts award
+their follow-up on completion. Eden uses a 5% anomaly roll and searches up to five stargate jumps for an eligible
+system, with a same-system fallback where eligible. For drone anomalies, Eden allocates a portion of successful
+nullsec rolls to Drone Infested Mine. Exact retail routing and rates are server-side. Escalations are private to the
+recipient, omitted from probes and public directories, and expire after 24 hours, or eight hours for Drone Infested
+Mine. Other expedition families such as unrated chains and capital or shielded starbases are outside this DED pass.
+[Combat site escalation table](https://wiki.eveuniversity.org/index.php?title=Combat_site&oldid=230825)
+[Drone Infested Mine](https://wiki.eveuniversity.org/index.php?title=Drone_Infested_Mine&oldid=230491)
+
+The pinned client consumes `dungeonExplorationMgr.GetMyEscalatingPathDetails` in `neocom/journal.pyj` and reads
+`dungeon.destDungeonID`, `dungeon.instanceID`, `dungeon.solarSystemID` and `expiryTime` in the Opportunities provider.
+The provider and journal both handle `OnEscalatingPathMessage(instanceID)`. Opportunities and Agency use
+`CmdWarpToStuff("epinstance", instanceID)`. Evejs's `dungeonExplorationMgrService.js` supplies an empty reference
+rowset (SHA-256 `01b2022b1fa83a621b2c8d2ecbe923cc9bcf92bfa3b414444a015c94907c4744`). Eden fills it from world
+schema 154 and uses pinned description localization for incoming transmissions.
+
+**Automated validation.** The initial exact filters were
+`FullyQualifiedName=Eden.Protocol.Tests.Exploration.DedAndGhostSiteTests.PinnedCatalogResolvesLayoutsRestrictionsAndCacheTypes`
+and `FullyQualifiedName=Eden.Protocol.Tests.Exploration.DedAndGhostSiteTests.ExpeditionGrantIsPrivatePersistentAndExpires`.
+They covered the pinned layouts, rollback and exactly-once grant settlement, private warp authorization, the
+journal row shape, and expiry and retirement on reopen through SQL and resident settlement. The fixture reproduced
+byte-for-byte. No full .NET suite was requested or run.
+
+The affected run passed 331 cases in 256.74 seconds. The final catalog-only correction replaced three drone hull
+variants that had no pinned hit points. The solution rebuilt without warnings or errors and all seven DED and
+Ghost Site tests passed against that revision in 117.64 seconds. The catalog and formatting policy suites passed
+eight and nine cases in 1.092 and 0.018 seconds. The ordered validation took 321.63 seconds and formatting checked
+2,026 files. The final catalog export also checked that each spawned NPC has positive pinned structure hit points.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Exploration|FullyQualifiedName~MissionGate|FullyQualifiedName~MissionStructure|FullyQualifiedName~JettisonTests|FullyQualifiedName~WreckTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~LiveNpc|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open a newly awarded escalation in Opportunities, then travel to its system and warp
+from the card. Follow The Maze's reported route and return through an incorrect gate.
 
 ## Celestial Show Info resource reads — November 9, 2026
 

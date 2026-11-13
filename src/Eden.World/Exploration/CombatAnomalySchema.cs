@@ -78,6 +78,25 @@ internal static class CombatAnomalySchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN DefinitionVersion INTEGER NOT NULL DEFAULT 0");
         }
+        if (!columns.Contains("DedVisitedRooms"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN DedVisitedRooms INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!columns.Contains("EscalationPilotId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN EscalationPilotId INTEGER");
+        }
+        if (!columns.Contains("EscalationSourceDungeonId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN EscalationSourceDungeonId INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!columns.Contains("EscalationExpiresAt"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCombatAnomaly ADD COLUMN EscalationExpiresAt INTEGER");
+        }
+        world.Database.ExecuteSqlRaw(
+            "CREATE INDEX IF NOT EXISTS IX_WorldCombatAnomaly_EscalationPilotId ON WorldCombatAnomaly(EscalationPilotId)"
+        );
         var npcColumns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpc')").ToHashSet();
         if (!npcColumns.Contains("AcquisitionRange"))
         {

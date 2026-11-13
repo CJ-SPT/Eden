@@ -10,12 +10,28 @@ public sealed record DedRoomMember(
     int Count = 1,
     int FactionId = 0,
     string? Name = null,
-    bool Structure = false
+    bool Structure = false,
+    int Stage = 0
 );
 
-public sealed record DedGateBinding(long ObjectId, bool RequiresClear = false, MissionGateKey? Key = null);
+public sealed record DedGateBinding(
+    long ObjectId,
+    bool RequiresClear = false,
+    MissionGateKey? Key = null,
+    int DestinationRoomId = 0,
+    int RequiredSkill = 0,
+    int RequiredLevel = 0
+);
 
-public sealed record DedRoomBinding(int RoomId, long EntryObjectId, DedGateBinding? Gate, IReadOnlyList<DedRoomMember> Members);
+public sealed record DedRoomBinding(
+    int RoomId,
+    long EntryObjectId,
+    DedGateBinding? Gate,
+    IReadOnlyList<DedRoomMember> Members,
+    IReadOnlyList<DedGateBinding>? Gates = null
+);
+
+public sealed record DedSecondaryReward(int TypeId, IReadOnlyList<DedLootSource> Loot);
 
 public sealed record DedComplexBinding(
     int DungeonId,
@@ -27,5 +43,10 @@ public sealed record DedComplexBinding(
     IReadOnlyList<DedLootSource> GuaranteedLoot,
     IReadOnlyList<int> DeadspaceModules,
     IReadOnlyList<int> FactionModules,
-    int Blueprint
+    int Blueprint,
+    int SecurityBands = 3,
+    int Revision = 0,
+    IReadOnlyList<DedSecondaryReward>? SecondaryRewards = null,
+    int ClearRoomId = 0,
+    int FollowUp = 0
 );

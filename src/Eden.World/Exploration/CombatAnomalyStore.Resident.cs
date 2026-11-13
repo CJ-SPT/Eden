@@ -17,7 +17,7 @@ internal sealed partial class CombatAnomalyStore
     private static void Invalidate(WorldAction world, int system) =>
         world.AfterCommit(() => s_versions.AddOrUpdate((world.WorldPath, system), 1, (_, old) => old + 1));
 
-    internal static void Killed(WorldAction world, CatalogDbContext catalog, WorldNpc npc, long now)
+    internal static void Killed(WorldAction world, CatalogDbContext catalog, WorldNpc npc, long now, long pilot = 0)
     {
         if (npc.AnchorKind != NpcAnchorKind.Anomaly)
         {
@@ -28,12 +28,20 @@ internal sealed partial class CombatAnomalyStore
         {
             return;
         }
-        if (site.Slot == DedComplexRules.SiteSlot)
+        if (DedComplexRules.IsSite(site.Slot))
         {
             if (DedKilled(world, catalog, site, npc, now))
             {
                 Invalidate(world, site.SystemId);
                 Invalidate(world, -1);
+                if (site.EscalationPilotId is long owner)
+                {
+                    world.AfterCommit(() => InvalidateEscalations(world.WorldPath, owner));
+                }
+                if (!(site.EscalationExpiresAt <= now))
+                {
+                    GrantEscalation(world, catalog, site, pilot, DedComplexCatalog.Find(catalog, site.DungeonId).Binding.FollowUp, now);
+                }
             }
             return;
         }
@@ -76,6 +84,11 @@ internal sealed partial class CombatAnomalyStore
         if (site.CompletedAt.HasValue)
         {
             Invalidate(world, -1);
+            uint roll = NpcSpawnRules.Seed(site.SystemId, site.Id) % 100;
+            if (roll < DedEscalationRules.ChancePercent)
+            {
+                GrantEscalation(world, catalog, site, pilot, DedEscalationRules.Destination(definition.Name, roll), now);
+            }
         }
     }
 
