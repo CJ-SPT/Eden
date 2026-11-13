@@ -66,6 +66,7 @@ public static class WorldTuningRules
             IndustryActivity.ResearchMaterial or IndustryActivity.ResearchTime => policy.ResearchSpeed,
             IndustryActivity.Copying => policy.CopyingSpeed,
             IndustryActivity.Invention => policy.InventionSpeed,
+            IndustryActivity.Reaction => 1,
             _ => throw new InvalidDataException("Unsupported industry activity."),
         };
 

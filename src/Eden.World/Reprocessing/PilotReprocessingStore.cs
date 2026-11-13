@@ -136,8 +136,11 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         var type = catalog.Definitions.Items[item.TypeId];
         var definition = catalog.Definitions.Find(CatalogData.Client.Types, (long)item.TypeId);
         var materials = catalog.Definitions.Find(CatalogData.Client.Typematerials, (long)item.TypeId);
+        bool alchemy =
+            type.CategoryId == (int)InventoryCategory.Material
+            && Eden.World.Industry.ReactionCatalog.IsMoonAlchemyOutput(catalog, item.TypeId);
         if (
-            type.CategoryId != (int)InventoryCategory.Asteroid
+            type.CategoryId != (int)InventoryCategory.Asteroid && !alchemy
             || definition?.PortionSize is not > 0
             || materials?.Materials is not { Length: > 0 }
             || materials.RandomizedMaterials is { Length: > 0 }
@@ -159,12 +162,14 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 item.TypeId,
                 item.Quantity,
                 checked((int)definition.PortionSize.Value),
-                stationEfficiency,
-                skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot.Id, skill)).ToArray(),
+                alchemy ? 1 : stationEfficiency,
+                alchemy
+                    ? []
+                    : skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot.Id, skill)).ToArray(),
                 materials
                     .Materials.Value.Select(m => new ReprocessingMaterial(checked((int)(m.MaterialTypeID ?? 0)), m.Quantity ?? 0))
                     .ToArray(),
-                world.Settings.Industry.ReprocessingEfficiency
+                alchemy ? 1 : world.Settings.Industry.ReprocessingEfficiency
             )
         );
         if (!EconomicStore.Enabled(world))

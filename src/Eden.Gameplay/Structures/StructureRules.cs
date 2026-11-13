@@ -41,7 +41,8 @@ public static class StructureRules
                 or StructureService.MaterialResearch
                 or StructureService.Copying
                 or StructureService.Invention
-                or StructureService.MoonMining;
+                or StructureService.MoonMining
+                or StructureService.CompositeReactions;
 
     public static int FuelAmount(StructureFamily family, IReadOnlyList<StructureService> services, double roleBonus, int amount)
     {

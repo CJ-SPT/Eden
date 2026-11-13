@@ -49,6 +49,30 @@ The same payment-trigger failure and retained `world.sqlite.owner` handle reprod
 
 **Optional maintainer checks:** None.
 
+## Composite reaction jobs
+
+The build-3662168 composite catalog admits the 58 published moon-material formulas. They use activity 9 in a low- or
+null-security refinery with an online Standup Composite Reactor. The native facility and blueprint replies advertise
+reaction outputs. Reactions have their own slot pool, skills and hull time multiplier. Install verifies the quoted materials,
+duration and charge. It reserves one reusable formula and consumes recipe fuel from Item Hangar. The existing Upwell
+fuel bay pays for onlining and hourly operation. Jobs pause at the saved service outage and resume when it returns.
+Delivery moves the exact output to the personal hangar once and releases the formula. Reaction delivery creates no
+NPC supply unlock. Fixed moon-alchemy outputs can be reprocessed to their catalog yields.
+
+World version 149 backfills missing adjusted prices for formulas with existing catalog references. The pinned
+`industry/activities/reaction.pyj` values each reaction run using the formula's adjusted price. The local evejs
+`industryRestrictions.js` and `structureIndustryJobs.js` informed slot separation and suspension behavior.
+See [CCP reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions).
+
+**Automated validation.** The exact composite reaction lifecycle test passed in 12.51 seconds. The final affected filter
+covered ReactionJobTests, ScienceJobTests, BulkIndustryDeliveryTests, ProductionCatalogTests, StructureRulesTests,
+StructureFuelRulesTests, MoonExtractionTests and ReprocessingTests. All 101 cases passed in 52.07 seconds.
+Tool and solution restore, the solution build and both Python policy suites passed.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** In the native Industry window, quote and deliver a composite job at a fueled refinery.
+
 ## Personal mining ledger — November 11, 2026
 
 Milestone 5 implements `characterMiningLedger.GetCharacterLogs()` for the selected pilot. It returns a Python list of

@@ -27,19 +27,33 @@ internal static class IndustryWire
                 ["system"] = IndustryDefinitions.Activities.ToDictionary(a => (long)a, _ => (object?)facility.CostIndex),
             },
             ["activities"] = IndustryDefinitions
-                .Activities.Where(a => a == IndustryActivity.Manufacturing ? facility.Manufacturing : facility.Laboratory)
+                .Activities.Where(a =>
+                    a switch
+                    {
+                        IndustryActivity.Manufacturing => facility.Manufacturing,
+                        IndustryActivity.Reaction => facility.ReactionProducts is { Count: > 0 },
+                        _ => facility.Laboratory,
+                    }
+                )
                 .ToDictionary(
                     a => (long)a,
                     a =>
                         (object?)
                             new object?[]
                             {
-                                Modifiers(facility.TimeMultiplier),
+                                Modifiers(a == IndustryActivity.Reaction ? facility.ReactionTimeMultiplier : facility.TimeMultiplier),
                                 Modifiers(a == IndustryActivity.Manufacturing ? facility.MaterialMultiplier : 1),
                                 new List<object?>(),
-                                a == IndustryActivity.Manufacturing ? new List<object?>() : scienceCategories.Cast<object?>().ToList(),
+                                a is IndustryActivity.Manufacturing or IndustryActivity.Reaction
+                                    ? new List<object?>()
+                                    : scienceCategories.Cast<object?>().ToList(),
                                 new List<object?>(),
-                                a == IndustryActivity.Manufacturing ? products.Cast<object?>().ToList() : new List<object?>(),
+                                a switch
+                                {
+                                    IndustryActivity.Manufacturing => products.Cast<object?>().ToList(),
+                                    IndustryActivity.Reaction => facility.ReactionProducts!.Cast<object?>().ToList(),
+                                    _ => new List<object?>(),
+                                },
                             }
                 ),
         };
