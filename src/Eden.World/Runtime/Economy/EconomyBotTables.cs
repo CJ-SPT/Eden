@@ -2107,6 +2107,7 @@ internal sealed partial class ResidentEconomy
                 primaryColumn: "Id"
             )
         );
+        RegisterDedGateUnlock();
         Register(
             new EconomyTable<Eden.Data.World.Exploration.WorldAnomalyMember, EconomyWorldAnomalyMember>(
                 "WorldAnomalyMember",
@@ -2196,7 +2197,13 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(17) ? null : reader.GetInt64(17)
                     ),
                 state => new(state.Id),
-                indexes: [new("Id", row => row.Id), new("DungeonId", row => row.DungeonId), new("SystemId", row => row.SystemId)],
+                indexes:
+                [
+                    new("Id", row => row.Id),
+                    new("DungeonId", row => row.DungeonId),
+                    new("SystemId", row => row.SystemId),
+                    new("EscalationPilotId", row => row.EscalationPilotId),
+                ],
                 primaryColumn: "Id"
             )
         );
@@ -3953,6 +3960,13 @@ internal sealed partial class EconomyTransaction
         foreach (var row in Retained<Eden.Data.World.Economy.SavedAdjustedPrice>()) { }
         foreach (var row in Retained<Eden.Data.World.Economy.SavedBeltRenewal>()) { }
         foreach (var row in Retained<Eden.Data.World.Economy.SavedEconomicPolicy>()) { }
+        foreach (var row in Retained<Eden.Data.World.Exploration.SavedDedGateUnlock>())
+        {
+            if (!PilotExists(row.PilotId) || Set<Eden.Data.World.Exploration.WorldCombatAnomaly>().Find(row.SiteId) is null)
+            {
+                throw new InvalidDataException("Missing resident DED gate unlock pilot or site.");
+            }
+        }
         foreach (var row in Retained<Eden.Data.World.Exploration.WorldAnomalyMember>()) { }
         foreach (var row in Retained<Eden.Data.World.Exploration.WorldCombatAnomaly>())
         {

@@ -6,8 +6,8 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Mining;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Exploration;
 
@@ -43,16 +43,17 @@ internal sealed class AgencyDirectory(WorldDatabase database) : IAgencyDirectory
                     .ToDictionary(id => id, _ => 1);
                 _catalogGeneration = database.Catalog.Identity.Generation;
             }
-            using WorldDbContext world = new(database.Path);
-            var latest = world
-                .Set<SavedMiningSite>()
-                .AsNoTracking()
-                .Where(s =>
-                    s.Family == MiningFamily.Ice
-                    && !world.Set<SavedMiningSite>().Any(n => n.SystemId == s.SystemId && n.Family == s.Family && n.Id > s.Id)
-                )
-                .OrderBy(s => s.SystemId)
-                .ToArray();
+            var latest = WorldActionScope.Inspect(
+                database,
+                world =>
+                    world
+                        .Filter<SavedMiningSite>(s => s.Family == MiningFamily.Ice)
+                        .AsEnumerable()
+                        .GroupBy(s => s.SystemId)
+                        .OrderBy(group => group.Key)
+                        .Select(group => group.MaxBy(s => s.Id)!)
+                        .ToArray()
+            );
             var counts = _iceSystems.ToDictionary();
             List<AnomalySystemSites> known = [];
             foreach (var site in latest)
@@ -103,47 +104,44 @@ internal sealed class AgencyDirectory(WorldDatabase database) : IAgencyDirectory
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         lock (database.MotionLock)
         {
-            using WorldDbContext world = new(database.Path);
-            List<int> systems = [];
-            if (database.Settings.NpcPopulation.Pirates)
-            {
-                systems.AddRange(
-                    world
-                        .Set<WorldCombatAnomaly>()
-                        .Where(s =>
-                            s.IsSignature
-                            && s.CompletedAt == null
-                            && !world
-                                .Set<WorldCombatAnomaly>()
-                                .Any(n => n.SystemId == s.SystemId && n.Slot == s.Slot && n.IsSignature && n.Id > s.Id)
-                        )
-                        .Select(s => s.SystemId)
-                );
-                systems.AddRange(
-                    world
-                        .Set<SavedExplorationSite>()
-                        .Where(s =>
-                            s.ReplaceAt == null
-                            && s.ExpiresAt > now
-                            && !world.Set<SavedExplorationSite>().Any(n => n.SystemId == s.SystemId && n.Kind == s.Kind && n.Id > s.Id)
-                        )
-                        .Select(s => s.SystemId)
-                );
-            }
+            return WorldActionScope.Inspect(database, world => SignatureCounts(world, now, database.Settings.NpcPopulation.Pirates));
+        }
+    }
+
+    private static IReadOnlyList<AgencySystemCount> SignatureCounts(WorldAction world, long now, bool pirates)
+    {
+        List<int> systems = [];
+        if (pirates)
+        {
             systems.AddRange(
                 world
-                    .Set<SavedMiningSite>()
-                    .Where(s =>
-                        s.Family == MiningFamily.Gas
-                        && s.ReplaceAt == null
-                        && s.ExpiresAt > now
-                        && !world.Set<SavedMiningSite>().Any(n => n.SystemId == s.SystemId && n.Family == s.Family && n.Id > s.Id)
-                    )
+                    .Filter<WorldCombatAnomaly>(s => s.IsSignature)
+                    .AsEnumerable()
+                    .GroupBy(s => (s.SystemId, s.Slot))
+                    .Select(group => group.MaxBy(s => s.Id)!)
+                    .Where(s => s.CompletedAt is null)
                     .Select(s => s.SystemId)
             );
-            // Remote signatures intentionally reveal only counts. These reads neither
-            // generate sites nor expose unscanned IDs, positions, types or rewards.
-            return systems.GroupBy(id => id).OrderBy(g => g.Key).Select(g => new AgencySystemCount(g.Key, g.Count())).ToArray();
+            systems.AddRange(
+                world
+                    .Filter<SavedExplorationSite>(_ => true)
+                    .AsEnumerable()
+                    .GroupBy(s => (s.SystemId, s.Kind))
+                    .Select(group => group.MaxBy(s => s.Id)!)
+                    .Where(s => s.ReplaceAt is null && s.ExpiresAt > now)
+                    .Select(s => s.SystemId)
+            );
         }
+        systems.AddRange(
+            world
+                .Filter<SavedMiningSite>(s => s.Family == MiningFamily.Gas)
+                .AsEnumerable()
+                .GroupBy(s => s.SystemId)
+                .Select(group => group.MaxBy(s => s.Id)!)
+                .Where(s => s.ReplaceAt is null && s.ExpiresAt > now)
+                .Select(s => s.SystemId)
+        );
+        // Remote signatures intentionally reveal only counts. A read never generates sites.
+        return systems.GroupBy(id => id).OrderBy(g => g.Key).Select(g => new AgencySystemCount(g.Key, g.Count())).ToArray();
     }
 }

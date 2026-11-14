@@ -7,8 +7,8 @@ using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mining;
 
@@ -79,11 +79,10 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
         {
             return new(long.MaxValue, []);
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(systems: [systemId]));
+        var world = transaction.World;
         var site = world
-            .Set<SavedMiningSite>()
-            .Where(s => s.SystemId == systemId && s.Family == family)
+            .Filter<SavedMiningSite>(s => s.SystemId == systemId && s.Family == family)
             .OrderByDescending(s => s.Id)
             .FirstOrDefault();
         if (site is not null && site.ExpiresAt <= now && site.ReplaceAt is null)
@@ -92,7 +91,7 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
         }
         if (site is null || site.ReplaceAt <= now)
         {
-            long id = Math.Max(MiningSiteRules.FirstSiteId, (world.Set<SavedMiningSite>().Max(s => (long?)s.Id) ?? 0) + 1);
+            long id = Math.Max(MiningSiteRules.FirstSiteId, (world.Filter<SavedMiningSite>(_ => true).Max(s => (long?)s.Id) ?? 0) + 1);
             int prior =
                 site is not null && wormholeClass > 0
                     ? Array.FindIndex(eligible, definition => definition.DungeonId == site.DungeonId)
@@ -119,11 +118,9 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
             };
             world.Add(site);
             CreateDeposits(world, site, definition);
-            world.SaveChanges();
         }
         if (site.ReplaceAt is long replacement)
         {
-            world.SaveChanges();
             transaction.Commit();
             return new(replacement, []);
         }
@@ -142,12 +139,11 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
             IsSignature: family == MiningFamily.Gas,
             Mining: site.Family
         );
-        world.SaveChanges();
         transaction.Commit();
         return new(site.ExpiresAt, [contact]);
     }
 
-    private static void CreateDeposits(WorldDbContext world, SavedMiningSite site, MiningSiteDefinition definition)
+    private static void CreateDeposits(WorldAction world, SavedMiningSite site, MiningSiteDefinition definition)
     {
         for (int index = 0; index < definition.Deposits.Count; index++)
         {
@@ -177,31 +173,5 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
         }
     }
 
-    internal static void Collected(WorldDbContext world, long depositId, long now)
-    {
-        if (!MiningSiteRules.IsDeposit(depositId) || world.Set<SavedMiningDeposit>().Find(depositId) is not { } member)
-        {
-            return;
-        }
-        var ids = world.Set<SavedMiningDeposit>().Where(d => d.SiteId == member.SiteId).Select(d => d.Id);
-        if (!world.Set<WorldAsteroid>().Any(a => ids.Contains(a.Id) && a.Quantity > 0))
-        {
-            var site = world.Set<SavedMiningSite>().Find(member.SiteId)!;
-            if (site.ReplaceAt is null)
-            {
-                Retire(world, site, now);
-            }
-        }
-    }
-
-    private static void Retire(WorldDbContext world, SavedMiningSite site, long now)
-    {
-        site.ReplaceAt = checked(
-            now + (site.Family == MiningFamily.Ice ? MiningSiteRules.IceReplacementDelay : MiningSiteRules.ReplacementDelay)
-        );
-        var members = world.Set<SavedMiningDeposit>().Where(d => d.SiteId == site.Id).ToArray();
-        var ids = members.Select(d => d.Id).ToArray();
-        world.RemoveRange(world.Set<WorldAsteroid>().Where(a => ids.Contains(a.Id)).ToArray());
-        world.RemoveRange(members);
-    }
+    internal static void Collected(WorldDbContext world, long depositId, long now) => Collected(new SqlWorldAction(world), depositId, now);
 }

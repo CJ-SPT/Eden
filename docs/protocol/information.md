@@ -451,3 +451,31 @@ Automated validation: **96 affected .NET cases passed in 30.69 s** using `FullyQ
 Live acceptance: **Not performed; agent client testing is disabled.** The maintainer's attached rejection screenshot is failure evidence for the previous revision, not acceptance of this fix.
 
 Optional maintainer check: after updating/restarting the server, reopen Alt+D using the same client profile and verify that first-open scanning and subsequent range changes show results without the rejection dialog.
+
+
+## Resident combat and resource sites
+
+Combat anomaly creation, arrival, reinforcement waves, DED pockets, passcard consumption,
+expedition listing and expiry, and public gas and ice fields use resident actions when the world
+is running. The Agency counts read the same committed site rows without generating sites or
+revealing unresolved signatures. Resource and NPC rows are committed with their sites, and the
+checkpoint projects those changes into the existing save schema.
+
+The pinned catalog remains the authority for site eligibility, scene geometry, and gate requirements.
+The gameplay references are [combat sites](https://wiki.eveuniversity.org/Guide_to_combat_sites),
+[gas harvesting](https://wiki.eveuniversity.org/Gas_cloud_harvesting), and
+[ice harvesting](https://wiki.eveuniversity.org/Ice_Harvesting). The local EveJS 261108.1 comparison
+used the scene anomaly and mining anomaly providers (SHA-256 prefixes
+`3FE86662CA432452` and `EF6895CC753D3459`) and `deadspaceWarpPolicy.js`
+(`BB21382CF4B83932`).
+
+**Automated validation.** Build passed with zero warnings or errors. The nine focused anomaly,
+DED/Ghost, Agency, gas and ice test classes passed 136 cases in 2 minutes 7 seconds. The DED
+passcard test measured zero SQL commands or connections during live activation and reuse, then
+verified persistence after reopening. The Agency signature count and first gas-site creation also
+used zero SQL commands and connections after their dependencies initialized. Both Python policy
+suites and formatting verification passed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.

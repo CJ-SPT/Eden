@@ -1,5 +1,6 @@
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
@@ -336,7 +337,39 @@ public sealed class GasMiningTests
         using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         MiningSiteStore store = new(new(f.Db.Path));
         int system = f.Db.Store.FindPilot(1000001)!.SystemId;
-        var first = store.Signatures(system, f.Clock.Now);
+        IReadOnlyList<CombatAnomaly> first;
+        // Initialize system deadlines and catalog inputs before measuring site creation.
+        LiveWorld.Execute(
+            f.Db.Path,
+            system,
+            () =>
+            {
+                using var owner = live.Enter();
+            },
+            "initialize gas site dependencies"
+        );
+        using (CatalogDbContext catalog = new(f.CatalogPath))
+        {
+            _ = catalog.FindSystem(system);
+            _ = catalog.Definitions.SystemSecurity;
+            foreach (
+                int type in MiningSiteCatalog
+                    .Sites.Where(site => site.Family == MiningFamily.Gas)
+                    .SelectMany(site => site.Deposits)
+                    .Select(deposit => deposit.TypeId)
+                    .Distinct()
+            )
+            {
+                _ = catalog.FittingType(type);
+            }
+            _ = catalog.CelestialsInSystem(system).ToArray();
+        }
+        using (var metrics = SessionPerformance.Begin("first gas signature", _ => { }, force: true)!)
+        {
+            first = store.Signatures(system, f.Clock.Now);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+        }
         Assert.Single(first);
         Assert.Empty(store.Signatures(0, f.Clock.Now));
         using (var metrics = SessionPerformance.Begin("warm mining sites", _ => { }, force: true)!)

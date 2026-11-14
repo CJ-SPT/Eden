@@ -47,6 +47,7 @@ internal sealed partial class EconomyTransaction
             case Eden.Data.World.Characters.Pilot removed:
                 RemoveRange(Filter<Eden.Data.World.Agents.SavedMissionGateUnlock>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Agents.SavedResearchProject>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Exploration.SavedDedGateUnlock>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarEvent>(c => c.OwnerId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarParticipant>(c => c.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarChange>(c => c.PilotId == removed.Id));

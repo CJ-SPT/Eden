@@ -1,14 +1,6 @@
-using Eden.Data.Catalog.Mining;
 using Eden.Data.World.Mining;
-using Eden.Gameplay.Exploration;
-using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
-using Eden.Infrastructure.Registration;
-using Eden.World.Catalog;
-using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
-using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mining;
 
@@ -20,8 +12,8 @@ internal sealed partial class MiningSiteStore
         {
             return;
         }
-        var ids = world.Set<SavedMiningDeposit>().Where(d => d.SiteId == member.SiteId).Select(d => d.Id);
-        if (!world.Set<WorldAsteroid>().Any(a => Enumerable.Contains(ids, a.Id) && a.Quantity > 0))
+        var members = world.Filter<SavedMiningDeposit>(d => d.SiteId == member.SiteId).ToArray();
+        if (!members.Any(d => world.Set<WorldAsteroid>().Find(d.Id)?.Quantity > 0))
         {
             var site = world.Set<SavedMiningSite>().Find(member.SiteId)!;
             if (site.ReplaceAt is null)
@@ -36,9 +28,8 @@ internal sealed partial class MiningSiteStore
         site.ReplaceAt = checked(
             now + (site.Family == MiningFamily.Ice ? MiningSiteRules.IceReplacementDelay : MiningSiteRules.ReplacementDelay)
         );
-        var members = world.Set<SavedMiningDeposit>().Where(d => d.SiteId == site.Id).ToArray();
-        var ids = members.Select(d => d.Id).ToArray();
-        world.RemoveRange(world.Set<WorldAsteroid>().Where(a => Enumerable.Contains(ids, a.Id)).ToArray());
+        var members = world.Filter<SavedMiningDeposit>(d => d.SiteId == site.Id).ToArray();
+        world.RemoveRange(members.Select(d => world.Set<WorldAsteroid>().Find(d.Id)).OfType<WorldAsteroid>());
         world.RemoveRange(members);
     }
 }

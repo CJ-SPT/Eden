@@ -16,8 +16,6 @@ using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
-using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Exploration;
 
@@ -70,11 +68,10 @@ internal sealed partial class CombatAnomalyStore
             _dedViews[system] = new(version, generation, long.MaxValue, pirates, null, []);
             return _dedViews[system].Sites;
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(systems: [system]));
+        var world = transaction.World;
         var site = world
-            .Set<WorldCombatAnomaly>()
-            .Where(s => s.SystemId == system && s.Slot == DedComplexRules.SiteSlot)
+            .Filter<WorldCombatAnomaly>(s => s.SystemId == system && s.Slot == DedComplexRules.SiteSlot)
             .OrderByDescending(s => s.Id)
             .FirstOrDefault();
         var definition = site is null ? null : definitions.FirstOrDefault(d => d.Binding.DungeonId == site.DungeonId);
@@ -97,7 +94,7 @@ internal sealed partial class CombatAnomalyStore
             double offset = placementSlot * CombatAnomalyRules.PlacementOffset;
             site = new()
             {
-                Id = NextSiteId(new SqlWorldAction(world)),
+                Id = NextSiteId(world),
                 DungeonId = definition.Binding.DungeonId,
                 SystemId = system,
                 IsSignature = true,
@@ -107,10 +104,9 @@ internal sealed partial class CombatAnomalyStore
                 Z = anchor.Z - offset,
             };
             world.Add(site);
-            world.SaveChanges();
             if (previousId is long replaced)
             {
-                _dedStarted.TryRemove(replaced, out _);
+                world.AfterCommit(() => _dedStarted.TryRemove(replaced, out _));
             }
             Invalidate(world, -1);
         }
@@ -177,16 +173,15 @@ internal sealed partial class CombatAnomalyStore
             return;
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(systems: [contact.SystemId]));
+        var world = transaction.World;
         var site = world.Set<WorldCombatAnomaly>().Find(contact.Id)!;
         long visited = Visited(site);
         if (site.CompletedAt is null && (visited & (1L << index)) == 0)
         {
-            SpawnDedRoom(new SqlWorldAction(world), catalog, site, profile, index, now);
+            SpawnDedRoom(world, catalog, site, profile, index, now);
             site.Wave = Math.Max(site.Wave, index);
             site.DedVisitedRooms = visited | (1L << index);
-            world.SaveChanges();
             Invalidate(world, site.SystemId);
         }
         transaction.Commit();
@@ -287,9 +282,8 @@ internal sealed partial class CombatAnomalyStore
             {
                 using var ownership = LiveWorld.Find(database.Path)?.Enter();
                 using var movement = database.EnterMovement();
-                using WorldDbContext world = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                return ValidateDedGate(world, catalog, pilotId, gateId, now).Gate;
+                return WorldActionScope.Inspect(database, world => ValidateDedGate(world, catalog, pilotId, gateId, now).Gate);
             },
             nameof(Gate)
         );
@@ -302,8 +296,8 @@ internal sealed partial class CombatAnomalyStore
             {
                 using var ownership = LiveWorld.Find(database.Path)?.Enter();
                 using var movement = database.EnterMovement();
-                using WorldDbContext world = new(database.Path);
-                using var transaction = world.Database.BeginTransaction();
+                using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+                var world = transaction.World;
                 using CatalogDbContext catalog = new(database.CatalogPath);
                 var (site, pilot, gate) = ValidateDedGate(world, catalog, pilotId, gateId, now);
                 if (gate.Destination != destination)
@@ -311,9 +305,15 @@ internal sealed partial class CombatAnomalyStore
                     throw new InvalidDataException("The acceleration gate destination changed.");
                 }
                 var key = gate.Access.Key;
-                var unlock = key is { Consume: true } ? world.Set<SavedDedGateUnlock>().Find(site.Id, gate.DungeonObjectId, pilotId) : null;
+                var unlock = key is { Consume: true }
+                    ? world
+                        .Filter<SavedDedGateUnlock>(g =>
+                            g.SiteId == site.Id && g.GateObjectId == gate.DungeonObjectId && g.PilotId == pilotId
+                        )
+                        .SingleOrDefault()
+                    : null;
                 var result = MissionGatePayment.Pay(world, catalog, pilotId, pilot.ActiveShipId, key, unlock?.ResetAt > now);
-                if (key is { Consume: true } && !(unlock?.ResetAt > now))
+                if (result.Items.Count != 0)
                 {
                     unlock ??= world
                         .Add(
@@ -327,7 +327,6 @@ internal sealed partial class CombatAnomalyStore
                         .Entity;
                     unlock.ResetAt = MissionGateAccessRules.NextDowntime(DateTimeOffset.FromFileTime(now)).UtcDateTime.ToFileTimeUtc();
                 }
-                world.SaveChanges();
                 transaction.Commit();
                 return result;
             },
@@ -335,7 +334,7 @@ internal sealed partial class CombatAnomalyStore
         );
 
     private static (WorldCombatAnomaly Site, Pilot Pilot, MissionGate Gate) ValidateDedGate(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long gateId,
@@ -350,7 +349,7 @@ internal sealed partial class CombatAnomalyStore
         long id = CombatAnomalyRules.FirstSiteId + sequence / DedComplexRules.GatesPerSite;
         int slot = (int)(sequence % DedComplexRules.GatesPerSite);
         var site = world.Set<WorldCombatAnomaly>().Find(id);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown DED pilot.");
         var ship = pilot.ActiveShip;
         if (
             site is null
@@ -406,8 +405,7 @@ internal sealed partial class CombatAnomalyStore
         var fitted = source.Access.ForbiddenEquipment is null
             ? []
             : world
-                .Set<OwnedItem>()
-                .Where(i => i.LocationId == ship.Id && i.OwnerId == pilot.Id)
+                .Filter<OwnedItem>(i => i.LocationId == ship.Id && i.OwnerId == pilot.Id)
                 .ToArray()
                 .Where(i =>
                     InventoryDefinitions.IsFittedSlot(i.FlagId)
@@ -419,15 +417,10 @@ internal sealed partial class CombatAnomalyStore
         bool cleared =
             !source.RequiresClear
             || !world
-                .Set<WorldAnomalyMember>()
-                .Any(m =>
-                    m.SiteId == site.Id
-                    && m.Wave == room
-                    && !m.Sentry
-                    && world
-                        .Set<WorldNpc>()
-                        .Any(n => n.Id == m.NpcId && n.Role == NpcRole.Pirate && n.DestroyedAt == null && n.RetiredAt == null)
-                );
+                .Filter<WorldAnomalyMember>(m => m.SiteId == site.Id && m.Wave == room && !m.Sentry)
+                .AsEnumerable()
+                .Select(member => world.Set<WorldNpc>().Find(member.NpcId))
+                .Any(n => n is { Role: NpcRole.Pirate, DestroyedAt: null, RetiredAt: null });
         MissionGateRules.Validate(new(position.X, position.Y, position.Z), type.Radius ?? 0, type.GroupId, gate, cleared);
         return (site, pilot, gate);
     }

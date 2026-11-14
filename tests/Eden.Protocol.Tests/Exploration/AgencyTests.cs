@@ -2,12 +2,14 @@ using Eden.Data.World.Exploration;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Mining;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
 using Eden.World.Catalog;
 using Eden.World.Exploration;
 using Eden.World.Mining;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,8 +69,10 @@ public sealed class AgencyTests
         Assert.Empty(f.Context.Notifications);
     }
 
-    [Fact]
-    public void SignatureCountsIncludeCombatHackingAndGasWithoutLeakingOrRecreatingRetiredSites()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SignatureCountsIncludeCombatHackingAndGasWithoutLeakingOrRecreatingRetiredSites(bool resident)
     {
         using Fixture f = new();
         int system = CombatAnomalyRules.SystemId;
@@ -150,11 +154,25 @@ public sealed class AgencyTests
             );
             world.SaveChanges();
         }
-        var counts = Assert.IsType<Dictionary<long, object?>>(f.Reply("dungeonInstanceCacheMgr", "GetSignatureInstances"));
-        Assert.Equal(3L, Assert.Single(counts).Value);
-        Assert.Equal((long)system, Assert.Single(counts).Key);
+        using var live = resident ? new LiveWorld(new(f.Db.Path), f.Clock, _ => { }) : null;
+        if (resident)
+        {
+            live!.Economy.Inspect(_ => true);
+        }
+        using (var metrics = SessionPerformance.Begin("Agency signature counts", _ => { }, force: true)!)
+        {
+            var counts = Assert.IsType<Dictionary<long, object?>>(f.Reply("dungeonInstanceCacheMgr", "GetSignatureInstances"));
+            Assert.Equal(3L, Assert.Single(counts).Value);
+            Assert.Equal((long)system, Assert.Single(counts).Key);
+            if (resident)
+            {
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+            }
+        }
         var directory = f.Db.Services.GetRequiredService<IAgencyDirectory>();
         Assert.Equal(1, Assert.Single(directory.Signatures(now + 1)).Count);
+        live?.Dispose();
         WorldTuningTests.Activate(f.Db, s => s with { NpcPopulation = s.NpcPopulation with { Pirates = false } });
         Assert.Equal(1, Assert.Single(directory.Signatures(now)).Count);
         Assert.Empty(directory.Signatures(now + 1));

@@ -7,6 +7,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Exploration;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
@@ -211,8 +212,10 @@ public sealed class DedAndGhostSiteTests
         Assert.Equal(3, saved.Set<WorldNpc>().Count(n => n.AnchorKind == NpcAnchorKind.GhostSite));
     }
 
-    [Fact]
-    public void DrugOutletConsumesItsPinnedPasscardOncePerPilot()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DrugOutletConsumesItsPinnedPasscardOncePerPilot(bool resident)
     {
         using Fixture f = new();
         PassiveCatalogFixture.LoadDedAndGhost(f.CatalogPath);
@@ -236,6 +239,7 @@ public sealed class DedAndGhostSiteTests
         }
         var store = (CombatAnomalyStore)f.Db.Services.GetRequiredService<ICombatAnomalies>();
         SeedDed(f, system, 116);
+        using var live = resident ? new LiveWorld(new(f.Db.Path), f.Clock, _ => { }) : null;
         var site = Assert.Single(store.Signatures(system, f.Clock.Now), s => s.Ded);
         Assert.Equal(116, site.DungeonId);
         var gates = site.Objects.Where(o => DedComplexRules.IsGate(o.Id)).OrderBy(o => o.Id).ToArray();
@@ -264,7 +268,21 @@ public sealed class DedAndGhostSiteTests
         var last = store.Gate(f.PilotId, gates[2].Id, f.Clock.Now);
         Assert.Throws<InvalidDataException>(() => store.ActivateGate(f.PilotId, last.Id, last.Destination, f.Clock.Now));
         long key = f.Grant(17892, cargo: true);
-        Assert.Single(store.ActivateGate(f.PilotId, last.Id, last.Destination, f.Clock.Now).Items);
+        using (var metrics = SessionPerformance.Begin("DED passcard", _ => { }, force: true)!)
+        {
+            Assert.Single(store.ActivateGate(f.PilotId, last.Id, last.Destination, f.Clock.Now).Items);
+            Assert.Empty(store.ActivateGate(f.PilotId, last.Id, last.Destination, f.Clock.Now).Items);
+            if (resident)
+            {
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+            }
+        }
+        if (live is not null)
+        {
+            await live.FlushAsync();
+            live.Dispose();
+        }
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         var reopened = new CombatAnomalyStore(new(f.Db.Path));
         Assert.Empty(reopened.ActivateGate(f.PilotId, last.Id, last.Destination, f.Clock.Now).Items);

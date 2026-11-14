@@ -5,8 +5,6 @@ using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
-using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Agents;
 
@@ -48,15 +46,6 @@ internal static class MissionGatePayment
         unlock.ResetAt = MissionGateAccessRules.NextDowntime(DateTimeOffset.FromFileTime(now)).UtcDateTime.ToFileTimeUtc();
         return result;
     }
-
-    internal static MissionGateActivation Pay(
-        WorldDbContext world,
-        CatalogDbContext catalog,
-        long pilotId,
-        long shipId,
-        MissionGateKey? key,
-        bool unlocked
-    ) => Pay(new SqlWorldAction(world), catalog, pilotId, shipId, key, unlocked);
 
     internal static MissionGateActivation Pay(
         WorldAction world,

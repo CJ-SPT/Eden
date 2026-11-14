@@ -8,7 +8,6 @@ using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
-using Eden.World.Storage;
 
 namespace Eden.World.Exploration;
 
@@ -44,11 +43,14 @@ internal sealed partial class CombatAnomalyStore
         using var owner = LiveWorld.Find(database.Path)?.Enter();
         using var movement = database.EnterMovement();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(
+            database,
+            select: world =>
+                new(world.Filter<WorldCombatAnomaly>(s => s.EscalationPilotId == pilot && s.CompletedAt == null).Select(s => s.SystemId))
+        );
+        var world = transaction.World;
         var candidates = world
-            .Set<WorldCombatAnomaly>()
-            .Where(s => s.EscalationPilotId == pilot && s.CompletedAt == null)
+            .Filter<WorldCombatAnomaly>(s => s.EscalationPilotId == pilot && s.CompletedAt == null)
             .OrderBy(s => s.Id)
             .ToArray();
         List<DedEscalation> journal = [];
@@ -58,8 +60,8 @@ internal sealed partial class CombatAnomalyStore
             if (site.EscalationExpiresAt is not long expiry || expiry <= now)
             {
                 site.CompletedAt = now;
-                RetireDedMembers(new SqlWorldAction(world), site, now);
-                _dedStarted.TryRemove(site.Id, out _);
+                RetireDedMembers(world, site, now);
+                world.AfterCommit(() => _dedStarted.TryRemove(site.Id, out _));
                 continue;
             }
             var definition = DedComplexCatalog.Find(catalog, site.DungeonId);
@@ -79,7 +81,6 @@ internal sealed partial class CombatAnomalyStore
                 )
             );
         }
-        world.SaveChanges();
         transaction.Commit();
         var view = new EscalationView(
             version,
