@@ -1,7 +1,7 @@
 # Eden documentation
 
-[Presence failure diagnostics](protocol/social.md#presence-failure-diagnostics-november-14-2026)
-records the unresolved Local/Guests report, verified deployment and bounded native failure capture.
+[Corporation owner cache correction](protocol/social.md#corporation-owner-cache-width-november-14-2026)
+records the missing field behind native Local, Guests and overview name failures, plus focused validation.
 
 [Resident NPC missiles and hull loss](protocol/performance.md#resident-npc-missiles-and-hull-loss-november-11-2026)
 records resident launch, flight, hull destruction, insurance and checkpoint retry.

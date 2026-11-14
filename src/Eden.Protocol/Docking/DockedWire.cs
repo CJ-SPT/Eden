@@ -91,11 +91,13 @@ internal sealed record CompatibilityRowset(IReadOnlyList<string> Header, IReadOn
         );
 }
 
-internal sealed record EveOwnerRow(long Id, string Name) : BlueModel
+internal sealed record EveOwnerRow(long Id, string Name, int GenderId) : BlueModel
 {
     private const int CharacterTypeId = 1373;
 
-    public override object ToBlue() => new object?[] { Id, Name, CharacterTypeId };
+    // Build 3662168 CorporationMembersO.__PrimeEveOwners appends ownerNameID=None
+    // before placing these four fields into the five-column owner cache.
+    public override object ToBlue() => new object?[] { Id, Name, CharacterTypeId, GenderId };
 }
 
 internal sealed record StationInfoRow(StationDirectoryEntry Station, long ServiceMask) : BlueModel

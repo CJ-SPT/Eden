@@ -5,6 +5,7 @@ lookups and locks are test doubles; no game process, renderer or session starts.
 """
 import ctypes
 import hashlib
+import json
 import os
 from pathlib import Path
 import sys
@@ -28,6 +29,12 @@ with zipfile.ZipFile(archive) as source:
     chat_service = zlib.decompress(source.read('xmppchatclient/xmppchatsvc.pyj'))
     guests = zlib.decompress(source.read('eve/client/script/ui/shared/dockedUI/guests.pyj'))
     station = zlib.decompress(source.read('eve/client/script/ui/station/base.pyj'))
+    corp_members = zlib.decompress(source.read('eve/client/script/ui/services/corporation/bco_members.pyj'))
+    owner_cfg = zlib.decompress(source.read('eve/common/script/sys/eveCfg.pyj'))
+    row = zlib.decompress(source.read('carbon/common/script/sys/row.pyj'))
+    sys_cfg = zlib.decompress(source.read('carbon/common/script/sys/cfg.pyj'))
+    uix = zlib.decompress(source.read('eve/client/script/ui/util/uix.pyj'))
+    overview = zlib.decompress(source.read('eve/client/script/ui/inflight/overview/overviewNodeUtil.pyj'))
 
 worker = r'''
 import __builtin__, marshal, sys, stackless
@@ -504,10 +511,100 @@ print('Native presence list assertions passed in the pinned Python 2 runtime')
 for attempt in range(300):
     ChatWindow().InitUsers()
 assert len(open(DIAGNOSTIC_PATH).readlines()) <= 256
+
+# Feed the actual server reply through native corporation cache priming, then
+# the native owner accessor and both list row builders. The old three-column
+# reply produces a four-value cache entry and raises IndexError on ownerNameID.
+reply = OWNER_REPLY
+assert reply['Header'] == ['ownerID', 'ownerName', 'typeID', 'gender']
+assert len(reply['Rows']) >= 2
+
+class NativeRow(object):
+    __slots__ = ('header', 'line')
+    __getattr__ = native(ROW_BLOB, 'Row', '__getattr__', {})
+    __init__ = native(SYS_CFG_BLOB, 'Row', '__init__', {})
+
+class NativeOwner(NativeRow):
+    __getattr__ = native(OWNER_CFG_BLOB, 'EveOwners', '__getattr__',
+                         {'sysCfg': Value(Row=NativeRow), 'boot': Value(role='client')})
+
+class OwnerReplyRow(list):
+    @property
+    def ownerID(self):
+        return self[0]
+
+cache = Value(header=reply['Header'] + ['ownerNameID'], data={})
+cache.Get = lambda char_id: NativeOwner(cache, char_id)
+prime = native(CORP_MEMBERS_BLOB, 'CorporationMembersO', '__PrimeEveOwners',
+               {'cfg': Value(eveowners=cache)})
+corp = Value(_CorporationMembersO__lock=temp_lock('corp-owner-cache'))
+native_chat_node = native(CHAT_BLOB, 'XmppChatWindow', '_GetUserEntryNode',
+                          {'GetFromClass': lambda entryType, data: Value(**data),
+                           'get_color_for_role': lambda role: None})
+native_guest_node = native(GUEST_BLOB, 'GuestsPanel', '_get_guest_entry',
+                           {'cfg': Value(eveowners=cache),
+                            'GetFromClass': lambda entryType, data: Value(**data),
+                            'get_guest_entry_class': lambda: object})
+window = Value(receiver='local_30000142', _user_entry_type=object,
+               _compact_member_entries_setting=Value(is_enabled=lambda: False))
+slim_name = native(UIX_BLOB, '<module>', 'GetSlimItemName',
+                   {'const': Value(categoryShip=6), 'session': Value(charid=0),
+                    'idCheckers': Value(IsCharacter=lambda char_id: True), 'cfg': Value(eveowners=cache)})
+prime_display_name = native(OVERVIEW_BLOB, '<module>', 'PrimeDisplayName',
+                            {'uix': Value(GetSlimItemName=slim_name), 'const': Value(groupStation=15),
+                             '_Encode': lambda name: name,
+                             'sm': Value(GetService=lambda name: Value(GetDisplayNameForBracket=slim_name))})
+for width in [3, 4]:
+    cache.data.clear()
+    corp.GetCorpRegistry = lambda: Value(GetEveOwners=lambda: [OwnerReplyRow(r[:width]) for r in reply['Rows']])
+    prime(corp)
+    assert corp._CorporationMembersO__memberIDs == [r[0] for r in reply['Rows']]
+    for source_row in reply['Rows']:
+        owner = cache.Get(source_row[0])
+        slim = Value(categoryID=6, groupID=25, charID=source_row[0])
+        overview_node = Value(slimItem=lambda: slim, usingLocalizationTooltips=False,
+                              sortNameIndex=0, sortValue=[None])
+        if width == 3:
+            for operation in [lambda: owner.name, lambda: prime_display_name(overview_node),
+                              lambda: native_chat_node(window, source_row[0], owner, {'role': 0})]:
+                try:
+                    operation()
+                    raise AssertionError('Old reply unexpectedly produced a valid owner')
+                except IndexError:
+                    pass
+            continue
+        assert owner.name == source_row[1]
+        assert owner.gender == source_row[3]
+        assert owner.ownerNameID is None
+        node = native_chat_node(window, source_row[0], owner, {'role': 0})
+        assert node.charID == source_row[0] and node.charIndex == source_row[1].lower()
+        guest = Value(character_id=source_row[0], name=owner.name,
+                      corporation_id=1000001, alliance_id=None, war_faction_id=None)
+        node = native_guest_node(guest)
+        assert node.charID == source_row[0] and node.label == source_row[1]
+        prime_display_name(overview_node)
+        assert overview_node.display_NAME == source_row[1]
+        assert overview_node.sortValue == [source_row[1].lower()]
+        assert overview_node.hint_NAME == source_row[1]
+print('Native corporation owner cache and chat/guest/overview row assertions passed')
 '''
 for name, blob in [('CHAT_BLOB', chat), ('CHAT_SERVICE_BLOB', chat_service),
-                   ('GUEST_BLOB', guests), ('STATION_BLOB', station), ('EXPRESSION_BLOB', expression)]:
+                   ('GUEST_BLOB', guests), ('STATION_BLOB', station), ('EXPRESSION_BLOB', expression),
+                   ('CORP_MEMBERS_BLOB', corp_members), ('OWNER_CFG_BLOB', owner_cfg),
+                   ('ROW_BLOB', row), ('SYS_CFG_BLOB', sys_cfg), ('UIX_BLOB', uix), ('OVERVIEW_BLOB', overview)]:
     worker = worker.replace(name, repr(blob))
+def python2_literal(value):
+    if isinstance(value, str):
+        return 'u' + ascii(value)
+    if isinstance(value, list):
+        return '[' + ','.join(python2_literal(item) for item in value) + ']'
+    if isinstance(value, dict):
+        return '{' + ','.join(python2_literal(k) + ':' + python2_literal(v) for k, v in value.items()) + '}'
+    return repr(value)
+
+
+worker = worker.replace('OWNER_REPLY', python2_literal(
+    json.loads(Path(str(sys.argv[1]) + '.owners.json').read_text(encoding='utf-8'))))
 worker = worker.replace('DIAGNOSTIC_PATH', repr(str(diagnostic_path)))
 
 try:

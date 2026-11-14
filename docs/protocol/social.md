@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation owner cache width, November 14, 2026](#corporation-owner-cache-width-november-14-2026)
 - [Presence failure diagnostics, November 14, 2026](#presence-failure-diagnostics-november-14-2026)
 - [Chat channel handoffs and queued station signals, November 14, 2026](#chat-channel-handoffs-and-queued-station-signals-november-14-2026)
 - [Local presence and station guest snapshots, November 12, 2026](#local-presence-and-station-guest-snapshots-november-12-2026)
@@ -25,6 +26,57 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
+
+## Corporation owner cache width, November 14, 2026
+
+After diagnostic revision `5922473b` was deployed and the user reopened three clients, native logs captured
+`IndexError` in `XmppChatWindow._GetUserEntryNode` and `InitUsers`, through `EveOwners.__getattr__` line 1505
+and Carbon `Row.__getattr__` line 32. Membership included the missing pilots; reading their owner names
+aborted row construction. The user also reported ships rendered in space but absent from the overview.
+
+`corpRegistry.GetEveOwners` returned three columns: ownerID, ownerName and typeID. Build 3662168's
+`CorporationMembersO.__PrimeEveOwners` copies each row and appends `None` for ownerNameID, expecting gender
+to already be present. The short reply therefore polluted the five-column owner cache with four values.
+Every native owner name lookup reads ownerNameID, producing the captured exception. XMPP's owner metadata
+does not replace an already cached owner. This explains why corporation mates could be missing while a
+pilot from a different corporation remained visible. Native overview `PrimeDisplayName` calls
+`uix.GetSlimItemName`, which reads the same owner name for piloted ships.
+
+The reply now includes saved gender as its fourth field. The resident corporation-name projection carries
+gender without materializing full member records, opening connections or issuing warmed SQL queries.
+Fresh client processes are required to discard the malformed in-memory owner records.
+
+Reference comparison: the local evejs `corpRegistryRuntime.js` SHA-256 is
+`41d691387ff45dce3cf4680da40291557b868f0b3f589234d0eb244b77c4e35c` (no Git metadata). Its owner reply
+includes gender and ownerNameID. Eden follows the newer pinned client's four-field input contract because
+that client appends ownerNameID itself. No reference implementation was copied. Carbon row access and
+the native corporation, chat, guest and overview methods were inspected as inert code from the verified
+build-3662168 archive identified below. Expected Local membership includes docked pilots;
+see [EVE University](https://wiki.eveuniversity.org/Identifying_war_targets_in_Local).
+
+**Automated validation.** Tool and solution restore passed; the solution built with zero warnings/errors
+in 1.70 seconds. The exact native regression passed with the actual handler reply exported into the pinned
+Python 2 harness. It executes native corporation priming, cached owner access, chat/guest row construction,
+and overview naming/sort keys. Three-field input reproduces the captured IndexError; four-field input
+passes. The first harness attempt failed because isolated Python 2 lacks `copy_reg`; direct inert literals
+replace the unnecessary pickle dependency. This was a test harness failure, not a production failure.
+
+The final focused run passed 77 tests in 28 seconds (runner reported 29.80 seconds including setup), with
+`EDEN_TEST_CLIENT_ROOT=E:\EdenDev\3662168`. Filter:
+`FullyQualifiedName~CorporationOwnerNamesTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~PresenceListTests|FullyQualifiedName~ConcordOverviewTests|FullyQualifiedName~Eden.Protocol.Tests.Chat`.
+The persistence tests cover membership, rename, rollback and reopen; owner reply checks include saved
+gender and zero warmed SQL/connection/fitting work. Both Python policy suites passed (8 cases in 1.211
+seconds and 9 cases in 0.021 seconds). Formatting application, verification and diff checks passed.
+No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The user's diagnostic-session
+failure is observed evidence, not acceptance of this correction. Server logs also recorded three chat
+connections ending after approximately 366–368 seconds and reconnecting. This cache correction does not
+establish the cause or resolution of those connection closures.
+
+**Optional maintainer checks.** After updating the server, fully reopen the clients and compare Local,
+station Guests and nearby piloted ships in the overview. Observe chat beyond the previous disconnect
+interval and retain the diagnostic logs if it reconnects.
 
 ## Presence failure diagnostics, November 14, 2026
 

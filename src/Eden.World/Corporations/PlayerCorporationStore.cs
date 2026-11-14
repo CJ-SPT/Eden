@@ -116,7 +116,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     ?? throw new InvalidDataException("Unknown pilot.");
                 return world
                     .Pilots.Where(p => p.CorporationId == corporation)
-                    .Select(p => new CorporationMemberName(p.Id, p.Name))
+                    .Select(p => new CorporationMemberName(p.Id, p.Name, p.GenderId))
                     .OrderBy(p => p.PilotId)
                     .ToArray();
             },

@@ -138,7 +138,7 @@ public sealed class PlayerCorporationTests
             BlueRead.Bytes(BlueRead.Tuple(BlueRead.Tuple(replies[3].State, 14)[4], 1)[0])
         );
         var owners = BlueRead.Fields(Assert.IsType<BlueInstance>(Decode(replies[4])).State);
-        var owner = BlueRead.Tuple(Assert.Single(Assert.IsType<List<object?>>(owners["lines"])), 3);
+        var owner = BlueRead.Tuple(Assert.Single(Assert.IsType<List<object?>>(owners["lines"])), 4);
         Assert.Equal(90000001L, owner[0]);
         var member = BlueRead.Fields(Assert.IsType<BlueInstance>(Decode(replies[5])).State);
         Assert.Equal(CorporationRules.CeoRoles, member["roles"]);

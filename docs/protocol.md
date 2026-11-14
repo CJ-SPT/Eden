@@ -1,7 +1,7 @@
 # Protocol findings and milestone records
 
-[Presence failure diagnostics](protocol/social.md#presence-failure-diagnostics-november-14-2026)
-records verified deployment and bounded native list/connection diagnostics for the unresolved report.
+[Corporation owner cache correction](protocol/social.md#corporation-owner-cache-width-november-14-2026)
+records the missing field behind native Local, Guests and overview name failures, plus focused validation.
 
 [Average-price transport output](protocol/performance.md#average-price-transport-output-november-14-2026)
 records compact frame writes, large-reply compression and output-stage diagnostics.

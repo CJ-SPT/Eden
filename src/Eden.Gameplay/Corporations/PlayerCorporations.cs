@@ -40,7 +40,7 @@ public sealed record CorporationMember(
 
 public sealed record CorporationEmployment(int CorporationId, long StartedAt);
 
-public sealed record CorporationMemberName(long PilotId, string Name);
+public sealed record CorporationMemberName(long PilotId, string Name, int GenderId);
 
 public sealed record CorporationCreation(PlayerCorporation Corporation, long BalanceCents);
 

@@ -124,8 +124,11 @@ internal sealed partial class CorporationHandler(
                     return new CorporationTickerSuggestions(corporations.SuggestTickers(Text(name)));
                 case ("GetEveOwners", []):
                     return new CompatibilityRowset(
-                        ["ownerID", "ownerName", "typeID"],
-                        corporations.MemberNames(context.Pilot.PilotId).Select(m => new EveOwnerRow(m.PilotId, m.Name)).ToArray()
+                        ["ownerID", "ownerName", "typeID", "gender"],
+                        corporations
+                            .MemberNames(context.Pilot.PilotId)
+                            .Select(m => new EveOwnerRow(m.PilotId, m.Name, m.GenderId))
+                            .ToArray()
                     );
                 case ("GetMember", [long pilot]):
                     var member =

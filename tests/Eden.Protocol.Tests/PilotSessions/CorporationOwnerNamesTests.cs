@@ -25,9 +25,16 @@ public sealed class CorporationOwnerNamesTests(ITestOutputHelper output)
     {
         using TestWorld db = new(liveWorld: true);
         CalendarTestData.AddPilots(db, 128);
+        Dictionary<long, int> genders;
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Pilots.Find(Member)!.GenderId = 0;
+            world.SaveChanges();
+            genders = world.Pilots.ToDictionary(p => p.Id, p => p.GenderId);
+        }
         var corporations = db.Services.GetRequiredService<IPlayerCorporations>();
         using CorporationTestClient client = new(db, 1000001);
-        var expected = corporations.Members(Viewer).Select(m => new CorporationMemberName(m.PilotId, m.Name)).ToArray();
+        var expected = corporations.Members(Viewer).Select(m => new CorporationMemberName(m.PilotId, m.Name, genders[m.PilotId])).ToArray();
         var live = db.Services.GetRequiredService<LiveWorld>();
         long started = Stopwatch.GetTimestamp();
         for (int i = 0; i < 5; i++)
@@ -50,8 +57,8 @@ public sealed class CorporationOwnerNamesTests(ITestOutputHelper output)
         }
         output.WriteLine($"Five narrow reads and assertions: {Stopwatch.GetElapsedTime(started).TotalMilliseconds:F2} ms.");
         var expectedWire = new CompatibilityRowset(
-            ["ownerID", "ownerName", "typeID"],
-            expected.Select(p => new EveOwnerRow(p.PilotId, p.Name)).ToArray()
+            ["ownerID", "ownerName", "typeID", "gender"],
+            expected.Select(p => new EveOwnerRow(p.PilotId, p.Name, p.GenderId)).ToArray()
         );
         var actual = Assert.IsType<PilotCallResult.Success>(client.Call("GetEveOwners", [])).Reply;
         Assert.Equal(BlueMarshal.Encode(expectedWire), BlueMarshal.Encode(actual));
@@ -93,6 +100,9 @@ public sealed class CorporationOwnerNamesTests(ITestOutputHelper output)
         db.Services.Dispose();
         WorldInitialization.Open(db.Path);
         using var reopened = ServerServices.Build(new(db.Path));
-        Assert.Equal(new(Viewer, "Committed 探索"), Assert.Single(reopened.GetRequiredService<IPlayerCorporations>().MemberNames(Viewer)));
+        Assert.Equal(
+            new(Viewer, "Committed 探索", initial.Single(p => p.PilotId == Viewer).GenderId),
+            Assert.Single(reopened.GetRequiredService<IPlayerCorporations>().MemberNames(Viewer))
+        );
     }
 }
