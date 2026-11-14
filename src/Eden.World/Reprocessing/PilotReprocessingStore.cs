@@ -14,9 +14,9 @@ using Eden.World.Characters;
 using Eden.World.Docking;
 using Eden.World.Economy;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Reprocessing;
 
@@ -25,10 +25,9 @@ internal sealed record ReprocessingFacility(long OwnerId, double Efficiency, dou
 [Injectable]
 internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvider? clock = null) : IPilotReprocessing
 {
-    private static Pilot ReadPilot(WorldDbContext world, long pilotId) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+    private static Pilot ReadPilot(WorldAction world, long pilotId) => world.Filter<Pilot>(p => p.Id == pilotId).Single();
 
-    private ReprocessingFacility Station(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long stationId)
+    private ReprocessingFacility Station(WorldAction world, CatalogDbContext catalog, Pilot pilot, long stationId)
     {
         if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
         {
@@ -36,12 +35,13 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         }
         if (pilot.ActiveShip.StructureId is long structureId)
         {
+            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
             Eden.World.Structures.PilotStructureStore.Advance(
                 world,
                 catalog,
-                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc()
+                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                structure.SystemId
             );
-            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
             var snapshot = Eden.World.Structures.PilotStructureStore.Snapshot(world, catalog, structure);
             if (
                 !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilot.Id)
@@ -81,12 +81,14 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
 
     public void CheckStation(long pilotId, long stationId)
     {
-        using WorldDbContext world = new(database.Path);
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         _ = Station(world, catalog, ReadPilot(world, pilotId), stationId);
+        scope.Commit();
     }
 
-    private static OwnedItem[] Items(WorldDbContext world, Pilot pilot, IReadOnlyList<long> ids, long? sourceId = null)
+    private static OwnedItem[] Items(WorldAction world, Pilot pilot, IReadOnlyList<long> ids, long? sourceId = null)
     {
         if (ids.Count == 0 || ids.Distinct().Count() != ids.Count)
         {
@@ -94,8 +96,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         }
         var ship = pilot.ActiveShip;
         var items = world
-            .Set<OwnedItem>()
-            .Where(i =>
+            .Filter<OwnedItem>(i =>
                 ids.Contains(i.Id)
                 && i.OwnerId == pilot.Id
                 && (
@@ -118,14 +119,14 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
     private static double Attribute(CatalogDbContext catalog, int typeId, DogmaAttributeId attribute, double fallback = 0) =>
         catalog.Definitions.Attributes(typeId).GetValueOrDefault(attribute, fallback);
 
-    private static double SkillMultiplier(WorldDbContext world, CatalogDbContext catalog, long pilotId, int skill)
+    private static double SkillMultiplier(WorldAction world, CatalogDbContext catalog, long pilotId, int skill)
     {
         int level = PilotSkillReader.Level(world, catalog, pilotId, skill);
         return 1 + level * Attribute(catalog, skill, DogmaAttributeId.RefiningYieldMutator) / 100;
     }
 
     private static ReprocessingQuote Quote(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         OwnedItem item,
@@ -176,7 +177,6 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         {
             return quote;
         }
-        var prices = EconomicStore.Prices(world);
         return quote with
         {
             Recoverables = quote
@@ -185,7 +185,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                     {
                         CostCents = EconomicRules.ReprocessingCharge(
                             m.Quantity,
-                            prices.TryGetValue(m.TypeId, out decimal price) && price > 0
+                            EconomicStore.AdjustedPrice(world, m.TypeId) is > 0 and var price
                                 ? price
                                 : throw new InvalidDataException($"Missing positive adjusted price for material {m.TypeId}."),
                             tax
@@ -196,7 +196,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         };
     }
 
-    private static decimal Tax(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long stationId, ReprocessingFacility station)
+    private static decimal Tax(WorldAction world, Pilot pilot, ReprocessingFacility station)
     {
         long owner = station.OwnerId;
         double standing = world.Set<SavedNpcStanding>().Find(pilot.Id, owner)?.Value ?? 0;
@@ -205,12 +205,12 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
 
     public ReprocessingQuotes Quote(long pilotId, long stationId, long activeShipId, IReadOnlyList<long> itemIds)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = ReadPilot(world, pilotId);
         var station = Station(world, catalog, pilot, stationId);
-        decimal tax = Tax(world, catalog, pilot, stationId, station);
+        decimal tax = Tax(world, pilot, station);
         if (pilot.ActiveShipId != activeShipId)
         {
             throw new InvalidDataException("The active ship has changed.");
@@ -219,6 +219,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             itemIds.Count == 0
                 ? []
                 : Items(world, pilot, itemIds).Select(i => Quote(world, catalog, pilot, i, station.Efficiency, tax)).ToArray();
+        scope.Commit();
         return new((double)tax, station.Efficiency, quotes);
     }
 
@@ -232,8 +233,8 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         int outputFlagId
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = ReadPilot(world, pilotId);
         var station = Station(world, catalog, pilot, stationId);
@@ -249,7 +250,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             throw new InvalidDataException("Reprocessing output must go to your current hangar or cargo.");
         }
         var items = Items(world, pilot, itemIds, sourceId);
-        decimal tax = Tax(world, catalog, pilot, stationId, station);
+        decimal tax = Tax(world, pilot, station);
         var quotes = items.Select(i => Quote(world, catalog, pilot, i, station.Efficiency, tax)).ToArray();
         if (quotes.Any(q => q.Portions == 0 || q.Recoverables.Count == 0))
         {
@@ -304,8 +305,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
             TaskEvents.Reprocessed
         );
-        world.SaveChanges();
-        transaction.Commit();
+        scope.Commit();
         return new(items.Select(i => i.Id).ToArray(), output, changes, balance);
     }
 }

@@ -2,10 +2,12 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Contracts;
 using Eden.Data.World.Docking;
+using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Market;
@@ -222,6 +224,19 @@ internal sealed partial class EconomyTransaction(
     private void Validate()
     {
         ValidateBotRows();
+        foreach (var job in Retained<IndustryJob>())
+        {
+            if (
+                job.Runs <= 0
+                || job.OutputQuantity <= 0
+                || job.DurationSeconds <= 0
+                || job.EndTime <= job.StartTime
+                || Pilots.Find(job.PilotId) is null
+            )
+            {
+                throw new InvalidDataException("The resident industry job has invalid values or an unknown pilot.");
+            }
+        }
         foreach (var account in Retained<Account>())
         {
             if (

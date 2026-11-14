@@ -6,9 +6,9 @@ using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Structures;
 
@@ -19,14 +19,13 @@ internal sealed class StructureCompressionStore(WorldDatabase database, TimeProv
 
     public GasDecompressionEfficiency Efficiency(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var facility = FacilityAt(world, catalog, pilot);
         var result = facility is null ? new GasDecompressionEfficiency(0, 0) : Efficiency(world, catalog, pilotId, facility);
-        world.SaveChanges();
-        transaction.Commit();
+        scope.Commit();
         return result;
     }
 
@@ -36,8 +35,8 @@ internal sealed class StructureCompressionStore(WorldDatabase database, TimeProv
 
     private StructureCompressionResult Convert(long pilotId, long itemId, bool decompress)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var facility =
@@ -84,8 +83,7 @@ internal sealed class StructureCompressionStore(WorldDatabase database, TimeProv
         {
             world.Remove(item);
         }
-        world.SaveChanges();
-        transaction.Commit();
+        scope.Commit();
         return new(
             before.Id,
             before.TypeId,
@@ -97,7 +95,7 @@ internal sealed class StructureCompressionStore(WorldDatabase database, TimeProv
         );
     }
 
-    private Facility? FacilityAt(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    private Facility? FacilityAt(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
         if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.StructureId is not long structureId)
         {
@@ -116,7 +114,7 @@ internal sealed class StructureCompressionStore(WorldDatabase database, TimeProv
         return new(snapshot.Profile.TypeId, module.TypeId);
     }
 
-    private static GasDecompressionEfficiency Efficiency(WorldDbContext world, CatalogDbContext catalog, long pilotId, Facility facility)
+    private static GasDecompressionEfficiency Efficiency(WorldAction world, CatalogDbContext catalog, long pilotId, Facility facility)
     {
         int level = PilotSkillReader.Level(world, catalog, pilotId, StructureCompressionRules.GasDecompressionSkill);
         return StructureCompressionRules.Efficiency(
@@ -139,7 +137,6 @@ internal sealed class StructureCompressionStore(WorldDatabase database, TimeProv
         return (decimal)value;
     }
 
-    private static Pilot Pilot(WorldDbContext world, long pilotId) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
-        ?? throw new InvalidDataException("Unknown resource owner.");
+    private static Pilot Pilot(WorldAction world, long pilotId) =>
+        world.Filter<Pilot>(p => p.Id == pilotId).SingleOrDefault() ?? throw new InvalidDataException("Unknown resource owner.");
 }

@@ -1,6 +1,8 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Docking;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
@@ -34,48 +36,24 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
 
     private SpatialStatus ReadStatus(long shipId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
-        {
-            using CatalogDbContext source = new(database.CatalogPath);
-            return live.Economy.Inspect(world =>
-            {
-                var state = world.Set<SpatialNavigationState>().Find(shipId);
-                var module = world
-                    .Set<ActiveFittedModule>()
-                    .Where(row => row.ShipId == shipId)
-                    .Select(row => row.ModuleId)
-                    .AsEnumerable()
-                    .Select(id => world.Set<OwnedItem>().Find(id))
-                    .FirstOrDefault(item =>
-                        item is { Online: true, Singleton: true }
-                        && item.LocationId == shipId
-                        && InventoryDefinitions.IsHighSlot(item.FlagId)
-                        && source.FittingType(item.TypeId)?.GroupId == SpatialModuleRules.CloakGroup
-                    );
-                return new SpatialStatus(
-                    module?.Id ?? 0,
-                    module is not null && FittingCatalog.DefaultEffect(source, module.TypeId) == DogmaEffect.CovertCloaking,
-                    state is { CloakModuleId: not 0 } && module is null ? long.MaxValue : state?.TargetingReadyAt ?? 0
-                );
-            });
-        }
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        return WorldActionScope.Inspect(database, world => ReadStatus(world, catalog, shipId));
+    }
+
+    private static SpatialStatus ReadStatus(WorldAction world, CatalogDbContext catalog, long shipId)
+    {
         var state = world.Set<SpatialNavigationState>().Find(shipId);
-        var types = catalog.Definitions.TypesInGroup(SpatialModuleRules.CloakGroup).ToArray();
-        var module = (
-            from active in world.Set<ActiveFittedModule>()
-            join item in world.Set<OwnedItem>() on active.ModuleId equals item.Id
-            where
-                active.ShipId == shipId
+        var module = world
+            .Filter<ActiveFittedModule>(row => row.ShipId == shipId)
+            .Select(row => row.ModuleId)
+            .AsEnumerable()
+            .Select(id => world.Set<OwnedItem>().Find(id))
+            .FirstOrDefault(item =>
+                item is { Online: true, Singleton: true }
                 && item.LocationId == shipId
-                && item.Online
-                && item.Singleton
-                && item.FlagId >= (int)InventoryFlag.HighSlot0
-                && item.FlagId <= (int)InventoryFlag.HighSlot7
-                && types.Contains(item.TypeId)
-            select item
-        ).FirstOrDefault();
+                && InventoryDefinitions.IsHighSlot(item.FlagId)
+                && catalog.FittingType(item.TypeId)?.GroupId == SpatialModuleRules.CloakGroup
+            );
         return new(
             module?.Id ?? 0,
             module is not null && FittingCatalog.DefaultEffect(catalog, module.TypeId) == DogmaEffect.CovertCloaking,
@@ -106,10 +84,10 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         );
     }
 
-    private static bool Scrambled(WorldDbContext world, long ship, long now) =>
+    private static bool Scrambled(WorldAction world, long ship, long now) =>
         world
-            .Set<WorldTackle>()
-            .Any(t => t.TargetId == ship && t.TargetKind == TackleTargetKind.Ship && t.MwdBlock > 0 && t.ExpiresAt > now);
+            .Filter<WorldTackle>(t => t.TargetId == ship && t.TargetKind == TackleTargetKind.Ship && t.MwdBlock > 0 && t.ExpiresAt > now)
+            .Any();
 
     public SpatialActivation Activate(
         long pilotId,
@@ -125,10 +103,10 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         {
             throw new InvalidDataException("Invalid micro-jump velocity.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var item = world.Set<OwnedItem>().Find(moduleId);
         bool cloak = SpatialModuleRules.IsCloak(effect);
         if (
@@ -151,22 +129,22 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
-        var status = ReadStatus(pilot.ActiveShipId);
+        var status = ReadStatus(world, catalog, pilot.ActiveShipId);
         if (cloak)
         {
             CheckCloakGeometry(world, catalog, pilot.ActiveShip, now);
         }
-        var cloakTypes = catalog.Definitions.TypesInGroup(SpatialModuleRules.CloakGroup).ToArray();
+        var cloakTypes = catalog.Definitions.TypesInGroup(SpatialModuleRules.CloakGroup).ToHashSet();
         if (
             cloak
             && world
-                .Set<OwnedItem>()
-                .Count(i =>
+                .Filter<OwnedItem>(i =>
                     i.LocationId == pilot.ActiveShipId
                     && i.FlagId >= (int)InventoryFlag.HighSlot0
                     && i.FlagId <= (int)InventoryFlag.HighSlot7
                     && cloakTypes.Contains(i.TypeId)
-                ) != 1
+                )
+                .Count() != 1
         )
         {
             throw new InvalidDataException("Fit only one cloaking device before activating it.");
@@ -174,7 +152,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         if (
             status.CloakModuleId != 0
             || world.Set<ModuleCooldown>().Find(moduleId)?.ReadyAt > now
-            || world.Set<ActiveFittedModule>().Any(a => a.ModuleId == moduleId)
+            || world.Set<ActiveFittedModule>().Find(moduleId) is not null
         )
         {
             throw new InvalidDataException("The module is active, cloaked or waiting for reactivation.");
@@ -183,7 +161,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             cloak
             && (
                 locks?.IsTargeted(pilot.ActiveShipId) == true
-                || world.Set<NpcAggression>().Any(a => a.TargetShipId == pilot.ActiveShipId && a.ReadyAt <= now)
+                || world.Filter<NpcAggression>(a => a.TargetShipId == pilot.ActiveShipId && a.ReadyAt <= now).Any()
             )
         )
         {
@@ -193,7 +171,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             !cloak
             && (
                 Scrambled(world, pilot.ActiveShipId, now)
-                || world.Set<SpatialNavigationState>().Any(s => s.ShipId == pilot.ActiveShipId && s.JumpModuleId != 0)
+                || world.Set<SpatialNavigationState>().Find(pilot.ActiveShipId) is { JumpModuleId: not 0 }
             )
         )
         {
@@ -235,7 +213,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             state.CloakTargetingMilliseconds = module.TargetingDelayMilliseconds;
             state.CloakReactivationMilliseconds = module.ReactivationMilliseconds;
             // A pending NPC acquisition is not an established lock and cannot finish through a cloak.
-            world.Set<NpcAggression>().Where(a => a.TargetShipId == pilot.ActiveShipId).ExecuteDelete();
+            world.RemoveRange(world.Filter<NpcAggression>(a => a.TargetShipId == pilot.ActiveShipId));
         }
         if (!cloak)
         {
@@ -257,71 +235,57 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         return new(module, now, ends, ready, capacitor, updated);
     }
 
-    private static SpatialNavigationState State(WorldDbContext world, long ship) =>
+    private static SpatialNavigationState State(WorldAction world, long ship) =>
         world.Set<SpatialNavigationState>().Find(ship) ?? world.Add(new SpatialNavigationState { ShipId = ship }).Entity;
 
-    private static void CheckCloakGeometry(WorldDbContext world, CatalogDbContext catalog, Ship ship, long now)
+    private static void CheckCloakGeometry(WorldAction world, CatalogDbContext catalog, Ship ship, long now)
     {
         var saved = ship.Position!;
         var origin = new SpacePosition(saved.X, saved.Y, saved.Z);
         int system = saved.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
         double radius = catalog.RequireItem(ship.TypeId).Radius ?? 0;
+        var live = LiveWorld.Find(world.WorldPath);
         bool Near(SpacePosition position, double otherRadius) => SpatialModuleRules.Proximity(origin, radius, position, otherRadius);
-        bool blocked = SystemObjects.Geometry(catalog, system).Any(o => o.Solid && Near(o.Position, o.Radius));
-        if (!blocked)
-        {
-            var cloakTypes = catalog.Definitions.TypesInGroup(SpatialModuleRules.CloakGroup).ToArray();
-            var cloaked = (
-                from active in world.Set<ActiveFittedModule>()
-                join item in world.Set<OwnedItem>() on active.ModuleId equals item.Id
-                where item.Online && cloakTypes.Contains(item.TypeId)
-                select active.ShipId
-            ).ToHashSet();
-            blocked = world
-                .Ships.Include(s => s.Position)
-                .Where(s => !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == s.OwnerId))
-                .Where(s => s.Id != ship.Id && s.Position != null)
+        bool NearBody(long id, int type, SpacePosition position) =>
+            Near(live?.PublishedPosition(system, id) ?? position, catalog.RequireItem(type).Radius ?? 0);
+
+        bool blocked =
+            SystemObjects.Geometry(catalog, system).Any(o => o.Solid && Near(o.Position, o.Radius))
+            || world
+                .Filter<FlightPosition>(p => p.SystemId == system)
                 .AsEnumerable()
-                .Any(s =>
-                    !cloaked.Contains(s.Id)
-                    && (s.Position!.SystemId ?? catalog.RequireStation(s.StationId).SolarSystemId) == system
-                    && Near(new(s.Position.X, s.Position.Y, s.Position.Z), catalog.RequireItem(s.TypeId).Radius ?? 0)
-                );
-        }
-        blocked |= world
-            .Set<WorldNpc>()
-            .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
-            .AsEnumerable()
-            .Any(n => Near(new(n.X, n.Y, n.Z), catalog.RequireItem(n.TypeId).Radius ?? 0));
-        blocked |= world
-            .Set<WorldWreck>()
-            .Where(w => w.SystemId == system && w.ExpiresAt > now)
-            .AsEnumerable()
-            .Any(w => Near(new(w.X, w.Y, w.Z), catalog.RequireItem(w.TypeId).Radius ?? 0));
-        var drones =
-            from drone in world.Set<WorldDrone>()
-            join item in world.Set<OwnedItem>() on drone.ItemId equals item.Id
-            where drone.SystemId == system
-            select new
-            {
-                drone.X,
-                drone.Y,
-                drone.Z,
-                item.TypeId,
-            };
-        blocked |= drones.AsEnumerable().Any(d => Near(new(d.X, d.Y, d.Z), catalog.RequireItem(d.TypeId).Radius ?? 0));
-        blocked |= world
-            .Set<WorldAsteroid>()
-            .Where(a => a.SystemId == system && a.Quantity > 0)
-            .AsEnumerable()
-            .Any(a => Near(new(a.X, a.Y, a.Z), a.Radius));
+                .Concat(world.Filter<FlightPosition>(p => p.SystemId == null))
+                .Any(p =>
+                    p.ShipId != ship.Id
+                    && world.Ships.Find(p.ShipId) is { } other
+                    && (p.SystemId ?? catalog.RequireStation(other.StationId).SolarSystemId) == system
+                    && world.Set<SavedCapsuleerSuspension>().Find(other.OwnerId) is null
+                    && NearBody(other.Id, other.TypeId, new(p.X, p.Y, p.Z))
+                    && ReadStatus(world, catalog, other.Id).CloakModuleId == 0
+                )
+            || world
+                .Filter<WorldNpc>(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
+                .AsEnumerable()
+                .Any(n => NearBody(n.Id, n.TypeId, new(n.X, n.Y, n.Z)))
+            || world
+                .Filter<WorldWreck>(w => w.SystemId == system && w.ExpiresAt > now)
+                .AsEnumerable()
+                .Any(w => NearBody(w.Id, w.TypeId, new(w.X, w.Y, w.Z)))
+            || world
+                .Filter<WorldDrone>(d => d.SystemId == system)
+                .AsEnumerable()
+                .Any(d => world.Set<OwnedItem>().Find(d.ItemId) is { } item && NearBody(d.ItemId, item.TypeId, new(d.X, d.Y, d.Z)))
+            || world
+                .Filter<WorldAsteroid>(a => a.SystemId == system && a.Quantity > 0)
+                .AsEnumerable()
+                .Any(a => Near(new(a.X, a.Y, a.Z), a.Radius));
         if (blocked)
         {
             throw new InvalidDataException("Move at least 2 km clear of nearby objects before cloaking.");
         }
     }
 
-    private static void Cooldown(WorldDbContext world, long module, long ready)
+    private static void Cooldown(WorldAction world, long module, long ready)
     {
         var cooldown = world.Set<ModuleCooldown>().Find(module) ?? world.Add(new ModuleCooldown { ModuleId = module }).Entity;
         cooldown.ReadyAt = ready;
@@ -330,9 +294,9 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
 
     public IReadOnlyDictionary<DogmaAttributeId, double> Stop(long pilotId, long shipId, long moduleId, long now)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        if (!world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
+        if (world.Ships.Find(shipId)?.OwnerId != pilotId)
         {
             return new Dictionary<DogmaAttributeId, double>();
         }
@@ -340,7 +304,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         var item = world.Set<OwnedItem>().Find(moduleId);
         var active = world.Set<ActiveFittedModule>().Find(moduleId);
         var pending = world.Set<SpatialNavigationState>().Find(shipId);
-        if (pending?.CloakModuleId == moduleId && world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
+        if (pending?.CloakModuleId == moduleId)
         {
             pending.TargetingReadyAt = SpatialModuleRules.Deadline(now, pending.CloakTargetingMilliseconds);
             if (item is not null)
@@ -349,7 +313,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             }
             pending.CloakModuleId = 0;
         }
-        if (active?.ShipId == shipId && world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
+        if (active?.ShipId == shipId)
         {
             world.Remove(active);
         }
@@ -358,9 +322,10 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             pending.JumpModuleId = 0;
         }
         world.SaveChanges();
-        var values = world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == shipId)
-            ? PilotFittingStore.ShipAttributes(world, catalog, pilotId)
-            : new Dictionary<DogmaAttributeId, double>();
+        var values =
+            world.Pilots.Find(pilotId)?.ActiveShipId == shipId
+                ? PilotFittingStore.ShipAttributes(world, catalog, pilotId)
+                : new Dictionary<DogmaAttributeId, double>();
         values[DogmaAttributeId.NextActivationTime] = world.Set<ModuleCooldown>().Find(moduleId)?.ReadyAt ?? 0;
         transaction.Commit();
         return values;
@@ -368,9 +333,10 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
 
     public MicroJumpResult? CompleteJump(long pilotId, long shipId, long moduleId, long startedAt, long now)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == shipId && p.ActiveShip.OwnerId == pilotId))
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
+        var pilot = world.Pilots.Find(pilotId);
+        if (pilot?.ActiveShipId != shipId || pilot.ActiveShip.OwnerId != pilotId)
         {
             throw new InvalidDataException("Complete a micro jump only on your own active ship.");
         }
@@ -379,7 +345,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         {
             return null;
         }
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        using CatalogDbContext catalog = new(database.CatalogPath);
         var item = world.Set<OwnedItem>().Find(moduleId);
         MicroJumpResult? result = null;
         if (
@@ -390,7 +356,7 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             && item.LocationId == shipId
             && InventoryDefinitions.IsMediumSlot(item.FlagId)
             && !Scrambled(world, shipId, now)
-            && ReadStatus(shipId).CloakModuleId == 0
+            && ReadStatus(world, catalog, shipId).CloakModuleId == 0
         )
         {
             var destination = SpatialModuleRules.Jump(
@@ -403,7 +369,10 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
             result = new(destination, new(state.VelocityX, state.VelocityY, state.VelocityZ));
         }
         state.JumpModuleId = 0;
-        world.Set<ActiveFittedModule>().Where(a => a.ModuleId == moduleId && a.ShipId == shipId).ExecuteDelete();
+        if (world.Set<ActiveFittedModule>().Find(moduleId) is { } active && active.ShipId == shipId)
+        {
+            world.Remove(active);
+        }
         world.SaveChanges();
         transaction.Commit();
         return result;
@@ -418,7 +387,11 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
                 state.TargetingReadyAt = SpatialModuleRules.Deadline(now, state.CloakTargetingMilliseconds);
                 if (world.Set<OwnedItem>().Any(i => i.Id == state.CloakModuleId))
                 {
-                    Cooldown(world, state.CloakModuleId, SpatialModuleRules.Deadline(now, state.CloakReactivationMilliseconds));
+                    Cooldown(
+                        new SqlWorldAction(world),
+                        state.CloakModuleId,
+                        SpatialModuleRules.Deadline(now, state.CloakReactivationMilliseconds)
+                    );
                 }
                 state.CloakModuleId = 0;
             }

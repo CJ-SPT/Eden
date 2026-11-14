@@ -20,6 +20,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -528,16 +529,18 @@ public sealed partial class ScienceJobTests
     }
 
     [Theory]
-    [InlineData(IndustryActivity.ResearchMaterial, 1, 0, 96000, 2400, 117600)]
-    [InlineData(IndustryActivity.ResearchTime, 1, 0, 96000, 2400, 117600)]
-    [InlineData(IndustryActivity.Copying, 2, 3, 576000, 14400, 820800)]
+    [InlineData(IndustryActivity.ResearchMaterial, 1, 0, 96000, 2400, 117600, false)]
+    [InlineData(IndustryActivity.ResearchTime, 1, 0, 96000, 2400, 117600, false)]
+    [InlineData(IndustryActivity.Copying, 2, 3, 576000, 14400, 820800, false)]
+    [InlineData(IndustryActivity.Copying, 2, 3, 576000, 14400, 820800, true)]
     public void PaidScienceValidatesFeesAndRollsBackInsufficientFundsWithoutReservingBlueprints(
         IndustryActivity activity,
         int runs,
         int licensed,
         long cost,
         long tax,
-        long total
+        long total,
+        bool resident
     )
     {
         using var f = Create();
@@ -553,6 +556,7 @@ public sealed partial class ScienceJobTests
             world.Add(new PilotWallet { PilotId = f.Pilot.PilotId, Cents = total - 1 });
             world.SaveChanges();
         }
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
         var request = Request(f, activity, runs, licensed) with { QuotedCharge = new(cost, tax, 0) };
         Assert.Throws<InvalidDataException>(() => f.Store.Install(f.Pilot.PilotId, request));
         Assert.False(f.Store.Blueprint(f.Pilot.PilotId, Fixture.BlueprintId).Item.Singleton);
@@ -570,10 +574,12 @@ public sealed partial class ScienceJobTests
         var job = f.Store.Install(f.Pilot.PilotId, request).Job;
         Assert.Equal(total, job.CostCents);
         f.Store.Cancel(f.Pilot.PilotId, job.Id, f.Pilot.SystemId);
+        live?.Dispose();
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(total, saved.Set<PilotWallet>().Find(f.Pilot.PilotId)!.Cents);
         var payment = Assert.Single(saved.Set<SavedServicePayment>());
+        Assert.Equal(job.Id, payment.ContextId);
         Assert.Equal(-total, payment.AmountCents);
         Assert.Equal(
             activity == IndustryActivity.Copying ? WalletEntryType.Copying

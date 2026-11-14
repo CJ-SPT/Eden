@@ -1,6 +1,8 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Mining;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -50,5 +52,44 @@ internal sealed partial class PersonalMiningLedgerStore
         saved.Quantity = total.Collected;
         saved.Critical = total.Critical;
         saved.Wasted = total.Wasted;
+        if (
+            !MoonMiningRules.IsMoonRock(resource.Id)
+            || world.Set<SavedMoonExtraction>().Find(MoonMiningRules.ExtractionId(resource.Id)) is not { } extraction
+        )
+        {
+            return;
+        }
+        long structureId = extraction.StructureId;
+        var moon = world
+            .Filter<SavedMoonMiningLog>(l =>
+                l.StructureId == structureId
+                && l.Day == day
+                && l.PilotId == pilot.Id
+                && l.CorporationId == pilot.CorporationId
+                && l.TypeId == resource.TypeId
+            )
+            .SingleOrDefault();
+        if (moon is null)
+        {
+            long first = MiningLedgerRules.EarliestDay(now);
+            world.RemoveRange(world.Filter<SavedMoonMiningLog>(l => l.StructureId == structureId && l.Day < first));
+            moon = world
+                .Add(
+                    new SavedMoonMiningLog
+                    {
+                        StructureId = structureId,
+                        PilotId = pilot.Id,
+                        Day = day,
+                        CorporationId = pilot.CorporationId,
+                        SystemId = resource.SystemId,
+                        TypeId = resource.TypeId,
+                    }
+                )
+                .Entity;
+        }
+        var moonTotal = MiningLedgerRules.Add(new(moon.Quantity, moon.Critical, moon.Wasted), quantity);
+        moon.Quantity = moonTotal.Collected;
+        moon.Critical = moonTotal.Critical;
+        moon.Wasted = moonTotal.Wasted;
     }
 }

@@ -339,7 +339,7 @@ public sealed class ReactionJobTests
     [InlineData(57496, 57459, 4097, BiochemicalReactor)]
     public void ReactorFamilyReservesFormulaConsumesMaterialsAndDeliversOnceAfterPause(int formulaType, int product, int group, int reactor)
     {
-        using StructureTests.Fixture f = new();
+        using StructureTests.Fixture f = new(liveWorld: true);
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSql(

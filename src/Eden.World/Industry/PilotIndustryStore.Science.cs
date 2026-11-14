@@ -11,8 +11,8 @@ using Eden.Gameplay.Market;
 using Eden.World.Catalog;
 using Eden.World.Economy;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Industry;
 
@@ -28,10 +28,10 @@ internal sealed partial class PilotIndustryStore
     private IndustryResult InstallScience(long pilotId, IndustryRequest request)
     {
         _ = ScienceRules.TimeAttribute(request.Activity);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        Eden.World.Structures.PilotStructureStore.Advance(world, catalog, Now);
+        AdvanceFacility(world, catalog, request.FacilityId, Now);
         var station = CurrentStation(world, catalog, pilotId, request.FacilityId, StationService.Laboratory);
         Eden.World.Structures.StructureIndustry.RequireService(world, catalog, pilotId, request.FacilityId, request.Activity);
         var item =
@@ -139,13 +139,13 @@ internal sealed partial class PilotIndustryStore
                 baseSeconds.Value,
                 checked((int)(definition.MaxProductionLimit ?? 0)),
                 world
-                    .Set<IndustryJob>()
-                    .Count(j =>
+                    .Filter<IndustryJob>(j =>
                         j.PilotId == pilotId
                         && j.Status == IndustryJobStatus.Installed
                         && j.Activity != IndustryActivity.Manufacturing
                         && j.Activity != IndustryActivity.Reaction
-                    ),
+                    )
+                    .Count(),
                 Bonuses(world, catalog, pilotId),
                 materials,
                 product?.Probability ?? 1,
@@ -215,9 +215,9 @@ internal sealed partial class PilotIndustryStore
             charge.TotalCents > 0
                 ? EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, EntryType(job.Activity), charge.TotalCents, now)
                 : null;
-        world.SaveChanges();
-        transaction.Commit();
-        return new(ReadJob(world, catalog, job), changes, balance);
+        var result = new IndustryResult(ReadJob(world, catalog, job), changes, balance);
+        scope.Commit();
+        return result;
     }
 
     private static double BlueprintValue(CatalogDbContext catalog, IReadOnlyDictionary<int, decimal> prices, int typeId)
@@ -242,7 +242,7 @@ internal sealed partial class PilotIndustryStore
         };
 
     private static void ConsumeMaterials(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long station,
@@ -253,8 +253,7 @@ internal sealed partial class PilotIndustryStore
         foreach (var material in materials)
         {
             var stacks = world
-                .Set<OwnedItem>()
-                .Where(i =>
+                .Filter<OwnedItem>(i =>
                     i.OwnerId == pilotId
                     && i.LocationId == station
                     && i.FlagId == (int)InventoryFlag.Hangar
@@ -287,7 +286,7 @@ internal sealed partial class PilotIndustryStore
         }
     }
 
-    private static OwnedItem ReserveBlueprint(WorldDbContext world, CatalogDbContext catalog, OwnedItem item, List<InventoryChange> changes)
+    private static OwnedItem ReserveBlueprint(WorldAction world, CatalogDbContext catalog, OwnedItem item, List<InventoryChange> changes)
     {
         InventoryItem? before = PilotInventoryStore.Read(catalog, item);
         if (item.Quantity > 1)
@@ -314,7 +313,7 @@ internal sealed partial class PilotIndustryStore
         return item;
     }
 
-    private static void DeliverScience(WorldDbContext world, CatalogDbContext catalog, IndustryJob job, List<InventoryChange> changes)
+    private static void DeliverScience(WorldAction world, CatalogDbContext catalog, IndustryJob job, List<InventoryChange> changes)
     {
         if (job.Activity is IndustryActivity.ResearchMaterial or IndustryActivity.ResearchTime)
         {

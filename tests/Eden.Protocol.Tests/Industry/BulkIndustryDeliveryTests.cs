@@ -1,13 +1,17 @@
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Industry;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Server;
+using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Fixture = Eden.Protocol.Tests.Industry.IndustryTests.Fixture;
 
@@ -160,13 +164,10 @@ public sealed class BulkIndustryDeliveryTests
         );
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void SqlFailureOnLaterJobRollsBackEarlierDeliveryAndRetryDeliversExactlyOnce(bool resident)
+    [Fact]
+    public void SqlFailureOnLaterJobRollsBackEarlierDeliveryAndRetryDeliversExactlyOnce()
     {
         using var f = Create();
-        using var live = resident ? ServerServices.Build(new(f.Db.Path), f.Clock, liveWorld: true) : null;
         var (first, second) = Install(f);
         f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(second.DurationSeconds));
         using (WorldDbContext world = new(f.Db.Path))
@@ -192,6 +193,66 @@ public sealed class BulkIndustryDeliveryTests
         Assert.Equal(300, f.Quantity(215));
         Assert.All(f.Store.DeliverMany(f.Pilot.PilotId, deliveries), result => Assert.Empty(result.Changes));
         Assert.Equal(300, f.Quantity(215));
+    }
+
+    [Fact]
+    public void ResidentBulkDeliveryRollsBackRejectedJobsAndRetriesFailedCheckpointWithoutDuplicatingOutput()
+    {
+        using var f = Create();
+        var pilot = f.Pilot;
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        live.Economy.Warm();
+        var (first, second) = Install(f);
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(second.DurationSeconds));
+        using (live.EnterShared("paid industry baseline"))
+        {
+            live.Economy.Flush();
+        }
+
+        IndustryDelivery[] deliveries = [new(first.Id, pilot.SystemId), new(second.Id, pilot.SystemId)];
+        using (var measured = SessionPerformance.Begin("resident industry delivery", _ => { }, force: true)!)
+        {
+            Assert.Throws<InvalidDataException>(() =>
+                f.Store.DeliverMany(pilot.PilotId, [deliveries[0], deliveries[1] with { SystemId = pilot.SystemId + 1 }])
+            );
+            Assert.All(f.Store.Jobs(pilot.PilotId, false), job => Assert.Equal(IndustryJobStatus.Ready, job.Status));
+            Assert.Equal(0, f.Store.Materials(pilot.PilotId, pilot.StationId).GetValueOrDefault(215));
+            Assert.Equal(2, f.Store.DeliverMany(pilot.PilotId, deliveries).Count);
+            Assert.All(f.Store.DeliverMany(pilot.PilotId, deliveries), result => Assert.Empty(result.Changes));
+            Assert.Equal(300, f.Store.Materials(pilot.PilotId, pilot.StationId)[215]);
+            Assert.Equal(0, measured.Commands);
+            Assert.Equal(0, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+        }
+
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        using (WorldDbContext baseline = new(checkpoint.Database))
+        {
+            baseline.Database.ExecuteSqlRaw(
+                """
+                CREATE TRIGGER RejectBulkDelivery BEFORE UPDATE OF Status ON WorldIndustryJob
+                WHEN NEW.Id=(SELECT MAX(Id) FROM WorldIndustryJob) AND NEW.Status=101
+                BEGIN SELECT RAISE(ABORT,'forced checkpoint failure'); END;
+                """
+            );
+        }
+        Assert.Throws<SqliteException>(() => checkpoint.Project());
+        using (WorldDbContext failed = new(checkpoint.Database))
+        {
+            Assert.All(failed.Set<IndustryJob>().ToArray(), job => Assert.Equal(IndustryJobStatus.Installed, job.Status));
+            Assert.Empty(failed.Set<SavedMarketUnlock>());
+            Assert.Empty(failed.Set<OwnedItem>().Where(item => item.OwnerId == pilot.PilotId && item.TypeId == 215));
+            failed.Database.ExecuteSqlRaw("DROP TRIGGER RejectBulkDelivery");
+        }
+        Assert.Equal(300, f.Store.Materials(pilot.PilotId, pilot.StationId)[215]);
+        checkpoint.Project();
+        using WorldDbContext reopened = new(checkpoint.Database);
+        Assert.Equal(2, reopened.Set<IndustryJob>().Count(j => j.Status == IndustryJobStatus.Delivered));
+        Assert.Equal(first.Id, Assert.Single(reopened.Set<SavedMarketUnlock>()).JobId);
+        Assert.Equal(
+            300,
+            reopened.Set<OwnedItem>().Where(item => item.OwnerId == pilot.PilotId && item.TypeId == 215).Sum(i => i.Quantity)
+        );
     }
 
     [Fact]

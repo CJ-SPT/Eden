@@ -4,6 +4,7 @@ using Eden.Gameplay.Industry;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Industry;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Structures;
@@ -11,7 +12,7 @@ namespace Eden.World.Structures;
 internal static class StructureIndustry
 {
     internal static void RequireService(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long structureId,
@@ -35,10 +36,10 @@ internal static class StructureIndustry
         }
     }
 
-    internal static void Synchronize(WorldDbContext world, CatalogDbContext catalog, SavedStructure structure, long at)
+    internal static void Synchronize(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long at)
     {
         var services = PilotStructureStore.Snapshot(world, catalog, structure).Services;
-        foreach (var job in world.Set<IndustryJob>().Where(j => j.StationId == structure.Id && j.Status == IndustryJobStatus.Installed))
+        foreach (var job in world.Filter<IndustryJob>(j => j.StationId == structure.Id && j.Status == IndustryJobStatus.Installed))
         {
             var type = catalog.RequireItem(job.ProductTypeId);
             var required =

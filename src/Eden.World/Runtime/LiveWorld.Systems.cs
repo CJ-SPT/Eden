@@ -91,6 +91,18 @@ internal sealed partial class LiveWorld
 
     internal LiveCombatRuntime? CombatForSystem(int system) => _systems.Get(system).State.Combat;
 
+    internal Eden.Gameplay.Flight.SpacePosition? PublishedPosition(int system, long id)
+    {
+        var entry = _systems.Get(system);
+        using var lease = entry.Enter("published position");
+        var state = entry.State;
+        ApplyPendingChanges(state);
+        return state.Combat?.DirectionalPosition(id)
+            ?? state.Tractors.Position(id)
+            ?? _shared.Combat?.DirectionalPosition(id)
+            ?? _shared.Tractors.Position(id);
+    }
+
     internal LiveShipHeat HeatForKnownShip(long ship) =>
         _heatOwners.TryGetValue(ship, out var owner) ? owner.Heat
         : _shipSystems.TryGetValue(ship, out int system) ? _systems.Get(system).State.Heat
@@ -477,11 +489,7 @@ internal sealed partial class LiveWorld
                     throw;
                 }
             }
-            while (entry.State.PendingChanges.TryPeek(out var changes))
-            {
-                ObserveState(entry.State, changes);
-                entry.State.PendingChanges.TryDequeue(out _);
-            }
+            ApplyPendingChanges(entry.State);
             if (advanceEffects && (_executionDepth.Value != 0 || _ownershipMonitor.IsEntered))
             {
                 AdvanceEffects(entry.State);
@@ -492,6 +500,15 @@ internal sealed partial class LiveWorld
         {
             lease.Dispose();
             throw;
+        }
+    }
+
+    private static void ApplyPendingChanges(LiveSystemState state)
+    {
+        while (state.PendingChanges.TryPeek(out var changes))
+        {
+            ObserveState(state, changes);
+            state.PendingChanges.TryDequeue(out _);
         }
     }
 
@@ -609,6 +626,7 @@ internal sealed partial class LiveWorld
                 {
                     int system =
                         Economy.Peek<Eden.Data.World.Docking.FlightPosition>(id)?.SystemId
+                        ?? (hull.StructureId is long structure ? Economy.Structure(structure)?.SystemId : null)
                         ?? _database.Catalog.FindStation(hull.StationId)?.SolarSystemId
                         ?? 0;
                     if (system > 0)

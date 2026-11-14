@@ -5,6 +5,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Structures;
@@ -25,7 +26,7 @@ internal sealed partial class PilotStructureStore
                 var profile = StructureCatalog.Require(catalog, structure.TypeId);
                 var module = StructureCatalog.Service(catalog, item.TypeId);
                 StructureRules.CheckServiceFit(profile, module, slot);
-                var installed = world.Set<SavedStructureService>().Where(m => m.StructureId == structureId).ToArray();
+                var installed = world.Filter<SavedStructureService>(m => m.StructureId == structureId).ToArray();
                 if (
                     installed.Any(m => m.Slot == slot)
                     || module.MaximumFitted > 0
@@ -90,8 +91,7 @@ internal sealed partial class PilotStructureStore
                         throw new InvalidDataException("This structure service requires gameplay systems that are not implemented yet.");
                     }
                     var active = world
-                        .Set<SavedStructureService>()
-                        .Where(m => m.StructureId == structureId && m.Online)
+                        .Filter<SavedStructureService>(m => m.StructureId == structureId && m.Online)
                         .ToArray()
                         .Select(m => StructureCatalog.Service(catalog, world.Set<OwnedItem>().Find(m.ItemId)!.TypeId))
                         .ToArray();
@@ -126,7 +126,7 @@ internal sealed partial class PilotStructureStore
                 item.Online = online;
                 module.Online = online;
                 world.SaveChanges();
-                structure.LowPowerAt = world.Set<SavedStructureService>().Any(m => m.StructureId == structureId && m.Online)
+                structure.LowPowerAt = world.Filter<SavedStructureService>(m => m.StructureId == structureId && m.Online).Any()
                     ? null
                     : structure.LowPowerAt ?? now;
                 StructureIndustry.Synchronize(world, catalog, structure, now);
@@ -176,8 +176,7 @@ internal sealed partial class PilotStructureStore
                     throw new InvalidDataException("The structure fuel bay accepts fuel blocks.");
                 }
                 double used = world
-                    .Set<OwnedItem>()
-                    .Where(i => i.LocationId == structureId && i.FlagId == StructureRules.FuelBayFlag)
+                    .Filter<OwnedItem>(i => i.LocationId == structureId && i.FlagId == StructureRules.FuelBayFlag)
                     .AsEnumerable()
                     .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
                 if (
@@ -213,7 +212,7 @@ internal sealed partial class PilotStructureStore
     }
 
     private static bool Fuel(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedStructure structure,
         StructureServiceProfile service,
@@ -222,8 +221,7 @@ internal sealed partial class PilotStructureStore
     )
     {
         var fuel = world
-            .Set<OwnedItem>()
-            .Where(i => i.LocationId == structure.Id && i.FlagId == StructureRules.FuelBayFlag)
+            .Filter<OwnedItem>(i => i.LocationId == structure.Id && i.FlagId == StructureRules.FuelBayFlag)
             .OrderBy(i => i.Id)
             .AsEnumerable()
             .Where(i => catalog.RequireItem(i.TypeId).GroupId == service.FuelGroupId)
@@ -248,13 +246,13 @@ internal sealed partial class PilotStructureStore
         return true;
     }
 
-    internal static void Advance(WorldDbContext world, CatalogDbContext catalog, long now, int? systemId = null)
+    internal static void Advance(WorldAction world, CatalogDbContext catalog, long now, int? systemId = null)
     {
-        var due = world
-            .Set<SavedStructure>()
-            .Where(s => systemId == null || s.SystemId == systemId)
-            .Where(s => s.StateEndsAt != null && s.StateEndsAt <= now || s.UnanchorAt != null && s.UnanchorAt <= now)
-            .ToArray();
+        var due = (
+            systemId is int system
+                ? world.Filter<SavedStructure>(s => s.SystemId == system && (s.StateEndsAt <= now || s.UnanchorAt <= now))
+                : world.Filter<SavedStructure>(s => s.StateEndsAt <= now || s.UnanchorAt <= now)
+        ).ToArray();
         foreach (var structure in due)
         {
             var profile = StructureCatalog.Require(catalog, structure.TypeId);
@@ -279,14 +277,13 @@ internal sealed partial class PilotStructureStore
         }
         world.SaveChanges();
         var stopping = due.Where(s => s.UnanchorAt <= now).ToDictionary(s => s.Id);
-        var services = world
-            .Set<SavedStructureService>()
-            .Where(m => systemId == null || world.Set<SavedStructure>().Any(s => s.Id == m.StructureId && s.SystemId == systemId))
-            .Where(m => m.Online && m.NextFuelAt != null && m.NextFuelAt <= now)
-            .OrderBy(m => m.StructureId)
-            .ThenBy(m => m.Slot)
-            .ToArray();
-        foreach (var group in services.GroupBy(m => m.StructureId))
+        var services = systemId is int scopeSystem
+            ? world
+                .Filter<SavedStructure>(s => s.SystemId == scopeSystem)
+                .AsEnumerable()
+                .SelectMany(s => world.Filter<SavedStructureService>(m => m.StructureId == s.Id && m.Online == true && m.NextFuelAt <= now))
+            : world.Filter<SavedStructureService>(m => m.Online == true && m.NextFuelAt <= now);
+        foreach (var group in services.OrderBy(m => m.StructureId).ThenBy(m => m.Slot).GroupBy(m => m.StructureId))
         {
             var structure = Require(world, group.Key);
             var profile = StructureCatalog.Require(catalog, structure.TypeId);
@@ -297,8 +294,7 @@ internal sealed partial class PilotStructureStore
             );
             long until = stopping.TryGetValue(structure.Id, out var stop) ? stop.UnanchorAt!.Value : now;
             var reserves = world
-                .Set<OwnedItem>()
-                .Where(i => i.LocationId == structure.Id && i.FlagId == StructureRules.FuelBayFlag)
+                .Filter<OwnedItem>(i => i.LocationId == structure.Id && i.FlagId == StructureRules.FuelBayFlag)
                 .AsEnumerable()
                 .GroupBy(i => catalog.RequireItem(i.TypeId).GroupId)
                 .Select(g => new StructureFuelReserve(g.Key, g.Sum(i => (long)i.Quantity)))
@@ -332,7 +328,7 @@ internal sealed partial class PilotStructureStore
                 module.NextFuelAt = null;
                 world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
                 world.SaveChanges();
-                structure.LowPowerAt = world.Set<SavedStructureService>().Any(m => m.StructureId == structure.Id && m.Online)
+                structure.LowPowerAt = world.Filter<SavedStructureService>(m => m.StructureId == structure.Id && m.Online).Any()
                     ? null
                     : structure.LowPowerAt ?? deadline.OfflineAt;
                 StructureIndustry.Synchronize(world, catalog, structure, deadline.OfflineAt!.Value);
@@ -342,7 +338,7 @@ internal sealed partial class PilotStructureStore
         foreach (var structure in stopping.Values)
         {
             long stoppedAt = structure.UnanchorAt!.Value;
-            foreach (var module in world.Set<SavedStructureService>().Where(m => m.StructureId == structure.Id && m.Online))
+            foreach (var module in world.Filter<SavedStructureService>(m => m.StructureId == structure.Id && m.Online))
             {
                 module.Online = false;
                 module.NextFuelAt = null;
@@ -351,8 +347,8 @@ internal sealed partial class PilotStructureStore
             // Services stop at the saved deadline even if personal assets delay packaging.
             // Settle their preceding fuel hours before changing the module state.
             if (
-                !world.Ships.Any(s => s.StructureId == structure.Id)
-                && !world.Set<OwnedItem>().Any(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId)
+                !world.Filter<Eden.Data.World.Inventory.Ship>(s => s.StructureId == structure.Id).Any()
+                && !world.Filter<OwnedItem>(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId).Any()
             )
             {
                 structure.State = StructureState.Unanchored;

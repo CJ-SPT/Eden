@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Insurance;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
@@ -16,6 +17,7 @@ using Eden.World.Docking;
 using Eden.World.Economy;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,99 +31,50 @@ internal sealed partial class PilotInsuranceStore(WorldDatabase database, TimePr
     public long Price(int typeId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        using WorldDbContext world = new(database.Path);
-        return Value(world, catalog, typeId);
+        return WorldActionScope.Inspect(database, world => Value(world, catalog, typeId));
     }
 
     public IReadOnlyDictionary<int, long> Prices(IReadOnlyList<int> typeIds)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        using WorldDbContext world = new(database.Path);
-        if (EconomicStore.Enabled(world))
-        {
-            return typeIds.Distinct().ToDictionary(id => id, id => Value(world, catalog, id));
-        }
-        var definitions = catalog.Definitions;
-        return typeIds
-            .Distinct()
-            .ToDictionary(
-                id => id,
-                id =>
-                    definitions.Items.TryGetValue(id, out var type)
-                    && type.CategoryId == (int)InventoryCategory.Ship
-                    && type.GroupId != FleetDefinitions.CapsuleGroup
-                        ? InsuranceRules.CatalogValue(definitions.Find(CatalogData.Client.Types, (long)id)?.BasePrice)
-                        : 0
-            );
+        return WorldActionScope.Inspect(database, world => typeIds.Distinct().ToDictionary(id => id, id => Value(world, catalog, id)));
     }
 
-    private static long Value(WorldDbContext world, CatalogDbContext catalog, int typeId)
-    {
-        var type = catalog.Definitions.Items.GetValueOrDefault(typeId);
-        if (type?.CategoryId != (int)InventoryCategory.Ship || type.GroupId == FleetDefinitions.CapsuleGroup)
-        {
-            return 0;
-        }
-        if (EconomicStore.Enabled(world))
-        {
-            if (type.GroupId == FleetDefinitions.CorvetteGroup)
-            {
-                // A freely recovered hull must not mint ISK through repeated losses.
-                return 0;
-            }
-            if (BuildContentPolicy.Current.Insurance.MaterialValuedHullTypes.Contains(typeId))
-            {
-                var blueprints = catalog.Definitions.BlueprintsForProduct(typeId);
-                var recipe = blueprints.Length == 1 ? catalog.Definitions.ManufacturingRecipe(blueprints[0]) : null;
-                if (recipe?.Materials is not { Length: > 0 })
-                {
-                    return 0;
-                }
-                var materials = recipe.Materials.Value.ToDictionary(
-                    m => checked((int)m.TypeID!.Value),
-                    m => checked((int)m.Quantity!.Value)
-                );
-                return checked(
-                    (long)Math.Round(EconomicRules.Value(materials, EconomicStore.Prices(world)) * 100, 0, MidpointRounding.ToEven)
-                );
-            }
-        }
-        return InsuranceRules.CatalogValue(catalog.Definitions.Find(CatalogData.Client.Types, (long)typeId)?.BasePrice);
-    }
+    private static long Value(WorldDbContext world, CatalogDbContext catalog, int typeId) =>
+        Value(new SqlWorldAction(world), catalog, typeId);
 
     public IReadOnlyList<InsurancePolicy> Contracts(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
         long now = Now;
-        return world
-            .Set<SavedInsurancePolicy>()
-            .Where(p =>
-                p.PilotId == pilotId
-                && p.Status == InsurancePolicyStatus.Active
-                && p.StartTime <= now
-                && p.EndTime > now
-                && world.Ships.Any(s => s.Id == p.ShipId && s.OwnerId == pilotId)
-            )
-            .OrderBy(p => p.ShipId)
-            .AsEnumerable()
-            .Select(p => p.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<SavedInsurancePolicy>(p =>
+                        p.PilotId == pilotId && p.Status == InsurancePolicyStatus.Active && p.StartTime <= now && p.EndTime > now
+                    )
+                    .OrderBy(p => p.ShipId)
+                    .AsEnumerable()
+                    .Where(p => world.Ships.Find(p.ShipId)?.OwnerId == pilotId)
+                    .Select(p => p.Snapshot())
+                    .ToArray()
+        );
     }
 
     public InsurancePolicy? Contract(long pilotId, long shipId) => Contracts(pilotId).SingleOrDefault(policy => policy.ShipId == shipId);
 
     public InsurancePurchase Insure(long pilotId, long stationId, long shipId, long premiumCents, bool replace)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var ship = ShipAtStation(world, catalog, pilotId, stationId, shipId);
         long value = Value(world, catalog, ship.TypeId);
         var level = InsuranceRules.LevelForPremium(value, premiumCents);
         long now = Now;
         var previous = world
-            .Set<SavedInsurancePolicy>()
-            .SingleOrDefault(p => p.ShipId == shipId && p.Status == InsurancePolicyStatus.Active);
+            .Filter<SavedInsurancePolicy>(p => p.ShipId == shipId && p.Status == InsurancePolicyStatus.Active)
+            .SingleOrDefault();
         if (previous is not null && previous.EndTime > now && !replace)
         {
             throw new InsuranceContractExists(previous.PilotId);
@@ -161,41 +114,36 @@ internal sealed partial class PilotInsuranceStore(WorldDatabase database, TimePr
                 Time = now,
             }
         );
-        world.SaveChanges();
-        transaction.Commit();
+        scope.Commit();
         return new(policy.Snapshot(), balance);
     }
 
     public void Cancel(long pilotId, long stationId, long shipId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         ShipAtStation(world, catalog, pilotId, stationId, shipId);
         var policy = world
-            .Set<SavedInsurancePolicy>()
-            .SingleOrDefault(p => p.ShipId == shipId && p.PilotId == pilotId && p.Status == InsurancePolicyStatus.Active);
+            .Filter<SavedInsurancePolicy>(p => p.ShipId == shipId && p.PilotId == pilotId && p.Status == InsurancePolicyStatus.Active)
+            .SingleOrDefault();
         if (policy is null)
         {
             throw new InvalidDataException("This ship has no active policy to cancel.");
         }
         policy.Status = InsurancePolicyStatus.Cancelled;
-        world.SaveChanges();
-        transaction.Commit();
+        scope.Commit();
     }
 
     public void CheckStation(long pilotId, long stationId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        CheckStation(world, catalog, pilotId, stationId);
+        WorldActionScope.Inspect(database, world => CheckStation(world, catalog, pilotId, stationId));
     }
 
-    private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, long stationId)
+    private static void CheckStation(WorldAction world, CatalogDbContext catalog, long pilotId, long stationId)
     {
-        var pilot =
-            world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
-            ?? throw new InvalidDataException("Unknown pilot.");
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).SingleOrDefault() ?? throw new InvalidDataException("Unknown pilot.");
         if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
         {
             throw new InvalidDataException("Insurance changes are available only at your current station.");
@@ -221,19 +169,15 @@ internal sealed partial class PilotInsuranceStore(WorldDatabase database, TimePr
         }
     }
 
-    private static Ship ShipAtStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, long stationId, long shipId)
+    private static Ship ShipAtStation(WorldAction world, CatalogDbContext catalog, long pilotId, long stationId, long shipId)
     {
         CheckStation(world, catalog, pilotId, stationId);
-        return world
-                .Ships.Include(s => s.Position)
-                .SingleOrDefault(s =>
-                    s.Id == shipId
-                    && s.OwnerId == pilotId
-                    && (s.StructureId ?? (long)s.StationId) == stationId
-                    && s.Position == null
-                    && s.StoredInId == null
-                )
-            ?? throw new InvalidDataException("Choose an owned assembled ship in your current station hangar.");
+        return
+            world.Ships.Find(shipId) is { Position: null, StoredInId: null } ship
+            && ship.OwnerId == pilotId
+            && ship.DockedLocationId == stationId
+            ? ship
+            : throw new InvalidDataException("Choose an owned assembled ship in your current station hangar.");
     }
 
     // The fatal-damage transaction owns this operation. A loss and its wallet

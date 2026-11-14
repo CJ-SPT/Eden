@@ -1,7 +1,6 @@
 using System.Globalization;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
-using Eden.Data.World.Structures;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Market;
 using Eden.World.Runtime.Combat;
@@ -53,7 +52,31 @@ internal sealed partial class ResidentEconomy
 
     internal EconomyStructure? Structure(long id) => _structures.GetValueOrDefault(id);
 
+    private void StructureChanged(EconomySavedStructure? before, EconomySavedStructure? after)
+    {
+        if (after is not null)
+        {
+            _structures[after.Id] = new(after.Id, after.SystemId, after.TypeId, after.State);
+        }
+        else if (before is not null)
+        {
+            _structures.Remove(before.Id);
+        }
+    }
+
     internal bool Cloaked(long ship) => _cloaked.Contains(ship);
+
+    private void SpatialNavigationChanged(EconomySpatialNavigationState? before, EconomySpatialNavigationState? after)
+    {
+        if (after is { CloakModuleId: not 0 })
+        {
+            _cloaked.Add(after.ShipId);
+        }
+        else if (before is not null)
+        {
+            _cloaked.Remove(before.ShipId);
+        }
+    }
 
     private readonly Dictionary<int, InstitutionalPreparation> _prepared = [];
     private readonly SortedSet<(long Expires, long Id)> _openOrders = [];
@@ -269,14 +292,6 @@ internal sealed partial class ResidentEconomy
         {
             table.Load(world);
         }
-        foreach (var state in world.Set<Eden.Data.World.Propulsion.SpatialNavigationState>().Where(s => s.CloakModuleId != 0))
-        {
-            _cloaked.Add(state.ShipId);
-        }
-        foreach (var structure in world.Set<SavedStructure>().Select(s => new EconomyStructure(s.Id, s.SystemId, s.TypeId, s.State)))
-        {
-            _structures[structure.Id] = structure;
-        }
         using var command = world.Database.GetDbConnection().CreateCommand();
         command.CommandText = "SELECT name,seq FROM sqlite_sequence";
         SessionPerformance.DatabaseCommand(command.CommandText);
@@ -448,7 +463,7 @@ internal sealed partial class ResidentEconomy
         }
         var affected = changes.GroupBy(c => c.Table).ToDictionary(g => g.Key, g => g.Select(c => c.Id).Distinct().ToArray());
         var tables = _tables.Values.Where(t => affected.ContainsKey(t.Name)).ToArray();
-        if (tables.Length == 0 && !affected.ContainsKey("WorldStructure") && !affected.ContainsKey("WorldSpatialNavigation"))
+        if (tables.Length == 0)
         {
             return;
         }
@@ -459,37 +474,6 @@ internal sealed partial class ResidentEconomy
             table.Observe(world, affected[table.Name]);
         }
         ReindexTimedModules(changes);
-        if (affected.TryGetValue("WorldStructure", out var structures))
-        {
-            foreach (long id in structures)
-            {
-                _structures.Remove(id);
-            }
-            foreach (
-                var structure in world
-                    .Set<SavedStructure>()
-                    .Where(s => structures.Contains(s.Id))
-                    .Select(s => new EconomyStructure(s.Id, s.SystemId, s.TypeId, s.State))
-            )
-            {
-                _structures[structure.Id] = structure;
-            }
-        }
-        if (affected.TryGetValue("WorldSpatialNavigation", out var navigation))
-        {
-            foreach (long ship in navigation)
-            {
-                _cloaked.Remove(ship);
-            }
-            foreach (
-                var state in world
-                    .Set<Eden.Data.World.Propulsion.SpatialNavigationState>()
-                    .Where(s => navigation.Contains(s.ShipId) && s.CloakModuleId != 0)
-            )
-            {
-                _cloaked.Add(state.ShipId);
-            }
-        }
         // External insertions share the same high-water domain, including deletions
         // of the last row and item-to-ship/implant conversions.
         using var command = world.Database.GetDbConnection().CreateCommand();

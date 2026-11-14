@@ -20,6 +20,7 @@ using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
@@ -31,10 +32,9 @@ internal sealed record RepairFacility(long OwnerId);
 [Injectable]
 internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
 {
-    private static Pilot Pilot(WorldDbContext world, long pilotId) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+    private static Pilot Pilot(WorldAction world, long pilotId) => world.Filter<Pilot>(p => p.Id == pilotId).Single();
 
-    private static RepairFacility Station(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long stationId)
+    private static RepairFacility Station(WorldAction world, CatalogDbContext catalog, Pilot pilot, long stationId)
     {
         if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
         {
@@ -59,13 +59,12 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
 
     public void CheckStation(long pilotId, long stationId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = Station(world, catalog, Pilot(world, pilotId), stationId);
+        WorldActionScope.Inspect(database, world => Station(world, catalog, Pilot(world, pilotId), stationId));
     }
 
     private static Dictionary<long, IReadOnlyList<RepairQuote>> Quotes(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         IReadOnlyList<long> ids
@@ -78,7 +77,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         Dictionary<long, IReadOnlyList<RepairQuote>> result = [];
         foreach (long id in ids)
         {
-            if (world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == id) is { } ship)
+            if (world.Ships.Find(id) is { } ship)
             {
                 if (ship.OwnerId != pilot.Id || ship.Position is not null || ship.DockedLocationId != pilot.ActiveShip.DockedLocationId)
                 {
@@ -109,7 +108,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
             else
             {
                 var item = InventoryPersistence.OwnedStack(world, pilot.Id, id);
-                var ownerShip = item is null ? null : world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == item.LocationId);
+                var ownerShip = item is null ? null : world.Ships.Find(item.LocationId);
                 if (
                     item is null
                     || item.OwnerId != pilot.Id
@@ -145,11 +144,16 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
 
     public IReadOnlyDictionary<long, IReadOnlyList<RepairQuote>> Quotes(long pilotId, long stationId, IReadOnlyList<long> itemIds)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = Pilot(world, pilotId);
-        _ = Station(world, catalog, pilot, stationId);
-        return Quotes(world, catalog, pilot, itemIds);
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var pilot = Pilot(world, pilotId);
+                _ = Station(world, catalog, pilot, stationId);
+                return Quotes(world, catalog, pilot, itemIds);
+            }
+        );
     }
 
     public RepairResult Repair(long pilotId, long stationId, IReadOnlyList<long> itemIds, long paymentCents, long now)
@@ -158,8 +162,8 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         {
             throw new InvalidDataException("Repair payments cannot be negative.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId], ships: itemIds));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var station = Station(world, catalog, pilot, stationId);
@@ -201,8 +205,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         }
         if (free)
         {
-            world.SaveChanges();
-            transaction.Commit();
+            scope.Commit();
             return new(balance, repairs, modules);
         }
         wallet!.Cents = balance - charged;
@@ -225,8 +228,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                             : JsonSerializer.Serialize(new StationRepairDetails(repairs, modules)),
                 }
             );
-        world.SaveChanges();
-        transaction.Commit();
+        scope.Commit();
         return new(wallet.Cents, repairs, modules);
     }
 

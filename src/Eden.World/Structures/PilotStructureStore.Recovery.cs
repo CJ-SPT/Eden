@@ -3,6 +3,7 @@ using Eden.Data.World.Structures;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Structures;
@@ -84,8 +85,8 @@ internal sealed partial class PilotStructureStore
                 {
                     throw new InvalidDataException("Approach your decommissioned structure in space before recovering it.");
                 }
-                var contents = world.Set<OwnedItem>().Where(i => i.LocationId == structureId).OrderBy(i => i.Id).ToArray();
-                if (contents.Any(i => i.OwnerId != structure.CorporationId) || world.Ships.Any(s => s.StructureId == structureId))
+                var contents = world.Filter<OwnedItem>(i => i.LocationId == structureId).OrderBy(i => i.Id).ToArray();
+                if (contents.Any(i => i.OwnerId != structure.CorporationId) || world.Filter<Ship>(s => s.StructureId == structureId).Any())
                 {
                     throw new InvalidDataException("Clear all personal assets before recovering this structure.");
                 }
@@ -99,8 +100,8 @@ internal sealed partial class PilotStructureStore
                 {
                     throw new InvalidDataException("Your ship cannot hold the packaged structure and its remaining contents.");
                 }
-                world.RemoveRange(world.Set<SavedStructureService>().Where(m => m.StructureId == structureId));
-                world.RemoveRange(world.Set<SavedStructureAccess>().Where(a => a.StructureId == structureId));
+                world.RemoveRange(world.Filter<SavedStructureService>(m => m.StructureId == structureId));
+                world.RemoveRange(world.Filter<SavedStructureAccess>(a => a.StructureId == structureId));
                 foreach (var item in contents)
                 {
                     if (Builtin(item))

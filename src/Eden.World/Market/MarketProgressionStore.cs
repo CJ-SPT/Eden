@@ -1,9 +1,11 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,9 +13,12 @@ namespace Eden.World.Market;
 
 internal static class MarketProgressionStore
 {
-    internal static void Claim(WorldDbContext world, CatalogDbContext catalog, IndustryJob job)
+    internal static void Claim(WorldDbContext world, CatalogDbContext catalog, IndustryJob job) =>
+        Claim(new SqlWorldAction(world), catalog, job);
+
+    internal static void Claim(WorldAction world, CatalogDbContext catalog, IndustryJob job)
     {
-        long account = world.Pilots.Where(p => p.Id == job.PilotId).Select(p => p.AccountId).Single();
+        long account = world.Filter<Pilot>(p => p.Id == job.PilotId).Select(p => p.AccountId).Single();
         if (
             account <= 0
             || job.Activity != IndustryActivity.Manufacturing

@@ -518,10 +518,12 @@ public sealed class StructureTests
         Assert.Equal(12, deployed.ReinforceHour);
     }
 
-    [Fact]
-    public void ManufacturingUsesEngineeringBonusesAndPausesAtTheExactFuelDeadlineAcrossReopen()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ManufacturingUsesEngineeringBonusesAndPausesAtTheExactFuelDeadlineAcrossReopen(bool resident)
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: resident);
         var structure = f.Online(35825);
         long module = f.Item(35878);
         f.Structures.FitService(f.PilotId, structure.Id, module, StructureRules.FirstServiceSlot);

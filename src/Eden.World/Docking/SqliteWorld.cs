@@ -16,6 +16,7 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
@@ -154,6 +155,15 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public DockedPilot Dock(long pilotId, long shipId, long stationId)
     {
+        if (stationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
+        {
+            using var scope = new WorldActionScope(_database, new(pilots: [pilotId], ships: [shipId]));
+            using CatalogDbContext source = new(_database.CatalogPath);
+            var docked = DockStructure(scope.World, source, pilotId, shipId, stationId);
+            scope.Commit();
+            LiveWorld.Find(_database.Path)?.Heat.ClearSelection(pilotId, shipId);
+            return docked;
+        }
         if (stationId is > 0 and <= int.MaxValue && LiveWorld.Find(_database.Path) is { SqlConnections: 0 } live)
         {
             using CatalogDbContext source = new(_database.CatalogPath);
@@ -166,10 +176,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
-        var result =
-            stationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId
-                ? DockStructure(world, catalog, pilotId, shipId, stationId)
-                : Dock(world, catalog, pilotId, shipId, checked((int)stationId));
+        var result = Dock(world, catalog, pilotId, shipId, checked((int)stationId));
         transaction.Commit();
         LiveWorld.Find(_database.Path)?.Heat.ClearSelection(pilotId, shipId);
         return result;

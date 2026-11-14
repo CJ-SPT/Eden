@@ -725,17 +725,6 @@ internal sealed partial class ResidentEconomy
 
 internal sealed record EconomySavedMarketUnlock(int TypeId, long AccountId, long PilotId, long JobId, long ClaimedAt);
 
-internal sealed partial class ResidentEconomy
-{
-    private static void ProjectSavedMarketUnlock(WorldDbContext world, IReadOnlyList<EconomyChange<EconomySavedMarketUnlock>> changes)
-    {
-        if (changes.Count != 0)
-        {
-            throw new InvalidOperationException("Reference economic rows cannot be projected.");
-        }
-    }
-}
-
 internal sealed record EconomyPilotSkill(long PilotId, int TypeId, long Points);
 
 internal sealed partial class ResidentEconomy
@@ -814,17 +803,6 @@ internal sealed record EconomyIndustryJob(
     long CostCents
 );
 
-internal sealed partial class ResidentEconomy
-{
-    private static void ProjectIndustryJob(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyIndustryJob>> changes)
-    {
-        if (changes.Count != 0)
-        {
-            throw new InvalidOperationException("Reference economic rows cannot be projected.");
-        }
-    }
-}
-
 internal sealed record EconomySavedContractEscrow(long ItemId, long ContractId);
 
 internal sealed partial class ResidentEconomy
@@ -848,6 +826,7 @@ internal sealed partial class ResidentEconomy
         RegisterCloneTrainingTables();
         RegisterCharacterSettings();
         RegisterJetcans();
+        RegisterStructureIndustryTables();
         Register(
             new EconomyTable<InventoryOwner, EconomyInventoryOwner>(
                 "WorldInventoryOwner",
@@ -995,6 +974,7 @@ internal sealed partial class ResidentEconomy
                     new("OwnerId", row => row.OwnerId),
                     new("TypeId", row => row.TypeId),
                     new("StationId", row => row.StationId),
+                    new("StructureId", row => row.StructureId),
                     new("StoredInId", row => row.StoredInId),
                 ],
                 changed: ShipIdentityChanged,
@@ -1496,7 +1476,6 @@ internal sealed partial class ResidentEconomy
                 "TypeId,AccountId,PilotId,JobId,ClaimedAt",
                 reader => new(reader.GetInt32(1), reader.GetInt64(2), reader.GetInt64(3), reader.GetInt64(4), reader.GetInt64(5)),
                 state => new(state.TypeId),
-                readOnly: true,
                 indexes: [new("TypeId", row => row.TypeId), new("PilotId", row => row.PilotId)],
                 primaryColumn: "TypeId"
             )
@@ -1633,7 +1612,6 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(25)
                     ),
                 state => new(state.Id),
-                readOnly: true,
                 indexes:
                 [
                     new("PilotId", row => row.PilotId),

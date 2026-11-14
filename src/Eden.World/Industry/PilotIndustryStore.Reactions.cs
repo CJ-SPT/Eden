@@ -8,6 +8,7 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Economy;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Structures;
 
@@ -17,11 +18,11 @@ internal sealed partial class PilotIndustryStore
 {
     private IndustryResult InstallReaction(long pilotId, IndustryRequest request)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
+        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         long now = Now;
-        PilotStructureStore.Advance(world, catalog, now);
+        AdvanceFacility(world, catalog, request.FacilityId, now);
         var station = CurrentStation(world, catalog, pilotId, request.FacilityId, null);
         double security = ManufacturingCatalog.Security(catalog, station.SolarSystemId);
         var item = world.Set<OwnedItem>().Find(request.BlueprintId);
@@ -58,8 +59,10 @@ internal sealed partial class PilotIndustryStore
         }
 
         int activeJobs = world
-            .Set<IndustryJob>()
-            .Count(j => j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed && j.Activity == IndustryActivity.Reaction);
+            .Filter<IndustryJob>(j =>
+                j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed && j.Activity == IndustryActivity.Reaction
+            )
+            .Count();
         var plan = ReactionRules.Plan(
             request,
             recipe.Seconds,
@@ -68,7 +71,7 @@ internal sealed partial class PilotIndustryStore
             recipe.Materials,
             FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier)
         );
-        double value = (double)EconomicStore.Prices(world).GetValueOrDefault(item.TypeId) * request.Runs;
+        double value = (double)EconomicStore.AdjustedPrice(world, item.TypeId) * request.Runs;
         var charge = EconomicStore.IndustryCharge(world, pilotId, station.SolarSystemId, value, request.Activity, security);
         if (request.QuotedCharge is { } quote && (quote.CostCents != charge.CostCents || quote.TaxCents != charge.TaxCents))
         {
@@ -101,8 +104,8 @@ internal sealed partial class PilotIndustryStore
             charge.TotalCents > 0
                 ? EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, WalletEntryType.Manufacturing, charge.TotalCents, now)
                 : null;
-        world.SaveChanges();
-        transaction.Commit();
-        return new(ReadJob(world, catalog, job), changes, balance);
+        var result = new IndustryResult(ReadJob(world, catalog, job), changes, balance);
+        scope.Commit();
+        return result;
     }
 }

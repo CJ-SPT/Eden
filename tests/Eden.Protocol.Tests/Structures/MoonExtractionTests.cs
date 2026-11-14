@@ -4,6 +4,7 @@ using Eden.Data.World.Mining;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,11 +19,13 @@ public sealed class MoonExtractionTests
     private const int MoonId = 40000991;
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void MoonPointIsExclusiveAndSavedExtractionFracturesAndExpiresOnce(bool automatic)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void MoonPointIsExclusiveAndSavedExtractionFracturesAndExpiresOnce(bool automatic, bool resident)
     {
-        using StructureTests.Fixture fixture = new();
+        using StructureTests.Fixture fixture = new(liveWorld: resident);
         using (CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath, writable: true))
         {
             const string system = """
@@ -62,7 +65,17 @@ public sealed class MoonExtractionTests
         var extraction = extractions.Start(fixture.PilotId, structure.Id, seconds);
         Assert.Equal(extraction, extractions.Current(fixture.PilotId, structure.Id));
         Assert.Throws<InvalidDataException>(() => extractions.Fracture(fixture.PilotId, structure.Id));
-        WorldInitialization.Initialize(new(fixture.Db.Path), fixture.Clock);
+        if (LiveWorld.Find(fixture.Db.Path) is { } live)
+        {
+            using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+            checkpoint.Project();
+            using WorldDbContext reopened = new(checkpoint.Database);
+            Assert.Equal(extraction.ReadyAt, reopened.Set<SavedMoonExtraction>().Find(extraction.Id)!.ReadyAt);
+        }
+        else
+        {
+            WorldInitialization.Initialize(new(fixture.Db.Path), fixture.Clock);
+        }
         Assert.Equal(extraction, extractions.Current(fixture.PilotId, structure.Id));
         fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(seconds));
         if (automatic)

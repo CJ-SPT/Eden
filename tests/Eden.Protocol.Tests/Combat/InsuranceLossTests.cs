@@ -151,13 +151,17 @@ public sealed class InsuranceLossTests
         fixture.Db.Store.SetPosition(Fixture.ShipId, null);
         PilotInsuranceStore insurance = new(new(fixture.Db.Path), fixture.Clock);
         var purchase = insurance.Insure(Fixture.PilotId, station, Fixture.ShipId, 30000, false);
+        var live = LiveWorld.Find(fixture.Db.Path)!;
+        using (live.EnterShared("insurance purchase baseline"))
+        {
+            live.Economy.Flush();
+        }
         fixture.Db.Store.SetPosition(Fixture.ShipId, position, fixture.Npc.SystemId);
         fixture.Aggress();
         fixture.Clock.Milliseconds = 7500;
         var paid = Assert.IsType<Eden.Gameplay.Combat.NpcShot>(fixture.Fire());
         Assert.True(paid.Health.Remaining.Destroyed);
         Assert.Equal(100000, paid.Insurance!.AmountCents);
-        var live = LiveWorld.Find(fixture.Db.Path)!;
         using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
         using (WorldDbContext before = new(checkpoint.Database))
         {

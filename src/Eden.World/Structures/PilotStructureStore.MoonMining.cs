@@ -5,8 +5,8 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Structures;
 
@@ -42,8 +42,7 @@ internal sealed partial class PilotStructureStore
                     throw new InvalidDataException("Corporation structure management authority is required.");
                 }
                 return world
-                    .Set<SavedMoonExtraction>()
-                    .Where(e => e.CorporationId == corporationId && !e.Ended && e.AutoFractureAt > Now)
+                    .Filter<SavedMoonExtraction>(e => e.CorporationId == corporationId && e.Ended == false && e.AutoFractureAt > Now)
                     .OrderBy(e => e.ReadyAt)
                     .AsEnumerable()
                     .Select(ReadExtraction)
@@ -98,7 +97,9 @@ internal sealed partial class PilotStructureStore
                 world.Add(extraction);
                 world.SaveChanges();
                 return ReadExtraction(extraction);
-            }
+            },
+            pilotId: pilotId,
+            structureId: structureId
         );
 
     public void Cancel(long pilotId, long structureId) =>
@@ -113,7 +114,9 @@ internal sealed partial class PilotStructureStore
                 }
                 extraction.Ended = true;
                 return true;
-            }
+            },
+            pilotId: pilotId,
+            structureId: structureId
         );
 
     public void Fracture(long pilotId, long structureId) =>
@@ -133,7 +136,9 @@ internal sealed partial class PilotStructureStore
                 }
                 Fracture(world, catalog, extraction, structure, now, now);
                 return true;
-            }
+            },
+            pilotId: pilotId,
+            structureId: structureId
         );
 
     public IReadOnlyList<MoonMiningObserver> Observers(long pilotId) =>
@@ -143,8 +148,7 @@ internal sealed partial class PilotStructureStore
                 int corporation = Pilot(world, pilotId).CorporationId;
                 long first = MiningLedgerRules.EarliestDay(Now);
                 return world
-                    .Set<SavedStructure>()
-                    .Where(s =>
+                    .Filter<SavedStructure>(s =>
                         s.CorporationId == corporation && world.Set<SavedMoonMiningLog>().Any(l => l.StructureId == s.Id && l.Day >= first)
                     )
                     .OrderBy(s => s.Id)
@@ -163,8 +167,7 @@ internal sealed partial class PilotStructureStore
                 }
                 long first = MiningLedgerRules.EarliestDay(Now);
                 return world
-                    .Set<SavedMoonMiningLog>()
-                    .Where(l => l.StructureId == structureId && l.Day >= first)
+                    .Filter<SavedMoonMiningLog>(l => l.StructureId == structureId && l.Day >= first)
                     .OrderByDescending(l => l.Day)
                     .ThenBy(l => l.Id)
                     .AsEnumerable()
@@ -173,15 +176,14 @@ internal sealed partial class PilotStructureStore
             }
         );
 
-    private T ReadMoonMining<T>(Func<WorldDbContext, CatalogDbContext, T> read)
+    private T ReadMoonMining<T>(Func<WorldAction, CatalogDbContext, T> read)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return read(world, catalog);
+        return WorldActionScope.Inspect(database, world => read(world, catalog));
     }
 
-    private static SavedMoonExtraction? ActiveExtraction(WorldDbContext world, long structureId) =>
-        world.Set<SavedMoonExtraction>().SingleOrDefault(e => e.StructureId == structureId && !e.Ended);
+    private static SavedMoonExtraction? ActiveExtraction(WorldAction world, long structureId) =>
+        world.Filter<SavedMoonExtraction>(e => e.StructureId == structureId && e.Ended == false).SingleOrDefault();
 
     private static IReadOnlyList<MoonOreShare> Composition(CatalogDbContext catalog, SavedStructure structure) =>
         structure.MoonId is int moonId
@@ -194,7 +196,7 @@ internal sealed partial class PilotStructureStore
         new(e.Id, e.StructureId, e.MoonId, e.SystemId, e.CorporationId, e.StartedAt, e.ReadyAt, e.AutoFractureAt);
 
     private static void Fracture(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedMoonExtraction extraction,
         SavedStructure structure,
@@ -262,7 +264,7 @@ internal sealed partial class PilotStructureStore
         extraction.FieldExpiresAt = expiresAt;
     }
 
-    private static void InterruptMoonExtraction(WorldDbContext world, CatalogDbContext catalog, SavedStructure structure, long at)
+    private static void InterruptMoonExtraction(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long at)
     {
         if (
             ActiveExtraction(world, structure.Id) is { } extraction
@@ -274,11 +276,13 @@ internal sealed partial class PilotStructureStore
         }
     }
 
-    private static void AdvanceMoonExtractions(WorldDbContext world, CatalogDbContext catalog, long now, int? systemId)
+    private static void AdvanceMoonExtractions(WorldAction world, CatalogDbContext catalog, long now, int? systemId)
     {
-        var inSystem = world.Set<SavedMoonExtraction>().Where(e => systemId == null || e.SystemId == systemId);
+        var active = systemId is int system
+            ? world.Filter<SavedMoonExtraction>(e => e.SystemId == system && e.Ended == false && e.AutoFractureAt <= now)
+            : world.Filter<SavedMoonExtraction>(e => e.Ended == false && e.AutoFractureAt <= now);
         const int batchSize = 64;
-        foreach (var extraction in inSystem.Where(e => !e.Ended && e.AutoFractureAt <= now).OrderBy(e => e.AutoFractureAt).Take(batchSize))
+        foreach (var extraction in active.OrderBy(e => e.AutoFractureAt).ThenBy(e => e.Id).Take(batchSize).ToArray())
         {
             if (world.Set<SavedStructure>().Find(extraction.StructureId) is { } structure)
             {
@@ -289,11 +293,19 @@ internal sealed partial class PilotStructureStore
                 extraction.Ended = true;
             }
         }
-        foreach (var extraction in inSystem.Where(e => e.FieldExpiresAt <= now).OrderBy(e => e.FieldExpiresAt).Take(batchSize))
+        var expired = systemId is int fieldSystem
+            ? world.Filter<SavedMoonExtraction>(e => e.SystemId == fieldSystem && e.FieldExpiresAt <= now)
+            : world.Filter<SavedMoonExtraction>(e => e.FieldExpiresAt != null && e.FieldExpiresAt <= now);
+        foreach (var extraction in expired.OrderBy(e => e.FieldExpiresAt).ThenBy(e => e.Id).Take(batchSize).ToArray())
         {
             long first = MoonMiningRules.RockId(extraction.Id, 0);
-            long end = checked(first + MoonMiningRules.MaximumRocks);
-            world.RemoveRange(world.Set<WorldAsteroid>().Where(rock => rock.Id >= first && rock.Id < end).ToArray());
+            for (int offset = 0; offset < MoonMiningRules.MaximumRocks; offset++)
+            {
+                if (world.Set<WorldAsteroid>().Find(checked(first + offset)) is { } rock)
+                {
+                    world.Remove(rock);
+                }
+            }
             extraction.FieldExpiresAt = null;
         }
     }

@@ -5,9 +5,11 @@ using Eden.Data.World.Loot;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Tests.Persistence;
+using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -24,16 +26,28 @@ public sealed partial class TranslocationTests
     public void RuntimeResolverUsesTheLatestResidentDronePosition()
     {
         using Combat.CombatDroneTests.Fixture f = new();
+        using ResidentFitCache fits = new(new(f.Base.Db.Path));
         using LiveWorld live = new(new(f.Base.Db.Path), f.Base.Clock, _ => { });
         f.Launch(quantity: 1);
         var before = Assert.Single(f.Drones.List(OtherSystem, f.Now));
         f.Tick();
         var drone = Assert.Single(f.Drones.List(OtherSystem, f.Now));
         Assert.NotEqual(before.Position, drone.Position);
-        var resolved = f.Base.Db.Services.GetRequiredService<IPilotTranslocation>().Resolve(drone.Id);
+        var translocation = f.Base.Db.Services.GetRequiredService<IPilotTranslocation>();
+        var pilot = f.Base.Db.Store.FindPilot(1000001)!;
+        var first = translocation.Resolve(drone.Id);
+        f.Base.Db.Services.GetRequiredService<ISystemObjects>().Load(first.System.Id);
+        List<string> commands = [];
+        using var measured = SessionPerformance.Begin("resident translocation", _ => { }, force: true, command: commands.Add)!;
+        var resolved = translocation.Resolve(drone.Id);
         Assert.Equal(drone.Position, resolved.Position);
         Assert.Equal(drone.Profile.Radius, resolved.Radius);
         Assert.Equal(drone.SystemId, resolved.System.Id);
+        var moved = translocation.Move(pilot.PilotId, pilot.ShipId, resolved);
+        Assert.Equal(resolved.System.Id, moved.Pilot.SystemId);
+        Assert.Empty(commands);
+        Assert.InRange(measured.Connections, 0, 1);
+        Assert.Equal(0, measured.FittingCalculations);
     }
 
     [Theory]

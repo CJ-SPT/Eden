@@ -2101,7 +2101,7 @@ internal sealed partial class ResidentEconomy
                 },
                 ProjectSavedEconomicPolicy,
                 "Id,ChargeServiceCosts,DefaultManufacturingIndex,RenewBelts,RenewalHourUtc",
-                reader => new(reader.GetInt32(1), reader.GetBoolean(2), reader.GetInt32(3), reader.GetBoolean(4), reader.GetInt32(5)),
+                reader => new(reader.GetInt32(1), reader.GetBoolean(2), reader.GetDecimal(3), reader.GetBoolean(4), reader.GetInt32(5)),
                 state => new(state.Id),
                 indexes: [new("Id", row => row.Id)],
                 primaryColumn: "Id"
@@ -2802,6 +2802,7 @@ internal sealed partial class ResidentEconomy
                     new("CloakModuleId", row => row.CloakModuleId),
                     new("JumpModuleId", row => row.JumpModuleId),
                 ],
+                changed: SpatialNavigationChanged,
                 primaryColumn: "ShipId"
             )
         );
@@ -3145,6 +3146,7 @@ internal sealed partial class ResidentEconomy
                     new("SystemId", row => row.SystemId),
                     new("TypeId", row => row.TypeId),
                 ],
+                changed: StructureChanged,
                 primaryColumn: "Id"
             )
         );
@@ -3345,6 +3347,22 @@ internal sealed partial class EconomyTransaction
             case Eden.Data.World.Repair.StationRepairPayment value:
                 value.Id = value.Id == 0 ? Next("WorldRepairPayment") : value.Id;
                 Reserve("WorldRepairPayment", value.Id);
+                break;
+            case Eden.Data.World.Structures.SavedMoonExtraction value:
+                value.Id = value.Id == 0 ? Next("WorldMoonExtraction") : value.Id;
+                Reserve("WorldMoonExtraction", value.Id);
+                break;
+            case Eden.Data.World.Mining.SavedMoonMiningLog value:
+                value.Id = value.Id == 0 ? Next("WorldMoonMiningLog") : value.Id;
+                Reserve("WorldMoonMiningLog", value.Id);
+                break;
+            case Eden.Data.World.Economy.SavedServicePayment value:
+                value.Id = value.Id == 0 ? Next("WorldServicePayment") : value.Id;
+                Reserve("WorldServicePayment", value.Id);
+                break;
+            case Eden.Data.World.Industry.IndustryJob value:
+                value.Id = value.Id == 0 ? Next("WorldIndustryJob") : value.Id;
+                Reserve("WorldIndustryJob", value.Id);
                 break;
             case Eden.Data.World.Structures.SavedStructure value:
                 value.Id = value.Id == 0 ? Next("WorldStructure") : value.Id;
@@ -4179,6 +4197,20 @@ internal sealed partial class EconomyTransaction
             if (Set<Eden.Data.World.Structures.SavedStructure>().Find(row.StructureId) is null)
             {
                 throw new InvalidDataException("Missing resident SavedStructure reference.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Structures.SavedStructureService>())
+        {
+            if (
+                Set<Eden.Data.World.Structures.SavedStructure>().Find(row.StructureId) is null
+                || Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ItemId) is null
+                || Filter<Eden.Data.World.Structures.SavedStructureService>(service =>
+                        service.StructureId == row.StructureId && service.Slot == row.Slot && service.ItemId != row.ItemId
+                    )
+                    .Any()
+            )
+            {
+                throw new InvalidDataException("Invalid resident structure service references or duplicate slot.");
             }
         }
         foreach (var row in Retained<Eden.Data.World.Thermal.SavedModuleCondition>())

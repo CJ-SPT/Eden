@@ -16,6 +16,7 @@ using Eden.World.Characters;
 using Eden.World.Industry;
 using Eden.World.Market;
 using Eden.World.Mining;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,8 +55,17 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
 
     internal static SavedEconomicPolicy Policy(WorldDbContext world) => world.Set<SavedEconomicPolicy>().Single();
 
-    internal static decimal Index(WorldDbContext world, int system) =>
-        world.Set<SavedManufacturingIndex>().Find(system)?.Index ?? Policy(world).DefaultManufacturingIndex;
+    internal static bool Enabled(WorldAction world) => world.Set<SavedEconomicPolicy>().Single().ChargeServiceCosts;
+
+    internal static decimal Index(WorldDbContext world, int system) => Index(new SqlWorldAction(world), system);
+
+    internal static decimal Index(WorldAction world, int system) =>
+        world.Set<SavedManufacturingIndex>().Find(system)?.Index ?? world.Set<SavedEconomicPolicy>().Single().DefaultManufacturingIndex;
+
+    internal static decimal AdjustedPrice(WorldAction world, int typeId) => world.Set<SavedAdjustedPrice>().Find(typeId)?.PriceIsk ?? 0;
+
+    internal static Dictionary<int, decimal> Prices(WorldAction world) =>
+        world.Set<SavedAdjustedPrice>().ToDictionary(p => p.TypeId, p => p.PriceIsk);
 
     internal static Dictionary<int, decimal> Prices(WorldDbContext world) =>
         world.Set<SavedAdjustedPrice>().AsNoTracking().ToDictionary(p => p.TypeId, p => p.PriceIsk);
@@ -167,16 +177,30 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
         int system,
         IReadOnlyDictionary<int, int> materials,
         double security = 0
+    ) => Manufacturing(new SqlWorldAction(world), pilotId, system, materials, security);
+
+    internal static ManufacturingCharge Manufacturing(
+        WorldAction world,
+        long pilotId,
+        int system,
+        IReadOnlyDictionary<int, int> materials,
+        double security = 0
     )
     {
         if (!Enabled(world))
         {
             return new(0, 0, 0);
         }
-        long account = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.AccountId).Single();
+        long account = world.Filter<Pilot>(p => p.Id == pilotId).Select(p => p.AccountId).Single();
         bool alpha = world.Set<Account>().Find(account)!.CloneGrade == AccountCloneGrade.Alpha;
         return EconomicRules.ManufacturingFromClientValue(
-            EconomicRules.ClientValue(materials, Prices(world)),
+            EconomicRules.ClientValue(
+                materials,
+                materials
+                    .Keys.Select(id => world.Set<SavedAdjustedPrice>().Find(id))
+                    .OfType<SavedAdjustedPrice>()
+                    .ToDictionary(p => p.TypeId, p => p.PriceIsk)
+            ),
             (double)Index(world, system),
             alpha,
             security
@@ -184,7 +208,7 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
     }
 
     internal static ManufacturingCharge IndustryCharge(
-        WorldDbContext world,
+        WorldAction world,
         long pilotId,
         int system,
         double value,
@@ -197,7 +221,7 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
         {
             return new(0, 0, 0);
         }
-        long account = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.AccountId).Single();
+        long account = world.Filter<Pilot>(p => p.Id == pilotId).Select(p => p.AccountId).Single();
         bool alpha = world.Set<Account>().Find(account)!.CloneGrade == AccountCloneGrade.Alpha;
         return EconomicRules.ManufacturingFromClientValue(
             value,
@@ -208,7 +232,17 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
         );
     }
 
-    internal static long Pay(WorldDbContext world, long pilot, long counterparty, long context, WalletEntryType kind, long cents, long now)
+    internal static long Pay(
+        WorldDbContext world,
+        long pilot,
+        long counterparty,
+        long context,
+        WalletEntryType kind,
+        long cents,
+        long now
+    ) => Pay(new SqlWorldAction(world), pilot, counterparty, context, kind, cents, now);
+
+    internal static long Pay(WorldAction world, long pilot, long counterparty, long context, WalletEntryType kind, long cents, long now)
     {
         var wallet = world.Set<PilotWallet>().Find(pilot) ?? world.Add(new PilotWallet { PilotId = pilot }).Entity;
         if (cents < 0 || wallet.Cents < cents)

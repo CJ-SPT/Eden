@@ -5,21 +5,21 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Structures;
 using Eden.World.Thermal;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Docking;
 
 public sealed partial class SqliteWorld
 {
-    private DockedPilot DockStructure(WorldDbContext world, CatalogDbContext catalog, long pilotId, long shipId, long structureId)
+    private DockedPilot DockStructure(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long structureId)
     {
         long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        PilotStructureStore.Advance(world, catalog, now);
         var structure = PilotStructureStore.Require(world, structureId);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        PilotStructureStore.Advance(world, catalog, now, structure.SystemId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
         var type = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var position = pilot.ActiveShip.Position;
@@ -48,7 +48,10 @@ public sealed partial class SqliteWorld
         return FindPilot(world, pilot.AccountId, pilotId)!;
     }
 
-    private static DockedPilot StructurePilot(WorldDbContext world, CatalogDbContext catalog, DockedPilot pilot, long structureId)
+    private static DockedPilot StructurePilot(WorldDbContext world, CatalogDbContext catalog, DockedPilot pilot, long structureId) =>
+        StructurePilot(new SqlWorldAction(world), catalog, pilot, structureId);
+
+    private static DockedPilot StructurePilot(WorldAction world, CatalogDbContext catalog, DockedPilot pilot, long structureId)
     {
         var structure = PilotStructureStore.Require(world, structureId);
         var profile = StructureCatalog.Require(catalog, structure.TypeId);

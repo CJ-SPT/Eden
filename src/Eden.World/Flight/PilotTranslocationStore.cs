@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Docking;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Flight;
@@ -7,10 +8,12 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Corporations;
 using Eden.World.Docking;
+using Eden.World.Fleets;
+using Eden.World.Repair;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Thermal;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Flight;
 
@@ -94,13 +97,12 @@ internal sealed partial class PilotTranslocationStore(
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            // Loading a system can initialize its asteroid rows. Do that before
-            // acquiring the move transaction's SQLite writer on this same world.
+            // Loading a system can initialize its asteroid rows before the move action begins.
             var destinationObjects = target.StationId is null ? objects.Load(target.System.Id) : [];
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldActionScope transaction = new(database, new(systems: [target.System.Id], pilots: [pilotId]));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
-            var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId);
+            var pilot = world.Filter<Pilot>(p => p.Id == pilotId).SingleOrDefault();
             if (
                 pilot is null
                 || pilot.ActiveShipId != expectedShipId
@@ -115,6 +117,7 @@ internal sealed partial class PilotTranslocationStore(
             if (target.StationId is int stationId)
             {
                 ship.StationId = stationId;
+                ship.StructureId = null;
                 if (ship.Position is { } saved)
                 {
                     world.Positions.Remove(saved);
@@ -127,6 +130,7 @@ internal sealed partial class PilotTranslocationStore(
                 var point = TranslocationRules.Arrival(target, radius, destinationObjects);
                 if (ship.Position is null)
                 {
+                    ship.StructureId = null;
                     ship.Position = world.Positions.Add(new FlightPosition { ShipId = ship.Id }).Entity;
                     PilotTaskTrackingStore.Record(
                         world,
@@ -136,15 +140,21 @@ internal sealed partial class PilotTranslocationStore(
                         TaskEvents.Undocked
                     );
                 }
+                else if (ship.Position.SystemId != target.System.Id && world is EconomyTransaction)
+                {
+                    CommandBurstStore.Clear(world, ship.Id);
+                    PilotRemoteAssistanceStore.ClearForTravel(world, ship.Id, target.System.Id);
+                }
                 ship.Position.SystemId = target.System.Id;
                 (ship.Position.X, ship.Position.Y, ship.Position.Z) = (point.X, point.Y, point.Z);
             }
             ShipHeatPersistence.CancelForTravel(world, ship.Id);
             world.SaveChanges();
             var current = PilotFleetStore.Read(catalog, ship);
+            var relocated = lookup.FindPilot(world, pilot.AccountId, pilotId)!;
             transaction.Commit();
             LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilotId, ship.Id);
-            return new(lookup.FindPilot(pilot.AccountId, pilotId)!, new(current, previous));
+            return new(relocated, new(current, previous));
         }
     }
 }

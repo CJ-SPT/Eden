@@ -1,4 +1,5 @@
 using Eden.Data.World.Combat;
+using Eden.Data.World.Docking;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
@@ -7,6 +8,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Targeting;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -203,6 +205,45 @@ public sealed partial class SpatialModuleOperationTests
         Assert.Throws<InvalidDataException>(() =>
             store.Activate(f.PilotId, module, DogmaEffect.MicroJumpDrive, new(1, 0, 0), SpacePosition.Zero, activated.EndsAt)
         );
+    }
+
+    [Fact]
+    public void ResidentJumpUsesTheLatestPositionAndCheckpointsThePaidCycleOnce()
+    {
+        using Fixture f = Prepare();
+        long drive = f.Fit(LargeDrive);
+        Space(f);
+        long ship = f.ShipId;
+        long pilot = f.PilotId;
+        var store = Store(f);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        live.Economy.Warm();
+        var origin = f.Db.Store.FindPilot(1000001)!.Position!;
+        _ = f.Fitting.ShipAttributes(pilot);
+        var moved = origin + new SpacePosition(500, 0, 0);
+        SpacePosition destination;
+        long reactivation;
+        List<string> commands = [];
+        using (var measured = SessionPerformance.Begin("resident micro jump", _ => { }, force: true, command: commands.Add)!)
+        {
+            var activated = store.Activate(pilot, drive, DogmaEffect.MicroJumpDrive, new(0, 1, 0), new(0, 20, 0), f.Clock.Now);
+            reactivation = activated.ReadyAt;
+            f.Db.Store.SetPosition(ship, moved);
+            Assert.Null(store.CompleteJump(pilot, ship, drive, activated.StartedAt, activated.EndsAt - 1));
+            var result = store.CompleteJump(pilot, ship, drive, activated.StartedAt, activated.EndsAt)!;
+            destination = result.Position;
+            Assert.Equal(moved + new SpacePosition(0, 100000, 0), destination);
+            Assert.Null(store.CompleteJump(pilot, ship, drive, activated.StartedAt, activated.EndsAt));
+            Assert.DoesNotContain(commands, sql => sql.Contains("\"World", StringComparison.Ordinal));
+            Assert.InRange(measured.Connections, 0, 1);
+        }
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext reopened = new(checkpoint.Database);
+        var position = reopened.Set<FlightPosition>().Find(ship)!;
+        Assert.Equal(destination, new SpacePosition(position.X, position.Y, position.Z));
+        Assert.Equal(reactivation, reopened.Set<ModuleCooldown>().Find(drive)!.ReadyAt);
+        Assert.Null(reopened.Set<ActiveFittedModule>().Find(drive));
     }
 
     [Theory]

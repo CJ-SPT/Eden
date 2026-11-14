@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Gameplay.Insurance;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,7 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectSavedInsurancePolicy(WorldDbContext world, IReadOnlyList<EconomyChange<EconomySavedInsurancePolicy>> changes)
     {
-        foreach (var batch in changes.Chunk(ProjectionBatchSize))
+        foreach (var batch in changes.OrderBy(c => c.Value?.Status == InsurancePolicyStatus.Active).Chunk(ProjectionBatchSize))
         {
             var removed = batch.Where(c => c.Value is null).Select(c => c.Key).ToArray();
             if (removed.Length != 0)

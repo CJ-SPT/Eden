@@ -4347,3 +4347,68 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Resident structures, spatial modules, translocation, and industry
+
+This follow-up starts from `9a48e15c`. Upwell deployment, docking, access, service fitting, fuel, decommissioning,
+compression, reprocessing, repairs, insurance and moon extraction use typed resident actions. Fuel expiration,
+industry suspension, and interrupted or fractured moon extractions settle together at their saved deadlines.
+Structure contacts and names see committed updates. Moon miners record their corporation's observer totals with
+the personal ledger and resource change.
+
+Cloak activation reads resident locks, fitted module state and current nearby positions. Decloaking retains the saved
+targeting and reactivation delays. Micro-jump completion uses the latest position and consumes the recorded spool
+once. Administrative translocation reads current resident coordinates for ships, drones, NPCs and wrecks. The move
+updates membership and the returned pilot snapshot in the same action.
+
+Manufacturing, science and reactions reserve blueprints, consume materials and record payments in the same
+resident action as job installation. Delivery batches publish output, job state, task progress and the first
+eligible market unlock together. An invalid entry rolls back the batch. Checkpoints project these changes into
+the existing save schema. Startup recovery, file-backed worlds and explicit SQL synchronization retain their
+SQLite paths. Other services still have SQL paths, including mail, calendars, bookmarks and planetary industry.
+
+Gameplay references were [Upwell structures](https://wiki.eveuniversity.org/Upwell_structures),
+[cloaking](https://wiki.eveuniversity.org/Cloaking), [micro jump drives](https://wiki.eveuniversity.org/Micro_Jump_Drive)
+and [industry](https://wiki.eveuniversity.org/Industry). The older local EveJS distribution identifies itself as
+`261108.1`. Reference checks covered fuel and abandonment in `structureState.js` (SHA-256 prefix
+`E12D487E9E2E0E54`), cloak eligibility in `shipCloak.js` (`8C017E8CBB7DD8DE`), jump heading and completion in
+`microJumpDriveRuntime.js` (`DC0619D26B350DF4`), `/tr` resolution in `transport.js` (`6A30BD367ABBDEF4`),
+and facility pauses and settlement in `industryRuntimeState.js` (`BF6AB290BD622ED0`).
+
+### Automated validation
+
+The larger affected run passed 406 of 408 cases in 8 minutes 13 seconds. The two failures came from fixture
+setup. The insurance loss fixture now establishes a paid checkpoint baseline, and the translocation fixture
+installs the same fitting cache used by the server. Both passed on the corrected build. The paid science case
+also caught integer decoding of the fractional default manufacturing index, which now loads as a decimal.
+
+The final focused run passed 21 cases in 12 seconds, including the two corrected fixtures and the paid science
+regression. It covers same-tick visibility, fuel and jump deadlines, rejected transactions, checkpoint rollback
+and retry, and reopening projected saves. The final solution build took 10.23 seconds with zero warnings or
+errors. Both Python policy suites passed 8 and 9 cases respectively. .NET style, CSharpier, line width and Git
+whitespace checks passed. The larger run used these `FullyQualifiedName~` clauses:
+
+```text
+Eden.Protocol.Tests.Structures, Eden.Protocol.Tests.Industry, Eden.Protocol.Tests.Flight.Translocation,
+Eden.Protocol.Tests.Propulsion.SpatialModule, Eden.Protocol.Tests.Economy.EconomicLifecycleTests,
+Eden.Protocol.Tests.Repair.RepairTests, Eden.Protocol.Tests.Persistence.InsuranceTests,
+Eden.Protocol.Tests.PilotSessions.InsuranceServiceTests, Eden.Protocol.Tests.Reprocessing,
+Eden.Protocol.Tests.Combat.InsuranceLossTests
+```
+
+The final run used these `FullyQualifiedName~` clauses:
+
+```text
+ResidentBulkDeliveryRollsBackRejectedJobs, ResidentConversionProjectsFuel, ManufacturingUsesEngineeringBonuses,
+MoonPointIsExclusiveAndSavedExtraction, ResidentJumpUsesTheLatestPosition, RuntimeResolverUsesTheLatestResidentDronePosition,
+ResidentLossCheckpointRetriesTheCapsuleWreckReportAndInsuranceTogether, PaidScienceValidatesFeesAndRollsBackInsufficientFunds,
+ReactorFamilyReservesFormula, WarmStructureAndEmptySystemContacts, ColdStructureContacts
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

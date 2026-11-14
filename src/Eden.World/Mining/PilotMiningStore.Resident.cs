@@ -134,6 +134,19 @@ internal sealed partial class PilotMiningStore
         {
             throw new InvalidDataException("The mining module does not match this resource.");
         }
+        if (
+            Eden.Gameplay.Structures.MoonMiningRules.IsMoonRock(asteroid.Id)
+            && (
+                world
+                    .Set<Eden.Data.World.Structures.SavedMoonExtraction>()
+                    .Find(Eden.Gameplay.Structures.MoonMiningRules.ExtractionId(asteroid.Id))
+                    ?.FieldExpiresAt
+                ?? 0
+            ) <= now
+        )
+        {
+            throw new InvalidDataException("The moon field is no longer available.");
+        }
         if (MiningSiteRules.IsDeposit(asteroid.Id) && world.Set<SavedMiningDeposit>().Find(asteroid.Id) is { } deposit)
         {
             var site = world.Set<SavedMiningSite>().Find(deposit.SiteId);

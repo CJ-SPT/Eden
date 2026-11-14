@@ -10,8 +10,8 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Structures;
 
@@ -27,27 +27,15 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
         long pilotId,
         long? structureId,
         long? sourceId,
-        Func<WorldDbContext, CatalogDbContext, long, StructureSnapshot> action
+        Func<WorldAction, CatalogDbContext, long, StructureSnapshot> action
     ) =>
         Execute(
             (world, catalog, now) =>
             {
-                var before = world
-                    .Set<OwnedItem>()
-                    .Where(i => i.OwnerId == pilotId || i.LocationId == structureId || i.Id == sourceId)
-                    .OrderBy(i => i.Id)
-                    .AsEnumerable()
-                    .Select(i => PilotInventoryStore.Read(catalog, i))
-                    .ToDictionary(i => i.Id);
+                var before = AffectedInventory(world, catalog, pilotId, structureId, sourceId);
                 var structure = action(world, catalog, now);
                 world.SaveChanges();
-                var after = world
-                    .Set<OwnedItem>()
-                    .Where(i => i.OwnerId == pilotId || i.LocationId == structure.Id || i.Id == sourceId)
-                    .OrderBy(i => i.Id)
-                    .AsEnumerable()
-                    .Select(i => PilotInventoryStore.Read(catalog, i))
-                    .ToDictionary(i => i.Id);
+                var after = AffectedInventory(world, catalog, pilotId, structure.Id, sourceId);
                 var changes = before
                     .Keys.Union(after.Keys)
                     .Order()
@@ -58,31 +46,73 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     ))
                     .ToArray();
                 return new StructureResult(structure, changes);
-            }
+            },
+            pilotId: pilotId,
+            structureId: structureId
         );
 
-    private T Execute<T>(Func<WorldDbContext, CatalogDbContext, long, T> action, int? systemId = null)
+    private static Dictionary<long, InventoryItem> AffectedInventory(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long? structureId,
+        long? sourceId
+    )
     {
-        using WorldDbContext world = new(database.Path) { Participants = systemId is int system ? new(systems: [system]) : null };
-        using var transaction = world.Database.BeginTransaction();
+        IEnumerable<OwnedItem> items = world.Filter<OwnedItem>(i => i.OwnerId == pilotId);
+        if (structureId is long location)
+        {
+            items = items.Concat(world.Filter<OwnedItem>(i => i.LocationId == location));
+        }
+        if (sourceId is long source && world.Filter<OwnedItem>(i => i.Id == source).SingleOrDefault() is { } item)
+        {
+            items = items.Append(item);
+        }
+        return items.DistinctBy(i => i.Id).Select(i => PilotInventoryStore.Read(catalog, i)).ToDictionary(i => i.Id);
+    }
+
+    private T Execute<T>(
+        Func<WorldAction, CatalogDbContext, long, T> action,
+        int? systemId = null,
+        long? pilotId = null,
+        long? structureId = null
+    )
+    {
         using CatalogDbContext catalog = new(database.CatalogPath);
+        int? ResolveSystem(WorldAction world) => systemId ?? (structureId is long id ? world.Structure(id)?.SystemId : null);
+        using var scope = new WorldActionScope(
+            database,
+            select: world =>
+            {
+                int? selectedSystem = ResolveSystem(world);
+                return new(pilots: pilotId is long pilot ? [pilot] : [], systems: selectedSystem is int system ? [system] : []);
+            }
+        );
+        var world = scope.World;
         long now = Now;
-        Advance(world, catalog, now, systemId);
+        int? selectedSystem = ResolveSystem(world);
+        if (selectedSystem.HasValue || structureId is null)
+        {
+            Advance(world, catalog, now, selectedSystem);
+        }
         var result = action(world, catalog, now);
-        world.SaveChanges();
-        transaction.Commit();
+        scope.Commit();
         return result;
     }
 
-    private static Pilot Pilot(WorldDbContext world, long id) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == id);
+    private static Pilot Pilot(WorldAction world, long id) => world.Filter<Pilot>(p => p.Id == id).Single();
 
-    internal static SavedStructure Require(WorldDbContext world, long id) =>
+    internal static SavedStructure Require(WorldDbContext world, long id) => Require(new SqlWorldAction(world), id);
+
+    internal static bool Access(WorldDbContext world, SavedStructure structure, long pilotId) =>
+        Access(new SqlWorldAction(world), structure, pilotId);
+
+    internal static SavedStructure Require(WorldAction world, long id) =>
         world.Set<SavedStructure>().Find(id) is { State: not StructureState.Destroyed } structure
             ? structure
             : throw new InvalidDataException("The structure is unavailable.");
 
-    private static Pilot Manage(WorldDbContext world, SavedStructure structure, long pilotId)
+    private static Pilot Manage(WorldAction world, SavedStructure structure, long pilotId)
     {
         var pilot = Pilot(world, pilotId);
         var corporation = world.Set<SavedCorporation>().Find(structure.CorporationId);
@@ -97,14 +127,14 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
         return pilot;
     }
 
-    internal static bool Access(WorldDbContext world, SavedStructure structure, long pilotId)
+    internal static bool Access(WorldAction world, SavedStructure structure, long pilotId)
     {
         var pilot = world.Pilots.Find(pilotId);
         if (pilot is null)
         {
             return false;
         }
-        var entries = world.Set<SavedStructureAccess>().Where(a => a.StructureId == structure.Id).ToArray();
+        var entries = world.Filter<SavedStructureAccess>(a => a.StructureId == structure.Id).ToArray();
         if (entries.FirstOrDefault(a => a.MemberId == pilotId) is { } individual)
         {
             return individual.Allowed;
@@ -116,11 +146,10 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
         return pilot.CorporationId == structure.CorporationId || structure.PublicAccess;
     }
 
-    internal static StructureSnapshot Snapshot(WorldDbContext world, CatalogDbContext catalog, SavedStructure structure)
+    internal static StructureSnapshot Snapshot(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
     {
         var modules = world
-            .Set<SavedStructureService>()
-            .Where(m => m.StructureId == structure.Id)
+            .Filter<SavedStructureService>(m => m.StructureId == structure.Id)
             .OrderBy(m => m.Slot)
             .AsEnumerable()
             .Select(m => new StructureModule(m.ItemId, world.Set<OwnedItem>().Find(m.ItemId)!.TypeId, m.Slot, m.Online, m.NextFuelAt))
@@ -201,12 +230,12 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
         Execute(
             (world, catalog, _) =>
                 world
-                    .Set<SavedStructure>()
-                    .Where(s => s.State != StructureState.Destroyed && (!systemId.HasValue || s.SystemId == systemId))
+                    .Filter<SavedStructure>(s => s.State != StructureState.Destroyed && (!systemId.HasValue || s.SystemId == systemId))
                     .OrderBy(s => s.Id)
                     .AsEnumerable()
                     .Select(s => Snapshot(world, catalog, s))
-                    .ToArray()
+                    .ToArray(),
+            systemId
         );
 
     public StructureSnapshot? Read(long pilotId, long structureId) =>
@@ -214,7 +243,8 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
             (world, catalog, _) =>
                 world.Set<SavedStructure>().Find(structureId) is { State: not StructureState.Destroyed } s
                     ? Snapshot(world, catalog, s)
-                    : null
+                    : null,
+            structureId: structureId
         );
 
     public bool HasService(long pilotId, long structureId, StructureService service) =>
@@ -222,7 +252,9 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
             (world, catalog, _) =>
                 world.Set<SavedStructure>().Find(structureId) is { } structure
                 && Access(world, structure, pilotId)
-                && Snapshot(world, catalog, structure).Services.Contains(service)
+                && Snapshot(world, catalog, structure).Services.Contains(service),
+            pilotId: pilotId,
+            structureId: structureId
         );
 
     public IReadOnlyList<StructureLocation> Names(IReadOnlyList<long> structureIds)
@@ -237,10 +269,13 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
 
     private StructureLocation? LoadName(long id)
     {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<SavedStructure>().Find(id) is { State: not StructureState.Destroyed } s
-            ? new(s.Id, s.Name, s.SystemId, new(s.X, s.Y, s.Z))
-            : null;
+        return WorldActionScope.Inspect<StructureLocation?>(
+            database,
+            world =>
+                world.Set<SavedStructure>().Find(id) is { State: not StructureState.Destroyed } s
+                    ? new(s.Id, s.Name, s.SystemId, new(s.X, s.Y, s.Z))
+                    : null
+        );
     }
 
     public IReadOnlyList<InventoryItem> Inventory(long pilotId, long structureId) =>
@@ -250,13 +285,14 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                 var structure = Require(world, structureId);
                 Manage(world, structure, pilotId);
                 return world
-                    .Set<OwnedItem>()
-                    .Where(i => i.LocationId == structureId && i.OwnerId == structure.CorporationId)
+                    .Filter<OwnedItem>(i => i.LocationId == structureId && i.OwnerId == structure.CorporationId)
                     .OrderBy(i => i.Id)
                     .AsEnumerable()
                     .Select(i => PilotInventoryStore.Read(catalog, i))
                     .ToArray();
-            }
+            },
+            pilotId: pilotId,
+            structureId: structureId
         );
 
     public StructureResult Deploy(long pilotId, StructureDeployment deployment) =>
@@ -343,8 +379,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                 }
                 if (
                     world
-                        .Set<SavedStructure>()
-                        .Where(s => s.SystemId == system && s.State != StructureState.Destroyed)
+                        .Filter<SavedStructure>(s => s.SystemId == system && s.State != StructureState.Destroyed)
                         .AsEnumerable()
                         .Any(s =>
                             point.DistanceTo(new(s.X, s.Y, s.Z))
@@ -433,7 +468,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
     private StructureResult Update(
         long pilotId,
         long structureId,
-        Action<WorldDbContext, CatalogDbContext, SavedStructure, Pilot, long> action
+        Action<WorldAction, CatalogDbContext, SavedStructure, Pilot, long> action
     ) =>
         Mutate(
             pilotId,
@@ -474,20 +509,30 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     throw new InvalidDataException("Choose distinct positive pilot or corporation access identities.");
                 }
                 structure.PublicAccess = publicAccess;
-                world.RemoveRange(world.Set<SavedStructureAccess>().Where(a => a.StructureId == structureId));
-                world.SaveChanges();
-                world.AddRange(
-                    members.Select(m => new SavedStructureAccess
+                var existing = world.Filter<SavedStructureAccess>(a => a.StructureId == structureId).ToDictionary(a => a.MemberId);
+                foreach (var member in members)
+                {
+                    if (existing.Remove(member.MemberId, out var entry))
                     {
-                        StructureId = structureId,
-                        MemberId = m.MemberId,
-                        Allowed = m.Allowed,
-                    })
-                );
+                        entry.Allowed = member.Allowed;
+                    }
+                    else
+                    {
+                        world.Add(
+                            new SavedStructureAccess
+                            {
+                                StructureId = structureId,
+                                MemberId = member.MemberId,
+                                Allowed = member.Allowed,
+                            }
+                        );
+                    }
+                }
+                world.RemoveRange(existing.Values);
             }
         );
 
-    private static OwnedItem AccessibleItem(WorldDbContext world, Pilot pilot, SavedStructure structure, long itemId)
+    private static OwnedItem AccessibleItem(WorldAction world, Pilot pilot, SavedStructure structure, long itemId)
     {
         var item = world.Set<OwnedItem>().Find(itemId);
         bool docked = pilot.ActiveShip.Position is null && pilot.ActiveShip.StructureId == structure.Id;
@@ -513,7 +558,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
 
     private const double StructureCatalogRange = 250_000;
 
-    private static void Consume(WorldDbContext world, OwnedItem item, int quantity)
+    private static void Consume(WorldAction world, OwnedItem item, int quantity)
     {
         if (quantity <= 0 || quantity > item.Quantity)
         {
@@ -601,8 +646,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
             (world, catalog, _) =>
             {
                 var structures = world
-                    .Set<SavedStructure>()
-                    .Where(s => s.SystemId == systemId && s.State != StructureState.Destroyed)
+                    .Filter<SavedStructure>(s => s.SystemId == systemId && s.State != StructureState.Destroyed)
                     .OrderBy(s => s.Id)
                     .ToArray();
                 var contacts = structures
@@ -626,7 +670,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     .Select(d => d!.Value)
                     .DefaultIfEmpty(long.MaxValue)
                     .Min();
-                var extractions = world.Set<SavedMoonExtraction>().Where(e => e.SystemId == systemId);
+                var extractions = world.Filter<SavedMoonExtraction>(e => e.SystemId == systemId);
                 long? nextFracture = extractions.Where(e => !e.Ended).Select(e => (long?)e.AutoFractureAt).Min();
                 long? nextExpiry = extractions.Select(e => e.FieldExpiresAt).Min();
                 deadline = Math.Min(deadline, Math.Min(nextFracture ?? long.MaxValue, nextExpiry ?? long.MaxValue));

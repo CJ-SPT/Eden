@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident structures, spatial modules, translocation, and industry](protocol/performance.md#resident-structures-spatial-modules-translocation-and-industry)
+records the live-world cutover and checkpoint validation for these paths.
+
 [Resident player travel, support modules, and industry monitoring](protocol/performance.md#resident-player-travel-support-modules-and-industry-monitoring)
 records the converted live-world paths and the SQL-backed paths found during the audit.
 
