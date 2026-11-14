@@ -2,15 +2,21 @@ using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
+using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
-public sealed class CapsuleerInboundProvisioningTests
+public sealed class CapsuleerInboundProvisioningTests(ITestOutputHelper output)
 {
     private const int Observer = 30000141;
     private const int Source = 30000142;
@@ -265,5 +271,85 @@ public sealed class CapsuleerInboundProvisioningTests
         Assert.NotNull(new CapsuleerProvisioner(fixture.Database, fixture.Clock).EnsureInbound(s_gate));
         using WorldDbContext saved = new(fixture.Database.Path);
         Assert.Single(saved.Set<SavedCapsuleerAgent>());
+    }
+
+    [Fact]
+    public void PreparingAnotherInboundVisitorKeepsTheResidentTransactionSmallWithExistingHaulers()
+    {
+        const int existingHaulers = 1024;
+        const long firstPilot = 91000000;
+        const long firstShip = 3000000000000;
+        const int maxAdditionalAllocation = 1024 * 1024;
+        var baseline = PrepareWithExistingHaulers(0);
+        var populated = PrepareWithExistingHaulers(existingHaulers);
+        output.WriteLine($"Additional visitor with no saved haulers: {baseline}");
+        output.WriteLine($"Additional visitor with {existingHaulers:N0} saved haulers: {populated}");
+        Assert.Equal(baseline.Commands, populated.Commands);
+        Assert.Equal(baseline.Connections, populated.Connections);
+        Assert.Equal(baseline.Fittings, populated.Fittings);
+        Assert.True(
+            populated.AllocatedBytes <= baseline.AllocatedBytes + maxAdditionalAllocation,
+            $"The resident provisioner allocated {populated.AllocatedBytes:N0} bytes with existing haulers and "
+                + $"{baseline.AllocatedBytes:N0} bytes without."
+        );
+
+        PerformanceSample PrepareWithExistingHaulers(int count)
+        {
+            using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+            using (WorldDbContext saved = new(fixture.Database.Path))
+            {
+                using var transaction = saved.Database.BeginTransaction();
+                saved.Database.ExecuteSql(
+                    $"""
+                    WITH RECURSIVE roster(n) AS (SELECT 0 WHERE {count}>0 UNION ALL SELECT n+1 FROM roster WHERE n+1<{count})
+                    INSERT INTO WorldInventoryOwner(Id) SELECT {firstPilot}+n FROM roster;
+                    WITH RECURSIVE roster(n) AS (SELECT 0 WHERE {count}>0 UNION ALL SELECT n+1 FROM roster WHERE n+1<{count})
+                    INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name)
+                    SELECT {firstShip}+n,{firstPilot}+n,601,60003760,'Quiet hauler ' || n FROM roster;
+                    WITH RECURSIVE roster(n) AS (SELECT 0 WHERE {count}>0 UNION ALL SELECT n+1 FROM roster WHERE n+1<{count})
+                    INSERT INTO WorldPilot(Id,AccountId,Name,CorporationId,ActiveShipId)
+                    SELECT {firstPilot}+n,1000001,'Quiet hauler ' || n,1000044,{firstShip}+n FROM roster;
+                    WITH RECURSIVE roster(n) AS (SELECT 0 WHERE {count}>0 UNION ALL SELECT n+1 FROM roster WHERE n+1<{count})
+                    INSERT INTO WorldCapsuleerHauler(Id,PilotId,SourceStationId,DestinationStationId,FounderShipId,StartingCents)
+                    SELECT -1-n,{firstPilot}+n,60003760,60015157,{firstShip}+n,{HaulingRules.StartingCents} FROM roster;
+                    """
+                );
+                transaction.Commit();
+            }
+
+            using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+            var live = host.GetRequiredService<LiveWorld>();
+            live.Economy.Warm();
+            var presence = host.GetRequiredService<IHumanPresence>();
+            using var observer = presence.Select(90000001, Observer);
+            using var source = presence.Select(90000002, Source);
+            using var provisioner = new CapsuleerProvisioner(fixture.Database, fixture.Clock);
+            var synchronization = host.GetRequiredService<IWorldSynchronization>();
+            CapsuleerScheduler.InboundPreparation request = new(s_gate, BothObserved: true);
+            long firstVisitor = Assert.IsType<long>(provisioner.PrepareBackgroundInbound(request, synchronization, default));
+            if (count > 0)
+            {
+                Assert.Equal(firstPilot + count, firstVisitor);
+            }
+            request = request with { Visitor = 1 };
+            PerformanceSample measured = default;
+            long visitor;
+            using (SessionPerformance.Capture("inbound visitor", sample => measured = sample))
+            {
+                visitor = Assert.IsType<long>(provisioner.PrepareBackgroundInbound(request, synchronization, default));
+            }
+            Assert.Equal(firstVisitor + 1, visitor);
+            Assert.Equal(visitor, provisioner.PrepareBackgroundInbound(request, synchronization, default));
+
+            using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+            snapshot.Project();
+            using WorldDbContext reopened = new(snapshot.Database);
+            var hauler = reopened.Set<SavedCapsuleerHauler>().Single(row => row.PilotId == visitor);
+            Assert.Equal(-count - 2, hauler.Id);
+            Assert.Equal(HaulerActivity.Docked, HaulerCheckpoint.Read(hauler.Progress)!.Activity);
+            Assert.Equal(CapsuleerAction.Trade, reopened.Set<SavedCapsuleerJob>().Single(row => row.PilotId == visitor).Action);
+            Assert.Equal(count + 2, reopened.Set<SavedCapsuleerHauler>().Count());
+            return measured;
+        }
     }
 }

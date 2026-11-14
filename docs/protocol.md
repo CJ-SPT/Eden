@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Inbound traffic provisioning stalls during autopilot](protocol/performance.md#inbound-traffic-provisioning-stalls-during-autopilot)
+records the Docker incident and the resident founder transaction regression.
+
 [Shared fleet rewards and watchlist damage](protocol/fleets.md#shared-mission-rewards-bounties-loot-and-watchlist-damage)
 records mission turn-in, on-grid bounties, fleet loot rights and private health updates.
 

@@ -232,7 +232,8 @@ internal sealed partial class CapsuleerProvisioner
         bool startDocked = false
     )
     {
-        long pilot = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
+        // Project IDs before aggregating so the founder transaction never tracks the saved roster.
+        long pilot = (world.Pilots.Select(p => (long?)p.Id).Max() ?? 90000000) + 1;
         long ship = InventoryPersistence.NextId(world);
         var trafficProfile =
             career == CapsuleerCareer.Hauling
@@ -348,7 +349,7 @@ internal sealed partial class CapsuleerProvisioner
             world.Add(
                 new SavedCapsuleerHauler
                 {
-                    Id = slot == 0 ? site.SystemId : Math.Min(0, world.Set<SavedCapsuleerHauler>().Min(h => (int?)h.Id) ?? 0) - 1,
+                    Id = slot == 0 ? site.SystemId : Math.Min(0, world.Set<SavedCapsuleerHauler>().Select(h => (int?)h.Id).Min() ?? 0) - 1,
                     RouteSystems = route!.Systems,
                     PilotId = pilot,
                     SourceStationId = station,

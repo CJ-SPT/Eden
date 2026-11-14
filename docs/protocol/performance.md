@@ -4348,6 +4348,58 @@ Not performed; agent client testing is disabled.
 
 None.
 
+## Inbound traffic provisioning stalls during autopilot
+
+At 10:14 p.m. ET on November 13, 2026, three clients stopped progressing during native autopilot travel.
+The Docker host was running `304d5a85`. The clients' logs ended around gate travel from Tash-Murkon Prime to
+Emrayur and from Ourapheh toward Manarq. Two managed stack captures from the running process showed
+session threads waiting for world ownership while `PrepareBackgroundInbound` committed a new gate visitor
+inside `ValidateBotRows`. A restart restored service temporarily, and a later capture showed the same stall
+after players reconnected. The save contained 23,332 pilots and 22,421 haulers.
+
+The selector overloads of `Max` and `Min` caused the resident query to materialize and track every existing
+pilot and hauler while choosing IDs. Commit then ran uniqueness checks for all tracked haulers, repeatedly
+walking the roster. Founder provisioning now projects only the ID columns before aggregating. The next
+pilot ID and negative hauler ID follow the existing rules, and the transaction validates the visitor's
+changes without revalidating unrelated founders. The scalar scans still scale with saved row counts.
+
+The native route continues through warp, approach and gate activation as described by [EVE University's
+travel guide](https://wiki.eveuniversity.org/Tips_for_New_Players#Don't_use_autopilot). The older EveJS 261108.1
+`beyonceService.js` (SHA-256 prefix `5C13B78749BD02C31`) also separates the warp and stargate jump calls.
+The observed stall was in Eden's shared world transaction for background traffic.
+
+### Automated validation
+
+The test `PreparingAnotherInboundVisitorKeepsTheResidentTransactionSmallWithExistingHaulers` warms the real
+resident provisioner, then compares a second inbound visitor on worlds with zero and 1,024 existing haulers.
+The original code allocated 356,042,760 bytes in the populated fixture versus 636,896 bytes in the small
+fixture. After the fix, the same fixtures allocated 1,203,888 and 552,984 bytes respectively, with zero world
+SQL commands, connections or fitting calculations in both cases. The test also checks duplicate request handling and
+pilot and hauler IDs, progress and the first scheduled job after reopening a projected checkpoint.
+
+The affected run passed 123 of 125 tests in 58 seconds. The two failures also reproduced at the unchanged
+`459fe47d` baseline in a 10.53-second focused run. The scalar coverage test treats the character settings
+binary read expressions as column names, and the population settings restart test sees an empty hauler scene.
+The solution build passed in 5.33 seconds with zero warnings or errors. Both Python policy suites passed
+all 8 and 9 cases, and the formatting check passed in 25.92 seconds.
+
+The affected filter uses `FullyQualifiedName~` with:
+
+```text
+CapsuleerInboundProvisioningTests, CapsuleerInboundRuntimeTests, CapsuleerBackgroundPreparationTests,
+CapsuleerProvisioningTests, ResidentPopulationTests, CapsuleerPopulationSettingsTests, CapsuleerGateWatchTests,
+AutoNavigationTests, FlightSessionTests, ResidentEconomyTests, EconomicProjectionTests
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Resume the same routes with several pilots and check that the sessions continue through adjacent systems
+while inbound traffic is created.
+
 ## Resident structures, spatial modules, translocation, and industry
 
 This follow-up starts from `9a48e15c`. Upwell deployment, docking, access, service fitting, fuel, decommissioning,
