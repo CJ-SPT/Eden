@@ -44,18 +44,24 @@ public sealed class CooperativeFleetTests
         var boss = BlueRead.Fields(Assert.IsType<BlueInstance>(members[leader.PilotId]).State);
         Assert.Equal((long)FleetRole.Commander, boss["role"]);
         Assert.Equal((long)FleetRules.BossJob, boss["job"]);
-        Assert.Null(leader.Reply("Invite", [member.PilotId, null, null, (long)FleetRole.Member]));
+        Assert.IsType<PilotCallResult.Failure>(leader.CallBound(id, "Invite", [member.PilotId, null, null, 0L]));
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("fleetObjectHandler", "MachoResolveObject", [id]));
+        Assert.Null(leader.Reply("Invite", [member.PilotId, null, null, null]));
         member.Advance();
         var invite = Assert.Single(member.Context.Notifications.OfType<FleetInviteNotification>());
         Assert.Equal(id, invite.FleetId);
         Assert.Equal(leader.PilotId, invite.Inviter);
-        Assert.Equal("AskJoinFleet", invite.Arguments[2]);
-        Assert.NotEmpty(BlueMarshal.Encode(invite.Arguments));
-        member.Bind(id);
+        var arguments = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(invite.Arguments)), 4);
+        Assert.Equal(id, arguments[0]);
+        Assert.Equal(leader.PilotId, arguments[1]);
+        Assert.Equal("AskJoinFleet", BlueMarshal.Text(arguments[2]));
+        Assert.Equal(false, BlueRead.Fields(arguments[3])["autoAccept"]);
+        Assert.Equal((long)PilotLogin.NodeId, member.ServiceReply("fleetObjectHandler", "MachoResolveObject", [id]));
         Assert.IsType<PilotCallResult.Failure>(member.CallBound(id, "GetInitState", []));
-        Assert.Null(member.Reply("AcceptInvite", [(long)member.Context.Pilot.ShipTypeId]));
+        member.Bind(id, new object?[] { "AcceptInvite", new object?[] { (long)member.Context.Pilot.ShipTypeId }, null });
         leader.Advance();
         Assert.Equal(id, member.Context.Pilot.Identity.Fleet!.FleetId);
+        Assert.Equal(FleetRole.Member, member.Context.Pilot.Identity.Fleet.Role);
         Assert.NotNull(member.Context.ResolveReference(member.Reference!.Id));
         var state = BlueRead.Fields(Assert.IsType<BlueInstance>(member.Reply("GetInitState", [])).State);
         Assert.Equal(2, Assert.IsType<Dictionary<long, object?>>(state["members"]).Count);
@@ -595,11 +601,12 @@ public sealed class CooperativeFleetTests
             return _fleet;
         }
 
-        public void Bind(long fleet)
+        public void Bind(long fleet, object?[]? firstCall = null)
         {
             var bound = Assert.IsType<BoundPilotReply>(
-                Assert.IsType<PilotCallResult.Success>(CallService("fleetObjectHandler", "MachoBindObject", [fleet, null])).Reply
+                Assert.IsType<PilotCallResult.Success>(CallService("fleetObjectHandler", "MachoBindObject", [fleet, firstCall])).Reply
             );
+            Assert.Null(BlueMarshal.Decode(BlueMarshal.Encode(bound.Reply)));
             Reference = bound.Reference;
             _fleet = fleet;
         }
@@ -614,14 +621,13 @@ public sealed class CooperativeFleetTests
         public PilotCallResult CallBound(long fleet, string method, object?[] args) =>
             CallService($"{CooperativeFleetHandler.Prefix}{fleet}", method, args);
 
-        public object? Reply(string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+        public object? ServiceReply(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             BlueMarshal.Decode(
-                BlueMarshal.Encode(
-                    Assert
-                        .IsType<PilotCallResult.Success>(CallService($"{CooperativeFleetHandler.Prefix}{_fleet}", method, args, keywords))
-                        .Reply
-                )
+                BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(CallService(service, method, args, keywords)).Reply)
             );
+
+        public object? Reply(string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
+            ServiceReply($"{CooperativeFleetHandler.Prefix}{_fleet}", method, args, keywords);
 
         public void Dispose() => _client.Dispose();
     }

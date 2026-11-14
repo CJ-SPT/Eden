@@ -509,6 +509,7 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 - [Signature suppression operation and timed activation expiry, November 7, 2026](protocol/fitting.md#signature-suppression-operation-and-timed-activation-expiry-november-7-2026)
 
+- [Default fleet invitations, November 14, 2026](protocol/fleets.md#default-fleet-invitations-november-14-2026)
 - [Command Bursts, November 13, 2026](protocol/fleets.md#command-bursts-november-13-2026)
 - [Cooperative fleet foundation, November 7, 2026](protocol/fleets.md#cooperative-fleet-foundation-november-7-2026)
 

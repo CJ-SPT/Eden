@@ -2,6 +2,45 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Default fleet invitations, November 14, 2026
+
+The default **Invite to Fleet** menu item, the multi-select character menu, and dropping a pilot into **My Fleet** send
+`Invite(characterID, None, None, None)`. Eden rejected the last argument because it required a numeric role.
+The adapter now treats `None` as squad member and resolves the default wing and squad through the existing fleet rules.
+Explicit roles still go through the existing position and authority checks.
+
+Inert inspection of build 3662168's original archive (SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`) confirmed
+`evefleet.client.menu.MemberMenu.Get`, `MenuSvc.InviteToFleet`, `fleetUtil.OnDropInMyFleet`, and
+the `fleetSvc.Invite` and `OnFleetInvite` methods. The recipient supplies the inviter's character link and accepts
+on a fleet moniker, which can carry `AcceptInvite` in its first bind. The older EVE.js reference's `fleetRuntime.js`
+(SHA-256 `494727D0F0793202BD9195C417FFFC63CCE499EA157890FC12981919BE521B8F`) also defaults an unspecified role to member.
+The invite uses the existing None and tuple codecs. [Carbon Blue Marshal.cpp](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+[EVE University fleet formation](https://wiki.eveuniversity.org/How_to_properly_form_a_fleet) describes the invite menu and fleet positions.
+
+**Automated validation.** The exact `NativeCreateInviteAcceptAndLeaveKeepReferencesRosterAndSessionFieldsConsistent` regression
+reproduced the default invite rejection before the fix. It exercises invite delivery, refusal of invalid roles and private
+roster reads, acceptance on the first bind, and fleet identity and roster changes.
+Tool and solution restores passed. The solution built in 11.10 seconds with zero warnings or errors.
+The focused .NET run passed 93 cases in 47.22 seconds. The VSTest filter used these class names with
+`FullyQualifiedName~`, joined by `|`.
+
+```text
+CooperativeFleetTests
+FleetRulesTests
+CommandBurstTests
+PilotServicesTests
+XmppChatTests
+PilotFleetTests
+```
+
+Catalog and formatting policy suites passed 8 and 9 cases, respectively. Formatting, the protocol index links, UTF-8, and
+`git diff --check` passed. The complete validation sequence took 125.66 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Use the default **Invite to Fleet** menu item and accept the prompt on a second client.
+
 ## Shared mission rewards, bounties, loot and watchlist damage
 
 - A ready mission turn-in offers **Share with fleet** or **Keep rewards**. Cancel leaves the mission accepted. Sharing divides
@@ -30,7 +69,7 @@ reference used `fleetShare.js` (SHA-256 `AC5538FE0E8E34C716838A663395E4FF9175DB4
 and `fleetRuntime.js` (SHA-256 `494727D0F0793202BD9195C417FFFC63CCE499EA157890FC12981919BE521B8F`).
 The existing [Carbon Blue reduce path](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
 decodes the native set and the existing Destiny carrier supplies the stamp.
-[EVE University mission fleets](https://wiki.eveuniversity.org/Mission_Fleets) ·
+[EVE University mission fleets](https://wiki.eveuniversity.org/Mission_Fleets) Â·
 [CCP container and wreck ownership](https://support.eveonline.com/hc/en-us/articles/115000597345-Container-and-Wreck-Ownership).
 
 **Automated validation.** The focused `FleetTurnInSplitsResidentRewardsOnceAndPersistsBothShares`,

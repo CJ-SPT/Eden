@@ -469,8 +469,9 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
                     return PilotCallResult.None;
                 case ("Reconnect" or "FinishMove", []):
                     return PilotCallResult.None;
-                case ("Invite", [long target, var wing, var squad, long role]):
-                    fleets.Invite(actor, id, target, Placement(wing, squad, role));
+                // The default invite menu and dropping a pilot into My Fleet send None for the member role.
+                case ("Invite", [long target, var wing, var squad, var role]) when role is null or long:
+                    fleets.Invite(actor, id, target, Placement(wing, squad, role as long? ?? (long)FleetRole.Member));
                     return PilotCallResult.None;
                 case ("MoveMember", [long target, var wing, var squad, long role]):
                     fleets.Move(actor, id, target, Placement(wing, squad, role));
