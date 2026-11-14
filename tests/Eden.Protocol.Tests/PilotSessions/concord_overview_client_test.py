@@ -71,7 +71,7 @@ guest_panel = type('GuestsPanel', (object,), {
                                          '_add_guest_to_scroll', '_remove_guest_from_scroll']})
 sys.modules['xmppchatclient.xmppchatwindow'].XmppChatWindow = chat_window
 sys.modules['xmppchatclient.xmppchatsvc'].XmppChatService = type('XmppChatService', (object,), {
-    name: lambda *args: None for name in ['_UnpackVikingPresence', '_HandleMessageFromAdmin']})
+    name: lambda *args: None for name in ['_UnpackVikingPresence', '_HandleMessageFromAdmin', '_AddCharacterToChannelWindow']})
 sys.modules['eve.client.script.ui.shared.dockedUI.guests'].GuestsPanel = guest_panel
 sys.modules['eve.client.script.ui.station.base'].StationSvc = type('StationSvc', (object,), {
     name: lambda *args: None for name in ['GetGuests', 'OnCharNowInStation', 'OnCharNoLongerInStation']})

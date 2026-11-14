@@ -40,11 +40,11 @@ def install_presence_lists():
     protect(XmppChatWindow, 'CharacterJoinedChannel')
     protect(XmppChatWindow, 'CharacterLeftChannel')
     protect(GuestsPanel, '_update_scroll_content')
-    protect(GuestsPanel, '_remove_guest_from_scroll')
 
     if not getattr(GuestsPanel._get_filtered_guests, '_eden_presence_serialized', False):
         filter_guests = GuestsPanel._get_filtered_guests
         add_guest = GuestsPanel._add_guest_to_scroll
+        remove_guest = GuestsPanel._remove_guest_from_scroll
 
         def known_guests(self, guests):
             owners = cfg.eveowners
@@ -58,53 +58,77 @@ def install_presence_lists():
                 guests = [guest for guest in guests if owners.GetIfExists(guest.character_id) is not None]
             return filter_guests(self, guests)
 
-        def add_once(self, guest):
+        def sync_guest(self, guest):
             with locks.TempLock(('eden-presence-list', id(self))):
-                if self._scroll is None or self._scroll.destroyed:
-                    return
-                if any(node.charID == guest.character_id for node in self._scroll.GetNodes()):
-                    return
-                if known_guests(self, [guest]):
-                    return add_guest(self, guest)
+                while self._scroll is not None and not self._scroll.destroyed:
+                    # GuestList mutates before emitting a signal. A callback
+                    # waiting behind a rebuild can already have been superseded
+                    # by a departure, rejoin or replacement station controller.
+                    guest_list = self._controller.guest_list
+                    current = None if guest_list is None else guest_list.guests_by_character_id.get(guest.character_id)
+                    visible = current is not None and known_guests(self, [current])
+                    if guest_list is not self._controller.guest_list:
+                        continue
+                    if guest_list is not None and current is not guest_list.guests_by_character_id.get(guest.character_id):
+                        continue
+                    if not visible:
+                        return remove_guest(self, guest)
+                    if any(node.charID == guest.character_id for node in self._scroll.GetNodes()):
+                        return
+                    return add_guest(self, current)
 
         known_guests._eden_presence_serialized = True
         GuestsPanel._get_filtered_guests = known_guests
-        GuestsPanel._add_guest_to_scroll = add_once
+        GuestsPanel._add_guest_to_scroll = sync_guest
+        GuestsPanel._remove_guest_from_scroll = sync_guest
 
     if not getattr(XmppChatService._UnpackVikingPresence, '_eden_presence_serialized', False):
         unpack = XmppChatService._UnpackVikingPresence
         handle_admin = XmppChatService._HandleMessageFromAdmin
+        add_character = XmppChatService._AddCharacterToChannelWindow
+
+        def channel_character(self, window, character_id):
+            channel = window.receiver
+            with locks.TempLock(('eden-presence-list', id(window))):
+                if window.receiver == channel and not window.destroyed:
+                    return add_character(self, window, character_id)
 
         def viking(self, channel, packet):
             with locks.TempLock(('eden-chat-presence', id(self), channel)):
-                result = unpack(self, channel, packet)
-                window = self.GetGroupChatWindow(channel)
-                if window is not None:
-                    with locks.TempLock(('eden-presence-list', id(window))):
-                        if window.receiver == channel and not window.destroyed:
-                            visible = {char for char, data in window.members.iteritems()
-                                       if not data.get('role', 0) & ROLE_CHTINVISIBLE}
-                            rows = {node.charID for node in window.userlist.GetNodes()}
-                            if visible != rows:
-                                window.InitUsers()
-                return result
+                window = self.GetOrCreateGroupChatWindow(channel)
+                if window is None:
+                    return
+                # Owner priming can yield before CharacterJoinedChannel takes
+                # the view lock. Keep the whole roster on its original channel.
+                with locks.TempLock(('eden-presence-list', id(window))):
+                    if window.receiver != channel or window.destroyed:
+                        return
+                    result = unpack(self, channel, packet)
+                    visible = {char for char, data in window.members.iteritems()
+                               if not data.get('role', 0) & ROLE_CHTINVISIBLE}
+                    rows = {node.charID for node in window.userlist.GetNodes()}
+                    if visible != rows:
+                        window.InitUsers()
+                    return result
 
         def admin(self, text, window):
             channel = window.receiver
             with locks.TempLock(('eden-chat-presence', id(self), channel)):
-                if window.receiver != channel:
-                    return
-                result = handle_admin(self, text, window)
-                command = json.loads(text)
-                if command.get('cmd') == 'leave':
-                    roles = self.memberRolesByChannels.get(channel)
-                    if roles is not None:
-                        roles.pop(command['charid'], None)
-                return result
+                with locks.TempLock(('eden-presence-list', id(window))):
+                    if window.receiver != channel or window.destroyed:
+                        return
+                    result = handle_admin(self, text, window)
+                    command = json.loads(text)
+                    if command.get('cmd') == 'leave':
+                        roles = self.memberRolesByChannels.get(channel)
+                        if roles is not None:
+                            roles.pop(command['charid'], None)
+                    return result
 
         viking._eden_presence_serialized = True
         XmppChatService._UnpackVikingPresence = viking
         XmppChatService._HandleMessageFromAdmin = admin
+        XmppChatService._AddCharacterToChannelWindow = channel_character
 
     if not getattr(StationSvc.GetGuests, '_eden_presence_serialized', False):
         get_guests = StationSvc.GetGuests

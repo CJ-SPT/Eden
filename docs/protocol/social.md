@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Chat channel handoffs and queued station signals, November 14, 2026](#chat-channel-handoffs-and-queued-station-signals-november-14-2026)
 - [Local presence and station guest snapshots, November 12, 2026](#local-presence-and-station-guest-snapshots-november-12-2026)
 - [Translocation destination Local handoff (November 6, 2026)](#translocation-destination-local-handoff-november-6-2026)
 - [Translocation chat continuity (November 6, 2026)](#translocation-chat-continuity-november-6-2026)
@@ -23,6 +24,58 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
+
+## Chat channel handoffs and queued station signals, November 14, 2026
+
+The user reported continuing chat and station-list differences between pilots after the earlier corrections.
+Headless checks found two further gaps in the signed login adapter. A chat roster could yield before entering
+`CharacterJoinedChannel`, let `SetChannel` replace the reused Local window, and then insert a source member into
+the destination. A station callback queued behind a rebuild could apply an old arrival or departure to the new
+controller's list. Serializing only the individual row methods did not establish which channel or station owned
+the pending work.
+
+Roster application now holds the window lock across owner priming and every member addition. Ordinary chat
+arrivals also hold that lock across their native priming helper; queued admin departures recheck the channel
+after acquiring it. Guest callbacks reconcile their character against the current controller instead of trusting
+the old signal direction. They recheck the controller and guest identity after a yielding owner lookup, preserve
+the search filter, and avoid duplicate rows. These changes use the existing login adapter; restart the updated
+server and fully close/relaunch both clients to install it in fresh client processes.
+
+Sources: inert inspection of build **3662168** `XmppChatService`, `XmppChatWindow`, `GuestsPanelController`,
+`GuestList`, `GuestsPanel` and `StationSvc` methods, with the executed methods identified below. The verified original archive is
+`E:\EdenDev\3662168\.eden-original-code.ccp`, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, with the pinned Python runtime
+`1266e119d5db70281831f06049faa2694e658a68d504e0cc5680ec5726ba3aa2`.
+[EVE University Local membership](https://wiki.eveuniversity.org/Identifying_war_targets_in_Local) establishes
+the expected known-space membership behavior. The local evejs reference's `stationService.js` confirms the
+snapshot/delta ledger boundary; `localChannelMove.js` delegates server room handoffs. That reference checkout
+has no Git metadata; the inspected station service's SHA-256 is
+`34c675bfafdfc62474a9afa29a673a40dc3ed072c3f2c3806ddd8fccef246f6e`. No reference implementation was copied.
+
+**Automated validation.** The exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.PresenceListTests.NativePresenceRebuildsPreserveConcurrentArrivalsDeparturesAndRowIndexes`.
+The added checks failed with source members leaking into destination Local and with stale station signals
+overwriting current membership before the respective corrections. The harness uses native roster/window,
+station-cache, guest-list and panel methods, with cooperative tasklets and stubbed rendering/services.
+It also covers queued departures across a channel switch, ordinary room arrivals, controller replacement
+during owner lookup, unresolved owners, and the previous snapshot/rebuild regressions. An initial invocation
+against `E:\Eve` stopped at the pinned-runtime hash guard; subsequent tests use the verified staged original.
+Tool/solution restore and solution build passed in **1.85 seconds**, with zero warnings or errors. Filter
+`FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~StationGuestTests|FullyQualifiedName~PresenceListTests|FullyQualifiedName~TranslocationTests|FullyQualifiedName~CharacterLogoffTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~ConcordOverviewTests`
+passed **116 tests**, zero failed/skipped, in **107.79 seconds**, using four workers and
+`EDEN_TEST_CLIENT_ROOT=E:\EdenDev\3662168`. This includes loopback TLS, repeated transitions and multi-pilot guest
+notifications. After strengthening the queued-signal harness to execute native `GuestList` mutations and real
+callback delivery, the exact presence filter passed again (**1 case**, **1.53 seconds** build plus **2.60 seconds** test command).
+Both Python policy suites passed (**8 catalog**, **9 formatting**, **1.58 seconds** combined). Formatting application
+and verification (**26.27 seconds**), the new documentation links/anchors and `git diff --check` passed. A broader
+index audit encountered existing legacy encodings in `fleets.md`/`industry.md` and the existing bulk-industry
+delivery anchor; those unrelated records were left intact. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. Native rendering and actual multi-client
+presentation remain unverified.
+
+**Optional maintainer checks.** After restarting the server and both clients, compare Local and Guests while
+one pilot docks, undocks, changes systems and reconnects; repeat with Guests open on the observing pilot.
 
 ## Local presence and station guest snapshots, November 12, 2026
 

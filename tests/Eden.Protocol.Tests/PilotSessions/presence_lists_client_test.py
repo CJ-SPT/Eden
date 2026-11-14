@@ -36,8 +36,14 @@ class Value(object):
         self.__dict__.update(kwargs)
 
 class Signal(object):
+    def __init__(self, *args):
+        self.callbacks = []
     def connect(self, callback):
-        pass
+        if callback not in self.callbacks:
+            self.callbacks.append(callback)
+    def __call__(self, *args):
+        for callback in self.callbacks[:]:
+            callback(*args)
 
 class Scroll(object):
     destroyed = False
@@ -94,6 +100,8 @@ class ChatWindow(object):
         self.userlist = Scroll()
         self.receiver = 'local_30000142'
     def SetChannel(self, channel):
+        if self.receiver == channel:
+            return
         self.receiver = channel
         self.userlist.Clear()
         self.userlistNodesByName = {}
@@ -124,6 +132,9 @@ class GuestOwners(object):
     def Hint(self, char_id, row):
         self.data[char_id] = Value(name=row[1])
     def fetch(self, ids):
+        if pause[0]:
+            pause[0] = False
+            stackless.schedule()
         self.retries.append(ids)
         return (), [(char_id, owners[char_id].name) for char_id in ids if char_id in owners]
 
@@ -139,14 +150,16 @@ class Guest(object):
         return guest_owners.data[self.character_id].name
 
 class GuestList(object):
-    location_id = 60011866
-    on_guest_added = Signal()
-    on_guest_removed = Signal()
     def __init__(self):
-        self.members = {1: Guest(1)}
+        native(GUEST_BLOB, 'GuestList', '__init__', {'signals': Value(Signal=Signal)})(self, 60011866, [Guest(1)])
     @property
-    def guests(self):
-        return self.members.values()
+    def members(self):
+        return self._guests
+
+for name in ['guests', 'guests_by_character_id', 'location_id']:
+    setattr(GuestList, name, property(native(GUEST_BLOB, 'GuestList', name, {})))
+for name in ['add', 'remove', 'discard']:
+    setattr(GuestList, name, native(GUEST_BLOB, 'GuestList', name, {}))
 
 class GuestPanel(object):
     def __init__(self):
@@ -243,8 +256,6 @@ class ChatService(object):
         self.window.receiver = 'local_30000142'
         self.memberRolesByChannels = {self.window.receiver: {2: 'participant'}}
         self.userData = {}
-    def GetOrCreateGroupChatWindow(self, channel):
-        return self.window
     def GetGroupChatWindow(self, channel):
         return self.window
     def _PopulateEveownersFromInfo(self, char_id, info):
@@ -254,8 +265,9 @@ class ChatService(object):
         window.CharacterJoinedChannel(char_id)
 
 chat_scope = {'json': Value(loads=load_json), 'logger': scope['logger']}
-for name in ['_UnpackVikingPresence', '_HandleMessageFromAdmin']:
+for name in ['_UnpackVikingPresence', '_HandleMessageFromAdmin', 'GetOrCreateGroupChatWindow']:
     setattr(ChatService, name, native(CHAT_SERVICE_BLOB, 'XmppChatService', name, chat_scope))
+ChatService.GetOrCreateGroupChatWindow.im_func.func_defaults = (True,)
 
 def chat_race():
     chat = ChatService()
@@ -361,6 +373,82 @@ chat.window.userlist.RemoveNodes([chat.window.userlistNodesByName[1]])
 packet = Value(children=[Value(attributes={'info': 'owner', 'role': '0'})])
 chat._UnpackVikingPresence(chat.window.receiver, packet)
 assert {node.charID for node in chat.window.userlist.nodes} == {1, 2}
+
+
+# Roster parsing can yield before it enters CharacterJoinedChannel. Switching
+# the reused Local window during that gap must not import source-room members.
+chat = ChatService()
+chat.window.InitUsers()
+race(lambda: chat._UnpackVikingPresence(chat.window.receiver, packet),
+     lambda: chat.window.SetChannel('local_30000143'))
+assert not errors, errors
+assert not chat.window.members, 'Source roster leaked into destination Local'
+assert not chat.window.userlist.nodes
+
+# A leave already waiting on the old window must not remove the same pilot
+# from the destination after SetChannel reuses that window.
+chat = ChatService()
+chat.window.InitUsers()
+def switch_while_locked():
+    with temp_lock(('eden-presence-list', id(chat.window))):
+        stackless.schedule()
+        chat.window.SetChannel('local_30000143')
+        chat.window.CharacterJoinedChannel(2)
+race(switch_while_locked, lambda: chat._HandleMessageFromAdmin('departure', chat.window))
+assert not errors, errors
+assert set(chat.window.members) == {2}
+assert {node.charID for node in chat.window.userlist.nodes} == {2}
+
+# Native GuestList mutates before its signal waits on the panel lock. Replace
+# the controller and rebuild while an old station signal is still queued.
+for present in [False, True]:
+    panel = GuestPanel()
+    old_list = panel._controller.guest_list
+    if present:
+        old_list.members[2] = Guest(2)
+    panel._update_scroll_content()
+    def replace_while_locked():
+        with temp_lock(('eden-presence-list', id(panel))):
+            stackless.schedule()
+            panel._controller.guest_list = GuestList()
+            if present:
+                panel._controller.guest_list.members[2] = Guest(2)
+            panel._update_scroll_content()
+    delta = (lambda: old_list.remove(2)) if present else (lambda: old_list.add(Guest(2)))
+    race(replace_while_locked, delta)
+    assert not errors, errors
+    assert {node.charID for node in panel._scroll.nodes} == set(panel._controller.guest_list.members), (
+        'Queued guest signal overwrote the current controller membership')
+
+# Ordinary room presence also primes owners before entering the window method.
+for channel in ['corp_1000044', 'private_7', 'local_30000142']:
+    chat = ChatService()
+    chat.window.SetChannel(channel)
+    race(lambda: chat._AddCharacterToChannelWindow(chat.window, 2),
+         lambda: chat.window.SetChannel('local_30000143'))
+    assert not errors, errors
+    assert not chat.window.members and not chat.window.userlist.nodes
+
+# An owner RPC can yield after the callback first reads the controller. A
+# replacement list must be checked again before adding the old station's row.
+panel = GuestPanel()
+panel._controller.guest_list.members[2] = Guest(2)
+del guest_owners.data[2]
+def replace_station():
+    panel._controller.guest_list = GuestList()
+    panel._controller.guest_list._location_id += 1
+race(lambda: panel._add_guest_to_scroll(Guest(2)), replace_station)
+assert not errors, errors
+assert 2 not in {node.charID for node in panel._scroll.nodes}
+
+# An owner still absent after the retry must not abort other guest rows.
+panel = GuestPanel()
+panel._controller.guest_list.members[99] = Guest(99)
+panel._update_scroll_content()
+assert {node.charID for node in panel._scroll.nodes} == {1}
+panel._controller.guest_list = None
+panel._add_guest_to_scroll(Guest(2))
+assert 2 not in {node.charID for node in panel._scroll.nodes}
 
 for cycle in range(3):
     assert 2 not in station_race().GetGuests()

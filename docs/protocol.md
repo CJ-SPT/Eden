@@ -144,6 +144,9 @@ records native row/count divergence, the signed login correction and headless co
 [Local presence and station guest snapshots](protocol/social.md#local-presence-and-station-guest-snapshots-november-12-2026)
 records human Local arrivals, participant roles, and races between snapshots and departures.
 
+[Chat channel handoffs and queued station signals](protocol/social.md#chat-channel-handoffs-and-queued-station-signals-november-14-2026)
+records source-room roster leakage and stale station callbacks after a controller replacement.
+
 [Player-created portrait settings](protocol/characters.md#player-created-portrait-settings-november-12-2026)
 records how saved camera and pose fields are adapted for the native scene renderer.
 
