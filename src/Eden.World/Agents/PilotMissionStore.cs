@@ -456,7 +456,7 @@ internal sealed partial class PilotMissionStore(
                 }
                 row.State = MissionState.Accepted;
                 row.AcceptedAt = now;
-                row.ExpiresAt = checked(now + MissionRules.MissionLifetime.Ticks);
+                row.ExpiresAt = checked(now + profile.Lifetime.Ticks);
                 if (profile.Kind == MissionKind.Courier)
                 {
                     changes.Add(

@@ -194,6 +194,21 @@ public static class MissionRules
     public const int MembersPerWave = 100;
     public const int ActionStride = 32;
 
+    // Build 3662168 client/missions expirationTime is measured in minutes.
+    // Non-expiring and longer special-agent lifecycles are not admitted here.
+    public static TimeSpan Lifetime(long? expirationMinutes)
+    {
+        if (expirationMinutes is null)
+        {
+            return MissionLifetime;
+        }
+        if (expirationMinutes <= 0 || expirationMinutes > MissionLifetime.TotalMinutes)
+        {
+            throw new InvalidDataException("Unsupported ordinary mission deadline.");
+        }
+        return TimeSpan.FromTicks(checked(expirationMinutes.Value * TimeSpan.TicksPerMinute));
+    }
+
     public static MissionKind? KindForDivision(int division) =>
         division switch
         {

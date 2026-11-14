@@ -43,8 +43,9 @@ def delivery_rejection(mission, name, volume):
         return 'Requires singleton objective inventory'
     if not cargo.get('objectiveTypeID') or not 0 < cargo.get('objectiveQuantity', 0) <= 2147483647 or volume <= 0:
         return 'Missing usable cargo definition'
-    if mission.get('expirationTime', 10080) != 10080:
-        return 'Requires a different acceptance deadline'
+    expiration = mission.get('expirationTime', 10080)
+    if type(expiration) is not int or not 0 < expiration <= 10080:
+        return 'Requires another mission deadline lifecycle'
     for reward in mission.get('missionRewards', {}).values():
         if isinstance(reward, dict) and reward.get('rewardTypeID', 29) != 29:
             return 'Requires fixed item rewards'

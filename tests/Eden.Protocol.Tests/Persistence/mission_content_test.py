@@ -31,9 +31,9 @@ class MissionAdmissionTests(unittest.TestCase):
         self.mission['messages'] = {'messages.mission.completed.nextmission.agentsays': 100}
         self.assertIsNotNone(delivery_rejection(self.mission, 'A delivery', 100))
 
-    def test_scripts_gifts_singletons_deadlines_and_item_rewards_remain_excluded(self):
+    def test_scripts_gifts_singletons_and_item_rewards_remain_excluded(self):
         changes = [dict(nodeGraphID=1), dict(clientObjectives=[1]), dict(contentTags=[1]),
-                   dict(initialAgentGiftTypeID=23), dict(expirationTime=60),
+                   dict(initialAgentGiftTypeID=23),
                    dict(missionRewards=dict(reward=dict(rewardTypeID=23, rewardQuantity=1)))]
         for change in changes:
             with self.subTest(change=change):
@@ -42,6 +42,18 @@ class MissionAdmissionTests(unittest.TestCase):
                 self.assertIsNotNone(delivery_rejection(mission, 'A delivery', 100))
         self.mission['courierMission']['objectiveSingleton'] = 1
         self.assertIsNotNone(delivery_rejection(self.mission, 'A delivery', 100))
+
+    def test_finite_catalog_deadlines_are_admitted(self):
+        for minutes in [1, 120, 240, 480, 720, 10080]:
+            with self.subTest(minutes=minutes):
+                self.mission['expirationTime'] = minutes
+                self.assertIsNone(delivery_rejection(self.mission, 'A delivery', 100))
+
+    def test_unsupported_deadline_lifecycles_are_excluded(self):
+        for minutes in [0, -1, 10081, None, 1.5, True, '120']:
+            with self.subTest(minutes=minutes):
+                self.mission['expirationTime'] = minutes
+                self.assertIsNotNone(delivery_rejection(self.mission, 'A delivery', 100))
 
     def test_invalid_cargo_is_not_admitted(self):
         for quantity in [0, -1, 2147483648]:

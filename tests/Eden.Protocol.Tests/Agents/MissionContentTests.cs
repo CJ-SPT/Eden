@@ -50,7 +50,7 @@ public sealed partial class MissionContentTests
         var profiles = MissionCatalog.Read(catalog);
         Assert.Equal(Content().Missions.Length, profiles.Length);
         Assert.Equal(50, profiles.Count(p => p.Kind == MissionKind.Combat));
-        Assert.Equal(261, profiles.Count(p => p.Kind == MissionKind.Courier));
+        Assert.Equal(265, profiles.Count(p => p.Kind == MissionKind.Courier));
         Assert.Equal(23, profiles.Count(p => p.Kind == MissionKind.Mining));
         foreach (var profile in profiles)
         {

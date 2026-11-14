@@ -93,7 +93,7 @@ internal sealed partial class PilotMissionStore
             Storyline = storyline,
             State = MissionState.Offered,
             OfferedAt = now,
-            ExpiresAt = checked(now + MissionRules.OfferLifetime.Ticks),
+            ExpiresAt = checked(now + profile.Lifetime.Ticks),
             DestinationStation = destination.Id,
             SystemId = destination.SolarSystemId,
             X = station.X + offset,

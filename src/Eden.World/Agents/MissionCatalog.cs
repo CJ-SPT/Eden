@@ -33,6 +33,7 @@ internal sealed record MissionProfile(
         : DungeonId.HasValue ? MissionKind.Combat
         : MissionKind.Courier;
 
+    internal TimeSpan Lifetime { get; init; }
     internal int SupplierFaction { get; init; }
     internal int SupplierCorporation { get; init; }
     internal ImmutableArray<MissionDeposit> Deposits { get; init; } = [];
@@ -153,6 +154,7 @@ internal static class MissionCatalog
         }
         return new(definition, name, nameId, briefingId, briefing, dungeonId, faction, corporation, cargoType, quantity, volume, rooms)
         {
+            Lifetime = MissionRules.Lifetime(mission.ExpirationTime),
             SupplierFaction = checked((int)(mission.FactionID ?? 0)),
             SupplierCorporation = checked((int)(mission.CorporationID ?? 0)),
             Deposits = deposits,

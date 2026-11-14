@@ -4077,6 +4077,16 @@
       "waves": []
     },
     {
+      "missionId": 2723,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
       "missionId": 2724,
       "level": 3,
       "difficulty": 500,
@@ -4249,6 +4259,16 @@
     {
       "missionId": 2741,
       "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2742,
+      "level": 4,
       "difficulty": 500,
       "storyline": false,
       "offerOrder": 1,
@@ -5045,6 +5065,26 @@
       "mining": true,
       "deadspace": false,
       "source": "build-3662168 client/missions and client/dungeons; Eden mining reward policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 13771,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 13773,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
       "sourceRevision": "3662168",
       "waves": []
     },

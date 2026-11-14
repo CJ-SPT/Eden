@@ -2,6 +2,67 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Catalog mission deadlines — November 14, 2026
+
+The catalog audit excluded four otherwise supported courier definitions solely because their `expirationTime` differs
+from seven days. Eden now reads that field as minutes for both offer creation and acceptance. Acceptance starts a fresh
+completion window. Missing values retain seven days; non-positive and greater-than-seven-day durations remain outside
+the admitted ordinary lifecycle. At the exact expiry timestamp, the existing mission closure path prevents cargo issuance
+or settlement. The saved `ExpiresAt` is authoritative across checkpoint/reopen; this change adds no database schema,
+background scheduler or alternate persistence path. All 334 previously admitted records have either an absent or
+10,080-minute duration, so their timing remains unchanged.
+
+| Catalog ID | Definition | Eden level | Duration |
+| --- | --- | --- | --- |
+| 2723 | A Change in Management | 1 | 120 minutes |
+| 2742 | A Change in Management | 4 | 240 minutes |
+| 13771 | Medical Delivery | 1 | 480 minutes |
+| 13773 | Wee Bug Problem | 2 | 720 minutes |
+
+The regenerated manifest and exhaustive audit contain **338 admitted / 2,554 blocked** records: 50 combat encounters,
+181 ordinary deliveries, 84 delivery storylines and 23 mining missions. The fixture contains 696 types and 4,126 source
+records. Existing cargo-volume level assignments, route selection, rewards, bonus policy and expiry consequences remain
+in force. The separate six-hour bonus window never permits settlement after the mission completion deadline.
+
+Reference evidence: [EVE University mission timers](https://wiki.eveuniversity.org/Missions#Mission_related_timers)
+describes separate offer and acceptance-based completion timers; build-3662168 `client/missions` supplies these four
+exceptions to the usual duration. Secondary behavior inspection used local evejs **261108.1**,
+`server/src/services/agent/agentMissionRuntime.js`, SHA-256
+`f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`:
+`resolveMissionExpirationDurationMs` interprets catalog minutes, and offer/accept paths reset the deadline.
+This was read-only reference inspection; no evejs implementation or content was copied. Native journal `expirationTime`
+continues to carry the saved FILETIME through the existing adapter; no wire or Carbon-owned codec behavior changed.
+
+**Automated validation.** Tool restore and solution restore succeeded. The final solution build passed with no warnings
+or errors (0.86 seconds). The corrected combined selection passed **103/103** in **149.45 seconds**. It selected
+`MissionDeadlineTests`, `MissionBonusTests`, `MissionPersistenceTests`, `MissionProtocolTests`, `MissionRulesTests`,
+and the exact content-load method using:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionDeadlineTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionBonusTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionRulesTests|FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters
+```
+
+Catalog policy **8/8**, formatting policy **9/9** and mission admission **7/7** passed in **2.40 seconds** combined.
+`Format.ps1 -Check` passed across **2,129 files**, including style and 140-column checks, in **51.56 seconds**.
+The final build/test/policy/format sequence took **204.52 seconds**. `git diff --check`, added documentation links/anchors,
+and UTF-8 verification passed. No full .NET suite was requested or run.
+
+Development began with the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionDeadlineTests.ResidentCatalogDeadlineSurvivesCheckpointsAndGatesTurnIn`:
+15/15 cases passed (build 4.58 seconds; tests 30.78 seconds), after fixing a missing test namespace import.
+The cases exercise all four new definitions and a seven-day baseline at one tick before, exactly at and one tick after
+expiry. They reopen offered and accepted resident checkpoints, assert native journal timestamps, and verify saved cargo,
+closure and exactly-once payment. New tests use only the resident world; SQL reads inspect completed checkpoints.
+The first combined run passed 100/103 cases in 72.62 seconds; three pure-rule cases failed because xUnit could not bind
+`int` InlineData values to a nullable `long`. Correcting those literals to `long` made the exact
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionDeadlineTests.LifetimeUsesCatalogMinutesOrSevenDayDefault`
+selection pass 4/4 (build 4.92 seconds; tests 2.78 seconds). The new documentation was normalized to UTF-8 and its local
+links and anchors were verified.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open a short-deadline offer and verify its native countdown resets on acceptance.
+
 ## Timed mission bonuses — November 14, 2026
 
 The evejs comparison found timed rewards missing from Eden's otherwise shared mission settlement path.

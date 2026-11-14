@@ -1246,7 +1246,7 @@ missionId,name,template,status,reason
 2720,A Total Mess,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2721,High Command,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2722,Tourists,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
-2723,A Change in Management,BasicCourierMission,blocked,Requires a different acceptance deadline
+2723,A Change in Management,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2724,Shipping Problems,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2725,Keeping The Grunts Happy,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2726,Air,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
@@ -1265,7 +1265,7 @@ missionId,name,template,status,reason
 2739,Miner Problems,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2740,Stolen Arms,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2741,Giving Shelter,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
-2742,A Change in Management,BasicCourierMission,blocked,Requires a different acceptance deadline
+2742,A Change in Management,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2743,A Feast Fit for a King,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2744,A Total Mess,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2745,A Bit of Terraforming,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
@@ -2216,9 +2216,9 @@ missionId,name,template,status,reason
 13768,Driving a Wedge - Get the Gallente (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
 13769,Driving a Wedge - Delegation Destruction (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
 13770,Driving a Wedge - Consulate Conflagration (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13771,Medical Delivery,BasicCourierMission,blocked,Requires a different acceptance deadline
+13771,Medical Delivery,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 13772,Probing Question,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13773,Wee Bug Problem,BasicCourierMission,blocked,Requires a different acceptance deadline
+13773,Wee Bug Problem,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 13774,An End to Eavesdropping,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 13775,Clearing a Path,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 13776,Cut-Throat Competition,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

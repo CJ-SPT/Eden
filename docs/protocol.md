@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Catalog mission deadlines](protocol/agents.md#catalog-mission-deadlines--november-14-2026) records four newly admitted
+courier definitions, resident expiry and checkpoint recovery.
+
 [Indexed resident disjunctions](protocol/performance.md#indexed-resident-disjunctions-november-14-2026)
 records bounded engagement queries, conservative fallbacks and matched query/session measurements.
 
