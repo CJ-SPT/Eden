@@ -536,7 +536,9 @@ internal sealed partial class LiveWorld
 
     private void AdvanceEffects(LiveSystemState state)
     {
-        if (SqlConnections != 0 || state.Expiring)
+        // Nested publication can enter the system while a resident action still owns it.
+        // Advance deadlines at the outer boundary so they never use a completed or speculative action.
+        if (SqlConnections != 0 || Economy.HasActiveAction || state.Expiring)
         {
             return;
         }

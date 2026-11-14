@@ -5,6 +5,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Skills;
 using Eden.Server;
 using Eden.World.Characters;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -89,11 +90,13 @@ public sealed class CharacterSheetTests
         Assert.Equal(NeuralRemapState.Default, saved.ReadAttributes(PilotId));
     }
 
-    [Fact]
-    public void RemapBanksOldRateAndReplansActiveQueueAtomicallyAcrossReopen()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RemapBanksOldRateAndReplansActiveQueueAtomicallyAcrossReopen(bool resident)
     {
         TestClock clock = new(new DateTimeOffset(2026, 11, 4, 0, 0, 0, TimeSpan.Zero));
-        using TestWorld db = new(clock: clock);
+        using TestWorld db = new(clock: clock, liveWorld: resident);
         var training = db.Services.GetRequiredService<IPilotTraining>();
         var sheet = db.Services.GetRequiredService<IPilotCharacterSheet>();
         ResetSkill(db);
@@ -108,6 +111,12 @@ public sealed class CharacterSheetTests
         Assert.Equal(clock.Now + duration, remap.Training.Queue[0].EndTime);
         Assert.Equal(remap.Training.Queue[0].EndTime, remap.Training.Queue[1].StartTime);
         Assert.Equal(NeuralRemapState.Default, sheet.ReadAttributes(WingId));
+        if (resident)
+        {
+            var live = db.Services.GetRequiredService<LiveWorld>();
+            Assert.Equal(FastShips, live.Economy.Peek<SavedCharacterSheet>(PilotId)!.Snapshot().Attributes);
+            await live.FlushAsync();
+        }
         using var reopened = ServerServices.Build(new(db.Path), clock);
         var saved = reopened.GetRequiredService<IPilotCharacterSheet>();
         var resumed = reopened.GetRequiredService<IPilotTraining>();

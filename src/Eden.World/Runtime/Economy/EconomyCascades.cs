@@ -74,6 +74,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Capsuleers.SavedCapsuleerHauler>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCharacterDeletion>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCharacterSetting>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedCharacterSheet>(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Loot.SavedJetcan>().Where(child => child.OwnerId == removed.Id));
                 if (Set<Eden.Data.World.Loot.SavedJettisonCooldown>().Find(removed.Id) is { } cooldown)
                 {

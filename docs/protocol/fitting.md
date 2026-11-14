@@ -2131,3 +2131,16 @@ Sources: inert inspection of staged build-3662168 `code.ccp`, SHA-256 **37FB2AF4
 **Live acceptance.** Not performed; agent client testing is disabled. Native fitting and simulation presentation remain unverified.
 
 **Optional maintainer checks.** After updating the server and reconnecting, online the reported afterburner and reopen the same simulated fit to compare CPU/power-grid budgets.
+
+## Heat during resident ship transitions
+
+A committed ship transfer can enter the heat owner again while clearing the previous overload selection.
+Deadline advancement now waits for the surrounding resident action to release its scope so the heat loader
+cannot read a completed transaction. Existing coverage exercises both leaving space with a paid cycle
+and leaving after burnout. It checks cycle cancellation, retained rack heat and the paid capacitor and cooldown.
+
+[EVE University's overheating reference](https://wiki.eveuniversity.org/Overheating) describes continued
+rack cooling while docked. The local EveJS 261108.1 `moduleHeat.js`, SHA-256 prefix `C5C30F1133BEF594`,
+also tracks rack cooling and burnout as separate effects.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.

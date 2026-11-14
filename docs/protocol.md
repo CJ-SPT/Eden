@@ -1,5 +1,9 @@
 # Protocol findings and milestone records
 
+[Resident neural remaps](protocol/characters.md#resident-neural-remaps) and
+[heat during resident ship transitions](protocol/fitting.md#heat-during-resident-ship-transitions)
+record fixes for two resident transaction failures.
+
 [Inbound traffic provisioning stalls during autopilot](protocol/performance.md#inbound-traffic-provisioning-stalls-during-autopilot)
 records the Docker incident and the resident founder transaction regression.
 

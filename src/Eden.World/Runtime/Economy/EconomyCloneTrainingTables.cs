@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Dogma;
@@ -314,7 +315,7 @@ internal sealed partial class ResidentEconomy
                     BonusRemaps = state.BonusRemaps,
                     NextTimedRemap = state.NextTimedRemap,
                 },
-                static (_, _) => throw new InvalidOperationException("Read-only rows cannot be projected."),
+                ProjectSavedCharacterSheet,
                 "PilotId,Biography,Intelligence,Memory,Charisma,Perception,Willpower,BonusRemaps,NextTimedRemap",
                 reader =>
                     new(
@@ -329,11 +330,46 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(9) ? null : reader.GetInt64(9)
                     ),
                 state => new(state.PilotId),
-                readOnly: true,
                 indexes: [],
-                primaryColumn: "PilotId"
+                primaryColumn: "PilotId",
+                rowIdIsKey: true
             )
         );
+    }
+
+    private static void ProjectSavedCharacterSheet(WorldDbContext world, IReadOnlyList<EconomyChange<EconomySavedCharacterSheet>> changes)
+    {
+        foreach (var batch in changes.Chunk(ProjectionBatchSize))
+        {
+            long[] removed = batch.Where(change => change.Value is null).Select(change => change.Key.Id).ToArray();
+            if (removed.Length != 0)
+            {
+                string deleted = JsonSerializer.Serialize(removed);
+                world.Database.ExecuteSql($"DELETE FROM WorldCharacterSheet WHERE PilotId IN (SELECT value FROM json_each({deleted}))");
+            }
+            var rows = batch.Where(change => change.Value is not null).Select(change => change.Value).ToArray();
+            if (rows.Length != 0)
+            {
+                string values = JsonSerializer.Serialize(rows);
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldCharacterSheet(
+                        PilotId,Biography,Intelligence,Memory,Charisma,Perception,Willpower,BonusRemaps,NextTimedRemap
+                    )
+                    SELECT
+                        json_extract(value,'$.PilotId'),json_extract(value,'$.Biography'),
+                        json_extract(value,'$.Intelligence'),json_extract(value,'$.Memory'),json_extract(value,'$.Charisma'),
+                        json_extract(value,'$.Perception'),json_extract(value,'$.Willpower'),
+                        json_extract(value,'$.BonusRemaps'),json_extract(value,'$.NextTimedRemap')
+                    FROM json_each({values}) WHERE 1
+                    ON CONFLICT(PilotId) DO UPDATE SET
+                        Biography=excluded.Biography,Intelligence=excluded.Intelligence,Memory=excluded.Memory,
+                        Charisma=excluded.Charisma,Perception=excluded.Perception,Willpower=excluded.Willpower,
+                        BonusRemaps=excluded.BonusRemaps,NextTimedRemap=excluded.NextTimedRemap
+                    """
+                );
+            }
+        }
     }
 
     private static void ProjectSavedHomeCloneTransfer(

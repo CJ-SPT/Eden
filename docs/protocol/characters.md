@@ -964,3 +964,28 @@ diff verification). No full .NET suite was requested or run.
 **Optional maintainer checks.** Reconnect and inspect the saved-time estimate for active and paused skills;
 collect a mining reward and an NPC bounty, then reopen the skill queue to confirm balances refresh silently.
 Native rendering, input and gameplay feel remain unverified.
+
+## Resident neural remaps
+
+The resident training action now writes the character sheet and the replanned queue together. The checkpoint
+projects remap counters, the timed deadline, base attributes and the existing biography into the same saved
+row. The timed and bonus remap rules follow the existing pinned character-sheet contract and
+[CCP's neural remap rules](https://support.eveonline.com/hc/en-us/articles/203267991-Neural-Remaps).
+The local EveJS 261108.1 reference exposes the related read in `skillMgrService.js`, SHA-256 prefix
+`64D7E60FC25C835C`.
+
+The remap regression runs in live and file-backed worlds. It verifies accrued points at the old rate, the
+new queue deadline, unchanged attributes for another pilot, checkpoint and reopen, and rejected input.
+
+**Automated validation.** The two exact remap and heat methods passed all four cases in 7.43 seconds.
+The solution build passed with zero warnings or errors. The combined selection passed 169 cases in 1 minute
+22 seconds. Both policy suites passed with 8 and 9 cases. Filters used the following
+`FullyQualifiedName~` clauses.
+
+```text
+CharacterSheetTests, CharacterSheetServiceTests, ShipHeatTests, PaidNaniteRepairTests,
+PilotGateTravel, GateTravelRulesTests, WormholeTravelTests, TranslocationTests, DockedServicesTests,
+MovementPersistenceTests, DetachedCheckpointTests, ResidentHandoffTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
