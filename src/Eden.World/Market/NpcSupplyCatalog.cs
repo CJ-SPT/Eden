@@ -21,7 +21,7 @@ internal sealed partial class PilotMarketStore
 
     private readonly record struct InstitutionalSupplier(int CorporationId, bool Hub);
 
-    private static readonly ConditionalWeakTable<CatalogProvider, Lazy<int[]>> BlueprintSupplies = new();
+    private static readonly ConditionalWeakTable<CatalogProvider, Lazy<int[]>> HubSupplies = new();
 
     private static readonly ConditionalWeakTable<
         CatalogProvider,
@@ -67,9 +67,9 @@ internal sealed partial class PilotMarketStore
         var definitions = catalog.Definitions;
         var corporation = catalog.Read(CatalogData.Client.Npccorporations, (long)supplier.CorporationId);
         var trades = corporation?.CorporationTrades ?? [];
-        // Hubs share the catalog's NPC blueprint sell assortment, regardless of
-        // the local corporation. Other institutional goods retain their suppliers.
-        int[] suppliedBlueprints = supplier.Hub ? HubBlueprints(catalog) : [];
+        // Hubs share catalog NPC blueprint and command-center sell assortments so
+        // industry can start without first visiting an unseeded supplier station.
+        int[] suppliedTypes = supplier.Hub ? HubInstitutionalSupplies(catalog) : [];
         var offered = trades
             .Where(t => t.Value != 0)
             .Select(t => new InstitutionalType(int.Parse(t.Key, CultureInfo.InvariantCulture), t.Value < 0))
@@ -81,7 +81,7 @@ internal sealed partial class PilotMarketStore
                         trades.GetValueOrDefault(skill.Definition.TypeId.ToString(CultureInfo.InvariantCulture)) < 0
                     ))
             )
-            .Union(suppliedBlueprints.Select(type => new InstitutionalType(type, false)))
+            .Union(suppliedTypes.Select(type => new InstitutionalType(type, false)))
             .OrderBy(offer => offer.TypeId)
             .ThenBy(offer => offer.Bid)
             .ToArray();
@@ -168,8 +168,8 @@ internal sealed partial class PilotMarketStore
         return result.AsReadOnly();
     }
 
-    private static int[] HubBlueprints(CatalogDbContext catalog) =>
-        BlueprintSupplies
+    private static int[] HubInstitutionalSupplies(CatalogDbContext catalog) =>
+        HubSupplies
             .GetValue(
                 catalog.Definitions,
                 definitions =>
@@ -182,7 +182,13 @@ internal sealed partial class PilotMarketStore
                             .Where(trade => trade.Value > 0)
                             .Select(trade => int.Parse(trade.Key, CultureInfo.InvariantCulture))
                             .Distinct()
-                            .Where(type => reader.FittingType(type)?.CategoryId == (int)InventoryCategory.Blueprint)
+                            .Where(type =>
+                                reader.FittingType(type) is { } item
+                                && (
+                                    item.CategoryId == (int)InventoryCategory.Blueprint
+                                    || item.GroupId == (int)HoldCargoGroup.CommandCenters
+                                )
+                            )
                             .ToArray();
                     })
             )

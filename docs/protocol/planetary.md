@@ -190,3 +190,55 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Command-center market supply — November 14, 2026
+
+Regional hubs now include the pinned catalog's NPC command-center sell assortment alongside blueprint originals.
+Previously, hub expansion included only blueprints; command centers appeared only when their original supplier's
+station was prepared, leaving ordinary regional market browsing without the items needed to begin PI. The existing
+resident institutional seeder adds the missing offers on market preparation, including for existing saves.
+No manufacturing unlock, database reset or catalog rebuild is required.
+
+Build 3662168 has eight published market types in group 1027: Temperate 2254, Barren 2524, Oceanic 2525,
+Ice 2533, Gas 2534, Lava 2549, Storm 2550 and Plasma 2551. Their catalog NPC sellers are corporations
+1000010, 1000054, 1000065 and 1000109, with positive fractional `corporationTrades` values of 0.333.
+Each already has a sell quote in Eden's embedded market snapshot. The fix preserves those prices, configured
+institutional stock, replenishment and original supplier stations. Buy-only, unlisted, unpublished and
+non-market types remain ineligible for hub sell supply; other planetary buildings are not added.
+
+[EVE University: setting up a planetary colony](https://wiki.eveuniversity.org/Setting_up_a_planetary_colony)
+confirms that the matching command center is purchased from NPC merchants before deployment. The local EveJS
+`261108.1` reference's `tools/market-seederv3/src/overlay.rs` identifies all eight command centers as NPC overlay
+goods (SHA-256 prefix `BD03B18F186AECC6`). This source snapshot has no Git metadata; no code was copied.
+The hub distribution is Eden policy, rather than a claim about retail station distribution.
+
+### Automated validation
+
+The exact initial filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Market.PlanetaryMarketTests.HubCommandCentersCanBePurchasedAndSurviveCheckpointReopen`.
+All eight cases passed after correcting the test's stock expectation to match existing immediate institutional
+replenishment (build 5.52 s, tests 7.98 s). The first run failed only that incorrect stock assertion.
+The resident tests exercise regional discovery from a non-supplier station, snapshot prices, rejected underpriced
+purchases with unchanged balances/history/orders, hangar delivery, wallet charges, stable order identity and
+inventory/history after checkpoint reopen. Additional cases cover original suppliers and eligibility rejection.
+
+Final validation used the following combined filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Market.PlanetaryMarketTests|FullyQualifiedName~Eden.Protocol.Tests.Market.BlueprintMarketTests|FullyQualifiedName~Eden.Protocol.Tests.Market.NpcSupplyTests|FullyQualifiedName~Eden.Protocol.Tests.Planetary
+```
+
+All 70 tests passed in 30.23 s. The earlier combined run passed 69 cases and exposed a missing NPC corporation row
+in the new supplier-station fixture; after supplying that catalog row, the exact supplier test passed (build 5.08 s,
+tests 6.44 s) before the final combined run. Tool/solution restore and solution build passed in 1.84 s with zero
+warnings/errors; both Python policy suites passed (8 + 9 tests, 1.30 s), and `tools/Format.ps1 -Check` passed in
+27.65 s. `git diff --check` passed. The full .NET suite was not requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After deploying and restarting the updated server, browse Command Centers with regional market range and buy the
+type matching the intended planet. Native market presentation and deployment remain unverified by this change.
