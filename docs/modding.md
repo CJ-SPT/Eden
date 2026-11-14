@@ -43,12 +43,13 @@ dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
 ```
 
 Use the hash printed by install. Append the same `--world PATH` to all four commands for a nondefault world.
-When upgrading to AutoMining 1.3.0, use a fresh export path and disable the previous package hash before enabling the new one.
+When upgrading to AutoMining 1.4.0, use a fresh export path and disable the previous package hash before enabling the new one.
 Restart Eden, then launch through Eden Launcher to receive the active mod set. In space, open **Eden Mods →
 AutoMining** from the Neocom context menu. Select ore types in **Available ore types** and use the right arrow
 to move them to **Active filter**. Search either list by name or grade. Use the left arrow to remove selected types, or
 **Clear filter** to allow all supported ore. Select **Apply settings** to save the changes for the selected
-character. **Reload** restores the saved settings. **Start** and **Stop** above the form control the run.
+character. **Reload** restores the saved settings. **Start** saves the whole form before starting. **Stop** ends the run.
+Stop before editing an active plan. Rejections now display the server's specific reason.
 
 Choose **Ore**, **Ice**, or **Gas** and select **Apply settings**. Fit a matching online harvester. The ore filter applies
 in Ore mode and lets you choose each grade independently. **Largest surveyed deposit** and **Smallest surveyed deposit**
@@ -57,20 +58,26 @@ use the remaining cubic metres on a ship with an integrated mining scanner and o
 Enable **Approach out-of-range targets** to let the ship move into harvesting range. A manual navigation order stops
 the run while automatic approach is enabled.
 
-The default unload threshold is **95%**. Set **Unload hold %** or select an NPC station in the current system, then
-apply the settings. At the threshold, or when the next eligible unit will not fit, station hauling moves the selected resource
+The default unload threshold is **95%**. Under **Unload station**, search by station or system name and choose
+a result. Stations can be in other connected systems. Set **Unload hold %** and apply the settings or start. At the threshold, or when the next eligible unit will not fit, station hauling moves the selected resource
 family to your personal Item Hangar and returns to the mining position. If **Jettison when unloading**
 is enabled, AutoMining uses the same threshold and jettisons the selected harvest on the current grid. It uses the
 normal jettison cooldown, and the can expires after two hours. Choose **Keep harvest on board** and leave jettison off
 to retain the harvest in your ship.
 
-For a multi-system ore route, enter ordered system names separated by commas under **Route and fleet**, for example
-`Jita, Perimeter, Jita`, and select **Save route / fleet** while stopped. Up to 32 system visits are supported, including
-repeated systems. Every system must have asteroid belts. **Start** visits each system's belts in catalog order and moves
-on when no compatible resource remains within reach. Enable **Approach out-of-range targets** to reach more of each belt.
-Routes use the shortest connected stargate path through **all security levels**, without the native autopilot's avoidance
-or safer-route preferences. A route ends after its last belt; it does not loop or resume after reconnecting. An empty route
-keeps the existing current-grid behavior. System routes currently cover ore belts; ice and gas remain current-grid modes.
+Under **Mining systems**, search for a system, select a result, and click **Add system**. Only systems with
+asteroid belts appear. Remove or reorder the list as needed. Up to 32 system visits are supported, including
+repeated systems. **Start** saves the plan, visits every belt in each listed system, and approaches matching ore
+automatically. The approach checkbox remains available for current-grid harvesting. Belts with no compatible
+filtered ore are skipped. Routes use the shortest connected stargate path through **all security levels**, without
+the native autopilot's avoidance or safer-route preferences. A route ends after its last belt; it does not loop
+or resume after reconnecting. An empty list keeps the current-grid behavior. Ice and gas remain current-grid modes.
+
+AutoMining checks visible NPC contacts before selecting resources or issuing route commands. On detecting pirates
+or NPCs targeting the ship, it stops automatic harvesting and skips that grid for the rest of the run. It moves to
+the next safe route stop, or retreats to a local station and docks when no stop remains. Followers and ships hauling
+also retreat and stop. A system without a station uses a stargate as its retreat point. It cannot know about rats at
+unvisited belts, and normal warp disruption and travel rules still apply. A failed escape stops with an explanation.
 
 For player fleets, the fleet boss selects **Lead fleet (boss)** and starts first. Members select **Follow fleet boss**,
 save, then start individually. Followers travel to the boss's current mining destination using their own ships and gates.
@@ -79,17 +86,17 @@ station and threshold remain their own. The boss advances independently; followe
 before following a changed destination. There is no automatic recruitment, NPC control, shared cargo or payout allocation.
 Fleet following also works with an empty boss route at the boss's starting mining position.
 
-Choose your unload station before departing its system. During a route or fleet run, a full ship travels back to that
-saved station, unloads into its own hangar, and returns to its mining position; followers rejoin the boss's latest destination.
-Ordinary current-grid solo hauling still requires a local station. The panel remains open across gate jumps; **Reload**
-refreshes the local station picker. Stop before changing route or fleet mode. Stop, manual navigation, ship changes,
-disconnects, travel failures, loss of fleet membership or a stopped/changed fleet boss end the affected run. A committed
-gate transition or warp can finish after stopping, but automation issues no further travel orders.
+A full ship travels to the saved station, unloads into its own hangar, and returns to its mining position;
+followers rejoin the boss's latest destination. Cross-system unloading also works with an empty mining-system list.
+The panel remains open across gate jumps, retaining the selected station and systems. Stop, manual navigation,
+ship changes, disconnects, travel failures, loss of fleet membership or a stopped/changed fleet boss end the affected
+run. A committed gate transition or warp can finish after stopping, but automation issues no further travel orders.
 
 See the protocol records for [mining cycles](protocol/industry.md#automining-the-current-grid),
 [automatic station hauling](protocol/industry.md#automining-station-hauling), and
 [approach, survey, harvesting, and jettison](protocol/industry.md#automining-approach-survey-and-harvest-handling), and
-[player fleets and system routes](protocol/industry.md#automining-player-fleets-and-system-routes).
+[player fleets and system routes](protocol/industry.md#automining-player-fleets-and-system-routes), and
+[searchable plans and rat avoidance](protocol/industry.md#automining-searchable-plans-and-rat-avoidance).
 
 ## Identity and persistence
 

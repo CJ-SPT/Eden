@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.Gameplay.Mining;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,6 +6,13 @@ namespace Eden.World.Catalog;
 
 public sealed partial class CatalogDbContext
 {
+    internal HashSet<int> MiningSystems() =>
+        Set<Celestial>()
+            .Where(body => body.GroupId == AsteroidDefinitions.BeltGroup)
+            .Select(body => body.SolarSystemId)
+            .Distinct()
+            .ToHashSet();
+
     // Read just the distinct populated type IDs. Belt layouts remain in the catalog.
     internal int[] PopulatedBeltOreTypes() =>
         Database

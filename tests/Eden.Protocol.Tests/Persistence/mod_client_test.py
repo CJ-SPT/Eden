@@ -115,29 +115,42 @@ class ClientModTests(unittest.TestCase):
 class AutoMiningPanelTests(unittest.TestCase):
     def test_run_and_save_actions_stay_outside_the_scroll_and_the_picker_applies_settings(self):
         calls = []
-        route_calls = []
+        searches = []
         state = {'status': 'Stopped', 'oreTypes': [(1228, 'Scordite'), (1230, 'Veldspar'), (17470, 'Veldspar II-Grade')],
                  'oreFilter': 'Scordite', 'selectedOreTypes': [1228],
                  'resourceFamily': 0, 'targetOrder': 0, 'approach': False, 'jettison': False,
-                 'unloadStation': 0, 'unloadThreshold': 95}
+                 'unloadStation': 0, 'unloadThreshold': 95, 'running': False, 'routeStops': [], 'fleetMode': 0}
+
+        class UserError(Exception):
+            def __init__(self, values):
+                self.dict = values
 
         class Remote:
             def GetStatus(self):
                 return state.copy()
 
-            def GetStations(self):
-                return [(60003760, 'Station')]
+            def SearchSystems(self, query):
+                searches.append(('systems', query))
+                return [(30000144, 'Perimeter')]
 
-            def SaveSettings(self, *args):
+            def SearchStations(self, query):
+                searches.append(('stations', query))
+                return [(60003760, 'Jita IV - Moon 4')]
+
+            def SavePlan(self, *args):
                 calls.append(args)
                 if args[0] is not None:
                     state['selectedOreTypes'] = args[0]
                     state['oreFilter'] = ', '.join('#%d' % type_id for type_id in args[0])
+                state.update(unloadStation=args[5], unloadThreshold=args[6],
+                             routeStops=[(system, 'Perimeter') for system in args[7]], fleetMode=args[8],
+                             unloadStationName='Jita IV - Moon 4')
                 return state.copy()
 
-            def SaveRoute(self, systems, mode):
-                route_calls.append((systems, mode))
-                state.update(routeSystems=systems, fleetMode=mode)
+            def Start(self):
+                if state['fleetMode'] == 2:
+                    raise UserError({'notify': 'The fleet boss is not leading. Start Lead fleet on the boss first.'})
+                state.update(running=True, status='Travelling to Perimeter')
                 return state.copy()
 
         class Control:
@@ -189,7 +202,7 @@ class AutoMiningPanelTests(unittest.TestCase):
         alignments = ['TOTOP', 'TOALL', 'TOBOTTOM', 'TOLEFT', 'TOLEFT_PROP', 'TORIGHT']
         scope = {name: Control for name in ('Button', 'ButtonGroup', 'Checkbox', 'Combo', 'Container', 'ContainerAutoSize',
                                            'EveHeaderSmall', 'EveLabelMedium', 'Scroll', 'ScrollContainer', 'SingleLineEditText')}
-        scope.update(Window=Window, uiconst=types.SimpleNamespace(**{name: name for name in alignments}),
+        scope.update(UserError=UserError, unicode=str, Window=Window, uiconst=types.SimpleNamespace(**{name: name for name in alignments}),
                      ButtonVariant=types.SimpleNamespace(PRIMARY=1), ButtonSizeMode=types.SimpleNamespace(DYNAMIC=1),
                      AxisAlignment=types.SimpleNamespace(START=1),
                      Generic=Control, GetFromClass=lambda entry_type, values: types.SimpleNamespace(**values),
@@ -224,7 +237,7 @@ class AutoMiningPanelTests(unittest.TestCase):
         self.assertEqual([], calls)
         panel.threshold.SetValue('81')
         panel.apply()
-        self.assertEqual([([17470], 0, 0, False, False, 0, 81)], calls)
+        self.assertEqual([([17470], 0, 0, False, False, 0, 81, [], 0)], calls)
         panel.clear_filter()
         self.assertEqual(set(), panel.active_types)
         panel.reload()
@@ -234,17 +247,38 @@ class AutoMiningPanelTests(unittest.TestCase):
         panel.clear_filter()
         panel.apply()
         self.assertEqual([], calls[-1][0])
-        panel.route.SetValue('Jita, Perimeter')
-        panel.fleet.LoadOptions(panel.FLEET_OPTIONS, 1)
-        panel.save_route()
-        self.assertEqual([('Jita, Perimeter', 1)], route_calls)
+        panel.system_search.SetValue('Peri')
+        panel.search_systems()
+        panel.add_system()
+        self.assertEqual([(30000144, 'Perimeter')], panel.route_entries)
+        panel.add_system()
+        panel.route_list.selection = [types.SimpleNamespace(routeIndex=1)]
+        panel.remove_system()
+        self.assertEqual([(30000144, 'Perimeter')], panel.route_entries)
+        panel.station_search.SetValue('Jita')
+        panel.search_stations()
+        self.assertEqual([('systems', 'Peri'), ('stations', 'Jita')], searches)
+        panel.station.LoadOptions([], 60003760)
+        panel.fleet.LoadOptions(panel.FLEET_OPTIONS, 2)
+        panel.start()
+        self.assertEqual('The fleet boss is not leading. Start Lead fleet on the boss first.', panel.notice.text)
+        self.assertFalse(panel.busy)
+        self.assertEqual([30000144], calls[-1][7])
+        self.assertEqual(60003760, calls[-1][5])
+        panel.fleet.LoadOptions(panel.FLEET_OPTIONS, 0)
+        panel.start()
+        self.assertTrue(state['running'])
+        self.assertEqual('Travelling to Perimeter', panel.status.text)
         panel.session_changed({'solarsystemid2': (30000142, 30000144)})
         self.assertFalse(panel.window.destroyed)
         panel.OnEdenAutoMiningStatus('Jumping to the next route system')
         self.assertEqual('Jumping to the next route system', panel.status.text)
         panel.reload()
-        self.assertEqual('Jita, Perimeter', panel.route.GetValue())
-        self.assertEqual(1, panel.fleet.GetValue())
+        self.assertEqual([(30000144, 'Perimeter')], panel.route_entries)
+        self.assertEqual(60003760, panel.station.GetValue())
+        panel.show_error(UserError({'info': 'Older information error'}))
+        self.assertEqual('Older information error', panel.notice.text)
+
 
 
 if __name__ == '__main__':

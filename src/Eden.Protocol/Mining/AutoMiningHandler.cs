@@ -57,6 +57,9 @@ internal sealed partial class AutoMiningHandler(
                     or "SaveOptions"
                     or "SaveSettings"
                     or "SaveRoute"
+                    or "SavePlan"
+                    or "SearchSystems"
+                    or "SearchStations"
                 )
         )
         {
@@ -70,6 +73,8 @@ internal sealed partial class AutoMiningHandler(
         {
             bool validArguments = method switch
             {
+                "SavePlan" => ValidPlanArguments(args),
+                "SearchSystems" or "SearchStations" => args is [string or byte[]],
                 "SaveRoute" => args is [string or byte[], long mode] && mode is >= 0 and <= (long)AutoMiningFleetMode.Follow,
                 "SaveFilter" => args is [string or byte[]],
                 "SaveOptions" => args is [long family, long order, bool, bool] && ValidOptions(family, order),
@@ -113,6 +118,13 @@ internal sealed partial class AutoMiningHandler(
             _route ??= routes?.ReadRoute(_pilotId) ?? AutoMiningRoute.Empty;
             switch (method)
             {
+                case "SavePlan":
+                    SavePlan(context, args);
+                    break;
+                case "SearchSystems":
+                    return new AutoMiningSystems(routes?.SearchSystems(BlueMarshal.Text(args[0])) ?? []);
+                case "SearchStations":
+                    return new AutoMiningStations(routes?.SearchStations(BlueMarshal.Text(args[0]), context.Pilot.SystemId) ?? []);
                 case "SaveRoute":
                     if (_flight is not null)
                     {
@@ -237,6 +249,8 @@ internal sealed partial class AutoMiningHandler(
             {
                 RouteText = routes?.Describe(_route) ?? "",
                 FleetMode = _route.FleetMode,
+                RouteStops = routes?.DescribeSystems(_route) ?? [],
+                UnloadStationName = _haulSettings.Enabled ? routes?.Station(_haulSettings.StationId).Name ?? "Saved station" : "",
             };
         }
         catch (InvalidDataException error)
@@ -377,6 +391,10 @@ internal sealed partial class AutoMiningHandler(
     private void AdvanceSelection(PilotCallContext context, bool sessionTick)
     {
         CheckFlight(context);
+        if (_flight is not null && AvoidRats(context, sessionTick))
+        {
+            return;
+        }
         if (_flight is not null && RouteActive)
         {
             if (!sessionTick)
@@ -583,6 +601,8 @@ internal sealed record AutoMiningStatus(
 {
     internal string RouteText { get; init; } = "";
     internal AutoMiningFleetMode FleetMode { get; init; }
+    internal IReadOnlyList<AutoMiningSystem> RouteStops { get; init; } = [];
+    internal string UnloadStationName { get; init; } = "";
     internal string OreFilter => Filter.Text;
 
     public override object ToBlue() =>
@@ -606,5 +626,7 @@ internal sealed record AutoMiningStatus(
             ["jettison"] = Options.Jettison,
             ["routeSystems"] = new BlueUnicode(RouteText),
             ["fleetMode"] = (int)FleetMode,
+            ["routeStops"] = new AutoMiningSystems(RouteStops),
+            ["unloadStationName"] = new BlueUnicode(UnloadStationName),
         };
 }

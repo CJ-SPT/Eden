@@ -22,6 +22,15 @@ public sealed record AutoMiningDestination(int SystemId, long Id, SpacePosition 
 
 public sealed record AutoMiningGate(int SystemId, long Id, int DestinationSystemId, long ExitId);
 
+public sealed record AutoMiningSystem(int Id, string Name);
+
+public sealed record AutoMiningPlan(
+    AutoMiningFilter Filter,
+    AutoMiningOptions Options,
+    AutoMiningHaulSettings Hauling,
+    AutoMiningRoute Route
+);
+
 public interface IPilotAutoMiningRoutes
 {
     AutoMiningRoute ReadRoute(long pilotId);
@@ -30,6 +39,11 @@ public interface IPilotAutoMiningRoutes
     IReadOnlyList<AutoMiningGate> Path(int origin, int destination);
     IReadOnlyList<AutoMiningDestination> Belts(int systemId);
     AutoMiningDestination Station(long stationId);
+    IReadOnlyList<AutoMiningSystem> SearchSystems(string query);
+    IReadOnlyList<AutoMiningStation> SearchStations(string query, int currentSystem);
+    IReadOnlyList<AutoMiningSystem> DescribeSystems(AutoMiningRoute route);
+    void SavePlan(long pilotId, int origin, AutoMiningPlan plan);
+    AutoMiningDestination? Refuge(int systemId, SpacePosition position);
 }
 
 public interface IAutoMiningFleets

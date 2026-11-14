@@ -11,6 +11,7 @@ internal sealed partial class AutoMiningHandler
         Mining,
         Unload,
         Return,
+        Refuge,
     }
 
     private sealed record MiningJourney(
@@ -28,12 +29,23 @@ internal sealed partial class AutoMiningHandler
     private int? _expectedSystem;
     private long _leader;
     private bool _routeExhausted;
-    private bool RouteActive => _route is { } route && (route.Travels || route.FleetMode != AutoMiningFleetMode.Solo);
+    private bool _crossSystemHauling;
+    private bool RouteActive =>
+        _journey is not null
+        || _crossSystemHauling
+        || _route is { } route && (route.Travels || route.FleetMode != AutoMiningFleetMode.Solo);
     internal bool IsMonitoring => _flight is not null;
 
     private void PrepareRoute(PilotCallContext context)
     {
         var route = _route!;
+        _destination = null;
+        _routeStops.Clear();
+        _leader = 0;
+        _crossSystemHauling =
+            _haulSettings is { Enabled: true } settings
+            && routes is not null
+            && routes.Station(settings.StationId).SystemId != context.Pilot.SystemId;
         if (!RouteActive)
         {
             return;
@@ -46,7 +58,6 @@ internal sealed partial class AutoMiningHandler
         {
             throw new InvalidDataException("System routes visit asteroid belts. Select Ore, or clear the route for ice and gas.");
         }
-        _leader = 0;
         if (route.FleetMode != AutoMiningFleetMode.Solo)
         {
             _leader = (fleets ?? throw new InvalidDataException("AutoMining fleets are unavailable.")).RequireLeader(context.Pilot.PilotId);
@@ -80,6 +91,9 @@ internal sealed partial class AutoMiningHandler
     private void StartRoute(PilotCallContext context)
     {
         _routeExhausted = false;
+        _unsafeSites.Clear();
+        _retreating = false;
+        _evading = false;
         if (!RouteActive)
         {
             return;
@@ -106,6 +120,11 @@ internal sealed partial class AutoMiningHandler
     {
         try
         {
+            if (_retreating)
+            {
+                AdvanceJourney(context);
+                return true;
+            }
             if (_route!.FleetMode == AutoMiningFleetMode.Lead)
             {
                 fleets!.Publish(_pilotId, _destination!);
@@ -132,7 +151,7 @@ internal sealed partial class AutoMiningHandler
                 {
                     SetStatus(context, "Waiting for manually started mining before moving on", s_retryInterval);
                 }
-                else if (_routeStops.TryDequeue(out var next))
+                else if (NextSafeStop() is { } next)
                 {
                     _destination = next;
                     _routeExhausted = false;
@@ -214,17 +233,33 @@ internal sealed partial class AutoMiningHandler
         {
             throw new InvalidDataException("The mining route arrived in an unexpected system.");
         }
-        double radius = journey.Purpose == JourneyPurpose.Unload ? flight.LocalStation(destination.Id)?.Radius ?? 0 : 0;
-        double tolerance = ReturnTolerance + radius + (journey.Purpose == JourneyPurpose.Unload ? context.Pilot.Flight.ShipRadius : 0);
+        bool station = journey.Purpose is JourneyPurpose.Unload or JourneyPurpose.Refuge;
+        double radius = station ? flight.LocalObject(destination.Id)?.Radius ?? 0 : 0;
+        double tolerance = ReturnTolerance + radius + (station ? context.Pilot.Flight.ShipRadius : 0);
         if (position.DistanceTo(destination.Position) > tolerance)
         {
-            MoveOnJourney(context, destination.Id, destination.Position, radius, point: journey.Purpose != JourneyPurpose.Unload);
+            MoveOnJourney(context, destination.Id, destination.Position, radius, point: !station);
             return;
         }
         ExecuteAutomaticCommand(flight, new FlightCommand.Stop(), "Could not stop at the mining destination.");
         _journey = null;
+        _evading = false;
         _nextDecision = clock.GetTimestamp();
-        if (journey.Purpose == JourneyPurpose.Unload)
+        if (journey.Purpose == JourneyPurpose.Refuge)
+        {
+            bool canDock = flight.LocalStation(destination.Id) is not null;
+            if (canDock)
+            {
+                ExecuteAutomaticCommand(flight, new FlightCommand.Dock(destination.Id, _ship), "Could not dock while avoiding rats.");
+            }
+            Cancel(
+                context,
+                canDock
+                    ? "Docked to avoid rats. Choose another mining system or restart when clear."
+                    : "Stopped at a stargate to avoid rats. Choose another mining system."
+            );
+        }
+        else if (journey.Purpose == JourneyPurpose.Unload)
         {
             EnterPhase(context, HaulPhase.Departing, "Arrived in the unload system");
         }

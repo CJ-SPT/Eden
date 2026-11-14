@@ -60,7 +60,7 @@ class MiningPanel(object):
         actions.add_button(Button(label='Stop', func=self.stop))
 
         footer = ContainerAutoSize(parent=content, align=uiconst.TOBOTTOM, alignMode=uiconst.TOTOP)
-        self.notice = EveLabelMedium(parent=footer, align=uiconst.TOTOP, padTop=6, maxLines=2, showEllipsis=True)
+        self.notice = EveLabelMedium(parent=footer, align=uiconst.TOTOP, padTop=6)
         footer_actions = ButtonGroup(parent=footer, align=uiconst.TOTOP, button_alignment=AxisAlignment.START,
                                      button_size_mode=ButtonSizeMode.DYNAMIC)
         footer_actions.add_button(Button(label='Apply settings', func=self.apply, variant=ButtonVariant.PRIMARY))
@@ -68,11 +68,11 @@ class MiningPanel(object):
         footer_actions.add_button(Button(label='Clear filter', func=self.clear_filter))
 
         body = ScrollContainer(parent=content, align=uiconst.TOALL, alignMode=uiconst.TOTOP, padBottom=4)
-        self.build_options(body)
         self.build_route(body)
+        self.build_options(body)
         self.build_filter(body)
         self.family.OnChange = self.family_changed
-        self.stations = []
+        self.station_names = {}
         self.request('GetStatus', load_settings=True)
 
     def build_options(self, body):
@@ -90,30 +90,124 @@ class MiningPanel(object):
         self.approach = Checkbox(parent=move, align=uiconst.TOTOP, text='Approach out-of-range targets')
         self.jettison = Checkbox(parent=full, align=uiconst.TOTOP, text='Jettison when unloading')
 
-        hauling = Container(parent=body, align=uiconst.TOTOP, height=50, padBottom=10)
+        EveHeaderSmall(parent=body, text='Unload station', align=uiconst.TOTOP, padTop=8, padBottom=4)
+        search = Container(parent=body, align=uiconst.TOTOP, height=30, padBottom=4)
+        Button(parent=search, align=uiconst.TORIGHT, label='Search', func=self.search_stations, padLeft=8)
+        self.station_search = SingleLineEditText(parent=search, align=uiconst.TOALL, maxLength=100,
+                                                 hintText='Station or system name')
+        self.station_search.OnReturn = self.search_stations
+        hauling = Container(parent=body, align=uiconst.TOTOP, height=50, padBottom=8)
         threshold = Container(parent=hauling, align=uiconst.TORIGHT, width=108, padLeft=12)
         station = Container(parent=hauling, align=uiconst.TOALL)
-        EveLabelMedium(parent=station, text='Unload station', align=uiconst.TOTOP, padBottom=2)
+        EveLabelMedium(parent=station, text='Search results / selected station', align=uiconst.TOTOP, padBottom=2)
         EveLabelMedium(parent=threshold, text='Unload hold %', align=uiconst.TOTOP, padBottom=2)
         self.station = Combo(parent=station, align=uiconst.TOTOP, options=[self.KEEP_HARVEST])
         self.threshold = SingleLineEditText(parent=threshold, align=uiconst.TOTOP, maxLength=3, setvalue='95')
 
     def build_route(self, body):
-        EveHeaderSmall(parent=body, text='Route and fleet', align=uiconst.TOTOP, padBottom=4)
-        EveLabelMedium(parent=body, text='Ordered system names, separated by commas. Empty = current grid.',
-                       align=uiconst.TOTOP, padBottom=4)
-        self.route = SingleLineEditText(parent=body, align=uiconst.TOTOP, maxLength=2048,
-                                        hintText='Example: Jita, Perimeter', padBottom=6)
-        row = Container(parent=body, align=uiconst.TOTOP, height=32, padBottom=8)
-        Button(parent=row, align=uiconst.TORIGHT, label='Save route / fleet', func=self.save_route, padLeft=12)
-        self.fleet = Combo(parent=row, align=uiconst.TOALL, options=self.FLEET_OPTIONS)
-        EveLabelMedium(parent=body, align=uiconst.TOTOP, padBottom=10,
-                       text='Routes visit ore belts once using shortest gate paths (all security levels). '
-                            'Enable approach to reach distant rocks. Followers use the boss\'s destination '
-                            'and their own harvesting settings. Stop before changing route or fleet mode.')
+        self.route_entries = []
+        EveHeaderSmall(parent=body, text='Mining systems', align=uiconst.TOTOP, padBottom=4)
+        search = Container(parent=body, align=uiconst.TOTOP, height=30, padBottom=4)
+        Button(parent=search, align=uiconst.TORIGHT, label='Search', func=self.search_systems, padLeft=8)
+        self.system_search = SingleLineEditText(parent=search, align=uiconst.TOALL, maxLength=100,
+                                                hintText='Search system name')
+        self.system_search.OnReturn = self.search_systems
+        results = Container(parent=body, align=uiconst.TOTOP, height=30, padBottom=4)
+        Button(parent=results, align=uiconst.TORIGHT, label='Add system', func=self.add_system, padLeft=8)
+        self.system_results = Combo(parent=results, align=uiconst.TOALL, options=[('Search for a system', 0)])
+        self.system_names = {}
+        self.route_list = Scroll(parent=body, align=uiconst.TOTOP, height=72, hasUnderlay=True, multiSelect=False)
+        route_actions = ButtonGroup(parent=body, align=uiconst.TOTOP, button_alignment=AxisAlignment.START,
+                                    button_size_mode=ButtonSizeMode.DYNAMIC, padBottom=6)
+        route_actions.add_button(Button(label='Remove', func=self.remove_system))
+        route_actions.add_button(Button(label='Move up', func=lambda *args: self.move_system(-1)))
+        route_actions.add_button(Button(label='Move down', func=lambda *args: self.move_system(1)))
+        self.fleet = Combo(parent=body, align=uiconst.TOTOP, options=self.FLEET_OPTIONS, padBottom=4)
+        self.fleet_hint = EveLabelMedium(parent=body, align=uiconst.TOTOP, padBottom=10)
+        self.fleet.OnChange = self.fleet_changed
+        self.refresh_route()
+        self.fleet_changed()
 
-    def save_route(self, *args):
-        self.request('SaveRoute', (self.route.GetValue().strip(), self.fleet.GetValue()))
+    def fleet_changed(self, *args):
+        hints = {0: 'Mines selected ore through every belt. Rats are skipped. Empty list = current grid.',
+                 1: 'Fleet boss leads this route. Other pilots select Follow fleet boss.',
+                 2: "Uses the boss's destination, ignoring your system list. The boss must start Lead fleet first."}
+        self.fleet_hint.SetText(hints[self.fleet.GetValue()])
+
+    def refresh_route(self):
+        self.route_list.Load(contentList=[GetFromClass(Generic, {'label': '%d. %s' % (index + 1, name),
+                                                               'routeIndex': index})
+                                          for index, (_, name) in enumerate(self.route_entries)],
+                             noContentHint='Current grid only. Search above to add a mining system.')
+
+    def add_system(self, *args):
+        system = self.system_results.GetValue()
+        if not system:
+            self.notice.SetText('Search for a system and choose a result first.')
+            return
+        if len(self.route_entries) >= 32:
+            self.notice.SetText('A route can contain at most 32 systems.')
+            return
+        self.route_entries.append((system, self.system_names[system]))
+        self.refresh_route()
+        self.notice.SetText('System added. Start saves your choices and begins mining.')
+
+    def remove_system(self, *args):
+        selected = self.route_list.GetSelected()
+        if selected:
+            del self.route_entries[selected[0].routeIndex]
+            self.refresh_route()
+
+    def move_system(self, direction):
+        selected = self.route_list.GetSelected()
+        if selected:
+            before = selected[0].routeIndex
+            after = before + direction
+            if 0 <= after < len(self.route_entries):
+                self.route_entries[before], self.route_entries[after] = self.route_entries[after], self.route_entries[before]
+                self.refresh_route()
+
+    def search_systems(self, *args):
+        self.search_locations(True)
+
+    def search_stations(self, *args):
+        self.search_locations(False)
+
+    def search_locations(self, systems):
+        if self.busy or not session.charid:
+            return
+        query = (self.system_search if systems else self.station_search).GetValue().strip()
+        if len(query) < 2:
+            self.notice.SetText('Enter at least two letters to search.')
+            return
+        revision = self.revision
+        self.busy = True
+        try:
+            remote = sm.RemoteSvc('edenAutoMining')
+            rows = remote.SearchSystems(query) if systems else remote.SearchStations(query)
+            if not self.is_current(revision):
+                return
+            if systems:
+                self.system_names = dict(rows)
+                options = [(name, system) for system, name in rows] or [('No mining systems found', 0)]
+                self.system_results.LoadOptions(options, options[0][1])
+            else:
+                self.station_names.update(rows)
+                selected = self.station.GetValue()
+                options = [self.KEEP_HARVEST] + [(name, station) for station, name in rows]
+                if selected and not any(station == selected for _, station in options):
+                    options.append((self.station_names.get(selected, 'Saved station'), selected))
+                self.station.LoadOptions(options, selected)
+            self.notice.SetText('%d results. Choose a result%s' % (len(rows), ' and Add system.' if systems else ' to unload there.'))
+        except UserError as error:
+            if self.is_current(revision):
+                self.show_error(error)
+        finally:
+            self.busy = False
+
+    def show_error(self, error):
+        values = getattr(error, 'dict', None) or {}
+        self.notice.SetText(values.get('notify') or values.get('info') or unicode(error))
 
     def build_filter(self, body):
         self.ore_types = []
@@ -200,13 +294,16 @@ class MiningPanel(object):
             self.revision += 1
             self.window.Close()
         elif 'solarsystemid2' in change and self.is_current(self.revision):
-            self.notice.SetText('System changed. Reload to refresh the local unload station list.')
+            self.notice.SetText('System changed. The mining plan and unload station are unchanged.')
 
     def OnEdenAutoMiningStatus(self, status):
         if self.is_current(self.revision):
             self.status.SetText(status)
 
     def apply(self, *args):
+        self.save_plan()
+
+    def save_plan(self, start_after=False):
         try:
             percent = int(self.threshold.GetValue())
             if not 1 <= percent <= 100:
@@ -215,12 +312,14 @@ class MiningPanel(object):
             self.notice.SetText('Enter a whole hold percentage from 1 to 100.')
             return
         ore_types = sorted(self.active_types) if self.filter_changed else None
-        self.request('SaveSettings', (ore_types, self.family.GetValue(), self.order.GetValue(),
+        self.request('SavePlan', (ore_types, self.family.GetValue(), self.order.GetValue(),
                                      bool(self.approach.GetValue()), bool(self.jettison.GetValue()),
-                                     self.station.GetValue(), percent))
+                                     self.station.GetValue(), percent,
+                                     [system for system, _ in self.route_entries], self.fleet.GetValue()),
+                     start_after=start_after)
 
     def start(self, *args):
-        self.request('Start')
+        self.save_plan(start_after=True)
 
     def stop(self, *args):
         self.request('Stop')
@@ -228,7 +327,7 @@ class MiningPanel(object):
     def reload(self, *args):
         self.request('GetStatus', load_settings=True)
 
-    def request(self, method, args=(), load_settings=False):
+    def request(self, method, args=(), load_settings=False, start_after=False):
         if not session.charid:
             self.notice.SetText('Select a character first.')
             return
@@ -238,24 +337,21 @@ class MiningPanel(object):
         self.busy = True
         try:
             remote = sm.RemoteSvc('edenAutoMining')
-            state = getattr(remote, method)(*args)
-            if load_settings:
-                stations = remote.GetStations()
-                if self.is_current(revision):
-                    self.stations = [(name, station) for station, name in stations]
+            if start_after and remote.GetStatus()['running']:
+                state = remote.Start()
+            else:
+                state = getattr(remote, method)(*args)
+                if start_after:
+                    state = remote.Start()
             if self.is_current(revision):
                 self.status.SetText(state['status'])
-                if load_settings or method == 'SaveSettings':
+                if load_settings or method == 'SavePlan':
                     self.set_settings(state)
-                if load_settings or method == 'SaveRoute':
-                    self.route.SetValue(state.get('routeSystems', ''))
-                    self.fleet.LoadOptions(self.FLEET_OPTIONS, state.get('fleetMode', 0))
-                self.notice.SetText({'GetStatus': 'Settings loaded.', 'SaveSettings': 'Settings saved.',
-                                     'SaveRoute': 'Route and fleet mode saved.'}.get(method, ''))
+                self.notice.SetText('' if start_after else {'GetStatus': 'Settings loaded.',
+                                                          'SavePlan': 'All settings saved.'}.get(method, ''))
         except UserError as error:
             if self.is_current(revision):
-                info = getattr(error, 'dict', None) or {}
-                self.notice.SetText(info.get('info', 'AutoMining request failed.'))
+                self.show_error(error)
         finally:
             self.busy = False
 
@@ -269,11 +365,15 @@ class MiningPanel(object):
         self.approach.SetChecked(state['approach'], report=False)
         self.jettison.SetChecked(state['jettison'], report=False)
         selected = state['unloadStation']
-        options = [self.KEEP_HARVEST] + self.stations
-        if selected and not any(station == selected for _, station in options):
-            options.append(('Saved station is outside this system', selected))
+        if selected:
+            self.station_names[selected] = state.get('unloadStationName') or 'Saved station'
+        options = [self.KEEP_HARVEST] + [(name, station) for station, name in self.station_names.items()]
         self.station.LoadOptions(options, selected)
         self.threshold.SetValue(str(state['unloadThreshold']))
+        self.route_entries = list(state.get('routeStops', []))
+        self.fleet.LoadOptions(self.FLEET_OPTIONS, state.get('fleetMode', 0))
+        self.fleet_changed()
+        self.refresh_route()
         self.refresh_filter()
 
     def is_current(self, revision):

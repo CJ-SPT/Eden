@@ -210,8 +210,10 @@ public sealed partial class MiningTests
     private static AutoMiningStatus Command(AutoMiningHandler handler, PilotCallContext context, string method, params object?[] args) =>
         RouteStatus(handler.Call(context, AutoMiningHandler.Service, method, args));
 
-    [Fact]
-    public async Task AutoMiningRouteHaulsAcrossSystemsAndReturnsThroughSessionFrames()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AutoMiningRouteHaulsAcrossSystemsAndReturnsThroughSessionFrames(bool restartOnCurrentGrid)
     {
         using HaulFixture f = new(6.343, multiSystem: true);
         f.Save(95);
@@ -221,6 +223,7 @@ public sealed partial class MiningTests
         bool returned = false;
         int transitions = 0;
         int lastSystem = f.Context.Pilot.SystemId;
+        bool restarted = false;
         for (int second = 0; second < 900 && !returned; second++)
         {
             await f.Step(1);
@@ -245,10 +248,20 @@ public sealed partial class MiningTests
                 unloaded = true;
                 Assert.Empty(f.Ore(f.Context.Pilot.ShipId));
             }
+            if (restartOnCurrentGrid && !restarted && f.Context.Pilot.SystemId == 30000144 && f.Mining.IsActive(f.Module))
+            {
+                Assert.IsType<PilotCallResult.Success>(f.Call("Stop"));
+                Assert.IsType<PilotCallResult.Success>(
+                    f.Call("SavePlan", null, 0L, 0L, false, false, f.Station, 95L, new List<object?>(), 0L)
+                );
+                f.Start();
+                restarted = true;
+            }
             returned = unloaded && f.Context.Pilot.SystemId == 30000144 && f.Mining.IsActive(f.Module);
         }
         Assert.True(unloaded, f.Status().Status);
         Assert.True(returned, f.Status().Status);
+        Assert.Equal(restartOnCurrentGrid, restarted);
         Assert.Equal(3, transitions);
         Assert.Equal(63, Assert.Single(f.Ledger.Read(f.Context.Pilot.PilotId)).Quantity.Collected);
         Assert.Equal(63, f.Ore(f.Station).Sum(item => item.Quantity));

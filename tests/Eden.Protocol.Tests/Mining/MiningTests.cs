@@ -400,7 +400,8 @@ public sealed partial class MiningTests
             bool locked = true,
             MiningLaserType laser = MiningLaserType.Civilian,
             StaticSpaceObject? warpDestination = null,
-            SpacePosition? initialPosition = null
+            SpacePosition? initialPosition = null,
+            Eden.Gameplay.Combat.INpcEncounters? encounters = null
         )
         {
             var pilot = Db.Store.FindPilot(account)!;
@@ -434,7 +435,8 @@ public sealed partial class MiningTests
                         objects,
                         [new(module, (int)laser, (int)InventoryFlag.HighSlot0)],
                         docking: Db.Services.GetRequiredService<IStationDocking>(),
-                        gates: Db.Services.GetRequiredService<IPilotGateTravel>()
+                        gates: Db.Services.GetRequiredService<IPilotGateTravel>(),
+                        encounters: encounters
                     ),
                 account,
                 SignedSettings.Empty

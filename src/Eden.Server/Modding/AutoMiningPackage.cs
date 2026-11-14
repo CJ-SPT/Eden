@@ -18,7 +18,7 @@ internal static class AutoMiningPackage
             {
                 Id = AutoMiningFilter.ModId,
                 Name = "AutoMining",
-                Version = "1.3.0",
+                Version = "1.4.0",
                 CatalogFingerprint = database.Catalog.Identity.SourceFingerprint,
                 ClientEntry = entry,
             },

@@ -36,7 +36,13 @@ internal sealed class AutoMiningFleetStore(ICooperativeFleets fleets, TimeProvid
     {
         var identity = fleets.Identity(pilotId);
         var boss = fleets.Identity(leaderId);
-        if (pilotId == leaderId || identity is null || boss?.FleetId != identity.FleetId || (boss.Job & FleetRules.BossJob) == 0)
+        if (pilotId == leaderId)
+        {
+            throw new InvalidDataException(
+                "You are the fleet boss. Choose Lead fleet to lead your members, or Solo to mine independently."
+            );
+        }
+        if (identity is null || boss?.FleetId != identity.FleetId || (boss.Job & FleetRules.BossJob) == 0)
         {
             throw new InvalidDataException("The AutoMining fleet boss changed. Start again to follow the new boss.");
         }
@@ -48,7 +54,9 @@ internal sealed class AutoMiningFleetStore(ICooperativeFleets fleets, TimeProvid
                 || clock.GetElapsedTime(leader.Updated) >= s_lifetime
             )
             {
-                throw new InvalidDataException("The fleet boss is not leading an active AutoMining run.");
+                throw new InvalidDataException(
+                    "The fleet boss is not leading an active AutoMining run. Start Lead fleet on the boss first, or choose Solo."
+                );
             }
             return leader.Destination;
         }

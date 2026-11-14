@@ -2013,3 +2013,67 @@ Not performed; agent client testing is disabled.
 
 - Export and activate 1.3.0, then check panel layout and status updates while crossing a gate.
 - With two player clients, verify fleet catch-up and independent unloading on a short route.
+
+## AutoMining searchable plans and rat avoidance
+
+AutoMining **1.4.0**, November 14, 2026, replaces comma-separated route entry with a system search and ordered
+selection list, and replaces the local-only station picker with a global station search. Search accepts 2-100
+characters and returns at most 30 name matches, preferring prefixes. System results contain only catalog systems
+with asteroid belts. Selected station and system names survive reloads and gate transitions.
+
+`edenAutoMining.SavePlan` validates and saves the filter, options, hauling and route in one resident transaction.
+Invalid systems, unreachable destinations and invalid stations leave all previous settings intact. Status adds
+`routeStops` (ID/Unicode name pairs) and `unloadStationName`. Start saves the displayed form before starting;
+there is no separate route-save button. Running plans must be stopped before editing. Existing RPCs remain available.
+The screenshot's generic error came from reading only `UserError.dict.info`; normal server failures populate
+`notify`. The panel now renders both forms without truncation, and fleet-boss/follower rejections explain which mode
+to choose. The original rejected Start's precise server reason was not captured in remote logs.
+
+Selected systems are visited in order and every belt is considered once per system visit. Matching ore is approached
+automatically for routes/followers, even if the current-grid approach option is off. Module compatibility, selected ore
+types and grades, surveying requirements, skills, inventory and capacitor remain authoritative. Global station selection
+also enables gate-based unloading and return for solo current-grid runs.
+
+Before resource selection or route advancement, the controller checks the existing visible NPC scene. Live pirates
+and NPCs targeting the ship within the existing 250 km visibility bound are threats; benign navy, convoy and mining
+contacts are not. It stops automatic cycles, remembers the unsafe grid for this run, and continues to the next route
+stop outside that grid. A pending safe destination is retained when rats are encountered in transit. Fleeing commands
+are not repeatedly restarted during approach/warp. With no further stop, while hauling, or while following another
+pilot, the ship retreats to the nearest local station, docks and stops. Stationless systems use the nearest stargate.
+Manual harvesting is preserved and produces an actionable request to stop it and escape. There is no remote belt
+omniscience, combat capability, player-threat avoidance or immunity to normal warp disruption and docking rules.
+
+Gameplay reference: [EVE University mining](https://wiki.eveuniversity.org/Mining), including belt rats and escape
+preparation. Existing NPC visibility, gate, docking and Destiny movement implementations are reused. The reference
+boundary remains [Carbon Ballpark.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp).
+The previously inspected EveJS mining reference above has no AutoMining implementation; no engine source was copied.
+
+### Automated validation
+
+Tool and solution restore, solution build (zero warnings/errors, 8.71 seconds), both Python policy suites
+(8 catalog cases in 0.925 seconds; 9 formatting cases in 0.023 seconds), and formatting/140-character verification
+passed. The panel/loader suite passed 5 cases in 0.016 seconds. The catalog policy initially rejected a direct
+feature query; the query now lives in the shared catalog reader and the corrected suite passes.
+
+The final focused run passed **145/145**, with no skips, in **59.55 seconds**, including inert pinned-client
+compilation and mod activation. Its filter ORs `Eden.Protocol.Tests.Mining.MiningTests`, `AutoMiningRouteRulesTests`,
+`CooperativeFleetTests`, `FleetRulesTests`, `FlightSessionTests`, `GateTravelRulesTests`, `TypedFlightTests`,
+`AutoMiningPackageTests`, `ServerServicesTests`, and `GameplayDependenciesTests` as fully qualified name substrings.
+The full .NET suite was not run. Exact development filters used the `Eden.Protocol.Tests.Mining.MiningTests` methods
+`AutoMiningAvoidsRatsAndEitherMinesNextBeltOrDocks`, `AutoMiningSearchAndPlanSaveAreAtomicAndSurviveReopen`,
+`AutoMiningThreatDetectionIgnoresBenignDeadAndDistantNpcs`, and
+`AutoMiningRouteHaulsAcrossSystemsAndReturnsThroughSessionFrames`.
+
+Deterministic scenarios cover rats appearing during a paid cycle, unchanged unsafe-belt ore, escape to another belt,
+forced approach with the approach option off, exhaustion and station refuge, benign/dead/distant contact rejection,
+search wire types, failed-plan unchanged state, checkpoint reopen, and cross-system unloading/return without a route.
+Panel tests cover searches, adding/removing systems, saving before Start, full `notify`/`info` messages, and reloads.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Relaunch through Eden Launcher, search for a mining system and unload station, then verify the native panel layout.
+- Check visible rat escape and fleet following with player clients; native presentation and gameplay feel remain unverified.

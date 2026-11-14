@@ -8,6 +8,7 @@ namespace Eden.Protocol.Mining;
 
 internal sealed partial class AutoMiningHandler
 {
+    private bool ApproachEnabled => Options.Approach || _route?.Travels == true;
     private const double ApproachRangeFraction = 0.8;
     private long? _approachTarget;
     private long _jettisonReadyAt;
@@ -40,7 +41,7 @@ internal sealed partial class AutoMiningHandler
             ),
             context.Pilot.Position!,
             context.Pilot.Flight.ShipRadius,
-            Options.Approach ? double.PositiveInfinity : Math.Min(lockRange, idle.Max(module => module.Range))
+            ApproachEnabled ? double.PositiveInfinity : Math.Min(lockRange, idle.Max(module => module.Range))
         );
         if (Options.TargetOrder == AutoMiningTargetOrder.Nearest)
         {
@@ -62,7 +63,7 @@ internal sealed partial class AutoMiningHandler
     )
     {
         if (
-            !Options.Approach
+            !ApproachEnabled
             || mining.HasCycle
             || ranked.Length == 0
             || lockRange <= 0

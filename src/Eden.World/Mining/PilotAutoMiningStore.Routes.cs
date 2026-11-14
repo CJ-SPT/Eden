@@ -97,6 +97,11 @@ internal sealed partial class PilotAutoMiningStore : IPilotAutoMiningRoutes
         {
             throw new InvalidDataException("The unload station is unavailable.");
         }
-        return new(station.SolarSystemId, station.Id, new(station.X, station.Y, station.Z), "Unload station");
+        return new(
+            station.SolarSystemId,
+            station.Id,
+            new(station.X, station.Y, station.Z),
+            database.Catalog.StationNames.GetValueOrDefault(station.Id) ?? "Unload station"
+        );
     }
 }
