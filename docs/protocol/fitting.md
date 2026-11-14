@@ -2,6 +2,34 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md)
 
+## Resident inventory and fitting commands
+
+Ship assembly, naming, boarding, capsule exit, corvette recovery, repackaging, and
+trashing publish under the resident owner. Trashing checks the complete containment
+tree, including escrowed descendants, before removing any item.
+
+Fitting, unfitting, rig removal, online state, and applying a saved fitting use the
+resident fitting transaction. Loaded charges follow a removed module into the
+destination hold. Applying a saved fitting evaluates the final rack as a unit and
+publishes slot, item, and resource changes together. Personal and corporation fitting
+plans use resident storage with owner-scoped revision updates after commit.
+
+Gameplay references are [Assembling and repackaging](https://wiki.eveuniversity.org/Assembling_and_repackaging)
+and [Fitting ships](https://wiki.eveuniversity.org/Fitting_Guidelines).
+The local EveJS 261108.1 comparison used `shipService.js`, `repackagingService.js`, and
+`invBrokerService.js` (SHA-256 prefixes `C34C3573C11CBAEC`, `A43E005E94D3270F`, and
+`8CEC4112DE1B312B`).
+
+**Automated validation.** The focused inventory, fitting, ship, clone, and character
+deletion run passed 418 tests in 7 minutes. The resident assembly test observed no
+world-table SQL across assembly, boarding, naming, and a retry, then verified the
+active hull and its consumed package after reopen. Solution build, both Python
+policy suites, and formatting verification passed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Apply a simulated fitting to the active ship
 
 Build **3662168** routes **Fit Ship** through `hullAndHardwareTypeBrowser.FitShip` and `fittingSvc.LoadFitting`.

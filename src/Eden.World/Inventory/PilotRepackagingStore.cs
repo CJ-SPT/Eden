@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Thermal;
@@ -11,8 +12,8 @@ using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Insurance;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Inventory;
 
@@ -21,10 +22,10 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
 {
     public IReadOnlyList<InventoryChange> Repackage(long pilotId, long stationId, IReadOnlyList<RepackageItem> items)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: items.Select(item => item.ItemId)));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         if (
             pilot.ActiveShip.Position is not null
             || pilot.ActiveShip.DockedLocationId != stationId
@@ -38,7 +39,7 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
         List<InventoryChange> changes = [];
         foreach (var request in items)
         {
-            var ship = world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == request.ItemId);
+            var ship = world.Ships.Find(request.ItemId);
             if (ship is not null)
             {
                 if (
@@ -57,8 +58,9 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
                     new(
                         before,
                         ship.TypeId != FleetDefinitions.CapsuleType && HullCatalog.CanAssemble(catalog, type, type.CategoryId),
-                        world.Pilots.Any(p => p.ActiveShipId == ship.Id),
-                        world.Set<OwnedItem>().Any(i => i.LocationId == ship.Id) || world.Ships.Any(s => s.StoredInId == ship.Id),
+                        world.Filter<Pilot>(p => p.ActiveShipId == ship.Id).Any(),
+                        world.Filter<OwnedItem>(i => i.LocationId == ship.Id).Any()
+                            || world.Filter<Ship>(s => s.StoredInId == ship.Id).Any(),
                         false,
                         health?.ArmorDamage ?? 0,
                         health?.StructureDamage ?? 0
@@ -103,7 +105,7 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
                         before,
                         supported,
                         false,
-                        world.Set<OwnedItem>().Any(i => i.LocationId == item.Id),
+                        world.Filter<OwnedItem>(i => i.LocationId == item.Id).Any(),
                         PilotIndustryStore.IsInstalled(world, item.Id),
                         0,
                         world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0
@@ -116,7 +118,6 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
                 }
             }
         }
-        world.SaveChanges();
         transaction.Commit();
         return changes;
     }

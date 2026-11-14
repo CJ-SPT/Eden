@@ -103,19 +103,13 @@ internal sealed partial class PilotFittingStore
         int flagId,
         long now,
         IReadOnlyDictionary<long, int>? placements = null,
-        bool completeOnline = false
+        bool completeOnline = false,
+        FittingCheckpoint? batchCheckpoint = null
     )
     {
-        var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = pilot.ActiveShip;
-        if (ship.Position is null && ship.StructureId is long structureId)
-        {
-            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
-            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId))
-            {
-                throw new InvalidDataException("Ship fitting requires a quantum core and access to this structure.");
-            }
-        }
+        CheckFittingService(world, ship, pilotId);
         if (
             ship.Position is not null
             || (sourceId != ship.Id && sourceId != ship.DockedLocationId)
@@ -146,7 +140,7 @@ internal sealed partial class PilotFittingStore
         {
             throw new InvalidDataException("Equipment is unavailable.");
         }
-        var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
+        var checkpoint = batchCheckpoint ?? FittingChanges.Capture(world, catalog, pilot, now);
         var before = PilotInventoryStore.List(world, catalog, pilotId, sourceId).ToDictionary(i => i.Id);
         var capacity = checkpoint.Capacity;
         var rack = world
@@ -313,7 +307,7 @@ internal sealed partial class PilotFittingStore
             OnlineCompleteFit(world, catalog, pilotId, ship.Id, now, checkpoint);
             return result;
         }
-        var cascaded = FittingChanges.Finish(world, catalog, pilot, checkpoint, now);
+        var cascaded = batchCheckpoint is null ? FittingChanges.Finish(world, catalog, pilot, checkpoint, now) : [];
         return result.Concat(cascaded).ToArray();
 
         (int First, int Count) SlotsFor(int typeId)
@@ -326,6 +320,18 @@ internal sealed partial class PilotFittingStore
             int first = definition.FirstFlag;
             int slots = capacity.Slots(definition.Rack);
             return (first, slots);
+        }
+    }
+
+    private static void CheckFittingService(WorldAction world, Ship ship, long pilotId)
+    {
+        if (ship.Position is null && ship.StructureId is long structureId)
+        {
+            var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
+            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId))
+            {
+                throw new InvalidDataException("Ship fitting requires a quantum core and access to this structure.");
+            }
         }
     }
 

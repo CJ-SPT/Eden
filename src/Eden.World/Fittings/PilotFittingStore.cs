@@ -103,7 +103,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     private IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributesSql(long pilotId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
             return live.Economy.Read(world => ShipAttributes(world, source, pilotId), new(pilots: [pilotId]));
@@ -119,7 +119,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public double SignatureRadius(long itemId, int typeId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
             return live.Economy.Read(
@@ -167,10 +167,9 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyList<InventoryChange> Fit(long pilotId, IReadOnlyList<long> itemIds, long sourceId, int flagId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var result = Fit(world, catalog, pilotId, itemIds, sourceId, flagId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        var result = Fit(transaction.World, catalog, pilotId, itemIds, sourceId, flagId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         transaction.Commit();
         return result;
     }
@@ -415,10 +414,10 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyList<InventoryChange> DestroyRig(long pilotId, long shipId, long itemId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var item = world.Set<OwnedItem>().Find(itemId);
         if (
             shipId != pilot.ActiveShipId
@@ -443,10 +442,9 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyList<InventoryChange> SetOnline(long pilotId, long shipId, long itemId, bool online)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var result = SetOnline(world, catalog, pilotId, shipId, itemId, online, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        var result = SetOnline(transaction.World, catalog, pilotId, shipId, itemId, online, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         transaction.Commit();
         return result;
     }
@@ -579,7 +577,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyList<FittingSkillBonus> SkillBonuses(long pilotId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
             return live.Economy.Read(
@@ -675,7 +673,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live && live.Economy.IsLoaded)
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
             return live.Economy.Read(world => ReadModuleAttributes(world, source, pilotId, module), new(pilots: [pilotId]));

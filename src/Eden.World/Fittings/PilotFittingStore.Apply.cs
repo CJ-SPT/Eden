@@ -1,12 +1,13 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Thermal;
 using Eden.Gameplay.Fittings;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Thermal;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Fittings;
 
@@ -14,10 +15,10 @@ internal sealed partial class PilotFittingStore
 {
     public AppliedFitting Apply(long pilotId, ApplyFittingRequest request)
     {
-        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId], ships: [request.ShipId]) };
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [request.ShipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = pilot.ActiveShip;
         if (
             ship.OwnerId != pilotId
@@ -35,8 +36,7 @@ internal sealed partial class PilotFittingStore
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var sourceIds = request.SourceItems.Values.SelectMany(ids => ids).ToHashSet();
         var stacks = world
-            .Set<OwnedItem>()
-            .Where(item =>
+            .Filter<OwnedItem>(item =>
                 item.OwnerId == pilotId
                 && item.LocationId == source
                 && item.FlagId == (int)InventoryFlag.Hangar
@@ -44,8 +44,7 @@ internal sealed partial class PilotFittingStore
             )
             .ToDictionary(item => item.Id);
         var rack = world
-            .Set<OwnedItem>()
-            .Where(item => item.OwnerId == pilotId && item.LocationId == ship.Id)
+            .Filter<OwnedItem>(item => item.OwnerId == pilotId && item.LocationId == ship.Id)
             .AsEnumerable()
             .Where(item => InventoryDefinitions.IsFittedSlot(item.FlagId))
             .ToDictionary(item => item.FlagId);
@@ -129,8 +128,9 @@ internal sealed partial class PilotFittingStore
             int type = group.Key.TypeId;
             int target = group.Sum(item => item.Quantity);
             long existing = world
-                .Set<OwnedItem>()
-                .Where(item => item.OwnerId == pilotId && item.LocationId == ship.Id && item.FlagId == flag && item.TypeId == type)
+                .Filter<OwnedItem>(item =>
+                    item.OwnerId == pilotId && item.LocationId == ship.Id && item.FlagId == flag && item.TypeId == type
+                )
                 .Sum(item => (long)item.Quantity);
             int needed = (int)Math.Max(0, target - existing);
             foreach (long id in SourceStacks(type))

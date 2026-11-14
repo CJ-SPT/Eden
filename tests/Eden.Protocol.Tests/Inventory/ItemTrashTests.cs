@@ -162,9 +162,9 @@ public sealed class ItemTrashTests
             catalog.Database.ExecuteSqlRaw(
                 """
                 INSERT OR IGNORE INTO ItemCategory(Id,Name) VALUES (2,'Celestial'),(9,'Blueprint');
-                INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (12,'Cargo Container',2),(9009,'Test blueprint',9);
-                INSERT INTO ItemType(Id,Name,GroupId) VALUES (3293,'Small Standard Container',12),(990001,'Test blueprint',9009);
-                INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3293','{{"volume":100}}');
+                INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (12,'Cargo Container',2),(9009,'Test blueprint',9);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (3293,'Small Standard Container',12),(990001,'Test blueprint',9009);
+                INSERT OR IGNORE INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3293','{{"volume":100}}');
                 INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','990001','{{"volume":0.01}}');
                 """
             );

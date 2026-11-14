@@ -28,6 +28,32 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class PilotFleetTests
 {
     [Fact]
+    public async Task ResidentShipAssemblyAndBoardingAvoidWorldSqlAndCheckpointTheActiveHull()
+    {
+        using Fixture fixture = new();
+        var original = fixture.Pilot;
+        var item = fixture.Buy();
+        using (LiveWorld live = new(new(fixture.Db.Path), TimeProvider.System, _ => { }))
+        {
+            live.Economy.Warm();
+            List<string> commands = [];
+            using (SessionPerformance.Begin("resident ship assembly and boarding", _ => { }, force: true, command: commands.Add))
+            {
+                Assert.Equal(item.Id, Assert.Single(fixture.Fleet.Assemble(original.PilotId, [item.Id], "Prospector").ShipIds));
+                Assert.Equal(item.Id, fixture.Fleet.Board(original.PilotId, item.Id, original.ShipId).Pilot.ShipId);
+                Assert.Equal("Prospector", fixture.Fleet.Name(original.PilotId, item.Id));
+                Assert.Empty(fixture.Fleet.Assemble(original.PilotId, [item.Id], "Retry").Changes);
+            }
+            Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
+            await live.FlushAsync();
+        }
+        Assert.Equal(item.Id, fixture.Pilot.ShipId);
+        using WorldDbContext saved = new(fixture.Db.Path);
+        Assert.Null(saved.Set<OwnedItem>().Find(item.Id));
+        Assert.Equal("Prospector", saved.Ships.Find(item.Id)!.Name);
+    }
+
+    [Fact]
     public void ResidentHullReadsUseCommittedMembershipWithoutSql()
     {
         using TestWorld fixture = new();

@@ -53,12 +53,9 @@ internal sealed partial class PilotInventoryStore(WorldDatabase database, TimePr
 
     public IReadOnlyList<InventoryChange> Move(long pilotId, long destinationId, InventoryMoveRequest request)
     {
-        if (
-            Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live
-            && TryResidentMove(live, pilotId, destinationId, request) is { } changes
-        )
+        if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
         {
-            return changes;
+            return MoveResident(live, pilotId, destinationId, request);
         }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();

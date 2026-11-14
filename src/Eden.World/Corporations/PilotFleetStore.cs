@@ -82,11 +82,11 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         InventoryItem? Owned(Ship? ship) => ship?.OwnerId == pilotId ? Read(catalog, ship) : null;
     }
 
-    public string Name(long pilotId, long shipId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world.Ships.Where(s => s.OwnerId == pilotId && s.Id == shipId).Select(s => s.Name).Single();
-    }
+    public string Name(long pilotId, long shipId) =>
+        WorldActionScope.Inspect(
+            database,
+            world => world.Filter<Ship>(s => s.OwnerId == pilotId && s.Id == shipId).Select(s => s.Name).Single()
+        );
 
     public string RenameDockedShip(long pilotId, long shipId, string name)
     {
@@ -95,11 +95,11 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             throw new InvalidDataException("Choose a valid ship name.");
         }
 
-        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId], ships: [shipId]) };
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var active = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId).ActiveShip;
-        var target = world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
+        var active = world.Filter<Pilot>(p => p.Id == pilotId).Single().ActiveShip;
+        var target = world.Filter<Ship>(s => s.Id == shipId && s.OwnerId == pilotId).SingleOrDefault();
         if (
             active.Position is not null
             || target is not { Position: null, StoredInId: null }
@@ -110,17 +110,16 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         }
 
         target.Name = string.IsNullOrWhiteSpace(name) ? catalog.RequireItem(target.TypeId).Name : name.Trim();
-        world.SaveChanges();
         transaction.Commit();
         return target.Name;
     }
 
     public ShipAssembly Assemble(long pilotId, IReadOnlyList<long> itemIds, string? name)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: itemIds));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         if (
             pilot.ActiveShip.Position is not null
             || itemIds.Count == 0
@@ -133,11 +132,11 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         }
         List<long> ships = [];
         List<InventoryChange> changes = [];
-        long nextId = InventoryPersistence.NextId(world);
+        long nextId = world.NextItemId();
         foreach (long id in itemIds)
         {
             // Retrying an assembled ID must not consume a second unit from its old stack.
-            if (world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == id) is { } assembled)
+            if (world.Ships.Find(id) is { } assembled)
             {
                 if (
                     assembled.OwnerId != pilotId
@@ -201,10 +200,10 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
 
     public ShipBoarding Leave(long pilotId, long expectedShipId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [expectedShipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var old = pilot.ActiveShip;
         if (
             old.Id != expectedShipId
@@ -223,7 +222,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
                     : null
             ) ?? throw new InvalidDataException("The catalog has no capsule.");
         var capsule = world
-            .Ships.Where(s =>
+            .Filter<Ship>(s =>
                 s.OwnerId == pilotId
                 && s.TypeId == type.Id
                 && (s.StructureId ?? (long)s.StationId) == old.DockedLocationId
@@ -237,7 +236,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             .Add(
                 new Ship
                 {
-                    Id = InventoryPersistence.NextId(world),
+                    Id = world.NextItemId(),
                     OwnerId = pilotId,
                     TypeId = type.Id,
                     StationId = old.StationId,
@@ -250,17 +249,18 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         pilot.ActiveShipId = capsule.Id;
         world.SaveChanges();
         var changes = created ? new InventoryChange[] { new(Read(catalog, capsule), null) } : [];
+        var activePilot = lookup.FindPilot(world, pilot.AccountId, pilotId)!;
         transaction.Commit();
-        return new(lookup.FindPilot(pilot.AccountId, pilotId)!, changes);
+        return new(activePilot, changes);
     }
 
     public ShipBoarding Board(long pilotId, long shipId, long previousShipId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId, previousShipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        var ship = world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
+        var ship = world.Filter<Ship>(s => s.Id == shipId && s.OwnerId == pilotId).SingleOrDefault();
         if (
             pilot.ActiveShip.Position is not null
             || ship is null
@@ -285,16 +285,17 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         }
         List<InventoryChange> changes = [];
         AdoptShip(world, catalog, pilot, ship, changes);
+        var activePilot = lookup.FindPilot(world, pilot.AccountId, pilotId)!;
         transaction.Commit();
-        return new(lookup.FindPilot(pilot.AccountId, pilotId)!, changes);
+        return new(activePilot, changes);
     }
 
     public ShipBoarding RecoverCorvette(long pilotId, long previousShipId, long stationId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [previousShipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var active = pilot.ActiveShip;
         if (active.Position is not null || active.DockedLocationId != stationId)
         {
@@ -386,7 +387,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             {
                 throw new InvalidDataException("The catalog's corvette cannot support the recovery equipment.");
             }
-            long nextId = InventoryPersistence.NextId(world);
+            long nextId = world.NextItemId();
             recovered = world
                 .Ships.Add(
                     new()
@@ -430,11 +431,12 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             TaskEvents.Boarded
         );
         AdoptShip(world, catalog, pilot, recovered, changes);
+        var activePilot = lookup.FindPilot(world, pilot.AccountId, pilotId)!;
         transaction.Commit();
-        return new(lookup.FindPilot(pilot.AccountId, pilotId)!, changes);
+        return new(activePilot, changes);
     }
 
-    private static void AdoptShip(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, Ship ship, List<InventoryChange> changes)
+    private static void AdoptShip(WorldAction world, CatalogDbContext catalog, Pilot pilot, Ship ship, List<InventoryChange> changes)
     {
         var old = pilot.ActiveShip;
         pilot.ActiveShip = ship;

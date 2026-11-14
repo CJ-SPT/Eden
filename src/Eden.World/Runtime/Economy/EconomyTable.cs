@@ -520,6 +520,12 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
 
     internal override TRow? Find(EconomyKey id) => FindUnfiltered(id) is { } row && transaction.Visible(row) ? row : null;
 
+    internal IEnumerable<TRow> SelectUnfiltered(Expression<Func<TRow, bool>> predicate)
+    {
+        var check = predicate.Compile(preferInterpretation: true);
+        return table.Matching(predicate).Concat(_local.Keys).Distinct().ToArray().Select(FindUnfiltered).OfType<TRow>().Where(check);
+    }
+
     internal override TRow? FindUnfiltered(EconomyKey id)
     {
         if (_removed.Contains(id))

@@ -3398,6 +3398,10 @@ internal sealed partial class EconomyTransaction
                 value.Id = value.Id == 0 ? Next("WorldRedeemToken") : value.Id;
                 Reserve("WorldRedeemToken", value.Id);
                 break;
+            case Eden.Data.World.Fittings.SavedFittingRecord value:
+                value.Id = value.Id == 0 ? Next("WorldSavedFitting") : value.Id;
+                Reserve("WorldSavedFitting", value.Id);
+                break;
             case Eden.Data.World.Combat.WorldMissile value:
                 value.Id = value.Id == 0 ? Next("WorldMissile") : value.Id;
                 Reserve("WorldMissile", value.Id);

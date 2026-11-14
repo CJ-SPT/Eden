@@ -848,6 +848,7 @@ internal sealed partial class ResidentEconomy
         RegisterCharacterServices();
         RegisterSkillTrading();
         RegisterRedemption();
+        RegisterSavedFittings();
         RegisterCharacterSettings();
         RegisterJetcans();
         RegisterStructureIndustryTables();

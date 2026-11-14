@@ -46,7 +46,8 @@ internal sealed partial class PilotInventoryStore
         long destinationId,
         InventoryMoveRequest request,
         long now,
-        IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null
+        IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null,
+        bool deferFittingChanges = false
     )
     {
         attributes ??= world.Attributes(pilotId);
@@ -133,10 +134,7 @@ internal sealed partial class PilotInventoryStore
             return splitChanges;
         }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
-        if (unfittedIds.Length != 0)
-        {
-            throw new InvalidOperationException("Fitting transitions require the fitting transaction boundary.");
-        }
+        var checkpoint = unfittedIds.Length > 0 && !deferFittingChanges ? FittingChanges.Capture(world, catalog, pilot, now) : null;
         var magazines = world
             .Set<OwnedItem>()
             .Where(i => i.OwnerId == pilotId && Enumerable.Contains(unfittedIds, i.LocationId))
@@ -260,6 +258,10 @@ internal sealed partial class PilotInventoryStore
             changes.Add(new(PilotFleetStore.Read(catalog, stored), previous));
         }
         world.SaveChanges();
+        if (checkpoint is not null)
+        {
+            changes.AddRange(FittingChanges.Finish(world, catalog, pilot, checkpoint, now));
+        }
         return changes;
     }
 
@@ -290,7 +292,7 @@ internal sealed partial class PilotInventoryStore
         return [new(Read(catalog, stack), previous), new(Read(catalog, separated), null)];
     }
 
-    private IReadOnlyList<InventoryChange>? TryResidentMove(
+    private IReadOnlyList<InventoryChange> MoveResident(
         Eden.World.Runtime.LiveWorld live,
         long pilotId,
         long destinationId,
@@ -298,18 +300,6 @@ internal sealed partial class PilotInventoryStore
     )
     {
         using var ownership = live.EnterShared("inventory move");
-        using (var selection = live.Economy.Begin(new(pilots: [pilotId])))
-        {
-            if (
-                selection
-                    .Set<OwnedItem>()
-                    .Where(i => Enumerable.Contains(request.ItemIds, i.Id))
-                    .Any(i => InventoryDefinitions.IsFittedSlot(i.FlagId))
-            )
-            {
-                return null;
-            }
-        }
         // Load once per real fit revision before opening the private economic view.
         var attributes = new Eden.World.Fittings.PilotFittingStore(database, clock).ShipAttributes(pilotId);
         using var transaction = live.Economy.Begin(new(pilots: [pilotId]));

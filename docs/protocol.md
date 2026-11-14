@@ -764,6 +764,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Fitting and module families
 
+- [Resident inventory and fitting commands](protocol/fitting.md#resident-inventory-and-fitting-commands)
 - [Apply a simulated fitting to the active ship](protocol/fitting.md#apply-a-simulated-fitting-to-the-active-ship)
 - [Bulk and corporation saved fittings, November 11, 2026](protocol/fitting.md#bulk-and-corporation-saved-fittings--november-11-2026)
 - <a id="personal-saved-fitting-plans-november-6-2026"></a>[Personal saved fitting plans (November 6, 2026)](protocol/fitting.md#personal-saved-fitting-plans-november-6-2026)

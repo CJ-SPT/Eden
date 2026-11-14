@@ -75,6 +75,19 @@ internal sealed class SqlWorldAction(WorldDbContext world) : WorldAction
 
     internal override IQueryable<T> Filter<T>(Expression<Func<T, bool>> predicate) => ((SqlActionRows<T>)Set<T>()).Filter(predicate);
 
+    internal override IReadOnlyList<long> ContainedInventoryIds(long location) =>
+        world
+            .Set<OwnedItem>()
+            .IgnoreQueryFilters()
+            .Where(item => item.LocationId == location)
+            .OrderBy(item => item.Id)
+            .Select(item => item.Id)
+            .AsEnumerable()
+            .Concat(
+                world.Ships.IgnoreQueryFilters().Where(ship => ship.StoredInId == location).OrderBy(ship => ship.Id).Select(ship => ship.Id)
+            )
+            .ToArray();
+
     internal override void Remove<T>(T row) => world.Remove(row);
 
     internal override void RemoveRange<T>(IEnumerable<T> rows) => world.RemoveRange(rows);

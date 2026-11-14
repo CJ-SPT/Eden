@@ -59,6 +59,8 @@ internal abstract class WorldAction
     internal virtual IQueryable<T> Filter<T>(Expression<Func<T, bool>> predicate)
         where T : class => Set<T>().Where(predicate);
 
+    internal abstract IReadOnlyList<long> ContainedInventoryIds(long location);
+
     internal virtual IReadOnlyList<WorldMissile> ExpiredMissileHistory(long oldest, bool npcOnly) =>
         npcOnly
             ? Filter<WorldMissile>(row => row.SourceKind == MissileSourceKind.Npc && row.EndedAt < oldest).ToArray()

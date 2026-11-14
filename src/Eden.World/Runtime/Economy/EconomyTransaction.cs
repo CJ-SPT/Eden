@@ -44,6 +44,18 @@ internal sealed partial class EconomyTransaction(
 
     internal override bool PilotExists(long id) => store.IsPilot(id);
 
+    internal override IReadOnlyList<long> ContainedInventoryIds(long location)
+    {
+        var items = (EconomySet<OwnedItem, EconomyOwnedItem>)Set<OwnedItem>();
+        var ships = (EconomySet<Ship, EconomyShip>)Ships;
+        return items
+            .SelectUnfiltered(item => item.LocationId == location)
+            .Select(item => item.Id)
+            .Order()
+            .Concat(ships.SelectUnfiltered(ship => ship.StoredInId == location).Select(ship => ship.Id).Order())
+            .ToArray();
+    }
+
     internal override long MailHead(long pilot) => store.MailHead(pilot);
 
     internal override long MailingListHead(long pilot) => store.MailingListHead(pilot);

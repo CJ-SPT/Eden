@@ -15,6 +15,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Filter<Eden.Data.World.Market.SavedRedeemedCurrency>(child => child.TokenId == removed.Id));
                 break;
             case Eden.Data.World.Inventory.InventoryOwner removed:
+                RemoveRange(Filter<Eden.Data.World.Fittings.SavedFittingRecord>(child => child.OwnerId == removed.Id));
                 if (Set<Eden.Data.World.Inventory.OwnedItem>().Any(child => child.OwnerId == removed.Id))
                 {
                     throw new InvalidDataException("The resident InventoryOwner still has OwnedItem references.");

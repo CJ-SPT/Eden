@@ -8,8 +8,8 @@ using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Industry;
 using Eden.World.Insurance;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Inventory;
 
@@ -22,15 +22,17 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
     public IReadOnlyList<InventoryChange> Trash(long pilotId, long stationId, IReadOnlyList<long> itemIds)
     {
         ItemTrashRules.CheckSelection(itemIds);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: itemIds));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (
-            !world.Pilots.Any(p => p.Id == pilotId)
+            !world.PilotExists(pilotId)
             || catalog.FindStation(stationId) is null
                 && !world
-                    .Set<Eden.Data.World.Structures.SavedStructure>()
-                    .Any(s => s.Id == stationId && s.State != Eden.Gameplay.Structures.StructureState.Destroyed)
+                    .Filter<Eden.Data.World.Structures.SavedStructure>(s =>
+                        s.Id == stationId && s.State != Eden.Gameplay.Structures.StructureState.Destroyed
+                    )
+                    .Any()
         )
         {
             throw new InvalidDataException("Choose personal assets at a known station.");
@@ -60,7 +62,7 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
                 new(
                     entry.Item,
                     pilotId,
-                    entry.Ship is not null && world.Pilots.Any(p => p.ActiveShipId == entry.Item.Id),
+                    entry.Ship is not null && world.Filter<Eden.Data.World.Characters.Pilot>(p => p.ActiveShipId == entry.Item.Id).Any(),
                     Committed(world, entry.Item.Id),
                     restricted.Contains(entry.Item),
                     selected.Contains(entry.Item.Id)
@@ -73,19 +75,9 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
             entries.Add(entry);
             // Ignore escrow filters when discovering descendants: a hidden or foreign
             // child must reject the batch rather than survive as an orphan.
-            var children = world.Set<OwnedItem>().IgnoreQueryFilters().Where(i => i.LocationId == entry.Item.Id).OrderBy(i => i.Id);
-            foreach (var child in children.ToArray())
+            foreach (long child in world.ContainedInventoryIds(entry.Item.Id))
             {
-                pending.Enqueue(new(PilotInventoryStore.Read(catalog, child), child, null));
-            }
-            var ships = world
-                .Ships.IgnoreQueryFilters()
-                .Include(s => s.Position)
-                .Where(s => s.StoredInId == entry.Item.Id)
-                .OrderBy(s => s.Id);
-            foreach (var ship in ships.ToArray())
-            {
-                pending.Enqueue(new(PilotFleetStore.Read(catalog, ship), null, ship));
+                pending.Enqueue(Read(world, catalog, child));
             }
         }
 
@@ -104,25 +96,24 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
             }
             changes.Add(new(entry.Item with { Quantity = 0 }, entry.Item));
         }
-        world.SaveChanges();
         transaction.Commit();
         return changes;
     }
 
-    private static TrashEntry Read(WorldDbContext world, CatalogDbContext catalog, long id)
+    private static TrashEntry Read(WorldAction world, CatalogDbContext catalog, long id)
     {
-        if (world.Ships.IgnoreQueryFilters().Include(s => s.Position).SingleOrDefault(s => s.Id == id) is { } ship)
+        if (world.Ships.FindUnfiltered(new(id)) is { } ship)
         {
             return new(PilotFleetStore.Read(catalog, ship), null, ship);
         }
-        if (world.Set<OwnedItem>().IgnoreQueryFilters().SingleOrDefault(i => i.Id == id) is { } stack)
+        if (world.Set<OwnedItem>().FindUnfiltered(new(id)) is { } stack)
         {
             return new(PilotInventoryStore.Read(catalog, stack), stack, null);
         }
         throw new InvalidDataException("The requested item is unavailable.");
     }
 
-    private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, long stationId, TrashEntry entry)
+    private static void CheckStation(WorldAction world, CatalogDbContext catalog, long pilotId, long stationId, TrashEntry entry)
     {
         HashSet<long> visited = [];
         while (true)
@@ -151,9 +142,9 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
         }
     }
 
-    private static bool Committed(WorldDbContext world, long id) =>
-        world.Set<SavedContractEscrow>().Any(e => e.ItemId == id)
-        || world.Set<SavedContract>().Any(c => c.PackageId == id && c.Status == ContractStatus.InProgress)
+    private static bool Committed(WorldAction world, long id) =>
+        world.Set<SavedContractEscrow>().Find(id) is not null
+        || world.Filter<SavedContract>(c => c.PackageId == id && c.Status == ContractStatus.InProgress).Any()
         || PilotIndustryStore.IsInstalled(world, id);
 
     private static InventoryTypeList Restrictions(ClientTypelist list) =>

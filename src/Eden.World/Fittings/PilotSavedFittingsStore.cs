@@ -8,8 +8,8 @@ using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Fittings;
 
@@ -20,25 +20,29 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
 
     public IReadOnlyList<SavedFitting> Read(long pilotId, long? ownerId = null)
     {
-        using WorldDbContext world = new(database.Path);
         long owner = ownerId ?? pilotId;
-        Authorize(world, pilotId, owner, false);
-        return world
-            .Set<SavedFittingRecord>()
-            .AsNoTracking()
-            .Where(f => f.OwnerId == owner)
-            .OrderBy(f => f.Id)
-            .ToArray()
-            .Select(f => f.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                Authorize(world, pilotId, owner, false);
+                return world
+                    .Filter<SavedFittingRecord>(f => f.OwnerId == owner)
+                    .OrderBy(f => f.Id)
+                    .AsEnumerable()
+                    .Select(f => f.Snapshot())
+                    .ToArray();
+            },
+            consistentFileRead: true
+        );
     }
 
     public long Save(long pilotId, FittingPlan plan, long? fittingId = null, long? ownerId = null)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         Validate(catalog, plan);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         long owner = ownerId ?? pilotId;
         Authorize(world, pilotId, owner, true);
         SavedFittingRecord saved;
@@ -52,9 +56,8 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
             saved = world.Add(new SavedFittingRecord { OwnerId = owner }).Entity;
         }
         Apply(saved, plan);
-        world.SaveChanges();
+        world.AfterCommit(() => Changed(owner));
         transaction.Commit();
-        Changed(owner);
         return saved.Id;
     }
 
@@ -66,8 +69,8 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
         {
             Validate(catalog, plan.Plan);
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         Authorize(world, pilotId, ownerId, true);
         CheckCapacity(world, pilotId, ownerId, plans.Count);
         List<SavedFittingRecord> saved = [];
@@ -78,29 +81,27 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
             world.Add(row);
             saved.Add(row);
         }
-        world.SaveChanges();
-        transaction.Commit();
         if (saved.Count > 0)
         {
-            Changed(ownerId);
+            world.AfterCommit(() => Changed(ownerId));
         }
+        transaction.Commit();
         return plans.Select((plan, index) => new FittingImportResult(plan.TemporaryId, saved[index].Id)).ToArray();
     }
 
     public void Rename(long pilotId, long fittingId, string name, string description, long? ownerId = null)
     {
         SavedFittingRules.CheckText(name, description);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         long owner = ownerId ?? pilotId;
         Authorize(world, pilotId, owner, true);
         var saved = Find(world, owner, fittingId);
         saved.Name = name.Trim();
         saved.Description = description;
         saved.SavedAt = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        world.SaveChanges();
+        world.AfterCommit(() => Changed(owner));
         transaction.Commit();
-        Changed(owner);
     }
 
     public void Delete(long pilotId, long fittingId, long? ownerId = null) => DeleteMany(pilotId, ownerId ?? pilotId, [fittingId]);
@@ -108,18 +109,17 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
     public IReadOnlyList<long> DeleteMany(long pilotId, long ownerId, IReadOnlyList<long> fittingIds)
     {
         SavedFittingRules.CheckBatch(fittingIds, false);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         Authorize(world, pilotId, ownerId, true);
         // Resolve the whole selection before deleting any entry.
         var saved = fittingIds.Select(id => Find(world, ownerId, id)).ToArray();
         world.RemoveRange(saved);
-        world.SaveChanges();
-        transaction.Commit();
         if (saved.Length > 0)
         {
-            Changed(ownerId);
+            world.AfterCommit(() => Changed(ownerId));
         }
+        transaction.Commit();
         return fittingIds.ToArray();
     }
 
@@ -148,20 +148,21 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
         }
     }
 
-    private static void CheckCapacity(WorldDbContext world, long pilotId, long ownerId, int added)
+    private static void CheckCapacity(WorldAction world, long pilotId, long ownerId, int added)
     {
         int limit = ownerId == pilotId ? SavedFittingRules.MaximumFittings : SavedFittingRules.MaximumCorporationFittings;
-        if (world.Set<SavedFittingRecord>().Count(f => f.OwnerId == ownerId) + added > limit)
+        if (world.Filter<SavedFittingRecord>(f => f.OwnerId == ownerId).Count() + added > limit)
         {
             throw new InvalidDataException($"This owner may save at most {limit} fittings.");
         }
     }
 
-    private static SavedFittingRecord Find(WorldDbContext world, long ownerId, long fittingId) =>
-        world.Set<SavedFittingRecord>().SingleOrDefault(f => f.Id == fittingId && f.OwnerId == ownerId)
-        ?? throw new InvalidDataException("This fitting does not belong to the requested owner.");
+    private static SavedFittingRecord Find(WorldAction world, long ownerId, long fittingId) =>
+        world.Set<SavedFittingRecord>().Find(fittingId) is { } row && row.OwnerId == ownerId
+            ? row
+            : throw new InvalidDataException("This fitting does not belong to the requested owner.");
 
-    private static void Authorize(WorldDbContext world, long pilotId, long ownerId, bool mutation)
+    private static void Authorize(WorldAction world, long pilotId, long ownerId, bool mutation)
     {
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown fitting owner.");
         if (ownerId == pilotId)
