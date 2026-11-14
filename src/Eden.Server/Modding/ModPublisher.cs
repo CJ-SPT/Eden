@@ -161,7 +161,8 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
 
     private static async Task Compile(string clientRoot, string directory, CancellationToken cancellation)
     {
-        ProcessStartInfo start = new(Environment.GetEnvironmentVariable("EDEN_PYTHON") ?? "python")
+        string python = Environment.GetEnvironmentVariable("EDEN_PYTHON") ?? (OperatingSystem.IsWindows() ? "python" : "python3");
+        ProcessStartInfo start = new(python)
         {
             UseShellExecute = false,
             CreateNoWindow = true,

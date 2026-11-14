@@ -19,7 +19,7 @@
     <label>Installed package hash <input @bind="Hash" /></label>
     <button @onclick="() => Select(true)">Enable package</button>
     <button class="secondary" @onclick="() => Select(false)">Disable package</button>
-    <label>Pinned source client folder <input @bind="ClientRoot" placeholder="E:\EdenDev\3662168" /></label>
+    <label>Pinned source client folder on this host <input @bind="ClientRoot" placeholder="@ClientRootExample" /></label>
     <button @onclick="Build">Build selected mod set</button>
     <button class="secondary" @onclick="Load">Refresh status</button>
 </fieldset>
@@ -42,6 +42,7 @@
     private string Archive = "";
     private string Hash = "";
     private string ClientRoot = "";
+    private static string ClientRootExample => OperatingSystem.IsWindows() ? @"E:\EdenDev\3662168" : "/config";
     private string? Message;
     private string? Error;
     private bool Busy;

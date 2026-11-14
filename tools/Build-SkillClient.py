@@ -1,4 +1,4 @@
-"""Build an Eden skill archive using only inert compilation in the pinned Python runtime.
+"""Build a pinned Eden client archive using inert Python 2.7 compilation.
 
 No game module bodies run. Original client files are read only; output must be elsewhere.
 """
@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import subprocess
 import tempfile
 import zipfile
 import zlib
@@ -93,36 +94,67 @@ def mod_sources(root):
     return modules
 
 
+def run_compiler(root, work, worker, python2):
+    source = worker.encode('ascii', 'backslashreplace')
+    if python2 is not None:
+        script = work / 'compile.py'
+        script.write_bytes(source)
+        try:
+            subprocess.run([python2, '-E', '-s', '-S', script.name], cwd=work, check=True)
+        except FileNotFoundError as error:
+            raise RuntimeError('Install CPython 2.7.18 on the host or set EDEN_PYTHON2 to its executable') from error
+        return
+
+    binaries = root / 'tq/bin64'
+    runtime_path = binaries / 'python27.dll'
+    if hashlib.sha256(runtime_path.read_bytes()).hexdigest() != PYTHON_SHA256:
+        raise ValueError('The source Python runtime does not match build 3662168')
+    previous = Path.cwd()
+    try:
+        os.chdir(work)
+        with os.add_dll_directory(str(binaries)):
+            runtime = ctypes.CDLL(str(runtime_path))
+            ctypes.c_int.in_dll(runtime, 'Py_NoSiteFlag').value = 1
+            runtime.Py_InitializeEx(0)
+            if runtime.PyRun_SimpleString(source):
+                raise RuntimeError('Inert skill compilation failed')
+    finally:
+        os.chdir(previous)
+
+
 def build(root, overlay, output, mods=None):
     root, overlay, output = root.resolve(), overlay.resolve(), output.resolve()
     if output.is_relative_to(root):
         raise ValueError('Skill package output must be outside the source client')
     archive = root / 'tq/code.ccp'
-    if hashlib.sha256(archive.read_bytes()).hexdigest() != PINNED_SHA256:
-        archive = root / '.eden-original-code.ccp'
-    if hashlib.sha256(archive.read_bytes()).hexdigest() != PINNED_SHA256:
-        raise ValueError('Select an unchanged build-3662168 source client')
-    binaries = root / 'tq/bin64'
-    if hashlib.sha256((binaries / 'python27.dll').read_bytes()).hexdigest() != PYTHON_SHA256:
-        raise ValueError('The source Python runtime does not match build 3662168')
+    archive = next((path for path in (archive, root / '.eden-original-code.ccp')
+                    if path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == PINNED_SHA256), None)
+    if archive is None:
+        raise ValueError('Select an unchanged build-3662168 code.ccp or .eden-original-code.ccp')
+    python2 = os.environ.get('EDEN_PYTHON2') or ('python2.7' if os.name != 'nt' else None)
     source = 'DATA_JSON = ' + repr(overlay.read_text(encoding='utf-8')) + '\n'
     source += Path(__file__).with_name('skill_client_overlay.py').read_text(encoding='utf-8')
     extra_sources = mod_sources(mods)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='eden-skill-compile-', dir=output.parent) as folder:
         work = Path(folder)
+
+        patched = {name: work / ('native-' + str(index)) for index, name in enumerate(WRAPPERS)}
         jobs = []
         with zipfile.ZipFile(archive) as original:
             for name, (function, wrapper) in WRAPPERS.items():
-                path = work / (name.replace('/', '_'))
+                path = patched[name]
                 path.write_bytes(zlib.decompress(original.read(name)))
-                jobs.append((str(path), function, wrapper))
+                jobs.append((path.name, function, wrapper))
             if extra_sources:
-                path = work / NEOCOM_MODULE.replace('/', '_')
+                path = patched[NEOCOM_MODULE] = work / 'native-neocom'
                 path.write_bytes(zlib.decompress(original.read(NEOCOM_MODULE)))
                 for function, wrapper in MOD_WRAPPERS:
-                    jobs.append((str(path), function, wrapper))
+                    jobs.append((path.name, function, wrapper))
         worker = '''import marshal
+import sys
+if EXTERNAL_COMPILER and (sys.version_info[:3] != (2, 7, 18) or sys.subversion[0] != 'CPython'):
+    sys.exit('The mod compiler requires CPython 2.7.18. Set EDEN_PYTHON2 to that interpreter.')
 def replace(code, constants):
     return type(code)(code.co_argcount,code.co_nlocals,code.co_stacksize,code.co_flags,
         code.co_code,tuple(constants),code.co_names,code.co_varnames,code.co_filename,
@@ -152,30 +184,30 @@ for path, name, source in EXTRA_COMPILATIONS:
     module=compile(source,name,'exec')
     open(path,'wb').write(header+marshal.dumps(module,0))
 '''
-        worker = worker.replace('JOBS', repr(jobs)).replace('MODULE_SOURCE', repr(source))
-        worker = worker.replace('MODULE_OUTPUT', repr(str(work / 'eden_skill_overlay.pyj')))
-        extras = [(str(work / ('extra-' + str(index))), name,
+        extras = [('extra-' + str(index), name,
                    ('# coding: utf-8\n' + module).encode('utf-8'))
                   for index, (name, module) in enumerate(sorted(extra_sources.items()))]
-        worker = worker.replace('EXTRA_COMPILATIONS', repr(extras))
-        with os.add_dll_directory(str(binaries)):
-            runtime = ctypes.CDLL(str(binaries / 'python27.dll'))
-            ctypes.c_int.in_dll(runtime, 'Py_NoSiteFlag').value = 1
-            runtime.Py_InitializeEx(0)
-            if runtime.PyRun_SimpleString(worker.encode('ascii', 'backslashreplace')):
-                raise RuntimeError('Inert skill compilation failed')
+        inputs = {
+            'EXTERNAL_COMPILER': python2 is not None,
+            'JOBS': jobs,
+            'MODULE_SOURCE': source,
+            'MODULE_OUTPUT': 'eden_skill_overlay.pyj',
+            'EXTRA_COMPILATIONS': extras,
+        }
+        declarations = ''.join(name + ' = ' + repr(value) + '\n' for name, value in inputs.items())
+        run_compiler(root, work, declarations + worker, python2)
         with zipfile.ZipFile(archive) as original, zipfile.ZipFile(output, 'w', zipfile.ZIP_STORED) as target:
             for name in dict.fromkeys(original.namelist()):
                 if name == 'eden_skill_overlay.pyj':
                     raise ValueError('The original archive already contains an Eden overlay')
-                path = work / name.replace('/', '_')
-                data = zlib.compress(path.read_bytes()) if name in WRAPPERS or (extra_sources and name == NEOCOM_MODULE) else original.read(name)
+                path = patched.get(name)
+                data = original.read(name) if path is None else zlib.compress(path.read_bytes())
                 target.writestr(zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0)), data)
-            for path, name, module in extras:
+            for path, name, _ in extras:
                 if name in original.namelist():
                     raise ValueError('A mod module overlaps the original archive')
                 target.writestr(zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0)),
-                                zlib.compress(Path(path).read_bytes()))
+                                zlib.compress((work / path).read_bytes()))
             target.writestr(zipfile.ZipInfo('eden_skill_overlay.pyj', (1980, 1, 1, 0, 0, 0)),
                             zlib.compress((work / 'eden_skill_overlay.pyj').read_bytes()))
     print('Skill client archive compiled successfully')

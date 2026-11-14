@@ -63,7 +63,8 @@ internal sealed class SkillClientPublisher(WorldDatabase database, SkillEditorSt
                 string input = Path.Combine(temporary, "overlay.json");
                 await File.WriteAllTextAsync(input, overlay, cancellation);
                 string code = Path.Combine(temporary, "code.ccp");
-                var start = new ProcessStartInfo(Environment.GetEnvironmentVariable("EDEN_PYTHON") ?? "python")
+                string python = Environment.GetEnvironmentVariable("EDEN_PYTHON") ?? (OperatingSystem.IsWindows() ? "python" : "python3");
+                var start = new ProcessStartInfo(python)
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,

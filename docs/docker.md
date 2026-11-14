@@ -37,7 +37,56 @@ docker compose run --rm eden --config /config/server.json --set-account-password
 docker compose up -d
 ```
 
-Windows development tickets and compiling client packages from the Windows client runtime require a native Windows host. The container can load and serve existing compatible packages from the mounted data directory.
+Windows development tickets still require a Windows host. The container builds mod sets from a verified original client
+archive and publishes them to remote players through Eden Launcher.
+
+## Enable AutoMining on a Docker host
+
+Copy the original **build 3662168** archive to `./deploy/.eden-original-code.ccp` on the Docker host. If you use
+`EDEN_HOST_CONFIG_DIR`, copy it there instead. Use `.eden-original-code.ccp` from a prepared client, or rename
+`tq/code.ccp` from an unchanged client. Compose already mounts this directory read-only at `/config`. The compiler
+needs only the archive, so the rest of the Windows client can stay on the player’s PC.
+
+Run these commands in the deployment checkout after updating it to a revision with Docker mod compilation.
+
+```sh
+docker compose build eden
+docker compose stop eden
+docker compose run --rm -T eden --mod-export-automining /data/AutoMining-1.2.0.edenmod
+docker compose run --rm -T eden --mod-install /data/AutoMining-1.2.0.edenmod
+docker compose run --rm -T eden --mod-enable NEW_PACKAGE_SHA256
+docker compose run --rm -T eden --mod-build /config
+docker compose up -d eden
+docker compose run --rm -T eden --mod-status
+```
+
+Use a fresh output filename when exporting again. Replace `NEW_PACKAGE_SHA256` with the hash printed by install.
+When upgrading, run `docker compose run --rm -T eden --mod-disable OLD_PACKAGE_SHA256` before enabling the new hash.
+Use the same Compose files and environment as your running deployment. If the service uses a nondefault world path,
+append the same container-side `--world PATH` to each mod command. Status should list `eden.automining` version
+`1.2.0` in the active set after startup. Then connect to the server’s existing URL in Eden Launcher, let it download
+the required mod set, and open **Eden Mods → AutoMining** in the Neocom. See [in-game controls](modding.md#automining).
+
+The image includes Python 3 and a standalone CPython 2.7.18 compiler. It reads the pinned archive as data and
+writes the composed mod set to the mounted server data directory. Supply the original archive separately.
+
+### Automated validation
+
+The .NET build passed in 4.66 seconds. The 40 focused tests passed in 12.20 seconds with standalone CPython 2.7.18
+on Windows. The launcher API test rejected a mismatched archive, built AutoMining from the original archive alone,
+downloaded the active set over the authenticated API, and received a launch ticket for its exact archive hash.
+The same launcher test passed with the pinned Windows DLL. The native adapter, Python policy suites, and formatting
+checks passed. The focused filter selected `AutoMiningPackageTests`, `ModLauncherApiTests`, `ModRuntimeTests`,
+`ModFoundationTests`, `SkillEditorTests`, and `GameplayDependenciesTests`. Docker was unavailable in the test
+workspace, so the Linux image build and Compose commands were unverified.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+Build the image and activate the set on the Docker host, then open the AutoMining panel using Eden Launcher.
 
 ## Remote administration
 

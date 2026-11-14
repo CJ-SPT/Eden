@@ -23,14 +23,17 @@ the selected set; build resolves the entire selection and stages a combined pack
 must be installed and enabled at their declared exact versions. Disable dependent mods together. Accidental
 overlapping skill definitions are rejected; replacements declare both the target and its owning dependency.
 
-Build reads an unchanged build-3662168 client, or a prepared client's verified original archive, and its pinned
-Python runtime. It compiles inert code without starting the game. Neither the source client nor the base catalog
-is changed. Built sets reuse the existing immutable `.skill-packages` catalog/archive boundary.
+Build verifies the original build-3662168 archive. Windows uses the pinned client DLL by default. On Linux, the
+input folder may contain only `.eden-original-code.ccp` or `tq/code.ccp` and the host needs Python 3.11 or newer
+and CPython 2.7.18. The defaults are `python3` and `python2.7`. Set `EDEN_PYTHON` and `EDEN_PYTHON2` for other paths.
+The [Docker image](docker.md#enable-automining-on-a-docker-host) includes both. The build compiles inert code and
+stages it in the existing immutable `.skill-packages` directory for Eden Launcher to download after activation.
 
 ## AutoMining
 
 AutoMining is an optional Eden-supplied client package with server-side mining controls. Export it for the target
-world and activate it through the normal mod workflow.
+world and activate it through the normal mod workflow. For a remote Docker server, use
+[the Compose commands](docker.md#enable-automining-on-a-docker-host). The commands below are for a Windows host.
 
 ```powershell
 dotnet run --project src/Eden.Server -- --mod-export-automining AutoMining.edenmod
