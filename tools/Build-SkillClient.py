@@ -45,24 +45,19 @@ def CloneGradeStorage():
 
 
 NEOCOM_MODULE = 'eve/client/script/ui/shared/neocom/neocom/neocomSvc.pyj'
-MOD_WRAPPERS = [
-    ('Run', """
-def Run(self):
-    def _eden_original(self):
-        pass
-    result = _eden_original(self)
-    import eden_mod_loader
-    eden_mod_loader.start(self)
-    return result
-"""),
-    ('GetMenu', """
+MOD_MENU_WRAPPER = """
 def GetMenu(self):
     def _eden_original(self):
         pass
-    import eden_mod_loader
-    return eden_mod_loader.menu(_eden_original(self))
-"""),
-]
+    entries = _eden_original(self)
+    try:
+        import eden_mod_loader
+        return eden_mod_loader.menu(entries)
+    except Exception:
+        import logging
+        logging.getLogger('eden.mods').exception('Could not open the Eden Mods menu')
+        return entries
+"""
 
 
 def mod_sources(root):
@@ -149,8 +144,7 @@ def build(root, overlay, output, mods=None):
             if extra_sources:
                 path = patched[NEOCOM_MODULE] = work / 'native-neocom'
                 path.write_bytes(zlib.decompress(original.read(NEOCOM_MODULE)))
-                for function, wrapper in MOD_WRAPPERS:
-                    jobs.append((path.name, function, wrapper))
+                jobs.append((path.name, 'GetMenu', MOD_MENU_WRAPPER))
         worker = '''import marshal
 import sys
 if EXTERNAL_COMPILER and (sys.version_info[:3] != (2, 7, 18) or sys.subversion[0] != 'CPython'):

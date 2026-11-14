@@ -161,6 +161,37 @@ Launcher registration and the account-password command now accept 6–128 charac
 
 **Optional maintainer checks:** Restart the server to apply the new password policy and use six characters in launcher account creation.
 
+## Deferred client mod registration
+
+The build-3662168 client stayed running without a window after receiving the Docker-published AutoMining 1.2.0
+archive. The local archive matched the advertised hash. A read-only process sample showed the client frame clock
+running. It did not identify the task that stalled startup.
+
+AutoMining 1.2.1 restores the original Neocom startup method byte-for-byte. The mod loader is first imported by
+the context-menu hook, and individual client modules register when the player opens Eden Mods. A mod that raises
+during registration has its partially registered menu entries removed, and other installed mods can still register.
+The original context menu remains available if the hook cannot load. The composed set identity includes the
+compiler revision so rebuilding a selection publishes the corrected archive.
+
+The pinned original archive was verified as SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+Four headless tests cover native menu fallback, deferred and isolated registration, and the existing mod command
+and session adapters. A pinned archive comparison verified that the Neocom Run code object is unchanged.
+
+### Automated validation
+
+Forty focused .NET tests passed in 11.10 seconds, using the standalone Python compiler. The exact AutoMining package
+test also passed with the pinned Windows DLL. The four client-mod tests, native skill-adapter test, both Python policy
+suites, solution build, and formatting check passed.
+
+### Live acceptance
+
+The reported hang was observed before the change. No game client was launched to accept the changed archive.
+
+### Optional maintainer check
+
+Launch through Eden Launcher and open Eden Mods from the Neocom after reaching space.
+
 ## Startup exchange
 
 The startup configuration identifies release 24.01, codename `V24.01`, region `ccp`, and port 26000. The client's packaged MachoNet version module specifies **496**. The installed GPS transport and the build-matched Blue marshaller supplied the message order, field types, and serialization rules. [Blue marshal implementation](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)

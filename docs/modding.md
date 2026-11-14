@@ -43,7 +43,7 @@ dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
 ```
 
 Use the hash printed by install. Append the same `--world PATH` to all four commands for a nondefault world.
-When upgrading to AutoMining 1.2.0, use a fresh export path and disable the previous package hash before enabling the new one.
+When upgrading to AutoMining 1.2.1, use a fresh export path and disable the previous package hash before enabling the new one.
 Restart Eden, then launch through Eden Launcher to receive the active mod set. In space, open **Eden Mods →
 AutoMining** from the Neocom context menu. Enter comma-separated ore group names such as `Veldspar, Scordite`,
 or leave the field empty for all supported ore. Select **Save Filter**, then **Start**. The filter is saved for the

@@ -1,5 +1,6 @@
 """Pinned-build client API. MODS is supplied by inert archive composition."""
 import json
+import logging
 
 _manager = None
 
@@ -48,9 +49,15 @@ class Manager(object):
         sm.RegisterNotify(self)
         for mod in MODS:
             api = ModApi(self, mod['id'])
-            module = __import__(mod['module'], fromlist=['register'])
-            module.register(api)
-            self.apis.append(api)
+            entry_count = len(self.entries)
+            try:
+                module = __import__(mod['module'], fromlist=['register'])
+                module.register(api)
+            except Exception:
+                del self.entries[entry_count:]
+                logging.getLogger('eden.mods').exception('Could not load mod %s', mod['id'])
+            else:
+                self.apis.append(api)
 
     def OnSessionChanged(self, is_remote, session, change):
         for api in self.apis:
@@ -68,16 +75,15 @@ class Manager(object):
             Button(parent=window.content, label=label, func=callback, align=uiconst.TOTOP, padBottom=8)
 
 
-def start(neocom):
+def show_mods(*args):
     global _manager
     if _manager is None:
         _manager = Manager()
+    _manager.show()
 
 
 def menu(original):
-    if _manager is None:
-        return original
     from carbonui.control.contextMenu.menuEntryData import MenuEntryData
     entries = list(original or [])
-    entries.append(MenuEntryData('Eden Mods', func=_manager.show))
+    entries.append(MenuEntryData('Eden Mods', func=show_mods))
     return entries
