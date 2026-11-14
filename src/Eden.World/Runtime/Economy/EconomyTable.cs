@@ -375,6 +375,8 @@ internal abstract class EconomySet<T> : IQueryable<T>, IEconomySet
         SelectRows(predicate).Select(selector.Compile(preferInterpretation: true));
 
     internal abstract T? Find(EconomyKey id);
+
+    internal abstract T? FindUnfiltered(EconomyKey id);
     internal abstract IQueryable<T> Where(Expression<Func<T, bool>> predicate);
 
     internal bool Any(Expression<Func<T, bool>> predicate) => Where(predicate).Any();
@@ -516,7 +518,9 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
         }
     }
 
-    internal override TRow? Find(EconomyKey id)
+    internal override TRow? Find(EconomyKey id) => FindUnfiltered(id) is { } row && transaction.Visible(row) ? row : null;
+
+    internal override TRow? FindUnfiltered(EconomyKey id)
     {
         if (_removed.Contains(id))
         {
@@ -536,7 +540,7 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
             _local.Add(id, row);
             transaction.Link(row);
         }
-        return transaction.Visible(row) ? row : null;
+        return row;
     }
 
     internal override IQueryable<TRow> Where(Expression<Func<TRow, bool>> predicate) => Queryable.Where(this, predicate);

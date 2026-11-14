@@ -9,15 +9,15 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Insurance;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Contracts;
 
 internal sealed partial class PilotContractStore
 {
     private static PersonalContract AcceptCourier(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedContract contract,
         long pilotId,
@@ -84,9 +84,9 @@ internal sealed partial class PilotContractStore
             }
         );
 
-    private static Pilot CourierPilot(WorldDbContext world, long pilotId, bool docked)
+    private static Pilot CourierPilot(WorldAction world, long pilotId, bool docked)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId);
         if (pilot is null || (docked && pilot.ActiveShip.Position is not null))
         {
             throw new InvalidDataException("Deliver courier packages while docked.");
@@ -94,7 +94,7 @@ internal sealed partial class PilotContractStore
         return pilot;
     }
 
-    private static OwnedItem AccessiblePackage(WorldDbContext world, SavedContract contract, Pilot pilot)
+    private static OwnedItem AccessiblePackage(WorldAction world, SavedContract contract, Pilot pilot)
     {
         var package = world
             .Set<OwnedItem>()
@@ -201,7 +201,7 @@ internal sealed partial class PilotContractStore
             }
         );
 
-    private static void FailCourier(WorldDbContext world, CatalogDbContext catalog, SavedContract contract, long pilotId, long now)
+    private static void FailCourier(WorldAction world, CatalogDbContext catalog, SavedContract contract, long pilotId, long now)
     {
         if (
             contract.Type != ContractType.Courier
@@ -235,12 +235,12 @@ internal sealed partial class PilotContractStore
             }
             else
             {
-                var item = world.Set<OwnedItem>().IgnoreQueryFilters().SingleOrDefault(i => i.Id == entry.ItemId);
+                var item = world.Set<OwnedItem>().FindUnfiltered(new(entry.ItemId));
                 if (item is not null)
                 {
                     world.Remove(item);
                 }
-                else if (world.Ships.IgnoreQueryFilters().SingleOrDefault(s => s.Id == entry.ItemId) is { } hull)
+                else if (world.Ships.FindUnfiltered(new(entry.ItemId)) is { } hull)
                 {
                     PilotInsuranceStore.VoidRemovedHull(world, hull.Id);
                     world.Remove(hull);
@@ -319,7 +319,7 @@ internal sealed partial class PilotContractStore
         );
 
     private static IReadOnlyList<InventoryChange> ReleaseCourierGoods(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedContract contract,
         long previousOwner,
@@ -339,7 +339,7 @@ internal sealed partial class PilotContractStore
             var item = Transfer(world, catalog, entry.ItemId, previousOwner, owner);
             if (roots.Contains(entry.ItemId))
             {
-                if (world.Set<OwnedItem>().IgnoreQueryFilters().SingleOrDefault(i => i.Id == entry.ItemId) is { } stack)
+                if (world.Set<OwnedItem>().FindUnfiltered(new(entry.ItemId)) is { } stack)
                 {
                     stack.LocationId = location;
                     stack.FlagId = flag;
@@ -348,15 +348,11 @@ internal sealed partial class PilotContractStore
                 }
                 else
                 {
-                    world
-                        .Ships.IgnoreQueryFilters()
-                        .Where(s => s.Id == entry.ItemId)
-                        .ExecuteUpdate(update =>
-                            update
-                                .SetProperty(s => s.StationId, checked((int)location))
-                                .SetProperty(s => s.StoredInId, (long?)null)
-                                .SetProperty(s => s.StorageFlagId, (int)InventoryFlag.Hangar)
-                        );
+                    var hull =
+                        world.Ships.FindUnfiltered(new(entry.ItemId)) ?? throw new InvalidDataException("The escrow hull is unavailable.");
+                    hull.StationId = checked((int)location);
+                    hull.StoredInId = null;
+                    hull.StorageFlagId = (int)InventoryFlag.Hangar;
                     item = item with { LocationId = location, FlagId = flag };
                 }
             }

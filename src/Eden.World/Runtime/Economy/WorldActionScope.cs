@@ -39,13 +39,14 @@ internal sealed class WorldActionScope : IDisposable
         }
     }
 
-    internal static T Inspect<T>(WorldDatabase database, Func<WorldAction, T> read)
+    internal static T Inspect<T>(WorldDatabase database, Func<WorldAction, T> read, bool consistentFileRead = false)
     {
         if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
         {
             return live.Economy.Inspect(read);
         }
         using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
+        using var transaction = consistentFileRead ? world.Database.BeginTransaction() : null;
         return read(new SqlWorldAction(world));
     }
 

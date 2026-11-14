@@ -89,6 +89,20 @@ internal sealed class SqlWorldAction(WorldDbContext world) : WorldAction
         return checked(Math.Max(saved, minimum) + 1);
     }
 
+    internal void TransferInactiveHull(Ship hull, long owner)
+    {
+        long previousOwner = hull.OwnerId;
+        int changed = world
+            .Ships.IgnoreQueryFilters()
+            .Where(ship => ship.Id == hull.Id && ship.OwnerId == previousOwner && !world.Pilots.Any(p => p.ActiveShipId == ship.Id))
+            .ExecuteUpdate(update => update.SetProperty(ship => ship.OwnerId, owner));
+        if (changed != 1)
+        {
+            throw new InvalidDataException("The escrow hull could not be transferred.");
+        }
+        world.Entry(hull).State = EntityState.Detached;
+    }
+
     internal override long NextItemId() => InventoryPersistence.NextId(world);
 
     internal override string? FitRevision(long pilot) => world.FitRevision(pilot);
@@ -124,7 +138,11 @@ internal sealed class SqlActionRows<T>(WorldDbContext world) : EconomySet<T>
     internal override IEnumerable<T> SelectRows(Expression<Func<T, bool>>? predicate) =>
         predicate is null ? Rows : Rows.Where(predicate.Compile(preferInterpretation: true));
 
-    internal override T? Find(EconomyKey id)
+    internal override T? Find(EconomyKey id) => Find(id, unfiltered: false);
+
+    internal override T? FindUnfiltered(EconomyKey id) => Find(id, unfiltered: true);
+
+    private T? Find(EconomyKey id, bool unfiltered)
     {
         var properties = world.Model.FindEntityType(typeof(T))!.FindPrimaryKey()!.Properties;
         object[] keys = properties
@@ -137,6 +155,18 @@ internal sealed class SqlActionRows<T>(WorldDbContext world) : EconomySet<T>
                     : id.Part
             )
             .ToArray();
+        if (unfiltered)
+        {
+            if (typeof(T) == typeof(OwnedItem))
+            {
+                return (T?)(object?)world.Set<OwnedItem>().IgnoreQueryFilters().SingleOrDefault(item => item.Id == id.Id);
+            }
+            if (typeof(T) == typeof(Ship))
+            {
+                return (T?)
+                    (object?)world.Ships.IgnoreQueryFilters().Include(ship => ship.Position).SingleOrDefault(ship => ship.Id == id.Id);
+            }
+        }
         var row = world.Set<T>().Find(keys);
         if (row is Pilot pilot)
         {

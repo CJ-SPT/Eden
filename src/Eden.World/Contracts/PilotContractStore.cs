@@ -20,9 +20,9 @@ using Eden.World.Industry;
 using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Contracts;
 
@@ -32,33 +32,29 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
     public long Revision => signal.Revision;
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    private T Read<T>(Func<WorldDbContext, CatalogDbContext, T> read, bool relationalOnly = false)
+    private T Read<T>(Func<WorldAction, CatalogDbContext, T> read)
     {
-        using WorldDbContext world = new(database.Path) { IsResidentProjection = relationalOnly };
-        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return read(world, catalog);
+        return WorldActionScope.Inspect(database, world => read(world, catalog), consistentFileRead: true);
     }
 
-    private T Write<T>(Func<WorldDbContext, CatalogDbContext, T> write)
+    private T Write<T>(Func<WorldAction, CatalogDbContext, T> write)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var world = transaction.World;
         T result = write(world, catalog);
-        world.SaveChanges();
+        world.AfterCommit(signal.Publish);
         transaction.Commit();
-        signal.Publish();
         return result;
     }
 
-    private static Pilot Pilot(WorldDbContext world, long id) =>
-        world.Pilots.Include(p => p.Account).SingleOrDefault(p => p.Id == id) ?? throw new InvalidDataException("Unknown pilot.");
+    private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 
-    private static ContractSkills Skills(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    private static ContractSkills Skills(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
         var ids = Enum.GetValues<ContractSkill>().Select(s => (int)s).ToArray();
-        bool trained = world.Set<PilotSkill>().Any(s => s.PilotId == pilot.Id && ids.Contains(s.TypeId) && s.Points > 0);
+        bool trained = world.Set<PilotSkill>().Any(s => s.PilotId == pilot.Id && Enumerable.Contains(ids, s.TypeId) && s.Points > 0);
         var alpha =
             trained && pilot.Account.CloneGrade == AccountCloneGrade.Alpha
                 ? catalog
@@ -88,7 +84,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
         return Write((world, catalog) => CreateOne(world, catalog, pilotId, draft, Now));
     }
 
-    private static long CreateOne(WorldDbContext world, CatalogDbContext catalog, long pilotId, ContractDraft draft, long now)
+    private static long CreateOne(WorldAction world, CatalogDbContext catalog, long pilotId, ContractDraft draft, long now)
     {
         var pilot = Pilot(world, pilotId);
         if (draft.AssigneeId == pilotId || (draft.AssigneeId is { } assignee && !world.Pilots.Any(p => p.Id == assignee)))
@@ -162,8 +158,8 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
             }
             var parentIds = contents.Select(i => i.Id).Append(root.Id).ToArray();
             if (
-                world.Set<OwnedItem>().Any(i => parentIds.Contains(i.LocationId) && i.OwnerId != pilotId)
-                || world.Ships.Any(s => s.StoredInId != null && parentIds.Contains(s.StoredInId.Value) && s.OwnerId != pilotId)
+                world.Set<OwnedItem>().Any(i => Enumerable.Contains(parentIds, i.LocationId) && i.OwnerId != pilotId)
+                || world.Ships.Any(s => s.StoredInId != null && Enumerable.Contains(parentIds, s.StoredInId.Value) && s.OwnerId != pilotId)
             )
             {
                 throw new InvalidDataException("A contract cannot include another owner's nested assets.");
@@ -248,7 +244,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
         return contract.Id;
     }
 
-    private static void SaveItem(WorldDbContext world, long contract, InventoryItem item, bool offered, long? parent) =>
+    private static void SaveItem(WorldAction world, long contract, InventoryItem item, bool offered, long? parent) =>
         world.Add(
             new SavedContractItem
             {
@@ -396,9 +392,9 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
             }
         );
 
-    private static InventoryItem Transfer(WorldDbContext world, CatalogDbContext catalog, long itemId, long previousOwner, long owner)
+    private static InventoryItem Transfer(WorldAction world, CatalogDbContext catalog, long itemId, long previousOwner, long owner)
     {
-        var item = world.Set<OwnedItem>().IgnoreQueryFilters().SingleOrDefault(i => i.Id == itemId);
+        var item = world.Set<OwnedItem>().FindUnfiltered(new(itemId));
         if (item is not null)
         {
             if (item.OwnerId != previousOwner)
@@ -408,7 +404,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
             item.OwnerId = owner;
             return PilotInventoryStore.Read(catalog, item);
         }
-        var ship = world.Ships.IgnoreQueryFilters().AsNoTracking().Include(s => s.Position).SingleOrDefault(s => s.Id == itemId);
+        var ship = world.Ships.FindUnfiltered(new(itemId));
         if (ship is null || ship.OwnerId != previousOwner || ship.Position is not null || world.Pilots.Any(p => p.ActiveShipId == itemId))
         {
             throw new InvalidDataException("The escrow hull is unavailable.");
@@ -416,20 +412,22 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
         if (owner != previousOwner)
         {
             PilotInsuranceStore.VoidRemovedHull(world, itemId);
-            // OwnerId participates in the alternate key that protects active-ship
-            // ownership. EF treats that key as immutable; update the inactive hull
-            // inside this transaction without replacing its health/storage identity.
-            int changed = world
-                .Ships.IgnoreQueryFilters()
-                .Where(s => s.Id == itemId && s.OwnerId == previousOwner && !world.Pilots.Any(p => p.ActiveShipId == s.Id))
-                .ExecuteUpdate(update => update.SetProperty(s => s.OwnerId, owner));
-            if (changed != 1)
-            {
-                throw new InvalidDataException("The escrow hull could not be transferred.");
-            }
+            TransferHull(world, ship, owner);
         }
-        ship.OwnerId = owner;
-        return PilotFleetStore.Read(catalog, ship);
+        return PilotFleetStore.Read(catalog, ship) with { OwnerId = owner };
+    }
+
+    private static void TransferHull(WorldAction world, Ship hull, long owner)
+    {
+        if (world is SqlWorldAction sql)
+        {
+            // EF maps the owner as part of the active-ship alternate key.
+            sql.TransferInactiveHull(hull, owner);
+        }
+        else
+        {
+            hull.OwnerId = owner;
+        }
     }
 
     public void Reject(long pilotId, long contractId) =>
@@ -510,7 +508,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
             }
         );
 
-    private static SavedContract Contract(WorldDbContext world, long pilotId, long contractId)
+    private static SavedContract Contract(WorldAction world, long pilotId, long contractId)
     {
         var contract = world.Set<SavedContract>().Find(contractId);
         if (
@@ -528,17 +526,9 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
         return contract;
     }
 
-    private static long Balance(WorldDbContext world, long pilotId) => world.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0;
+    private static long Balance(WorldAction world, long pilotId) => world.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0;
 
-    private static void Pay(
-        WorldDbContext world,
-        SavedContract contract,
-        long pilot,
-        long other,
-        WalletEntryType type,
-        long amount,
-        long now
-    )
+    private static void Pay(WorldAction world, SavedContract contract, long pilot, long other, WalletEntryType type, long amount, long now)
     {
         if (amount == 0)
         {
@@ -566,7 +556,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
     }
 
     private static void Change(
-        WorldDbContext world,
+        WorldAction world,
         long contract,
         long pilot,
         ContractChangeKind kind,
@@ -593,7 +583,7 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
             }
         );
 
-    private static ContractDetails Details(WorldDbContext world, SavedContract contract) =>
+    private static ContractDetails Details(WorldAction world, SavedContract contract) =>
         new(
             contract.Snapshot(),
             world
@@ -818,7 +808,10 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 var active = world
                     .Set<SavedContract>()
                     .Where(c =>
-                        assigned.Contains(c.Id) && c.AssigneeId == pilotId && c.Status == ContractStatus.Outstanding && c.Expires > now
+                        Enumerable.Contains(assigned, c.Id)
+                        && c.AssigneeId == pilotId
+                        && c.Status == ContractStatus.Outstanding
+                        && c.Expires > now
                     )
                     .Select(c => c.Id)
                     .ToHashSet();

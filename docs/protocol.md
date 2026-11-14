@@ -657,6 +657,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Personal contracts
 
+- [Resident contract settlement and search](protocol/contracts.md#resident-contract-settlement-and-search)
+
 - <a id="contract-search-endpoint-access"></a>[Contract search endpoint access](protocol/contracts.md#contract-search-endpoint-access)
 - <a id="contract-search-endpoint-metadata"></a>[Contract search endpoint metadata](protocol/contracts.md#contract-search-endpoint-metadata)
 - <a id="contract-submission-optional-identifiers"></a>[Contract submission optional identifiers](protocol/contracts.md#contract-submission-optional-identifiers)

@@ -19,6 +19,7 @@ using Eden.World.Contracts;
 using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -175,8 +176,10 @@ public sealed class ContractTests
         }
     }
 
-    [Fact]
-    public void FittedHullEscrowRetainsHealthLoadedChargesCarriedHullsAndBlocksOtherInventoryOperations()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FittedHullEscrowRetainsHealthLoadedChargesCarriedHullsAndBlocksOtherInventoryOperations(bool resident)
     {
         using TestWorld db = new();
         Fund(db, ContractAssetTestData.Pilot);
@@ -203,6 +206,8 @@ public sealed class ContractTests
         InsuranceTestData.Prepare(db);
         var insurance = db.Services.GetRequiredService<IPilotInsurance>();
         insurance.Insure(ContractAssetTestData.Pilot, ContractAssetTestData.Station, hull, 5000, false);
+        var clock = CalendarTestData.Clock();
+        using var live = resident ? new LiveWorld(new(db.Path), clock, _ => { }) : null;
         var contracts = db.Services.GetRequiredService<IPilotContracts>();
         var draft = Draft(hull) with { Items = [new(hull, 1)] };
         long id = contracts.Create(ContractAssetTestData.Pilot, draft);
@@ -218,8 +223,16 @@ public sealed class ContractTests
                 .Move(ContractAssetTestData.Pilot, [charges], module, db.Store.FindPilot(1000001)!.ShipId, (int)InventoryFlag.Cargo, null)
         );
         Assert.Null(insurance.Contract(ContractAssetTestData.Pilot, hull));
-        WorldInitialization.Open(db.Path);
+        if (live is null)
+        {
+            WorldInitialization.Open(db.Path);
+        }
         contracts.Accept(ContractAssetTestData.Other, id);
+        if (live is not null)
+        {
+            await live.FlushAsync();
+            live.Dispose();
+        }
         using WorldDbContext verify = new(db.Path);
         Assert.Equal(ContractAssetTestData.Other, verify.Ships.Find(hull)!.OwnerId);
         Assert.Equal(hull, verify.Ships.Find(carried)!.StoredInId);

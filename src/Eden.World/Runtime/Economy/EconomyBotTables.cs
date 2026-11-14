@@ -3271,6 +3271,26 @@ internal sealed partial class EconomyTransaction
     {
         switch (row)
         {
+            case Eden.Data.World.Contracts.SavedContract value:
+                value.Id = value.Id == 0 ? Next("WorldContract") : value.Id;
+                Reserve("WorldContract", value.Id);
+                break;
+            case Eden.Data.World.Contracts.SavedContractBid value:
+                value.Id = value.Id == 0 ? Next("WorldContractBid") : value.Id;
+                Reserve("WorldContractBid", value.Id);
+                break;
+            case Eden.Data.World.Contracts.SavedContractChange value:
+                value.Id = value.Id == 0 ? Next("WorldContractChange") : value.Id;
+                Reserve("WorldContractChange", value.Id);
+                break;
+            case Eden.Data.World.Contracts.SavedContractItem value:
+                value.Id = value.Id == 0 ? Next("WorldContractItem") : value.Id;
+                Reserve("WorldContractItem", value.Id);
+                break;
+            case Eden.Data.World.Contracts.SavedContractPayment value:
+                value.Id = value.Id == 0 ? Next("WorldContractPayment") : value.Id;
+                Reserve("WorldContractPayment", value.Id);
+                break;
             case Eden.Data.World.Exploration.SavedScanProbe value:
                 Reserve("WorldScanProbe", value.Id);
                 break;
@@ -3658,7 +3678,7 @@ internal sealed partial class EconomyTransaction
         }
         foreach (var row in Retained<Eden.Data.World.Combat.ModuleCooldown>())
         {
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
@@ -3669,7 +3689,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident WorldNpc reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.TargetShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.TargetShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -3759,7 +3779,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident NpcAggression reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.TargetShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.TargetShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -3804,15 +3824,15 @@ internal sealed partial class EconomyTransaction
         }
         foreach (var row in Retained<Eden.Data.World.Combat.SavedWeaponLink>())
         {
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.MasterId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.MasterId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.SlaveId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.SlaveId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
@@ -3828,7 +3848,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident ShipHealthState values.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -3861,7 +3881,7 @@ internal sealed partial class EconomyTransaction
         }
         foreach (var row in Retained<Eden.Data.World.Combat.WorldPlayerEwar>())
         {
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
@@ -3869,7 +3889,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.SourceShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.SourceShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -3947,14 +3967,14 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident WorldDrone values.");
             }
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ItemId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ItemId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
         }
         foreach (var row in Retained<Eden.Data.World.Drones.WorldDroneCombatTriggers>())
         {
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -3980,11 +4000,11 @@ internal sealed partial class EconomyTransaction
         }
         foreach (var row in Retained<Eden.Data.World.Fittings.ActiveFittedModule>())
         {
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -3995,7 +4015,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident ShipEnergy values.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -4186,7 +4206,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident SpatialNavigationState values.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -4204,7 +4224,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident WorldTackle values.");
             }
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
@@ -4212,7 +4232,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.SourceShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.SourceShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -4223,11 +4243,11 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident PendingLocalRepair values.");
             }
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -4241,7 +4261,7 @@ internal sealed partial class EconomyTransaction
         }
         foreach (var row in Retained<Eden.Data.World.Repair.WorldRemoteAssistance>())
         {
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
@@ -4249,18 +4269,18 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.SourceShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.SourceShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.TargetId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.TargetId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
         }
         foreach (var row in Retained<Eden.Data.World.Repair.WorldRemoteRepair>())
         {
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
@@ -4268,11 +4288,11 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.SourceShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.SourceShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.TargetId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.TargetId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -4302,7 +4322,7 @@ internal sealed partial class EconomyTransaction
         {
             if (
                 Set<Eden.Data.World.Structures.SavedStructure>().Find(row.StructureId) is null
-                || Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ItemId) is null
+                || Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ItemId)) is null
                 || Filter<Eden.Data.World.Structures.SavedStructureService>(service =>
                         service.StructureId == row.StructureId && service.Slot == row.Slot && service.ItemId != row.ItemId
                     )
@@ -4318,7 +4338,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident SavedModuleCondition values.");
             }
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
@@ -4338,7 +4358,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident SavedNaniteRepair values.");
             }
-            if (Set<Eden.Data.World.Inventory.OwnedItem>().Find(row.ModuleId) is null)
+            if (Set<Eden.Data.World.Inventory.OwnedItem>().FindUnfiltered(new(row.ModuleId)) is null)
             {
                 throw new InvalidDataException("Missing resident OwnedItem reference.");
             }
@@ -4346,7 +4366,7 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
@@ -4361,7 +4381,7 @@ internal sealed partial class EconomyTransaction
         }
         foreach (var row in Retained<Eden.Data.World.Thermal.SavedShipHeat>())
         {
-            if (Set<Eden.Data.World.Inventory.Ship>().Find(row.ShipId) is null)
+            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.ShipId)) is null)
             {
                 throw new InvalidDataException("Missing resident Ship reference.");
             }

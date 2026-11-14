@@ -269,3 +269,31 @@ References: inert inspection of the same build **3662168** `code.ccp` archive/ha
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Create contracts for two fitted ships and inspect progress, the returned contracts and each price. Accept one and cancel the other, then inspect native fitting/cargo displays after reconnecting. Native rendering, input and contract-window behavior remain unverified.
+
+
+## Resident contract settlement and search
+
+Contract creation, acceptance and reclamation, bulk offers, courier packages, and auction
+settlement use resident actions. A contract commits its inventory custody, wallet postings,
+and update cursor together. Escrowed items remain hidden from regular inventory queries.
+Settlement accesses the reserved rows and preserves the identities of fitted hulls, their
+modules and charges, and ships carried in bays.
+
+Contract search reads committed resident headers, item summaries and bids. Cold and warmed
+search can use the same state, and page details hydrate only the requested contracts. The
+direct-file adapter retains the existing save format and its atomic updates to inactive hulls.
+
+The gameplay reference was [Contracts](https://wiki.eveuniversity.org/Contracts). The local
+EveJS 261108.1 comparison used `contractRuntimeState.js`, `contractAuctionRuntime.js` and
+`contractItemCustody.js` (SHA-256 prefixes `CB0A86AB657EDCAE`, `518805F3EB316500` and
+`902924C04DB501B5`).
+
+**Automated validation.** The contract, account inventory, and character deletion filter
+passed 183 cases in 59 seconds. Ten focused cases passed before the combined run, including
+fitted-hull escrow and settlement in both persistence modes and zero world SQL commands or
+connections in warmed searches over up to 2,000 contracts. Both Python policy suites and
+formatting verification passed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.

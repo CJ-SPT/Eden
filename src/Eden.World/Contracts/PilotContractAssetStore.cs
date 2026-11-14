@@ -9,8 +9,8 @@ using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Industry;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Contracts;
 
@@ -22,38 +22,50 @@ internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAsse
 
     public IReadOnlyList<InventoryItem> Station(long pilotId, int stationId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        CheckStation(world, catalog, pilotId, stationId);
-        return Assets(world, catalog, pilotId, stationId);
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                CheckStation(world, catalog, pilotId, stationId);
+                return Assets(world, catalog, pilotId, stationId);
+            }
+        );
     }
 
     public IReadOnlyList<InventoryItem> Contents(long pilotId, int stationId, long itemId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        CheckStation(world, catalog, pilotId, stationId);
-        CheckRoots(world, catalog, pilotId, stationId, [itemId]);
-        return Contents(world, catalog, pilotId, itemId);
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                CheckStation(world, catalog, pilotId, stationId);
+                CheckRoots(world, catalog, pilotId, stationId, [itemId]);
+                return Contents(world, catalog, pilotId, itemId);
+            }
+        );
     }
 
     public IReadOnlyList<ContractContainerCount> Counts(long pilotId, int stationId, IReadOnlyList<long> itemIds)
     {
         ContractAssetRules.CheckSelection(itemIds);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        CheckStation(world, catalog, pilotId, stationId);
-        CheckRoots(world, catalog, pilotId, stationId, itemIds);
-        return itemIds.Select(id => new ContractContainerCount(id, Contents(world, catalog, pilotId, id).Count)).ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                CheckStation(world, catalog, pilotId, stationId);
+                CheckRoots(world, catalog, pilotId, stationId, itemIds);
+                return itemIds.Select(id => new ContractContainerCount(id, Contents(world, catalog, pilotId, id).Count)).ToArray();
+            }
+        );
     }
 
     public IReadOnlyList<InventoryChange> Split(long pilotId, int stationId, long itemId, int quantity)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         CheckStation(world, catalog, pilotId, stationId);
         var stack = InventoryPersistence.OwnedStack(world, pilotId, itemId);
@@ -91,12 +103,11 @@ internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAsse
             new(PilotInventoryStore.Read(catalog, stack), previous),
             new(PilotInventoryStore.Read(catalog, separated), null),
         };
-        world.SaveChanges();
         transaction.Commit();
         return changes;
     }
 
-    private static void CheckStation(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId)
+    private static void CheckStation(WorldAction world, CatalogDbContext catalog, long pilotId, int stationId)
     {
         // Contract preparation can inspect and split remote personal hangars.
         if (!world.Pilots.Any(p => p.Id == pilotId) || catalog.FindStation(stationId) is null)
@@ -105,7 +116,7 @@ internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAsse
         }
     }
 
-    internal static IReadOnlyList<InventoryItem> Assets(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId)
+    internal static IReadOnlyList<InventoryItem> Assets(WorldAction world, CatalogDbContext catalog, long pilotId, int stationId)
     {
         var items = world
             .Set<OwnedItem>()
@@ -114,7 +125,7 @@ internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAsse
             .AsEnumerable()
             .Select(i => PilotInventoryStore.Read(catalog, i));
         var ships = world
-            .Ships.Include(s => s.Position)
+            .Set<Ship>()
             .Where(s => s.OwnerId == pilotId && s.StationId == stationId && s.StoredInId == null && s.Position == null)
             .Where(s => !world.Pilots.Any(p => p.ActiveShipId == s.Id))
             .AsEnumerable()
@@ -122,7 +133,7 @@ internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAsse
         return items.Concat(ships).OrderBy(i => i.Id).ToArray();
     }
 
-    private static void CheckRoots(WorldDbContext world, CatalogDbContext catalog, long pilotId, int stationId, IReadOnlyList<long> itemIds)
+    private static void CheckRoots(WorldAction world, CatalogDbContext catalog, long pilotId, int stationId, IReadOnlyList<long> itemIds)
     {
         ContractAssetRules.CheckSelection(itemIds);
         var available = Assets(world, catalog, pilotId, stationId).Select(i => i.Id).ToHashSet();
@@ -132,7 +143,7 @@ internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAsse
         }
     }
 
-    internal static IReadOnlyList<InventoryItem> Contents(WorldDbContext world, CatalogDbContext catalog, long pilotId, long root)
+    internal static IReadOnlyList<InventoryItem> Contents(WorldAction world, CatalogDbContext catalog, long pilotId, long root)
     {
         // Include fitted modules, their loaded charges and ships in bays. Keep the
         // original location/flag on every row so a later escrow transfer can retain the graph.
@@ -143,14 +154,17 @@ internal sealed class PilotContractAssetStore(WorldDatabase database, IPilotAsse
         {
             var children = world
                 .Set<OwnedItem>()
-                .Where(i => i.OwnerId == pilotId && parents.Contains(i.LocationId))
+                .Where(i => i.OwnerId == pilotId && Enumerable.Contains(parents, i.LocationId))
                 .AsEnumerable()
                 .Select(i => PilotInventoryStore.Read(catalog, i))
                 .Concat(
                     world
-                        .Ships.Include(s => s.Position)
+                        .Set<Ship>()
                         .Where(s =>
-                            s.OwnerId == pilotId && s.Position == null && s.StoredInId != null && parents.Contains(s.StoredInId.Value)
+                            s.OwnerId == pilotId
+                            && s.Position == null
+                            && s.StoredInId != null
+                            && Enumerable.Contains(parents, s.StoredInId.Value)
                         )
                         .AsEnumerable()
                         .Select(s => PilotFleetStore.Read(catalog, s))

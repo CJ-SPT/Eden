@@ -3,6 +3,7 @@ using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Contracts;
@@ -156,7 +157,7 @@ internal sealed partial class PilotContractStore
         );
 
     private static IReadOnlyList<InventoryChange> DeliverAuctionGoods(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedContract contract,
         long winner

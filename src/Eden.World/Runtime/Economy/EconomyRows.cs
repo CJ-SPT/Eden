@@ -809,9 +809,22 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectSavedContractEscrow(WorldDbContext world, IReadOnlyList<EconomyChange<EconomySavedContractEscrow>> changes)
     {
-        if (changes.Count != 0)
+        foreach (var batch in changes.Where(change => change.Value is null).Chunk(ProjectionBatchSize))
         {
-            throw new InvalidOperationException("Reference economic rows cannot be projected.");
+            string ids = JsonSerializer.Serialize(batch.Select(change => change.Key.Id));
+            world.Database.ExecuteSql($"DELETE FROM WorldContractEscrow WHERE ItemId IN (SELECT value FROM json_each({ids}))");
+        }
+        foreach (var batch in changes.Where(change => change.Value is not null).Select(change => change.Value).Chunk(ProjectionBatchSize))
+        {
+            string values = JsonSerializer.Serialize(batch);
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldContractEscrow(ItemId,ContractId)
+                SELECT json_extract(value,'$.ItemId'),json_extract(value,'$.ContractId')
+                FROM json_each({values}) WHERE 1
+                ON CONFLICT(ItemId) DO UPDATE SET ContractId=excluded.ContractId
+                """
+            );
         }
     }
 }
@@ -824,6 +837,7 @@ internal sealed partial class ResidentEconomy
         RegisterExplorationSites();
         RegisterProbeScanning();
         RegisterHacking();
+        RegisterContracts();
         RegisterInformationCycles();
         RegisterMissionRewardTables();
         RegisterWormholeJumps();
@@ -1643,8 +1657,7 @@ internal sealed partial class ResidentEconomy
                 "ItemId,ContractId",
                 reader => new(reader.GetInt64(1), reader.GetInt64(2)),
                 state => new(state.ItemId),
-                readOnly: true,
-                indexes: [],
+                indexes: [new("ContractId", row => row.ContractId)],
                 primaryColumn: "ItemId"
             )
         );

@@ -6,8 +6,8 @@ using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Contracts;
 
@@ -43,7 +43,7 @@ internal sealed partial class PilotContractStore
                 {
                     return new([], 0, 0);
                 }
-                var rows = world.Set<SavedContract>().AsNoTracking().Where(c => c.Status == ContractStatus.Outstanding && c.Expires > now);
+                var rows = world.Filter<SavedContract>(c => c.Status == ContractStatus.Outstanding && c.Expires > now);
                 if (search.Type is (int)ContractType.ItemExchange or (int)ContractType.Auction or (int)ContractType.Courier)
                 {
                     rows = rows.Where(c => (int)c.Type == search.Type);
@@ -145,15 +145,13 @@ internal sealed partial class PilotContractStore
                 var found = candidates.Take(ContractSearchRules.MaximumResults).ToArray();
                 var page = found.Skip(search.Offset).Take(ContractSearchRules.PageSize).ToArray();
                 return new(PageDetails(world, page), found.Length, 0);
-            },
-            // Contract headers/items/bids have no resident overlay. Identity validation uses the committed directory.
-            relationalOnly: true
+            }
         );
         return result with { Seconds = timer.Elapsed.TotalSeconds };
     }
 
     private static IQueryable<SavedContract> FilterItems(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         IQueryable<SavedContract> rows,
         ContractSearch search
@@ -163,7 +161,7 @@ internal sealed partial class PilotContractStore
         {
             rows = rows.Where(c => c.Type != ContractType.Auction || c.BuyoutCents != 0);
         }
-        var items = world.Set<SavedContractItem>().AsNoTracking();
+        var items = world.Filter<SavedContractItem>(_ => true);
         if (search.ExcludeTrade)
         {
             rows = rows.Where(c =>
@@ -211,7 +209,7 @@ internal sealed partial class PilotContractStore
                 .Definitions.Items.Values.Where(type => type.Name.Contains(name, StringComparison.OrdinalIgnoreCase))
                 .Select(type => type.Id)
                 .ToArray();
-            matching = matching.Where(i => matchingTypes.Contains(i.TypeId));
+            matching = matching.Where(i => Enumerable.Contains(matchingTypes, i.TypeId));
         }
         return rows.Where(c => c.Type != ContractType.Courier && matching.Any(i => i.ContractId == c.Id));
     }
@@ -239,7 +237,7 @@ internal sealed partial class PilotContractStore
         return (search.Descending ? rows.OrderByDescending(key) : rows.OrderBy(key)).ThenBy(c => c.Id);
     }
 
-    private static IReadOnlyList<ContractDetails> PageDetails(WorldDbContext world, IReadOnlyList<SavedContract> page)
+    private static IReadOnlyList<ContractDetails> PageDetails(WorldAction world, IReadOnlyList<SavedContract> page)
     {
         if (page.Count == 0)
         {
@@ -248,15 +246,13 @@ internal sealed partial class PilotContractStore
         var ids = page.Select(c => c.Id).ToArray();
         var items = world
             .Set<SavedContractItem>()
-            .AsNoTracking()
-            .Where(i => ids.Contains(i.ContractId))
+            .Where(i => Enumerable.Contains(ids, i.ContractId))
             .OrderBy(i => i.Id)
             .AsEnumerable()
             .ToLookup(i => i.ContractId, i => i.Snapshot());
         var bids = world
             .Set<SavedContractBid>()
-            .AsNoTracking()
-            .Where(b => ids.Contains(b.ContractId))
+            .Where(b => Enumerable.Contains(ids, b.ContractId))
             .OrderByDescending(b => b.AmountCents)
             .ThenByDescending(b => b.Id)
             .AsEnumerable()

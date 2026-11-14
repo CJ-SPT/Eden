@@ -16,10 +16,10 @@ public sealed class ContractSearchPerformanceTests
 
     [Theory]
     [InlineData(false, 2000, 4)]
-    [InlineData(true, 2000, 3)]
-    [InlineData(true, 100, 3)]
-    [InlineData(true, 0, 1)]
-    public void SearchHydratesOnlyThePageWithConstantSql(bool liveWorld, int count, int commands)
+    [InlineData(true, 2000, 0)]
+    [InlineData(true, 100, 0)]
+    [InlineData(true, 0, 0)]
+    public void SearchHydratesOnlyThePageAndUsesNoSqlForResidentWorlds(bool liveWorld, int count, int commands)
     {
         var clock = CalendarTestData.Clock();
         using TestWorld db = new(clock: clock, liveWorld: liveWorld);
@@ -42,7 +42,7 @@ public sealed class ContractSearchPerformanceTests
             Assert.Equal(new long[] { 200, 100 }, details.Bids.Select(bid => bid.AmountCents));
         }
         Assert.Equal(commands, metrics.Commands);
-        Assert.Equal(1, metrics.Connections);
+        Assert.Equal(liveWorld ? 0 : 1, metrics.Connections);
         Assert.Equal(0, metrics.FittingCalculations);
     }
 
@@ -175,8 +175,8 @@ public sealed class ContractSearchPerformanceTests
         using (var metrics = SessionPerformance.Begin("contract read projection boundary", _ => { }, force: true, command: commands.Add)!)
         {
             Assert.Single(contracts.Search(PilotId, new(Type: (int)ContractType.All)).Contracts);
-            Assert.True(metrics.Commands == 3, string.Join(Environment.NewLine, commands));
-            Assert.Equal(1, metrics.Connections);
+            Assert.Empty(commands);
+            Assert.Equal(0, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }
         using WorldDbContext relational = new(db.Path) { IsResidentProjection = true };
