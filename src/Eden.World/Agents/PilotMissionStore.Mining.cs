@@ -31,7 +31,7 @@ internal sealed partial class PilotMissionStore
         }
     }
 
-    private static IEnumerable<StaticSpaceObject> MiningContacts(WorldDbContext world, SavedMission mission, MissionProfile profile)
+    private static IEnumerable<StaticSpaceObject> MiningContacts(WorldAction world, SavedMission mission, MissionProfile profile)
     {
         long first = MissionMiningRules.DepositId(mission.Id, 0);
         return MissionDeposits(world.Set<WorldAsteroid>(), mission.Id)

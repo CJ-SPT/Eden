@@ -833,3 +833,31 @@ No full .NET suite was requested or run. Final TRX:
 
 **Optional maintainer checks.** Inspect Guristas Spies and a Duo of Death destination pocket for
 separated groups, native battery positions, scenery and stable arrival.
+
+## Resident mission sites and research agents
+
+Mission scene reloads, pocket arrival, objective tracking, acceleration gates and mission containers
+use the resident world during live play. The first room spawns through the same action as later waves.
+Consumed gate keys and per-pilot unlocks commit together. Failed cargo moves preserve the container and
+its contents. Accepted mission expiry and tracker refresh use the same world action as the affected rows.
+
+Agent information reads observe accrued research. Project start, rate settlement, cancellation and datacore
+purchases use resident actions. Research points, wallet debit, delivered inventory and the service journal
+commit together. Checkpoints use the existing project and unlock tables.
+
+The pinned catalog supplies mission restrictions, room geometry, and research fields. Gameplay references
+are [acceleration gates](https://wiki.eveuniversity.org/Acceleration_gate) and
+[R&D agents](https://wiki.eveuniversity.org/Agent#Research_agents). The local EveJS 261108.1 comparison
+used `deadspaceWarpPolicy.js` (SHA-256 prefix `BB21382CF4B83932`) and `researchRuntime.js`
+(`D6E8E398BB3FF9BA`).
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Automated validation.** Build passed with zero warnings or errors. The mission gate, retrieval,
+structure, tracker, research, mining and DED/Ghost site filter passed 114 cases in 2 minutes 14 seconds.
+The two direct-file and resident research replacement cases passed after the checkpoint ordering
+adjustment. Both Python policy suites and formatting checks passed. The earlier broader development
+run was stopped after a checkpoint fixture failure. The corrected structure failure case passed in
+the focused run.
+
+**Optional maintainer checks.** None.

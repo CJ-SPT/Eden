@@ -46,7 +46,7 @@ internal sealed partial class PilotMissionStore
 
     private sealed record ContainerAccess(Pilot Pilot, StaticSpaceObject Container, int SystemId, SavedMissionStructure? Structure = null);
 
-    private ContainerAccess AccessContainer(WorldDbContext world, CatalogDbContext catalog, long pilotId, long containerId)
+    private ContainerAccess AccessContainer(WorldAction world, CatalogDbContext catalog, long pilotId, long containerId)
     {
         if (!MissionContainerRules.IsContainer(containerId))
         {
@@ -59,7 +59,7 @@ internal sealed partial class PilotMissionStore
         {
             throw new InvalidDataException("The mission container is unavailable or belongs to another pilot.");
         }
-        var pilot = ReadPilot(world, pilotId);
+        var pilot = ResidentPilot(world, pilotId);
         var position = pilot.ActiveShip.Position;
         if (position is null || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != mission.SystemId)
         {
@@ -74,7 +74,7 @@ internal sealed partial class PilotMissionStore
                 throw new InvalidDataException("This mission container is unavailable.");
             }
             long source = profile.Definition.Structures[structureIndex].ObjectId;
-            var structure = world.Set<SavedMissionStructure>().SingleOrDefault(s => s.MissionId == missionId && s.ObjectId == source);
+            var structure = world.Filter<SavedMissionStructure>(s => s.MissionId == missionId && s.ObjectId == source).SingleOrDefault();
             if (structure?.DestroyedAt is null)
             {
                 throw new InvalidDataException("Destroy the mission structure before recovering its cargo.");
@@ -108,29 +108,30 @@ internal sealed partial class PilotMissionStore
 
     private MissionContainerInventory ReadOwned(long pilotId, long containerId)
     {
-        using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        using (database.EnterMovement())
-        {
-            using WorldDbContext world = new(database.Path);
-            using CatalogDbContext catalog = new(database.CatalogPath);
-            var access = AccessContainer(world, catalog, pilotId, containerId);
-            var container = access.Container;
-            return new(
-                new(
-                    container.Id,
-                    container.TypeId,
-                    pilotId,
-                    access.SystemId,
-                    (int)InventoryFlag.AutoFit,
-                    1,
-                    container.GroupId,
-                    container.CategoryId,
-                    PilotInventoryStore.Volume(catalog, container.TypeId),
-                    true
-                ),
-                PilotInventoryStore.List(world, catalog, pilotId, containerId)
-            );
-        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return WorldActionScope.Inspect<MissionContainerInventory>(
+            database,
+            world =>
+            {
+                var access = AccessContainer(world, catalog, pilotId, containerId);
+                var container = access.Container;
+                return new(
+                    new(
+                        container.Id,
+                        container.TypeId,
+                        pilotId,
+                        access.SystemId,
+                        (int)InventoryFlag.AutoFit,
+                        1,
+                        container.GroupId,
+                        container.CategoryId,
+                        PilotInventoryStore.Volume(catalog, container.TypeId),
+                        true
+                    ),
+                    PilotInventoryStore.List(world, catalog, pilotId, containerId)
+                );
+            }
+        );
     }
 
     public IReadOnlyList<InventoryChange> Take(long pilotId, long shipId, InventoryMoveRequest request)
@@ -143,8 +144,8 @@ internal sealed partial class PilotMissionStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
             var access = AccessContainer(world, catalog, pilotId, request.SourceId);
             var changes = SpaceLootTransfer.Take(
@@ -160,7 +161,7 @@ internal sealed partial class PilotMissionStore
             world.SaveChanges();
             if (access.Structure is { } structure)
             {
-                structure.LootEmpty = !world.Set<OwnedItem>().Any(i => i.LocationId == request.SourceId && i.Quantity > 0);
+                structure.LootEmpty = !world.Filter<OwnedItem>(i => i.LocationId == request.SourceId && i.Quantity > 0).Any();
                 world.SaveChanges();
             }
             transaction.Commit();

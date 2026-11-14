@@ -8,6 +8,7 @@ using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,13 +37,14 @@ internal sealed partial class PilotMissionStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
+            using WorldActionScope transaction = new(database, new(systems: [systemId]));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
-            using var transaction = world.Database.BeginTransaction();
-            var rows = world.Set<SavedMission>().Where(m => m.SystemId == systemId && m.State == MissionState.Accepted).ToArray();
+            long now = Now;
+            var rows = world.Filter<SavedMission>(m => m.SystemId == systemId && m.State == MissionState.Accepted).ToArray();
             foreach (var row in rows)
             {
-                Expire(world, row, Now);
+                Expire(world, row, now);
             }
             var sites = rows.Where(m => m.State == MissionState.Accepted)
                 .Where(m => MissionCatalog.Find(catalog, m.MissionId).DungeonId.HasValue)
@@ -50,12 +52,12 @@ internal sealed partial class PilotMissionStore
                 {
                     var profile = MissionCatalog.Find(catalog, m.MissionId);
                     var position = new SpacePosition(m.X, m.Y, m.Z);
-                    var progress = world.Set<SavedMissionRoom>().Where(r => r.MissionId == m.Id).ToDictionary(r => r.RoomId);
+                    var progress = world.Filter<SavedMissionRoom>(r => r.MissionId == m.Id).ToDictionary(r => r.RoomId);
                     var indices = profile
                         .Rooms.SelectMany(r => r.Objects)
                         .Select((o, index) => KeyValuePair.Create(o.Id, index))
                         .ToDictionary();
-                    var structures = world.Set<SavedMissionStructure>().Where(s => s.MissionId == m.Id).ToDictionary(s => s.ObjectId);
+                    var structures = world.Filter<SavedMissionStructure>(s => s.MissionId == m.Id).ToDictionary(s => s.ObjectId);
                     return profile
                         .Rooms.Select(room =>
                         {
@@ -135,19 +137,20 @@ internal sealed partial class PilotMissionStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
+            using WorldActionScope transaction = new(database, new(systems: [systemId]));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
-            using var transaction = world.Database.BeginTransaction();
+            long now = Now;
             foreach (var site in pending)
             {
-                var row = world.Set<SavedMission>().Find(site.Id)!;
-                if (row.State == MissionState.Accepted && !row.ObjectiveComplete && !Expire(world, row, Now))
+                var row = world.Set<SavedMission>().Find(site.Id);
+                if (row is { State: MissionState.Accepted, ObjectiveComplete: false } && !Expire(world, row, now))
                 {
                     var profile = MissionCatalog.Find(catalog, row.MissionId);
                     if (world.Set<SavedMissionRoom>().Find(row.Id, site.RoomId) is null && !(profile.Rooms.Length == 1 && row.Wave >= 0))
                     {
                         int wave = Enumerable.Range(0, profile.Definition.Waves.Length).First(w => profile.WaveRoom(w) == site.RoomId);
-                        Spawn(world, catalog, row, wave, Now);
+                        Spawn(world, catalog, row, wave, now);
                     }
                 }
             }
@@ -252,101 +255,13 @@ internal sealed partial class PilotMissionStore
         );
         if (decision.SpawnNextWave)
         {
-            Spawn(world, catalog, mission, nextWave, now);
+            Spawn(new SqlWorldAction(world), catalog, mission, nextWave, now);
         }
         if (decision.Complete)
         {
             mission.ObjectiveComplete =
                 member.CompletesMission || MissionStructureRules.Complete(true, StructureProgress(world, mission.Id));
         }
-    }
-
-    private static void Spawn(WorldDbContext world, CatalogDbContext catalog, SavedMission mission, int wave, long now)
-    {
-        var profile = MissionCatalog.Find(catalog, mission.MissionId);
-        int roomId = profile.WaveRoom(wave);
-        var room = profile.Rooms.Single(r => r.Id == roomId);
-        var groups = profile.Definition.Waves[wave].Groups;
-        List<MissionPreparedSpawn> spawns = [];
-        for (int groupIndex = 0; groupIndex < groups.Length; groupIndex++)
-        {
-            var group = groups[groupIndex];
-            for (int i = 0; i < group.Count; i++)
-            {
-                int slot = spawns.Count;
-                if (slot >= MissionRules.MembersPerWave)
-                {
-                    throw new InvalidDataException("Mission wave exceeds its reserved NPC identity range.");
-                }
-                uint seed = NpcSpawnRules.Seed(mission.SystemId, wave, checked((int)mission.Id + slot));
-                int type = group.Types[(int)(seed % group.Types.Length)];
-                var npcProfile = new NpcProfileCatalog().Read(catalog, type);
-                spawns.Add(
-                    new(
-                        group,
-                        new(type, groupIndex, group.Range, npcProfile.Type.GroupId == NpcEncounterDefinitions.SentryGroup),
-                        npcProfile
-                    )
-                );
-            }
-        }
-        bool initial = !Enumerable.Range(0, wave).Any(w => profile.WaveRoom(w) == roomId);
-        var placements = MissionSpawnRules.Place(initial, spawns.Select(s => s.Member).ToArray(), room.SpawnAnchors);
-        for (int slot = 0; slot < spawns.Count; slot++)
-        {
-            var spawn = spawns[slot];
-            var group = spawn.Group;
-            var npcProfile = spawn.Profile;
-            int type = spawn.Member.TypeId;
-            int faction = group.EnemyFaction == 0 ? profile.EnemyFaction : group.EnemyFaction;
-            int corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
-            long id = checked(
-                MissionRules.FirstNpcId + mission.Id * MissionRules.NpcsPerMission + wave * MissionRules.MembersPerWave + slot
-            );
-            var p = new SpacePosition(mission.X, mission.Y, mission.Z) + (room.Position + placements[slot].Position);
-            world.Add(
-                new WorldNpc
-                {
-                    Id = id,
-                    TypeId = type,
-                    SystemId = mission.SystemId,
-                    CorporationId = corporation,
-                    FactionId = faction,
-                    AnchorKind = NpcAnchorKind.Mission,
-                    Role = NpcRole.Pirate,
-                    EncounterId = MissionRules.FirstSiteId + mission.Id,
-                    SpawnSlot = slot,
-                    HomeX = p.X,
-                    HomeY = p.Y,
-                    HomeZ = p.Z,
-                    X = p.X,
-                    Y = p.Y,
-                    Z = p.Z,
-                    ShieldCharge = npcProfile.Attributes.GetValueOrDefault(DogmaAttributeId.ShieldCapacity),
-                    UpdatedAt = now,
-                    MotionAt = now,
-                    AcquisitionRange = placements[slot].AcquisitionRange,
-                }
-            );
-            world.Add(
-                new SavedMissionMember
-                {
-                    NpcId = id,
-                    MissionId = mission.Id,
-                    Wave = wave,
-                    Trigger = group.Trigger,
-                    CompletesMission = group.CompletesMission,
-                    Required = group.Required,
-                    LootTypeId = group.LootTypeId,
-                    LootQuantity = group.LootQuantity,
-                }
-            );
-        }
-        var progress =
-            world.Set<SavedMissionRoom>().Find(mission.Id, roomId)
-            ?? world.Add(new SavedMissionRoom { MissionId = mission.Id, RoomId = roomId }).Entity;
-        progress.Wave = wave;
-        mission.Wave = Math.Max(mission.Wave, wave);
     }
 
     internal static IReadOnlyList<NpcLootDrop> KeyLoot(WorldDbContext world, WorldNpc npc, long now)

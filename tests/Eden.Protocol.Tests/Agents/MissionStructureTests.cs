@@ -114,7 +114,8 @@ public sealed partial class MissionStructureTests
                 using (var command = failed.Database.CreateCommand())
                 {
                     command.CommandText = """
-                        CREATE TRIGGER Reject_Structure_Death BEFORE UPDATE ON WorldMissionStructure
+                        CREATE TRIGGER Reject_Structure_Death BEFORE INSERT ON WorldMissionStructure
+                        WHEN NEW.DestroyedAt IS NOT NULL
                         BEGIN SELECT RAISE(ABORT,'injected structure checkpoint failure'); END
                         """;
                     command.ExecuteNonQuery();
@@ -122,7 +123,7 @@ public sealed partial class MissionStructureTests
                 Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => failed.Project());
                 using var rejected = new WorldDbContext(failed.Database);
                 Assert.Null(rejected.Set<WorldNpc>().Find(warehouse.Id)!.DestroyedAt);
-                Assert.Null(rejected.Set<SavedMissionStructure>().Find(warehouse.Id)!.DestroyedAt);
+                Assert.Null(rejected.Set<SavedMissionStructure>().Find(warehouse.Id)?.DestroyedAt);
                 Assert.Empty(rejected.Set<OwnedItem>().Where(i => i.TypeId == ObjectiveType));
                 Assert.False(rejected.Set<SavedMission>().Find(mission.Id)!.ObjectiveComplete);
             }

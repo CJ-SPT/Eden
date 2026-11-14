@@ -15,6 +15,7 @@ using Eden.World.Agents;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -378,22 +379,17 @@ public sealed class MissionGateAccessTests
     )
     {
         long shipId = f.Context.Pilot.ShipId;
-        using WorldDbContext world = new(f.Db.Path);
+        using WorldActionScope transaction = new(new(f.Db.Path), new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         if (pilotId != MissionFixture.PilotId)
         {
-            shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
+            shipId = world.Pilots.Find(pilotId)!.ActiveShipId;
         }
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
-        using var transaction = world.Database.BeginTransaction();
         var result = MissionGatePayment.Apply(world, catalog, pilotId, shipId, mission.Id, gate, f.Clock.Now);
-        world.SaveChanges();
         if (commit)
         {
             transaction.Commit();
-        }
-        else
-        {
-            transaction.Rollback();
         }
         return result;
     }

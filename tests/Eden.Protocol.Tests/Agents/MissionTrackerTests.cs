@@ -64,9 +64,16 @@ public sealed class MissionTrackerTests
         using MissionFixture f = new(division: MissionRules.SecurityDivision, live: true);
         var accepted = f.Accept(f.Request());
         var tracker = f.Handler<MissionTrackerHandler>();
-        tracker.Advance(f.Context);
+        MissionTrackingEntry entry;
+        using (var measured = SessionPerformance.Begin("first mission scene and tracker", _ => { }, force: true)!)
+        {
+            Assert.NotEmpty(f.Missions.Sites(accepted.SystemId));
+            tracker.Advance(f.Context);
+            entry = Assert.Single(f.Missions.Tracking(MissionFixture.PilotId));
+            Assert.Equal(0, measured.Commands);
+            Assert.Equal(0, measured.Connections);
+        }
         Assert.Equal("TravelTo", BlueMarshal.Text(Current(f)[0]));
-        var entry = Assert.Single(f.Missions.Tracking(MissionFixture.PilotId));
         var room = entry.Rooms[0];
         f.Db.Store.SetPosition(f.Context.Pilot.ShipId, room, accepted.SystemId);
         f.Context.ChangeShip(f.Db.Store.FindPilot(1000001)!);

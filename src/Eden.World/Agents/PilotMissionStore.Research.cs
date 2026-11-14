@@ -10,6 +10,7 @@ using Eden.Gameplay.Market;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Agents;
@@ -22,7 +23,7 @@ internal sealed partial class PilotMissionStore
         Estimate: fields => 128 + fields.Count * 128L
     );
 
-    private T ResearchOperation<T>(long pilotId, Func<WorldDbContext, CatalogDbContext, Pilot, long, T> action)
+    private T ResearchOperation<T>(long pilotId, Func<WorldAction, CatalogDbContext, Pilot, long, T> action)
     {
         return LiveWorld.Execute(
             database.Path,
@@ -30,12 +31,12 @@ internal sealed partial class PilotMissionStore
             {
                 using var ownership = LiveWorld.Find(database.Path)?.Enter();
                 using var movement = database.EnterMovement();
-                using WorldDbContext world = new(database.Path);
+                using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+                var world = transaction.World;
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                using var transaction = world.Database.BeginTransaction();
                 long now = Now;
                 training.Advance(world, pilotId, now);
-                var result = action(world, catalog, Pilot(world, pilotId), now);
+                var result = action(world, catalog, ResidentPilot(world, pilotId), now);
                 world.SaveChanges();
                 transaction.Commit();
                 return result;
@@ -99,7 +100,7 @@ internal sealed partial class PilotMissionStore
             }
         );
 
-    private ResearchProject SettleResearch(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, SavedResearchProject row, long now)
+    private ResearchProject SettleResearch(WorldAction world, CatalogDbContext catalog, Pilot pilot, SavedResearchProject row, long now)
     {
         var agent = ResearchAgent(row.AgentId);
         row.Points = ResearchRules.Accrue(row.Points, row.PointsPerDay, row.SettledAt, now);
@@ -118,8 +119,7 @@ internal sealed partial class PilotMissionStore
             pilotId,
             (world, catalog, pilot, now) =>
                 world
-                    .Set<SavedResearchProject>()
-                    .Where(p => p.PilotId == pilotId && (agentId == null || p.AgentId == agentId))
+                    .Filter<SavedResearchProject>(p => p.PilotId == pilotId && (agentId == null || p.AgentId == agentId))
                     .OrderBy(p => p.AgentId)
                     .ToArray()
                     .Select(row => SettleResearch(world, catalog, pilot, row, now))
@@ -144,8 +144,8 @@ internal sealed partial class PilotMissionStore
                 }
                 int capacity = 1 + Skill(world, catalog, pilot, ResearchRules.ProjectManagement);
                 if (
-                    world.Set<SavedResearchProject>().Any(p => p.PilotId == pilotId && p.AgentId == agentId)
-                    || world.Set<SavedResearchProject>().Count(p => p.PilotId == pilotId) >= capacity
+                    world.Filter<SavedResearchProject>(p => p.PilotId == pilotId && p.AgentId == agentId).Any()
+                    || world.Filter<SavedResearchProject>(p => p.PilotId == pilotId).Count() >= capacity
                 )
                 {
                     throw new InvalidDataException(
@@ -169,8 +169,8 @@ internal sealed partial class PilotMissionStore
             }
         );
 
-    private static SavedResearchProject ResearchRow(WorldDbContext world, long pilotId, long agentId, long projectId) =>
-        world.Set<SavedResearchProject>().SingleOrDefault(p => p.PilotId == pilotId && p.AgentId == agentId && p.Id == projectId)
+    private static SavedResearchProject ResearchRow(WorldAction world, long pilotId, long agentId, long projectId) =>
+        world.Filter<SavedResearchProject>(p => p.PilotId == pilotId && p.AgentId == agentId && p.Id == projectId).SingleOrDefault()
         ?? throw new InvalidDataException("This research action is stale. Reopen the agent conversation.");
 
     public void CancelResearch(long pilotId, long agentId, long projectId) =>

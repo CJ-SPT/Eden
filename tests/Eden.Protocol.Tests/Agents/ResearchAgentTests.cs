@@ -15,6 +15,7 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -93,10 +94,12 @@ public sealed class ResearchAgentTests
 
     private static ResearchProject Start(MissionFixture f) => Store(f).StartResearch(MissionFixture.PilotId, MissionFixture.AgentId, Field);
 
-    [Fact]
-    public void AccruesOfflineAndPurchasePersistsPointsWalletInventoryAndJournal()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AccruesOfflineAndPurchasePersistsPointsWalletInventoryAndJournal(bool resident)
     {
-        using var f = Create();
+        using var f = Create(live: resident);
         var started = Start(f);
         Assert.Equal(43.2, started.PointsPerDay, 8);
         f.Clock.AdvanceWallTime(TimeSpan.FromDays(5));
@@ -124,6 +127,11 @@ public sealed class ResearchAgentTests
         Assert.Equal(MissionFixture.AgentId, row[0]);
         Assert.Equal((long)Field, row[1]);
         Assert.Equal(16, Assert.IsType<double>(row[3]), 8);
+        if (resident)
+        {
+            await LiveWorld.Find(f.Db.Path)!.FlushAsync();
+            f.StopResident();
+        }
         f.Clock.AdvanceWallTime(TimeSpan.FromDays(1));
         using var reopenedStore = Eden.Server.ServerServices.Build(new(f.Db.Path), f.Clock);
         Assert.Equal(59.2, Assert.Single(reopenedStore.GetRequiredService<IPilotResearch>().Research(MissionFixture.PilotId)).Points, 8);
@@ -193,10 +201,12 @@ public sealed class ResearchAgentTests
         Assert.Empty(world.Set<SavedServicePayment>().Where(p => p.Kind == WalletEntryType.DatacorePurchase));
     }
 
-    [Fact]
-    public void InsufficientFundsWrongStationAndStaleProjectsCannotDeliverDatacores()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InsufficientFundsWrongStationAndStaleProjectsCannotDeliverDatacores(bool resident)
     {
-        using var f = Create();
+        using var f = Create(live: resident);
         var project = Start(f);
         f.Clock.AdvanceWallTime(TimeSpan.FromDays(5));
         using (WorldDbContext world = new(f.Db.Path))
@@ -214,6 +224,11 @@ public sealed class ResearchAgentTests
         Assert.Equal(0, replacement.Points);
         Assert.Throws<InvalidDataException>(() => Store(f).CancelResearch(MissionFixture.PilotId, MissionFixture.AgentId, project.Id));
         Assert.Throws<InvalidDataException>(() => Store(f).BuyDatacores(MissionFixture.PilotId, MissionFixture.AgentId, project.Id, 1));
+        if (resident)
+        {
+            await LiveWorld.Find(f.Db.Path)!.FlushAsync();
+            f.StopResident();
+        }
         using WorldDbContext check = new(f.Db.Path);
         Assert.Empty(check.Set<OwnedItem>().Where(i => i.TypeId == Datacore));
         Assert.Equal(replacement.Id, check.Set<SavedResearchProject>().Single().Id);

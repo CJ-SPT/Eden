@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident mission sites and research agents](protocol/agents.md#resident-mission-sites-and-research-agents)
+records scene admission, gate payment, container transfer and research settlement.
+
 [Resident neural remaps](protocol/characters.md#resident-neural-remaps) and
 [heat during resident ship transitions](protocol/fitting.md#heat-during-resident-ship-transitions)
 record fixes for two resident transaction failures.

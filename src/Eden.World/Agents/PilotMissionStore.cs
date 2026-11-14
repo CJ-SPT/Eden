@@ -90,48 +90,48 @@ internal sealed partial class PilotMissionStore(
 
     private AgentServiceInformation InformationOwned(long pilotId, long agentId)
     {
-        using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        using (database.EnterMovement())
-        {
-            using WorldDbContext world = new(database.Path);
-            using CatalogDbContext catalog = new(database.CatalogPath);
-            using var transaction = world.Database.BeginTransaction();
-            var pilot = Pilot(world, pilotId);
-            var agent = Agent(agentId);
-            var access = Access(world, catalog, pilot, agent);
-            long now = Now;
-            // Show Info observes saved deadlines without expiring or creating offers.
-            var active = world
-                .Set<SavedMission>()
-                .AsNoTracking()
-                .SingleOrDefault(m =>
-                    m.PilotId == pilotId
-                    && m.AgentId == agentId
-                    && m.ClosedAt == null
-                    && m.ExpiresAt > now
-                    && (m.State == MissionState.Offered || m.State == MissionState.Accepted)
-                );
-            bool content = agent.Type == AgentType.Basic && access.Allowed && ProfilesForAgent(catalog, agent, agent.Level, false).Any();
-            var information = AgentInformationRules.Describe(agent, access, content, active is not null, active?.Storyline == true);
-            if (agent.Type != AgentType.Research)
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return WorldActionScope.Inspect(
+            database,
+            world =>
             {
-                return information;
+                var pilot = ResidentPilot(world, pilotId);
+                var agent = Agent(agentId);
+                var access = Access(world, catalog, pilot, agent);
+                long now = Now;
+                // Show Info observes saved deadlines without expiring or creating offers.
+                var active = world
+                    .Filter<SavedMission>(m =>
+                        m.PilotId == pilotId
+                        && m.AgentId == agentId
+                        && m.ClosedAt == null
+                        && m.ExpiresAt > now
+                        && (m.State == MissionState.Offered || m.State == MissionState.Accepted)
+                    )
+                    .SingleOrDefault();
+                bool content =
+                    agent.Type == AgentType.Basic && access.Allowed && ProfilesForAgent(catalog, agent, agent.Level, false).Any();
+                var information = AgentInformationRules.Describe(agent, access, content, active is not null, active?.Storyline == true);
+                if (agent.Type != AgentType.Research)
+                {
+                    return information;
+                }
+                var project = world.Filter<SavedResearchProject>(p => p.PilotId == pilotId && p.AgentId == agentId).SingleOrDefault();
+                return information with
+                {
+                    ResearchFields = ResearchFields(catalog, agentId),
+                    Research = project is null
+                        ? null
+                        : new(
+                            project.Id,
+                            agent,
+                            project.SkillId,
+                            ResearchRules.Accrue(project.Points, project.PointsPerDay, project.SettledAt, now),
+                            project.PointsPerDay
+                        ),
+                };
             }
-            var project = world.Set<SavedResearchProject>().SingleOrDefault(p => p.PilotId == pilotId && p.AgentId == agentId);
-            return information with
-            {
-                ResearchFields = ResearchFields(catalog, agentId),
-                Research = project is null
-                    ? null
-                    : new(
-                        project.Id,
-                        agent,
-                        project.SkillId,
-                        ResearchRules.Accrue(project.Points, project.PointsPerDay, project.SettledAt, now),
-                        project.PointsPerDay
-                    ),
-            };
-        }
+        );
     }
 
     private static AgentAccess Access(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent) =>
@@ -203,68 +203,88 @@ internal sealed partial class PilotMissionStore(
 
     private MissionTrackingView LoadTracking(long pilotId)
     {
-        var journal = JournalOwned(pilotId);
-        long expires = journal.Select(offer => offer.ExpiresAt).DefaultIfEmpty(long.MaxValue).Min();
-        var offers = journal.Where(offer => offer.State == MissionState.Accepted).ToArray();
-        if (offers.Length == 0)
-        {
-            return new([], expires);
-        }
+        using WorldActionScope action = new(database, new(pilots: [pilotId]));
+        var world = action.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        using WorldDbContext world = new(database.Path);
-        var ids = offers.Select(offer => offer.Id).ToArray();
-        var enemies = (
-            from member in world.Set<SavedMissionMember>()
-            join npc in world.Set<WorldNpc>() on member.NpcId equals npc.Id
-            where ids.Contains(member.MissionId) && member.CompletesMission
-            select new MissionTrackingTargetRow(
-                member.MissionId,
-                npc.TypeId,
-                npc.Id,
-                npc.HomeX ?? npc.X,
-                npc.HomeY ?? npc.Y,
-                npc.HomeZ ?? npc.Z
-            )
-        ).ToArray();
-        var structures = (
-            from member in world.Set<SavedMissionStructure>()
-            join npc in world.Set<WorldNpc>() on member.NpcId equals npc.Id
-            where ids.Contains(member.MissionId) && (member.Required || member.CompletesMission) && member.DestroyedAt == null
-            select new MissionTrackingTargetRow(
-                member.MissionId,
-                npc.TypeId,
-                npc.Id,
-                npc.HomeX ?? npc.X,
-                npc.HomeY ?? npc.Y,
-                npc.HomeZ ?? npc.Z
-            )
-        ).ToArray();
-        return new(
-            Array.AsReadOnly(
-                offers
-                    .Select(offer => new MissionTrackingEntry(
-                        offer,
-                        Array.AsReadOnly(
-                            MissionCatalog.Find(catalog, offer.MissionId).Rooms.Select(room => offer.Position + room.Position).ToArray()
-                        )
+        var pilot = ResidentPilot(world, pilotId);
+        long now = Now;
+        var rows = world
+            .Filter<SavedMission>(mission => mission.PilotId == pilotId && mission.ClosedAt == null)
+            .OrderBy(mission => mission.Id)
+            .ToArray();
+        var active = rows.Where(mission => !Expire(world, mission, now)).ToArray();
+        long expires = active.Select(mission => mission.ExpiresAt).DefaultIfEmpty(long.MaxValue).Min();
+        var offers = active
+            .Where(mission => mission.State == MissionState.Accepted)
+            .Select(mission => Snapshot(world, catalog, pilot, mission))
+            .ToArray();
+        var entries = TrackingEntries(world, catalog, offers);
+        action.Commit();
+        return new(entries, expires);
+    }
+
+    private static IReadOnlyList<MissionTrackingEntry> TrackingEntries(
+        WorldAction world,
+        CatalogDbContext catalog,
+        IReadOnlyList<MissionOffer> offers
+    )
+    {
+        if (offers.Count == 0)
+        {
+            return [];
+        }
+        var npcs = world.Set<WorldNpc>();
+        var targets = offers
+            .SelectMany(offer =>
+            {
+                long mission = offer.Id;
+                var members = world
+                    .Filter<SavedMissionMember>(member => member.MissionId == mission && member.CompletesMission)
+                    .Select(member => member.NpcId)
+                    .ToArray();
+                var structures = world
+                    .Filter<SavedMissionStructure>(structure =>
+                        structure.MissionId == mission
+                        && (structure.Required || structure.CompletesMission)
+                        && structure.DestroyedAt == null
                     )
-                    {
-                        Targets = Array.AsReadOnly(
-                            enemies
-                                .Concat(structures)
-                                .Where(target => target.MissionId == offer.Id)
-                                .OrderBy(target => target.Id)
-                                .Select(target => new MissionTrackingTarget(
-                                    target.TypeId,
-                                    target.Id,
-                                    new(target.HomeX, target.HomeY, target.HomeZ)
-                                ))
-                                .ToArray()
-                        ),
-                    })
-                    .ToArray()
-            ),
-            expires
+                    .Select(structure => structure.NpcId)
+                    .ToArray();
+                return members
+                    .Concat(structures)
+                    .Select(id => npcs.Find(id))
+                    .OfType<WorldNpc>()
+                    .Select(npc => new MissionTrackingTargetRow(
+                        mission,
+                        npc.TypeId,
+                        npc.Id,
+                        npc.HomeX ?? npc.X,
+                        npc.HomeY ?? npc.Y,
+                        npc.HomeZ ?? npc.Z
+                    ));
+            })
+            .ToLookup(target => target.MissionId);
+        return Array.AsReadOnly(
+            offers
+                .Select(offer => new MissionTrackingEntry(
+                    offer,
+                    Array.AsReadOnly(
+                        MissionCatalog.Find(catalog, offer.MissionId).Rooms.Select(room => offer.Position + room.Position).ToArray()
+                    )
+                )
+                {
+                    Targets = Array.AsReadOnly(
+                        targets[offer.Id]
+                            .OrderBy(target => target.Id)
+                            .Select(target => new MissionTrackingTarget(
+                                target.TypeId,
+                                target.Id,
+                                new(target.HomeX, target.HomeY, target.HomeZ)
+                            ))
+                            .ToArray()
+                    ),
+                })
+                .ToArray()
         );
     }
 

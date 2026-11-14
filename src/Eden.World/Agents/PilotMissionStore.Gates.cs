@@ -7,8 +7,7 @@ using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
-using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Agents;
 
@@ -27,14 +26,14 @@ internal sealed partial class PilotMissionStore
             // Resolve/expire the shared scene before opening the mutation transaction.
             // Validation below re-reads authoritative membership, hull, fit and position in that transaction.
             var gate = Gate(pilotId, gateId);
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
             if (gate.Destination != destination)
             {
                 throw new InvalidDataException("The acceleration gate destination changed; activate it again.");
             }
-            var pilot = ReadPilot(world, pilotId);
+            var pilot = ResidentPilot(world, pilotId);
             ValidateGate(world, catalog, pilot, gate);
             long missionId = MissionId(gate);
             var result = MissionGatePayment.Apply(world, catalog, pilotId, pilot.ActiveShipId, missionId, gate, Now);
@@ -54,25 +53,27 @@ internal sealed partial class PilotMissionStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
-            var pilot = ReadPilot(world, pilotId);
-            var position = pilot.ActiveShip.Position ?? throw new InvalidDataException("Undock before activating an acceleration gate.");
-            int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
+            int system = WorldActionScope.Inspect(
+                database,
+                world =>
+                {
+                    var ship = ResidentPilot(world, pilotId).ActiveShip;
+                    var position = ship.Position ?? throw new InvalidDataException("Undock before activating an acceleration gate.");
+                    return position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
+                }
+            );
             var gate =
                 Sites(system).SelectMany(s => s.Gates).SingleOrDefault(g => g.Id == gateId)
                 ?? throw new InvalidDataException("This acceleration gate is unavailable in your solar system.");
-            ValidateGate(world, catalog, pilot, gate);
+            WorldActionScope.Inspect(database, world => ValidateGate(world, catalog, ResidentPilot(world, pilotId), gate));
             return gate;
         }
     }
 
-    private static Eden.Data.World.Characters.Pilot ReadPilot(WorldDbContext world, long pilotId) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-
     private static long MissionId(MissionGate gate) => (gate.Id - MissionRules.FirstObjectId) / MissionRules.NpcsPerMission;
 
-    private void ValidateGate(WorldDbContext world, CatalogDbContext catalog, Eden.Data.World.Characters.Pilot pilot, MissionGate gate)
+    private void ValidateGate(WorldAction world, CatalogDbContext catalog, Eden.Data.World.Characters.Pilot pilot, MissionGate gate)
     {
         var position = pilot.ActiveShip.Position ?? throw new InvalidDataException("Undock before activating an acceleration gate.");
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
@@ -90,15 +91,14 @@ internal sealed partial class PilotMissionStore
             int last =
                 world.Set<SavedMissionRoom>().Find(mission.Id, gate.SourceRoomId)?.Wave ?? (profile.Rooms.Length == 1 ? mission.Wave : -1);
             var required = world
-                .Set<SavedMissionMember>()
-                .Where(m => m.MissionId == mission.Id && m.Required)
+                .Filter<SavedMissionMember>(m => m.MissionId == mission.Id && m.Required)
                 .ToArray()
                 .Where(m => waves.Contains(m.Wave))
                 .Select(m => m.NpcId)
                 .ToArray();
             cleared =
                 waves.All(w => w <= last)
-                && !world.Set<WorldNpc>().Any(n => required.Contains(n.Id) && n.DestroyedAt == null && n.RetiredAt == null);
+                && !required.Select(id => world.Set<WorldNpc>().Find(id)).Any(n => n is { DestroyedAt: null, RetiredAt: null });
         }
         MissionGateRules.Validate(new(position.X, position.Y, position.Z), type.Radius ?? 0, type.GroupId, gate, cleared);
         var ship = new InventoryItem(
@@ -116,8 +116,7 @@ internal sealed partial class PilotMissionStore
         var fitted = gate.Access.ForbiddenEquipment is null
             ? []
             : world
-                .Set<Eden.Data.World.Inventory.OwnedItem>()
-                .Where(i => i.LocationId == pilot.ActiveShipId && i.OwnerId == pilot.Id)
+                .Filter<Eden.Data.World.Inventory.OwnedItem>(i => i.LocationId == pilot.ActiveShipId && i.OwnerId == pilot.Id)
                 .ToArray()
                 .Where(i =>
                     InventoryDefinitions.IsFittedSlot(i.FlagId)

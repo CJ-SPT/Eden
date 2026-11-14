@@ -3264,6 +3264,10 @@ internal sealed partial class EconomyTransaction
     {
         switch (row)
         {
+            case Eden.Data.World.Agents.SavedResearchProject value:
+                value.Id = value.Id == 0 ? Next("WorldResearchProject") : value.Id;
+                Reserve("WorldResearchProject", value.Id);
+                break;
             case Eden.Data.World.Agents.SavedMission value:
                 value.Id = value.Id == 0 ? Next("WorldMission") : value.Id;
                 Reserve("WorldMission", value.Id);
@@ -3425,6 +3429,29 @@ internal sealed partial class EconomyTransaction
 
     private void ValidateBotRows()
     {
+        foreach (var row in Retained<Eden.Data.World.Agents.SavedResearchProject>())
+        {
+            if (!PilotExists(row.PilotId) || !double.IsFinite(row.Points) || !double.IsFinite(row.PointsPerDay))
+            {
+                throw new InvalidDataException("Invalid resident research project.");
+            }
+            if (
+                Filter<Eden.Data.World.Agents.SavedResearchProject>(other =>
+                        other.PilotId == row.PilotId && other.AgentId == row.AgentId && other.Id != row.Id
+                    )
+                    .Any()
+            )
+            {
+                throw new InvalidDataException("This agent already has a resident research project.");
+            }
+        }
+        foreach (var row in Retained<Eden.Data.World.Agents.SavedMissionGateUnlock>())
+        {
+            if (!PilotExists(row.PilotId) || Set<Eden.Data.World.Agents.SavedMission>().Find(row.MissionId) is null)
+            {
+                throw new InvalidDataException("The resident gate unlock has no mission or pilot.");
+            }
+        }
         foreach (var row in Retained<Eden.Data.World.Agents.SavedMission>())
         {
             if (

@@ -4,6 +4,7 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,7 @@ namespace Eden.World.Agents;
 internal static class MissionGatePayment
 {
     internal static MissionGateActivation Apply(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long shipId,
@@ -22,7 +23,13 @@ internal static class MissionGatePayment
     )
     {
         var key = gate.Access.Key;
-        var unlock = key is { Consume: true } ? world.Set<SavedMissionGateUnlock>().Find(missionId, gate.DungeonObjectId, pilotId) : null;
+        var unlock = key is { Consume: true }
+            ? world
+                .Filter<SavedMissionGateUnlock>(g =>
+                    g.MissionId == missionId && g.GateObjectId == gate.DungeonObjectId && g.PilotId == pilotId
+                )
+                .SingleOrDefault()
+            : null;
         var result = Pay(world, catalog, pilotId, shipId, key, unlock?.ResetAt > now);
         if (result.Items.Count == 0)
         {
@@ -49,6 +56,15 @@ internal static class MissionGatePayment
         long shipId,
         MissionGateKey? key,
         bool unlocked
+    ) => Pay(new SqlWorldAction(world), catalog, pilotId, shipId, key, unlocked);
+
+    internal static MissionGateActivation Pay(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        MissionGateKey? key,
+        bool unlocked
     )
     {
         if (!MissionGateAccessRules.RequiresKey(key, unlocked))
@@ -56,8 +72,9 @@ internal static class MissionGatePayment
             return new([]);
         }
         var stacks = world
-            .Set<OwnedItem>()
-            .Where(i => i.OwnerId == pilotId && i.LocationId == shipId && i.FlagId == (int)InventoryFlag.Cargo && i.TypeId == key!.TypeId)
+            .Filter<OwnedItem>(i =>
+                i.OwnerId == pilotId && i.LocationId == shipId && i.FlagId == (int)InventoryFlag.Cargo && i.TypeId == key!.TypeId
+            )
             .OrderBy(i => i.Id)
             .ToArray();
         if (stacks.Sum(i => (long)i.Quantity) < key!.Quantity)
