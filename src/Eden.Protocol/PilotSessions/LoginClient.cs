@@ -24,6 +24,7 @@ internal static class LoginClient
             "Eden.Protocol.Flight.concord_overview_client.py",
             "Eden.Protocol.Flight.npc_bounty_client.py",
             "Eden.Protocol.Docking.presence_lists_client.py",
+            "Eden.Protocol.Corporations.corporation_diagnostics_client.py",
             "Eden.Protocol.Skills.free_points_client.py",
             "Eden.Protocol.Planetary.planetary_client.py"
         );

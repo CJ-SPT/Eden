@@ -46,6 +46,10 @@ names += ['npcs', 'npcs.client', 'npcs.client.components', 'npcs.client.componen
           'eve.client.script.ui.inflight', 'eve.client.script.ui.inflight.activeitem',
           'eve.client.script.ui.inflight.selectedItemWnd', 'eve.client.script.ui.shared.info',
           'eve.client.script.ui.shared.info.infoContentBase']
+names += ['eve.client.script.ui.shared.neocom', 'eve.client.script.ui.shared.neocom.corporation',
+          'eve.client.script.ui.shared.neocom.corporation.corporationWindow',
+          'eve.client.script.ui.services.corporation',
+          'eve.client.script.ui.services.corporation.base_corporation']
 for name in names:
     module = type(sys)(name)
     module.__path__ = []
@@ -55,6 +59,12 @@ for name in names:
         setattr(sys.modules[parent], child, module)
 photo = sys.modules['eve.client.script.ui.services.evePhotosvc']
 photo.EvePhoto = type('EvePhoto', (object,), {'GetPortrait': lambda *args: None})
+sys.modules['eve.client.script.ui.shared.neocom.corporation.corporationWindow'].CorporationWindow = type(
+    'CorporationWindow', (object,), {name: lambda *args: None for name in (
+        'ApplyAttributes', 'construct_corporation_panels', 'construct_administration_panels',
+        'construct_alliance_panels', 'reconstruct_main_tabs', 'SelectPanel')})
+sys.modules['eve.client.script.ui.services.corporation.base_corporation'].Corporation = type(
+    'Corporation', (object,), {'InviteToJoinCorp': lambda *args: None})
 sys.modules['os.path'].exists = lambda *args: False
 sys.modules['blue'].paths = None
 sys.modules['carbon.common.script.sys.serviceConst'].ROLE_CHTINVISIBLE = 1048576

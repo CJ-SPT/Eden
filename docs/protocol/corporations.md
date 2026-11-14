@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation construction failure capture, November 14, 2026](#corporation-construction-failure-capture-november-14-2026)
 - [Direct invitations and corporation window reads, November 14, 2026](#direct-invitations-and-corporation-window-reads-november-14-2026)
 - [Corporation registry lifetime and application replies](#corporation-registry-lifetime-and-application-replies)
 - [Corporation contacts and standings, November 11, 2026](#corporation-contacts-and-standings--november-11-2026)
@@ -32,6 +33,37 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation construction failure capture, November 14, 2026
+
+After updating the server and reconnecting, the maintainer still observed a corporation window with overlapping
+kill-report and standings controls, no title and no navigation tabs. The earlier invitation/bulletin change did not
+resolve that failure. The latest available game log contained no unsupported-call error; it did not contain a Python
+traceback either. This is an unresolved live failure, not accepted window behavior.
+
+In the pinned build 3662168 source identified below, `CorporationWindow.ApplyAttributes` constructs all panels before
+building the header tabs and selecting a panel. That ordering is consistent with an exception during construction,
+but the screenshot alone does not identify the failing method or response. Reviewed eager reads included voting access,
+corporation identity, titles, member roles and offices; no further reply correction was justified by the available evidence.
+
+The signed login adapter now observes window construction, panel selection and `Corporation.InviteToJoinCorp`.
+It writes `%TEMP%\eden-corporation-<pid>.log` locally, including installation and begin/complete markers, exception types,
+and up to 32 traceback frames. Separate limits retain at most 128 progress and 128 failure records per process.
+It records no arguments, exception messages, frame locals or credentials and transmits nothing. Original return values
+and exceptions are preserved, including when logging fails. Repeated installation does not stack wrappers.
+
+**Automated validation.** The exact-method diagnostic regression passed through `tools/Test-Feature.ps1`.
+Tool restore, solution restore/build (zero warnings/errors), the combined filter
+`FullyQualifiedName~CorporationClientDiagnosticsTests|FullyQualifiedName~ConcordOverviewTests|FullyQualifiedName~PilotLoginTests|FullyQualifiedName~PlanetaryClientTests`
+passed all six cases, including signed-login evaluation in the pinned Python 2 runtime
+(`EDEN_TEST_CLIENT_ROOT=E:/EdenDev/3662168`). Both Python policy suites passed (8 catalog and 9 formatting cases);
+formatting verified 2,141 files. The final validation sequence took 35 seconds, with 3 seconds in focused tests.
+These checks establish diagnostic behavior, not the cause or correction of the reported window fault.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After installing this server revision, reconnect and open Corporation once; optionally
+repeat the failed invitation. Retain the new `%TEMP%\eden-corporation-*.log` for the next investigation.
 
 ## Direct invitations and corporation window reads, November 14, 2026
 

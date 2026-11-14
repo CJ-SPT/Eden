@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation construction failure capture](protocol/corporations.md#corporation-construction-failure-capture-november-14-2026)
+records the still-unresolved window failure and bounded local traceback diagnostics.
+
 [Corporation invitations and window reads](protocol/corporations.md#direct-invitations-and-corporation-window-reads-november-14-2026)
 records resident direct invitations, native bulletin reads and actionable bound-call errors.
 
