@@ -9,25 +9,24 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
 [Injectable]
 internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock) : IPilotBoosters
 {
-    internal static ActiveBooster[] Active(WorldDbContext world, long pilot, long now) =>
+    internal static ActiveBooster[] Active(WorldAction world, long pilot, long now) =>
         world
-            .Set<SavedBooster>()
-            .Where(b => b.PilotId == pilot && b.ExpiresAt > now)
+            .Filter<SavedBooster>(b => b.PilotId == pilot && b.ExpiresAt > now)
             .OrderBy(b => b.Slot)
             .AsEnumerable()
             .Select(b => b.Snapshot())
             .ToArray();
 
-    internal static BoosterSnapshot Read(WorldDbContext world, long pilot, long now)
+    internal static BoosterSnapshot Read(WorldAction world, long pilot, long now)
     {
         var boosters = Active(world, pilot, now);
         return new(
@@ -44,9 +43,11 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
         {
             return resident.Learning(pilotId).At(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        return Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        return WorldActionScope.Inspect(
+            database,
+            world => Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+            consistentFileRead: true
+        );
     }
 
     private static CharacterBoosterProfile Profile(CatalogDbContext catalog, InventoryItem item)
@@ -126,7 +127,7 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
         };
     }
 
-    private static int Biology(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    private static int Biology(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
         int level = PilotSkillReader.Level(world, catalog, pilot.Id, BoosterRules.BiologySkill);
         if (pilot.Account.CloneGrade == AccountCloneGrade.Alpha)
@@ -139,14 +140,10 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
 
     public BoosterChange Consume(long pilotId, long itemId, long expectedLocation)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world
-            .Pilots.Include(p => p.Account)
-            .Include(p => p.ActiveShip)
-                .ThenInclude(s => s.Position)
-            .Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var item =
             InventoryPersistence.OwnedStack(world, pilotId, itemId)
             ?? throw new InvalidDataException("That booster does not belong to you.");
@@ -179,9 +176,9 @@ internal sealed class PilotBoosterStore(WorldDatabase database, PilotTrainingSto
                     now,
                     Active(world, pilotId, now)
                 );
-                world.RemoveRange(world.Set<SavedBooster>().Where(b => b.PilotId == pilotId && b.Slot == profile.Slot));
+                world.RemoveRange(world.Filter<SavedBooster>(b => b.PilotId == pilotId && b.Slot == profile.Slot).ToArray());
                 world.SaveChanges();
-                long installed = item.Quantity == 1 ? item.Id : InventoryPersistence.NextId(world);
+                long installed = item.Quantity == 1 ? item.Id : world.NextItemId();
                 item.Quantity--;
                 if (item.Quantity == 0)
                 {

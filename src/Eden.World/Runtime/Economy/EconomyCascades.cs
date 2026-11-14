@@ -49,6 +49,16 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotImplant>().Where(child => child.CloneId == removed.Id));
                 break;
             case Eden.Data.World.Characters.Pilot removed:
+                RemoveRange(Filter<Eden.Data.World.Market.TestingWalletGrant>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedPilotNote>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedBooster>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedBoosterState>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedHomeStationPayment>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedJumpClonePayment>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedJumpCloneTimer>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Skills.SavedSkillInjectorState>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Skills.SavedSkillExtraction>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Skills.SavedSkillInjection>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Corporations.SavedCorporationApplication>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Corporations.SavedCorporationEmployment>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Corporations.SavedCorporationChange>(row => row.PilotId == removed.Id));
@@ -199,6 +209,7 @@ internal sealed partial class EconomyTransaction
                 Eden.World.Repair.PilotRemoteAssistanceStore.ClearForTravel(this, removed.ShipId);
                 break;
             case Eden.Data.World.Inventory.Ship removed:
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedShipDirt>(child => child.ShipId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Information.SavedInformationCycle>(cycle => cycle.ShipId == removed.Id));
                 Eden.World.Fleets.CommandBurstStore.Clear(this, removed.Id);
                 if (Set<Eden.Data.World.Characters.Pilot>().Any(child => child.ActiveShipId == removed.Id && child.Id == removed.OwnerId))

@@ -13,7 +13,7 @@ internal sealed partial class PilotTaskTrackingStore
 {
     private static void CheckPilot(WorldAction world, long pilotId)
     {
-        if (!world.Pilots.Any(pilot => pilot.Id == pilotId))
+        if (!world.PilotExists(pilotId))
         {
             throw new InvalidDataException("Unknown pilot.");
         }
@@ -23,7 +23,7 @@ internal sealed partial class PilotTaskTrackingStore
     {
         // Query tracked rows as well as additions so one operation can record
         // multiple activities before its owning transaction saves anything.
-        world.Set<SavedTaskCounter>().Where(counter => counter.PilotId == pilotId).Load();
+        world.Filter<SavedTaskCounter>(counter => counter.PilotId == pilotId).Load();
         return world
             .Set<SavedTaskCounter>()
             .Local.Where(counter => counter.PilotId == pilotId)

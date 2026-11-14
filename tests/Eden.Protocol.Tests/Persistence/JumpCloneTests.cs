@@ -8,11 +8,13 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Skills;
 using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -122,6 +124,42 @@ internal static class JumpCloneTestData
 
 public sealed class JumpCloneTests
 {
+    [Fact]
+    public async Task ResidentSwapsAndCloneReadsAvoidWorldSqlAndCheckpointTheFinalActiveBody()
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock);
+        JumpCloneTestData.Prepare(db);
+        var pilot = db.Store.FindPilot(1000001)!;
+        var current = db.Services.GetRequiredService<IPilotFleet>().Leave(pilot.PilotId, pilot.ShipId).Pilot;
+        var clones = db.Services.GetRequiredService<IPilotJumpClones>();
+        long active;
+        using (LiveWorld live = new(new(db.Path), clock, _ => { }))
+        {
+            _ = clones.Read(pilot.PilotId);
+            _ = clones.Price(pilot.PilotId);
+            clones.Install(pilot.PilotId);
+            clones.Install(pilot.PilotId);
+            List<string> commands = [];
+            using (SessionPerformance.Begin("resident clone commands", _ => { }, force: true, command: commands.Add))
+            {
+                var first = clones.Read(pilot.PilotId).Clones[0];
+                current = clones.Jump(pilot.PilotId, current.ShipId, first.StationId, first.Id, JumpCloneRules.FeeCents).Pilot;
+                var next = clones.Read(pilot.PilotId).Clones[0];
+                _ = clones.Jump(pilot.PilotId, current.ShipId, next.StationId, next.Id, JumpCloneRules.FeeCents);
+                active = next.Id;
+                Assert.Null(clones.Read(pilot.PilotId).LastJump);
+            }
+            Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
+            await live.FlushAsync();
+        }
+        using WorldDbContext saved = new(db.Path);
+        var activeBody = Assert.Single(saved.Set<SavedJumpClone>().Where(body => body.PilotId == pilot.PilotId && body.Active));
+        Assert.Equal(active, activeBody.Id);
+        Assert.Equal(4, saved.Set<SavedJumpClonePayment>().Count(payment => payment.PilotId == pilot.PilotId));
+        Assert.Equal(0, saved.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM pragma_foreign_key_check").Single());
+    }
+
     [Fact]
     public void MultipleBodiesNamesFeesAndOwnershipSurviveReopenAndDestroyNeverRefunds()
     {

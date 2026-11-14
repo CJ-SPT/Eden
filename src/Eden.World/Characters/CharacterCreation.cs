@@ -1,10 +1,16 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Content;
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -14,30 +20,94 @@ namespace Eden.World.Characters;
 [Injectable]
 internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clock) : ICharacterCreation
 {
-    public CharacterNameResult ValidateName(string name)
-    {
-        using WorldDbContext world = new(database.Path);
-        return ValidateName(world, name);
-    }
+    public CharacterNameResult ValidateName(string name) => WorldActionScope.Inspect(database, world => ValidateName(world, name));
 
-    private static CharacterNameResult ValidateName(WorldDbContext world, string name) =>
-        CharacterRules.ValidateName(name, world.Pilots.Any(p => EF.Functions.Collate(p.Name, "NOCASE") == name));
+    private static CharacterNameResult ValidateName(WorldAction world, string name) =>
+        CharacterRules.ValidateName(name, world.HasPilotName(name));
 
     public long Create(long accountId, NewCharacter character)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        if (LiveWorld.Find(database.Path) is { } live)
+        {
+            using var action = live.Economy.Begin(TransactionParticipants.None);
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            var origin = ReadOrigin(action, catalog, accountId, character);
+            long created = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            long pilotId = NextPilotId(action);
+            long shipId = action.NextItemId();
+            action.Add(new InventoryOwner { Id = pilotId });
+            action.Add(
+                new Ship
+                {
+                    Id = shipId,
+                    OwnerId = pilotId,
+                    TypeId = origin.Hull,
+                    StationId = origin.Station,
+                    Name = origin.ShipName,
+                }
+            );
+            action.Add(
+                new Pilot
+                {
+                    Id = pilotId,
+                    AccountId = accountId,
+                    Name = character.Name,
+                    CorporationId = origin.Corporation,
+                    ActiveShipId = shipId,
+                    CreatedAt = created,
+                    RaceId = character.RaceId,
+                    BloodlineId = character.BloodlineId,
+                    GenderId = character.GenderId,
+                    AncestryId = character.AncestryId,
+                    SchoolId = character.SchoolId,
+                    Appearance = character.Appearance,
+                    Portrait = character.Portrait,
+                }
+            );
+            if (action.Settings.Progression.GrantStartingSkills)
+            {
+                StartingSkills.Grant(action, catalog, pilotId, character.RaceId);
+            }
+            var equipment = BuildContentPolicy.Current.StartingEquipment;
+            foreach (int typeId in new[] { equipment.MinerType, equipment.WeaponType })
+            {
+                action.Add(
+                    new OwnedItem
+                    {
+                        Id = action.NextItemId(),
+                        OwnerId = pilotId,
+                        TypeId = typeId,
+                        LocationId = origin.Station,
+                        FlagId = (int)InventoryFlag.Hangar,
+                        Quantity = 1,
+                    }
+                );
+            }
+            TestingWalletFunding.Grant(action, pilotId, created);
+            action.Add(new SavedHomeStation { PilotId = pilotId, StationId = origin.Station });
+            CapsuleerPopulationStore.Reconcile(action, catalog);
+            CapsuleerPopulationStore.ScheduleFounders(action);
+            action.Commit();
+            return pilotId;
+        }
+        return CreateFile(accountId, character);
+    }
+
+    private static long NextPilotId(WorldAction world) => checked((world.Pilots.Select(p => (long?)p.Id).Max() ?? 90000000) + 1);
+
+    private sealed record CharacterOrigin(int Corporation, int Hull, int Station, string ShipName);
+
+    private static CharacterOrigin ReadOrigin(WorldAction world, CatalogDbContext catalog, long accountId, NewCharacter character)
+    {
+        var pilotIds = world.Filter<Pilot>(pilot => pilot.AccountId == accountId).Select(pilot => pilot.Id).ToArray();
         if (
             ValidateName(world, character.Name) != CharacterNameResult.Available
-            || world.Pilots.Count(p =>
-                p.AccountId == accountId && !world.Set<SavedCharacterDeletion>().Any(d => d.PilotId == p.Id && d.DeletedAt != null)
-            ) >= ICharacterCreation.Slots
+            || pilotIds.Count(id => world.Set<SavedCharacterDeletion>().Find(id)?.DeletedAt is null) >= ICharacterCreation.Slots
         )
         {
             throw new InvalidDataException("Name unavailable or all character slots occupied.");
         }
 
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var school = catalog.Read(CatalogData.Client.Schools, (long)character.SchoolId);
         var race = catalog.Read(CatalogData.Client.Races, (long)character.RaceId);
         var bloodline = catalog.Read(CatalogData.Client.Bloodlines, (long)character.BloodlineId);
@@ -77,7 +147,16 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
             throw new InvalidDataException("Missing or ambiguous school station or corporation.");
         }
         string shipName = catalog.FittingType(checked((int)hull))?.Name ?? throw new InvalidDataException("Unknown starter hull.");
-        long pilotId = (world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1;
+        return new(checked((int)corp), checked((int)hull), station, shipName);
+    }
+
+    private long CreateFile(long accountId, NewCharacter character)
+    {
+        using WorldDbContext world = new(database.Path);
+        using var transaction = world.Database.BeginTransaction();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var (corp, hull, station, shipName) = ReadOrigin(new SqlWorldAction(world), catalog, accountId, character);
+        long pilotId = checked((world.Pilots.Max(p => (long?)p.Id) ?? 90000000) + 1);
         long shipId = InventoryPersistence.NextId(world);
         long created = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         // The pilot and active ship reference each other. Check both links at commit.
@@ -102,15 +181,15 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         world.Add(new SavedHomeStation { PilotId = pilotId, StationId = station });
         world.SaveChanges();
 
-        Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);
-        Eden.World.Capsuleers.CapsuleerPopulationStore.ScheduleFounders(world);
+        CapsuleerPopulationStore.Reconcile(world, catalog);
+        CapsuleerPopulationStore.ScheduleFounders(world);
         transaction.Commit();
         return pilotId;
     }
 
-    public byte[]? ReadAppearance(long characterId, bool portrait)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world.Pilots.Where(p => p.Id == characterId).Select(p => portrait ? p.Portrait : p.Appearance).Single();
-    }
+    public byte[]? ReadAppearance(long characterId, bool portrait) =>
+        WorldActionScope.Inspect(
+            database,
+            world => world.Filter<Pilot>(p => p.Id == characterId).Select(p => portrait ? p.Portrait : p.Appearance).Single()
+        );
 }

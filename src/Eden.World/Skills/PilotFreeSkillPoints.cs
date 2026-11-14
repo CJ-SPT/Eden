@@ -92,7 +92,10 @@ internal sealed partial class PilotTrainingStore
         return result;
     }
 
-    internal FreePointChange Credit(WorldDbContext world, long pilotId, long amount, long now)
+    internal FreePointChange Credit(WorldDbContext world, long pilotId, long amount, long now) =>
+        Credit(new SqlWorldAction(world), pilotId, amount, now);
+
+    internal FreePointChange Credit(WorldAction world, long pilotId, long amount, long now)
     {
         var result = UpdateCore(world, pilotId, null, false, false, null, new(null, amount), false, now);
         return new(result.Points!.Remaining, result.Training, result.Points.Allocations, result.PointRevision);

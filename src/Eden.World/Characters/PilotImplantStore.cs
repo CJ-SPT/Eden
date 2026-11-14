@@ -13,7 +13,6 @@ using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
@@ -43,19 +42,10 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
             : world.Filter<SavedPilotImplant>(implant => implant.CloneId == body.Id).OrderBy(implant => implant.Slot).ToArray();
     }
 
-    internal static ImplantSnapshot Read(WorldDbContext world, long pilotId)
+    internal static ImplantSnapshot Read(WorldAction world, long pilotId)
     {
         var basis = PilotCharacterSheetStore.ReadAttributes(world, pilotId).Attributes;
-        var implants = (
-            from implant in world.Set<SavedPilotImplant>()
-            join body in world.Set<SavedJumpClone>() on implant.CloneId equals body.Id
-            where body.PilotId == pilotId && body.Active
-            orderby implant.Slot
-            select implant
-        )
-            .AsEnumerable()
-            .Select(i => i.Snapshot())
-            .ToArray();
+        var implants = ActiveImplants(world, pilotId).Select(i => i.Snapshot()).ToArray();
         return new(implants, ImplantRules.Effective(basis, implants))
         {
             Revision = world.Set<SavedImplantState>().Find(pilotId)?.Revision ?? 0,
@@ -69,9 +59,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
         {
             return resident.Learning(pilotId).Implants;
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        return Read(world, pilotId);
+        return WorldActionScope.Inspect(database, world => Read(world, pilotId), consistentFileRead: true);
     }
 
     private static LearningImplant Profile(CatalogDbContext catalog, InventoryItem item)
@@ -115,7 +103,7 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
         return new(item.TypeId, checked((int)slot), nonzero[0].CharacterAttribute, checked((int)bonus));
     }
 
-    internal static void Requirements(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int typeId)
+    internal static void Requirements(WorldAction world, CatalogDbContext catalog, Pilot pilot, int typeId)
     {
         var attributes = catalog.FittingAttributes(typeId);
         var alpha =
@@ -152,14 +140,10 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
 
     public ImplantChange Install(long pilotId, long itemId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world
-            .Pilots.Include(p => p.Account)
-            .Include(p => p.ActiveShip)
-                .ThenInclude(s => s.Position)
-            .Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var item =
             InventoryPersistence.OwnedStack(world, pilotId, itemId)
             ?? throw new InvalidDataException("That implant does not belong to you.");
@@ -185,10 +169,10 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
             {
                 Requirements(world, catalog, pilot, item.TypeId);
                 var body =
-                    world.Set<SavedJumpClone>().SingleOrDefault(c => c.PilotId == pilotId && c.Active)
+                    world.Filter<SavedJumpClone>(c => c.PilotId == pilotId && c.Active).SingleOrDefault()
                     ?? world.Add(new SavedJumpClone { PilotId = pilotId, Active = true }).Entity;
                 world.SaveChanges();
-                long installedId = item.Quantity == 1 ? item.Id : InventoryPersistence.NextId(world);
+                long installedId = item.Quantity == 1 ? item.Id : world.NextItemId();
                 item.Quantity--;
                 if (item.Quantity == 0)
                 {
@@ -214,15 +198,11 @@ internal sealed class PilotImplantStore(WorldDatabase database, PilotTrainingSto
 
     public ImplantChange Destroy(long pilotId, long itemId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         var item =
-            (
-                from implant in world.Set<SavedPilotImplant>()
-                join body in world.Set<SavedJumpClone>() on implant.CloneId equals body.Id
-                where body.PilotId == pilotId && body.Active && implant.ItemId == itemId
-                select implant
-            ).SingleOrDefault() ?? throw new InvalidDataException("That implant is not installed in your active clone.");
+            ActiveImplants(world, pilotId).SingleOrDefault(implant => implant.ItemId == itemId)
+            ?? throw new InvalidDataException("That implant is not installed in your active clone.");
         var state = training.ChangeAttributes(world, pilotId, () => world.Remove(item));
         var snapshot = Read(world, pilotId);
         transaction.Commit();

@@ -3370,9 +3370,29 @@ internal sealed partial class EconomyTransaction
                 value.Id = value.Id == 0 ? Next("WorldHomeCloneTransfer") : value.Id;
                 Reserve("WorldHomeCloneTransfer", value.Id);
                 break;
+            case Eden.Data.World.Characters.SavedHomeStationPayment value:
+                value.Id = value.Id == 0 ? Next("WorldHomeStationPayment") : value.Id;
+                Reserve("WorldHomeStationPayment", value.Id);
+                break;
+            case Eden.Data.World.Characters.SavedJumpClone value:
+                value.Id = value.Id == 0 ? Next("WorldJumpClone") : value.Id;
+                Reserve("WorldJumpClone", value.Id);
+                break;
+            case Eden.Data.World.Characters.SavedJumpClonePayment value:
+                value.Id = value.Id == 0 ? Next("WorldJumpClonePayment") : value.Id;
+                Reserve("WorldJumpClonePayment", value.Id);
+                break;
             case Eden.Data.World.Skills.TrainingLog value:
                 value.Id = value.Id == 0 ? Next("WorldSkillHistory") : value.Id;
                 Reserve("WorldSkillHistory", value.Id);
+                break;
+            case Eden.Data.World.Skills.SavedSkillExtraction value:
+                value.Id = value.Id == 0 ? Next("WorldSkillExtraction") : value.Id;
+                Reserve("WorldSkillExtraction", value.Id);
+                break;
+            case Eden.Data.World.Skills.SavedSkillInjection value:
+                value.Id = value.Id == 0 ? Next("WorldSkillInjection") : value.Id;
+                Reserve("WorldSkillInjection", value.Id);
                 break;
             case Eden.Data.World.Combat.WorldMissile value:
                 value.Id = value.Id == 0 ? Next("WorldMissile") : value.Id;

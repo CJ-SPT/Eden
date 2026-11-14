@@ -1,9 +1,9 @@
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
@@ -11,47 +11,43 @@ namespace Eden.World.Characters;
 internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock)
     : IPilotCharacterSheet
 {
-    public PublicCharacterProfile? ReadPublicProfile(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Pilots.AsNoTracking()
-            .Where(p => p.Id == pilotId)
-            .Select(p => new PublicCharacterProfile(
-                p.Id,
-                p.Name,
-                p.CorporationId,
-                p.RaceId,
-                p.BloodlineId,
-                p.GenderId,
-                p.SchoolId,
-                p.AncestryId,
-                p.CreatedAt,
-                world.Set<SavedCharacterSheet>().Where(s => s.PilotId == p.Id).Select(s => s.Biography).FirstOrDefault() ?? ""
-            ))
-            .SingleOrDefault();
-    }
+    public PublicCharacterProfile? ReadPublicProfile(long pilotId) =>
+        WorldActionScope.Inspect<PublicCharacterProfile?>(
+            database,
+            world =>
+                world.Pilots.Find(pilotId) is { } p
+                    ? new(
+                        p.Id,
+                        p.Name,
+                        p.CorporationId,
+                        p.RaceId,
+                        p.BloodlineId,
+                        p.GenderId,
+                        p.SchoolId,
+                        p.AncestryId,
+                        p.CreatedAt,
+                        world.Set<SavedCharacterSheet>().Find(pilotId)?.Biography ?? ""
+                    )
+                    : null,
+            consistentFileRead: true
+        );
 
-    public NeuralRemapState ReadAttributes(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return ReadAttributes(world, pilotId);
-    }
+    public NeuralRemapState ReadAttributes(long pilotId) => WorldActionScope.Inspect(database, world => ReadAttributes(world, pilotId));
 
-    public CharacterAttributes ReadEffectiveAttributes(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        return PilotBoosterStore.Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()).Attributes;
-    }
+    public CharacterAttributes ReadEffectiveAttributes(long pilotId) =>
+        WorldActionScope.Inspect(
+            database,
+            world => PilotBoosterStore.Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()).Attributes,
+            consistentFileRead: true
+        );
 
-    internal static NeuralRemapState ReadAttributes(WorldDbContext world, long pilotId)
+    internal static NeuralRemapState ReadAttributes(WorldAction world, long pilotId)
     {
         CheckPilot(world, pilotId);
         return world.Set<SavedCharacterSheet>().Find(pilotId)?.Snapshot() ?? NeuralRemapState.Default;
     }
 
-    internal static SavedCharacterSheet GetOrCreate(WorldDbContext world, long pilotId)
+    private static SavedCharacterSheet GetOrCreate(WorldAction world, long pilotId)
     {
         CheckPilot(world, pilotId);
         if (world.Set<SavedCharacterSheet>().Find(pilotId) is { } saved)
@@ -65,26 +61,27 @@ internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrai
 
     public CharacterRemapResult Remap(long pilotId, CharacterAttributes attributes) => training.Remap(pilotId, attributes);
 
-    public string ReadBiography(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        CheckPilot(world, pilotId);
-        return world.Set<SavedCharacterSheet>().Find(pilotId)?.Biography ?? "";
-    }
+    public string ReadBiography(long pilotId) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                CheckPilot(world, pilotId);
+                return world.Set<SavedCharacterSheet>().Find(pilotId)?.Biography ?? "";
+            }
+        );
 
     public void SaveBiography(long pilotId, string biography)
     {
         CharacterSheetRules.CheckBiography(biography);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        GetOrCreate(world, pilotId).Biography = biography;
-        world.SaveChanges();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        GetOrCreate(transaction.World, pilotId).Biography = biography;
         transaction.Commit();
     }
 
-    private static void CheckPilot(WorldDbContext world, long pilotId)
+    private static void CheckPilot(WorldAction world, long pilotId)
     {
-        if (!world.Pilots.Any(pilot => pilot.Id == pilotId))
+        if (!world.PilotExists(pilotId))
         {
             throw new InvalidDataException("Unknown character.");
         }

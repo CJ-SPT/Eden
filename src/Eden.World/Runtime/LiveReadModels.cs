@@ -186,23 +186,27 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
             _learning,
             pilotId,
             () =>
-            {
-                using WorldDbContext world = new(database.Path);
-                world.Database.OpenConnection();
-                var implants = PilotImplantStore.Read(world, pilotId);
-                var boosters = world.Set<SavedBooster>().Where(b => b.PilotId == pilotId).OrderBy(b => b.Slot).AsNoTracking().ToArray();
-                var injector = world.Set<SavedSkillInjectorState>().Find(pilotId);
-                return new(
-                    implants with
+                WorldActionScope.Inspect<LiveLearningState>(
+                    database,
+                    world =>
                     {
-                        Implants = Array.AsReadOnly(implants.Implants.ToArray()),
-                    },
-                    Array.AsReadOnly(boosters.Select(b => new LiveLearningBooster(b.Snapshot(), b.RemainingInjectionUses)).ToArray()),
-                    world.Set<SavedBoosterState>().Find(pilotId)?.Revision ?? 0,
-                    injector?.NextAlphaInjection ?? 0,
-                    injector?.Revision ?? 0
-                );
-            }
+                        var implants = PilotImplantStore.Read(world, pilotId);
+                        var boosters = world.Filter<SavedBooster>(b => b.PilotId == pilotId).OrderBy(b => b.Slot).ToArray();
+                        var injector = world.Set<SavedSkillInjectorState>().Find(pilotId);
+                        return new(
+                            implants with
+                            {
+                                Implants = Array.AsReadOnly(implants.Implants.ToArray()),
+                            },
+                            Array.AsReadOnly(
+                                boosters.Select(b => new LiveLearningBooster(b.Snapshot(), b.RemainingInjectionUses)).ToArray()
+                            ),
+                            world.Set<SavedBoosterState>().Find(pilotId)?.Revision ?? 0,
+                            injector?.NextAlphaInjection ?? 0,
+                            injector?.Revision ?? 0
+                        );
+                    }
+                )
         );
 
     internal FreeSkillPointBalance Points(long pilot, Func<FreeSkillPointBalance> load) => Read(_points, pilot, load);

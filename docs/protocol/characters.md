@@ -632,6 +632,35 @@ References: inert inspection of the pinned archive, SHA-256 **37FB2AF4FA0EC5C8FA
 
 **Optional maintainer checks.** Redeem a fixed SP reward and inspect the native free-point total. Apply SP to a skill and a running queue, then reconnect and compare remaining points/deadlines. Inspect the native display when an Alpha queue reaches its passive-training cap; rendering, prompts and perceived timing remain unverified.
 
+### Resident character, clone, and skill services
+
+Character creation and deletion, portraits, biographies, attributes, pilot notes, task
+counters, ship cleaning, combat and standing history, home and jump clones, implants,
+boosters, and skill-item commands use the resident world. Clone swaps publish the new
+capsule and active body with the wallet debit and timer. Checkpoints release the old active
+body's unique slot before projecting the new one. Augmentation and skill-point transactions
+retain the existing training, expiry, ownership, and eligibility rules.
+
+Gameplay references are [jump clones](https://wiki.eveuniversity.org/Jump_clones),
+[implants](https://wiki.eveuniversity.org/Implant),
+[medical boosters](https://wiki.eveuniversity.org/Medical_boosters), and
+[skill trading](https://wiki.eveuniversity.org/Skill_Injector).
+The local EveJS 261108.1 comparison used `jumpCloneRuntime.js`,
+`homeStationSelfDestructRuntime.js`, `implantsAndBoosters.js`, and `skillTradingRuntime.js`
+(SHA-256 prefixes `9A1082E0C456182F`, `1A94A56B76261E83`, `68F27EA25720DBAC`, and
+`2DAB41076B2C11C8`).
+
+**Automated validation.** The focused character, clone, augmentation, task, and skill
+run passed 656 tests in 3 minutes 36 seconds. One migration fixture still expected
+schema version 64 after upgrade and passed after updating its assertion to the current
+version. The pinned Python portrait test was skipped. The resident clone test recorded
+no world SQL across repeated swaps and verified the active body and fees after checkpoint.
+Solution build, both Python policy suites, and formatting verification passed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ### Skill-point queue call latency, November 13, 2026
 
 Server logs showed `GetFreeSkillPointsAppliedToQueue` holding a world owner for 1,031.52 ms and

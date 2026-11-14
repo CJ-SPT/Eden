@@ -12,8 +12,8 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Skills;
 
@@ -22,7 +22,7 @@ internal sealed record SkillExtractionResult(TrainingState Training, IReadOnlyLi
 internal sealed partial class PilotTrainingStore
 {
     internal SkillExtractionResult Extract(
-        WorldDbContext world,
+        WorldAction world,
         long pilotId,
         IReadOnlyList<SkillExtractionRequest> requests,
         IReadOnlyList<SkillExtractionFloor> floors,
@@ -37,7 +37,7 @@ internal sealed partial class PilotTrainingStore
             changed.Add(head.Target.TypeId);
             world.SaveChanges();
         }
-        var targets = world.Set<PilotSkill>().Where(s => s.PilotId == pilotId).Select(s => new TrainingTarget(s.TypeId, 5)).ToArray();
+        var targets = world.Filter<PilotSkill>(s => s.PilotId == pilotId).Select(s => new TrainingTarget(s.TypeId, 5)).ToArray();
         var allocations = SkillExtractionRules.Plan(
             requests,
             ReadInputs(world, pilotId, targets, now),
@@ -63,40 +63,35 @@ internal sealed partial class PilotTrainingStore
 internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock)
     : IPilotSkillExtraction
 {
-    private static long Revision(WorldDbContext world, long pilotId) =>
-        world.Set<SavedSkillExtraction>().Where(e => e.PilotId == pilotId).Max(e => (long?)e.Id) ?? 0;
+    private static long Revision(WorldAction world, long pilotId) =>
+        world.Filter<SavedSkillExtraction>(e => e.PilotId == pilotId).Max(e => (long?)e.Id) ?? 0;
 
     public long Revision(long pilotId)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.extraction");
         return LiveReadModels.Find(database.Path) is { } resident
-            ? resident.Extraction(pilotId, () => RevisionSql(pilotId))
-            : RevisionSql(pilotId);
+            ? resident.Extraction(pilotId, () => ReadRevision(pilotId))
+            : ReadRevision(pilotId);
     }
 
-    private long RevisionSql(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return Revision(world, pilotId);
-    }
+    private long ReadRevision(long pilotId) => WorldActionScope.Inspect(database, world => Revision(world, pilotId));
 
     public SkillExtractionState Snapshot(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         var state = training.Advance(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
-        var ids = world.Set<PilotSkill>().Where(s => s.PilotId == pilotId).Select(s => s.TypeId).ToArray();
+        var ids = world.Filter<PilotSkill>(s => s.PilotId == pilotId).Select(s => s.TypeId).ToArray();
         long revision = Revision(world, pilotId);
         transaction.Commit();
         return new(revision, new(state.Queue, ids));
     }
 
-    private static IReadOnlyList<SkillExtractionFloor> Restrictions(WorldDbContext world, CatalogDbContext catalog, long pilotId)
+    private static IReadOnlyList<SkillExtractionFloor> Restrictions(WorldAction world, CatalogDbContext catalog, long pilotId)
     {
         List<SkillExtractionFloor> floors = [];
         var colonies = world
-            .Set<Eden.Data.World.Planetary.SavedPlanetaryColony>()
-            .Where(c => c.PilotId == pilotId)
+            .Filter<Eden.Data.World.Planetary.SavedPlanetaryColony>(c => c.PilotId == pilotId)
             .AsEnumerable()
             .Select(Eden.World.Planetary.PilotPlanetaryIndustryStore.ReadState)
             .ToArray();
@@ -117,7 +112,8 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
                 )
             );
         }
-        int clones = world.Set<SavedJumpClone>().Count(c => c.PilotId == pilotId && !c.Active);
+        var bodies = world.Filter<SavedJumpClone>(c => c.PilotId == pilotId).ToArray();
+        int clones = bodies.Count(c => !c.Active);
         const int LevelsPerSkill = 5;
         var cloneSkills = new[] { InfomorphSkill.Psychology, InfomorphSkill.AdvancedPsychology, InfomorphSkill.ElitePsychology };
         for (int i = 0; i < cloneSkills.Length; i++)
@@ -128,12 +124,10 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
                 floors.Add(new((int)cloneSkills[i], required, "That skill level is required by an installed jump clone."));
             }
         }
-        var implantTypes = (
-            from implant in world.Set<SavedPilotImplant>()
-            join body in world.Set<SavedJumpClone>() on implant.CloneId equals body.Id
-            where body.PilotId == pilotId
-            select implant.TypeId
-        )
+        var bodyIds = bodies.Select(body => body.Id).ToArray();
+        var implantTypes = world
+            .Filter<SavedPilotImplant>(implant => Enumerable.Contains(bodyIds, implant.CloneId))
+            .Select(implant => implant.TypeId)
             .Distinct()
             .ToArray();
         HashSet<int> visited = [];
@@ -191,10 +185,10 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
 
     public SkillExtractionChange Extract(long pilotId, long itemId, IReadOnlyList<SkillExtractionRequest> requests)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         if (pilot.ActiveShip.Position is not null)
         {
             throw new InvalidSkillExtraction("SkillExtractorNotDockedInStation");

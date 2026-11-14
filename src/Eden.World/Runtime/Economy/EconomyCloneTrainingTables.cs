@@ -268,7 +268,7 @@ internal sealed partial class ResidentEconomy
                     StartedAt = state.StartedAt,
                     ExpiresAt = state.ExpiresAt,
                 },
-                static (_, _) => throw new InvalidOperationException("Read-only rows cannot be projected."),
+                ProjectSavedBooster,
                 "ItemId,PilotId,TypeId,Slot,Bonus,RemainingInjectionUses,StartedAt,ExpiresAt",
                 reader =>
                     new(
@@ -282,7 +282,6 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(8)
                     ),
                 state => new(state.ItemId),
-                readOnly: true,
                 indexes: [new("PilotId", row => row.PilotId)],
                 primaryColumn: "ItemId"
             )
@@ -427,7 +426,8 @@ internal sealed partial class ResidentEconomy
 
     private static void ProjectSavedJumpClone(WorldDbContext world, IReadOnlyList<EconomyChange<EconomySavedJumpClone>> changes)
     {
-        foreach (var change in changes)
+        // Release the previous active body before writing the new one, regardless of key order.
+        foreach (var change in changes.OrderBy(change => change.Value?.Active == true))
         {
             if (change.Value is { } row)
             {
@@ -447,6 +447,31 @@ internal sealed partial class ResidentEconomy
             {
                 world.Database.ExecuteSql($"DELETE FROM WorldJumpClone WHERE Id={change.Key.Id}");
             }
+        }
+    }
+
+    private static void ProjectSavedBooster(WorldDbContext world, IReadOnlyList<EconomyChange<EconomySavedBooster>> changes)
+    {
+        foreach (var batch in changes.Where(change => change.Value is null).Chunk(ProjectionBatchSize))
+        {
+            string keys = JsonSerializer.Serialize(batch.Select(change => change.Key.Id));
+            world.Database.ExecuteSql($"DELETE FROM WorldBooster WHERE ItemId IN (SELECT value FROM json_each({keys}))");
+        }
+        foreach (var batch in changes.Where(change => change.Value is not null).Select(change => change.Value).Chunk(ProjectionBatchSize))
+        {
+            string values = JsonSerializer.Serialize(batch);
+            world.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldBooster(ItemId,PilotId,TypeId,Slot,Bonus,RemainingInjectionUses,StartedAt,ExpiresAt)
+                SELECT json_extract(value,'$.ItemId'), json_extract(value,'$.PilotId'), json_extract(value,'$.TypeId'),
+                    json_extract(value,'$.Slot'), json_extract(value,'$.Bonus'), json_extract(value,'$.RemainingInjectionUses'),
+                    json_extract(value,'$.StartedAt'), json_extract(value,'$.ExpiresAt')
+                FROM json_each({values}) WHERE 1
+                ON CONFLICT(ItemId) DO UPDATE SET
+                    TypeId=excluded.TypeId, Slot=excluded.Slot, Bonus=excluded.Bonus, StartedAt=excluded.StartedAt,
+                    ExpiresAt=excluded.ExpiresAt, RemainingInjectionUses=excluded.RemainingInjectionUses
+                """
+            );
         }
     }
 

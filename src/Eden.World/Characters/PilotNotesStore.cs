@@ -2,8 +2,8 @@ using Eden.Data.World.Characters;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
@@ -13,22 +13,21 @@ internal sealed class PilotNotesStore(WorldDatabase database, INpcDirectory npcs
     public string Read(long pilotId, long targetId)
     {
         PilotNoteRules.CheckTarget(targetId);
-        using WorldDbContext world = new(database.Path);
-        CheckCharacters(world, pilotId, targetId);
-        return world
-                .Set<SavedPilotNote>()
-                .AsNoTracking()
-                .Where(note => note.PilotId == pilotId && note.TargetId == targetId)
-                .Select(note => note.Text)
-                .SingleOrDefault()
-            ?? "";
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                CheckCharacters(world, pilotId, targetId);
+                return world.Set<SavedPilotNote>().Find(pilotId, targetId)?.Text ?? "";
+            }
+        );
     }
 
     public void Save(long pilotId, PilotNote note)
     {
         PilotNoteRules.Check(note);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         CheckCharacters(world, pilotId, note.TargetId);
         var saved = world.Set<SavedPilotNote>().Find(pilotId, note.TargetId);
         if (note.Text.Length == 0)
@@ -53,17 +52,16 @@ internal sealed class PilotNotesStore(WorldDatabase database, INpcDirectory npcs
         {
             saved.Text = note.Text;
         }
-        world.SaveChanges();
         transaction.Commit();
     }
 
-    private void CheckCharacters(WorldDbContext world, long pilotId, long targetId)
+    private void CheckCharacters(WorldAction world, long pilotId, long targetId)
     {
-        if (!world.Pilots.Any(pilot => pilot.Id == pilotId))
+        if (!world.PilotExists(pilotId))
         {
             throw new InvalidDataException("Unknown note owner.");
         }
-        if (!world.Pilots.Any(pilot => pilot.Id == targetId) && npcs.Character(targetId) is null)
+        if (!world.PilotExists(targetId) && npcs.Character(targetId) is null)
         {
             throw new InvalidDataException("Unknown note target.");
         }

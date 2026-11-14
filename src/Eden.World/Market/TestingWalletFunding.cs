@@ -1,5 +1,6 @@
 using Eden.Data.World.Market;
 using Eden.Gameplay.Market;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Market;
@@ -8,7 +9,9 @@ internal static class TestingWalletFunding
 {
     // The caller owns the migration/character-creation transaction. The grant's
     // primary key makes funding durable and unique for the lifetime of a pilot.
-    internal static void Grant(WorldDbContext world, long pilotId, long time)
+    internal static void Grant(WorldDbContext world, long pilotId, long time) => Grant(new SqlWorldAction(world), pilotId, time);
+
+    internal static void Grant(WorldAction world, long pilotId, long time)
     {
         if (world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingGrants: false })
         {

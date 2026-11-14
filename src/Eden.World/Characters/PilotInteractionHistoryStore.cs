@@ -12,6 +12,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Characters;
@@ -25,49 +26,53 @@ internal sealed partial class PilotInteractionHistoryStore(WorldDatabase databas
         {
             throw new InvalidDataException("Invalid combat history page.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var rows = world.Set<SavedCombatReport>().Where(r => r.PilotId == pilotId && (beforeId == null || r.Id < beforeId));
-        // The native client filters this shared reply after the call. Give
-        // each filter its own page, or mixed kills/losses hide its Next button.
-        return rows.Where(r => !r.IsLoss)
-            .OrderByDescending(r => r.Id)
-            .Take(count)
-            .ToArray()
-            .Concat(rows.Where(r => r.IsLoss).OrderByDescending(r => r.Id).Take(count).ToArray())
-            .OrderByDescending(r => r.Id)
-            .Select(r => r.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var rows = world.Filter<SavedCombatReport>(r => r.PilotId == pilotId && (beforeId == null || r.Id < beforeId));
+                // The client filters one shared reply. Give kills and losses their own page.
+                return rows.Where(r => !r.IsLoss)
+                    .OrderByDescending(r => r.Id)
+                    .Take(count)
+                    .ToArray()
+                    .Concat(rows.Where(r => r.IsLoss).OrderByDescending(r => r.Id).Take(count).ToArray())
+                    .OrderByDescending(r => r.Id)
+                    .Select(r => r.Snapshot())
+                    .ToArray();
+            },
+            consistentFileRead: true
+        );
     }
 
-    public ShipCombatReport? Report(long pilotId, long reportId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<SavedCombatReport>().SingleOrDefault(r => r.Id == reportId && r.PilotId == pilotId)?.Snapshot();
-    }
+    public ShipCombatReport? Report(long pilotId, long reportId) =>
+        WorldActionScope.Inspect(
+            database,
+            world => world.Filter<SavedCombatReport>(r => r.Id == reportId && r.PilotId == pilotId).SingleOrDefault()?.Snapshot()
+        );
 
-    public IReadOnlyList<NpcStanding> Standings(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedNpcStanding>()
-            .Where(s => s.PilotId == pilotId)
-            .OrderBy(s => s.SourceId)
-            .Select(s => new NpcStanding(s.SourceId, s.Value))
-            .ToArray();
-    }
+    public IReadOnlyList<NpcStanding> Standings(long pilotId) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<SavedNpcStanding>(s => s.PilotId == pilotId)
+                    .OrderBy(s => s.SourceId)
+                    .Select(s => new NpcStanding(s.SourceId, s.Value))
+                    .ToArray()
+        );
 
-    public IReadOnlyList<StandingTransaction> Transactions(long pilotId, long sourceId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedStandingTransaction>()
-            .Where(t => t.PilotId == pilotId && t.SourceId == sourceId)
-            .OrderByDescending(t => t.Id)
-            .AsEnumerable()
-            .Select(t => t.Snapshot())
-            .ToArray();
-    }
+    public IReadOnlyList<StandingTransaction> Transactions(long pilotId, long sourceId) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<SavedStandingTransaction>(t => t.PilotId == pilotId && t.SourceId == sourceId)
+                    .OrderByDescending(t => t.Id)
+                    .AsEnumerable()
+                    .Select(t => t.Snapshot())
+                    .ToArray()
+        );
 
     internal static CombatParty Player(WorldDbContext world, Pilot pilot, long shipId, int? weaponType = null, bool readSecurity = false)
     {

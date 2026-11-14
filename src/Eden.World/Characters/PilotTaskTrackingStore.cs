@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,28 +14,35 @@ internal sealed partial class PilotTaskTrackingStore(WorldDatabase database, Tim
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    public TaskProgress Read(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        CheckPilot(world, pilotId);
-        var counters = Counters(world, pilotId);
-        return new(
-            world
-                .Set<SavedCompletedTask>()
-                .Where(task => task.PilotId == pilotId)
-                .OrderBy(task => task.Id)
-                .Select(task => new CompletedTask(task.Id, task.Time))
-                .ToArray(),
-            counters.Where(counter => counter.Name.StartsWith("client_", StringComparison.Ordinal)).ToArray(),
-            counters.Any(counter => counter.Name == TaskEvents.Warped && counter.Count > 0)
+    public TaskProgress Read(long pilotId) =>
+        WorldActionScope.Inspect<TaskProgress>(
+            database,
+            world =>
+            {
+                CheckPilot(world, pilotId);
+                var counters = world
+                    .Filter<SavedTaskCounter>(counter => counter.PilotId == pilotId)
+                    .Select(counter => new TaskCounter(counter.Name, counter.Count))
+                    .AsEnumerable()
+                    .OrderBy(counter => counter.Name, StringComparer.Ordinal)
+                    .ToArray();
+                return new(
+                    world
+                        .Filter<SavedCompletedTask>(task => task.PilotId == pilotId)
+                        .OrderBy(task => task.Id)
+                        .Select(task => new CompletedTask(task.Id, task.Time))
+                        .ToArray(),
+                    counters.Where(counter => counter.Name.StartsWith("client_", StringComparison.Ordinal)).ToArray(),
+                    counters.Any(counter => counter.Name == TaskEvents.Warped && counter.Count > 0)
+                );
+            },
+            consistentFileRead: true
         );
-    }
 
     public void Update(long pilotId, IReadOnlyList<CompletedTask> completed, IReadOnlyList<TaskCounter> counters)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         CheckPilot(world, pilotId);
         if (
@@ -92,16 +100,7 @@ internal sealed partial class PilotTaskTrackingStore(WorldDatabase database, Tim
             }
         }
         Complete(world, pilotId, now, definitions, merged);
-        world.SaveChanges();
         transaction.Commit();
-    }
-
-    private static void CheckPilot(WorldDbContext world, long pilotId)
-    {
-        if (!world.Pilots.Any(pilot => pilot.Id == pilotId))
-        {
-            throw new InvalidDataException("Unknown pilot.");
-        }
     }
 
     private static IReadOnlyList<TaskDefinition> Definitions(CatalogDbContext catalog)

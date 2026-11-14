@@ -9,8 +9,8 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Economy;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Skills;
 
@@ -26,9 +26,9 @@ internal sealed class PilotSkillPurchaseStore(WorldDatabase database, TimeProvid
         {
             throw new InvalidDataException("Select distinct skill types to purchase.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        if (!world.Pilots.Any(pilot => pilot.Id == pilotId))
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
+        if (!world.PilotExists(pilotId))
         {
             throw new InvalidDataException("The pilot does not exist.");
         }
@@ -62,7 +62,6 @@ internal sealed class PilotSkillPurchaseStore(WorldDatabase database, TimeProvid
         if (purchases.Count > 0)
         {
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.SkillInjected, purchases.Count);
-            world.SaveChanges();
         }
         transaction.Commit();
         return new(typeIds.ToArray(), balance);

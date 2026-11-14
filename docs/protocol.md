@@ -590,6 +590,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Characters and skills
 
+- [Resident character, clone, and skill services](protocol/characters.md#resident-character-clone-and-skill-services)
 - [Neocom skill startup, November 11, 2026](protocol/characters.md#neocom-skill-startup-november-11-2026)
 - [Direct skill purchasing, November 11, 2026](protocol/characters.md#direct-skill-purchasing-november-11-2026)
 - [Faction-warfare rank overview, November 8, 2026](protocol/characters.md#faction-warfare-rank-overview-november-8-2026)

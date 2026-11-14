@@ -105,7 +105,7 @@ public sealed class PilotNotesTests
         WorldInitialization.Open(db.Path);
         Assert.Equal("Migrated note", notes.Read(Owner, Other));
         using WorldDbContext final = new(db.Path);
-        Assert.Equal(64, final.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        Assert.Equal(WorldMigration.CurrentVersion, final.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
     }
 
     [Fact]

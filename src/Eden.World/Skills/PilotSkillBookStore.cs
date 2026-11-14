@@ -1,5 +1,5 @@
-using System.Globalization;
 using Eden.Data.Catalog;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
@@ -10,8 +10,8 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Skills;
 
@@ -24,13 +24,12 @@ internal sealed class PilotSkillBookStore(WorldDatabase database, TimeProvider? 
         {
             throw new InvalidDataException("Select distinct skillbooks to inject.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = pilot.ActiveShip;
         var items = world
-            .Set<OwnedItem>()
-            .Where(i =>
+            .Filter<OwnedItem>(i =>
                 itemIds.Contains(i.Id)
                 && i.OwnerId == pilotId
                 && (
@@ -84,7 +83,6 @@ internal sealed class PilotSkillBookStore(WorldDatabase database, TimeProvider? 
             TaskEvents.SkillInjected,
             items.Length
         );
-        world.SaveChanges();
         transaction.Commit();
         return new(items.Select(i => i.TypeId).ToArray(), changes);
     }

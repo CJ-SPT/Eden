@@ -11,8 +11,8 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Skills;
 
@@ -20,17 +20,16 @@ namespace Eden.World.Skills;
 internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrainingStore training, TimeProvider clock)
     : IPilotSkillInjectors
 {
-    private static Pilot Pilot(WorldDbContext world, long pilot) =>
-        world.Pilots.Include(p => p.Account).Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilot)
-        ?? throw new InvalidDataException("Unknown pilot.");
+    private static Pilot Pilot(WorldAction world, long pilot) =>
+        world.Pilots.Find(pilot) ?? throw new InvalidDataException("Unknown pilot.");
 
-    internal static SavedSkillInjectorState State(WorldDbContext world, long pilot) =>
+    internal static SavedSkillInjectorState State(WorldAction world, long pilot) =>
         world.Set<SavedSkillInjectorState>().Find(pilot) ?? world.Add(new SavedSkillInjectorState { PilotId = pilot }).Entity;
 
-    internal static SkillInjectorStatus Read(WorldDbContext world, long pilot, long now)
+    private static SkillInjectorStatus Read(WorldAction world, long pilot, long now)
     {
         var state = world.Set<SavedSkillInjectorState>().Find(pilot);
-        int uses = world.Set<SavedBooster>().Where(b => b.PilotId == pilot && b.ExpiresAt > now).Sum(b => b.RemainingInjectionUses);
+        int uses = world.Filter<SavedBooster>(b => b.PilotId == pilot && b.ExpiresAt > now).Sum(b => b.RemainingInjectionUses);
         return new(uses, state?.NextAlphaInjection ?? 0, state?.Revision ?? 0);
     }
 
@@ -41,10 +40,15 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
         {
             return resident.Learning(pilotId).InjectionsAt(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        _ = Pilot(world, pilotId);
-        return Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                _ = Pilot(world, pilotId);
+                return Read(world, pilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            },
+            consistentFileRead: true
+        );
     }
 
     private static void Station(Pilot pilot)
@@ -55,7 +59,7 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
         }
     }
 
-    private static OwnedItem Item(WorldDbContext world, Pilot pilot, long id, int quantity)
+    private static OwnedItem Item(WorldAction world, Pilot pilot, long id, int quantity)
     {
         var item =
             InventoryPersistence.OwnedStack(world, pilot.Id, id) ?? throw new InvalidSkillInjection("YouDoNotOwnCharacterServiceItem");
@@ -108,9 +112,9 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
         );
     }
 
-    private static long Allocated(WorldDbContext world, long pilot, TrainingState training, long now)
+    private static long Allocated(WorldAction world, long pilot, TrainingState training, long now)
     {
-        long total = world.Set<PilotSkill>().Where(s => s.PilotId == pilot).Sum(s => s.Points);
+        long total = world.Filter<PilotSkill>(s => s.PilotId == pilot).Sum(s => s.Points);
         if (training.Queue.FirstOrDefault() is { StartTime: not null } first)
         {
             total = checked(total + first.PointsAt(now) - world.Set<PilotSkill>().Find(pilot, first.Target.TypeId)!.Points);
@@ -120,15 +124,15 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
 
     public long AllocatedPoints(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         _ = Pilot(world, pilotId);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         return Allocated(world, pilotId, training.Advance(world, pilotId, now), now);
     }
 
     private static SkillInjectionPlan Plan(
-        WorldDbContext world,
+        WorldAction world,
         Pilot pilot,
         SkillInjectorProfile profile,
         int quantity,
@@ -153,8 +157,8 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
 
     public long Preview(long pilotId, int typeId, int quantity)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         Station(pilot);
@@ -164,8 +168,8 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
 
     public void Check(long pilotId, long itemId, int quantity)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var item = Item(world, pilot, itemId, quantity);
@@ -175,8 +179,8 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
 
     public SkillInjectorChange Inject(long pilotId, long itemId, int quantity)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var item = Item(world, pilot, itemId, quantity);
@@ -193,8 +197,7 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
         int remaining = plan.UsesSpent;
         foreach (
             var booster in world
-                .Set<SavedBooster>()
-                .Where(b => b.PilotId == pilotId && b.ExpiresAt > now && b.RemainingInjectionUses > 0)
+                .Filter<SavedBooster>(b => b.PilotId == pilotId && b.ExpiresAt > now && b.RemainingInjectionUses > 0)
                 .OrderBy(b => b.ExpiresAt)
                 .ThenBy(b => b.ItemId)
         )
@@ -233,8 +236,8 @@ internal sealed class PilotSkillInjectorStore(WorldDatabase database, PilotTrain
 
     public IReadOnlyList<InventoryChange> Convert(long pilotId, long itemId, int quantity, bool split)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var item = Item(world, pilot, itemId, quantity);

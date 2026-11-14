@@ -2,8 +2,8 @@ using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
@@ -20,21 +20,24 @@ internal sealed class CharacterPortraitStore(WorldDatabase database, CharacterDo
         {
             return [];
         }
-        using WorldDbContext world = new(database.Path);
-        var pilots = world
-            .Pilots.AsNoTracking()
-            .Where(p =>
-                characterIds.Contains(p.Id) && !world.Set<SavedCharacterDeletion>().Any(d => d.PilotId == p.Id && d.DeletedAt != null)
-            )
-            .Select(p => new
-            {
-                p.Id,
-                p.Appearance,
-                p.Portrait,
-                p.BloodlineId,
-                p.GenderId,
-            })
-            .ToArray();
+        var pilots = WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<Pilot>(p => characterIds.Contains(p.Id))
+                    .AsEnumerable()
+                    .Where(p => world.Set<SavedCharacterDeletion>().Find(p.Id)?.DeletedAt is null)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.Appearance,
+                        p.Portrait,
+                        p.BloodlineId,
+                        p.GenderId,
+                    })
+                    .ToArray(),
+            consistentFileRead: true
+        );
         return pilots
             .Select(p => new CharacterPortraitSource(
                 p.Id,

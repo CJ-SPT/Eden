@@ -1,7 +1,9 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Contracts;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Docking;
 using Eden.Data.World.Industry;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
@@ -9,31 +11,29 @@ using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
-using Eden.World.Contracts;
-using Eden.World.Corporations;
-using Eden.World.Industry;
-using Eden.World.Market;
-using Eden.World.Skills;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
 [Injectable]
 internal sealed class CharacterDeletionStore(WorldDatabase database, TimeProvider clock) : ICharacterDeletion
 {
-    public CharacterDeletionState? Read(long accountId, long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        RequireOwner(world, accountId, pilotId);
-        var saved = world.Set<SavedCharacterDeletion>().Find(pilotId);
-        return saved is null ? null : new(saved.ReadyAt, saved.DeletedAt);
-    }
+    public CharacterDeletionState? Read(long accountId, long pilotId) =>
+        WorldActionScope.Inspect<CharacterDeletionState?>(
+            database,
+            world =>
+            {
+                RequireOwner(world, accountId, pilotId);
+                var saved = world.Set<SavedCharacterDeletion>().Find(pilotId);
+                return saved is null ? null : new(saved.ReadyAt, saved.DeletedAt);
+            }
+        );
 
     public long Prepare(long accountId, long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         RequireOwner(world, accountId, pilotId);
         var saved = world.Set<SavedCharacterDeletion>().Find(pilotId);
         if (saved is null)
@@ -49,17 +49,20 @@ internal sealed class CharacterDeletionStore(WorldDatabase database, TimeProvide
 
     public void Cancel(long accountId, long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         RequireOwner(world, accountId, pilotId);
-        world.Set<SavedCharacterDeletion>().Where(d => d.PilotId == pilotId).ExecuteDelete();
+        if (world.Set<SavedCharacterDeletion>().Find(pilotId) is { } saved)
+        {
+            world.Remove(saved);
+        }
         transaction.Commit();
     }
 
     public void Delete(long accountId, long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         RequireOwner(world, accountId, pilotId);
         var saved = world.Set<SavedCharacterDeletion>().Find(pilotId);
         long now = Now;
@@ -68,42 +71,40 @@ internal sealed class CharacterDeletionStore(WorldDatabase database, TimeProvide
         // Keep identities, ownership and historical references intact. The tombstone
         // permanently removes account access and releases the slot without reusing IDs.
         saved!.DeletedAt = now;
-        world.Set<QueuedLevel>().Where(q => q.PilotId == pilotId).ExecuteDelete();
-        world.Positions.Where(p => world.Ships.IgnoreQueryFilters().Any(s => s.OwnerId == pilotId && s.Id == p.ShipId)).ExecuteDelete();
-        world.SaveChanges();
+        world.RemoveRange(world.Filter<QueuedLevel>(q => q.PilotId == pilotId).ToArray());
+        var hulls = world.Filter<Ship>(ship => ship.OwnerId == pilotId).Select(ship => ship.Id).ToArray();
+        world.RemoveRange(world.Filter<FlightPosition>(position => Enumerable.Contains(hulls, position.ShipId)).ToArray());
         transaction.Commit();
     }
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    private static void RequireSettled(WorldDbContext world, long pilotId)
+    private static void RequireSettled(WorldAction world, long pilotId)
     {
-        int corporation = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.CorporationId).Single();
-        if (world.Set<SavedCorporation>().Any(c => c.Id == corporation))
+        int corporation = world.Pilots.Find(pilotId)!.CorporationId;
+        if (world.Set<SavedCorporation>().Find(corporation) is not null)
         {
             throw new InvalidDataException("Leave your player corporation before preparing for biomass.");
         }
-        if (world.Set<SavedPersonalOrder>().Any(o => o.PilotId == pilotId && o.Status == PersonalOrderStatus.Open))
+        if (world.Filter<SavedPersonalOrder>(o => o.PilotId == pilotId && o.Status == PersonalOrderStatus.Open).Any())
         {
             throw new InvalidDataException("Close your market orders before preparing for biomass.");
         }
         if (
             world
-                .Set<IndustryJob>()
-                .Any(j => j.PilotId == pilotId && (j.Status == IndustryJobStatus.Installed || j.Status == IndustryJobStatus.Ready))
+                .Filter<IndustryJob>(j =>
+                    j.PilotId == pilotId && (j.Status == IndustryJobStatus.Installed || j.Status == IndustryJobStatus.Ready)
+                )
+                .Any()
         )
         {
             throw new InvalidDataException("Deliver or cancel your industry jobs before preparing for biomass.");
         }
+        var bids = world.Filter<SavedContractBid>(bid => bid.BidderId == pilotId).Select(bid => bid.ContractId).ToArray();
         if (
             world
-                .Set<SavedContract>()
-                .Any(c =>
-                    (
-                        c.IssuerId == pilotId
-                        || c.AcceptorId == pilotId
-                        || world.Set<SavedContractBid>().Any(b => b.ContractId == c.Id && b.BidderId == pilotId)
-                    )
+                .Filter<SavedContract>(c =>
+                    (c.IssuerId == pilotId || c.AcceptorId == pilotId || Enumerable.Contains(bids, c.Id))
                     && (
                         c.Status == ContractStatus.Outstanding
                         || c.Status == ContractStatus.InProgress
@@ -111,18 +112,16 @@ internal sealed class CharacterDeletionStore(WorldDatabase database, TimeProvide
                         || c.Status == ContractStatus.FinishedContractor
                     )
                 )
+                .Any()
         )
         {
             throw new InvalidDataException("Settle your contracts before preparing for biomass.");
         }
     }
 
-    private static void RequireOwner(WorldDbContext world, long accountId, long pilotId)
+    private static void RequireOwner(WorldAction world, long accountId, long pilotId)
     {
-        if (
-            !world.Pilots.Any(p => p.Id == pilotId && p.AccountId == accountId)
-            || world.Set<SavedCharacterDeletion>().Any(d => d.PilotId == pilotId && d.DeletedAt != null)
-        )
+        if (world.Pilots.Find(pilotId)?.AccountId != accountId || world.Set<SavedCharacterDeletion>().Find(pilotId)?.DeletedAt is not null)
         {
             throw new InvalidDataException("Unknown pilot for this account.");
         }

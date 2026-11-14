@@ -16,7 +16,6 @@ using Eden.World.Market;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
@@ -24,9 +23,7 @@ namespace Eden.World.Characters;
 internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lookup, TimeProvider clock, PilotTrainingStore training)
     : IPilotJumpClones
 {
-    private static Pilot Pilot(WorldDbContext world, long id) =>
-        world.Pilots.Include(p => p.Account).Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == id)
-        ?? throw new InvalidDataException("Unknown pilot.");
+    private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 
     private static CatalogStationDefinition Station(CatalogDbContext catalog, int id) =>
         catalog.FindStation(id) ?? throw new InvalidDataException("Unknown jump clone station.");
@@ -51,9 +48,6 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         JumpCloneRules.CheckLocation(station.SolarSystemId, station.RegionId);
         return station;
     }
-
-    private static JumpCloneSkills Skills(WorldDbContext world, CatalogDbContext catalog, Pilot pilot) =>
-        Skills(new SqlWorldAction(world), catalog, pilot);
 
     private static JumpCloneSkills Skills(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
@@ -96,69 +90,57 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
     public JumpCloneSkills ReadCloneSkills(long pilotId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return WorldActionScope.Inspect(
-            database,
-            world =>
-                Skills(
-                    world,
-                    catalog,
-                    world.Filter<Pilot>(p => p.Id == pilotId).SingleOrDefault() ?? throw new InvalidDataException("Unknown pilot.")
-                )
-        );
+        return WorldActionScope.Inspect(database, world => Skills(world, catalog, Pilot(world, pilotId)));
     }
 
-    public JumpCloneSnapshot Read(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        _ = Pilot(world, pilotId);
-        return new(
-            world
-                .Set<SavedJumpClone>()
-                .Where(c => c.PilotId == pilotId && !c.Active)
-                .OrderBy(c => c.Id)
-                .Select(c => new JumpClone(c.Id, c.StationId!.Value, c.Name))
-                .ToArray(),
-            world.Set<SavedJumpCloneTimer>().Find(pilotId)?.Time
-        )
-        {
-            Implants = (
-                from implant in world.Set<SavedPilotImplant>()
-                join body in world.Set<SavedJumpClone>() on implant.CloneId equals body.Id
-                where body.PilotId == pilotId && !body.Active
-                orderby body.Id, implant.Slot
-                select implant
-            )
-                .AsEnumerable()
-                .Select(i => i.Snapshot())
-                .ToArray(),
-        };
-    }
+    public JumpCloneSnapshot Read(long pilotId) =>
+        WorldActionScope.Inspect<JumpCloneSnapshot>(
+            database,
+            world =>
+            {
+                _ = Pilot(world, pilotId);
+                var bodies = world
+                    .Filter<SavedJumpClone>(c => c.PilotId == pilotId && !c.Active)
+                    .OrderBy(c => c.Id)
+                    .Select(c => new JumpClone(c.Id, c.StationId!.Value, c.Name))
+                    .ToArray();
+                var ids = bodies.Select(c => c.Id).ToArray();
+                return new(bodies, world.Set<SavedJumpCloneTimer>().Find(pilotId)?.Time)
+                {
+                    Implants = world
+                        .Filter<SavedPilotImplant>(implant => Enumerable.Contains(ids, implant.CloneId))
+                        .OrderBy(implant => implant.CloneId)
+                        .ThenBy(implant => implant.Slot)
+                        .AsEnumerable()
+                        .Select(implant => implant.Snapshot())
+                        .ToArray(),
+                };
+            },
+            consistentFileRead: true
+        );
 
     public long Price(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = CurrentStation(catalog, Pilot(world, pilotId), facility: false);
+        _ = WorldActionScope.Inspect(database, world => CurrentStation(catalog, Pilot(world, pilotId), facility: false));
         return JumpCloneRules.FeeCents;
     }
 
-    private static int? InstallLimit(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    private static int? InstallLimit(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
         _ = CurrentStation(catalog, pilot, facility: true);
         int capacity = Skills(world, catalog, pilot).Capacity;
-        return world.Set<SavedJumpClone>().Count(c => c.PilotId == pilot.Id && !c.Active) >= capacity ? capacity : null;
+        return world.Filter<SavedJumpClone>(c => c.PilotId == pilot.Id && !c.Active).Count() >= capacity ? capacity : null;
     }
 
     public int? InstallLimit(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return InstallLimit(world, catalog, Pilot(world, pilotId));
+        return WorldActionScope.Inspect(database, world => InstallLimit(world, catalog, Pilot(world, pilotId)));
     }
 
     private SavedJumpClonePayment Pay(
-        WorldDbContext world,
+        WorldAction world,
         Pilot pilot,
         CatalogStationDefinition station,
         JumpClonePaymentKind kind,
@@ -187,8 +169,8 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
 
     public JumpCloneChange Install(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         if (InstallLimit(world, catalog, pilot) is not null)
@@ -212,15 +194,16 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         return new(payment.BalanceCents, station.Id);
     }
 
-    private static SavedJumpClone Owned(WorldDbContext world, long pilotId, long cloneId) =>
-        world.Set<SavedJumpClone>().SingleOrDefault(c => c.Id == cloneId && c.PilotId == pilotId && !c.Active)
-        ?? throw new InvalidDataException("That installed jump clone does not belong to you or is no longer available.");
+    private static SavedJumpClone Owned(WorldAction world, long pilotId, long cloneId) =>
+        world.Set<SavedJumpClone>().Find(cloneId) is { Active: false } clone && clone.PilotId == pilotId
+            ? clone
+            : throw new InvalidDataException("That installed jump clone does not belong to you or is no longer available.");
 
     public void Rename(long pilotId, long cloneId, string name)
     {
         string value = JumpCloneRules.Name(name);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         Owned(world, pilotId, cloneId).Name = value;
         world.SaveChanges();
         transaction.Commit();
@@ -228,8 +211,8 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
 
     public int Destroy(long pilotId, long cloneId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         var clone = Owned(world, pilotId, cloneId);
         int station = clone.StationId!.Value;
         world.Remove(clone);
@@ -250,8 +233,8 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
 
     public JumpCloneTransfer Jump(long pilotId, long expectedShipId, int stationId, long cloneId, long quotedCents)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var source = CurrentStation(catalog, pilot, facility: false);
@@ -282,7 +265,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
             .Add(
                 new Ship
                 {
-                    Id = InventoryPersistence.NextId(world),
+                    Id = world.NextItemId(),
                     OwnerId = pilotId,
                     TypeId = type.Id,
                     StationId = stationId,
@@ -296,7 +279,7 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
             () =>
             {
                 var outgoing =
-                    world.Set<SavedJumpClone>().SingleOrDefault(c => c.PilotId == pilotId && c.Active)
+                    world.Filter<SavedJumpClone>(c => c.PilotId == pilotId && c.Active).SingleOrDefault()
                     ?? world.Add(new SavedJumpClone { PilotId = pilotId }).Entity;
                 outgoing.Active = false;
                 outgoing.StationId = source.Id;
@@ -321,12 +304,8 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         ShipStoragePersistence.Destroy(world, old);
         world.SaveChanges();
         var item = PilotFleetStore.Read(catalog, capsule);
+        var activePilot = lookup.FindPilot(world, pilot.AccountId, pilotId)!;
         transaction.Commit();
-        return new(
-            lookup.FindPilot(pilot.AccountId, pilotId)!,
-            [new(previous with { Quantity = 0 }, previous), new(item, null)],
-            payment.BalanceCents,
-            source.Id
-        );
+        return new(activePilot, [new(previous with { Quantity = 0 }, previous), new(item, null)], payment.BalanceCents, source.Id);
     }
 }

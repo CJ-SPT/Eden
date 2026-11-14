@@ -14,7 +14,6 @@ using Eden.World.Market;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
@@ -24,9 +23,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    private static Pilot Pilot(WorldDbContext world, long id) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == id)
-        ?? throw new InvalidDataException("Unknown pilot.");
+    private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 
     private static CatalogStationDefinition? Station(CatalogDbContext catalog, int id) => catalog.FindStation(id);
 
@@ -56,19 +53,17 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
 
     public HomeStation Read(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return Read(world, catalog, Pilot(world, pilotId));
+        return WorldActionScope.Inspect(database, world => Read(world, catalog, Pilot(world, pilotId)));
     }
 
     public IReadOnlyList<HomeStationCandidate> Candidates(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return Candidates(world, catalog, Pilot(world, pilotId));
+        return WorldActionScope.Inspect(database, world => Candidates(world, catalog, Pilot(world, pilotId)));
     }
 
-    private static IReadOnlyList<HomeStationCandidate> Candidates(WorldDbContext world, CatalogDbContext catalog, Pilot pilot)
+    private static IReadOnlyList<HomeStationCandidate> Candidates(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
         var home = Read(world, catalog, pilot);
         int? current = pilot.ActiveShip.Position is null && pilot.ActiveShip.StructureId is null ? pilot.ActiveShip.StationId : null;
@@ -92,8 +87,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
 
     public long? NextRemoteChange(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        _ = Pilot(world, pilotId);
+        _ = WorldActionScope.Inspect(database, world => Pilot(world, pilotId));
         // Current station and school HQ changes never consume the remote-office
         // cooldown. NPC-corporation pilots have no remote-office entitlement.
         return null;
@@ -101,8 +95,8 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
 
     public HomeStationChange Set(long pilotId, int stationId, bool allowRemote)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var candidate =
@@ -142,8 +136,8 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
 
     public HomeCloneTransfer SelfDestruct(long pilotId, long expectedShipId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         var old = pilot.ActiveShip;
@@ -169,7 +163,7 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
             .Add(
                 new Ship
                 {
-                    Id = InventoryPersistence.NextId(world),
+                    Id = world.NextItemId(),
                     OwnerId = pilotId,
                     TypeId = capsuleType.Id,
                     Name = capsuleType.Name,
@@ -197,8 +191,9 @@ internal sealed class PilotHomeStationStore(WorldDatabase database, SqliteWorld 
         ShipStoragePersistence.Destroy(world, old);
         world.SaveChanges();
         var incoming = PilotFleetStore.Read(catalog, capsule);
+        var activePilot = lookup.FindPilot(world, pilot.AccountId, pilotId)!;
         transaction.Commit();
-        return new(lookup.FindPilot(pilot.AccountId, pilotId)!, [new(previous with { Quantity = 0 }, previous), new(incoming, null)]);
+        return new(activePilot, [new(previous with { Quantity = 0 }, previous), new(incoming, null)]);
     }
 }
 

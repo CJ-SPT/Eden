@@ -1,10 +1,11 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
@@ -17,17 +18,17 @@ internal sealed class PilotShipAppearanceStore(WorldDatabase database, TimeProvi
 
     private ShipDirtState Access(long pilotId, long shipId, bool clean)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId);
-        var ship = world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
+        var pilot = world.Pilots.Find(pilotId);
+        var ship = world.Filter<Ship>(s => s.Id == shipId && s.OwnerId == pilotId).SingleOrDefault();
         if (pilot is null || ship is null)
         {
             throw new InvalidDataException("This owned ship is unavailable.");
         }
         var item = ShipStoragePersistence.Location(ship);
         var parent = ship.StoredInId is { } parentId
-            ? world.Ships.Include(s => s.Position).SingleOrDefault(s => s.Id == parentId && s.OwnerId == pilotId)
+            ? world.Filter<Ship>(s => s.Id == parentId && s.OwnerId == pilotId).SingleOrDefault()
             : null;
         if (
             !ShipStorageRules.CanRead(
@@ -58,7 +59,6 @@ internal sealed class PilotShipAppearanceStore(WorldDatabase database, TimeProvi
         {
             state.Timestamp = ShipDirtRules.CleanTimestamp(state.Timestamp, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         }
-        world.SaveChanges();
         transaction.Commit();
         return new(shipId, state.Timestamp);
     }
