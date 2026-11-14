@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation invitations and window reads](protocol/corporations.md#direct-invitations-and-corporation-window-reads-november-14-2026)
+records resident direct invitations, native bulletin reads and actionable bound-call errors.
+
 [Singleton mission cargo](protocol/agents.md#singleton-mission-cargo--november-14-2026) records nine newly admitted courier
 definitions, distinct inventory identities, resident checkpoint recovery and atomic turn-in.
 

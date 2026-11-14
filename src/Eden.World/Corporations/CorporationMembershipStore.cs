@@ -85,6 +85,56 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         return application.Snapshot();
     }
 
+    public CorporationApplication Invite(long actorId, long pilotId)
+    {
+        var resident =
+            LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Corporation invitations require an active resident world.");
+        using var world = resident.Economy.Begin(TransactionParticipants.None);
+        var actor = Pilot(world, actorId);
+        var corporation = Corporation(world, actor.CorporationId);
+        if (!CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.PersonnelManager))
+        {
+            throw new InvalidDataException("Personnel management is required to invite corporation members.");
+        }
+        var pilot = Pilot(world, pilotId);
+        CheckJoin(world, pilot, corporation);
+        var application = world
+            .Set<SavedCorporationApplication>()
+            .Where(a => a.PilotId == pilotId && a.CorporationId == corporation.Id)
+            .AsEnumerable()
+            .SingleOrDefault(a => !CorporationMembershipRules.Closed(a.Status));
+        if (application?.Status is CorporationApplicationStatus.Invited or CorporationApplicationStatus.Offered)
+        {
+            return application.Snapshot();
+        }
+        long now = Now;
+        if (application is null)
+        {
+            application = world
+                .Add(
+                    new SavedCorporationApplication
+                    {
+                        PilotId = pilotId,
+                        CorporationId = corporation.Id,
+                        Status = CorporationApplicationStatus.Invited,
+                        AppliedAt = now,
+                        UpdatedAt = now,
+                    }
+                )
+                .Entity;
+        }
+        else
+        {
+            CorporationMembershipRules.CheckTransition(application.Status, CorporationApplicationStatus.Offered, false, true);
+            application.Status = CorporationApplicationStatus.Offered;
+            application.UpdatedAt = now;
+        }
+        world.SaveChanges();
+        NotifyApplication(world, application);
+        world.Commit();
+        return application.Snapshot();
+    }
+
     public CorporationApplication Update(long actorId, CorporationApplicationUpdate update)
     {
         CorporationMembershipRules.CheckText(update.Text);

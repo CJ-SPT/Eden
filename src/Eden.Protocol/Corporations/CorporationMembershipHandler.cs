@@ -146,6 +146,7 @@ internal sealed partial class CorporationHandler
             || method
                 is not (
                     "InsertApplication"
+                    or "InsertInvitation"
                     or "UpdateApplicationOffer"
                     or "GetMyApplications"
                     or "GetApplications"
@@ -171,6 +172,10 @@ internal sealed partial class CorporationHandler
             long pilot = context.Pilot.PilotId;
             switch (method, args)
             {
+                case ("InsertInvitation", [long invitee]) when invitee > 0:
+                    var invitation = membership.Invite(pilot, invitee);
+                    Advance(context);
+                    return invitation.Id;
                 case ("InsertApplication", [long corporation, var text]) when corporation is > 0 and <= int.MaxValue:
                     var application = membership.Apply(pilot, (int)corporation, Text(text));
                     Advance(context);

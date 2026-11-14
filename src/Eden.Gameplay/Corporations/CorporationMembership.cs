@@ -61,6 +61,7 @@ public interface ICorporationMembership
 {
     IReadOnlyList<CorporationApplication> Applications(long pilotId, bool forCorporation);
     CorporationApplication Apply(long pilotId, int corporationId, string text);
+    CorporationApplication Invite(long actorId, long pilotId);
     CorporationApplication Update(long actorId, CorporationApplicationUpdate update);
     CorporationLeavePermission CanRemove(long actorId, long pilotId);
     void Remove(long actorId, long pilotId);

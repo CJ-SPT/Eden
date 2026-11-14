@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Direct invitations and corporation window reads, November 14, 2026](#direct-invitations-and-corporation-window-reads-november-14-2026)
 - [Corporation registry lifetime and application replies](#corporation-registry-lifetime-and-application-replies)
 - [Corporation contacts and standings, November 11, 2026](#corporation-contacts-and-standings--november-11-2026)
 
@@ -31,6 +32,53 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Direct invitations and corporation window reads, November 14, 2026
+
+The maintainer reported that the player corporation window and direct invitations still failed. The November 14
+game log records the invitation confirmation at 12:41:06 ET, followed by `Unsupported local call corpRegistry.MachoBindObject`
+at 12:41:08 and three further registry failures. That log does not expose the embedded methods, so it cannot establish
+which read failed on each window attempt. Inert inspection confirms that `base_corporation.InviteToJoinCorp` calls
+`InsertInvitation(characterID)`, which had no Eden handler. `GetCorpBulletins` also called an unhandled `GetBulletins()`.
+
+`InsertInvitation` now authorizes the selected pilot as CEO, Director or Personnel Manager and uses the existing resident
+world transaction, saved application rows and checkpoint mechanism. A direct invitation has native status 8 and returns
+its application ID. Existing applications become offers without replacing their text; repeated outstanding invitations
+return the existing ID without adding events. Invitations remain possible when unsolicited applications are disabled.
+Unknown pilots, ordinary members, existing corporation members, CEOs and full corporations are rejected without changes.
+The recipient sees the invitation through `GetMyApplications` and the existing `OnCorporationApplicationChanged` updates;
+only their acceptance moves membership. Withdrawal/rejection permits a later invitation. This does not add a separate
+notification-feed message or automatic welcome mail.
+
+`GetBulletins` returns the native empty list for Eden's currently absent bulletin feature, allowing the read to complete.
+Bulletin editing and recruitment advertisements remain separate work. Unsupported binds now include their embedded
+method in the client error, for example `corpRegistry.MachoBindObject (UnknownCorporationMethod)`, so another missing
+panel call can be identified from the game log.
+
+Sources: build **3662168** original `code.ccp`, SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, `base_corporation.InviteToJoinCorp`,
+`GetMyOpenInvitations`, `GetCorpBulletins`, `bco_applications` and `corporationWindow` panel construction.
+EVE.js **261108.1** `corpRegistryRuntime.Handle_InsertInvitation` was reviewed as a behavioral reference;
+its older client target and independent state model were not copied.
+[EVE University recruitment](https://wiki.eveuniversity.org/Recruiting_corporation_members) documents direct invitations,
+Personnel Manager authority and recipient acceptance. Existing list, integer and object-reference encoding reuses
+[Carbon Blue Marshal.cpp at af0d65b](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
+
+**Automated validation.** Ten new cases cover native bound invitations, application
+reply fields and notifications, consent, repeat suppression, rejection/reinvitation, permissions, malformed requests,
+capacity, preserved applicant text, closed unsolicited recruitment, checkpoint/restart persistence and window reads.
+The initial invitation test reproduced the unsupported call. An initial test helper attempted to decode an outbound
+object reference with the inbound decoder; it was corrected to inspect `BoundPilotReply` and serialize its payload.
+Tool restore, solution restore and build passed with zero warnings/errors. The combined filter
+`FullyQualifiedName~Corporation|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~HomeStationServiceTests|FullyQualifiedName~CharacterSheetServiceTests`
+passed **281 tests in 95 seconds**. Both Python policy suites passed (8 catalog and 9 formatting cases), formatting
+verified 2,138 files, and documentation validation checked 616 links/anchors. The final validation sequence took
+**134 seconds**. No full .NET suite or live client run was requested or performed.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The reported window's rendering remains unverified.
+
+**Optional maintainer checks.** Restart on the updated server and reopen Corporation. Invite another pilot, then accept
+through Recruitment / My Applications. If a panel still fails, the updated game-log error includes its embedded method.
 
 ## Corporation registry lifetime and application replies
 

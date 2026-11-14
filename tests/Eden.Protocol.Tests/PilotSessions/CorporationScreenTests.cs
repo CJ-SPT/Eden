@@ -14,6 +14,42 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class CorporationScreenTests
 {
+    [Fact]
+    public async Task UnsupportedRegistryBindNamesItsEmbeddedMethodInTheClientError()
+    {
+        using TestWorld db = new(liveWorld: true);
+        var pilot = db.Store.FindPilot(1000001)!;
+        using var scope = db.Services.CreateScope();
+        var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
+        Queue<object?> requests = new([
+            PilotServicesTests.Request("charUnboundMgr", "SelectCharacterID", [pilot.PilotId]),
+            PilotServicesTests.Request(
+                "corpRegistry",
+                "MachoBindObject",
+                [(long)pilot.CorpId, new object?[] { "UnknownCorporationMethod", Array.Empty<object?>(), null }]
+            ),
+        ]);
+        List<BlueInstance> packets = [];
+        await Assert.ThrowsAsync<EndOfStreamException>(() =>
+            session.RunAsync(
+                () => requests.TryDequeue(out var next) ? Task.FromResult(next) : throw new EndOfStreamException(),
+                packet =>
+                {
+                    packets.Add(Assert.IsType<BlueInstance>(packet));
+                    return Task.CompletedTask;
+                },
+                _ => { },
+                1000001,
+                42,
+                SignedSettings.Empty,
+                CancellationToken.None
+            )
+        );
+        var error = Assert.Single(packets, p => p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+        var body = BlueRead.Tuple(BlueRead.Tuple(error.State, 14)[4], 3);
+        Assert.Equal("Unsupported local call corpRegistry.MachoBindObject (UnknownCorporationMethod)", BlueMarshal.Text(body[2]));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

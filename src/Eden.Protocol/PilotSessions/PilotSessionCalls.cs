@@ -172,7 +172,7 @@ internal sealed class PilotSessionCalls(
         }
         if (result is PilotCallResult.UnsupportedCall)
         {
-            await output.WriteAsync(packet.UnsupportedCall(service, method));
+            await output.WriteAsync(packet.UnsupportedCall(description));
             latency.ReplyWritten();
             await output.FlushFlightUpdatesAsync();
             await output.FlushNotificationsAsync();

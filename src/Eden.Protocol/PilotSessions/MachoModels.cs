@@ -88,8 +88,8 @@ internal sealed record IncomingMachoPacket(string Name, object?[] Fields)
 
     public BlueInstance InvalidArguments() => Response("ErrorResponse", 15, new object?[] { 6, 0, "Unsupported local call arguments" });
 
-    public BlueInstance UnsupportedCall(string service, string method) =>
-        Response("ErrorResponse", 15, new object?[] { 6, 0, $"Unsupported local call {service}.{method}" });
+    public BlueInstance UnsupportedCall(string description) =>
+        Response("ErrorResponse", 15, new object?[] { 6, 0, $"Unsupported local call {description}" });
 
     public BlueInstance UserError(PilotCallResult.NamedFailure error)
     {

@@ -79,6 +79,7 @@ internal sealed partial class CorporationHandler(
                     or "GetSuggestedTickerNames"
                     or "GetEveOwners"
                     or "GetMember"
+                    or "GetBulletins"
                     or "DoesMyCorpAcceptStructures"
                     or "DoesCorpRestrictCorpMails"
                 )
@@ -135,6 +136,10 @@ internal sealed partial class CorporationHandler(
                         corporations.Members(context.Pilot.PilotId).SingleOrDefault(m => m.PilotId == pilot)
                         ?? throw new InvalidDataException("That pilot is not a member of your corporation.");
                     return new PlayerCorporationMemberReply(member);
+                case ("GetBulletins", []):
+                    // Build 3662168 base_corporation.GetCorpBulletins iterates this list.
+                    // Eden has no saved corporation bulletins yet.
+                    return BlueEmpty.List;
                 case ("DoesMyCorpAcceptStructures" or "DoesCorpRestrictCorpMails", []):
                     return false;
                 default:

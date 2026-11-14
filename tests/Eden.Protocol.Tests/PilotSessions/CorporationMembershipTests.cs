@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
-public sealed class CorporationMembershipTests
+public sealed partial class CorporationMembershipTests
 {
     private const long Ceo = 90000001;
     private const long Applicant = 90000002;

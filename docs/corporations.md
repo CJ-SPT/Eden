@@ -8,7 +8,7 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 
 | Milestone | Status |
 | --- | --- |
-| Creation, identity, applications, joining/leaving | Published |
+| Creation, identity, applications, joining/leaving | Published; [direct invitations](protocol/corporations.md#direct-invitations-and-corporation-window-reads-november-14-2026) now use resident applications and checkpoints |
 | Login and corporation-window compatibility | Published |
 | Persistent settings, logos and division names | Published; 116 focused tests and required checks passed |
 | Delegated roles, titles and member administration | Published; 177 focused tests and required checks passed |
@@ -17,7 +17,7 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Bills panel reads/preferences and corporate market history reads | Published; 203 focused tests and required checks passed; invoice sources/corporate trading remain separate |
 | Corporation inventory ownership storage | Published; 176 focused tests and required checks passed |
 | Offices and corporation asset access | Implemented: rentals, seven hangar divisions, transfers and asset reports; recurring billing/impound recovery deferred |
-| Member communications and recruitment services | Pending |
+| Member communications and recruitment services | Direct invitations implemented; bulletin editing, advertisements and welcome mail pending |
 | Share holdings, shareholders and transfers | Published; 198 focused tests and required checks passed |
 | Voting, share issuance/dividends and CEO succession/closure | Pending |
 
