@@ -131,7 +131,7 @@ internal sealed partial class LiveCombatRuntime(
         {
             return null;
         }
-        // Mining alerts and cargo/operation state share the paid shot's SQL transaction.
+        // Mining alerts and cargo state share the paid shot's world action.
         if (NpcPopulationRules.IsMining(target.Role) || target.Role == NpcRole.Concord)
         {
             return null;

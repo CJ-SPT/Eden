@@ -27,6 +27,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Mining;
 using Eden.World.Repair;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -52,10 +53,15 @@ internal sealed partial class LiveCombatRuntime
         {
             return cached;
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        var profile = WorldActionScope.Inspect(database, world => BuildOverloadedTurrets(world, ship, members), consistentFileRead: true);
+        _bankHeat.AddOrUpdate(first.Definition, profile);
+        return profile;
+    }
+
+    private BankHeatProfile BuildOverloadedTurrets(WorldAction world, LiveCombatShip ship, IReadOnlyList<long> members)
+    {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == ship.PilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == ship.PilotId).Single();
         var fit = FittingCalculation.Read(world, catalog, pilot, overloadedModules: members.ToHashSet());
         BankHeatProfile profile = new([], []);
         foreach (long member in members)
@@ -80,8 +86,6 @@ internal sealed partial class LiveCombatRuntime
             );
             profile.Absorption.Add(member, values[DogmaAttributeId.HeatAbsorption]);
         }
-        transaction.Commit();
-        _bankHeat.AddOrUpdate(first.Definition, profile);
         return profile;
     }
 

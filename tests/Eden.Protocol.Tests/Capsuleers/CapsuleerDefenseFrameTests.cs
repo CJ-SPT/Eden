@@ -37,9 +37,9 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
 
     private sealed class QuietPopulation : INpcPopulationSeeder
     {
-        public long NextUpdate(WorldDbContext world, int systemId, long now) => long.MaxValue;
+        public long NextUpdate(Eden.World.Runtime.Economy.WorldAction world, int systemId, long now) => long.MaxValue;
 
-        public void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, long now) { }
+        public void Seed(Eden.World.Runtime.Economy.WorldAction world, CatalogDbContext catalog, int systemId, long now) { }
     }
 
     [Theory]

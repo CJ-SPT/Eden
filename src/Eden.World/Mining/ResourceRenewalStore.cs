@@ -4,6 +4,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Economy;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +30,10 @@ internal sealed class ResourceRenewalStore(WorldDatabase database, TimeProvider 
         if (live?.Reads is { } reads && reads.TryResourceDeadline(out long deadline) && deadline > now)
         {
             return 0;
+        }
+        if (live is { SqlConnections: 0 })
+        {
+            return RenewResident(live, now, limit);
         }
         using WorldDbContext world = new(database.Path) { Participants = TransactionParticipants.None };
         using var transaction = world.Database.BeginTransaction();
@@ -66,4 +71,41 @@ internal sealed class ResourceRenewalStore(WorldDatabase database, TimeProvider 
         }
         return due.Length;
     }
+
+    private int RenewResident(LiveWorld live, long now, int limit)
+    {
+        long next = live.Economy.Inspect(world =>
+            world.Set<SavedEconomicPolicy>().Single().RenewBelts
+                ? world.Set<SavedBeltRenewal>().Select(belt => (long?)belt.NextRenewal).Min() ?? long.MaxValue
+                : long.MaxValue
+        );
+        if (next > now)
+        {
+            live.Reads?.ScheduleResources(next);
+            return 0;
+        }
+        using WorldActionScope transaction = new(
+            database,
+            select: world => new(systems: Due(world, now, limit).Select(belt => belt.SystemId))
+        );
+        var world = transaction.World;
+        var due = Due(world, now, limit);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        AsteroidFieldStore.Renew(world, catalog, due);
+        long following = ResourceRenewalRules.Next(now, world.Set<SavedEconomicPolicy>().Single().RenewalHourUtc);
+        foreach (var belt in due)
+        {
+            belt.NextRenewal = following;
+        }
+        transaction.Commit();
+        return due.Length;
+    }
+
+    private static SavedBeltRenewal[] Due(WorldAction world, long now, int limit) =>
+        world
+            .Filter<SavedBeltRenewal>(belt => belt.NextRenewal <= now)
+            .OrderBy(belt => belt.NextRenewal)
+            .ThenBy(belt => belt.BeltId)
+            .Take(limit)
+            .ToArray();
 }

@@ -3,6 +3,7 @@ using Eden.Data.World.Thermal;
 using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,22 @@ internal sealed record ShipHeatProjection(long ShipId, ShipHeatSnapshot State);
 
 internal sealed record ShipHeatCheckpoint(IReadOnlyList<ShipHeatProjection> Ships)
 {
+    internal void Stage(WorldAction world)
+    {
+        foreach (var ship in Ships)
+        {
+            foreach (var module in ship.State.Modules.Where(m => m.Condition.Damage > 0))
+            {
+                var condition =
+                    world.Set<SavedModuleCondition>().Find(module.ItemId)
+                    ?? world.Add(new SavedModuleCondition { ModuleId = module.ItemId }).Entity;
+                condition.Damage = module.Condition.Damage;
+            }
+            var saved = world.Set<SavedShipHeat>().Find(ship.ShipId) ?? world.Add(new SavedShipHeat { ShipId = ship.ShipId }).Entity;
+            saved.StateJson = ShipHeatPersistence.Encode(ship.State);
+        }
+    }
+
     internal void Apply(WorldDbContext world)
     {
         using var transaction = world.Database.CurrentTransaction is null ? world.Database.BeginTransaction() : null;
@@ -441,16 +458,37 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                     .ToArray();
                 if (burned.Length > 0)
                 {
-                    using WorldDbContext world = new(database.Path) { Participants = new(pilots: [loaded.PilotId], ships: [ship]) };
-                    using var transaction = world.Database.BeginTransaction();
                     using CatalogDbContext catalog = new(database.CatalogPath);
-                    new ShipHeatCheckpoint([new(ship, next)]).Apply(world);
-                    foreach (var module in burned)
+                    var affected = new TransactionParticipants(pilots: [loaded.PilotId], ships: [ship]);
+                    ShipHeatCheckpoint checkpoint = new([new(ship, next)]);
+                    if (owner.SqlConnections == 0)
                     {
-                        ModuleConditionPersistence.ApplyDamage(world, catalog, module.ItemId, 0, module.BurnedAt ?? next.UpdatedAt);
+                        using WorldActionScope transaction = new(database, affected);
+                        checkpoint.Stage(transaction.World);
+                        foreach (var module in burned)
+                        {
+                            ModuleConditionPersistence.BurnOut(
+                                transaction.World,
+                                catalog,
+                                module.ItemId,
+                                module.BurnedAt ?? next.UpdatedAt
+                            );
+                        }
+                        transaction.Commit();
                     }
-                    world.SaveChanges();
-                    transaction.Commit();
+                    else
+                    {
+                        // The direct SQL adapter settles deadlines before starting its transaction.
+                        using WorldDbContext world = new(database.Path) { Participants = affected };
+                        using var transaction = world.Database.BeginTransaction();
+                        checkpoint.Apply(world);
+                        foreach (var module in burned)
+                        {
+                            ModuleConditionPersistence.ApplyDamage(world, catalog, module.ItemId, 0, module.BurnedAt ?? next.UpdatedAt);
+                        }
+                        world.SaveChanges();
+                        transaction.Commit();
+                    }
                     foreach (var module in burned)
                     {
                         _requested.Remove(module.ItemId);
@@ -530,7 +568,6 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
 
     internal void TransferSystemTo(LiveShipHeat destination, int system)
     {
-        Flush(new(systems: [system]));
         foreach (long ship in _ships.Where(pair => pair.Value.SystemId == system).Select(pair => pair.Key).ToArray())
         {
             TransferShipTo(destination, ship, system);

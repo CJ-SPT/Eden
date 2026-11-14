@@ -414,7 +414,7 @@ internal sealed partial class LiveWorld : IDisposable
             system => new(this, database, clock, combatObjects, residentReads, simulationObjects, system),
             () => _heldSystems.Value!.Count == 0 || _ownershipMonitor.IsEntered
         );
-        CapsuleerActivity = new(database, clock);
+        CapsuleerActivity = new(database, clock, this);
         CapsuleerRoutines = new(this, _path);
         Economy = new(this, database);
         _clock = clock;

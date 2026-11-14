@@ -179,16 +179,7 @@ internal sealed partial class AsteroidFieldStore(WorldDatabase database, TimePro
 
     internal static void Renew(WorldDbContext world, CatalogDbContext catalog, IReadOnlyList<SavedBeltRenewal> belts)
     {
-        // Warm cold belt counts together rather than opening one catalog connection per belt.
-        _ = catalog.ReadMany(CatalogData.Client.Asteroidcountbytypeidbeltid, belts.Select(belt => (long)belt.BeltId));
-        var generated = belts
-            .SelectMany(belt =>
-                catalog
-                    .CelestialsInSystem(belt.SystemId)
-                    .Where(body => body.Id == belt.BeltId && body.GroupId == AsteroidDefinitions.BeltGroup)
-                    .SelectMany(body => Generate(catalog, body))
-            )
-            .ToArray();
+        var generated = RenewalDeposits(catalog, belts);
         if (generated.Length == 0)
         {
             return;
@@ -211,6 +202,19 @@ internal sealed partial class AsteroidFieldStore(WorldDatabase database, TimePro
                 WHERE WorldAsteroid.Quantity < excluded.Quantity
             """
         );
+    }
+
+    private static WorldAsteroid[] RenewalDeposits(CatalogDbContext catalog, IReadOnlyList<SavedBeltRenewal> belts)
+    {
+        _ = catalog.ReadMany(CatalogData.Client.Asteroidcountbytypeidbeltid, belts.Select(belt => (long)belt.BeltId));
+        return belts
+            .SelectMany(belt =>
+                catalog
+                    .CelestialsInSystem(belt.SystemId)
+                    .Where(body => body.Id == belt.BeltId && body.GroupId == AsteroidDefinitions.BeltGroup)
+                    .SelectMany(body => Generate(catalog, body))
+            )
+            .ToArray();
     }
 
     private static IEnumerable<WorldAsteroid> Generate(CatalogDbContext catalog, CatalogCelestialDefinition belt)

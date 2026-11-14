@@ -5,7 +5,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
-using Eden.World.Storage;
+using Eden.World.Runtime.Economy;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.Protocol.Tests.Fixtures;
@@ -13,9 +13,9 @@ namespace Eden.Protocol.Tests.Fixtures;
 // Explicit isolated encounter fixture. Production uses regional population rules.
 internal sealed class TestNpcPopulationSeeder : INpcPopulationSeeder
 {
-    public long NextUpdate(WorldDbContext world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
+    public long NextUpdate(WorldAction world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
 
-    public void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
+    public void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
         if (systemId != NpcEncounterDefinitions.PerimeterSystem)
         {
@@ -40,7 +40,7 @@ internal sealed class TestNpcPopulationSeeder : INpcPopulationSeeder
         {
             // Keep defeated rows for bounty identity. A replacement gets a new
             // AUTOINCREMENT ID only after the local ten-minute respawn delay.
-            var previous = world.Set<WorldNpc>().Where(n => n.BeltId == belt.Id).OrderByDescending(n => n.Id).FirstOrDefault();
+            var previous = world.Filter<WorldNpc>(n => n.BeltId == belt.Id).OrderByDescending(n => n.Id).FirstOrDefault();
             if (
                 previous is not null
                 && (

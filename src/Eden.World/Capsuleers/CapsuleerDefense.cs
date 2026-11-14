@@ -1,3 +1,4 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Capsuleers;
@@ -18,8 +19,8 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
@@ -410,17 +411,23 @@ internal sealed class CapsuleerDefense(
 
     private CapsuleerAttacker[] PlayerAttackers(DockedPilot pilot, long now)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var attacks = world
-            .Set<SavedPilotHostility>()
-            .Where(attack => attack.TargetShipId == pilot.ShipId && attack.ExpiresAt > now)
-            .AsNoTracking()
-            .ToArray();
+        var attacks = WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<SavedPilotHostility>(attack =>
+                        attack.TargetShipId == pilot.ShipId && attack.ExpiresAt > now && attack.LastAttackAt > 0
+                    )
+                    .AsEnumerable()
+                    .Select(attack =>
+                        (Attack: attack, Pilot: world.Filter<Pilot>(value => value.ActiveShipId == attack.SourceShipId).SingleOrDefault())
+                    )
+                    .ToArray()
+        );
         List<CapsuleerAttacker> result = [];
-        foreach (var attack in attacks.Where(attack => attack.LastAttackAt > 0))
+        foreach (var (attack, other) in attacks)
         {
-            var other = world.Pilots.Include(value => value.ActiveShip).SingleOrDefault(value => value.ActiveShipId == attack.SourceShipId);
             if (other is null || presence.Find(pilot.SystemId, attack.SourceShipId) is not { } contact)
             {
                 continue;

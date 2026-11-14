@@ -103,6 +103,7 @@ public sealed class DetachedCheckpointTests
     {
         using AmmunitionTests.Fixture f = new(liveWorld: true);
         f.Load(quantity: 400);
+        ProjectLoadedMagazine(f);
         f.Clock.Milliseconds += 5000;
         f.Space();
         f.Fire();
@@ -206,6 +207,7 @@ public sealed class DetachedCheckpointTests
     {
         using AmmunitionTests.Fixture f = new(liveWorld: true);
         f.Load(quantity: 400);
+        ProjectLoadedMagazine(f);
         f.Clock.Milliseconds += 5000;
         f.Space();
         var first = f.Fire();
@@ -237,5 +239,11 @@ public sealed class DetachedCheckpointTests
         File.Copy(f.Db.Path, checkpoint);
         using WorldDbContext reopened = new(checkpoint);
         Assert.Equal(199, reopened.Set<OwnedItem>().Single(i => i.LocationId == f.Gun).Quantity);
+    }
+
+    private static void ProjectLoadedMagazine(AmmunitionTests.Fixture fixture)
+    {
+        using WorldDbContext world = new(fixture.Db.Path);
+        Assert.Equal(200, world.Set<OwnedItem>().Single(i => i.LocationId == fixture.Gun).Quantity);
     }
 }

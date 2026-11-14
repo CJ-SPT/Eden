@@ -216,6 +216,7 @@ public sealed class CombatAnomalyFrameTests(ITestOutputHelper output)
         int commands = 0;
         int connections = 0;
         int fits = 0;
+        List<string> worldCommands = [];
         long firstSecond = fixture.Clock.Seconds;
         for (int second = 1; second <= 35; second++)
         {
@@ -223,7 +224,18 @@ public sealed class CombatAnomalyFrameTests(ITestOutputHelper output)
             frameBytes = 0;
             framePackets = 0;
             additions = 0;
-            using var metrics = SessionPerformance.Begin("combat-anomaly-frame", _ => { }, force: true)!;
+            using var metrics = SessionPerformance.Begin(
+                "combat-anomaly-frame",
+                _ => { },
+                force: true,
+                command: sql =>
+                {
+                    if (System.Text.RegularExpressions.Regex.IsMatch(sql, @"\bWorld[A-Za-z0-9_]+\b"))
+                    {
+                        worldCommands.Add(sql);
+                    }
+                }
+            )!;
             long start = Stopwatch.GetTimestamp();
             await tick.AdvanceAsync(context, transport, _ => { }, 1000001, 42);
             if (second <= 5)
@@ -239,6 +251,7 @@ public sealed class CombatAnomalyFrameTests(ITestOutputHelper output)
             Assert.Equal(0, additions);
         }
         Assert.True(damage > 0);
+        Assert.Empty(worldCommands);
         Assert.InRange(maxBytes, 1, 64_000);
         Assert.InRange(maxPackets, 1, 64);
         output.WriteLine(

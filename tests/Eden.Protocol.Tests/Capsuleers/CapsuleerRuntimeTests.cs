@@ -27,6 +27,39 @@ public sealed class CapsuleerRuntimeTests
     private const int OreType = 1230;
 
     [Fact]
+    public void WarmedActivityClockStartsFromTheResidentSave()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        long saved = TimeSpan.FromMinutes(5).Ticks;
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            world.Set<SavedCapsuleerClock>().Single().ElapsedTicks = saved;
+            world.SaveChanges();
+        }
+        List<string> clockQueries = [];
+        using ServiceProvider host = BuildMeasured();
+        Assert.Single(clockQueries);
+        var presence = host.GetRequiredService<IHumanPresence>();
+        using var human = presence.Select(90000001, SourceSystem);
+        f.Clock.Seconds++;
+        Assert.Equal(saved + TimeSpan.TicksPerSecond, presence.Read().ElapsedTicks);
+
+        ServiceProvider BuildMeasured()
+        {
+            using var measured = SessionPerformance.Begin("activity clock hydration", _ => { }, force: true, command: RecordClockQuery);
+            return ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        }
+
+        void RecordClockQuery(string sql)
+        {
+            if (sql.Contains("WorldCapsuleerClock", StringComparison.Ordinal))
+            {
+                clockQueries.Add(sql);
+            }
+        }
+    }
+
+    [Fact]
     public void UnchangedSchedulerReadsDoNotRebuildMembershipBetweenJobs()
     {
         using CapsuleerHaulerTests.Fixture f = new();

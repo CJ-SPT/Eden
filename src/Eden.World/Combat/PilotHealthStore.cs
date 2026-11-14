@@ -9,7 +9,9 @@ using Eden.World.Fittings;
 using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
 
@@ -22,8 +24,7 @@ internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotH
         {
             return destroyed;
         }
-        using WorldDbContext world = new(database.Path);
-        return world.Set<ShipLoss>().Any(l => l.ShipId == shipId);
+        return WorldActionScope.Inspect(database, world => world.Set<ShipLoss>().Find(shipId) is not null);
     }
 
     public ShipHealth Read(long pilotId, long now)
@@ -33,13 +34,22 @@ internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotH
         {
             return resident;
         }
-        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
-        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
-        var health = Read(world, shipId, ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilotId)), now);
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Read(ReadAndSettle, new(pilots: [pilotId]));
+        }
+        using WorldDbContext file = new(database.Path) { Participants = new(pilots: [pilotId]) };
+        using var transaction = file.Database.BeginTransaction();
+        var health = ReadAndSettle(new SqlWorldAction(file));
         transaction.Commit();
         return health;
+
+        ShipHealth ReadAndSettle(WorldAction world)
+        {
+            long shipId = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
+            return Read(world, shipId, ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilotId)), now);
+        }
     }
 
     internal static ShipHealth Read(WorldDbContext world, long shipId, HullDefense defense, long now)

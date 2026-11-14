@@ -18,6 +18,24 @@ namespace Eden.World.Mining;
 
 internal sealed partial class AsteroidFieldStore
 {
+    internal static void Renew(WorldAction world, CatalogDbContext catalog, IReadOnlyList<SavedBeltRenewal> belts)
+    {
+        foreach (var deposit in RenewalDeposits(catalog, belts))
+        {
+            if (world.Set<WorldAsteroid>().Find(deposit.Id) is { } saved)
+            {
+                if (saved.Quantity < deposit.Quantity)
+                {
+                    saved.Quantity = deposit.Quantity;
+                }
+            }
+            else
+            {
+                world.Add(deposit);
+            }
+        }
+    }
+
     internal static void Populate(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
         long? nextRenewal = null;

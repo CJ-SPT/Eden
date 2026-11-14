@@ -6,6 +6,51 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Gameplay SQL migration and replay
+
+Paid heat burnout commits module damage, offline state, activity cancellation, and
+resource resizing in a resident action. Heat handoff transfers pending state between
+owners. Overloaded turret banks, NPC electronic warfare contacts, ship health, and
+capsuleer player-threat reads use resident state. Production and fixture NPC population
+seeders share the same typed operation. Belt replenishment preserves saved geometry
+and quantities above baseline, while publishing each batch with its next deadlines.
+The capsuleer activity clock starts from the hydrated row. Cold resident inspections
+preserve their participant scope when escalating to the persistence coordinator, so
+the local population can load while an unrelated system owner is busy.
+
+The schema inspection found 203 SQLite tables, 197 EF world mappings, and 195 resident
+registrations, including 190 writable mappings and five read-only mirrors. The two EF
+tables without resident registration hold administrative configuration and its revision
+history. The six raw tables hold launcher credentials, refresh tokens, sessions, and
+tickets, the compatibility fit revision, and SQLite sequence metadata. Catalog queries,
+startup hydration and migration, checkpoint projection, and explicit SQLite consumers
+still use SQLite. Internal test switches can select the legacy motion and NPC observer
+adapters for comparison.
+
+Both passes over all 13 sampled gameplay reads issued zero world-table SQL after
+hydration. The first anomaly/signature lookup issued 90 catalog commands, and its
+repeat issued zero. The 30-frame anomaly replays for 2351, 2352, and 3454 issued
+90, 0, and 94 SQL commands respectively. No frame issued world-table SQL. Checkpoint
+projection was measured independently.
+
+Gameplay references were [Overheating](https://wiki.eveuniversity.org/Overheating) and
+[Guide to combat sites](https://wiki.eveuniversity.org/Guide_to_combat_sites).
+The local EveJS 261108.1 comparison used `moduleHeat.js` and `scene/modules.js`
+(SHA-256 prefixes `C5C30F1133BEF594` and `9DECE322A0410FE8`).
+
+**Automated validation.** The integrated combat, traffic, checkpoint, and inventory
+selection passed 358 cases in 3 minutes 58 seconds. The final health, repair, heat, and
+system-isolation selection passed 169 cases in 2 minutes 32 seconds, including the
+file-backed health read that settles a paid repair exactly once. Four earlier failures
+reproduced on `b92b136b`. The scoped inspection fixed the population timeout, and three
+checkpoint fixtures now establish the intended SQLite baseline before injecting or
+checking projection failures. Both solution builds, both Python policy suites, and
+formatting verification passed. The replay field measurements are from automated fixtures.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Resident wallet history, redemption, and ledgers
 
 The personal wallet journal reads market trades, bounties, repairs, clone fees,

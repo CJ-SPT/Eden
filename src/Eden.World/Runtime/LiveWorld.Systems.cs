@@ -208,10 +208,12 @@ internal sealed partial class LiveWorld
             id =>
             {
                 using var ownership = EnterShared("pilot membership");
-                if (Economy.IsLoaded && Economy.Peek<Eden.Data.World.Characters.Pilot>(id) is { } residentPilot)
+                if (Economy.IsLoaded)
                 {
                     Economy.TrackPilot(id);
-                    return _pilotSystems[id];
+                    return _pilotSystems.TryGetValue(id, out int assigned)
+                        ? assigned
+                        : throw new InvalidOperationException($"No system is available for pilot {id}.");
                 }
                 using WorldDbContext world = new(_path) { IsResidentProjection = true };
                 var row = world
@@ -299,13 +301,13 @@ internal sealed partial class LiveWorld
         return new SystemContext(this, previous);
     }
 
-    internal IDisposable EnterShared(string operation = "shared world")
+    internal IDisposable EnterShared(string operation = "shared world", TransactionParticipants? participants = null)
     {
         var context = UseShared();
         bool nested = _ownershipMonitor.IsEntered;
         try
         {
-            var persistence = EnterPersistence(operation);
+            var persistence = EnterPersistence(operation, participants);
             try
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);

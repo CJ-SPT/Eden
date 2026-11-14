@@ -15,7 +15,7 @@ internal sealed record CapsuleerClockCheckpoint(long ElapsedTicks)
 }
 
 // All entry points, including checkpoint capture, are serialized by the world owner.
-internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clock)
+internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clock, LiveWorld? owner = null)
 {
     private HumanActivity? _activity;
     private HumanActivityClock? _clockView;
@@ -43,12 +43,21 @@ internal sealed class CapsuleerActivity(WorldDatabase database, TimeProvider clo
         {
             if (_activity is null)
             {
-                using WorldDbContext world = new(database.Path);
-                long elapsed = world.Set<SavedCapsuleerClock>().AsNoTracking().Single().ElapsedTicks;
-                _activity = new(elapsed, clock.GetTimestamp());
+                _activity = new(LoadElapsed(), clock.GetTimestamp());
             }
             return _activity;
         }
+    }
+
+    private long LoadElapsed()
+    {
+        if (owner?.Economy is { IsLoaded: true } economy)
+        {
+            return economy.Peek<SavedCapsuleerClock>(1)?.ElapsedTicks
+                ?? throw new InvalidDataException("The resident capsuleer clock is missing.");
+        }
+        using WorldDbContext world = new(database.Path);
+        return world.Set<SavedCapsuleerClock>().AsNoTracking().Single().ElapsedTicks;
     }
 
     internal void Update(Guid session, int? system, long pilotId)

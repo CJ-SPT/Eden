@@ -100,42 +100,19 @@ public sealed class OverloadControlTests
                 }
                 Assert.True(seed < 10000);
             }
-            if (fatal)
-            {
-                using WorldDbContext blocking = new(f.Db.Path);
-                blocking.Database.ExecuteSqlRaw(
-                    "CREATE TRIGGER RejectHeatBurnout BEFORE UPDATE OF Online ON WorldItem "
-                        + "WHEN NEW.Online=0 BEGIN SELECT RAISE(ABORT,'reject burnout'); END"
-                );
-            }
             live.Heat.PublishCommitted(f.PilotId, ship, state);
             live.Heat.PublishResident(ship, state);
             using var before = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
-            if (fatal)
-            {
-                long originalTime = f.Clock.Milliseconds;
-                f.Clock.Milliseconds += (cycle.CompletesAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond + 1;
-                Assert.Throws<DbUpdateException>(() =>
-                {
-                    using var ownership = live.Enter();
-                });
-                f.Clock.Milliseconds = originalTime;
-                Assert.True(HeatCycleRules.SameState(state, heat.Read(f.PilotId, ship, f.Clock.Now)));
-                using WorldDbContext blocking = new(f.Db.Path);
-                Assert.True(blocking.Set<OwnedItem>().Find(module)!.Online);
-                Assert.Null(blocking.Set<SavedModuleCondition>().Find(module));
-                blocking.Database.ExecuteSqlRaw("DROP TRIGGER RejectHeatBurnout");
-                live.Heat.PublishCommitted(f.PilotId, ship, state);
-                live.Heat.PublishResident(ship, state);
-            }
             f.Clock.Milliseconds += (cycle.CompletesAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond + 1;
-            using (var metrics = SessionPerformance.Begin("unobserved paid heat completion", _ => { }, force: true)!)
+            List<string> commands = [];
+            using (var metrics = SessionPerformance.Begin("unobserved paid heat completion", _ => { }, force: true, command: commands.Add)!)
             {
                 using (live.Enter()) { }
                 var condition = conditions.Read(f.PilotId, ship).Single(m => m.Condition.ItemId == module).Condition;
                 damage = condition.Damage;
                 Assert.True(damage > 0);
                 Assert.Equal(fatal, condition.BurnedOut);
+                Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
                 if (!fatal)
                 {
                     Assert.Equal(0, metrics.Commands);

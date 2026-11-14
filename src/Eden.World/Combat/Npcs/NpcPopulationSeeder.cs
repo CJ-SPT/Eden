@@ -45,7 +45,7 @@ internal sealed partial class NpcPopulationSeeder(
         }
     }
 
-    public long NextUpdate(WorldDbContext world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
+    public long NextUpdate(WorldAction world, int systemId, long now) => NpcPopulationSchedule.Next(world, systemId, now);
 
     private readonly HashSet<string> _diagnostics = [];
 
@@ -63,7 +63,7 @@ internal sealed partial class NpcPopulationSeeder(
     public void Seed(WorldDbContext world, CatalogDbContext catalog, int systemId, long now) =>
         Seed(new SqlWorldAction(world), catalog, systemId, now);
 
-    internal void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long now)
+    public void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
         var excluded = NpcSpecialTypes.Excluded.ToArray();
         var retired = world

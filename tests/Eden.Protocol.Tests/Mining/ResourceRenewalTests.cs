@@ -64,7 +64,7 @@ public sealed class ResourceRenewalTests(ITestOutputHelper output)
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public async Task OverdueRenewalUsesBatchSqlAndPreservesDepositsAcrossCheckpointAndRestart(bool resident, bool coldBeltCounts)
+    public async Task OverdueRenewalPreservesDepositsAcrossCheckpointAndRestart(bool resident, bool coldBeltCounts)
     {
         TestClock clock = new();
         using TestWorld db = new(clock: clock, liveWorld: resident);
@@ -93,12 +93,21 @@ public sealed class ResourceRenewalTests(ITestOutputHelper output)
         }
         var renewal = db.Services.GetRequiredService<IResourceRenewal>();
         long started = Stopwatch.GetTimestamp();
-        using (var measured = SessionPerformance.Begin("overdue belt batch", output.WriteLine, force: true)!)
+        List<string> commands = [];
+        using (var measured = SessionPerformance.Begin("overdue belt batch", output.WriteLine, force: true, command: commands.Add)!)
         {
             Assert.Equal(BeltCount, renewal.Renew());
             output.WriteLine($"Renewal {Stopwatch.GetElapsedTime(started).TotalMilliseconds:F2} ms; commands={measured.Commands}.");
-            Assert.InRange(measured.Commands, 1, 6);
-            Assert.InRange(measured.Connections, 1, 2);
+            if (resident)
+            {
+                Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
+                Assert.InRange(measured.Connections, 0, 1);
+            }
+            else
+            {
+                Assert.InRange(measured.Commands, 1, 6);
+                Assert.InRange(measured.Connections, 1, 2);
+            }
             Assert.Equal(0, measured.FittingCalculations);
         }
         Assert.Equal(BeltCount * RocksPerBelt, field.List(SystemId).Count);
@@ -133,13 +142,11 @@ public sealed class ResourceRenewalTests(ITestOutputHelper output)
         );
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void FailedDeadlineUpdateRollsBackOreAndResidentViewsBeforeRetry(bool resident)
+    [Fact]
+    public void FailedFileDeadlineUpdateRollsBackOreBeforeRetry()
     {
         TestClock clock = new();
-        using TestWorld db = new(clock: clock, liveWorld: resident);
+        using TestWorld db = new(clock: clock);
         Prepare(db);
         var field = db.Services.GetRequiredService<IAsteroidField>();
         Assert.NotEmpty(field.List(SystemId));

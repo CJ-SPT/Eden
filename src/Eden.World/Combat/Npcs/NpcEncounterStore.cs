@@ -100,7 +100,7 @@ internal sealed class NpcEncounterStore(
         {
             return long.MaxValue;
         }
-        if (population is not NpcPopulationSeeder seeder || LiveWorld.Find(database.Path) is not { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is not { SqlConnections: 0 } live)
         {
             Read(systemId, now, false);
             return database.PopulationDeadlines[systemId];
@@ -115,14 +115,14 @@ internal sealed class NpcEncounterStore(
         {
             using WorldActionScope transaction = new(database, select: world => PopulationParticipants(world, systemId));
             using CatalogDbContext catalog = new(database.CatalogPath);
-            seeder.Seed(transaction.World, catalog, systemId, now);
-            due = NpcPopulationSchedule.Next(transaction.World, systemId, now);
+            population.Seed(transaction.World, catalog, systemId, now);
+            due = population.NextUpdate(transaction.World, systemId, now);
             transaction.Commit();
         }
         else
         {
             var participants = live.Economy.Inspect(world => PopulationParticipants(world, systemId));
-            due = live.Economy.Inspect(world => NpcPopulationSchedule.Next(world, systemId, now), participants);
+            due = live.Economy.Inspect(world => population.NextUpdate(world, systemId, now), participants);
         }
         database.PopulationStamps[systemId] = stamp;
         database.PopulationDeadlines[systemId] = due;
@@ -159,7 +159,7 @@ internal sealed class NpcEncounterStore(
             )
         )
         {
-            population.Seed(world, catalog, systemId, now);
+            population.Seed(new SqlWorldAction(world), catalog, systemId, now);
         }
         world.SaveChanges();
         var npcs = world
@@ -295,7 +295,7 @@ internal sealed class NpcEncounterStore(
             : [];
         // A route deadline can fall between two reads in the same wall-clock
         // second. Keep the exact due time in addition to the coarse seed stamp.
-        long nextPopulation = population?.NextUpdate(world, systemId, now) ?? long.MaxValue;
+        long nextPopulation = population?.NextUpdate(new SqlWorldAction(world), systemId, now) ?? long.MaxValue;
         transaction.Commit();
         if (population is not null)
         {

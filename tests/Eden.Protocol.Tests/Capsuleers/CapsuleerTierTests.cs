@@ -41,6 +41,10 @@ public sealed class CapsuleerTierTests
         var live = LiveWorld.Find(fixture.Db.Path)!;
         SpacePosition moved = fixture.Npc.Position + new SpacePosition(3000, 0, 0);
         var runtime = live.CombatForSystem(Elsewhere)!;
+        using (WorldDbContext baseline = new(fixture.Db.Path))
+        {
+            Assert.NotNull(baseline.Positions.Single(p => p.ShipId == Combat.NpcCombatTests.Fixture.ShipId));
+        }
         runtime.PublishPilotPosition(Combat.NpcCombatTests.Fixture.ShipId, Elsewhere, moved);
         using SqliteConnection fault = new(live.ConnectionString);
         fault.Open();

@@ -181,12 +181,13 @@ internal sealed partial class ResidentEconomy
 
     internal T Inspect<T>(Func<WorldAction, T> read, TransactionParticipants? participants = null)
     {
-        using var lease = _owner.EnterShared("resident inspection");
+        var scope = participants ?? TransactionParticipants.None;
+        using var lease = _owner.EnterShared("resident inspection", scope);
         if (_active is not null)
         {
             return read(_active);
         }
-        using var action = Begin(participants ?? TransactionParticipants.None);
+        using var action = Begin(scope);
         return read(action);
     }
 

@@ -1,8 +1,7 @@
 using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.World.Combat.Npcs;
-using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
+using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Runtime.Combat;
 
@@ -13,16 +12,18 @@ internal sealed partial class LiveCombatRuntime
         var contacts =
             owner.Reads?.NpcEwarSource(sourceId)
             ?? Loading(() =>
-            {
-                using WorldDbContext world = new(database.Path);
-                return world
-                    .Set<WorldNpcEwar>()
-                    .Where(e => e.NpcId == sourceId && e.AppliedJson != null)
-                    .AsNoTracking()
-                    .AsEnumerable()
-                    .Select(e => e.Contact()!)
-                    .ToArray();
-            });
+                WorldActionScope.Inspect(
+                    database,
+                    world =>
+                    {
+                        return world
+                            .Filter<WorldNpcEwar>(e => e.NpcId == sourceId && e.AppliedJson != null)
+                            .AsEnumerable()
+                            .Select(e => e.Contact()!)
+                            .ToArray();
+                    }
+                )
+            );
         return contacts.Count == 0 ? null : contacts;
     }
 
