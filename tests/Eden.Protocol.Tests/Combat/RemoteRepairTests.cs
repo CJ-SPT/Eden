@@ -9,6 +9,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -18,6 +19,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Repair;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -85,6 +87,69 @@ public sealed partial class RemoteRepairTests
 
     private static RemoteRepairActivation Start(Fixture f, long module, DogmaEffect effect) =>
         Store(f).Start(f.PilotId, module, effect, Target(f), new HashSet<long> { Target(f) }, f.Clock.Now);
+
+    [Fact]
+    public async Task WarmRemoteRepairPaysAndSettlesOnceOnResidentWorld()
+    {
+        using Fixture f = Prepare();
+        long module = f.Fit(11355);
+        Space(f);
+        Damage(f);
+        long ship = f.ShipId;
+        var target = f.Db.Store.FindPilot(1000002)!;
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using ResidentFitCache fits = new(new(f.Db.Path));
+        live.Economy.Warm();
+        var store = Store(f);
+        var health = f.Db.Services.GetRequiredService<IPilotHealth>();
+        var before = health.Read(target.PilotId, f.Clock.Now);
+        var warmup = Start(f, module, DogmaEffect.RemoteArmorRepair);
+        store.IsOnline(f.PilotId, ship, module);
+        store.Stop(f.PilotId, module);
+        f.Clock.AdvanceWallTime(TimeSpan.FromTicks(warmup.Cycle.CompletesAt - f.Clock.Now));
+        RemoteRepairActivation paid;
+        double armor;
+        List<string> sql = [];
+        using (var measured = SessionPerformance.Begin("resident remote repair", _ => { }, force: true, command: sql.Add)!)
+        {
+            Assert.True(store.IsOnline(f.PilotId, ship, module));
+            paid = store.Start(
+                f.PilotId,
+                module,
+                DogmaEffect.RemoteArmorRepair,
+                target.ShipId,
+                new HashSet<long> { target.ShipId },
+                f.Clock.Now
+            );
+            Assert.Throws<InvalidDataException>(() =>
+                store.Start(
+                    f.PilotId,
+                    module,
+                    DogmaEffect.RemoteArmorRepair,
+                    target.ShipId,
+                    new HashSet<long> { target.ShipId },
+                    f.Clock.Now
+                )
+            );
+            store.Complete(f.PilotId, module, paid.Cycle.CompletesAt - 1);
+            Assert.Equal(before.Remaining.Armor, health.Read(target.PilotId, f.Clock.Now).Remaining.Armor);
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(paid.Cycle.CompletesAt - f.Clock.Now));
+            store.Complete(f.PilotId, module, f.Clock.Now);
+            store.Complete(f.PilotId, module, f.Clock.Now);
+            armor = health.Read(target.PilotId, f.Clock.Now).Remaining.Armor;
+            Assert.Equal(Math.Min(before.Defense.Armor, before.Remaining.Armor + paid.Cycle.Module.Amount), armor, 6);
+            Assert.True(measured.Commands == 0, string.Join(Environment.NewLine, sql));
+            Assert.Equal(0, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+        }
+        await live.FlushAsync();
+        using var disk = WorldConnections.FileConnection(f.Db.Path);
+        using WorldDbContext reopened = new(disk);
+        Assert.Empty(reopened.Set<WorldRemoteRepair>());
+        Assert.Equal(paid.Cycle.CompletesAt, reopened.Set<ModuleCooldown>().Find(module)!.ReadyAt);
+        Assert.Equal(paid.Capacitor, reopened.Set<ShipEnergy>().Find(ship)!.Charge);
+        Assert.Equal(before.Defense.Armor - armor, reopened.Set<ShipHealthState>().Find(target.ShipId)!.ArmorDamage, 6);
+    }
 
     [Fact]
     public void AllUnrestrictedCatalogProfilesAreAdmittedAndAbyssalProfilesAreRejected()

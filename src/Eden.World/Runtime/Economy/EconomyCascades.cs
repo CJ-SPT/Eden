@@ -87,6 +87,7 @@ internal sealed partial class EconomyTransaction
                     Set<Eden.Data.World.Corporations.SavedCorporationWalletSelection>().Where(child => child.PilotId == removed.Id)
                 );
                 RemoveRange(Set<Eden.Data.World.Industry.IndustryJob>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Exploration.SavedWormholeJump>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Insurance.SavedInsuranceLedger>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Insurance.SavedInsurancePolicy>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Loot.WorldWreck>().Where(child => child.OwnerId == removed.Id));
@@ -135,6 +136,7 @@ internal sealed partial class EconomyTransaction
                 break;
             case Eden.Data.World.Docking.FlightPosition removed:
                 Eden.World.Fleets.CommandBurstStore.Clear(this, removed.ShipId);
+                Eden.World.Repair.PilotRemoteAssistanceStore.ClearForTravel(this, removed.ShipId);
                 break;
             case Eden.Data.World.Inventory.Ship removed:
                 Eden.World.Fleets.CommandBurstStore.Clear(this, removed.Id);

@@ -1,15 +1,19 @@
 using System.Text.Json;
+using Eden.Data.World.Exploration;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Exploration;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
+using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +27,55 @@ public sealed class WormholeTravelTests
     private const int Remote = 31000356;
     private const int SystemClass = 2;
     private const int Portal = 30583;
+
+    [Fact]
+    public async Task WarmWormholeTravelKeepsPolarizationResidentUntilCheckpoint()
+    {
+        using Fixture f = new();
+        AddRoute(f);
+        long ship = f.ShipId;
+        var travel = f.Db.Services.GetRequiredService<IWormholeTravel>();
+        var source = Assert.Single(Assert.Single(travel.Signatures(Known)).Objects);
+        var exit = Assert.Single(Assert.Single(travel.Signatures(Remote)).Objects);
+        f.Db.Store.SetPosition(ship, source.Position, Known);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using ResidentFitCache fits = new(new(f.Db.Path));
+        live.Economy.Warm();
+        _ = f.Db.Store.FindPilot(1000001);
+        travel.Prepare(f.PilotId, ship, source.Id);
+        travel.Transfer(f.PilotId, ship, source.Id, exit.Id);
+        f.Db.Store.SetPosition(ship, exit.Position, Remote);
+        travel.Transfer(f.PilotId, ship, exit.Id, source.Id);
+        f.Db.Store.SetPosition(ship, source.Position, Known);
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(WormholeRules.PolarizationSeconds));
+        long jumpTime = f.Clock.Now;
+        List<string> sql = [];
+        using (var measured = SessionPerformance.Begin("resident wormhole travel", _ => { }, force: true, command: sql.Add)!)
+        {
+            Assert.Equal(exit.Id, travel.Prepare(f.PilotId, ship, source.Id).Exit.Id);
+            Assert.Throws<InvalidDataException>(() => travel.Transfer(f.PilotId, ship, source.Id, source.Id));
+            Assert.Null(travel.Polarization(f.PilotId, Known, source.Id));
+            Assert.Equal(Remote, travel.Transfer(f.PilotId, ship, source.Id, exit.Id).SystemId);
+            f.Db.Store.SetPosition(ship, exit.Position, Remote);
+            Assert.Equal(Known, travel.Transfer(f.PilotId, ship, exit.Id, source.Id).SystemId);
+            f.Db.Store.SetPosition(ship, source.Position, Known);
+            Assert.Throws<InvalidDataException>(() => travel.Prepare(f.PilotId, ship, source.Id));
+            f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(WormholeRules.PolarizationSeconds) - TimeSpan.FromTicks(1));
+            Assert.NotNull(travel.Polarization(f.PilotId, Known, source.Id));
+            f.Clock.AdvanceWallTime(TimeSpan.FromTicks(1));
+            Assert.Null(travel.Polarization(f.PilotId, Known, source.Id));
+            Assert.Equal(Remote, travel.Prepare(f.PilotId, ship, source.Id).System.Id);
+            Assert.True(measured.Commands == 0, $"{measured.Commands} SQL commands: {string.Join(Environment.NewLine, sql)}");
+            Assert.Equal(0, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+        }
+        await live.FlushAsync();
+        using var disk = WorldConnections.FileConnection(f.Db.Path);
+        using WorldDbContext reopened = new(disk);
+        Assert.Equal(Known, reopened.Positions.Find(ship)!.SystemId);
+        Assert.Equal(jumpTime, reopened.Set<SavedWormholeJump>().Find(f.PilotId, source.Id)!.JumpedAt);
+        Assert.Equal(jumpTime, reopened.Set<SavedWormholeJump>().Find(f.PilotId, exit.Id)!.JumpedAt);
+    }
 
     [Fact]
     public void ProbedWormholeSupportsRoundTripHarvestAndPersistentPolarization()

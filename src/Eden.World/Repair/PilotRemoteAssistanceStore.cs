@@ -16,7 +16,9 @@ using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -56,11 +58,11 @@ internal sealed partial class PilotRemoteAssistanceStore(WorldDatabase database,
         bool overloaded
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [targetId]));
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var item = world.Set<OwnedItem>().Find(moduleId);
         int group = item is null ? 0 : catalog.FittingType(item.TypeId)?.GroupId ?? 0;
         if (
@@ -99,21 +101,25 @@ internal sealed partial class PilotRemoteAssistanceStore(WorldDatabase database,
                 throw new InvalidDataException("Load a compatible remote assistance script.");
             }
         }
-        var calculation = FittingCalculation.Read(
+        var calculation = overloaded
+            ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: new HashSet<long> { moduleId })
+            : null;
+        var attributes = PilotFittingStore.ReadModuleAttributes(
             world,
             catalog,
-            pilot,
-            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+            pilotId,
+            PilotInventoryStore.Read(catalog, item),
+            calculation
         );
-        var module = RemoteAssistanceRules.Define(moduleId, item.TypeId, effect, calculation.Graph.Attributes(moduleId));
+        var module = RemoteAssistanceRules.Define(moduleId, item.TypeId, effect, attributes);
         var source = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         CheckAlive(pilot, source);
         int system = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
-        var target = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == targetId);
+        var target = world.Filter<Pilot>(p => p.ActiveShipId == targetId).SingleOrDefault();
         if (
             target?.ActiveShip.Position is null
             || CrimewatchPersistence.System(catalog, target.ActiveShip) != system
-            || world.Set<SavedLogoff>().Any(l => l.ShipId == targetId && l.ExpiresAt <= now)
+            || world.Filter<SavedLogoff>(l => l.ShipId == targetId && l.ExpiresAt <= now).Any()
         )
         {
             throw new InvalidDataException("The remote assistance target must be another pilot's live ship in the same system.");
@@ -167,19 +173,19 @@ internal sealed partial class PilotRemoteAssistanceStore(WorldDatabase database,
         cooldown ??= world.Set<ModuleCooldown>().Add(new() { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = end;
-        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end) : null;
+        var heat = calculation is null ? null : ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end);
         world.SaveChanges();
-        transaction.Commit();
         if (heat is not null)
         {
-            WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
+            world.AfterCommit(() => WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat));
         }
+        transaction.Commit();
         return new(contact, capacitor);
 
         void CheckAlive(Pilot owner, IReadOnlyDictionary<DogmaAttributeId, double> values)
         {
             if (
-                world.Set<ShipLoss>().Any(l => l.ShipId == owner.ActiveShipId)
+                world.Set<ShipLoss>().Find(owner.ActiveShipId) is not null
                 || PilotHealthStore.Read(world, owner.ActiveShipId, ShipHealth.DefenseFrom(values), now).Remaining.Destroyed
             )
             {
@@ -205,8 +211,7 @@ internal sealed partial class PilotRemoteAssistanceStore(WorldDatabase database,
 
     private IReadOnlyList<RemoteAssistanceContact> ReadIncoming(long targetId)
     {
-        using WorldDbContext world = new(database.Path);
-        return Active(world, targetId);
+        return WorldActionScope.Inspect(database, world => Active(world, targetId));
     }
 
     public bool IsActive(long pilotId, long shipId, long moduleId) =>
@@ -215,65 +220,56 @@ internal sealed partial class PilotRemoteAssistanceStore(WorldDatabase database,
 
     private bool ReadActive(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<WorldRemoteAssistance>().Any(e => e.ModuleId == moduleId && e.PilotId == pilotId && e.SourceShipId == shipId)
-            && world
-                .Set<OwnedItem>()
-                .Any(i =>
-                    i.Id == moduleId
-                    && i.OwnerId == pilotId
-                    && i.LocationId == shipId
-                    && i.Singleton
-                    && i.Online
-                    && i.FlagId >= (int)InventoryFlag.MediumSlot0
-                    && i.FlagId <= (int)InventoryFlag.MediumSlot7
-                );
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world.Set<WorldRemoteAssistance>().Find(moduleId) is { } effect
+                && effect.PilotId == pilotId
+                && effect.SourceShipId == shipId
+                && world.Set<OwnedItem>().Find(moduleId) is { Singleton: true, Online: true } item
+                && item.OwnerId == pilotId
+                && item.LocationId == shipId
+                && InventoryDefinitions.IsMediumSlot(item.FlagId)
+        );
     }
 
     public void Stop(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        if (
-            world
-                .Set<WorldRemoteAssistance>()
-                .SingleOrDefault(e => e.ModuleId == moduleId && e.PilotId == pilotId && e.SourceShipId == shipId) is
-            { } row
-        )
+        using WorldActionScope transaction = new(database, new(ships: [shipId]));
+        var world = transaction.World;
+        if (world.Set<WorldRemoteAssistance>().Find(moduleId) is { } row && row.PilotId == pilotId && row.SourceShipId == shipId)
         {
             Remove(world, row, Now);
         }
-        else if (world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
+        else if (world.Ships.Find(shipId)?.OwnerId == pilotId)
         {
-            world.Set<ActiveFittedModule>().Where(e => e.ModuleId == moduleId && e.ShipId == shipId).ExecuteDelete();
+            RemoveMarker(world, moduleId, shipId);
         }
-        world.SaveChanges();
         transaction.Commit();
     }
 
     public void Cancel(long pilotId, long shipId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        if (world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
+        using WorldActionScope transaction = new(
+            database,
+            new(ships: [shipId]),
+            world => new(ships: EffectsForShip(world, shipId).Select(e => e.SourceShipId).Append(shipId))
+        );
+        var world = transaction.World;
+        if (world.Ships.Find(shipId)?.OwnerId == pilotId)
         {
-            var rows = world
-                .Set<WorldRemoteAssistance>()
-                .Where(e => e.SourceShipId == shipId && e.PilotId == pilotId || e.TargetId == shipId)
-                .ToArray();
             long now = Now;
-            foreach (var row in rows)
+            foreach (var row in EffectsForShip(world, shipId).Where(e => e.PilotId == pilotId || e.TargetId == shipId))
             {
                 Remove(world, row, now);
             }
-            world.SaveChanges();
         }
         transaction.Commit();
     }
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    private static void Remove(WorldDbContext world, WorldRemoteAssistance row, long now)
+    private static void Remove(WorldAction world, WorldRemoteAssistance row, long now)
     {
         var contact = row.Contact();
         ShipHeatPersistence.CancelSource(
@@ -283,8 +279,11 @@ internal sealed partial class PilotRemoteAssistanceStore(WorldDatabase database,
             new HeatCycleKey(row.ModuleId, contact.StartedAt, contact.ExpiresAt),
             now
         );
-        // The existing effect-deletion trigger removes its active marker.
-        // Tracking both deletes would race that trigger during SaveChanges.
+        // The SQL adapter's effect-deletion trigger removes the active marker.
+        if (world is EconomyTransaction)
+        {
+            RemoveMarker(world, row.ModuleId, row.SourceShipId);
+        }
         world.Remove(row);
     }
 }

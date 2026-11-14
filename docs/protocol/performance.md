@@ -4252,3 +4252,98 @@ Not performed; agent client testing is disabled. The Docker host was not deploye
 
 After deployment, compare mining skill-point latency, checkpoint `maxCopyPause`, and capsuleer backlog age
 on the target server. The in-process replay does not establish client rendering or sustained network capacity.
+
+## Resident player travel, support modules, and industry monitoring
+
+The audit started at `c2a95cf6`. Paired stargate transfers now use the resident operation already exercised by
+autonomous pilots. The concurrent AutoMining merge (`43d3e100`) also routes player undocking and NPC-station
+docking through resident operations. Wormhole travel and polarization use resident rows. Account profile and roster
+reads use resident rows with explicit account, character and deletion checks. Gate transfer validates the pair and
+commits the location and task changes under the origin and destination owners. The pilot snapshot is built in that
+same transaction.
+
+Travel permission checks and disconnect/reconnect now use resident Crimewatch state, including pending NPC combat
+and drone timers imported for the pilot. A detached checkpoint persists the saved logoff ship and deadline.
+Landing in a different system or docking clears remote electronic assistance and its activation marker before
+observers read the new location. Remote assistance and remote repair now use resident transactions for paid
+cycles and cancellation. Armor/hull completion reads the current source and target under the same owner and
+settles the saved cycle once. Normal activations reuse cached fitting data. Overloaded cycles retain their
+explicit fitting calculation. NPC-station industry monitors read the pilot's current hangar and see committed
+material changes within the same tick.
+
+Other paths confirmed to use live-world SQL include Upwell docking and service/fuel/moon deadlines,
+spatial module activation and micro-jump completion, administrative
+translocation, and industry job installation, completion and delivery. The populated scaling replay's earlier
+20-command sample was attributed to its mining pilot by the per-session counters. This milestone did not trace
+those commands individually or rerun that copied-save workload. Startup recovery, schema migration, compatible
+file-backed worlds, and checkpoint projection continue to use SQLite.
+
+Build 3662168 travel, Crimewatch, module-cycle and industry-monitor contracts are covered by the existing
+protocol tests. EVE University references describe [Crimewatch timers](https://wiki.eveuniversity.org/Timers),
+[stargates](https://wiki.eveuniversity.org/Stargates), [logistics](https://wiki.eveuniversity.org/Guide_to_Logistics),
+[remote assistance](https://wiki.eveuniversity.org/Remote_assistance) and [blueprints](https://wiki.eveuniversity.org/Blueprints).
+The older local EveJS copy was checked for `CmdDock` and `CmdStargateJump` in `beyonceService.js`
+(SHA-256 `5C13B78749BD02C31D7844D631FC88B818B299DEFF4AC49058A860EEB3F9027D`), disconnect state capture in
+`sessionDisconnect.js` (`901A554C22424E8312EAAC9579FB752A5828F6987685F00E38396EF4A49893FD`), and the
+`ConnectJob` reply in `industryMonitorService.js` (`8B6BB763B165D2EAE858B638EBBB0F5B581C303D61D3D737766A741D815CDC35`).
+`wormholeRuntime.js` keys polarization by pilot and entrance and compares against the exact deadline
+(`3D20EB4D8041CB2E6C2FDB4F8EF7B3814067DE88951AFB40E9750531902D68C9`). The resident adapter uses Eden's
+existing per-entrance saved timestamps.
+
+### Automated validation
+
+The warmed regressions reproduced SQL on `c2a95cf6`. The Crimewatch test recorded 20 SQL commands and the
+industry monitor recorded 13. The player travel and remote repair traces contained 72 and 88 SQL statements,
+respectively, including separate statements within batched commands. Warmed player travel, wormhole travel,
+Crimewatch, remote repair and industry monitoring fixtures assert zero SQL commands, connection opens and
+fitting calculations. Tests cover rejected travel, failed gate pairs, exact wormhole polarization expiry,
+duplicate repair settlement, rolled-back hangar changes, observer visibility and reopened checkpoints. Remote
+assistance tests exercise cleanup when either ship leaves space and when the recipient changes systems.
+
+The first affected run passed 831 of 835 cases in 13 minutes 32 seconds, before wormhole conversion. The four
+failures reproduced on the unchanged `c2a95cf6` baseline. They were one
+`FittingSnapshotTests.ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes` case,
+one `MutadaptiveRemoteRepairTests.RestrictionsAndDuplicateFittingPreserveInventory` case, and two
+`RemoteAssistanceTests.FutureLogisticsHullSelectorsHaveKnownConsumersWithoutEnablingTheirHullCohort` variants.
+The fitting case counted ten SQL commands against a limit of nine. The three fitting/content admission cases
+returned true where the fixtures expected false.
+
+The first run combined `FullyQualifiedName~` clauses for these classes and namespaces:
+
+```text
+Eden.Protocol.Tests.Flight, DockedServicesTests, StructureTests, StructureCompressionTests, WormholeTravelTests,
+CrimewatchTests, CharacterLogoffTests, ResidentCombatMonitoringTests, ConcordTests, PilotServicesTests,
+PilotFleetTests, Eden.Protocol.Tests.Industry, RemoteAssistanceTests, RemoteRepairTests, FittingSnapshotTests,
+LiveWorldTests, DetachedCheckpointTests, CheckpointOwnershipTests, EconomicProjectionTests
+```
+
+The final solution build took 9.80 seconds with zero warnings or errors. The final affected run passed all
+415 cases in 4 minutes 17 seconds. It combined `FullyQualifiedName~` clauses for the classes below and excluded
+the three confirmed baseline hull and fitting-admission failures. The earlier command-count failure was outside
+this selection. The catalog and formatting policy suites passed 8 and 9 cases respectively. .NET style,
+CSharpier, line-width, and Git whitespace verification passed. The full .NET suite was not run.
+
+```text
+FlightSessionTests, WormholeTravelTests, CrimewatchTests, CharacterLogoffTests, RemoteRepairTests,
+RemoteAssistanceTests, IndustryTests, DetachedCheckpointTests, ResidentEconomyTests, EconomicProjectionTests,
+StructureTests, CharacterDeletionTests, CommandBurstTests
+```
+
+After integrating `43d3e100`, the solution built in 7.71 seconds with zero warnings or errors. The integration
+selection passed 97 cases in 39 seconds. Its skipped AutoMining package case passed separately in 4 seconds with
+the pinned build-3662168 source client and headless package compilation. Both Python suites, .NET style,
+CSharpier and line width passed again. The integration selection combined `FullyQualifiedName~` clauses for:
+
+```text
+FlightSessionTests, WormholeTravelTests, CrimewatchTests, CharacterLogoffTests,
+WarmRemoteRepairPaysAndSettlesOnceOnResidentWorld, CommittedMembershipChangesReleaseCachedRecipientBonusesBeforeAnySessionFrame,
+WarmIndustryMonitorSeesCommittedMaterialsWithoutSql, AutoMining, DetachedCheckpointTests, EconomicProjectionTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

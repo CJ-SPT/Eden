@@ -1,10 +1,13 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
+using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
@@ -534,6 +537,60 @@ public sealed class FlightSessionTests
         double clearance = session.Pilot.Position!.DistanceTo(pilot.Home.Position) - pilot.Flight.StationRadius - pilot.Flight.ShipRadius;
         Assert.InRange(clearance, -20, 20);
         Assert.Equal(session.Pilot, db.Store.FindPilot(1000001));
+    }
+
+    [Fact]
+    public async Task WarmPlayerTravelAndRosterUseResidentWorldAndSurviveCheckpoints()
+    {
+        const long Account = 1000001;
+        Clock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        using ResidentFitCache fits = new(new(db.Path));
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        live.Economy.Warm();
+        var pilot = db.Store.FindPilot(Account)!;
+        using var session = new FlightSession(db.Store, pilot, clock, new(), db.Objects, docking: db.Store);
+        Assert.Null(session.CallWire("ship", "Undock", [pilot.ShipId]));
+        Assert.Null(session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+        var gate = db.Objects.Single(body => body.DestinationGateId.HasValue);
+        var travel = db.Services.GetRequiredService<IPilotGateTravel>();
+        db.Store.SetPosition(pilot.ShipId, gate.Position);
+        var arrival = travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.DestinationGateId!.Value);
+        var returnGate = db
+            .Services.GetRequiredService<ISystemObjects>()
+            .Load(arrival.SystemId)
+            .Single(body => body.Id == gate.DestinationGateId);
+        db.Store.SetPosition(pilot.ShipId, returnGate.Position);
+        travel.Transfer(pilot.PilotId, pilot.ShipId, returnGate.Id, gate.Id);
+        db.Store.SetPosition(pilot.ShipId, pilot.Home.Position);
+        db.Store.Dock(pilot.PilotId, pilot.ShipId, pilot.StationId);
+
+        DockedPilot transferred;
+        List<string> sql = [];
+        using (var measured = SessionPerformance.Begin("resident player travel", _ => { }, force: true, command: sql.Add)!)
+        {
+            Assert.Equal(pilot.Account, db.Store.ReadAccount(Account));
+            Assert.Equal(pilot, Assert.Single(db.Store.ListPilots(Account)));
+            Assert.Null(db.Store.FindPilot(Account + 1, pilot.PilotId));
+            Assert.Null(session.CallWire("ship", "Undock", [pilot.ShipId]));
+            Assert.Equal(session.Pilot.Position, db.Store.FindPilot(Account, pilot.PilotId)!.Position);
+            Assert.Null(session.CallWire("beyonce", "CmdDock", [(long)pilot.StationId, pilot.ShipId]));
+            db.Store.SetPosition(pilot.ShipId, gate.Position);
+            Assert.Throws<InvalidDataException>(() => travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, gate.Id));
+            Assert.Equal(gate.Position, db.Store.FindPilot(Account)!.Position);
+            transferred = travel.Transfer(pilot.PilotId, pilot.ShipId, gate.Id, returnGate.Id);
+            Assert.Equal(gate.DestinationSystemId, transferred.SystemId);
+            Assert.Equal(transferred, db.Store.FindPilot(Account));
+            Assert.True(measured.Commands == 0, string.Join(Environment.NewLine, sql));
+            Assert.Equal(0, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+        }
+        await live.FlushAsync();
+        using var disk = WorldConnections.FileConnection(db.Path);
+        using WorldDbContext reopened = new(disk);
+        var position = reopened.Positions.Find(pilot.ShipId)!;
+        Assert.Equal(transferred.SystemId, position.SystemId);
+        Assert.Equal(transferred.Position, new SpacePosition(position.X, position.Y, position.Z));
     }
 
     [Fact]

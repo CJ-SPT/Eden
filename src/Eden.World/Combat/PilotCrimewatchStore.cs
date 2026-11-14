@@ -146,6 +146,20 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
 
     public void CheckTravel(long pilotId, CrimewatchTravel action, int? destinationSystemId = null)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            using CatalogDbContext residentCatalog = new(database.CatalogPath);
+            live.Economy.Inspect(
+                world =>
+                {
+                    var pilot = world.Pilots.Single(p => p.Id == pilotId);
+                    CrimewatchPersistence.CheckTravel(world, residentCatalog, pilot, action, Now, destinationSystemId);
+                    return true;
+                },
+                new(pilots: [pilotId])
+            );
+            return;
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -155,17 +169,21 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
 
     public void Connect(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        world.Set<SavedLogoff>().Where(s => s.PilotId == pilotId).ExecuteDelete();
+        using WorldActionScope action = new(database, TransactionParticipants.None);
+        if (action.World.Set<SavedLogoff>().Find(pilotId) is { } logoff)
+        {
+            action.World.Remove(logoff);
+        }
+        action.Commit();
     }
 
     public void Disconnect(long pilotId, long shipId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope action = new(database, new(pilots: [pilotId]));
+        var world = action.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is null || world.Set<ShipLoss>().Any(s => s.ShipId == shipId))
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
+        if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is null || world.Set<ShipLoss>().Find(shipId) is not null)
         {
             return;
         }
@@ -174,8 +192,7 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
         row.ShipId = shipId;
         row.SystemId = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
         row.ExpiresAt = Math.Max(row.ExpiresAt, CrimewatchRules.LogoffDeadline(timers, Now));
-        world.SaveChanges();
-        transaction.Commit();
+        action.Commit();
     }
 
     public IReadOnlyList<LoggedOffPilot> LoggedOff(int systemId)
@@ -224,7 +241,7 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
             var owner = world.Pilots.Find(row.PilotId);
             if (
                 owner?.ActiveShipId == row.ShipId
-                && !world.Filter<ShipLoss>(s => s.ShipId == row.ShipId).Any()
+                && world.Set<ShipLoss>().Find(row.ShipId) is null
                 && lookup.FindPilot(world, owner.AccountId, owner.Id) is { Position: not null } pilot
                 && pilot.SystemId == system
             )

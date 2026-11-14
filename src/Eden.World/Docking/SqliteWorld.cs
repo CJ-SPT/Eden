@@ -38,7 +38,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public void SetPosition(long shipId, SpacePosition? position, int? systemId = null)
     {
-        if (LiveWorld.Find(_database.Path) is { } live)
+        if (LiveWorld.Find(_database.Path) is { SqlConnections: 0 } live)
         {
             SetResidentPosition(live, shipId, position, systemId);
             return;
@@ -135,6 +135,15 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public AccountProfile ReadAccount(long accountId)
     {
+        if (LiveWorld.Find(_database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(world =>
+                world
+                    .Filter<Account>(a => a.Id == accountId)
+                    .Select(a => new AccountProfile(a.UserName, a.CreatedAt, a.CloneGrade))
+                    .Single()
+            );
+        }
         using WorldDbContext world = new(_database.Path);
         return world
             .Set<Account>()
@@ -145,7 +154,7 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public DockedPilot Dock(long pilotId, long shipId, long stationId)
     {
-        if (stationId is > 0 and <= int.MaxValue && LiveWorld.Find(_database.Path) is { } live)
+        if (stationId is > 0 and <= int.MaxValue && LiveWorld.Find(_database.Path) is { SqlConnections: 0 } live)
         {
             using CatalogDbContext source = new(_database.CatalogPath);
             using var action = live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
@@ -202,6 +211,11 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public IReadOnlyList<DockedPilot> ListPilots(long accountId)
     {
+        if (LiveWorld.Find(_database.Path) is { SqlConnections: 0 } live)
+        {
+            using var ownership = live.EnterShared("resident pilot roster");
+            return ResidentPilotIds(live, accountId).Select(id => FindPilot(accountId, id)!).ToArray();
+        }
         using WorldDbContext world = new(_database.Path);
         return world
             .Pilots.Where(p =>
@@ -216,6 +230,14 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public DockedPilot? FindPilot(long accountId, long? pilotId = null)
     {
+        if (LiveWorld.Find(_database.Path) is { SqlConnections: 0 } live)
+        {
+            using var ownership = pilotId is null ? live.EnterShared("resident pilot lookup") : null;
+            long? selected = pilotId ?? ResidentPilotIds(live, accountId).Select(id => (long?)id).FirstOrDefault();
+            return selected is long residentId
+                ? live.Economy.Read(world => FindPilot(world, accountId, residentId), new(pilots: [residentId]))
+                : null;
+        }
         using WorldDbContext world = new(_database.Path) { Participants = pilotId is long id ? new(pilots: [id]) : null };
         using var transaction = world.Database.BeginTransaction();
         var result = FindPilot(world, accountId, pilotId);

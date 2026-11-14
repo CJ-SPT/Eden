@@ -15,6 +15,7 @@ using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
 using Eden.World.Fittings;
+using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -37,6 +38,17 @@ public sealed partial class SqliteWorld
             live.Heat.ClearSelection(pilot, shipId);
         }
     }
+
+    private static long[] ResidentPilotIds(LiveWorld live, long accountId) =>
+        live.Economy.Inspect(world =>
+            world
+                .Filter<Pilot>(p => p.AccountId == accountId)
+                .Select(p => p.Id)
+                .AsEnumerable()
+                .Where(id => world.Set<SavedCharacterDeletion>().Find(id)?.DeletedAt is null)
+                .Order()
+                .ToArray()
+        );
 
     internal static bool SetPosition(
         WorldAction world,
@@ -68,7 +80,14 @@ public sealed partial class SqliteWorld
         if (transfer)
         {
             ShipHeatPersistence.CancelForTravel(world, shipId);
-            Eden.World.Fleets.CommandBurstStore.Clear(world, shipId);
+            if (world is EconomyTransaction)
+            {
+                Eden.World.Fleets.CommandBurstStore.Clear(world, shipId);
+            }
+        }
+        if (saved is not null && systemId is int nextSystem && saved.SystemId != nextSystem)
+        {
+            PilotRemoteAssistanceStore.ClearForTravel(world, shipId, nextSystem);
         }
         if (
             position is not null
@@ -156,17 +175,13 @@ public sealed partial class SqliteWorld
 
     internal DockedPilot? FindPilot(WorldAction world, long accountId, long? pilotId = null)
     {
-        var pilot = world
-            .Pilots.AsNoTracking()
-            .Include(p => p.Account)
-            .Include(p => p.ActiveShip)
-            .Where(p =>
-                p.AccountId == accountId
-                && (pilotId == null || p.Id == pilotId)
-                && !world.Set<SavedCharacterDeletion>().Any(d => d.PilotId == p.Id && d.DeletedAt != null)
-            )
+        var candidates = pilotId is long selected
+            ? world.Filter<Pilot>(p => p.Id == selected && p.AccountId == accountId)
+            : world.Filter<Pilot>(p => p.AccountId == accountId);
+        var pilot = candidates
+            .AsEnumerable()
             .OrderBy(p => p.Id)
-            .FirstOrDefault();
+            .FirstOrDefault(p => world.Set<SavedCharacterDeletion>().Find(p.Id)?.DeletedAt is null);
         if (pilot is null)
         {
             return null;

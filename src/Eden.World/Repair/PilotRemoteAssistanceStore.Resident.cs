@@ -27,11 +27,39 @@ namespace Eden.World.Repair;
 
 internal sealed partial class PilotRemoteAssistanceStore
 {
+    internal static void ClearForTravel(WorldAction world, long shipId, int? destination = null)
+    {
+        if (world is not EconomyTransaction)
+        {
+            return;
+        }
+        foreach (var effect in EffectsForShip(world, shipId).Where(effect => effect.SystemId != destination))
+        {
+            RemoveMarker(world, effect.ModuleId, effect.SourceShipId);
+            world.Remove(effect);
+        }
+    }
+
+    private static WorldRemoteAssistance[] EffectsForShip(WorldAction world, long shipId) =>
+        world
+            .Filter<WorldRemoteAssistance>(effect => effect.SourceShipId == shipId)
+            .AsEnumerable()
+            .Concat(world.Filter<WorldRemoteAssistance>(effect => effect.TargetId == shipId))
+            .DistinctBy(effect => effect.ModuleId)
+            .ToArray();
+
+    private static void RemoveMarker(WorldAction world, long moduleId, long shipId)
+    {
+        if (world.Set<ActiveFittedModule>().Find(moduleId) is { } active && active.ShipId == shipId)
+        {
+            world.Remove(active);
+        }
+    }
+
     internal static IReadOnlyList<RemoteAssistanceContact> Active(WorldAction world, long shipId) =>
         Array.AsReadOnly(
             world
-                .Set<WorldRemoteAssistance>()
-                .Where(e => e.TargetId == shipId)
+                .Filter<WorldRemoteAssistance>(e => e.TargetId == shipId)
                 .OrderBy(e => e.ModuleId)
                 .AsNoTracking()
                 .AsEnumerable()

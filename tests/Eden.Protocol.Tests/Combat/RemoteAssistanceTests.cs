@@ -579,6 +579,9 @@ public sealed partial class RemoteAssistanceTests
     [InlineData("source-dock")]
     [InlineData("recipient-dock")]
     [InlineData("recipient-system")]
+    [InlineData("resident-source-dock")]
+    [InlineData("resident-recipient-dock")]
+    [InlineData("resident-recipient-system")]
     public void CommittedMembershipChangesReleaseCachedRecipientBonusesBeforeAnySessionFrame(string change)
     {
         using Fixture f = Prepare();
@@ -592,8 +595,23 @@ public sealed partial class RemoteAssistanceTests
         Assert.Single(Store(f).Incoming(targetShip));
         Assert.True(Store(f).IsActive(f.PilotId, f.ShipId, module));
         Assert.True(f.Fitting.ShipAttributes(recipientPilot)[DogmaAttributeId.ScanResolution] > before[DogmaAttributeId.ScanResolution]);
-        using (WorldDbContext world = new(f.Db.Path))
+        if (change.StartsWith("resident-", StringComparison.Ordinal))
         {
+            if (change == "resident-recipient-system")
+            {
+                f.Db.Store.SetPosition(targetShip, new(10_000_000, 0, 0), 30000144);
+            }
+            else
+            {
+                f.Db.Store.SetPosition(change == "resident-source-dock" ? f.ShipId : targetShip, null);
+            }
+            using var action = live.Economy.Begin(TransactionParticipants.None);
+            Assert.Null(action.Set<WorldRemoteAssistance>().Find(module));
+            Assert.Null(action.Set<ActiveFittedModule>().Find(module));
+        }
+        else
+        {
+            using WorldDbContext world = new(f.Db.Path);
             if (change == "marker")
             {
                 world.Set<ActiveFittedModule>().Where(m => m.ModuleId == module).ExecuteDelete();

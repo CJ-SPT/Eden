@@ -19,6 +19,7 @@ using Eden.World.Docking;
 using Eden.World.Economy;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -116,6 +117,11 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             }
             return location;
         }
+        return NpcStation(catalog, id, service);
+    }
+
+    private static IndustryStation NpcStation(CatalogDbContext catalog, long id, StationService? service)
+    {
         var station = catalog.Definitions.FindStation(id) is { } npc ? IndustryStation.From(npc) : null;
         if (
             station is null
@@ -160,6 +166,18 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
 
     public void CheckStation(long pilotId, long stationId)
     {
+        if (stationId < StructureRules.FirstStructureId && LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            live.Economy.Inspect(
+                world =>
+                {
+                    CheckResidentNpcStation(world, pilotId, stationId);
+                    return true;
+                },
+                new(pilots: [pilotId])
+            );
+            return;
+        }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         _ = CurrentStation(world, catalog, pilotId, stationId, null);
@@ -167,12 +185,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
 
     public void CheckAccess(long pilotId, long stationId)
     {
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
         // LobbyWnd checks both service IDs even at factory-only stations.
         // Public NPC stations have no Eden standing restriction; availability
         // of manufacturing itself is checked independently on every job.
-        _ = CurrentStation(world, catalog, pilotId, stationId, null);
+        CheckStation(pilotId, stationId);
     }
 
     public IndustryFacility Facility(long pilotId, long stationId)
@@ -317,15 +333,43 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
 
     public IReadOnlyDictionary<int, long> Materials(long pilotId, long stationId)
     {
+        if (stationId < StructureRules.FirstStructureId && LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            return live.Economy.Inspect(
+                world =>
+                {
+                    CheckResidentNpcStation(world, pilotId, stationId);
+                    return MaterialQuantities(
+                        world.Filter<OwnedItem>(i =>
+                            i.OwnerId == pilotId && i.LocationId == stationId && i.FlagId == (int)InventoryFlag.Hangar && !i.Singleton
+                        )
+                    );
+                },
+                new(pilots: [pilotId])
+            );
+        }
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         _ = CurrentStation(world, catalog, pilotId, stationId, null);
-        return world
-            .Set<OwnedItem>()
-            .Where(i => i.OwnerId == pilotId && i.LocationId == stationId && i.FlagId == (int)InventoryFlag.Hangar && !i.Singleton)
-            .AsEnumerable()
-            .GroupBy(i => i.TypeId)
-            .ToDictionary(g => g.Key, g => g.Sum(i => (long)i.Quantity));
+        return MaterialQuantities(
+            world
+                .Set<OwnedItem>()
+                .Where(i => i.OwnerId == pilotId && i.LocationId == stationId && i.FlagId == (int)InventoryFlag.Hangar && !i.Singleton)
+        );
+    }
+
+    private static Dictionary<int, long> MaterialQuantities(IEnumerable<OwnedItem> items) =>
+        items.GroupBy(i => i.TypeId).ToDictionary(g => g.Key, g => g.Sum(i => (long)i.Quantity));
+
+    private void CheckResidentNpcStation(WorldAction world, long pilotId, long stationId)
+    {
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        if (pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != stationId)
+        {
+            throw new InvalidDataException("Use industry from your current station while docked.");
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        _ = NpcStation(catalog, stationId, null);
     }
 
     private static int Level(WorldDbContext world, CatalogDbContext catalog, long pilotId, int typeId) =>

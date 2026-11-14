@@ -15,6 +15,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Industry;
 using Eden.Protocol.PilotSessions;
@@ -25,6 +26,7 @@ using Eden.World.Catalog;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -683,6 +685,58 @@ public sealed class IndustryTests
         Assert.IsType<PilotCallResult.Failure>(handler.CallWire(context, "industryManager", "GetJob", [jobId + 1]));
         Assert.Null(handler.CallWire(context, "industryMonitor", "DisconnectJob", [connected[0]]));
         Assert.False(handler.IsMonitoring);
+    }
+
+    [Fact]
+    public void WarmIndustryMonitorSeesCommittedMaterialsWithoutSql()
+    {
+        using Fixture f = new();
+        var pilot = f.Pilot;
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        live.Economy.Warm();
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            p => new(f.Db.Store, p, f.Clock, new(), []),
+            7,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        IndustryHandler handler = new(f.Store);
+        Dictionary<string, object?> location = new()
+        {
+            ["itemID"] = (long)pilot.StationId,
+            ["ownerID"] = pilot.PilotId,
+            ["flagID"] = (long)InventoryFlag.Hangar,
+        };
+        var request = new Dictionary<string, object?> { ["inputLocation"] = location, ["facilityID"] = (long)pilot.StationId };
+        f.Store.Materials(pilot.PilotId, pilot.StationId);
+        using var measured = SessionPerformance.Begin("resident industry materials", _ => { }, force: true)!;
+        var monitor = Assert.IsType<object?[]>(handler.CallWire(context, "industryMonitor", "ConnectJob", [request]));
+        Assert.Equal(81L, Assert.IsType<Dictionary<long, object?>>(monitor[1])[34]);
+        handler.Advance(context);
+        Assert.Empty(context.Notifications);
+        using (var action = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            action.Set<OwnedItem>().Find(Fixture.BlueprintId + 1)!.Quantity -= 7;
+        }
+        handler.Advance(context);
+        Assert.Empty(context.Notifications);
+        using (var action = live.Economy.Begin(new(pilots: [pilot.PilotId])))
+        {
+            action.Set<OwnedItem>().Find(Fixture.BlueprintId + 1)!.Quantity -= 7;
+            action.Commit();
+        }
+        handler.Advance(context);
+        handler.Advance(context);
+        var notice = Assert.Single(context.Notifications);
+        Assert.Equal("OnIndustryMaterials", notice.Name);
+        Assert.Equal(monitor[0], notice.Arguments[0]);
+        Assert.Equal(74L, Assert.IsType<Dictionary<long, object?>>(notice.Arguments[1])[34]);
+        Assert.Equal(0, measured.Commands);
+        Assert.Equal(0, measured.Connections);
+        Assert.Equal(0, measured.FittingCalculations);
     }
 
     [Fact]

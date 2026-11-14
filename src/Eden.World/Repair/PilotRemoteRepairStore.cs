@@ -18,10 +18,10 @@ using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Repair;
 
@@ -34,18 +34,14 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
 
     private bool ReadOnline(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<OwnedItem>()
-            .Any(i =>
-                i.Id == moduleId
-                && i.OwnerId == pilotId
-                && i.LocationId == shipId
-                && i.Singleton
-                && i.Online
-                && i.FlagId >= (int)InventoryFlag.HighSlot0
-                && i.FlagId <= (int)InventoryFlag.HighSlot7
-            );
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world.Set<OwnedItem>().Find(moduleId) is { Singleton: true, Online: true } item
+                && item.OwnerId == pilotId
+                && item.LocationId == shipId
+                && InventoryDefinitions.IsHighSlot(item.FlagId)
+        );
     }
 
     public RemoteRepairActivation Start(
@@ -80,8 +76,8 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         bool overloaded
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [targetId]));
+        var world = transaction.World;
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
@@ -112,13 +108,17 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
-        var calculation = FittingCalculation.Read(
+        var calculation = overloaded
+            ? FittingCalculation.Read(world, catalog, pilot, overloadedModules: new HashSet<long> { moduleId })
+            : null;
+        var attributes = PilotFittingStore.ReadModuleAttributes(
             world,
             catalog,
-            pilot,
-            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+            pilotId,
+            PilotInventoryStore.Read(catalog, item),
+            calculation
         );
-        var module = RemoteRepairRules.Define(item.Id, item.TypeId, effect, calculation.Graph.Attributes(item.Id));
+        var module = RemoteRepairRules.Define(item.Id, item.TypeId, effect, attributes);
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         _ = Health(world, pilot, ship, now);
         var target = Target(world, catalog, pilot, targetId, now);
@@ -166,7 +166,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
                 catalog,
                 pilotId,
                 item,
-                AncillaryRepairRules.Define(ancillary, calculation.Graph.Attributes(item.Id)),
+                AncillaryRepairRules.Define(ancillary, attributes),
                 DogmaAttributeId.ChargeGroup1
             )
             : null;
@@ -186,7 +186,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         cooldown.Kind = ModuleCooldownKind.Cycle;
         cooldown.ReadyAt = end;
         RemoteRepairApplied? applied = module.Kind == RemoteRepairKind.Shield ? Apply(world, target, module, distance, now) : null;
-        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end) : null;
+        var heat = calculation is null ? null : ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, end);
         world.SaveChanges();
         transaction.Commit();
         if (heat is not null)
@@ -202,10 +202,9 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
 
     public void Complete(long pilotId, long moduleId, long now)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var row = world.Set<WorldRemoteRepair>().SingleOrDefault(r => r.ModuleId == moduleId && r.PilotId == pilotId);
-        if (row is null)
+        using WorldActionScope transaction = new(database, select: world => RepairParticipants(world, pilotId, moduleId));
+        var world = transaction.World;
+        if (world.Set<WorldRemoteRepair>().Find(moduleId) is not { } row || row.PilotId != pilotId)
         {
             return;
         }
@@ -263,9 +262,9 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
 
     public void Stop(long pilotId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        if (world.Set<WorldRemoteRepair>().SingleOrDefault(r => r.PilotId == pilotId && r.ModuleId == moduleId) is { } row)
+        using WorldActionScope transaction = new(database, select: world => RepairParticipants(world, pilotId, moduleId));
+        var world = transaction.World;
+        if (world.Set<WorldRemoteRepair>().Find(moduleId) is { } row && row.PilotId == pilotId)
         {
             var cycle = JsonSerializer.Deserialize<RemoteRepairCycle>(row.CycleJson)!;
             HeatCycleKey key = new(moduleId, cycle.StartedAt, cycle.CompletesAt);
@@ -278,27 +277,31 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
 
     private sealed record RepairTarget(Pilot Pilot, IReadOnlyDictionary<DogmaAttributeId, double> Attributes, ShipHealth Health);
 
-    private static Pilot Pilot(WorldDbContext world, long pilotId) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+    private static TransactionParticipants RepairParticipants(WorldAction world, long pilotId, long moduleId) =>
+        world.Set<WorldRemoteRepair>().Find(moduleId) is { } row && row.PilotId == pilotId
+            ? new(pilots: [pilotId], ships: [row.SourceShipId, row.TargetId])
+            : TransactionParticipants.None;
 
-    private static ShipHealth Health(WorldDbContext world, Pilot pilot, IReadOnlyDictionary<DogmaAttributeId, double> values, long now)
+    private static Pilot Pilot(WorldAction world, long pilotId) => world.Filter<Pilot>(p => p.Id == pilotId).Single();
+
+    private static ShipHealth Health(WorldAction world, Pilot pilot, IReadOnlyDictionary<DogmaAttributeId, double> values, long now)
     {
         var health = PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(values), now);
-        if (health.Remaining.Destroyed || world.Set<ShipLoss>().Any(l => l.ShipId == pilot.ActiveShipId))
+        if (health.Remaining.Destroyed || world.Set<ShipLoss>().Find(pilot.ActiveShipId) is not null)
         {
             throw new InvalidDataException("A destroyed ship cannot send or receive remote repairs.");
         }
         return health;
     }
 
-    private static RepairTarget Target(WorldDbContext world, CatalogDbContext catalog, Pilot source, long targetId, long now)
+    private static RepairTarget Target(WorldAction world, CatalogDbContext catalog, Pilot source, long targetId, long now)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == targetId);
+        var pilot = world.Filter<Pilot>(p => p.ActiveShipId == targetId).SingleOrDefault();
         if (
             pilot?.ActiveShip.Position is null
             || source.ActiveShip.Position is null
             || CrimewatchPersistence.System(catalog, pilot.ActiveShip) != CrimewatchPersistence.System(catalog, source.ActiveShip)
-            || world.Set<SavedLogoff>().Any(l => l.ShipId == targetId && l.ExpiresAt <= now)
+            || world.Filter<SavedLogoff>(l => l.ShipId == targetId && l.ExpiresAt <= now).Any()
         )
         {
             throw new InvalidDataException("The remote repair target must be another pilot's live ship in the same system.");
@@ -323,13 +326,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
         );
     }
 
-    private static RemoteRepairApplied Apply(
-        WorldDbContext world,
-        RepairTarget target,
-        RemoteRepairModule module,
-        double distance,
-        long now
-    )
+    private static RemoteRepairApplied Apply(WorldAction world, RepairTarget target, RemoteRepairModule module, double distance, long now)
     {
         double amount = RemoteRepairRules.Amount(
             module,

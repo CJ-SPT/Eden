@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Exploration;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -12,8 +13,8 @@ using Eden.World.Combat;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Exploration;
 
@@ -151,26 +152,33 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
 
     public WormholeJump Prepare(long pilotId, long shipId, long entranceId)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldActionScope action = new(database, new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var connection = Validate(world, catalog, pilotId, shipId, entranceId, Now);
-        return new(connection.Exit.Body, SystemObjects.FindSystem(catalog, connection.Exit.System), connection.TargetClass);
+        var connection = Validate(action.World, catalog, pilotId, shipId, entranceId, Now);
+        var result = new WormholeJump(
+            connection.Exit.Body,
+            SystemObjects.FindSystem(catalog, connection.Exit.System),
+            connection.TargetClass
+        );
+        action.Commit();
+        return result;
     }
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     public DockedPilot Transfer(long pilotId, long shipId, long entranceId, long exitId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        using var transaction = world.Database.BeginTransaction();
+        var entrance = catalog.Definitions.GlobalDefinition(s_connections).GetValueOrDefault(entranceId);
+        using WorldActionScope transaction = new(database, new(systems: entrance is null ? [] : [entrance.Exit.System], pilots: [pilotId]));
+        var world = transaction.World;
         long now = Now;
         var connection = Validate(world, catalog, pilotId, shipId, entranceId, now);
         if (connection.Exit.Body.Id != exitId)
         {
             throw new InvalidDataException("The requested wormhole exit does not match its entrance.");
         }
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         double shipRadius = catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0;
         var arrival = GateTravelRules.Arrival(shipId, connection.Exit.Body.Position, connection.Exit.Body.Radius, shipRadius);
         var saved =
@@ -178,9 +186,10 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
             ?? world.Add(new SavedWormholeJump { PilotId = pilotId, EntranceId = entranceId }).Entity;
         saved.JumpedAt = now;
         SqliteWorld.SetPosition(world, catalog, shipId, arrival, connection.Exit.System, now);
+        var result = ships.FindPilot(world, pilot.AccountId, pilotId)!;
         transaction.Commit();
         LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilotId, shipId);
-        return ships.FindPilot(pilot.AccountId, pilotId)!;
+        return result;
     }
 
     public WormholePolarization? Polarization(long pilotId, int systemId, long entranceId)
@@ -190,18 +199,17 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
         {
             return null;
         }
-        using WorldDbContext world = new(database.Path);
-        return ReadPolarization(world, pilotId, entranceId, Now);
+        return WorldActionScope.Inspect(database, world => ReadPolarization(world, pilotId, entranceId, Now));
     }
 
-    private static WormholePolarization? ReadPolarization(WorldDbContext world, long pilotId, long entranceId, long now) =>
+    private static WormholePolarization? ReadPolarization(WorldAction world, long pilotId, long entranceId, long now) =>
         world.Set<SavedWormholeJump>().Find(pilotId, entranceId) is { } jump && jump.JumpedAt + PolarizationTicks > now
             ? new(jump.JumpedAt + PolarizationTicks, WormholeRules.PolarizationSeconds)
             : null;
 
-    private static Connection Validate(WorldDbContext world, CatalogDbContext catalog, long pilotId, long shipId, long entranceId, long now)
+    private static Connection Validate(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long entranceId, long now)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var position = pilot.ActiveShip.Position;
         var type = catalog.RequireItem(pilot.ActiveShip.TypeId);
         if (

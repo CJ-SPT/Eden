@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident player travel, support modules, and industry monitoring](protocol/performance.md#resident-player-travel-support-modules-and-industry-monitoring)
+records the converted live-world paths and the SQL-backed paths found during the audit.
+
 [In-game text for routine rejections](protocol/compatibility.md#in-game-text-for-routine-rejections)
 records the native text-message path for routine service refusals.
 

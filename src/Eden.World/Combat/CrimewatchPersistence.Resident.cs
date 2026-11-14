@@ -122,7 +122,7 @@ internal static partial class CrimewatchPersistence
                 ? 0
                 : Security(catalog, System(catalog, pilot.ActiveShip), false);
         CrimewatchRules.CheckTravel(timers, action, security, now);
-        if (world.Set<SavedConcordResponse>().Any(r => r.ShipId == pilot.ActiveShipId && r.CompletedAt == null))
+        if (world.Set<SavedConcordResponse>().Find(pilot.ActiveShipId) is { CompletedAt: null })
         {
             throw new InvalidDataException("CONCORD enforcement prevents travel or changing ships.");
         }

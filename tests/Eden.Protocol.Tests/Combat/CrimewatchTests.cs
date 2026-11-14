@@ -38,6 +38,68 @@ public sealed class CrimewatchTests
     private const long WingShip = 1000000000002;
 
     [Fact]
+    public async Task WarmTravelAndLogoffWritesUseResidentTimersAndSurviveCheckpoints()
+    {
+        using Fixture f = new();
+        Space(f);
+        long pilot = f.PilotId;
+        long ship = f.ShipId;
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        using ResidentFitCache fits = new(new(f.Db.Path));
+        live.Economy.Warm();
+        var store = Store(f);
+        store.CheckTravel(pilot, CrimewatchTravel.Dock);
+        store.Disconnect(pilot, ship);
+        store.LoggedOff(SystemId);
+        store.Connect(pilot);
+
+        long weaponUntil = f.Clock.Now + TimeSpan.TicksPerSecond;
+        using (var action = live.Economy.Begin(new(pilots: [pilot])))
+        {
+            var row = CrimewatchPersistence.State(action, pilot);
+            row.SystemId = SystemId;
+            row.WeaponsUntil = weaponUntil;
+            row.PvpUntil = f.Clock.Now + TimeSpan.TicksPerMinute;
+            action.Commit();
+        }
+        using (var measured = SessionPerformance.Begin("resident travel and logoff", _ => { }, force: true)!)
+        {
+            Assert.Throws<InvalidDataException>(() => store.CheckTravel(pilot, CrimewatchTravel.Dock));
+            f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+            store.CheckTravel(pilot, CrimewatchTravel.Dock);
+            store.Disconnect(pilot, WingShip);
+            Assert.Empty(store.LoggedOff(SystemId));
+            store.Disconnect(pilot, ship);
+            Assert.Equal(f.Clock.Now + CrimewatchRules.PvpDuration.Ticks, Assert.Single(store.LoggedOff(SystemId)).ExpiresAt);
+            Assert.Equal(0, measured.Commands);
+            Assert.Equal(0, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+        }
+        await live.FlushAsync();
+        using (var disk = WorldConnections.FileConnection(f.Db.Path))
+        using (WorldDbContext reopened = new(disk))
+        {
+            var saved = reopened.Set<SavedLogoff>().Single();
+            Assert.Equal(ship, saved.ShipId);
+            Assert.Equal(SystemId, saved.SystemId);
+            Assert.Equal(f.Clock.Now + CrimewatchRules.PvpDuration.Ticks, saved.ExpiresAt);
+        }
+        using (var measured = SessionPerformance.Begin("resident reconnect", _ => { }, force: true)!)
+        {
+            store.Connect(pilot);
+            store.Connect(pilot);
+            Assert.Empty(store.LoggedOff(SystemId));
+            Assert.Equal(0, measured.Commands);
+            Assert.Equal(0, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+        }
+        await live.FlushAsync();
+        using var clearedDisk = WorldConnections.FileConnection(f.Db.Path);
+        using WorldDbContext cleared = new(clearedDisk);
+        Assert.Empty(cleared.Set<SavedLogoff>());
+    }
+
+    [Fact]
     public void LoggedOffContactsRefreshDirtyPositionsWithoutSqlAndKeepExactDeadlines()
     {
         using Fixture f = new();

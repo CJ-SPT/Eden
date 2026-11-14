@@ -843,6 +843,7 @@ internal sealed partial class ResidentEconomy
     private void RegisterTables()
     {
         RegisterBotTables();
+        RegisterWormholeJumps();
         RegisterCommandBursts();
         RegisterCloneTrainingTables();
         RegisterCharacterSettings();

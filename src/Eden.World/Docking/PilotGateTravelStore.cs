@@ -15,6 +15,25 @@ internal sealed partial class PilotGateTravelStore(WorldDatabase database, Sqlit
 {
     public DockedPilot Transfer(long pilotId, long shipId, long sourceGateId, long exitGateId)
     {
+        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        {
+            using CatalogDbContext residentCatalog = new(database.CatalogPath);
+            int? destination = residentCatalog.FindCelestial(exitGateId)?.SolarSystemId;
+            using var action = live.Economy.Begin(new(systems: destination is int system ? [system] : [], pilots: [pilotId]));
+            var transfer = TransferDetailed(
+                action,
+                residentCatalog,
+                pilotId,
+                shipId,
+                sourceGateId,
+                exitGateId,
+                clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+            );
+            var result = ships.FindPilot(action, transfer.AccountId, pilotId)!;
+            action.Commit();
+            live.Heat.ClearSelection(pilotId, shipId);
+            return result;
+        }
         using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
