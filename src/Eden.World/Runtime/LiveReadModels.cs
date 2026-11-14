@@ -112,7 +112,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "WorldMiningSite"
     );
 
-    private readonly ResidentSnapshot<int, JetcanView> _jetcans = new("resident.jetcans", "WorldJetcan");
+    private readonly ResidentSnapshot<int, JetcanView> _jetcans = new("resident.jetcans", "WorldJetcan", "WorldPilotSecurity");
 
     internal IReadOnlyList<WreckContact> Jetcans(int system, long now) =>
         Read(_jetcans, system, () => JetcanStore.ReadContacts(owner, database, system, now), now, view => view.NextExpiry).Contacts;
@@ -121,6 +121,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
 
     private readonly ResidentSnapshot<int, WreckView> _wrecks = new(
         "resident.wrecks",
+        "WorldPilotSecurity",
         "WorldWreck",
         "WorldPlanetaryLaunch",
         "WorldPlanetaryOffice",

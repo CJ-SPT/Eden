@@ -94,6 +94,7 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
             throw new InvalidDataException("No container identity is available.");
         }
         var point = JetcanRules.LaunchPosition(position, hull.Radius ?? 0, type.Radius ?? 0);
+        var ownerAccess = SpaceLootRights.OwnerAccess(world, pilotId, now);
         var can = world
             .Add(
                 new SavedJetcan
@@ -107,13 +108,14 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
                     Y = point.Y,
                     Z = point.Z,
                     ExpiresAt = checked(now + JetcanRules.Lifetime),
+                    Abandoned = LootRightsRules.AbandonedAtCreation(ownerAccess, playerWreck: false),
                 }
             )
             .Entity;
         cooldown ??= world.Add(new SavedJettisonCooldown { PilotId = pilotId }).Entity;
         cooldown.ReadyAt = checked(now + JetcanRules.Cooldown);
         var changes = selected.SelectMany(stack => Transfer(world, catalog, stack.Cargo, can.Id, stack.Quantity)).ToArray();
-        return new(changes, Contact: Contact(type, can));
+        return new(changes, Contact: Contact(type, can, ownerAccess.SecurityStatus));
     }
 
     public IReadOnlyList<InventoryChange> Deposit(long pilotId, long canId, InventoryMoveRequest request, long now)
@@ -257,17 +259,18 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
         return new(item, Contents(world, catalog, id), Capacity(type));
     }
 
-    internal static WreckContact[] Contacts(CatalogDbContext catalog, IReadOnlyList<SavedJetcan> rows)
+    internal static WreckContact[] Contacts(WorldAction world, CatalogDbContext catalog, IReadOnlyList<SavedJetcan> rows)
     {
         if (rows.Count == 0)
         {
             return [];
         }
         var type = catalog.RequireItem(JetcanRules.TypeId);
-        return rows.Select(can => Contact(type, can)).ToArray();
+        var security = SpaceLootRights.SecurityStatuses(world, rows.Select(can => can.OwnerId));
+        return rows.Select(can => Contact(type, can, security.GetValueOrDefault(can.OwnerId))).ToArray();
     }
 
-    private static WreckContact Contact(CatalogItemDefinition type, SavedJetcan can) =>
+    private static WreckContact Contact(CatalogItemDefinition type, SavedJetcan can, double security) =>
         new(
             can.Id,
             can.ShipId,
@@ -282,7 +285,8 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
             false,
             type.GroupId,
             type.CategoryId,
-            Abandoned: can.Abandoned
+            Abandoned: can.Abandoned,
+            OwnerSecurityStatus: security
         );
 
     internal static SavedJetcan[] List(WorldAction world, int system) =>
@@ -303,7 +307,8 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
         }
         var active = rows.Where(can => can.ExpiresAt > now).ToArray();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return new(Array.AsReadOnly(Contacts(catalog, active)), active.Select(can => can.ExpiresAt).DefaultIfEmpty(long.MaxValue).Min());
+        var contacts = live.Economy.Inspect(world => Contacts(world, catalog, active));
+        return new(Array.AsReadOnly(contacts), active.Select(can => can.ExpiresAt).DefaultIfEmpty(long.MaxValue).Min());
     }
 
     internal static IReadOnlyList<InventoryChange> Take(
@@ -319,7 +324,14 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
     )
     {
         var (pilot, can) = Access(world, catalog, pilotId, canId, now, allowForeign: true);
-        bool theft = SpaceLootRights.CheckTake(world, catalog, pilot, can.SystemId, new(can.OwnerId, can.CorporationId, can.Abandoned));
+        bool theft = SpaceLootRights.CheckTake(
+            world,
+            catalog,
+            pilot,
+            can.SystemId,
+            new(can.OwnerId, can.CorporationId, can.Abandoned),
+            now
+        );
         var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, canId, items, quantity, destinationFlag, can.OwnerId);
         if (theft)
         {

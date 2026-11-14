@@ -55,7 +55,8 @@ internal sealed partial class WreckStore
             catalog,
             pilot,
             wreck.SystemId,
-            new(wreck.OwnerId, wreck.CorporationId, wreck.Abandoned)
+            new(wreck.OwnerId, wreck.CorporationId, wreck.Abandoned),
+            now
         );
         var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, wreckId, itemIds, quantity, destinationFlag, wreck.OwnerId);
         if (theft)
@@ -155,6 +156,7 @@ internal sealed partial class WreckStore
                     Z = npc.Z,
                     CreatedAt = now,
                     ExpiresAt = checked(now + WreckDefinitions.LifetimeSeconds * TimeSpan.TicksPerSecond),
+                    Abandoned = SpaceLootRights.AbandonedAtCreation(world, pilot.Id, now),
                 }
             )
             .Entity;
@@ -291,6 +293,7 @@ internal sealed partial class WreckStore
                     Z = position.Z,
                     CreatedAt = now,
                     ExpiresAt = checked(now + WreckDefinitions.LifetimeSeconds * TimeSpan.TicksPerSecond),
+                    Abandoned = SpaceLootRights.AbandonedAtCreation(world, pilot.Id, now, playerWreck: true),
                 }
             )
             .Entity;

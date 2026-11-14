@@ -5,6 +5,8 @@ namespace Eden.Gameplay.Loot;
 
 public sealed record LootRights(long OwnerId, int CorporationId, bool Abandoned);
 
+public sealed record LootOwnerAccess(CrimewatchFlag Flag, double SecurityStatus, bool LimitedEngagement);
+
 public interface ISpaceLootRights
 {
     void Abandon(long pilotId, IReadOnlyList<long> containerIds, long now);
@@ -13,6 +15,14 @@ public interface ISpaceLootRights
 public static class LootRightsRules
 {
     public const int MaximumAbandonSelection = 1000;
+
+    public static bool CanTakeFromOwner(LootOwnerAccess owner) =>
+        owner.Flag is CrimewatchFlag.Suspect or CrimewatchFlag.Criminal
+        || owner.SecurityStatus <= CrimewatchRules.OutlawSecurity
+        || owner.LimitedEngagement;
+
+    public static bool AbandonedAtCreation(LootOwnerAccess owner, bool playerWreck) =>
+        owner.Flag == CrimewatchFlag.Criminal || playerWreck && owner.SecurityStatus <= CrimewatchRules.OutlawSecurity;
 
     public static bool CanTake(long pilotId, int corporationId, LootRights rights, bool fleetAccess) =>
         rights.Abandoned

@@ -1,7 +1,9 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Loot;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Registration;
@@ -17,16 +19,47 @@ namespace Eden.World.Loot;
 [Injectable]
 internal sealed class SpaceLootRights(WorldDatabase database) : ISpaceLootRights
 {
-    internal static bool Entitled(WorldAction world, Pilot pilot, int system, LootRights rights) =>
+    internal static bool Entitled(WorldAction world, Pilot pilot, int system, LootRights rights, ICooperativeFleets? fleets = null) =>
         LootRightsRules.CanTake(
             pilot.Id,
             pilot.CorporationId,
             rights,
-            LiveWorld.Find(world.WorldPath)?.Fleets?.CanShareLoot(pilot.Id, rights.OwnerId, system) == true
+            (fleets ?? LiveWorld.Find(world.WorldPath)?.Fleets)?.CanShareLoot(pilot.Id, rights.OwnerId, system) == true
         );
 
-    internal static bool CheckTake(WorldAction world, CatalogDbContext catalog, Pilot pilot, int system, LootRights rights) =>
-        !Entitled(world, pilot, system, rights)
+    internal static LootOwnerAccess OwnerAccess(WorldAction world, long owner, long now, long? viewer = null) =>
+        new(
+            world.Set<SavedCrimewatch>().Find(owner)?.Timers().Flag(now) ?? CrimewatchFlag.None,
+            world.Set<SavedSecurityStatus>().Find(owner)?.Value ?? 0,
+            viewer is long pilot && CrimewatchPersistence.Engagement(world, pilot, owner)?.ExpiresAt > now
+        );
+
+    internal static bool AbandonedAtCreation(WorldAction world, long owner, long now, bool playerWreck = false) =>
+        LootRightsRules.AbandonedAtCreation(OwnerAccess(world, owner, now), playerWreck);
+
+    internal static IReadOnlyDictionary<long, double> SecurityStatuses(WorldAction world, IEnumerable<long> owners)
+    {
+        var ids = owners.ToHashSet();
+        return ids.Count == 0
+            ? new Dictionary<long, double>()
+            : world
+                .Filter<SavedSecurityStatus>(status => ids.Contains(status.PilotId))
+                .ToDictionary(status => status.PilotId, status => status.Value);
+    }
+
+    internal static bool CanTake(
+        WorldAction world,
+        Pilot pilot,
+        int system,
+        LootRights rights,
+        long now,
+        ICooperativeFleets? fleets = null
+    ) =>
+        Entitled(world, pilot, system, rights, fleets)
+        || LootRightsRules.CanTakeFromOwner(OwnerAccess(world, rights.OwnerId, now, pilot.Id));
+
+    internal static bool CheckTake(WorldAction world, CatalogDbContext catalog, Pilot pilot, int system, LootRights rights, long now) =>
+        !CanTake(world, pilot, system, rights, now)
         && LootRightsRules.CheckTake(
             false,
             CrimewatchPersistence.Security(catalog, system),

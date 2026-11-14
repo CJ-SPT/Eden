@@ -7,6 +7,30 @@ namespace Eden.Protocol.Tests.Loot;
 public sealed class LootRightsRulesTests
 {
     [Theory]
+    [InlineData(CrimewatchFlag.None, 0, false, false, false)]
+    [InlineData(CrimewatchFlag.Suspect, 0, false, true, false)]
+    [InlineData(CrimewatchFlag.Criminal, 0, false, true, true)]
+    [InlineData(CrimewatchFlag.None, -5, false, true, false)]
+    [InlineData(CrimewatchFlag.None, -4.99, false, false, false)]
+    [InlineData(CrimewatchFlag.None, 0, true, true, false)]
+    public void LegalTakingDoesNotPermanentlyAbandonOrdinaryContainers(
+        CrimewatchFlag flag,
+        double security,
+        bool engagement,
+        bool lawful,
+        bool abandoned
+    )
+    {
+        LootOwnerAccess owner = new(flag, security, engagement);
+        Assert.Equal(lawful, LootRightsRules.CanTakeFromOwner(owner));
+        Assert.Equal(abandoned, LootRightsRules.AbandonedAtCreation(owner, playerWreck: false));
+        Assert.Equal(
+            abandoned || security <= CrimewatchRules.OutlawSecurity,
+            LootRightsRules.AbandonedAtCreation(owner, playerWreck: true)
+        );
+    }
+
+    [Theory]
     [InlineData(0.8, ShipSafetyLevel.Partial, true)]
     [InlineData(0.1, ShipSafetyLevel.Disabled, true)]
     [InlineData(0, ShipSafetyLevel.Full, false)]

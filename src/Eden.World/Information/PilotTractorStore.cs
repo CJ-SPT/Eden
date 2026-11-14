@@ -19,9 +19,13 @@ internal sealed partial class PilotInformationStore
     public void AdvanceTractor(InformationCycle cycle, long now)
     {
         if (
-            cycle.TargetOwnerId is not long owner
-            || !CanTractor(cycle.PilotId, owner, false)
-                && !WorldActionScope.Inspect(database, world => world.Set<WorldWreck>().Find(cycle.TargetId)?.Abandoned == true)
+            !WorldActionScope.Inspect(
+                database,
+                world =>
+                    world.Pilots.Find(cycle.PilotId) is { } pilot
+                    && world.Set<WorldWreck>().Find(cycle.TargetId) is { } wreck
+                    && CanTractor(world, pilot, wreck, now)
+            )
         )
         {
             throw new InvalidDataException("The tractor beam no longer has access to this container.");

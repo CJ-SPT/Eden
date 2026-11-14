@@ -87,6 +87,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                     Z = npc.Z,
                     CreatedAt = now,
                     ExpiresAt = checked(now + WreckDefinitions.LifetimeSeconds * TimeSpan.TicksPerSecond),
+                    Abandoned = SpaceLootRights.AbandonedAtCreation(new SqlWorldAction(world), pilot.Id, now),
                 }
             )
             .Entity;
@@ -223,6 +224,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                     Z = position.Z,
                     CreatedAt = now,
                     ExpiresAt = checked(now + WreckDefinitions.LifetimeSeconds * TimeSpan.TicksPerSecond),
+                    Abandoned = SpaceLootRights.AbandonedAtCreation(new SqlWorldAction(world), pilot.Id, now, playerWreck: true),
                 }
             )
             .Entity;
@@ -311,7 +313,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
         var contacts = ReadContacts(action, catalog, systemId, now);
         return includeJetcans
             ? contacts
-                .Concat(JetcanStore.Contacts(catalog, JetcanStore.List(action, systemId).Where(c => c.ExpiresAt > now).ToArray()))
+                .Concat(JetcanStore.Contacts(action, catalog, JetcanStore.List(action, systemId).Where(c => c.ExpiresAt > now).ToArray()))
                 .ToArray()
             : contacts;
     }
@@ -320,6 +322,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
     {
         var wrecks = world.Filter<WorldWreck>(w => w.SystemId == systemId && w.ExpiresAt > now).OrderBy(w => w.Id).ToArray();
         var ids = wrecks.Select(w => w.Id).ToHashSet();
+        var security = SpaceLootRights.SecurityStatuses(world, wrecks.Select(w => w.OwnerId));
         var storedInIds = ids.Select(id => (long?)id).ToHashSet();
         var occupied = world
             .Filter<OwnedItem>(i => ids.Contains(i.LocationId))
@@ -344,7 +347,8 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                     (float)(type.Radius ?? 0),
                     !occupied.Contains(w.Id),
                     type.GroupId,
-                    Abandoned: w.Abandoned
+                    Abandoned: w.Abandoned,
+                    OwnerSecurityStatus: security.GetValueOrDefault(w.OwnerId)
                 );
             })
             .Concat(Eden.World.Planetary.PlanetaryOrbitStore.Contacts(world, catalog, systemId, now))

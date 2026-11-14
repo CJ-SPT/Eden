@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Criminal loot and lawful recovery, November 14, 2026](#criminal-loot-and-lawful-recovery-november-14-2026)
+
 - [Loot abandonment and theft, November 14, 2026](#loot-abandonment-and-theft-november-14-2026)
 
 - [Direct player trading](#direct-player-trading)
@@ -25,6 +27,80 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Criminal loot and lawful recovery, November 14, 2026
+
+The next evejs comparison closed three connected recovery gaps:
+
+- Wrecks and jetcans created while their owner has an active criminal timer are permanently public.
+  A destroyed outlaw pilot's ship also leaves a public wreck. The saved `Abandoned` marker survives timer
+  expiry, security recovery, restart and checkpoints; the loot keeps its original owner until taken.
+- Pilots can take loot with full safety when its owner is suspect, criminal, outlaw (security status at
+  or below -5), or in an active limited engagement with them. Temporary rights are checked at transfer
+  time and expire at the exact deadline. They do not permanently abandon existing containers, create
+  combat flags for the looter, or extend the owner's timer. Suspect-created containers remain private.
+- Tractor beams accept player-corporation and lawful-owner access, in addition to owner/fleet/public
+  rights. Activation and ongoing movement use current permissions. Leaving the corporation or losing
+  the temporary right stops the pull without changing wreck ownership. NPC corporation membership
+  grants no sharing rights.
+
+The client's outlaw check requires `securityStatus` on the wreck/container slim. Contacts now include
+that value from the owner's saved status. Reads batch owner lookups, and resident views invalidate only
+for affected owners. A security-status change sends `OnSlimItemChange`; warmed observers and tractor
+permission checks perform no SQL or fitting calculations. Existing Blue encoding and tractor movement
+math remain unchanged. Schema stays **157**; this uses the abandonment field added in the prior milestone.
+The prior record's automatic-abandonment limitation is superseded for newly created loot. War/faction
+legality and additional deployable types are not introduced by this change.
+
+The original build-3662168 archive was inspected inertly (SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`).
+`eve/client/script/remote/michelle.pyj`'s `Park.HaveLootRight` checks the four-field loot-rights tuple,
+excludes NPC corporation sharing, and then calls `crimewatchSvc.CanAttackFreely`.
+`eve/client/script/ui/services/crimewatchSvc.pyj` checks owner flags, limited engagement and the slim's
+security status. `Park.IsAbandoned` reads only the saved public flag. The michelle module required inert
+CPython 2.7 unmarshalling after xdis could not decode the complete module; only code objects were inspected.
+
+The local evejs `261108.1` snapshot has no Git revision. `inventoryLootRights.js` and
+`space/modules/tractorBeamRuntime.js` connect tractor access to shared loot entitlement;
+`services/security/crimewatchState.js` implements legal-owner theft exemptions. Their SHA-256 values are:
+
+- `server/src/space/runtime/inventoryLootRights.js`:
+  `e308a33d85a403fc9b2a250d326c7e177e35d4d74699958b6ccfba33d0bc46d9`
+- `server/src/space/modules/tractorBeamRuntime.js`:
+  `f04058f4d7ee2f6685fbc342a538d846d136842127f3aef9dd12196200816717`
+- `server/src/services/security/crimewatchState.js`:
+  `46cf97d25ba2f99b925a3b4f1b5da80596be783ac6fcb1a3869628989a950f84`
+
+Eden's implementation follows its typed world state and the pinned client, with gameplay confirmation from
+[EVE University timers](https://wiki.eveuniversity.org/Timers),
+[salvaging](https://wiki.eveuniversity.org/Salvaging),
+[outlaw wreck recovery](https://wiki.eveuniversity.org/Hisec_Suspect_Hunting),
+[CCP criminal consequences](https://support.eveonline.com/hc/en-us/articles/203268591-Criminal-Timer), and
+[CCP's legal-container-access rule](https://www.eveonline.com/news/view/patch-notes-for-retribution-1).
+
+**Automated validation** — Tool restore, solution restore/build (zero warnings/errors), 261 focused .NET tests,
+both Python policy suites (8 catalog and 9 formatting tests), and formatting/140-column verification passed.
+The final sequence took 137.3 seconds; the .NET test command took 102.1 seconds. Development started with the exact method filter
+`FullyQualifiedName~CriminalJettisonIsPublicAfterTheFlagExpiresAndSurvivesCheckpoint`. Tests cover file and
+resident worlds, real fatal damage, persisted public loot, full-safety access and deadline rejection,
+corporation join/leave, timer expiry during a tractor cycle, observer slim fields, rollback and unrelated
+cache invalidation. Build-time duplicate/missing imports were corrected before passing development runs.
+No full .NET suite was requested or run.
+
+The final filter combined `FullyQualifiedName~Eden.Protocol.Tests.Loot`,
+`FullyQualifiedName~Eden.Protocol.Tests.Information`,
+`FullyQualifiedName~Eden.Protocol.Tests.Combat.CrimewatchTests`,
+`FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcCombatTests`,
+`FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CooperativeFleetTests`,
+`FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CorporationMembershipTests`,
+`FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackSplitTests`,
+`FullyQualifiedName~Eden.Protocol.Tests.Persistence.ResidentReadTests`, and
+`FullyQualifiedName~Eden.Protocol.Tests.Planetary.PlanetaryProtocolTests` with `|`.
+
+**Live acceptance** — Not performed; agent client testing is disabled.
+
+**Optional maintainer checks** — Check public loot markers after a criminal ship loss and tractor access
+between two corporation members; verify the tractor stops when the acting pilot leaves the corporation.
 
 ## Loot abandonment and theft, November 14, 2026
 

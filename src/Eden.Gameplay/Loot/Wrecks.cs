@@ -19,7 +19,8 @@ public sealed record WreckContact(
     int CategoryId = WreckDefinitions.Category,
     int? PlanetId = null,
     long? LootFleetId = null,
-    bool Abandoned = false
+    bool Abandoned = false,
+    double OwnerSecurityStatus = 0
 );
 
 public sealed record WreckInventory(InventoryItem Container, IReadOnlyList<InventoryItem> Items, double? Capacity = null);

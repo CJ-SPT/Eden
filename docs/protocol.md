@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Criminal loot and lawful recovery](protocol/inventory.md#criminal-loot-and-lawful-recovery-november-14-2026) records automatic public
+loot creation, legal-owner access, corporation tractor rights and native security-status updates.
+
 [Loot abandonment and theft](protocol/inventory.md#loot-abandonment-and-theft-november-14-2026) records native public loot,
 safety-gated transfers, suspect timers and persistent wreck/jetcan rights.
 

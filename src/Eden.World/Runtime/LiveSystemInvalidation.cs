@@ -162,14 +162,18 @@ internal sealed partial class LiveReadModels
         );
         _jetcans.ObserveValues(
             changes,
-            (system, view, change) => Arrived(system, change) || view.Contacts.Any(contact => contact.Id == change.Id)
+            (system, view, change) =>
+                change.Table == "WorldPilotSecurity"
+                    ? view.Contacts.Any(contact => contact.OwnerId == change.Id)
+                    : Arrived(system, change) || view.Contacts.Any(contact => contact.Id == change.Id)
         );
         _wrecks.ObserveValues(
             changes,
             (system, view, change) =>
-                change.Table == "WorldItemMembership"
+                change.Table == "WorldPilotSecurity" ? view.Contacts.Any(c => c.OwnerId == change.Id)
+                : change.Table == "WorldItemMembership"
                     ? view.Items.Contains(change.Id) || view.Contacts.Any(c => inventoryLocations.Contains(c.Id))
-                    : Arrived(system, change) || view.Contacts.Any(c => c.Id == change.Id || c.SourceId == change.Id)
+                : Arrived(system, change) || view.Contacts.Any(c => c.Id == change.Id || c.SourceId == change.Id)
         );
         _drones.ObserveValues(
             changes,

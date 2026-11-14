@@ -163,6 +163,7 @@ internal sealed record WreckSlimItem(WreckContact Wreck) : SlimItem
         fields["launcherID"] = Wreck.SourceId;
         fields["isEmpty"] = Wreck.Empty;
         fields["lootRights"] = new object?[] { Wreck.OwnerId, Wreck.CorporationId, Wreck.LootFleetId, Wreck.Abandoned };
+        fields["securityStatus"] = Wreck.OwnerSecurityStatus;
         return Wrap(fields);
     }
 }

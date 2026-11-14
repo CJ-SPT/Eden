@@ -23,6 +23,7 @@ using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Loot;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
@@ -151,8 +152,8 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
                 resources: [new(SharedSimulationResource.Npc, targetId), new(SharedSimulationResource.Wreck, targetId)]
             );
 
-    private bool CanTractor(long pilot, long owner, bool abandoned) =>
-        abandoned || pilot == owner || fleets?.Identity(pilot) is { } source && fleets.Identity(owner)?.FleetId == source.FleetId;
+    private bool CanTractor(WorldAction world, Pilot pilot, WorldWreck wreck, long now) =>
+        SpaceLootRights.CanTake(world, pilot, wreck.SystemId, new(wreck.OwnerId, wreck.CorporationId, wreck.Abandoned), now, fleets);
 
     private void CheckTarget(WorldAction world, CatalogDbContext catalog, Pilot pilot, long targetId, InformationModule module, long now)
     {
@@ -167,7 +168,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
                 || wreck.SystemId != system
                 || wreck.ExpiresAt <= now
                 || module.Effect == DogmaEffect.Salvaging && (wreck.SalvagedAt is not null || wreck.SalvageJson is null)
-                || module.Effect == DogmaEffect.TractorBeam && !CanTractor(pilot.Id, wreck.OwnerId, wreck.Abandoned)
+                || module.Effect == DogmaEffect.TractorBeam && !CanTractor(world, pilot, wreck, now)
             )
             {
                 throw new InvalidDataException("This wreck is unavailable or cannot be tractored by this pilot.");

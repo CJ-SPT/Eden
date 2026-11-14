@@ -1,8 +1,10 @@
 using System.Runtime.CompilerServices;
+using Eden.Data.World.Loot;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Loot;
+using Eden.World.Loot;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -90,11 +92,18 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
         using var ownership = owner.Enter();
         foreach (var (module, tractor) in _cycles.ToArray())
         {
-            bool allowed =
-                tractor.Cycle.TargetOwnerId == tractor.Cycle.PilotId
-                || tractor.Fleets?.Identity(tractor.Cycle.PilotId) is { } sourceFleet
-                    && tractor.Fleets.Identity(tractor.Cycle.TargetOwnerId ?? 0)?.FleetId == sourceFleet.FleetId
-                || owner.Economy.Peek<Eden.Data.World.Loot.WorldWreck>(tractor.Cycle.TargetId)?.Abandoned == true;
+            bool allowed = owner.Economy.Inspect(world =>
+                world.Set<WorldWreck>().Find(tractor.Cycle.TargetId) is { } wreck
+                && world.Pilots.Find(tractor.Cycle.PilotId) is { } pilot
+                && SpaceLootRights.CanTake(
+                    world,
+                    pilot,
+                    wreck.SystemId,
+                    new(wreck.OwnerId, wreck.CorporationId, wreck.Abandoned),
+                    now,
+                    tractor.Fleets
+                )
+            );
             if (!allowed)
             {
                 _cycles.Remove(module);
