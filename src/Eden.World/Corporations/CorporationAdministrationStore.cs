@@ -2,6 +2,7 @@ using System.Text.Json;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -30,8 +31,8 @@ internal sealed class CorporationAdministrationStore(WorldDatabase database) : I
 
     private void Change(long actorId, Func<CorporationDetails, CorporationDetails> update)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var actor = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown pilot.");
         var corporation =
             world.Set<SavedCorporation>().Find(actor.CorporationId)
@@ -49,7 +50,6 @@ internal sealed class CorporationAdministrationStore(WorldDatabase database) : I
         {
             world.Add(new SavedCorporationChange { PilotId = member, AdministrationJson = change });
         }
-        world.SaveChanges();
         transaction.Commit();
     }
 }

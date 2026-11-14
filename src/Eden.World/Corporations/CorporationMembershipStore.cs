@@ -7,6 +7,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -18,31 +19,35 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
 
     public IReadOnlyList<CorporationApplication> Applications(long pilotId, bool forCorporation)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var pilot = Pilot(world, pilotId);
-        var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
-        if (
-            forCorporation
-            && (corporation is null || !CorporationRoleStore.Has(world, pilotId, corporation, CorporationRole.PersonnelManager))
-        )
-        {
-            throw new InvalidDataException("Personnel management is required to review corporation applications.");
-        }
-        return world
-            .Set<SavedCorporationApplication>()
-            .Where(a => forCorporation ? a.CorporationId == pilot.CorporationId : a.PilotId == pilotId)
-            .OrderByDescending(a => a.Id)
-            .AsEnumerable()
-            .Select(a => a.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<CorporationApplication>>(
+            database,
+            world =>
+            {
+                var pilot = Pilot(world, pilotId);
+                var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
+                if (
+                    forCorporation
+                    && (corporation is null || !CorporationRoleStore.Has(world, pilotId, corporation, CorporationRole.PersonnelManager))
+                )
+                {
+                    throw new InvalidDataException("Personnel management is required to review corporation applications.");
+                }
+                return world
+                    .Set<SavedCorporationApplication>()
+                    .Where(a => forCorporation ? a.CorporationId == pilot.CorporationId : a.PilotId == pilotId)
+                    .OrderByDescending(a => a.Id)
+                    .AsEnumerable()
+                    .Select(a => a.Snapshot())
+                    .ToArray();
+            }
+        );
     }
 
     public CorporationApplication Apply(long pilotId, int corporationId, string text)
     {
         CorporationMembershipRules.CheckText(text);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var pilot = Pilot(world, pilotId);
         var corporation = Corporation(world, corporationId);
         CheckJoin(world, pilot, corporation);
@@ -76,7 +81,6 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
             .Entity;
         world.SaveChanges();
         NotifyApplication(world, application);
-        world.SaveChanges();
         transaction.Commit();
         return application.Snapshot();
     }
@@ -85,8 +89,8 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
     {
         CorporationMembershipRules.CheckText(update.Text);
         CorporationMembershipRules.CheckText(update.Response);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var actor = Pilot(world, actorId);
         var application =
             world.Set<SavedCorporationApplication>().Find(update.Id) ?? throw new InvalidDataException("Unknown corporation application.");
@@ -140,15 +144,19 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
 
     public CorporationLeavePermission CanRemove(long actorId, long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        return Permission(world, actorId, pilotId);
+        return WorldActionScope.Inspect<CorporationLeavePermission>(
+            database,
+            world =>
+            {
+                return Permission(world, actorId, pilotId);
+            }
+        );
     }
 
     public void Remove(long actorId, long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var permission = Permission(world, actorId, pilotId);
         if (!permission.Allowed)
         {
@@ -170,12 +178,11 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         Move(world, pilot, destination, Now);
         world.SaveChanges();
         Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
-        world.SaveChanges();
         transaction.Commit();
         database.NotifyAccessGroupsChanged();
     }
 
-    private CorporationLeavePermission Permission(WorldDbContext world, long actorId, long pilotId)
+    private CorporationLeavePermission Permission(WorldAction world, long actorId, long pilotId)
     {
         var actor = Pilot(world, actorId);
         var pilot = Pilot(world, pilotId);
@@ -207,7 +214,7 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         return new(true, "");
     }
 
-    internal static void Move(WorldDbContext world, Pilot pilot, int corporationId, long now)
+    internal static void Move(WorldAction world, Pilot pilot, int corporationId, long now)
     {
         if (world.Set<SavedCorporationWalletSelection>().Find(pilot.Id) is { } selection)
         {
@@ -251,7 +258,7 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         }
     }
 
-    internal static void WithdrawOtherApplications(WorldDbContext world, long pilotId, long? keepId, long now)
+    internal static void WithdrawOtherApplications(WorldAction world, long pilotId, long? keepId, long now)
     {
         foreach (
             var other in world
@@ -267,7 +274,7 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         }
     }
 
-    private static void CheckJoin(WorldDbContext world, Pilot pilot, SavedCorporation corporation) =>
+    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation) =>
         CorporationMembershipRules.CheckJoin(
             pilot.CorporationId == corporation.Id,
             world.Set<SavedCorporation>().Any(c => c.CeoId == pilot.Id),
@@ -275,12 +282,12 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
             corporation.MemberLimit
         );
 
-    private static Pilot Pilot(WorldDbContext world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
+    private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 
-    private static SavedCorporation Corporation(WorldDbContext world, int id) =>
+    private static SavedCorporation Corporation(WorldAction world, int id) =>
         world.Set<SavedCorporation>().Find(id) ?? throw new InvalidDataException("Unknown player corporation.");
 
-    private static void NotifyApplication(WorldDbContext world, SavedCorporationApplication application)
+    private static void NotifyApplication(WorldAction world, SavedCorporationApplication application)
     {
         var corporation = Corporation(world, application.CorporationId);
         string json = JsonSerializer.Serialize(application.Snapshot());
@@ -297,8 +304,13 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
 
     public long Head(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<SavedCorporationChange>().Where(c => c.PilotId == pilotId).Max(c => (long?)c.Id) ?? 0;
+        return WorldActionScope.Inspect<long>(
+            database,
+            world =>
+            {
+                return world.Set<SavedCorporationChange>().Where(c => c.PilotId == pilotId).Max(c => (long?)c.Id) ?? 0;
+            }
+        );
     }
 
     public IReadOnlyList<CorporationChange> Changes(long pilotId, long after)
@@ -307,14 +319,19 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         {
             return [];
         }
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedCorporationChange>()
-            .Where(c => c.PilotId == pilotId && c.Id > after)
-            .OrderBy(c => c.Id)
-            .Take(CorporationMembershipRules.ChangePageSize)
-            .AsEnumerable()
-            .Select(c => c.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<CorporationChange>>(
+            database,
+            world =>
+            {
+                return world
+                    .Set<SavedCorporationChange>()
+                    .Where(c => c.PilotId == pilotId && c.Id > after)
+                    .OrderBy(c => c.Id)
+                    .Take(CorporationMembershipRules.ChangePageSize)
+                    .AsEnumerable()
+                    .Select(c => c.Snapshot())
+                    .ToArray();
+            }
+        );
     }
 }

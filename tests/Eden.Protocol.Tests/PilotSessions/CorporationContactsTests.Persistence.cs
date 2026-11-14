@@ -3,7 +3,6 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Protocol.Corporations;
 using Eden.World.Storage;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -52,7 +51,7 @@ public sealed partial class CorporationContactsTests
                 Assert.Throws<DbUpdateException>(() => store.SetStanding(Ceo, [Navy, Member], -5));
                 break;
             case "delete":
-                Assert.Throws<SqliteException>(() => store.Delete(Ceo, [Navy, Member]));
+                Assert.Throws<DbUpdateException>(() => store.Delete(Ceo, [Navy, Member]));
                 break;
             default:
                 Assert.Throws<DbUpdateException>(() => store.DeleteLabel(Ceo, label));

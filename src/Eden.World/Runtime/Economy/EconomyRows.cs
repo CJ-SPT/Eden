@@ -838,6 +838,8 @@ internal sealed partial class ResidentEconomy
         RegisterProbeScanning();
         RegisterHacking();
         RegisterContracts();
+        RegisterCorporationMembership();
+        RegisterCorporationAssets();
         RegisterInformationCycles();
         RegisterMissionRewardTables();
         RegisterWormholeJumps();

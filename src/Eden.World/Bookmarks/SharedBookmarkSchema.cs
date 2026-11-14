@@ -4,6 +4,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.AccessGroups;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -117,8 +118,32 @@ internal static class SharedBookmarkSchema
         EnsureCorporations(world, corporations);
     }
 
-    internal static void EnsureCorporation(WorldDbContext world, int corporationId, string name) =>
-        EnsureCorporations(world, [new(corporationId, name)]);
+    internal static void EnsureCorporation(WorldAction world, int corporationId, string name)
+    {
+        if (world.Filter<SavedAccessGroup>(g => g.IsCorporation && g.CreatorId == corporationId).Any())
+        {
+            return;
+        }
+        var group = world
+            .Add(
+                new SavedAccessGroup
+                {
+                    CreatorId = corporationId,
+                    IsCorporation = true,
+                    Name = name,
+                }
+            )
+            .Entity;
+        world.SaveChanges();
+        world.Add(
+            new SavedAccessGroupMember
+            {
+                GroupId = group.Id,
+                OwnerId = corporationId,
+                Role = AccessGroupRole.Admin,
+            }
+        );
+    }
 
     private static void EnsureCorporations(WorldDbContext world, IReadOnlyList<KeyValuePair<int, string>> corporations)
     {

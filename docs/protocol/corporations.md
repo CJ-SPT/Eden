@@ -486,3 +486,28 @@ World schema **72** adds corporations, employment and formation payments. Startu
 Sources: inert inspection of build **3662168**, `code.ccp` SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, especially `bco_corporations.AddCorporation`/`LoadCorporation`, `bco_members.MemberCanCreateCorporation`/`__PrimeEveOwners`, `corp_dlg_editcorpdetails.Submit`/`PickTicker`, `corp_ui_home.GetSubContentDetails` and `appConst.corporationStartupCost`, `corpRoleDirector`, `refCorporationRegistrationFee`. Consulted the public Carbon repository inventory: no public corporation gameplay service owns these rules. Existing DBRow and tuple/list adapters reuse [Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp), including `ReadObjectDBRow` and the DBRow writer. No game launch or client-code execution occurred.
 
 Automated validation: focused creation tests cover native argument/reply shapes, owner priming, CEO role/session ordering, old registry rejection, fee/journal state, malformed and rejected requests, duplicate identities, version-71 migration and disk/resident-world reopen. Tool/solution restore and build passed with zero warnings/errors. The filter `FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~HomeStationServiceTests|FullyQualifiedName~CharacterSheetServiceTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~ChatWorldTests|FullyQualifiedName~ChatServiceTests|FullyQualifiedName~Wallet` passed **141 tests in 31 seconds**. Both Python policy suites passed (3 catalog and 9 formatting tests), and formatting verification checked 701 files. The complete validation sequence took **49 seconds**; no full .NET suite was requested or run. Live acceptance: **Not performed; agent client testing is disabled.** Optional maintainer checks: form a corporation and inspect its details; reconnect and inspect the CEO, ticker and employment history.
+
+
+## Resident corporation services
+
+Corporation creation, membership and employment, role and title changes, contact labels,
+bills, office rentals and storage, shares, wallets, and loyalty point transfers use resident
+state. A new corporation's inventory owner, shares, and bookmark access group publish with
+its founding action. Corporation wallet and loyalty store purchases commit the debit, journal,
+and inventory changes together. Corporation change cursors and financial reads use the
+same committed state.
+
+Gameplay references are [managing corporation members](https://wiki.eveuniversity.org/Managing_corporation_members),
+[corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics), and
+[loyalty points](https://wiki.eveuniversity.org/Loyalty_Points). The local EveJS 261108.1
+comparison used `officeRentalSettlementState.js` and `walletState.js` (SHA-256 prefixes
+`98B9BFFB17EF87C0` and `83965CB640B33208`).
+
+**Automated validation.** The focused corporation, loyalty, wallet history, character deletion,
+shared bookmark, and access-group filter passed 262 tests in 1 minute 57 seconds. The run
+covered file and resident operation, projection and reopen, permission failures, and ordered
+notifications. Solution build, both Python policy suites, and formatting verification passed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.

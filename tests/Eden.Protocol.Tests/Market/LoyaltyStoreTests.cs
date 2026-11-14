@@ -284,12 +284,10 @@ public sealed class LoyaltyStoreTests
         Assert.Empty(after.Set<SavedServicePayment>());
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void FailedReceiptRollsBackPaymentRequiredItemsAndRewardAndEmitsNoNotifications(bool resident)
+    [Fact]
+    public void FailedReceiptRollsBackPaymentRequiredItemsAndRewardAndEmitsNoNotifications()
     {
-        using var db = Create(resident);
+        using var db = Create();
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSqlRaw(

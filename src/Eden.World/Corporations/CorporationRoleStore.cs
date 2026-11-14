@@ -4,6 +4,7 @@ using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -46,26 +47,31 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         return access with { Roles = roles };
     }
 
-    internal static bool Has(WorldDbContext world, long actorId, SavedCorporation corporation, CorporationRole role) =>
+    internal static bool Has(WorldAction world, long actorId, SavedCorporation corporation, CorporationRole role) =>
         world.Pilots.Find(actorId)?.CorporationId == corporation.Id && Effective(world, actorId, corporation).Roles.Has(role);
 
     public IReadOnlyList<CorporationTitle> Titles(long memberId)
     {
-        using WorldDbContext world = new(database.Path);
-        var pilot = world.Pilots.Find(memberId) ?? throw new InvalidDataException("Unknown pilot.");
-        if (!world.Set<SavedCorporation>().Any(c => c.Id == pilot.CorporationId))
-        {
-            return [];
-        }
-        var saved = world
-            .Set<SavedCorporationTitle>()
-            .Where(t => t.CorporationId == pilot.CorporationId)
-            .AsEnumerable()
-            .ToDictionary(t => t.TitleId, t => t.Snapshot());
-        return Enumerable
-            .Range(0, CorporationRoleRules.TitleCount)
-            .Select(index => saved.GetValueOrDefault(1L << index) ?? new CorporationTitle(1L << index, "", new()))
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<CorporationTitle>>(
+            database,
+            world =>
+            {
+                var pilot = world.Pilots.Find(memberId) ?? throw new InvalidDataException("Unknown pilot.");
+                if (!world.Set<SavedCorporation>().Any(c => c.Id == pilot.CorporationId))
+                {
+                    return [];
+                }
+                var saved = world
+                    .Set<SavedCorporationTitle>()
+                    .Where(t => t.CorporationId == pilot.CorporationId)
+                    .AsEnumerable()
+                    .ToDictionary(t => t.TitleId, t => t.Snapshot());
+                return Enumerable
+                    .Range(0, CorporationRoleRules.TitleCount)
+                    .Select(index => saved.GetValueOrDefault(1L << index) ?? new CorporationTitle(1L << index, "", new()))
+                    .ToArray();
+            }
+        );
     }
 
     public void UpdateMembers(long actorId, IReadOnlyList<CorporationMemberUpdate> updates)
@@ -74,8 +80,8 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         {
             throw new InvalidDataException("Choose distinct members within the corporation batch limit.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var corporation = Current(world, actorId);
         var actor = Effective(world, actorId, corporation);
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -151,7 +157,6 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
                 Notify(world, corporation.Id, new(corporation.Id, update.PilotId, effectiveBefore, effectiveAfter), null);
             }
         }
-        world.SaveChanges();
         transaction.Commit();
     }
 
@@ -165,8 +170,8 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         {
             CorporationRoleRules.Validate(title);
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var corporation = Current(world, actorId);
         RequireDirector(world, actorId, corporation);
         var beforeMembers = world
@@ -191,14 +196,13 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         }
         world.SaveChanges();
         NotifyAffectedMembers(world, corporation, beforeMembers);
-        world.SaveChanges();
         transaction.Commit();
     }
 
     public void DeleteTitle(long actorId, long titleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var corporation = Current(world, actorId);
         RequireDirector(world, actorId, corporation);
         var title =
@@ -218,12 +222,11 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         Notify(world, corporation.Id, null, new(corporation.Id, titleId, title.Snapshot(), null));
         world.SaveChanges();
         NotifyAffectedMembers(world, corporation, before);
-        world.SaveChanges();
         transaction.Commit();
     }
 
     private void NotifyAffectedMembers(
-        WorldDbContext world,
+        WorldAction world,
         SavedCorporation corporation,
         IReadOnlyDictionary<long, CorporationMemberAccess> before
     )
@@ -245,7 +248,7 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         }
     }
 
-    private static void Save(WorldDbContext world, long pilot, int corporation, CorporationMemberAccess access)
+    private static void Save(WorldAction world, long pilot, int corporation, CorporationMemberAccess access)
     {
         var saved =
             world.Set<SavedCorporationMemberAccess>().Find(pilot) ?? world.Add(new SavedCorporationMemberAccess { PilotId = pilot }).Entity;
@@ -253,14 +256,14 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         saved.DataJson = JsonSerializer.Serialize(access);
     }
 
-    internal static SavedCorporation Current(WorldDbContext world, long actorId)
+    internal static SavedCorporation Current(WorldAction world, long actorId)
     {
         var actor = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown pilot.");
         return world.Set<SavedCorporation>().Find(actor.CorporationId)
             ?? throw new InvalidDataException("Join a player corporation first.");
     }
 
-    internal static void RequireDirector(WorldDbContext world, long actorId, SavedCorporation corporation)
+    internal static void RequireDirector(WorldAction world, long actorId, SavedCorporation corporation)
     {
         if (!Has(world, actorId, corporation, CorporationRole.Director))
         {
@@ -268,7 +271,7 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         }
     }
 
-    private static void Notify(WorldDbContext world, int corporation, CorporationRoleChange? member, CorporationTitleChange? title)
+    private static void Notify(WorldAction world, int corporation, CorporationRoleChange? member, CorporationTitleChange? title)
     {
         foreach (long recipient in world.Pilots.Where(p => p.CorporationId == corporation).Select(p => p.Id))
         {
@@ -282,4 +285,12 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
             );
         }
     }
+
+    internal static SavedCorporation Current(WorldDbContext world, long actorId) => Current(new SqlWorldAction(world), actorId);
+
+    internal static void RequireDirector(WorldDbContext world, long actorId, SavedCorporation corporation) =>
+        RequireDirector(new SqlWorldAction(world), actorId, corporation);
+
+    internal static bool Has(WorldDbContext world, long actorId, SavedCorporation corporation, CorporationRole role) =>
+        Has(new SqlWorldAction(world), actorId, corporation, role);
 }

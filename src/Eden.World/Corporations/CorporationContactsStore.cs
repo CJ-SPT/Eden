@@ -2,8 +2,8 @@ using Eden.Data.World.Corporations;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Corporations;
 
@@ -14,27 +14,30 @@ internal sealed class CorporationContactsStore(WorldDatabase database) : ICorpor
 
     public CorporationContactBook Read(long actorId)
     {
-        using WorldDbContext world = new(database.Path);
-        var pilot = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown contact reader.");
-        int owner = pilot.CorporationId;
-        return new(
-            owner,
-            world
-                .Set<SavedCorporationContact>()
-                .AsNoTracking()
-                .Where(c => c.CorporationId == owner)
-                .OrderBy(c => c.ContactId)
-                .ToArray()
-                .Select(c => c.Snapshot())
-                .ToArray(),
-            world
-                .Set<SavedCorporationContactLabel>()
-                .AsNoTracking()
-                .Where(l => l.CorporationId == owner)
-                .OrderBy(l => l.Id)
-                .ToArray()
-                .Select(l => l.Snapshot())
-                .ToArray()
+        return WorldActionScope.Inspect<CorporationContactBook>(
+            database,
+            world =>
+            {
+                var pilot = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown contact reader.");
+                int owner = pilot.CorporationId;
+                return new(
+                    owner,
+                    world
+                        .Set<SavedCorporationContact>()
+                        .Where(c => c.CorporationId == owner)
+                        .OrderBy(c => c.ContactId)
+                        .ToArray()
+                        .Select(c => c.Snapshot())
+                        .ToArray(),
+                    world
+                        .Set<SavedCorporationContactLabel>()
+                        .Where(l => l.CorporationId == owner)
+                        .OrderBy(l => l.Id)
+                        .ToArray()
+                        .Select(l => l.Snapshot())
+                        .ToArray()
+                );
+            }
         );
     }
 
@@ -63,10 +66,11 @@ internal sealed class CorporationContactsStore(WorldDatabase database) : ICorpor
             (world, corporation) =>
             {
                 CheckTargets(world, corporation.Id, contacts);
-                world
-                    .Set<SavedCorporationContact>()
-                    .Where(c => c.CorporationId == corporation.Id && contacts.Contains(c.ContactId))
-                    .ExecuteDelete();
+                world.RemoveRange(
+                    world
+                        .Filter<SavedCorporationContact>(c => c.CorporationId == corporation.Id && contacts.Contains(c.ContactId))
+                        .ToArray()
+                );
             }
         );
 
@@ -186,22 +190,21 @@ internal sealed class CorporationContactsStore(WorldDatabase database) : ICorpor
             }
         );
 
-    private void Write(long actorId, Action<WorldDbContext, SavedCorporation> action)
+    private void Write(long actorId, Action<WorldAction, SavedCorporation> action)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var corporation = CorporationRoleStore.Current(world, actorId);
         if (!CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.Diplomat))
         {
             throw new InvalidDataException("Only the CEO, a Director or a Diplomat can change corporation contacts.");
         }
         action(world, corporation);
-        world.SaveChanges();
         transaction.Commit();
         database.CorporationContactStamps.AddOrUpdate(corporation.Id, 1, (_, revision) => revision + 1);
     }
 
-    private void CheckTargets(WorldDbContext world, int corporationId, IReadOnlyList<long> contacts)
+    private void CheckTargets(WorldAction world, int corporationId, IReadOnlyList<long> contacts)
     {
         ContactRules.CheckContacts(corporationId, contacts);
         var known = world.Pilots.Where(p => contacts.Contains(p.Id)).Select(p => p.Id).ToHashSet();
@@ -213,11 +216,11 @@ internal sealed class CorporationContactsStore(WorldDatabase database) : ICorpor
         }
     }
 
-    private static SavedCorporationContactLabel Label(WorldDbContext world, int corporationId, long labelId) =>
+    private static SavedCorporationContactLabel Label(WorldAction world, int corporationId, long labelId) =>
         world.Set<SavedCorporationContactLabel>().Find(corporationId, labelId)
         ?? throw new InvalidDataException("Unknown corporation contact label.");
 
-    private static void CheckName(WorldDbContext world, int corporationId, string name, long? except)
+    private static void CheckName(WorldAction world, int corporationId, string name, long? except)
     {
         if (
             world

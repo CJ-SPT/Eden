@@ -637,6 +637,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Corporations
 
+- [Resident corporation services](protocol/corporations.md#resident-corporation-services)
 - [Corporation registry lifetime and application replies](protocol/corporations.md#corporation-registry-lifetime-and-application-replies)
 - [Corporation contacts and standings, November 11, 2026](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026)
 

@@ -11,6 +11,7 @@ using Eden.World.Catalog;
 using Eden.World.Industry;
 using Eden.World.Insurance;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,48 +22,68 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
 {
     public IReadOnlyList<CorporationOffice> Offices(long actorId)
     {
-        using WorldDbContext world = new(database.Path);
-        var pilot = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown pilot.");
-        return world
-            .Set<SavedCorporationOffice>()
-            .Where(o => o.CorporationId == pilot.CorporationId)
-            .OrderBy(o => o.StationId)
-            .AsEnumerable()
-            .Select(o => o.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<CorporationOffice>>(
+            database,
+            world =>
+            {
+                var pilot = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown pilot.");
+                return world
+                    .Set<SavedCorporationOffice>()
+                    .Where(o => o.CorporationId == pilot.CorporationId)
+                    .OrderBy(o => o.StationId)
+                    .AsEnumerable()
+                    .Select(o => o.Snapshot())
+                    .ToArray();
+            }
+        );
     }
 
     public IReadOnlyList<int> Tenants(long actorId)
     {
-        using WorldDbContext world = new(database.Path);
-        int station = DockedStation(world, actorId);
-        return world
-            .Set<SavedCorporationOffice>()
-            .Where(o => o.StationId == station)
-            .OrderBy(o => o.CorporationId)
-            .Select(o => o.CorporationId)
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<int>>(
+            database,
+            world =>
+            {
+                int station = DockedStation(world, actorId);
+                return world
+                    .Set<SavedCorporationOffice>()
+                    .Where(o => o.StationId == station)
+                    .OrderBy(o => o.CorporationId)
+                    .Select(o => o.CorporationId)
+                    .ToArray();
+            }
+        );
     }
 
     public int EmptyOffices(long actorId)
     {
-        using WorldDbContext world = new(database.Path);
-        int station = DockedStation(world, actorId);
-        return Math.Max(0, Settings(world).OfficeSlots - world.Set<SavedCorporationOffice>().Count(o => o.StationId == station));
+        return WorldActionScope.Inspect<int>(
+            database,
+            world =>
+            {
+                int station = DockedStation(world, actorId);
+                return Math.Max(0, Settings(world).OfficeSlots - world.Set<SavedCorporationOffice>().Count(o => o.StationId == station));
+            }
+        );
     }
 
     public long Quote(long actorId)
     {
-        using WorldDbContext world = new(database.Path);
-        DockedStation(world, actorId);
-        CorporationRoleStore.Current(world, actorId);
-        return Settings(world).RentalFeeCents;
+        return WorldActionScope.Inspect<long>(
+            database,
+            world =>
+            {
+                DockedStation(world, actorId);
+                CorporationRoleStore.Current(world, actorId);
+                return Settings(world).RentalFeeCents;
+            }
+        );
     }
 
     public CorporationOffice Rent(long actorId, long quotedCents)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         int station = DockedStation(world, actorId);
         var corporation = RentalAuthority(world, actorId);
         var settings = Settings(world);
@@ -83,11 +104,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var location = catalog.RequireStation(station);
-        long last = world
-            .Database.SqlQueryRaw<long>("SELECT COALESCE(MAX(seq),0) AS Value FROM sqlite_sequence WHERE name='WorldCorporationOffice'")
-            .AsEnumerable()
-            .Single();
-        long id = Math.Max(CorporationStorageRules.FirstOfficeId, checked(last + 1));
+        long id = world.Next("WorldCorporationOffice", CorporationStorageRules.FirstOfficeId - 1);
         if (id > CorporationStorageRules.LastOfficeId)
         {
             throw new InvalidDataException("The office identifier range is exhausted.");
@@ -120,15 +137,14 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
             "Office rental"
         );
         Notify(world, new(actorId, office.Snapshot(), true, []));
-        world.SaveChanges();
         transaction.Commit();
         return office.Snapshot();
     }
 
     public CorporationOffice Unrent(long actorId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         int station = DockedStation(world, actorId);
         var corporation = RentalAuthority(world, actorId);
         var office =
@@ -140,89 +156,108 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
         }
         Notify(world, new(actorId, office.Snapshot(), true, []));
         world.Remove(office);
-        world.SaveChanges();
         transaction.Commit();
         return office.Snapshot();
     }
 
     public CorporationOffice Office(long actorId, long officeId)
     {
-        using WorldDbContext world = new(database.Path);
-        return LocalOffice(world, actorId, officeId).Snapshot();
+        return WorldActionScope.Inspect<CorporationOffice>(
+            database,
+            world =>
+            {
+                return LocalOffice(world, actorId, officeId).Snapshot();
+            }
+        );
     }
 
     public IReadOnlyList<InventoryItem> List(long actorId, long officeId, int? flag)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var office = LocalOffice(world, actorId, officeId);
-        var corporation = CorporationRoleStore.Current(world, actorId);
-        var access = CorporationRoleStore.Effective(world, actorId, corporation);
-        if (flag.HasValue && !CorporationStorageRules.CanQuery(access, office.StationId, corporation.StationId, flag.Value))
-        {
-            throw new InvalidDataException("You cannot view this corporation hangar division.");
-        }
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        return PilotInventoryStore
-            .List(world, catalog, corporation.Id, officeId)
-            .Where(i =>
-                (!flag.HasValue || i.FlagId == flag)
-                && CorporationStorageRules.CanQuery(access, office.StationId, corporation.StationId, i.FlagId)
-            )
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<InventoryItem>>(
+            database,
+            world =>
+            {
+                var office = LocalOffice(world, actorId, officeId);
+                var corporation = CorporationRoleStore.Current(world, actorId);
+                var access = CorporationRoleStore.Effective(world, actorId, corporation);
+                if (flag.HasValue && !CorporationStorageRules.CanQuery(access, office.StationId, corporation.StationId, flag.Value))
+                {
+                    throw new InvalidDataException("You cannot view this corporation hangar division.");
+                }
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                return PilotInventoryStore
+                    .List(world, catalog, corporation.Id, officeId)
+                    .Where(i =>
+                        (!flag.HasValue || i.FlagId == flag)
+                        && CorporationStorageRules.CanQuery(access, office.StationId, corporation.StationId, i.FlagId)
+                    )
+                    .ToArray();
+            }
+        );
     }
 
     public bool CanObserve(long actorId, long officeId, int flag)
     {
-        using WorldDbContext world = new(database.Path);
-        var pilot = world.Pilots.Find(actorId);
-        var office = world.Set<SavedCorporationOffice>().Find(officeId);
-        var corporation = office is null ? null : world.Set<SavedCorporation>().Find(office.CorporationId);
-        return pilot is not null
-            && office is not null
-            && corporation is not null
-            && pilot.CorporationId == corporation.Id
-            && CorporationStorageRules.CanQuery(
-                CorporationRoleStore.Effective(world, actorId, corporation),
-                office.StationId,
-                corporation.StationId,
-                flag
-            );
+        return WorldActionScope.Inspect<bool>(
+            database,
+            world =>
+            {
+                var pilot = world.Pilots.Find(actorId);
+                var office = world.Set<SavedCorporationOffice>().Find(officeId);
+                var corporation = office is null ? null : world.Set<SavedCorporation>().Find(office.CorporationId);
+                return pilot is not null
+                    && office is not null
+                    && corporation is not null
+                    && pilot.CorporationId == corporation.Id
+                    && CorporationStorageRules.CanQuery(
+                        CorporationRoleStore.Effective(world, actorId, corporation),
+                        office.StationId,
+                        corporation.StationId,
+                        flag
+                    );
+            }
+        );
     }
 
     public IReadOnlyList<InventoryItem> Assets(long actorId, int corporationId, int stationId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var corporation = CorporationRoleStore.Current(world, actorId);
-        if (corporation.Id != corporationId)
-        {
-            throw new InvalidDataException("Read assets for your current corporation.");
-        }
-        var access = CorporationRoleStore.Effective(world, actorId, corporation);
-        var office = world.Set<SavedCorporationOffice>().SingleOrDefault(o => o.CorporationId == corporationId && o.StationId == stationId);
-        if (office is null)
-        {
-            return [];
-        }
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        return PilotInventoryStore
-            .List(world, catalog, corporationId, office.Id)
-            .Where(i => CorporationStorageRules.CanQuery(access, stationId, corporation.StationId, i.FlagId))
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<InventoryItem>>(
+            database,
+            world =>
+            {
+                var corporation = CorporationRoleStore.Current(world, actorId);
+                if (corporation.Id != corporationId)
+                {
+                    throw new InvalidDataException("Read assets for your current corporation.");
+                }
+                var access = CorporationRoleStore.Effective(world, actorId, corporation);
+                var office = world
+                    .Set<SavedCorporationOffice>()
+                    .SingleOrDefault(o => o.CorporationId == corporationId && o.StationId == stationId);
+                if (office is null)
+                {
+                    return [];
+                }
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                return PilotInventoryStore
+                    .List(world, catalog, corporationId, office.Id)
+                    .Where(i => CorporationStorageRules.CanQuery(access, stationId, corporation.StationId, i.FlagId))
+                    .ToArray();
+            }
+        );
     }
 
     public IReadOnlyList<InventoryChange> Move(long actorId, long destinationId, InventoryMoveRequest request)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         int station = DockedStation(world, actorId);
         var corporation = CorporationRoleStore.Current(world, actorId);
         var access = CorporationRoleStore.Effective(world, actorId, corporation);
         var office =
             world.Set<SavedCorporationOffice>().SingleOrDefault(o => o.CorporationId == corporation.Id && o.StationId == station)
             ?? throw new InvalidDataException("Your corporation does not rent an office here.");
-        var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == actorId);
+        var pilot = world.Pilots.Single(p => p.Id == actorId);
         bool fromOffice = request.SourceId == office.Id;
         bool toOffice = destinationId == office.Id;
         if (
@@ -253,8 +288,9 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
                     .Concat(
                         request.SourceId == station
                             ? world
-                                .Ships.Include(s => s.Position)
-                                .Where(s => s.OwnerId == actorId && s.StationId == station && s.StoredInId == null && s.Position == null)
+                                .Ships.Where(s =>
+                                    s.OwnerId == actorId && s.StationId == station && s.StoredInId == null && s.Position == null
+                                )
                                 .AsEnumerable()
                                 .Select(s => PilotFleetStore.Read(catalog, s))
                             : []
@@ -324,29 +360,20 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
                     || world
                         .Set<OwnedItem>()
                         .Any(i =>
-                            (i.LocationId == hull.Id || contentIds.Contains(i.LocationId))
-                            && (i.OwnerId != sourceOwner || !contentIds.Contains(i.Id))
+                            (i.LocationId == hull.Id || Enumerable.Contains(contentIds, i.LocationId))
+                            && (i.OwnerId != sourceOwner || !Enumerable.Contains(contentIds, i.Id))
                         )
                 )
                 {
                     throw new InvalidDataException("The ship contains assets that cannot be transferred.");
                 }
-                // The active-ship ownership constraint uses (Id, OwnerId) as an alternate key.
-                // EF keys are immutable; update this inactive hull in-place within our transaction.
-                world.Entry(hull).State = EntityState.Detached;
                 long? container = toOffice ? office.Id : null;
-                int changed = world
-                    .Ships.Where(s => s.Id == hull.Id && s.OwnerId == sourceOwner && !world.Pilots.Any(p => p.ActiveShipId == s.Id))
-                    .ExecuteUpdate(update =>
-                        update
-                            .SetProperty(s => s.OwnerId, targetOwner)
-                            .SetProperty(s => s.StoredInId, container)
-                            .SetProperty(s => s.StorageFlagId, request.FlagId)
-                            .SetProperty(s => s.StationId, station)
-                    );
-                if (changed != 1)
+                if (sourceOwner != targetOwner && world is SqlWorldAction sql)
                 {
-                    throw new InvalidDataException("The inactive ship could not be transferred.");
+                    sql.TransferInactiveHull(hull, targetOwner);
+                    hull =
+                        world.Ships.FindUnfiltered(new(hull.Id))
+                        ?? throw new InvalidDataException("The inactive ship could not be transferred.");
                 }
                 hull.OwnerId = targetOwner;
                 hull.StoredInId = container;
@@ -403,15 +430,14 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
             }
         }
         Notify(world, new(actorId, office.Snapshot(), false, changes));
-        world.SaveChanges();
         transaction.Commit();
         return changes;
     }
 
     public IReadOnlyList<InventoryChange> Stack(long actorId, long officeId, int flag)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var office = LocalOffice(world, actorId, officeId);
         var corporation = CorporationRoleStore.Current(world, actorId);
         var access = CorporationRoleStore.Effective(world, actorId, corporation);
@@ -453,22 +479,21 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
             }
         }
         Notify(world, new(actorId, office.Snapshot(), false, changes));
-        world.SaveChanges();
         transaction.Commit();
         return changes;
     }
 
-    private static SavedCorporationOfficeSettings Settings(WorldDbContext world) => world.Set<SavedCorporationOfficeSettings>().Find(1)!;
+    private static SavedCorporationOfficeSettings Settings(WorldAction world) => world.Set<SavedCorporationOfficeSettings>().Find(1)!;
 
-    private static int DockedStation(WorldDbContext world, long actorId)
+    private static int DockedStation(WorldAction world, long actorId)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == actorId);
+        var pilot = world.Pilots.SingleOrDefault(p => p.Id == actorId);
         return pilot?.ActiveShip is { Position: null, StructureId: null } ship
             ? ship.StationId
             : throw new InvalidDataException("Dock at the office's station before using corporation storage.");
     }
 
-    private static SavedCorporation RentalAuthority(WorldDbContext world, long actorId)
+    private static SavedCorporation RentalAuthority(WorldAction world, long actorId)
     {
         var corporation = CorporationRoleStore.Current(world, actorId);
         if (!CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.CanRentOffice))
@@ -478,7 +503,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
         return corporation;
     }
 
-    private static SavedCorporationOffice LocalOffice(WorldDbContext world, long actorId, long officeId)
+    private static SavedCorporationOffice LocalOffice(WorldAction world, long actorId, long officeId)
     {
         int station = DockedStation(world, actorId);
         var corporation = CorporationRoleStore.Current(world, actorId);
@@ -490,7 +515,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
             : throw new InvalidDataException("This corporation office is unavailable at your current station.");
     }
 
-    private static void Notify(WorldDbContext world, CorporationStorageChange change)
+    private static void Notify(WorldAction world, CorporationStorageChange change)
     {
         if (!change.RentalChanged && change.Items.Count == 0)
         {

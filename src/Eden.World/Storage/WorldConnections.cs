@@ -279,6 +279,7 @@ internal static partial class WorldConnections
 
         private bool _itemMembershipWrite;
         private bool _positionMembershipWrite;
+        private bool _positionKeyWrite;
         private bool _schemaWrite;
         private bool _marketDefinitionWrite;
         private bool _marketMembershipWrite;
@@ -399,6 +400,10 @@ internal static partial class WorldConnections
                                     // Corporation location roles depend on docking membership,
                                     // while ordinary coordinates stay in resident motion state.
                                     RecordChange("WorldPositionMembership", id);
+                                    if (operation == SQLitePCL.raw.SQLITE_UPDATE && _positionKeyWrite)
+                                    {
+                                        RecordChange("WorldPositionKey", id);
+                                    }
                                 }
                                 if (
                                     string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
@@ -470,6 +475,7 @@ internal static partial class WorldConnections
                                 )
                                 {
                                     _positionMembershipWrite = true;
+                                    _positionKeyWrite |= string.Equals(column, "ShipId", StringComparison.OrdinalIgnoreCase);
                                 }
                                 // Row callbacks must also cover unqualified bulk DELETE operations.
                                 // Schema writes must retain SQLite's normal DROP/ALTER behavior.
@@ -526,6 +532,7 @@ internal static partial class WorldConnections
                         _changes.Clear();
                         _itemMembershipWrite = false;
                         _positionMembershipWrite = false;
+                        _positionKeyWrite = false;
                         _schemaWrite = false;
                         _marketDefinitionWrite = false;
                         _marketMembershipWrite = false;

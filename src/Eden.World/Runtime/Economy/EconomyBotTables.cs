@@ -3271,6 +3271,34 @@ internal sealed partial class EconomyTransaction
     {
         switch (row)
         {
+            case Eden.Data.World.Corporations.SavedCorporationApplication value:
+                value.Id = value.Id == 0 ? Next("WorldCorporationApplication") : value.Id;
+                Reserve("WorldCorporationApplication", value.Id);
+                break;
+            case Eden.Data.World.Corporations.SavedCorporationChange value:
+                value.Id = value.Id == 0 ? Next("WorldCorporationChange") : value.Id;
+                Reserve("WorldCorporationChange", value.Id);
+                break;
+            case Eden.Data.World.Corporations.SavedCorporationEmployment value:
+                value.Id = value.Id == 0 ? Next("WorldCorporationEmployment") : value.Id;
+                Reserve("WorldCorporationEmployment", value.Id);
+                break;
+            case Eden.Data.World.Corporations.SavedCorporationLoyaltyTransfer value:
+                value.Id = value.Id == 0 ? Next("WorldCorporationLoyaltyTransfer") : value.Id;
+                Reserve("WorldCorporationLoyaltyTransfer", value.Id);
+                break;
+            case Eden.Data.World.Corporations.SavedCorporationOffice value:
+                value.Id = value.Id == 0 ? Next("WorldCorporationOffice") : value.Id;
+                Reserve("WorldCorporationOffice", value.Id);
+                break;
+            case Eden.Data.World.Corporations.SavedCorporationPayment value:
+                value.Id = value.Id == 0 ? Next("WorldCorporationPayment") : value.Id;
+                Reserve("WorldCorporationPayment", value.Id);
+                break;
+            case Eden.Data.World.Corporations.SavedCorporationShareTransfer value:
+                value.Id = value.Id == 0 ? Next("WorldCorporationShareTransfer") : value.Id;
+                Reserve("WorldCorporationShareTransfer", value.Id);
+                break;
             case Eden.Data.World.Contracts.SavedContract value:
                 value.Id = value.Id == 0 ? Next("WorldContract") : value.Id;
                 Reserve("WorldContract", value.Id);

@@ -16,8 +16,8 @@ using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Industry;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Market;
 
@@ -36,11 +36,9 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
             ?? throw new InvalidDataException("Invalid loyalty store offers.");
     }
 
-    private static CatalogStationDefinition Station(WorldDbContext world, CatalogDbContext catalog, long pilotId)
+    private static CatalogStationDefinition Station(WorldAction world, CatalogDbContext catalog, long pilotId)
     {
-        var pilot =
-            world.Pilots.Include(p => p.ActiveShip).ThenInclude(ship => ship.Position).SingleOrDefault(p => p.Id == pilotId)
-            ?? throw new InvalidDataException("Unknown loyalty store customer.");
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown loyalty store customer.");
         var station = catalog.Definitions.FindStation(pilot.ActiveShip.StationId);
         if (
             pilot.ActiveShip.Position is not null
@@ -55,12 +53,17 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
 
     public void CheckStation(long pilotId, int stationId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (Station(world, catalog, pilotId).Id != stationId)
-        {
-            throw new InvalidDataException("Use your current station's loyalty store.");
-        }
+        WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                if (Station(world, catalog, pilotId).Id != stationId)
+                {
+                    throw new InvalidDataException("Use your current station's loyalty store.");
+                }
+            }
+        );
     }
 
     private static IReadOnlyList<LoyaltyOffer> Offers(CatalogDbContext catalog, int corporationId)
@@ -101,8 +104,7 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
 
     public IReadOnlyList<LoyaltyOffer> Offers(long pilotId, int corporationId)
     {
-        using WorldDbContext world = new(database.Path);
-        if (!world.Pilots.Any(p => p.Id == pilotId))
+        if (!WorldActionScope.Inspect(database, world => world.PilotExists(pilotId)))
         {
             throw new InvalidDataException("Unknown loyalty store customer.");
         }
@@ -112,8 +114,8 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
 
     public LoyaltyPurchase Purchase(long pilotId, int corporationId, int offerId, int count, bool corporate = false)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var station = Station(world, catalog, pilotId);
         if (station.OwnerId != corporationId)
@@ -137,8 +139,7 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
         long balanceBefore = owner is null ? wallet?.Cents ?? 0 : CorporationWalletStore.ReadBalance(world, owner, key!.Value);
         LoyaltyStoreRules.CheckFunds(pointsBefore, balanceBefore, cost);
         var stacks = world
-            .Set<OwnedItem>()
-            .Where(item =>
+            .Filter<OwnedItem>(item =>
                 item.OwnerId == pilotId
                 && item.LocationId == station.Id
                 && item.FlagId == (int)InventoryFlag.Hangar
@@ -253,17 +254,16 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
                 }
             );
         }
-        world.SaveChanges();
         transaction.Commit();
         return new(pointsBefore, pointsBefore - cost.Points, balanceBefore - cost.IskCents, changes, owner?.Id, key);
     }
 
     public LoyaltyExchange ExchangeConcord(long pilotId, int corporationId, long points)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(ship => ship.Position).SingleOrDefault(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId);
         if (
             pilot is null
             || pilot.ActiveShip.Position is not null
@@ -297,7 +297,6 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
         destination ??= world.Add(new SavedLoyaltyBalance { PilotId = pilotId, IssuerCorporationId = corporationId }).Entity;
         source.Points -= cost;
         destination.Points += points;
-        world.SaveChanges();
         transaction.Commit();
         return new(sourceBefore, source.Points, before, destination.Points);
     }

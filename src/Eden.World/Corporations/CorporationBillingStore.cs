@@ -5,6 +5,7 @@ using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -14,21 +15,25 @@ internal sealed class CorporationBillingStore(WorldDatabase database) : ICorpora
 {
     public CorporationBillPaymentSettings Read(long actorId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var corporation = Authorize(world, actorId, false);
-        var saved = world.Set<SavedCorporationBillPaymentSettings>().Find(corporation.Id);
-        var settings = saved is null ? null : JsonSerializer.Deserialize<CorporationBillPaymentSettings>(saved.DataJson);
-        var rules = BillTypes()
-            .Select(id => new CorporationBillPaymentRule(id, settings?.Rules.Any(r => r.BillTypeId == id && r.Enabled) == true));
-        return new(corporation.Id, settings?.DivisionKey ?? CorporationWalletRules.MasterKey, rules.ToArray());
+        return WorldActionScope.Inspect<CorporationBillPaymentSettings>(
+            database,
+            world =>
+            {
+                var corporation = Authorize(world, actorId, false);
+                var saved = world.Set<SavedCorporationBillPaymentSettings>().Find(corporation.Id);
+                var settings = saved is null ? null : JsonSerializer.Deserialize<CorporationBillPaymentSettings>(saved.DataJson);
+                var rules = BillTypes()
+                    .Select(id => new CorporationBillPaymentRule(id, settings?.Rules.Any(r => r.BillTypeId == id && r.Enabled) == true));
+                return new(corporation.Id, settings?.DivisionKey ?? CorporationWalletRules.MasterKey, rules.ToArray());
+            }
+        );
     }
 
     public void Save(long actorId, CorporationBillPaymentSettings settings)
     {
         CorporationWalletRules.CheckKey(settings.DivisionKey);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var corporation = Authorize(world, actorId, true);
         var billTypes = BillTypes();
         if (
@@ -47,7 +52,6 @@ internal sealed class CorporationBillingStore(WorldDatabase database) : ICorpora
             world.Set<SavedCorporationBillPaymentSettings>().Find(corporation.Id)
             ?? world.Add(new SavedCorporationBillPaymentSettings { CorporationId = corporation.Id }).Entity;
         saved.DataJson = JsonSerializer.Serialize(settings);
-        world.SaveChanges();
         transaction.Commit();
     }
 
@@ -57,7 +61,7 @@ internal sealed class CorporationBillingStore(WorldDatabase database) : ICorpora
         return catalog.Records(CatalogData.Client.Billtypes).Keys.Select(id => checked((int)id)).Order().ToArray();
     }
 
-    private static SavedCorporation Authorize(WorldDbContext world, long actorId, bool write)
+    private static SavedCorporation Authorize(WorldAction world, long actorId, bool write)
     {
         var corporation = CorporationRoleStore.Current(world, actorId);
         var required = write ? CorporationRole.Accountant : CorporationRole.Accountant | CorporationRole.JuniorAccountant;

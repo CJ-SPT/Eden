@@ -7,6 +7,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
 using Eden.World.Market;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -20,14 +21,18 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
         {
             CorporationWalletRules.CheckKey(division);
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var corporation = CorporationRoleStore.Current(world, actorId);
-        var roles = CorporationRoleStore.Effective(world, actorId, corporation).Roles;
-        if (!roles.Has(CorporationRole.Accountant | CorporationRole.JuniorAccountant | CorporationRole.Trader))
-        {
-            throw new InvalidDataException("Corporation financial or trader access is required for market history.");
-        }
+        WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var corporation = CorporationRoleStore.Current(world, actorId);
+                var roles = CorporationRoleStore.Effective(world, actorId, corporation).Roles;
+                if (!roles.Has(CorporationRole.Accountant | CorporationRole.JuniorAccountant | CorporationRole.Trader))
+                {
+                    throw new InvalidDataException("Corporation financial or trader access is required for market history.");
+                }
+            }
+        );
     }
 
     public IReadOnlyList<CorporationWalletDivision> Divisions(long actorId) =>
@@ -35,31 +40,39 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
 
     private IReadOnlyList<CorporationWalletDivision> ReadDivisions(long actorId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var corporation = CorporationRoleStore.Current(world, actorId);
-        var roles = CorporationRoleStore.Effective(world, actorId, corporation).Roles;
-        return Enumerable
-            .Range(CorporationWalletRules.MasterKey, CorporationWalletRules.DivisionCount)
-            .Where(key => CorporationWalletRules.CanRead(roles, key))
-            .Select(key => new CorporationWalletDivision(key, ReadBalance(world, corporation, key)))
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<CorporationWalletDivision>>(
+            database,
+            world =>
+            {
+                var corporation = CorporationRoleStore.Current(world, actorId);
+                var roles = CorporationRoleStore.Effective(world, actorId, corporation).Roles;
+                return Enumerable
+                    .Range(CorporationWalletRules.MasterKey, CorporationWalletRules.DivisionCount)
+                    .Where(key => CorporationWalletRules.CanRead(roles, key))
+                    .Select(key => new CorporationWalletDivision(key, ReadBalance(world, corporation, key)))
+                    .ToArray();
+            }
+        );
     }
 
     public long Balance(long actorId, int key)
     {
         CorporationWalletRules.CheckKey(key);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var corporation = AuthorizeRead(world, actorId, key);
-        return ReadBalance(world, corporation, key);
+        return WorldActionScope.Inspect<long>(
+            database,
+            world =>
+            {
+                var corporation = AuthorizeRead(world, actorId, key);
+                return ReadBalance(world, corporation, key);
+            }
+        );
     }
 
     public void SelectDivision(long actorId, int key)
     {
         CorporationWalletRules.CheckKey(key);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var corporation = CorporationRoleStore.Current(world, actorId);
         if (!CorporationWalletRules.CanTake(CorporationRoleStore.Effective(world, actorId, corporation).Roles, key))
         {
@@ -70,37 +83,40 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
             ?? world.Add(new SavedCorporationWalletSelection { PilotId = actorId }).Entity;
         selection.CorporationId = corporation.Id;
         selection.Key = key;
-        world.SaveChanges();
         transaction.Commit();
     }
 
     public IReadOnlyList<CorporationWalletEntry> Journal(long actorId, bool corporation, int key, HistoryPeriod? period = null)
     {
         CorporationWalletRules.CheckKey(key);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        long owner = corporation ? AuthorizeRead(world, actorId, key).Id : actorId;
-        if (!corporation && key != CorporationWalletRules.MasterKey)
-        {
-            throw new InvalidDataException("Personal wallets have one cash account.");
-        }
-        long from = period?.From ?? 0;
-        long until = period?.Until ?? long.MaxValue;
-        return world
-            .Set<SavedWalletLedger>()
-            .Where(e => e.OwnerId == owner && e.Key == key && e.Time >= from && e.Time < until)
-            .OrderByDescending(e => e.Id)
-            .Take(1000)
-            .AsEnumerable()
-            .Select(e => e.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<CorporationWalletEntry>>(
+            database,
+            world =>
+            {
+                long owner = corporation ? AuthorizeRead(world, actorId, key).Id : actorId;
+                if (!corporation && key != CorporationWalletRules.MasterKey)
+                {
+                    throw new InvalidDataException("Personal wallets have one cash account.");
+                }
+                long from = period?.From ?? 0;
+                long until = period?.Until ?? long.MaxValue;
+                return world
+                    .Set<SavedWalletLedger>()
+                    .Where(e => e.OwnerId == owner && e.Key == key && e.Time >= from && e.Time < until)
+                    .OrderByDescending(e => e.Id)
+                    .Take(1000)
+                    .AsEnumerable()
+                    .Select(e => e.Snapshot())
+                    .ToArray();
+            }
+        );
     }
 
     public void Transfer(long actorId, WalletTransferRequest request)
     {
         CorporationWalletRules.CheckTransfer(request);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         var actor = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown pilot.");
         var sourceCorporation = request.FromCorporation ? CorporationRoleStore.Current(world, actorId) : null;
         if (
@@ -186,7 +202,6 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
             actor.Id,
             request.Reason
         );
-        world.SaveChanges();
         transaction.Commit();
     }
 
@@ -229,7 +244,7 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
         return tax;
     }
 
-    private static SavedCorporation AuthorizeRead(WorldDbContext world, long actorId, int key)
+    private static SavedCorporation AuthorizeRead(WorldAction world, long actorId, int key)
     {
         var corporation = CorporationRoleStore.Current(world, actorId);
         if (!CorporationWalletRules.CanRead(CorporationRoleStore.Effective(world, actorId, corporation).Roles, key))
@@ -239,15 +254,15 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
         return corporation;
     }
 
-    private static PilotWallet PilotWallet(WorldDbContext world, long pilotId) =>
+    private static PilotWallet PilotWallet(WorldAction world, long pilotId) =>
         world.Set<PilotWallet>().Find(pilotId) ?? world.Add(new PilotWallet { PilotId = pilotId }).Entity;
 
-    internal static long ReadBalance(WorldDbContext world, SavedCorporation corporation, int key) =>
+    internal static long ReadBalance(WorldAction world, SavedCorporation corporation, int key) =>
         key == CorporationWalletRules.MasterKey
             ? corporation.BalanceCents
             : world.Set<SavedCorporationWallet>().Find(corporation.Id, key)?.BalanceCents ?? 0;
 
-    internal static void WriteBalance(WorldDbContext world, SavedCorporation corporation, int key, long balance)
+    internal static void WriteBalance(WorldAction world, SavedCorporation corporation, int key, long balance)
     {
         if (key == CorporationWalletRules.MasterKey)
         {
@@ -288,4 +303,10 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
                 Reason = reason,
             }
         );
+
+    internal static long ReadBalance(WorldDbContext world, SavedCorporation corporation, int key) =>
+        ReadBalance(new SqlWorldAction(world), corporation, key);
+
+    internal static void WriteBalance(WorldDbContext world, SavedCorporation corporation, int key, long balance) =>
+        WriteBalance(new SqlWorldAction(world), corporation, key, balance);
 }

@@ -464,6 +464,9 @@ internal sealed partial class ResidentEconomy
             return;
         }
         var affected = changes.GroupBy(c => c.Table).ToDictionary(g => g.Key, g => g.Select(c => c.Id).Distinct().ToArray());
+        // SQLite reports the new rowid when a position's ship key changes. The prior
+        // ship is absent from the update hook, so reload membership on that boundary.
+        bool positionsChanged = affected.ContainsKey("WorldPositionKey");
         var tables = _tables.Values.Where(t => affected.ContainsKey(t.Name)).ToArray();
         if (tables.Length == 0)
         {
@@ -473,7 +476,14 @@ internal sealed partial class ResidentEconomy
         world.Database.OpenConnection();
         foreach (var table in tables)
         {
-            table.Observe(world, affected[table.Name]);
+            if (positionsChanged && table.Name == "WorldPosition")
+            {
+                table.Load(world);
+            }
+            else
+            {
+                table.Observe(world, affected[table.Name]);
+            }
         }
         ReindexTimedModules(changes);
         // External insertions share the same high-water domain, including deletions
