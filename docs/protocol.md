@@ -893,3 +893,6 @@ covers launcher sessions and game tickets.
 
 [Resident capsuleer ship blueprints](protocol/capsuleers.md#resident-ship-blueprints-november-14-2026)
 covers cold founder and inbound ship preparation.
+
+[Resident gameplay fallback dispatch](protocol/architecture.md#resident-gameplay-fallback-dispatch-november-14-2026)
+records the live-owner and SQL transaction boundaries.

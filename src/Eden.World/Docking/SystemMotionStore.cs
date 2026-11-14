@@ -16,8 +16,8 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Propulsion;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Docking;
 
@@ -65,11 +65,8 @@ public sealed partial class SqliteWorld
         IReadOnlyList<StaticSpaceObject> objects
     )
     {
-        using WorldDbContext world = new(_database.Path);
-        // Keep the ownership lease through synchronization; committing an EF-owned
-        // transaction otherwise closes its connection before the object handoff.
-        world.Database.OpenConnection();
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(_database, new(systems: [systemId], ships: ships.Select(ship => ship.Id)));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(_database.CatalogPath);
         var npcs = world
             .Set<WorldNpc>()
@@ -83,7 +80,7 @@ public sealed partial class SqliteWorld
         var attributes = profiles.ToDictionary(p => p.Key, p => p.Value.Attributes);
         var ids = npcs.Select(n => n.Id).ToArray();
         var tackle = PilotTackleStore.NpcTackles(world, ids);
-        var aggressionByNpc = world.Set<NpcAggression>().Where(a => ids.Contains(a.NpcId)).ToDictionary(a => a.NpcId);
+        var aggressionByNpc = world.Set<NpcAggression>().Where(a => Enumerable.Contains(ids, a.NpcId)).ToDictionary(a => a.NpcId);
         var effectiveByNpc = npcs.ToDictionary(
             n => n.Id,
             n => TackleDefinitions.NpcAttributes(attributes[n.TypeId], tackle[n.Id].Select(t => t.Module()).ToArray())
@@ -229,7 +226,6 @@ public sealed partial class SqliteWorld
         }
         world.SaveChanges();
         transaction.Commit();
-        WorldConnections.SynchronizeCommitted(world);
         _database.MotionStamps[systemId] = stamp;
         foreach (var collision in resolved.Values.Where(c => c.Bumped))
         {

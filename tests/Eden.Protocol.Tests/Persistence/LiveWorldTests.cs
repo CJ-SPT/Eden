@@ -18,6 +18,64 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class LiveWorldTests
 {
     [Fact]
+    public void GameplayUsesResidentStateWithAnOpenSqlConnection()
+    {
+        using TestWorld db = new();
+        WorldDatabase database = new(db.Path);
+        using LiveWorld live = new(database, new TestClock(), _ => { }, combatObjects: false, residentReads: false);
+        live.Economy.Warm();
+        var pilot = db.Store.FindPilot(1000001)!;
+        var wallet = new PilotWalletReader(database);
+        long original = wallet.Balance(pilot.PilotId);
+        db.Store.SetPosition(pilot.ShipId, pilot.Home.Position, pilot.HomeSystemId);
+        using WorldDbContext sql = new(db.Path);
+        sql.Database.OpenConnection();
+        List<string> commands = [];
+        using (
+            var metrics = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin(
+                "idle SQL connection",
+                _ => { },
+                force: true,
+                command: commands.Add
+            )!
+        )
+        {
+            Assert.Equal(original, wallet.Balance(pilot.PilotId));
+            Assert.Equal(pilot.PilotId, db.Store.FindPilot(1000001)!.PilotId);
+            db.Store.SetPosition(pilot.ShipId, pilot.Home.Position, pilot.HomeSystemId);
+            Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
+            Assert.Equal(0, metrics.Connections);
+        }
+        using (var transaction = sql.Database.BeginTransaction())
+        {
+            sql.Database.ExecuteSql(
+                $"""
+                INSERT INTO WorldWallet(PilotId,Cents) VALUES({pilot.PilotId},{original + 1})
+                ON CONFLICT(PilotId) DO UPDATE SET Cents=excluded.Cents
+                """
+            );
+            using (var metrics = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin("active SQL transaction", _ => { }, force: true)!)
+            {
+                Assert.Equal(original, wallet.Balance(pilot.PilotId));
+                Assert.Throws<InvalidOperationException>(() => db.Store.SetPosition(pilot.ShipId, null));
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+            }
+            transaction.Rollback();
+        }
+        Assert.Equal(original, wallet.Balance(pilot.PilotId));
+        sql.Database.ExecuteSql(
+            $"""
+            INSERT INTO WorldWallet(PilotId,Cents) VALUES({pilot.PilotId},{original + 1})
+            ON CONFLICT(PilotId) DO UPDATE SET Cents=excluded.Cents
+            """
+        );
+        Assert.Throws<InvalidOperationException>(() => db.Store.SetPosition(pilot.ShipId, null));
+        sql.Database.CloseConnection();
+        Assert.Equal(original + 1, wallet.Balance(pilot.PilotId));
+    }
+
+    [Fact]
     public async Task DurableFlushDoesNotCaptureTheCallingSynchronizationContext()
     {
         using TestWorld db = new();

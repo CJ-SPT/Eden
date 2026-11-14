@@ -18,49 +18,15 @@ internal sealed partial class LiveCombatRuntime
     private ResidentMap<long, long> DroneControllers() =>
         _droneControllers ??= Loading(() =>
         {
-            if (owner.SqlConnections == 0 && owner.Economy.IsLoaded)
-            {
-                return owner.Economy.Inspect(world =>
-                    world
-                        .Set<WorldDrone>()
-                        .Where(d => d.ControllerShipId != 0 && d.SystemId != null && (systemId == null || d.SystemId == systemId))
-                        .Select(d => new DroneController(d.ControllerShipId, d.PilotId))
-                        .Distinct()
-                        .ToDictionary(d => d.ControllerShipId, d => d.PilotId)
-                );
-            }
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-            return world
-                .Set<WorldDrone>()
-                .AsNoTracking()
-                .Where(d => d.ControllerShipId != 0 && d.SystemId != null && (systemId == null || d.SystemId == systemId))
-                .Select(d => new { d.ControllerShipId, d.PilotId })
-                .Distinct()
-                .ToDictionary(d => d.ControllerShipId, d => d.PilotId);
+            return owner.Economy.Inspect(world =>
+                world
+                    .Set<WorldDrone>()
+                    .Where(d => d.ControllerShipId != 0 && d.SystemId != null && (systemId == null || d.SystemId == systemId))
+                    .Select(d => new DroneController(d.ControllerShipId, d.PilotId))
+                    .Distinct()
+                    .ToDictionary(d => d.ControllerShipId, d => d.PilotId)
+            );
         });
-
-    internal void WarmDrones()
-    {
-        Execute(() => WarmDronesOwned(), nameof(WarmDrones));
-    }
-
-    private void WarmDronesOwned()
-    {
-        using var ownership = owner.Enter();
-        bool available = Loading(() =>
-        {
-            using WorldDbContext world = new(database.Path);
-            return world
-                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM sqlite_master WHERE type='table' AND name='WorldDrone'")
-                .Any();
-        });
-        // The resident owner opens before startup migrations. Defer hydration
-        // until initialization has supplied the drone schema and reset control.
-        if (available)
-        {
-            _ = DroneControllers();
-        }
-    }
 
     internal bool FireNpc(
         long pilotId,

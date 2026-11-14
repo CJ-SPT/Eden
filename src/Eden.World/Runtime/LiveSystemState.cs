@@ -34,6 +34,6 @@ internal sealed class LiveSystemState
         Heat = new(owner, database, clock);
         Tractors = new(owner, database);
         Nanites = new(database, clock, system);
-        TimedModules = new(database, system);
+        TimedModules = new(owner, system);
     }
 }

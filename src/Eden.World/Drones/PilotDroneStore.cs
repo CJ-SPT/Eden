@@ -80,7 +80,7 @@ internal sealed partial class PilotDroneStore(
 
     public DroneControl Control(long pilotId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Inspect(world => ReadControl(world, pilotId), new(pilots: [pilotId]));
         }

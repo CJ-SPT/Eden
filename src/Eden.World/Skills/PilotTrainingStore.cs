@@ -77,7 +77,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
 
     public IReadOnlyList<TrainingEvent> History(long pilotId, int count)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Inspect(world => ReadHistory(world.Filter<TrainingLog>(e => e.PilotId == pilotId), count));
         }

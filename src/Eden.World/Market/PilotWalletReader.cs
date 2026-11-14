@@ -29,7 +29,7 @@ internal sealed class PilotWalletReader(WorldDatabase database) : IPilotWalletRe
     public long Balance(long pilotId)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.wallet");
-        return LiveWorld.Find(database.Path) is { SqlConnections: 0 } live ? live.WalletBalance(pilotId) : BalanceSql(pilotId);
+        return LiveWorld.Find(database.Path) is { } live ? live.WalletBalance(pilotId) : BalanceSql(pilotId);
     }
 
     private long BalanceSql(long pilotId)

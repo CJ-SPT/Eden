@@ -152,7 +152,6 @@ public static class WorldInitialization
             .Set<WorldMissile>()
             .Where(m => m.Status == MissileFlightStatus.Flying || m.Status == MissileFlightStatus.Attached)
             .ExecuteUpdate(set => set.SetProperty(m => m.Status, MissileFlightStatus.Expired).SetProperty(m => m.EndedAt, now));
-        LiveCombatRuntime.Find(database.Path)?.WarmDrones();
     }
 
     // The host calls this after migration/configuration/renewal and before opening

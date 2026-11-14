@@ -48,43 +48,7 @@ internal sealed partial class LiveCombatRuntime
         {
             value = Loading(() =>
             {
-                if (owner.SqlConnections == 0 && owner.Economy.IsLoaded)
-                {
-                    return owner.Economy.Inspect(world => ReadDronePlayer(world, shipId));
-                }
-                using WorldDbContext world = new(database.Path);
-                using CatalogDbContext catalog = new(database.CatalogPath);
-                var pilot = world
-                    .Pilots.Include(p => p.ActiveShip)
-                        .ThenInclude(s => s.Position)
-                    .SingleOrDefault(p => p.ActiveShipId == shipId);
-                if (pilot?.ActiveShip.Position is null || world.Set<ShipLoss>().Any(l => l.ShipId == shipId))
-                {
-                    return null;
-                }
-                var engagements = world
-                    .Set<SavedEngagement>()
-                    .Where(e => e.LowerPilotId == pilot.Id || e.HigherPilotId == pilot.Id)
-                    .AsEnumerable()
-                    .Select(e => new LimitedEngagement(
-                        e.LowerPilotId == pilot.Id ? e.HigherPilotId : e.LowerPilotId,
-                        e.ActiveUntil,
-                        e.ExpiresAt
-                    ))
-                    .ToArray();
-                var logoff = world.Set<SavedLogoff>().Find(pilot.Id);
-                return new DronePlayer(
-                    pilot.Id,
-                    shipId,
-                    CrimewatchPersistence.System(catalog, pilot.ActiveShip),
-                    catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup,
-                    world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha,
-                    pilot.SafetyLevel,
-                    (world.Set<SavedSecurityStatus>().Find(pilot.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
-                    logoff is null ? null : new(logoff.ShipId, logoff.SystemId, logoff.ExpiresAt),
-                    engagements,
-                    world.Set<SavedCrimewatch>().Find(pilot.Id)?.Timers() ?? CrimewatchTimers.Empty
-                );
+                return owner.Economy.Inspect(world => ReadDronePlayer(world, shipId));
             });
             _dronePlayers[shipId] = value;
         }

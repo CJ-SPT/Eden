@@ -92,21 +92,25 @@ internal sealed partial class LiveWorld : IDisposable
     internal long CheckpointCopies => Interlocked.Read(ref _checkpointCopies);
     internal bool CheckpointCopying => Volatile.Read(ref _checkpointCopying);
     private long _checkpointCopies;
-    private readonly ThreadLocal<int> _sqlConnections = new();
-    internal int SqlConnections => _sqlConnections.Value;
-    private LiveTimedModules _timedModules => Current.TimedModules;
-    internal bool TracksTimedModules => true;
+    private readonly ThreadLocal<List<SqliteConnection>> _sqlConnections = new(() => []);
+    internal int SqlConnections => _sqlConnections.Value!.Count;
+    internal bool HasOpenSqlTransaction =>
+        _sqlConnections.Value!.Any(connection => connection.Handle is { } handle && SQLitePCL.raw.sqlite3_get_autocommit(handle) == 0);
 
-    internal void SqlOpened() => _sqlConnections.Value++;
+    // External changes enter the resident generation when the explicit connection closes.
+    internal bool HasUnpublishedSqlChanges => _sqlConnections.Value!.Any(WorldConnections.HasUnpublishedChanges);
+
+    internal void SqlOpened(SqliteConnection connection) => _sqlConnections.Value!.Add(connection);
 
     internal void SqlClosed(
+        SqliteConnection connection,
         IReadOnlyCollection<CombatRowChange> changes,
         TransactionParticipants? participants = null,
         int? projectionSystem = null,
         IReadOnlySet<int>? committedSystems = null
     )
     {
-        _sqlConnections.Value--;
+        _sqlConnections.Value!.Remove(connection);
         if (Economy.IsProjecting)
         {
             return;
@@ -315,7 +319,6 @@ internal sealed partial class LiveWorld : IDisposable
 
     private static void ObserveState(LiveSystemState state, IReadOnlyCollection<CombatRowChange> changes)
     {
-        state.TimedModules.Observe(changes);
         state.Heat.Observe(changes);
         state.Nanites.Observe(changes);
         state.Tractors.Observe(changes);
@@ -464,7 +467,6 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 throw new InvalidOperationException("This world already has a resident owner.");
             }
-            Combat?.WarmDrones();
             Heat.Warm();
             using (Enter())
             {

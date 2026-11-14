@@ -162,7 +162,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         using var ownership = owner.CurrentSystem is null ? owner.EnterShared() : owner.Enter();
         // Never publish data read from a caller's transaction, including rolled-back
         // or partially tracked changes. Ordinary stores remain the mutation owners.
-        if (owner.SqlConnections != 0)
+        if (owner.HasOpenSqlTransaction || owner.Economy.HasActiveAction && owner.HasPersistenceOwnership)
         {
             return load();
         }

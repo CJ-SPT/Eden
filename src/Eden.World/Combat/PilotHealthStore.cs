@@ -35,7 +35,7 @@ internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotH
             return resident;
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Read(ReadAndSettle, new(pilots: [pilotId]));
         }

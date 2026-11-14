@@ -18,14 +18,12 @@ internal sealed partial class LiveReadModels
         "resident.playerEwarTarget"
     );
 
-    private bool CanReadResident => owner.Economy.IsLoaded && owner.SqlConnections == 0;
-
     private T ReadResidentVersion<TKey, T>(ResidentSnapshot<TKey, T> cache, TKey key, Func<long> revision, Func<WorldAction, T> read)
         where TKey : notnull =>
         owner.Run(() =>
         {
             using var ownership = owner.CurrentSystem is null ? owner.EnterShared() : owner.Enter();
-            if (owner.HasPersistenceOwnership && owner.Economy.HasActiveAction)
+            if (!owner.Economy.IsLoaded || owner.HasPersistenceOwnership && owner.Economy.HasActiveAction)
             {
                 return owner.Economy.Inspect(read);
             }
@@ -49,13 +47,13 @@ internal sealed partial class LiveReadModels
         owner.Run(() =>
         {
             using var ownership = owner.CurrentSystem is null ? owner.EnterShared() : owner.Enter();
-            return owner.HasPersistenceOwnership && owner.Economy.HasActiveAction ? owner.Economy.Inspect(pending) : committed();
+            return !owner.Economy.IsLoaded || owner.HasPersistenceOwnership && owner.Economy.HasActiveAction
+                ? owner.Economy.Inspect(pending)
+                : committed();
         });
 
-    internal bool? ShipDestroyed(long ship) =>
-        CanReadResident
-            ? ReadResidentGuard(() => owner.Economy.HasShipLoss(ship), world => world.Set<ShipLoss>().Find(ship) is not null)
-            : null;
+    internal bool ShipDestroyed(long ship) =>
+        ReadResidentGuard(() => owner.Economy.HasShipLoss(ship), world => world.Set<ShipLoss>().Find(ship) is not null);
 
     private NpcEffectView ResidentNpcTarget(long ship) =>
         ReadResidentVersion(

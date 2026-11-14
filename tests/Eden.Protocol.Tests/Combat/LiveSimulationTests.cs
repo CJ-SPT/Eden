@@ -404,7 +404,7 @@ public sealed partial class LiveSimulationTests
     [InlineData(NpcNavigationState.Pursuing, NpcRole.Pirate)]
     [InlineData(NpcNavigationState.Returning, NpcRole.Pirate)]
     [InlineData(NpcNavigationState.Patrolling, NpcRole.Navy)]
-    public void ResidentMotionMatchesTheSqlAdapter(NpcNavigationState navigation, NpcRole role)
+    public void ResidentMotionMatchesTheAlternateResidentAdapter(NpcNavigationState navigation, NpcRole role)
     {
         using NpcCombatTests.Fixture control = new(liveWorld: true, simulationObjects: false);
         using NpcCombatTests.Fixture resident = new(liveWorld: true);
@@ -434,10 +434,15 @@ public sealed partial class LiveSimulationTests
         {
             control.Clock.Seconds++;
             resident.Clock.Seconds++;
-            expected = control
-                .Db.Store.Advance(control.Npc.SystemId, second, control.Clock.Now, expected, [])
-                .Select(s => s.Ship)
-                .ToArray();
+            using (var metrics = SessionPerformance.Begin("alternate resident motion", _ => { }, force: true)!)
+            {
+                expected = control
+                    .Db.Store.Advance(control.Npc.SystemId, second, control.Clock.Now, expected, [])
+                    .Select(s => s.Ship)
+                    .ToArray();
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+            }
             actual = resident.Db.Store.Advance(resident.Npc.SystemId, second, resident.Clock.Now, actual, []).Select(s => s.Ship).ToArray();
             LiveWorld.Find(resident.Db.Path)!.Combat!.Flush();
             using WorldDbContext left = new(control.Db.Path);

@@ -17,7 +17,6 @@ using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat.Npcs;
 
@@ -83,14 +82,17 @@ internal sealed class NpcEncounterStore(
                 return resident;
             }
             Read(systemId, now, false);
-            using WorldDbContext world = new(database.Path) { Participants = new(systems: [systemId]) };
-            return world
-                .Set<WorldNpc>()
-                .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
-                .OrderBy(n => n.Id)
-                .AsEnumerable()
-                .Select(n => new NpcSimulationContact(n.Id, new(n.X, n.Y, n.Z), n.Navigation == NpcNavigationState.Warping))
-                .ToArray();
+            return WorldActionScope.Inspect(
+                database,
+                world =>
+                    world
+                        .Set<WorldNpc>()
+                        .Where(n => n.SystemId == systemId && n.DestroyedAt == null && n.RetiredAt == null)
+                        .OrderBy(n => n.Id)
+                        .AsEnumerable()
+                        .Select(n => new NpcSimulationContact(n.Id, new(n.X, n.Y, n.Z), n.Navigation == NpcNavigationState.Warping))
+                        .ToArray()
+            );
         }
     }
 
@@ -100,7 +102,7 @@ internal sealed class NpcEncounterStore(
         {
             return long.MaxValue;
         }
-        if (LiveWorld.Find(database.Path) is not { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is not { } live)
         {
             Read(systemId, now, false);
             return database.PopulationDeadlines[systemId];
@@ -147,9 +149,9 @@ internal sealed class NpcEncounterStore(
 
     private IReadOnlyList<NpcContact> Read(int systemId, long now, bool buildContacts = true)
     {
-        using WorldDbContext world = new(database.Path) { Participants = new(systems: [systemId]) };
+        using WorldActionScope transaction = new(database, select: world => PopulationParticipants(world, systemId));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        using var transaction = world.Database.BeginTransaction();
         long populationStamp = now / TimeSpan.TicksPerSecond;
         if (
             population is not null
@@ -159,7 +161,7 @@ internal sealed class NpcEncounterStore(
             )
         )
         {
-            population.Seed(new SqlWorldAction(world), catalog, systemId, now);
+            population.Seed(world, catalog, systemId, now);
         }
         world.SaveChanges();
         var npcs = world
@@ -168,15 +170,14 @@ internal sealed class NpcEncounterStore(
             .OrderBy(n => n.Id)
             .ToArray();
         var ids = npcs.Select(n => n.Id).ToArray();
-        var mining = world.Set<WorldNpcMiningMember>().Where(m => ids.Contains(m.NpcId)).ToDictionary(m => m.NpcId);
+        var mining = world.Set<WorldNpcMiningMember>().Where(m => Enumerable.Contains(ids, m.NpcId)).ToDictionary(m => m.NpcId);
         var ewar = world
             .Set<WorldNpcEwar>()
-            .Where(e => ids.Contains(e.NpcId) && e.AppliedJson != null)
-            .AsNoTracking()
+            .Where(e => Enumerable.Contains(ids, e.NpcId) && e.AppliedJson != null)
             .AsEnumerable()
             .Select(e => e.Contact()!)
             .ToLookup(e => e.SourceId);
-        var aggression = world.Set<NpcAggression>().AsNoTracking().Where(a => ids.Contains(a.NpcId)).ToDictionary(a => a.NpcId);
+        var aggression = world.Set<NpcAggression>().Where(a => Enumerable.Contains(ids, a.NpcId)).ToDictionary(a => a.NpcId);
         var profiles = npcs.Select(n => n.TypeId).Distinct().ToDictionary(id => id, id => ReadProfile(catalog, id));
         NpcWeaponContact? Weapon(WorldNpc npc)
         {
@@ -295,7 +296,7 @@ internal sealed class NpcEncounterStore(
             : [];
         // A route deadline can fall between two reads in the same wall-clock
         // second. Keep the exact due time in addition to the coarse seed stamp.
-        long nextPopulation = population?.NextUpdate(new SqlWorldAction(world), systemId, now) ?? long.MaxValue;
+        long nextPopulation = population?.NextUpdate(world, systemId, now) ?? long.MaxValue;
         transaction.Commit();
         if (population is not null)
         {

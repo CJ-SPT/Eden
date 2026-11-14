@@ -259,7 +259,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
         var cans = live.Reads?.Jetcans(systemId, now) ?? JetcanStore.ReadContacts(live, database, systemId, now).Contacts;
         return live.Tractors.Contacts(cans.Count == 0 ? contacts : contacts.Concat(cans).ToArray(), now);
 
-        IReadOnlyList<WreckContact> Load() => live.SqlConnections == 0 ? ListResident(systemId, now) : ListSql(systemId, now);
+        IReadOnlyList<WreckContact> Load() => ListResident(systemId, now);
     }
 
     private IReadOnlyList<WreckContact> ListResident(int systemId, long now)

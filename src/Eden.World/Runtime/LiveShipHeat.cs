@@ -461,34 +461,13 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
                     using CatalogDbContext catalog = new(database.CatalogPath);
                     var affected = new TransactionParticipants(pilots: [loaded.PilotId], ships: [ship]);
                     ShipHeatCheckpoint checkpoint = new([new(ship, next)]);
-                    if (owner.SqlConnections == 0)
+                    using WorldActionScope transaction = new(database, affected);
+                    checkpoint.Stage(transaction.World);
+                    foreach (var module in burned)
                     {
-                        using WorldActionScope transaction = new(database, affected);
-                        checkpoint.Stage(transaction.World);
-                        foreach (var module in burned)
-                        {
-                            ModuleConditionPersistence.BurnOut(
-                                transaction.World,
-                                catalog,
-                                module.ItemId,
-                                module.BurnedAt ?? next.UpdatedAt
-                            );
-                        }
-                        transaction.Commit();
+                        ModuleConditionPersistence.BurnOut(transaction.World, catalog, module.ItemId, module.BurnedAt ?? next.UpdatedAt);
                     }
-                    else
-                    {
-                        // The direct SQL adapter settles deadlines before starting its transaction.
-                        using WorldDbContext world = new(database.Path) { Participants = affected };
-                        using var transaction = world.Database.BeginTransaction();
-                        checkpoint.Apply(world);
-                        foreach (var module in burned)
-                        {
-                            ModuleConditionPersistence.ApplyDamage(world, catalog, module.ItemId, 0, module.BurnedAt ?? next.UpdatedAt);
-                        }
-                        world.SaveChanges();
-                        transaction.Commit();
-                    }
+                    transaction.Commit();
                     foreach (var module in burned)
                     {
                         _requested.Remove(module.ItemId);
@@ -527,19 +506,11 @@ internal sealed class LiveShipHeat(LiveWorld owner, WorldDatabase database, Time
         _internal++;
         try
         {
-            if (owner.Economy.IsLoaded && owner.SqlConnections == 0)
-            {
-                using CatalogDbContext residentCatalog = new(database.CatalogPath);
-                return owner.Economy.Inspect(
-                    action => ShipHeatPersistence.Load(action, residentCatalog, ship, now, liveChange, current, expectedPilot),
-                    new(ships: [ship])
-                );
-            }
-            using WorldDbContext world = new(database.Path) { Participants = new(ships: [ship]) };
-            world.Database.OpenConnection();
-            using CatalogDbContext catalog = new(database.CatalogPath);
-            var loaded = ShipHeatPersistence.Load(world, catalog, ship, now, liveChange, current, expectedPilot);
-            return loaded;
+            using CatalogDbContext residentCatalog = new(database.CatalogPath);
+            return owner.Economy.Inspect(
+                action => ShipHeatPersistence.Load(action, residentCatalog, ship, now, liveChange, current, expectedPilot),
+                new(ships: [ship])
+            );
         }
         finally
         {

@@ -57,25 +57,7 @@ internal sealed partial class LiveCombatRuntime
         {
             var rows = Loading(() =>
             {
-                if (owner.SqlConnections == 0)
-                {
-                    return owner.Economy.Read(world => LoadDrones(world, system), new(systems: [system]));
-                }
-                using WorldDbContext world = new(database.Path);
-                using CatalogDbContext catalog = new(database.CatalogPath);
-                return world
-                    .Set<WorldDrone>()
-                    .Where(d => d.SystemId == system && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == d.PilotId))
-                    .AsEnumerable()
-                    .Select(d => new LiveDrone(
-                        PilotDroneStore.Contact(world, catalog, d),
-                        d.UpdatedAt,
-                        d.ReadyAt,
-                        d.CommandedAt,
-                        d.ArmorDamage,
-                        d.StructureDamage
-                    ))
-                    .ToArray();
+                return owner.Economy.Read(world => LoadDrones(world, system), new(systems: [system]));
             });
             foreach (var row in rows)
             {
@@ -96,35 +78,7 @@ internal sealed partial class LiveCombatRuntime
         {
             inputs = Loading(() =>
             {
-                if (owner.SqlConnections == 0)
-                {
-                    return owner.Economy.Read(world => ReadDroneInputs(world, pilotId, drones), new(pilots: [pilotId]));
-                }
-                using WorldDbContext world = new(database.Path);
-                using CatalogDbContext catalog = new(database.CatalogPath);
-                var pilot = world.Pilots.Include(p => p.ActiveShip).Single(p => p.Id == pilotId);
-                var fit = FittingCalculation.Read(world, catalog, pilot);
-                var saved = world.Set<WorldDroneSettings>().Find(pilotId);
-                ResidentSet<int> qualified = [];
-                foreach (int type in drones.Select(d => d.Contact.Profile.TypeId).Distinct())
-                {
-                    try
-                    {
-                        PilotSkillReader.CheckRequirements(world, catalog, pilotId, type);
-                        qualified.Add(type);
-                    }
-                    catch (InvalidDataException)
-                    {
-                        // An invalidated qualification releases the same selected drones as the SQL path.
-                    }
-                }
-                return new DronePilot(
-                    DroneCatalog.ControlLimit(fit),
-                    fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.DroneBandwidth),
-                    fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
-                    saved is null ? new() : new(saved.Aggressive, saved.FocusFire),
-                    qualified
-                );
+                return owner.Economy.Read(world => ReadDroneInputs(world, pilotId, drones), new(pilots: [pilotId]));
             });
             _dronePilots[pilotId] = inputs;
         }
@@ -165,24 +119,14 @@ internal sealed partial class LiveCombatRuntime
         {
             systems = Loading(() =>
             {
-                if (owner.SqlConnections == 0)
-                {
-                    return owner.Economy.Inspect(world =>
-                        world
-                            .Set<WorldDrone>()
-                            .Where(d => d.PilotId == pilotId && d.ControllerShipId != 0 && d.SystemId != null)
-                            .Select(d => d.SystemId!.Value)
-                            .Distinct()
-                            .ToArray()
-                    );
-                }
-                using WorldDbContext world = new(database.Path);
-                return world
-                    .Set<WorldDrone>()
-                    .Where(d => d.PilotId == pilotId && d.ControllerShipId != 0 && d.SystemId != null)
-                    .Select(d => d.SystemId!.Value)
-                    .Distinct()
-                    .ToArray();
+                return owner.Economy.Inspect(world =>
+                    world
+                        .Set<WorldDrone>()
+                        .Where(d => d.PilotId == pilotId && d.ControllerShipId != 0 && d.SystemId != null)
+                        .Select(d => d.SystemId!.Value)
+                        .Distinct()
+                        .ToArray()
+                );
             });
             _dronePilotSystems[pilotId] = systems;
         }

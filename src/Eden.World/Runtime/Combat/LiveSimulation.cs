@@ -143,24 +143,14 @@ internal sealed partial class LiveCombatRuntime
             _ = DroneControllers();
             ids = Loading(() =>
             {
-                if (owner.SqlConnections == 0)
-                {
-                    return owner.Economy.Inspect(world =>
-                        world
-                            .Set<WorldNpc>()
-                            .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
-                            .OrderBy(n => n.Id)
-                            .Select(n => n.Id)
-                            .ToArray()
-                    );
-                }
-                using WorldDbContext world = new(database.Path) { Participants = new(systems: [system]) };
-                return world
-                    .Set<WorldNpc>()
-                    .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
-                    .OrderBy(n => n.Id)
-                    .Select(n => n.Id)
-                    .ToArray();
+                return owner.Economy.Inspect(world =>
+                    world
+                        .Set<WorldNpc>()
+                        .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
+                        .OrderBy(n => n.Id)
+                        .Select(n => n.Id)
+                        .ToArray()
+                );
             });
             _systemNpcs[system] = ids;
         }
@@ -185,20 +175,11 @@ internal sealed partial class LiveCombatRuntime
                         );
                     }
                 }
-                if (owner.SqlConnections == 0)
+                return owner.Economy.Inspect(world =>
                 {
-                    return owner.Economy.Inspect(world =>
-                    {
-                        Apply(PilotTackleStore.NpcTackles(world, missing.Select(n => n.Id).ToArray()));
-                        return true;
-                    });
-                }
-                using WorldDbContext world = new(database.Path)
-                {
-                    Participants = new(resources: missing.Select(npc => new SimulationResource(SharedSimulationResource.Npc, npc.Id))),
-                };
-                Apply(PilotTackleStore.NpcTackles(world, missing.Select(n => n.Id).ToArray()));
-                return true;
+                    Apply(PilotTackleStore.NpcTackles(world, missing.Select(n => n.Id).ToArray()));
+                    return true;
+                });
             });
         }
         // Consumers index the current NPC IDs synchronously under the owner.
@@ -237,25 +218,11 @@ internal sealed partial class LiveCombatRuntime
         var missing = ships.Where(s => !_positions.ContainsKey(s.Id)).Select(s => s.Id).ToArray();
         if (missing.Length != 0)
         {
-            Loading(() =>
+            foreach (long id in missing)
             {
-                if (owner.Economy.IsLoaded)
-                {
-                    foreach (long id in missing)
-                    {
-                        var row = owner.Economy.Peek<Eden.Data.World.Docking.FlightPosition>(id);
-                        _savedPositions[id] = row is null ? null : new(row.SystemId, new(row.X, row.Y, row.Z));
-                    }
-                    return true;
-                }
-                using WorldDbContext world = new(database.Path);
-                var rows = world.Positions.AsNoTracking().Where(p => missing.Contains(p.ShipId)).ToDictionary(p => p.ShipId);
-                foreach (long id in missing)
-                {
-                    _savedPositions[id] = rows.TryGetValue(id, out var row) ? new(row.SystemId, new(row.X, row.Y, row.Z)) : null;
-                }
-                return true;
-            });
+                var row = owner.Economy.Peek<Eden.Data.World.Docking.FlightPosition>(id);
+                _savedPositions[id] = row is null ? null : new(row.SystemId, new(row.X, row.Y, row.Z));
+            }
         }
         var warping = result
             .Ships.Where(r => r.Ship.Navigation.Warp is not null && ships.Single(s => s.Id == r.Ship.Id).Navigation.Warp is null)

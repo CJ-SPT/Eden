@@ -316,3 +316,15 @@ The shared TestClock replaces 16 duplicated feature clocks and offers independen
 Automated final baseline: pinned tool restore, solution restore, build with zero warnings/errors, all **419 .NET tests**, **3 catalog Python tests**, **9 formatting-policy Python tests**, and formatting verification passed. Formatting covers 267 authored files; git diff whitespace validation passed.
 
 Live final host: launched ArchitectureFinal against the isolated audit-flight world through its normal entry point. It initialized successfully, listened on loopback and accepted the pinned client's encrypted login. The connected Eden Pilot window showed the Ibis docked at Jita IV Moon 4. Inventory retained 100 Iron Charge S and its original blueprint in Item hangar. Wallet showed the existing 22,686 ISK balance and saved journal, PLEX 0, and one LP Corporations row plus one EverMarks row. The final client was left open on that copied save. Automated checks and the narrower live actions recorded above remain distinct: the complete warp/gate/fatal-combat matrix was not manually repeated for this refactor.
+
+## Resident gameplay fallback dispatch (November 14, 2026)
+
+With a live owner, gameplay dispatch selects a resident action, including alternate NPC acquisition, scene building and movement
+when simulation objects are disabled. The free-point and NPC-aggression readers use resident rows when their optional caches
+are disabled. Module expiry and paid heat burnout settle through resident transactions. Out-of-range docking IDs are rejected
+before any saved-world lookup.
+
+An idle explicit SQL connection may coexist with resident gameplay. An active native transaction or an open connection with
+unpublished changes blocks another resident mutation. Resident inspections see the published generation, and the explicit SQL
+bridge projects and synchronizes external changes. Startup hydration, detached checkpoints, catalog reads, and stopped-world
+tools still use SQLite.

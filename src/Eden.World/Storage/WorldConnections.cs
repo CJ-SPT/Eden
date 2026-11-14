@@ -62,6 +62,8 @@ internal static partial class WorldConnections
         IReadOnlySet<int>? committedSystems = null
     ) => LiveWorld.Find(path) is { } live ? new LiveConnection(live, participants, projection, committedSystems) : FileConnection(path);
 
+    internal static bool HasUnpublishedChanges(SqliteConnection connection) => connection is LiveConnection { HasUnpublishedChanges: true };
+
     internal static void RequireDurableClose(System.Data.Common.DbConnection connection)
     {
         if (connection is LiveConnection live)
@@ -271,6 +273,8 @@ internal static partial class WorldConnections
                 .Concat(_committingChanges)
                 .Any(change => change.Table == "schema" || tables.Contains(change.Table, StringComparer.Ordinal));
 
+        internal bool HasUnpublishedChanges => _changes.Concat(_committingChanges).Any(change => !change.Projection);
+
         internal void FinalizeCommit()
         {
             _changes.UnionWith(_committingChanges);
@@ -336,161 +340,158 @@ internal static partial class WorldConnections
                 using var command = CreateCommand();
                 command.CommandText = "PRAGMA temp_store=MEMORY";
                 command.ExecuteNonQuery();
-                if (world.Combat is not null || world.Reads is not null || world.TracksTimedModules)
-                {
-                    // The commit callback runs before SQLite completes COMMIT. Stage its
-                    // rows until the next successful statement/close; a failed commit's
-                    // rollback callback discards them. Never publish rolled-back writes.
-                    SQLitePCL.raw.sqlite3_commit_hook(
-                        Handle!,
-                        _ =>
+                // The commit callback runs before SQLite completes COMMIT. Stage its
+                // rows until the next successful statement/close; a failed commit's
+                // rollback callback discards them. Never publish rolled-back writes.
+                SQLitePCL.raw.sqlite3_commit_hook(
+                    Handle!,
+                    _ =>
+                    {
+                        FinalizeCommit();
+                        _committingChanges.UnionWith(_pendingChanges);
+                        _pendingChanges.Clear();
+                        _savepoints.Clear();
+                        return 0;
+                    },
+                    null
+                );
+                SQLitePCL.raw.sqlite3_rollback_hook(
+                    Handle!,
+                    _ =>
+                    {
+                        _pendingChanges.Clear();
+                        _committingChanges.Clear();
+                        _pendingInstitutional.Clear();
+                        _savepoints.Clear();
+                    },
+                    null
+                );
+                SQLitePCL.raw.sqlite3_update_hook(
+                    Handle!,
+                    (SQLitePCL.strdelegate_update)(
+                        (_, operation, _, table, id) =>
                         {
                             FinalizeCommit();
-                            _committingChanges.UnionWith(_pendingChanges);
-                            _pendingChanges.Clear();
-                            _savepoints.Clear();
-                            return 0;
-                        },
-                        null
-                    );
-                    SQLitePCL.raw.sqlite3_rollback_hook(
-                        Handle!,
-                        _ =>
+                            RecordChange(table, id);
+                            if (
+                                (table is "WorldMarketOrder" or "WorldPersonalOrder")
+                                && (operation != SQLitePCL.raw.SQLITE_UPDATE || _marketDefinitionWrite)
+                            )
+                            {
+                                RecordChange("WorldMarketDefinition", id);
+                                if (_preparingStation is { } station)
+                                {
+                                    _pendingInstitutional.Remove(station);
+                                    _committedInstitutional.Remove(station);
+                                }
+                                else
+                                {
+                                    _pendingInstitutional.Clear();
+                                    _committedInstitutional.Clear();
+                                }
+                            }
+                            if ((table is "WorldMarketOrder" or "WorldPersonalOrder") && _marketMembershipWrite)
+                            {
+                                RecordChange("WorldMarketMembership", id);
+                            }
+                            if (
+                                string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
+                                && (operation != SQLitePCL.raw.SQLITE_UPDATE || _positionMembershipWrite)
+                            )
+                            {
+                                // Corporation location roles depend on docking membership,
+                                // while ordinary coordinates stay in resident motion state.
+                                RecordChange("WorldPositionMembership", id);
+                                if (operation == SQLitePCL.raw.SQLITE_UPDATE && _positionKeyWrite)
+                                {
+                                    RecordChange("WorldPositionKey", id);
+                                }
+                            }
+                            if (
+                                string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
+                                && (operation != SQLitePCL.raw.SQLITE_UPDATE || _itemMembershipWrite)
+                            )
+                            {
+                                RecordChange("WorldItemMembership", id);
+                            }
+                        }
+                    ),
+                    null
+                );
+                SQLitePCL.raw.sqlite3_set_authorizer(
+                    Handle!,
+                    (SQLitePCL.strdelegate_authorizer)(
+                        (_, action, table, column, _, _) =>
                         {
-                            _pendingChanges.Clear();
-                            _committingChanges.Clear();
-                            _pendingInstitutional.Clear();
-                            _savepoints.Clear();
-                        },
-                        null
-                    );
-                    SQLitePCL.raw.sqlite3_update_hook(
-                        Handle!,
-                        (SQLitePCL.strdelegate_update)(
-                            (_, operation, _, table, id) =>
+                            if (action == SQLitePCL.raw.SQLITE_SAVEPOINT)
                             {
-                                FinalizeCommit();
-                                RecordChange(table, id);
-                                if (
-                                    (table is "WorldMarketOrder" or "WorldPersonalOrder")
-                                    && (operation != SQLitePCL.raw.SQLITE_UPDATE || _marketDefinitionWrite)
-                                )
-                                {
-                                    RecordChange("WorldMarketDefinition", id);
-                                    if (_preparingStation is { } station)
-                                    {
-                                        _pendingInstitutional.Remove(station);
-                                        _committedInstitutional.Remove(station);
-                                    }
-                                    else
-                                    {
-                                        _pendingInstitutional.Clear();
-                                        _committedInstitutional.Clear();
-                                    }
-                                }
-                                if ((table is "WorldMarketOrder" or "WorldPersonalOrder") && _marketMembershipWrite)
-                                {
-                                    RecordChange("WorldMarketMembership", id);
-                                }
-                                if (
-                                    string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
-                                    && (operation != SQLitePCL.raw.SQLITE_UPDATE || _positionMembershipWrite)
-                                )
-                                {
-                                    // Corporation location roles depend on docking membership,
-                                    // while ordinary coordinates stay in resident motion state.
-                                    RecordChange("WorldPositionMembership", id);
-                                    if (operation == SQLitePCL.raw.SQLITE_UPDATE && _positionKeyWrite)
-                                    {
-                                        RecordChange("WorldPositionKey", id);
-                                    }
-                                }
-                                if (
-                                    string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
-                                    && (operation != SQLitePCL.raw.SQLITE_UPDATE || _itemMembershipWrite)
-                                )
-                                {
-                                    RecordChange("WorldItemMembership", id);
-                                }
+                                Savepoint(table!, column!);
                             }
-                        ),
-                        null
-                    );
-                    SQLitePCL.raw.sqlite3_set_authorizer(
-                        Handle!,
-                        (SQLitePCL.strdelegate_authorizer)(
-                            (_, action, table, column, _, _) =>
+                            if (
+                                action == SQLitePCL.raw.SQLITE_UPDATE
+                                && table is "WorldMarketOrder" or "WorldPersonalOrder"
+                                && column is "StationId" or "SystemId" or "RegionId" or "Bid"
+                            )
                             {
-                                if (action == SQLitePCL.raw.SQLITE_SAVEPOINT)
-                                {
-                                    Savepoint(table!, column!);
-                                }
-                                if (
-                                    action == SQLitePCL.raw.SQLITE_UPDATE
-                                    && table is "WorldMarketOrder" or "WorldPersonalOrder"
-                                    && column is "StationId" or "SystemId" or "RegionId" or "Bid"
-                                )
-                                {
-                                    _marketMembershipWrite = true;
-                                }
-                                if (
-                                    action == SQLitePCL.raw.SQLITE_UPDATE
-                                    && (
-                                        table == "WorldMarketOrder" && column is not ("Remaining" or "Entered" or "Issued")
-                                        || table == "WorldPersonalOrder" && column is "StationId" or "SystemId" or "RegionId" or "Bid"
-                                    )
-                                )
-                                {
-                                    _marketDefinitionWrite = true;
-                                }
-                                if (
-                                    action
-                                    is SQLitePCL.raw.SQLITE_ALTER_TABLE
-                                        or SQLitePCL.raw.SQLITE_CREATE_TABLE
-                                        or SQLitePCL.raw.SQLITE_DROP_TABLE
-                                        or SQLitePCL.raw.SQLITE_DROP_INDEX
-                                        or SQLitePCL.raw.SQLITE_CREATE_TRIGGER
-                                        or SQLitePCL.raw.SQLITE_DROP_TRIGGER
-                                )
-                                {
-                                    _schemaWrite = true;
-                                    RecordChange("schema", 0);
-                                }
-                                if (
-                                    action == SQLitePCL.raw.SQLITE_UPDATE
-                                    && string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
-                                    && !string.Equals(column, "Quantity", StringComparison.OrdinalIgnoreCase)
-                                    && !string.Equals(column, "CrystalDamage", StringComparison.OrdinalIgnoreCase)
-                                )
-                                {
-                                    _itemMembershipWrite = true;
-                                }
-                                if (
-                                    action == SQLitePCL.raw.SQLITE_UPDATE
-                                    && string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
-                                    && (
-                                        string.Equals(column, "ShipId", StringComparison.OrdinalIgnoreCase)
-                                        || string.Equals(column, "SystemId", StringComparison.OrdinalIgnoreCase)
-                                    )
-                                )
-                                {
-                                    _positionMembershipWrite = true;
-                                    _positionKeyWrite |= string.Equals(column, "ShipId", StringComparison.OrdinalIgnoreCase);
-                                }
-                                // Row callbacks must also cover unqualified bulk DELETE operations.
-                                // Schema writes must retain SQLite's normal DROP/ALTER behavior.
-                                return
-                                    action == SQLitePCL.raw.SQLITE_DELETE
-                                    && !_schemaWrite
-                                    && table?.StartsWith("World", StringComparison.OrdinalIgnoreCase) == true
-                                    ? SQLitePCL.raw.SQLITE_IGNORE
-                                    : SQLitePCL.raw.SQLITE_OK;
+                                _marketMembershipWrite = true;
                             }
-                        ),
-                        null
-                    );
-                }
-                world.SqlOpened();
+                            if (
+                                action == SQLitePCL.raw.SQLITE_UPDATE
+                                && (
+                                    table == "WorldMarketOrder" && column is not ("Remaining" or "Entered" or "Issued")
+                                    || table == "WorldPersonalOrder" && column is "StationId" or "SystemId" or "RegionId" or "Bid"
+                                )
+                            )
+                            {
+                                _marketDefinitionWrite = true;
+                            }
+                            if (
+                                action
+                                is SQLitePCL.raw.SQLITE_ALTER_TABLE
+                                    or SQLitePCL.raw.SQLITE_CREATE_TABLE
+                                    or SQLitePCL.raw.SQLITE_DROP_TABLE
+                                    or SQLitePCL.raw.SQLITE_DROP_INDEX
+                                    or SQLitePCL.raw.SQLITE_CREATE_TRIGGER
+                                    or SQLitePCL.raw.SQLITE_DROP_TRIGGER
+                            )
+                            {
+                                _schemaWrite = true;
+                                RecordChange("schema", 0);
+                            }
+                            if (
+                                action == SQLitePCL.raw.SQLITE_UPDATE
+                                && string.Equals(table, "WorldItem", StringComparison.OrdinalIgnoreCase)
+                                && !string.Equals(column, "Quantity", StringComparison.OrdinalIgnoreCase)
+                                && !string.Equals(column, "CrystalDamage", StringComparison.OrdinalIgnoreCase)
+                            )
+                            {
+                                _itemMembershipWrite = true;
+                            }
+                            if (
+                                action == SQLitePCL.raw.SQLITE_UPDATE
+                                && string.Equals(table, "WorldPosition", StringComparison.OrdinalIgnoreCase)
+                                && (
+                                    string.Equals(column, "ShipId", StringComparison.OrdinalIgnoreCase)
+                                    || string.Equals(column, "SystemId", StringComparison.OrdinalIgnoreCase)
+                                )
+                            )
+                            {
+                                _positionMembershipWrite = true;
+                                _positionKeyWrite |= string.Equals(column, "ShipId", StringComparison.OrdinalIgnoreCase);
+                            }
+                            // Row callbacks must also cover unqualified bulk DELETE operations.
+                            // Schema writes must retain SQLite's normal DROP/ALTER behavior.
+                            return
+                                action == SQLitePCL.raw.SQLITE_DELETE
+                                && !_schemaWrite
+                                && table?.StartsWith("World", StringComparison.OrdinalIgnoreCase) == true
+                                ? SQLitePCL.raw.SQLITE_IGNORE
+                                : SQLitePCL.raw.SQLITE_OK;
+                        }
+                    ),
+                    null
+                );
+                world.SqlOpened(this);
                 _lease = lease;
             }
             catch
@@ -521,7 +522,7 @@ internal static partial class WorldConnections
                     try
                     {
                         FinalizeCommit();
-                        world.SqlClosed(_changes, participants, _projectionSystem, committedSystems);
+                        world.SqlClosed(this, _changes, participants, _projectionSystem, committedSystems);
                         foreach (var pair in _committedInstitutional)
                         {
                             world.InstitutionalSupply[pair.Key] = pair.Value;

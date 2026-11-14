@@ -41,7 +41,7 @@ internal sealed class WorldActionScope : IDisposable
 
     internal static T Inspect<T>(WorldDatabase database, Func<WorldAction, T> read, bool consistentFileRead = false)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Inspect(read);
         }

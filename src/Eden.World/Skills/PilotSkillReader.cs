@@ -77,7 +77,7 @@ internal sealed partial class PilotSkillReader(WorldDatabase database) : IPilotS
     public IReadOnlyList<TrainedSkill> ReadSkills(long pilotId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Inspect(world =>
                 world

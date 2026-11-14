@@ -1,121 +1,42 @@
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Fleets;
-using Eden.World.Runtime.Combat;
-using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime;
 
-// Timed bonuses expire under the owner before reads, independently of socket frames.
-internal sealed class LiveTimedModules(WorldDatabase database, int? system = null)
+internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
 {
-    private readonly ResidentSnapshot<int, long> _deadline = new("resident.timedModules", "WorldActiveModule", "schema");
-    private readonly ResidentSnapshot<int, long> _burstDeadline = new("resident.burstDeadline", "WorldCommandBurst", "schema");
-
-    internal void Observe(IReadOnlyCollection<CombatRowChange> changes)
-    {
-        _deadline.Observe(changes);
-        _burstDeadline.Observe(changes);
-    }
-
-    private void ExpireBursts(long now)
-    {
-        if (LiveWorld.Find(database.Path) is { } live && live.Economy.IsLoaded && live.SqlConnections == 0)
-        {
-            if (live.Economy.HasActiveAction && live.HasPersistenceOwnership)
-            {
-                return;
-            }
-            var due = live.Economy.DueCommandBursts(system, now);
-            if (due.Length == 0)
-            {
-                return;
-            }
-            var ships = live.Economy.Inspect(world =>
-                due.Select(id => world.Set<WorldCommandBurst>().Find(id)?.ShipId).OfType<long>().Distinct().ToArray()
-            );
-            using var action = live.Economy.Begin(new(ships: ships));
-            foreach (long id in due)
-            {
-                if (action.Set<WorldCommandBurst>().Find(id) is { } burst && burst.ExpiresAt <= now)
-                {
-                    action.Remove(burst);
-                }
-            }
-            action.Commit();
-            return;
-        }
-        if (!_burstDeadline.TryRead(0, 0, out long deadline))
-        {
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-            deadline =
-                world.Set<WorldCommandBurst>().Where(b => system == null || b.SystemId == system).Min(b => (long?)b.ExpiresAt)
-                ?? long.MaxValue;
-            _burstDeadline.Publish(0, deadline, 0, long.MaxValue);
-        }
-        if (deadline <= now)
-        {
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
-            world.Set<WorldCommandBurst>().Where(b => b.ExpiresAt <= now && (system == null || b.SystemId == system)).ExecuteDelete();
-            transaction.Commit();
-        }
-    }
-
     internal void Expire(long now)
     {
-        ExpireBursts(now);
-        if (LiveWorld.Find(database.Path) is { } live && live.Economy.IsLoaded && live.SqlConnections == 0)
-        {
-            if (live.Economy.HasActiveAction && live.HasPersistenceOwnership || live.Economy.NextModuleExpiry(system) > now)
-            {
-                return;
-            }
-            var modules = live.Economy.DueModules(system, now);
-            var members = live.Economy.Inspect(world =>
-                modules.Select(module => world.Set<ActiveFittedModule>().Find(module)?.ShipId).OfType<long>().Distinct().ToArray()
-            );
-            using var action = live.Economy.Begin(new(ships: members));
-            foreach (long moduleId in modules)
-            {
-                if (action.Set<ActiveFittedModule>().Find(moduleId) is { ExpiresAt: > 0 } module && module.ExpiresAt <= now)
-                {
-                    action.Remove(module);
-                }
-            }
-            action.Commit();
-            return;
-        }
-        if (!_deadline.TryRead(0, 0, out long due))
-        {
-            using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-            var active = world.Set<ActiveFittedModule>().Where(m => m.ExpiresAt > 0);
-            if (system is int id)
-            {
-                var members = ResidentSystemMembership.Ships(world, database, id);
-                active = active.Where(m => members.Contains(m.ShipId));
-            }
-            due = active.Min(m => (long?)m.ExpiresAt) ?? long.MaxValue;
-            _deadline.Publish(0, due, 0, long.MaxValue);
-        }
-        if (due > now)
+        var economy = owner.Economy;
+        var bursts = economy.DueCommandBursts(system, now);
+        var modules = economy.DueModules(system, now);
+        if (bursts.Length == 0 && modules.Length == 0)
         {
             return;
         }
-        long[] ships;
-        using (WorldDbContext selection = new(database.Path) { IsResidentProjection = true })
+        var ships = economy.Inspect(world =>
+            bursts
+                .Select(id => world.Set<WorldCommandBurst>().Find(id)?.ShipId)
+                .Concat(modules.Select(id => world.Set<ActiveFittedModule>().Find(id)?.ShipId))
+                .OfType<long>()
+                .Distinct()
+                .ToArray()
+        );
+        using var action = economy.Begin(new(ships: ships));
+        foreach (long id in bursts)
         {
-            var active = selection.Set<ActiveFittedModule>().Where(m => m.ExpiresAt > 0 && m.ExpiresAt <= now);
-            if (system is int id)
+            if (action.Set<WorldCommandBurst>().Find(id) is { } burst && burst.ExpiresAt <= now)
             {
-                var members = ResidentSystemMembership.Ships(selection, database, id);
-                active = active.Where(m => members.Contains(m.ShipId));
+                action.Remove(burst);
             }
-            ships = active.Select(m => m.ShipId).Distinct().ToArray();
         }
-        using WorldDbContext expiry = new(database.Path) { Participants = new(ships: ships) };
-        using var transaction = expiry.Database.BeginTransaction();
-        expiry.Set<ActiveFittedModule>().Where(m => ships.Contains(m.ShipId) && m.ExpiresAt > 0 && m.ExpiresAt <= now).ExecuteDelete();
-        transaction.Commit();
+        foreach (long id in modules)
+        {
+            if (action.Set<ActiveFittedModule>().Find(id) is { ExpiresAt: > 0 } module && module.ExpiresAt <= now)
+            {
+                action.Remove(module);
+            }
+        }
+        action.Commit();
     }
 }

@@ -56,7 +56,7 @@ internal sealed partial class LiveCombatRuntime
             || cached.Epoch != _contactEpoch
         )
         {
-            Flush();
+            PublishResident(CaptureOwnCheckpoint(new(systems: [system])));
             // Contact construction can seed, retire or return NPCs. Preserve those
             // committed invalidations rather than treating it as hydration only.
             var rows = read();

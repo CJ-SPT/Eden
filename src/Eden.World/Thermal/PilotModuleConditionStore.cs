@@ -33,7 +33,7 @@ internal sealed class PilotModuleConditionStore(WorldDatabase database) : IPilot
     private IReadOnlyList<FittedModuleCondition> ReadBaseline(long pilot, long ship)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Inspect(world => ReadConditions(world, catalog, pilot, ship), new(pilots: [pilot], ships: [ship]));
         }

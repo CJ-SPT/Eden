@@ -75,7 +75,7 @@ internal sealed class CapsuleerGateWatch(WorldDatabase database) : ICapsuleerGat
 
     private long ActiveShip(long pilot)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Inspect(world =>
                 world.Pilots.Where(row => row.Id == pilot && row.AccountId > 0).Select(row => row.ActiveShipId).FirstOrDefault()
@@ -87,7 +87,7 @@ internal sealed class CapsuleerGateWatch(WorldDatabase database) : ICapsuleerGat
 
     private GateWatcherPosition? Position(long ship)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Inspect(world =>
             {

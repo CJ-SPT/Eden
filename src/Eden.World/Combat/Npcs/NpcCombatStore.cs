@@ -59,30 +59,28 @@ internal sealed partial class NpcCombatStore(
         if (
             LiveCombatRuntime
                 .Find(database.Path, candidates.FirstOrDefault()?.PilotId ?? 0)
-                ?.Acquire(candidates, now, () => AcquireSql(candidates, now)) == true
+                ?.Acquire(candidates, now, () => AcquireFromRows(candidates, now)) == true
         )
         {
             return;
         }
-        AcquireSql(candidates, now);
+        AcquireFromRows(candidates, now);
     }
 
-    private void AcquireSql(IReadOnlyList<NpcTargetCandidate> candidates, long now)
+    private void AcquireFromRows(IReadOnlyList<NpcTargetCandidate> candidates, long now)
     {
         if (candidates.Count == 0)
         {
             return;
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var requested = candidates.ToHashSet();
         var pilotIds = requested.Select(c => c.PilotId).ToArray();
+        using WorldActionScope transaction = new(database, new(pilots: pilotIds, ships: requested.Select(c => c.ShipId)));
+        var world = transaction.World;
+        using CatalogDbContext catalog = new(database.CatalogPath);
         var pilots = world
-            .Pilots.Include(p => p.ActiveShip)
-                .ThenInclude(s => s.Position)
-            .Where(p =>
-                pilotIds.Contains(p.Id)
+            .Pilots.Where(p =>
+                Enumerable.Contains(pilotIds, p.Id)
                 && p.ActiveShip.Position != null
                 && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == p.Id)
             )
@@ -102,18 +100,18 @@ internal sealed partial class NpcCombatStore(
             .ToArray();
         var occupied = world
             .Set<NpcAggression>()
-            .Where(a => world.Set<WorldNpc>().Any(n => n.Id == a.NpcId && systems.Contains(n.SystemId)))
+            .Where(a => world.Set<WorldNpc>().Any(n => n.Id == a.NpcId && Enumerable.Contains(systems, n.SystemId)))
             .Select(a => a.NpcId)
             .ToArray();
         var npcs = world
             .Set<WorldNpc>()
             .Where(n =>
-                systems.Contains(n.SystemId)
+                Enumerable.Contains(systems, n.SystemId)
                 && n.Role == NpcRole.Pirate
                 && n.DestroyedAt == null
                 && n.RetiredAt == null
                 && n.Navigation == NpcNavigationState.Idle
-                && !occupied.Contains(n.Id)
+                && !Enumerable.Contains(occupied, n.Id)
             )
             .OrderBy(n => n.Id)
             .ToArray();
@@ -171,8 +169,10 @@ internal sealed partial class NpcCombatStore(
         {
             return resident;
         }
-        using WorldDbContext world = new(database.Path);
-        return world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId).OrderBy(a => a.NpcId).Select(a => a.NpcId).ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world => world.Set<NpcAggression>().Where(a => a.TargetShipId == shipId).OrderBy(a => a.NpcId).Select(a => a.NpcId).ToArray()
+        );
     }
 
     public void Disengage(long shipId, long? npcId = null)
@@ -209,7 +209,9 @@ internal sealed partial class NpcCombatStore(
             )
             .ToArray();
         var ids = aggression.Select(a => a.NpcId).ToArray();
-        foreach (var npc in world.Set<WorldNpc>().Where(n => ids.Contains(n.Id) && n.DestroyedAt == null && n.RetiredAt == null))
+        foreach (
+            var npc in world.Set<WorldNpc>().Where(n => Enumerable.Contains(ids, n.Id) && n.DestroyedAt == null && n.RetiredAt == null)
+        )
         {
             NpcMotion.Return(npc, catalog.FittingType(npc.TypeId)?.GroupId ?? 0);
         }

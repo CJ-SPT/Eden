@@ -72,7 +72,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
     public InventoryItem? Find(long pilotId, long shipId)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Inspect(world => Owned(world.Ships.Find(shipId)), new(ships: [shipId]));
         }

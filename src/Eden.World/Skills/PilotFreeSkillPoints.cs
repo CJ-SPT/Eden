@@ -18,15 +18,8 @@ internal sealed partial class PilotTrainingStore
     public FreeSkillPointBalance Observe(long pilotId)
     {
         using var phase = SessionPerformance.Phase("read.freePoints");
-        return LiveWorld.Find(database.Path) is { SqlConnections: 0, Reads: { } reads } live
-            ? reads.Points(pilotId, () => live.Economy.Inspect(world => ReadPointBalance(world, pilotId)))
-            : ObserveSql(pilotId);
-    }
-
-    private FreeSkillPointBalance ObserveSql(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return ReadPointBalance(world, pilotId);
+        FreeSkillPointBalance Load() => WorldActionScope.Inspect(database, world => ReadPointBalance(world, pilotId));
+        return LiveReadModels.Find(database.Path)?.Points(pilotId, Load) ?? Load();
     }
 
     public FreeSkillPointState Snapshot(long pilotId)

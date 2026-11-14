@@ -31,7 +31,7 @@ internal sealed class ResourceRenewalStore(WorldDatabase database, TimeProvider 
         {
             return 0;
         }
-        if (live is { SqlConnections: 0 })
+        if (live is { })
         {
             return RenewResident(live, now, limit);
         }

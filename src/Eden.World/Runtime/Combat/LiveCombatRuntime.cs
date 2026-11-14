@@ -41,7 +41,7 @@ internal sealed partial class LiveCombatRuntime(
     private ResidentMap<long, LiveAggression>? _aggressions;
     private readonly ResidentSet<long> _dirtyAggressions = [];
     private readonly ResidentMap<(int System, long Encounter), long[]> _guardGroups = [];
-    internal bool CanRun => _internal == 0 && owner.SqlConnections == 0;
+    internal bool CanRun => _internal == 0;
 
     internal static LiveCombatRuntime? Find(string path) => LiveWorld.Find(path)?.Combat;
 
@@ -252,7 +252,7 @@ internal sealed partial class LiveCombatRuntime(
 
     private ResidentMap<long, LiveAggression> Aggression()
     {
-        if (_aggressions is null && owner.SqlConnections == 0)
+        if (_aggressions is null)
         {
             _aggressions = owner.Economy.Inspect(
                 world =>
@@ -265,22 +265,6 @@ internal sealed partial class LiveCombatRuntime(
                         ),
                 TransactionParticipants.None
             );
-        }
-        if (_aggressions is null)
-        {
-            _aggressions = Loading(() =>
-            {
-                using WorldDbContext world = new(database.Path) { Participants = systemId is { } system ? new(systems: [system]) : null };
-                return world
-                    .Set<NpcAggression>()
-                    .AsNoTracking()
-                    .Where(a => systemId == null || world.Set<WorldNpc>().Any(n => n.Id == a.NpcId && n.SystemId == systemId))
-                    .ToArray()
-                    .ToDictionary(
-                        a => a.NpcId,
-                        a => new LiveAggression(a.NpcId, a.TargetShipId, a.ReadyAt, a.MissileReadyAt, a.LastShotAt, a.LastTargetId)
-                    );
-            });
         }
         return _aggressions;
     }
@@ -311,34 +295,19 @@ internal sealed partial class LiveCombatRuntime(
         {
             members = Loading(() =>
             {
-                if (owner.SqlConnections == 0)
-                {
-                    return owner.Economy.Inspect(world =>
-                        world
-                            .Set<WorldNpc>()
-                            .Where(n =>
-                                n.SystemId == attacked.SystemId
-                                && n.EncounterId == attacked.EncounterId
-                                && n.Role != NpcRole.Pirate
-                                && n.DestroyedAt == null
-                                && n.RetiredAt == null
-                            )
-                            .Select(n => n.Id)
-                            .ToArray()
-                    );
-                }
-                using WorldDbContext world = new(database.Path);
-                return world
-                    .Set<WorldNpc>()
-                    .Where(n =>
-                        n.SystemId == attacked.SystemId
-                        && n.EncounterId == attacked.EncounterId
-                        && n.Role != NpcRole.Pirate
-                        && n.DestroyedAt == null
-                        && n.RetiredAt == null
-                    )
-                    .Select(n => n.Id)
-                    .ToArray();
+                return owner.Economy.Inspect(world =>
+                    world
+                        .Set<WorldNpc>()
+                        .Where(n =>
+                            n.SystemId == attacked.SystemId
+                            && n.EncounterId == attacked.EncounterId
+                            && n.Role != NpcRole.Pirate
+                            && n.DestroyedAt == null
+                            && n.RetiredAt == null
+                        )
+                        .Select(n => n.Id)
+                        .ToArray()
+                );
             });
             _guardGroups[(attacked.SystemId, attacked.EncounterId)] = members;
         }

@@ -45,7 +45,7 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Read(world => ModuleAttributes(world, catalog, pilotId, module), new(pilots: [pilotId]));
         }

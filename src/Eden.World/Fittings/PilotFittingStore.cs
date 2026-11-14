@@ -103,7 +103,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     private IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributesSql(long pilotId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
             return live.Economy.Read(world => ShipAttributes(world, source, pilotId), new(pilots: [pilotId]));
@@ -119,7 +119,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public double SignatureRadius(long itemId, int typeId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
             return live.Economy.Read(
@@ -577,7 +577,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyList<FittingSkillBonus> SkillBonuses(long pilotId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
             return live.Economy.Read(
@@ -673,7 +673,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(long pilotId, InventoryItem module)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             using CatalogDbContext source = new(database.CatalogPath);
             return live.Economy.Read(world => ReadModuleAttributes(world, source, pilotId, module), new(pilots: [pilotId]));

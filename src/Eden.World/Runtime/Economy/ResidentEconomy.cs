@@ -190,7 +190,7 @@ internal sealed partial class ResidentEconomy
         {
             return read(_active);
         }
-        using var action = Begin(scope);
+        using var action = Begin(scope, inspect: true);
         return read(action);
     }
 
@@ -229,15 +229,17 @@ internal sealed partial class ResidentEconomy
             ? typed.Open(transaction)
             : throw new InvalidOperationException($"{typeof(T).Name} has no resident economic mapping.");
 
-    internal EconomyTransaction Begin(TransactionParticipants? participants = null)
+    internal EconomyTransaction Begin(TransactionParticipants? participants = null, bool inspect = false)
     {
         var lease = _owner.EnterShared("economic transaction");
         IDisposable? systems = null;
         try
         {
-            if (_transaction || _owner.SqlConnections != 0)
+            if (_transaction || !inspect && (_owner.HasOpenSqlTransaction || _owner.HasUnpublishedSqlChanges))
             {
-                throw new InvalidOperationException("Resident economic transactions cannot overlap another transaction.");
+                throw new InvalidOperationException(
+                    "Complete the current world transaction and close connections with pending changes before beginning a resident action."
+                );
             }
             EnsureLoaded();
             if (participants is not null)

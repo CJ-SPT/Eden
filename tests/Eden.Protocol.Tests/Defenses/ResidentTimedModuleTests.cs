@@ -132,8 +132,8 @@ public sealed partial class SignatureSuppressionOperationTests
         Assert.Equal(long.MaxValue, live.Economy.NextModuleExpiry(source));
         Assert.Equal(paid.Schedule.ExpiresAt, live.Economy.NextModuleExpiry(destination));
         fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(paid.Schedule.ExpiresAt - fixture.Clock.Now));
-        LiveTimedModules empty = new(new(fixture.Db.Path), source);
-        LiveTimedModules target = new(new(fixture.Db.Path), destination);
+        LiveTimedModules empty = new(live, source);
+        LiveTimedModules target = new(live, destination);
         List<string> commands = [];
         using (var metrics = SessionPerformance.Begin("resident module deadline", _ => { }, force: true, command: commands.Add)!)
         {

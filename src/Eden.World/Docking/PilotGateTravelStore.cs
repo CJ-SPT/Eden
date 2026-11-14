@@ -15,7 +15,7 @@ internal sealed partial class PilotGateTravelStore(WorldDatabase database, Sqlit
 {
     public DockedPilot Transfer(long pilotId, long shipId, long sourceGateId, long exitGateId)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             using CatalogDbContext residentCatalog = new(database.CatalogPath);
             int? destination = residentCatalog.FindCelestial(exitGateId)?.SolarSystemId;

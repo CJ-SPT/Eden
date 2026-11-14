@@ -140,7 +140,7 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
 
     public void CheckTravel(long pilotId, CrimewatchTravel action, int? destinationSystemId = null)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             using CatalogDbContext residentCatalog = new(database.CatalogPath);
             live.Economy.Inspect(
@@ -203,7 +203,7 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
 
     private IReadOnlyList<LoggedOffPilot> LoadLoggedOff(int system)
     {
-        if (LiveWorld.Find(database.Path) is { SqlConnections: 0 } live)
+        if (LiveWorld.Find(database.Path) is { } live)
         {
             return live.Economy.Read(world => LoggedOff(world, system), new(systems: [system]));
         }
