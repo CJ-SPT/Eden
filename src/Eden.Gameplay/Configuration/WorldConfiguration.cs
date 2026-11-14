@@ -45,6 +45,13 @@ public sealed record IndustryPolicy(
     decimal ReprocessingEfficiency = 1
 );
 
+public sealed record PlanetaryPolicy(
+    decimal ExtractionYieldMultiplier = 1,
+    decimal FactoryOutputMultiplier = 1,
+    decimal CpuMultiplier = 1,
+    decimal PowergridMultiplier = 1
+);
+
 public sealed record StructurePolicy(decimal AnchoringSpeed = 1, decimal OnliningSpeed = 1, decimal UnanchoringSpeed = 1);
 
 public sealed record NpcPopulationPolicy(
@@ -81,6 +88,7 @@ public sealed record WorldSettings
     public MiningHoldPolicy MiningHolds { get; init; } = new();
     public RewardPolicy Rewards { get; init; } = new();
     public IndustryPolicy Industry { get; init; } = new();
+    public PlanetaryPolicy PlanetaryIndustry { get; init; } = new();
     public StructurePolicy Structures { get; init; } = new();
     public NpcPopulationPolicy NpcPopulation { get; init; } = new();
     public ProgressionPolicy Progression { get; init; } = new();

@@ -134,6 +134,22 @@ internal sealed class SettingsForm
     [Range(typeof(decimal), "0.1", "100")]
     public decimal StructureUnanchoringSpeed { get; set; } = 1;
 
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Extraction yield")]
+    public decimal PlanetaryExtractionYieldMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Factory output")]
+    public decimal PlanetaryFactoryOutputMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Command center CPU")]
+    public decimal PlanetaryCpuMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Command center powergrid")]
+    public decimal PlanetaryPowergridMultiplier { get; set; } = 1;
+
     internal static SettingsForm From(WorldSettings settings) =>
         new()
         {
@@ -154,6 +170,10 @@ internal sealed class SettingsForm
             CopyingSpeed = settings.Industry.CopyingSpeed,
             InventionSpeed = settings.Industry.InventionSpeed,
             ReprocessingEfficiency = settings.Industry.ReprocessingEfficiency,
+            PlanetaryExtractionYieldMultiplier = settings.PlanetaryIndustry.ExtractionYieldMultiplier,
+            PlanetaryFactoryOutputMultiplier = settings.PlanetaryIndustry.FactoryOutputMultiplier,
+            PlanetaryCpuMultiplier = settings.PlanetaryIndustry.CpuMultiplier,
+            PlanetaryPowergridMultiplier = settings.PlanetaryIndustry.PowergridMultiplier,
             StructureAnchoringSpeed = settings.Structures.AnchoringSpeed,
             StructureOnliningSpeed = settings.Structures.OnliningSpeed,
             StructureUnanchoringSpeed = settings.Structures.UnanchoringSpeed,
@@ -201,6 +221,12 @@ internal sealed class SettingsForm
             MiningHolds = new(GeneralMiningHoldMultiplier, IceHoldMultiplier, GasHoldMultiplier),
             Rewards = new(BountyMultiplier, MissionIskMultiplier, MissionLpMultiplier, MissionStandingMultiplier),
             Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
+            PlanetaryIndustry = new(
+                PlanetaryExtractionYieldMultiplier,
+                PlanetaryFactoryOutputMultiplier,
+                PlanetaryCpuMultiplier,
+                PlanetaryPowergridMultiplier
+            ),
             Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
             Progression = new(StartingSkills, KillSkillPointMultiplier, MiningSkillPointMultiplier),

@@ -135,6 +135,25 @@ else
                     ExampleAmount="50" ExampleUnit="% recovery" Reward="false"
                     Speed="false" Efficiency="true" />
             </section>
+            <section id="settings-PlanetaryIndustry" class="card" hidden="@(Workspace.Activity != SettingsActivity.PlanetaryIndustry)">
+                <h2>Planetary industry</h2>
+                <MultiplierControl Label="Extraction yield" @bind-Value="Form.PlanetaryExtractionYieldMultiplier"
+                    Description="Scales newly installed extractor programs; existing programs keep their yield."
+                    ExampleAmount="100" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Factory output" @bind-Value="Form.PlanetaryFactoryOutputMultiplier"
+                    Description="Scales completed factory batches after restart; ingredients and cycle times stay the same."
+                    ExampleAmount="20" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Command center CPU" @bind-Value="Form.PlanetaryCpuMultiplier"
+                    Description="Scales CPU supplied at every command center upgrade level."
+                    ExampleAmount="1675" ExampleUnit="tf" Reward="false" Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Command center powergrid" @bind-Value="Form.PlanetaryPowergridMultiplier"
+                    Description="Scales powergrid supplied at every command center upgrade level."
+                    ExampleAmount="6000" ExampleUnit="MW" Reward="false" Speed="false" Efficiency="false" />
+                <p class="muted">Output rounds down to whole units, with a minimum of one per positive batch.
+                    Resize output routes and upgrade links to collect increased production. Storage limits still apply.</p>
+                <p class="muted">After reducing CPU or powergrid, remove buildings or upgrade the command center
+                    until the colony fits before submitting edits.</p>
+            </section>
             <div id="settings-World" hidden="@(Workspace.Activity != SettingsActivity.World)">
             <section class="card"><h2>Economy</h2>
                 <label><InputCheckbox @bind-Value="Form.ProgressiveMarkets" />Progressive regional markets</label>

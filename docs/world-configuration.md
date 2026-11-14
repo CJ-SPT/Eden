@@ -15,6 +15,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
 | Progression | NPC kill-SP and mining-SP multipliers; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
+| Planetary industry | Extraction yield, factory output, command-center CPU and powergrid multipliers. |
 | Structures | Anchoring, core onlining and decommissioning speeds for new timers; saved deadlines retain their original terms. |
 | Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
@@ -24,7 +25,7 @@ Changes affect future operations. Balances, installed jobs and paid costs, quote
 
 ## World tuning
 
-The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **World & economy** and **Advanced**.
+The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **Planetary industry**, **World & economy** and **Advanced**.
 Switching categories retains the draft. Activity reward/yield multipliers show their unit, range, explanation and an illustrative example.
 **Reset to 1×** resets that control; **Reset draft to original** restores the world's original revision into the draft.
 **Discard unsaved changes** returns to the last loaded or saved draft, including any already pending revision.
@@ -37,7 +38,7 @@ The existing hull clearance and deterministic warp landing offset still apply. M
 landings retain their existing/requested distances. Historical configuration documents that omit Navigation use 15000 metres.
 
 All new multipliers default to **1× current Eden behavior**, including when loading historical documents that omit the new fields.
-Gathering, structure/industry speed and reprocessing multipliers accept **0.1–100×**. Reward multipliers accept **0–100×**;
+Gathering, planetary industry, structure/industry speed and reprocessing multipliers accept **0.1–100×**. Reward multipliers accept **0–100×**;
 zero disables that reward. Forms, command imports and the administrator API enforce the same bounds. These policies belong to the
 saved world; they do not modify shared catalog definitions or autonomous NPC gathering/production.
 
@@ -70,6 +71,43 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 
 Training speed, combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
 update is required. Native visual presentation remains unverified; see the [implementation record](protocol/world-configuration.md).
+
+## Planetary industry
+
+Open **Settings → Planetary industry** to tune four independent **0.1–100×** multipliers, all defaulting to **1×**:
+
+| Control | Effect after Save for restart and restarting the server |
+| --- | --- |
+| Extraction yield | Scales the base yield of newly installed extractor programs and their survey quotes. Existing programs keep their saved yield and expiry. |
+| Factory output | Scales the product units per completed schematic cycle. Ingredients, input buffers and cycle lengths stay unchanged. Applies to outstanding cycles and offline catch-up processed after restart. |
+| Command center CPU | Scales available CPU at all six command-center levels. Buildings, extractor heads and links still consume their normal CPU. |
+| Command center powergrid | Scales available powergrid at all six levels. Buildings, heads and links still consume their normal power. |
+
+Production rounds down to whole units with a minimum of one for a positive batch, including P4 recipes.
+Routes retain their saved quantities and bandwidth reservations. **Resize output routes and upgrade links** to collect
+increased production; unrouted output and overflow are still lost. Storage capacity is unchanged. When lowering output,
+remove or recreate routes that exceed both the original and newly configured factory output before submitting edits.
+Lowering CPU or powergrid preserves existing buildings; remove enough buildings/links or upgrade the command center
+so the complete colony fits before submitting an edit.
+
+The signed login adapter synchronizes native CPU/power previews and factory products. Reconnect after server restart;
+no separately rebuilt client package is required. Native rendering and interactive gameplay remain unverified.
+Extraction quotes and saved program parameters already carry the configured yield through the ordinary protocol.
+Policies and colony progress use the existing world configuration and resident checkpoint paths.
+
+Configuration exports store these values under `settings.planetaryIndustry`:
+
+```json
+"planetaryIndustry": {
+  "extractionYieldMultiplier": 1,
+  "factoryOutputMultiplier": 1,
+  "cpuMultiplier": 1,
+  "powergridMultiplier": 1
+}
+```
+
+Historical configuration documents that omit this group retain 1× behavior. Drafts, original/active/pending comparisons,
+imports, validation and restore use the same settings. See the [implementation record](protocol/planetary.md#world-configuration--november-14-2026).
 
 ## Progressive regional markets
 

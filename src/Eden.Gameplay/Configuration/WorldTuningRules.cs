@@ -26,6 +26,7 @@ public static class WorldTuningRules
         ArgumentNullException.ThrowIfNull(settings.Rewards);
         ArgumentNullException.ThrowIfNull(settings.Industry);
         ArgumentNullException.ThrowIfNull(settings.Structures);
+        ArgumentNullException.ThrowIfNull(settings.PlanetaryIndustry);
         ArgumentNullException.ThrowIfNull(settings.Progression);
         if (settings.Navigation is null || settings.Navigation.AutopilotGateLandingMeters is < 0 or > (int)NavigationState.MaximumWarpRange)
         {
@@ -48,6 +49,10 @@ public static class WorldTuningRules
         ValidateRate(settings.Industry.CopyingSpeed);
         ValidateRate(settings.Industry.InventionSpeed);
         ValidateRate(settings.Industry.ReprocessingEfficiency);
+        ValidateRate(settings.PlanetaryIndustry.ExtractionYieldMultiplier);
+        ValidateRate(settings.PlanetaryIndustry.FactoryOutputMultiplier);
+        ValidateRate(settings.PlanetaryIndustry.CpuMultiplier);
+        ValidateRate(settings.PlanetaryIndustry.PowergridMultiplier);
         ValidateRate(settings.Structures.AnchoringSpeed);
         ValidateRate(settings.Structures.OnliningSpeed);
         ValidateRate(settings.Structures.UnanchoringSpeed);

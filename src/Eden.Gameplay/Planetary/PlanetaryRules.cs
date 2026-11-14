@@ -1,3 +1,5 @@
+using Eden.Gameplay.Configuration;
+
 namespace Eden.Gameplay.Planetary;
 
 public static class PlanetaryRules
@@ -69,7 +71,8 @@ public static class PlanetaryRules
         IReadOnlyList<PlanetaryHead> heads,
         double radius,
         IReadOnlyList<PlanetaryPin> peers,
-        bool validateRange = true
+        bool validateRange = true,
+        PlanetaryPolicy? policy = null
     )
     {
         var profile = PinType(catalog, pin.TypeId);
@@ -120,7 +123,7 @@ public static class PlanetaryRules
                 * Math.Sqrt(radius / MinimumHeadRadius)
                 * Math.Max(0.1, 1 - overlap);
         }
-        return new(Math.Max(1, checked((int)Math.Floor(quantity))), cycle, cycles);
+        return new(ScaleOutput(Math.Max(1, checked((int)Math.Floor(quantity))), policy?.ExtractionYieldMultiplier ?? 1), cycle, cycles);
     }
 
     public static int ExtractionOutput(PlanetaryProgram program, PlanetaryType type, long time)
@@ -140,7 +143,8 @@ public static class PlanetaryRules
         PlanetaryCatalog catalog,
         IReadOnlyList<PlanetaryCommand> commands,
         int upgradeSkill,
-        long now
+        long now,
+        PlanetaryPolicy? policy = null
     )
     {
         if (commands.Count is < 1 or > MaximumCommands || colony.PlanetId != planet.Id)
@@ -372,7 +376,7 @@ public static class PlanetaryRules
         foreach (var (id, install) in programs)
         {
             var pin = pins.Single(p => p.Id == id);
-            var quote = Quote(planet, catalog, pin, install.TypeId!.Value, pin.Heads ?? [], install.HeadRadius, peers);
+            var quote = Quote(planet, catalog, pin, install.TypeId!.Value, pin.Heads ?? [], install.HeadRadius, peers, policy: policy);
             var program = new PlanetaryProgram(
                 install.TypeId.Value,
                 now,
@@ -393,8 +397,8 @@ public static class PlanetaryRules
             NextPin = nextPin,
             NextRoute = nextRoute,
         };
-        Validate(result, planet, catalog);
-        return new(PlanetarySimulation.Advance(result, catalog, now), cost);
+        Validate(result, planet, catalog, policy);
+        return new(PlanetarySimulation.Advance(result, catalog, now, policy), cost);
     }
 
     private static PlanetaryPin EditableHeads(PlanetaryPin pin, PlanetaryCatalog catalog, long now)
@@ -454,7 +458,13 @@ public static class PlanetaryRules
         }
     }
 
-    public static void Validate(PlanetaryColony colony, PlanetaryPlanet planet, PlanetaryCatalog catalog)
+    public static int ScaleOutput(int quantity, decimal multiplier)
+    {
+        WorldTuningRules.ValidateRate(multiplier);
+        return quantity <= 0 ? 0 : Math.Max(1, checked((int)decimal.Floor(quantity * multiplier)));
+    }
+
+    public static void Validate(PlanetaryColony colony, PlanetaryPlanet planet, PlanetaryCatalog catalog, PlanetaryPolicy? policy = null)
     {
         double cpu = 0;
         double power = 0;
@@ -471,7 +481,10 @@ public static class PlanetaryRules
             cpu += linkUsage.Cpu;
             power += linkUsage.Power;
         }
-        if (cpu > s_cpu[colony.Level] || power > s_power[colony.Level])
+        if (
+            cpu > s_cpu[colony.Level] * (double)(policy?.CpuMultiplier ?? 1)
+            || power > s_power[colony.Level] * (double)(policy?.PowergridMultiplier ?? 1)
+        )
         {
             throw new InvalidDataException("The colony exceeds its command center CPU or power supply.");
         }
@@ -529,7 +542,9 @@ public static class PlanetaryRules
         {
             var schematic = catalog.Schematics[pin.SchematicId!.Value];
             long outgoing = colony.Routes.Where(r => r.Path[0] == pin.Id).Sum(r => (long)r.Quantity);
-            if (outgoing > schematic.Output.Quantity)
+            // Keep pre-existing routes valid when output is reduced; they carry only available production.
+            int output = Math.Max(schematic.Output.Quantity, ScaleOutput(schematic.Output.Quantity, policy?.FactoryOutputMultiplier ?? 1));
+            if (outgoing > output)
             {
                 throw new InvalidDataException("The processor's routes exceed its output per cycle.");
             }

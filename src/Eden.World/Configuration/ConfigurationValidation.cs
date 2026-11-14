@@ -39,6 +39,7 @@ internal static class ConfigurationValidation
             || settings.Simulation is null
             || settings.Capsuleers is null
             || settings.Rewards is null
+            || settings.PlanetaryIndustry is null
             || settings.Industry is null
             || settings.Navigation is null
         )

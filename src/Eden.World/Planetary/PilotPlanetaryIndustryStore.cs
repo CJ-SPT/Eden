@@ -67,9 +67,9 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
 
     internal static void Save(SavedPlanetaryColony saved, PlanetaryColony colony) => saved.StateJson = JsonSerializer.Serialize(colony);
 
-    private static PlanetaryColony Advance(SavedPlanetaryColony saved, PlanetaryCatalog catalog, long now)
+    private PlanetaryColony Advance(SavedPlanetaryColony saved, PlanetaryCatalog catalog, long now)
     {
-        var colony = PlanetarySimulation.Advance(ReadState(saved), catalog, now);
+        var colony = PlanetarySimulation.Advance(ReadState(saved), catalog, now, database.Settings.PlanetaryIndustry);
         Save(saved, colony);
         return colony;
     }
@@ -272,7 +272,8 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                     definitions,
                     commands,
                     PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.CommandCenterUpgradesSkill),
-                    now
+                    now,
+                    database.Settings.PlanetaryIndustry
                 );
                 foreach (var create in commands.OfType<CreatePlanetaryPin>())
                 {
@@ -351,7 +352,17 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                 {
                     throw new InvalidDataException("Choose an extractor control unit.");
                 }
-                return PlanetaryRules.Quote(planet, definitions, pin, typeId, heads, radius, colony.Pins, validateRange: !temporary);
+                return PlanetaryRules.Quote(
+                    planet,
+                    definitions,
+                    pin,
+                    typeId,
+                    heads,
+                    radius,
+                    colony.Pins,
+                    validateRange: !temporary,
+                    policy: database.Settings.PlanetaryIndustry
+                );
             }
         );
     }
@@ -601,7 +612,7 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                     );
                 }
                 PlanetaryOrbitStore.CheckOfficeCapacity(world, catalog, pilotId, officeId);
-                colony = PlanetarySimulation.Advance(colony, definitions, now);
+                colony = PlanetarySimulation.Advance(colony, definitions, now, database.Settings.PlanetaryIndustry);
                 Save(saved, colony);
                 return new PlanetaryChange(colony, changes, balance);
             }

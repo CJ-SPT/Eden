@@ -87,7 +87,12 @@ public partial class SettingsPage
     private void Invalid() => Error = "Review the validation messages before saving. Changes in other tabs are retained.";
 
     private static string ActivityLabel(SettingsActivity activity) =>
-        activity == SettingsActivity.World ? "World & economy" : activity.ToString();
+        activity switch
+        {
+            SettingsActivity.World => "World & economy",
+            SettingsActivity.PlanetaryIndustry => "Planetary industry",
+            _ => activity.ToString(),
+        };
 
     private async Task Validate() => await Act(save: false);
 

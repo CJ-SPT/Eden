@@ -1,8 +1,10 @@
+using Eden.Gameplay.Configuration;
+
 namespace Eden.Gameplay.Planetary;
 
 public static class PlanetarySimulation
 {
-    public static PlanetaryColony Advance(PlanetaryColony colony, PlanetaryCatalog catalog, long now)
+    public static PlanetaryColony Advance(PlanetaryColony colony, PlanetaryCatalog catalog, long now, PlanetaryPolicy? policy = null)
     {
         if (now < colony.SimulatedAt)
         {
@@ -102,7 +104,11 @@ public static class PlanetarySimulation
                 else if (pin.SchematicId is int recipe)
                 {
                     var schematic = catalog.Schematics[recipe];
-                    Produce(pin, schematic.Output.TypeId, schematic.Output.Quantity);
+                    Produce(
+                        pin,
+                        schematic.Output.TypeId,
+                        PlanetaryRules.ScaleOutput(schematic.Output.Quantity, policy?.FactoryOutputMultiplier ?? 1)
+                    );
                     // Produce may have delivered inputs back to this pin through another
                     // same-deadline producer; preserve that updated buffer.
                     pins[pin.Id] = pins[pin.Id] with

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
@@ -6,7 +7,12 @@ using Eden.Protocol.Transport;
 namespace Eden.Protocol.PilotSessions;
 
 [Injectable(InjectionType.Scoped)]
-public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session, SessionDiagnostics? diagnostics = null)
+public sealed class PilotLogin(
+    ILoginIdentity identity,
+    IPilotSession session,
+    SessionDiagnostics? diagnostics = null,
+    IWorldTuning? tuning = null
+)
 {
     private static long s_nextClientId = DateTime.UtcNow.Ticks;
     internal const long PlayerRole = 1L << 61;
@@ -41,7 +47,7 @@ public sealed class PilotLogin(ILoginIdentity identity, IPilotSession session, S
         byte[] challenge = RandomNumberGenerator.GetBytes(64);
         // Install native UI compatibility adapters before the roster opens.
         // The signed expression returns no settings or other client data.
-        byte[] expression = LoginClient.Expression;
+        byte[] expression = LoginClient.For(tuning?.Settings.PlanetaryIndustry ?? new());
         byte[] signature = key.SignData(PilotLoginWire.HashArgument(expression), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         await packets.WriteAsync(
             new LoginChallenge(challenge, new SignedSettings(expression, signature), PilotLoginWire.HashArgument(credentials.Challenge))

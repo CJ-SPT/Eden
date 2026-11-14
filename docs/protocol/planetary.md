@@ -242,3 +242,62 @@ Not performed; agent client testing is disabled.
 
 After deploying and restarting the updated server, browse Command Centers with regional market range and buy the
 type matching the intended planet. Native market presentation and deployment remain unverified by this change.
+
+## World configuration — November 14, 2026
+
+The administration page now has a **Planetary industry** category with independently validated 0.1–100× extraction,
+factory product, command-center CPU and command-center powergrid multipliers. All default to 1×; older configuration
+revisions without the group deserialize to those defaults. Draft activation remains restart-only.
+See [operator settings and route limitations](../world-configuration.md#planetary-industry).
+
+Typed Gameplay rules scale new extraction base quantities before saving the program and scale factory products when
+advancing deadlines. World passes the active saved policy through every colony advancement, edit and quote boundary.
+Program base quantities already serialize as `qtyPerCycle`; program deadlines and previously installed yields remain
+unchanged. Factory multipliers affect all subsequently simulated completions, including offline catch-up. Configured
+CPU and power affect final-layout admission. Colony state remains under the resident owner and existing checkpoint;
+no second persistence implementation or SQL fallback was introduced.
+
+Factory routes may carry up to the greater of original and configured product output, retaining ordinary input limits
+and bandwidth accounting. Existing routes are never silently increased; users resize them and upgrade links to carry
+additional output. Overflow and storage limits still apply. Reducing capacity preserves existing buildings but requires
+a fitting final layout on the next edit.
+
+The existing host-signed login expression supplies the active capacity and factory policies. Its planetary adapter
+wraps `planetCommon.GetCPUOutput`, `GetPowerOutput` and `ProcessPin.SetSchematic`; the latter scales each pin's own
+products so native simulation, output previews and route creation use the same quantity. Catalog recipes, ingredients
+and cycle times are untouched. Reinstallation retains the original functions and reconnecting to default settings
+restores 1× behavior. Default logins avoid eagerly loading planetary modules.
+
+References rechecked: [UniWiki colony setup](https://wiki.eveuniversity.org/Setting_up_a_planetary_colony) and
+[planetary buildings](https://wiki.eveuniversity.org/Planetary_buildings) explain command-center supply and building,
+head and link constraints. These multipliers are Eden operator policy. The local EveJs files and SHA-256 identities
+listed above remain the reference snapshot; its factory-output routing and capacity behavior were consulted without
+copying implementation. No Carbon-owned codec, transport or Destiny behavior changed.
+
+Inert inspection of the installed build-3662168 archive (SHA-256
+`2dbc29987d01515f4f40c319f89f0276f05ac3d175d79776a03f1f8e2bab5c6a`) confirmed the command-pin calls into
+`planetCommon` and `ProcessPin.SetSchematic`'s per-pin product dictionary, consumed by `Run` and `GetProducts`.
+This archive is a locally prepared client, not the stock archive recorded earlier.
+
+**Automated validation:** Tool/solution restore and isolated solution build passed (23.85 seconds, zero warnings).
+Focused .NET validation passed 84 tests in 18 seconds; three optional native-client/browser checks were skipped because
+their opt-in environments were unset. The catalog and formatting Python policy suites passed 8 and 9 tests respectively
+(0.993 and 0.017 seconds). Formatting verification passed. Full .NET regression was not requested.
+
+Coverage includes all 68 schematics at 0.1×, 1×, 2.5× and 100×, independent capacity rejection, legacy imports,
+draft activation, resident rollback/checkpoint/reopen, and isolated signed adapter scaling, repeated installation and
+default restoration. The initial exact-method filter through `tools/Test-Feature.ps1` was
+`FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryConfigurationTests.CapacityMultipliersIndependentlyAdmitAndRejectColonyLayouts`.
+The final focused filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Planetary|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldConfigurationTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotLoginTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ConcordOverviewTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.FreePointClientTests
+```
+
+A preceding shared-output run failed before executing tests with a test-assembly version/loading mismatch. Validation
+then used `--artifacts-path artifacts/planetary-configuration` for an isolated restore/build and the successful run above.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After restart and reconnect, compare a tuned colony's CPU/power display and factory
+output preview, then resize a factory route and confirm Submit accepts a layout within the configured capacity.

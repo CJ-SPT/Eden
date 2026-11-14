@@ -10,6 +10,7 @@
     <EmbeddedResource Include="Flight/npc_bounty_client.py" />
     <EmbeddedResource Include="Docking/presence_lists_client.py" />
     <EmbeddedResource Include="Skills/free_points_client.py" />
+    <EmbeddedResource Include="Planetary/planetary_client.py" />
     <PackageReference Include="Google.Protobuf" Version="3.36.2" />
     <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.4.2" />
     <PackageReference Include="ZLinq" Version="1.6.1" />
