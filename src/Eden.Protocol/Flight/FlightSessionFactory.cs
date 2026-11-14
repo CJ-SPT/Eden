@@ -35,7 +35,8 @@ internal sealed class FlightSessionFactory(
     ICapsuleerPresentation? presentation = null,
     IPilotMissions? missions = null,
     IPilotCommandBursts? commandBursts = null,
-    IDedComplexTravel? dedComplexes = null
+    IDedComplexTravel? dedComplexes = null,
+    ICooperativeFleets? fleets = null
 )
 {
     public FlightSession Create(DockedPilot pilot)
@@ -71,7 +72,8 @@ internal sealed class FlightSessionFactory(
                 presentation: presentation,
                 missions: missions,
                 commandBursts: commandBursts,
-                dedComplexes: dedComplexes
+                dedComplexes: dedComplexes,
+                fleets: fleets
             );
         }
         catch

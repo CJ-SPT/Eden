@@ -4,6 +4,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -20,10 +21,12 @@ internal static partial class SpaceLootTransfer
         long containerId,
         IReadOnlyList<long> itemIds,
         int? quantity,
-        InventoryFlag destinationFlag
+        InventoryFlag destinationFlag,
+        long? sourceOwnerId = null
     )
     {
         long pilotId = pilot.Id;
+        long ownerId = sourceOwnerId ?? pilotId;
         if (
             pilot.ActiveShipId != shipId
             || itemIds.Count == 0
@@ -36,11 +39,11 @@ internal static partial class SpaceLootTransfer
         }
         var items = world
             .Set<OwnedItem>()
-            .Where(i => Enumerable.Contains(itemIds, i.Id) && i.OwnerId == pilotId && i.LocationId == containerId)
+            .Where(i => Enumerable.Contains(itemIds, i.Id) && i.OwnerId == ownerId && i.LocationId == containerId)
             .OrderBy(i => i.Id)
             .ToArray();
         var storedShips = world
-            .Ships.Where(s => Enumerable.Contains(itemIds, s.Id) && s.OwnerId == pilotId && s.StoredInId == containerId)
+            .Ships.Where(s => Enumerable.Contains(itemIds, s.Id) && s.OwnerId == ownerId && s.StoredInId == containerId)
             .OrderBy(s => s.Id)
             .ToArray();
         if (
@@ -79,7 +82,7 @@ internal static partial class SpaceLootTransfer
         {
             var before = PilotInventoryStore.Read(catalog, item);
             int moved = quantity ?? item.Quantity;
-            if (moved < item.Quantity && JetcanRules.IsJetcan(containerId))
+            if (moved < item.Quantity && JetcanRules.IsJetcan(containerId) && ownerId == pilotId)
             {
                 changes.AddRange(InventoryPersistence.SplitTransfer(world, catalog, item, before, shipId, (int)destinationFlag, moved));
             }
@@ -105,6 +108,7 @@ internal static partial class SpaceLootTransfer
             }
             else
             {
+                item.OwnerId = pilotId;
                 item.LocationId = shipId;
                 item.FlagId = (int)destinationFlag;
                 item.Online = false;
@@ -114,6 +118,15 @@ internal static partial class SpaceLootTransfer
         foreach (var stored in storedShips)
         {
             var previous = PilotFleetStore.Read(catalog, stored);
+            if (stored.OwnerId != pilotId)
+            {
+                PilotInsuranceStore.VoidRemovedHull(world, stored.Id);
+                foreach (var item in ShipStoragePersistence.Contents(world, stored.OwnerId, stored.Id))
+                {
+                    item.OwnerId = pilotId;
+                }
+                stored.OwnerId = pilotId;
+            }
             stored.StoredInId = shipId;
             stored.StorageFlagId = (int)destinationFlag;
             changes.Add(new(PilotFleetStore.Read(catalog, stored), previous));

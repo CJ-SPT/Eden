@@ -10,6 +10,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +21,7 @@ internal sealed partial class PilotMissionStore
     private sealed record MissionPayment(long BalanceCents, long PointsBefore, long PointsAfter);
 
     private SavedMission Offer(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         CatalogAgent agent,
@@ -81,7 +82,7 @@ internal sealed partial class PilotMissionStore
         }
         // A fixed offset from a real station gives each live mission a distinct location.
         // Historical closed missions remain part of the sequence so restarts cannot overlap sites.
-        long serial = (world.Set<SavedMission>().Max(m => (long?)m.Id) ?? 0) + 1;
+        long serial = world.Next("WorldMission");
         double offset = MissionRules.PlacementOffset * serial;
         var row = new SavedMission
         {
@@ -121,45 +122,82 @@ internal sealed partial class PilotMissionStore
             );
     }
 
-    private static MissionPayment Pay(
-        WorldDbContext world,
+    private MissionPayment Pay(
+        WorldAction world,
         Pilot pilot,
         CatalogAgent agent,
         SavedMission mission,
         long now,
-        List<MissionStandingChange> standings
+        List<MissionStandingChange> standings,
+        IReadOnlyList<long> sharers
     )
     {
-        var wallet = world.Set<PilotWallet>().Find(pilot.Id) ?? world.Add(new PilotWallet { PilotId = pilot.Id }).Entity;
-        wallet.Cents = checked(wallet.Cents + mission.IskCents);
+        int count = sharers.Count + 1;
+        long iskShare = mission.IskCents / count;
+        long lpShare = mission.LoyaltyPoints / count;
+        double standingShare = mission.CorporationFraction / count;
+        foreach (long recipient in sharers)
+        {
+            Credit(world, recipient, agent, mission, now, iskShare, lpShare);
+            List<MissionStandingChange> gains = [];
+            Gain(world, recipient, agent.CorporationId, standingShare, now, agent.CorporationId, mission.SystemId, gains);
+            foreach (var gain in gains)
+            {
+                world.AfterCommit(() => fleets.NotifyMissionStanding(recipient, gain.SourceId, gain.After));
+            }
+        }
+        var payment = Credit(
+            world,
+            pilot.Id,
+            agent,
+            mission,
+            now,
+            mission.IskCents - iskShare * sharers.Count,
+            mission.LoyaltyPoints - lpShare * sharers.Count
+        );
+        Gain(world, pilot.Id, agent.Id, mission.CorporationFraction, now, agent.CorporationId, mission.SystemId, standings);
+        Gain(world, pilot.Id, agent.CorporationId, standingShare, now, agent.CorporationId, mission.SystemId, standings);
+        if (mission.Storyline && agent.FactionId is int faction)
+        {
+            Gain(world, pilot.Id, faction, mission.FactionFraction, now, agent.CorporationId, mission.SystemId, standings);
+        }
+        return payment;
+    }
+
+    private static MissionPayment Credit(
+        WorldAction world,
+        long pilotId,
+        CatalogAgent agent,
+        SavedMission mission,
+        long now,
+        long isk,
+        long points
+    )
+    {
+        var wallet = world.Set<PilotWallet>().Find(pilotId) ?? world.Add(new PilotWallet { PilotId = pilotId }).Entity;
+        wallet.Cents = checked(wallet.Cents + isk);
         world.Add(
             new SavedMarketPayment
             {
-                PilotId = pilot.Id,
+                PilotId = pilotId,
                 CounterpartyId = agent.Id,
                 OrderId = mission.Id,
                 Kind = WalletEntryType.AgentMissionReward,
-                AmountCents = mission.IskCents,
+                AmountCents = isk,
                 BalanceCents = wallet.Cents,
                 Time = now,
             }
         );
         var lp =
-            world.Set<SavedLoyaltyBalance>().Find(pilot.Id, agent.CorporationId)
-            ?? world.Add(new SavedLoyaltyBalance { PilotId = pilot.Id, IssuerCorporationId = agent.CorporationId }).Entity;
+            world.Set<SavedLoyaltyBalance>().Find(pilotId, agent.CorporationId)
+            ?? world.Add(new SavedLoyaltyBalance { PilotId = pilotId, IssuerCorporationId = agent.CorporationId }).Entity;
         long before = lp.Points;
-        lp.Points = checked(lp.Points + mission.LoyaltyPoints);
-        Gain(world, pilot.Id, agent.Id, mission.CorporationFraction, now, agent.CorporationId, mission.SystemId, standings);
-        Gain(world, pilot.Id, agent.CorporationId, mission.CorporationFraction, now, agent.CorporationId, mission.SystemId, standings);
-        if (mission.Storyline && agent.FactionId is int faction)
-        {
-            Gain(world, pilot.Id, faction, mission.FactionFraction, now, agent.CorporationId, mission.SystemId, standings);
-        }
+        lp.Points = checked(lp.Points + points);
         return new(wallet.Cents, before, lp.Points);
     }
 
     private static void Gain(
-        WorldDbContext world,
+        WorldAction world,
         long pilotId,
         long source,
         double fraction,
@@ -197,14 +235,14 @@ internal sealed partial class PilotMissionStore
         }
     }
 
-    private void Progress(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent, int level, long now)
+    private void Progress(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent, int level, long now)
     {
         if (agent.FactionId is not int faction || level > 4)
         {
             return;
         }
         var progress =
-            world.Set<SavedMissionProgress>().Find(pilot.Id, faction, level)
+            world.Filter<SavedMissionProgress>(p => p.PilotId == pilot.Id && p.FactionId == faction && p.Level == level).SingleOrDefault()
             ?? world
                 .Add(
                     new SavedMissionProgress

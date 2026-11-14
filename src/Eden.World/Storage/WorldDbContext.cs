@@ -482,7 +482,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
             .ToTable("WorldNpcBounty", t => t.HasCheckConstraint("CK_NpcBounty_Amounts", "AmountCents > 0 AND BalanceCents >= 0"));
         model.Entity<NpcBounty>().HasOne<Pilot>().WithMany().HasForeignKey(b => b.PilotId);
         model.Entity<NpcBounty>().HasOne<WorldNpc>().WithMany().HasForeignKey(b => b.NpcId);
-        model.Entity<NpcBounty>().HasIndex(b => b.NpcId).IsUnique();
+        model.Entity<NpcBounty>().HasIndex(b => new { b.NpcId, b.PilotId }).IsUnique();
         model.Entity<NpcBounty>().HasIndex(b => new { b.PilotId, b.Time });
         model
             .Entity<WorldNpc>()

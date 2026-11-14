@@ -42,7 +42,8 @@ internal sealed partial class FlightSession(
     ICapsuleerPresentation? presentation = null,
     IPilotMissions? missions = null,
     IPilotCommandBursts? commandBursts = null,
-    IDedComplexTravel? dedComplexes = null
+    IDedComplexTravel? dedComplexes = null,
+    ICooperativeFleets? fleets = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -75,7 +76,21 @@ internal sealed partial class FlightSession(
 
     private FlightEffects Effects => _effects ??= new(Update);
     private FlightScene Scene =>
-        _scene ??= new(space, clock, objects, Effects, Update, Updates.Add, health, encounters, wrecks, missiles, drones, commandBursts);
+        _scene ??= new(
+            space,
+            clock,
+            objects,
+            Effects,
+            Update,
+            Updates.Add,
+            health,
+            encounters,
+            wrecks,
+            missiles,
+            drones,
+            commandBursts,
+            fleets
+        );
     private FlightSceneContext SceneContext => new(Pilot, InBallpark, CanTarget, _simulatedStamp);
     private FlightModuleEffects ModuleEffects => _moduleEffects ??= new(_initialFlight, modules, Effects);
     private int Stamp => space.Stamp(clock);
@@ -684,6 +699,11 @@ internal sealed partial class FlightSession(
         space.Publish(contact);
         Scene.RefreshPeers(SceneContext, contact);
     }
+
+    internal IReadOnlyList<ShipContact> VisiblePeers => Scene.VisiblePeers;
+
+    internal void NotifyFleetHealth(ShipHealth health) =>
+        Updates.Add(new(_simulatedStamp, new DestinyCommand.OnFleetDamageStateChange(health.ShipId, health.DamageState())));
 
     public IEnumerable<PilotContact> VisiblePilots() => space.Peers(Pilot).Select(ship => ship.Pilot).Prepend(PilotContact.From(Pilot));
 

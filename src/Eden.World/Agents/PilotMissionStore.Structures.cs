@@ -8,6 +8,7 @@ using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Agents;
@@ -22,7 +23,9 @@ internal sealed partial class PilotMissionStore
         SavedMission mission,
         MissionProfile profile,
         long now
-    )
+    ) => SeedStructures(new SqlWorldAction(world), catalog, mission, profile, now);
+
+    private static void SeedStructures(WorldAction world, CatalogDbContext catalog, SavedMission mission, MissionProfile profile, long now)
     {
         List<PendingMissionStructure> pending = [];
         for (int index = 0; index < profile.Definition.Structures.Length; index++)

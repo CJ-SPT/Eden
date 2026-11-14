@@ -8,6 +8,7 @@ using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Agents;
@@ -26,7 +27,7 @@ internal sealed partial class PilotMissionStore
         return checked(MissionRules.FirstObjectId + missionId * MissionRules.NpcsPerMission + sceneryIndex);
     }
 
-    private static void SeedContainers(WorldDbContext world, CatalogDbContext catalog, SavedMission mission, MissionProfile profile)
+    private static void SeedContainers(WorldAction world, CatalogDbContext catalog, SavedMission mission, MissionProfile profile)
     {
         for (int index = 0; index < profile.Definition.Containers.Length; index++)
         {

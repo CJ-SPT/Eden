@@ -3651,7 +3651,10 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
-            if (true && Set<Eden.Data.World.Combat.NpcBounty>().Any(other => true && other.NpcId == row.NpcId && (other.Id != row.Id)))
+            if (
+                Set<Eden.Data.World.Combat.NpcBounty>()
+                    .Any(other => other.NpcId == row.NpcId && other.PilotId == row.PilotId && other.Id != row.Id)
+            )
             {
                 throw new InvalidDataException("Duplicate resident NpcBounty unique value.");
             }

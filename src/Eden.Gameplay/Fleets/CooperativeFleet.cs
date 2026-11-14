@@ -43,7 +43,15 @@ public enum FleetBroadcastKind
     HealTarget,
 }
 
-public sealed record FleetPilot(long Id, int CorporationId, long ShipId, int ShipTypeId, int SystemId, SpacePosition? Position);
+public sealed record FleetPilot(
+    long Id,
+    int CorporationId,
+    long ShipId,
+    int ShipTypeId,
+    int SystemId,
+    SpacePosition? Position,
+    bool InTransit = false
+);
 
 public sealed record FleetPlacement(long WingId, long SquadId, FleetRole Role);
 
@@ -100,6 +108,8 @@ public abstract record FleetEvent
 
     public sealed record Warp(FleetWarpOrder Order) : FleetEvent;
 
+    public sealed record MissionStanding(long SourceId, double Value) : FleetEvent;
+
     public sealed record Resync(FleetMember? Member) : FleetEvent;
 }
 
@@ -111,7 +121,11 @@ public interface ICooperativeFleets
     FleetIdentity? Identity(long actor);
     IReadOnlySet<long> MembersInFleet(long actor, IReadOnlyList<long> candidates);
     FleetMembership? Membership(long actor);
+    FleetMembership? JoinMembership(long actor);
+    IReadOnlyList<FleetPilot> Fleetmates(long actor);
+    bool CanShareLoot(long actor, long owner, int system);
     IReadOnlyList<FleetDelivery> Drain(long actor);
+    void NotifyMissionStanding(long pilotId, long sourceId, double value);
     CooperativeFleet Create(long actor);
     bool CanBind(long actor, long fleet);
     CooperativeFleet Read(long actor, long fleet);

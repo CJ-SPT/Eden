@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Shared fleet rewards and watchlist damage](protocol/fleets.md#shared-mission-rewards-bounties-loot-and-watchlist-damage)
+records mission turn-in, on-grid bounties, fleet loot rights and private health updates.
+
 [Resident mail, inbox and calendar](protocol/social.md#resident-mail-inbox-and-calendar),
 [resident bookmarks and access lists](protocol/navigation.md#resident-bookmarks-and-access-lists), and
 [resident planetary industry](protocol/planetary.md#resident-planetary-industry)

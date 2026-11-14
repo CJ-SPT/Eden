@@ -9,7 +9,7 @@ namespace Eden.World.Agents;
 
 internal sealed partial class PilotMissionStore
 {
-    private static void SeedMiningDeposits(WorldDbContext world, SavedMission mission, MissionProfile profile)
+    private static void SeedMiningDeposits(WorldAction world, SavedMission mission, MissionProfile profile)
     {
         for (int index = 0; index < profile.Deposits.Length; index++)
         {

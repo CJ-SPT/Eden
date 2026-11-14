@@ -391,6 +391,8 @@ internal sealed partial class LiveWorld : IDisposable
         }
     }
 
+    internal Eden.Gameplay.Fleets.ICooperativeFleets? Fleets { get; }
+
     internal LiveWorld(
         WorldDatabase database,
         TimeProvider clock,
@@ -399,9 +401,11 @@ internal sealed partial class LiveWorld : IDisposable
         bool combatObjects = true,
         bool residentReads = true,
         bool simulationObjects = true,
-        Action<SqliteConnection, SqliteConnection>? copy = null
+        Action<SqliteConnection, SqliteConnection>? copy = null,
+        Eden.Gameplay.Fleets.ICooperativeFleets? fleets = null
     )
     {
+        Fleets = fleets;
         _database = database;
         _ownershipMonitor = new("world", _gate);
         _path = Path.GetFullPath(database.Path);

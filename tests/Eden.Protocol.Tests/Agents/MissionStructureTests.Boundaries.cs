@@ -12,6 +12,7 @@ using Eden.Protocol.Combat;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
 using Eden.World.Combat.Npcs;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,31 +49,33 @@ public sealed partial class MissionStructureTests
     }
 
     [Fact]
-    public void FailedAcceptanceRollsBackAllocatedStructuresAndCanRetryWithoutDuplicateMembership()
+    public void FailedStructureCheckpointRetriesWithoutDuplicatingResidentAcceptance()
     {
         using MissionFixture f = new(division: MissionRules.SecurityDivision, live: true);
         var offer = Hidden(f, accept: false);
-        using (WorldDbContext world = new(f.Db.Path))
+        var live = f.Services.GetRequiredService<LiveWorld>();
+        f.Accept(offer);
+        using (var failed = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot()))
         {
-            world.Database.ExecuteSqlRaw(
-                """
+            using WorldDbContext unchanged = new(failed.Database);
+            var original = unchanged.Set<SavedMission>().AsNoTracking().SingleOrDefault(row => row.Id == offer.Id)?.State;
+            using var command = failed.Database.CreateCommand();
+            command.CommandText = """
                 CREATE TRIGGER Reject_Structure_Acceptance BEFORE INSERT ON WorldMissionStructure
                     BEGIN SELECT RAISE(ABORT,'injected structure membership failure'); END;
-                """
-            );
+                """;
+            command.ExecuteNonQuery();
+            Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => failed.Project());
+            Assert.Empty(unchanged.Set<SavedMissionStructure>());
+            Assert.Equal(original, unchanged.Set<SavedMission>().AsNoTracking().SingleOrDefault(row => row.Id == offer.Id)?.State);
         }
-        Assert.Throws<DbUpdateException>(() => f.Accept(offer));
-        Assert.Equal(MissionState.Offered, Current(f).State);
-        using (WorldDbContext world = new(f.Db.Path))
-        {
-            Assert.Empty(world.Set<SavedMissionStructure>());
-            Assert.Empty(world.Set<WorldNpc>().Where(n => n.Role == NpcRole.MissionStructure));
-            world.Database.ExecuteSqlRaw("DROP TRIGGER Reject_Structure_Acceptance");
-        }
-        f.Accept(offer);
-        Assert.Equal(5, Structures(f, offer).Length);
-        using WorldDbContext check = new(f.Db.Path);
-        Assert.Equal(5, check.Set<SavedMissionStructure>().Count());
+        Assert.Equal(MissionState.Accepted, Current(f).State);
+        Assert.Throws<InvalidDataException>(() => f.Accept(offer));
+        using var retry = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        retry.Project();
+        using WorldDbContext saved = new(retry.Database);
+        Assert.Equal(5, saved.Set<SavedMissionStructure>().Count());
+        Assert.Equal(MissionState.Accepted, saved.Set<SavedMission>().Find(offer.Id)!.State);
     }
 
     [Fact]

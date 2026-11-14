@@ -201,11 +201,26 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
         return (pilot, system, new(position.X, position.Y, position.Z));
     }
 
-    internal static (Pilot Pilot, SavedJetcan Can) Access(WorldAction world, CatalogDbContext catalog, long pilotId, long id, long now)
+    internal static (Pilot Pilot, SavedJetcan Can) Access(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long id,
+        long now,
+        bool fleetLoot = false
+    )
     {
         var (pilot, system, position) = InSpace(world, catalog, pilotId);
         var can = world.Set<SavedJetcan>().Find(id);
-        if (can is null || can.ExpiresAt <= now || can.SystemId != system || can.OwnerId != pilotId)
+        if (
+            can is null
+            || can.ExpiresAt <= now
+            || can.SystemId != system
+            || (
+                can.OwnerId != pilotId
+                && (!fleetLoot || LiveWorld.Find(world.WorldPath)?.Fleets?.CanShareLoot(pilotId, can.OwnerId, system) != true)
+            )
+        )
         {
             throw new InvalidDataException("The cargo container is unavailable or you do not have its loot rights.");
         }
@@ -233,7 +248,7 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
 
     internal static WreckInventory Read(WorldAction world, CatalogDbContext catalog, long pilotId, long id, long now)
     {
-        var (_, can) = Access(world, catalog, pilotId, id, now);
+        var (_, can) = Access(world, catalog, pilotId, id, now, fleetLoot: true);
         var type = catalog.RequireItem(JetcanRules.TypeId);
         var item = new InventoryItem(
             can.Id,
@@ -310,8 +325,8 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
         InventoryFlag destinationFlag
     )
     {
-        var (pilot, can) = Access(world, catalog, pilotId, canId, now);
-        var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, canId, items, quantity, destinationFlag);
+        var (pilot, can) = Access(world, catalog, pilotId, canId, now, fleetLoot: true);
+        var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, canId, items, quantity, destinationFlag, can.OwnerId);
         if (!world.Filter<OwnedItem>(item => item.LocationId == canId).Any())
         {
             world.Remove(can);

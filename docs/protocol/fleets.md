@@ -2,6 +2,54 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Shared mission rewards, bounties, loot and watchlist damage
+
+- A ready mission turn-in offers **Share with fleet** or **Keep rewards**. Cancel leaves the mission accepted. Sharing divides
+  ISK, LP and NPC corporation standing among the completing pilot and up to nine other online fleet members, including
+  pilots in another system. If more than nine qualify, Eden selects nine at random. The completer receives rounding remainders,
+  agent and direct storyline faction standing, and storyline progression. Settlement checks the accepted offer again after
+  the dialog and commits cargo consumption, all credits, standing history and mission closure together.
+- NPC bounties divide among the final-blow pilot and active fleetmates within Eden's observer grid of the defeated NPC.
+  Docked and traveling members are excluded. Each share has its own wallet history and uses the recipient's corporation
+  bounty tax rules. The final-blow pilot receives any remainder and the existing kill progression credit. World version 155
+  permits one bounty entry per NPC and recipient while preserving earlier entries.
+- Fleetmates can open and take loot from a member's wrecks and jettisoned cargo while the owner is in the same system.
+  Each read and transfer checks current membership, system, proximity and expiry. The transfer changes ownership of items
+  actually taken, with split quantities remaining under the source owner. NPC wrecks from a mission belong to the mission
+  owner. Wreck and can slim items advertise the current fleet permission to eligible viewers.
+- The native watchlist accepts add, remove and damage registration, with up to 100 favorites per pilot. The server sends the
+  initial and changed shield, armor and hull state of watched fleetmates on the visible grid. Watch registrations survive
+  ordinary ship and system changes during the fleet session. A changed fleet membership invalidates stale registrations.
+  Damage updates use the recipient's Destiny stream and are excluded from shared movement history.
+
+Build 3662168's original archive SHA-256 is
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Inert inspection confirmed
+`agents.SingleChoiceBox` with agent/content IDs and localized choices, `fleetSvc` favorites as a Python set or None, and
+`michelle.OnFleetDamageStateChange(shipID, damageState)` and its four-field loot-rights tuple. The local EVE.js build 3396210
+reference used `fleetShare.js` (SHA-256 `AC5538FE0E8E34C716838A663395E4FF9175DB4D666FB8FC56C10C049EAAEB7F`)
+and `fleetRuntime.js` (SHA-256 `494727D0F0793202BD9195C417FFFC63CCE499EA157890FC12981919BE521B8F`).
+The existing [Carbon Blue reduce path](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+decodes the native set and the existing Destiny carrier supplies the stamp.
+[EVE University mission fleets](https://wiki.eveuniversity.org/Mission_Fleets) ·
+[CCP container and wreck ownership](https://support.eveonline.com/hc/en-us/articles/115000597345-Container-and-Wreck-Ownership).
+
+**Automated validation.** The focused `FleetTurnInSplitsResidentRewardsOnceAndPersistsBothShares`,
+`OnGridFleetSharesBountyAndCanLootWreckUntilMembershipEnds` and `WatchlistSendsPrivateNativeDamageUpdatesAndStopsOnLeave`
+cases cover cancellation and replay, saved reward splits, SQL-free warmed bounty settlement, loot ownership and revocation,
+and private native damage updates. The final affected filter covered mission protocol, persistence, structures, mining and
+research, cooperative fleets and burst rules, fatal NPC settlement, corporation wallets, jetcans, migration and hosting.
+All 164 cases passed in 115 seconds. Build completed with zero warnings and errors. Both Python policy suites and formatting passed.
+The earlier affected run was stopped after 516 passing cases and two checkpoint test failures. The bounty test's wallet
+assertion also failed on unchanged `304d5a85`; the corrected test compares against the captured relational baseline.
+The structure test now injects failure during detached projection and verifies that retry saves the single resident
+acceptance. All three corrected checkpoint cases passed. After rebasing onto the Opportunities gateway change, the
+integration filter passed 45 fleet, mission turn-in, gateway, corporation screen and hosting cases in 18 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Turn in a mission with a fleetmate and inspect the client prompt. Loot a fleetmate's wreck
+before and after leaving. Watch a fleetmate's bars while taking damage, then leave their grid.
+
 ## Command Bursts, November 13, 2026
 
 Eden implements 18 published Command Burst modules and 19 charges from build 3662168. The six families are Armor, Shield,

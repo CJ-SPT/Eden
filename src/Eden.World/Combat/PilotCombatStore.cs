@@ -22,6 +22,7 @@ using Eden.World.Combat.Weapons;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
@@ -725,8 +726,25 @@ internal sealed partial class PilotCombatStore(
 
     public IReadOnlyList<CombatReward> Rewards(long pilotId)
     {
+        if (LiveWorld.Find(database.Path) is { } live)
+        {
+            return live.Economy.Inspect(world => Rewards(world, pilotId));
+        }
         using WorldDbContext world = new(database.Path);
         return Rewards(world, pilotId);
+    }
+
+    internal static IReadOnlyList<CombatReward> Rewards(WorldAction world, long pilotId, HistoryPeriod? period = null)
+    {
+        long from = period?.From ?? 0;
+        long until = period?.Until ?? long.MaxValue;
+        return world
+            .Filter<NpcBounty>(b => b.PilotId == pilotId && b.Time >= from && b.Time < until)
+            .OrderByDescending(b => b.Time)
+            .ThenByDescending(b => b.Id)
+            .AsEnumerable()
+            .Select(Read)
+            .ToArray();
     }
 
     internal static IReadOnlyList<CombatReward> Rewards(WorldDbContext world, long pilotId, HistoryPeriod? period = null)

@@ -319,7 +319,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _learning.Observe(changes, (pilot, change) => change.Table != "WorldPilot" || pilot == change.Id);
         _points.Observe(changes, (pilot, change) => pilot == change.Id);
         _extraction.Observe(changes, (pilot, change) => pilot == change.Id);
-        _loyalty.Observe(changes);
+        _loyalty.Observe(changes, (pilot, change) => !change.Resident || pilot == change.Id);
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
         _autoMiningModules.Observe(changes, (key, change) => change.Table != "WorldFitRevision" || key.Pilot == change.Id);
         _autoMiningHolds.Observe(

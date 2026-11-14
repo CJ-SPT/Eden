@@ -1,7 +1,9 @@
 using System.Globalization;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Characters;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -14,6 +16,11 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
     private readonly Guid _session = Guid.NewGuid();
     private long? _pilot;
     private FleetPilot? _presence;
+    private const int MaximumDamageSenders = 100; // Pinned evefleet.MAX_DAMAGE_SENDERS.
+    private FleetMembership? _watchingAs;
+    private readonly Dictionary<long, FleetMembership> _watchlist = [];
+    private readonly Dictionary<long, ShipHealth> _watchHealth = [];
+    private int _watchSystem;
     public bool IsMonitoring => _pilot.HasValue;
 
     public void Advance(PilotCallContext context)
@@ -33,9 +40,18 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
             || last.ShipTypeId != pilot.ShipTypeId
             || last.SystemId != pilot.SystemId
             || last.Position != pilot.Position
+            || last.InTransit != IsInTransit(context)
         )
         {
-            _presence = new(pilot.PilotId, pilot.CorpId, pilot.ShipId, pilot.ShipTypeId, pilot.SystemId, pilot.Position);
+            _presence = new(
+                pilot.PilotId,
+                pilot.CorpId,
+                pilot.ShipId,
+                pilot.ShipTypeId,
+                pilot.SystemId,
+                pilot.Position,
+                IsInTransit(context)
+            );
             fleets.Update(_session, _presence);
         }
         var identity = fleets.Identity(pilot.PilotId);
@@ -44,11 +60,12 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
             context.Flight.UpdateFleet(identity);
             context.ReleaseFleetReferences(identity?.FleetId);
         }
+        AdvanceWatchlist(context);
         foreach (var delivery in fleets.Drain(pilot.PilotId))
         {
             var value = delivery.Event;
             if (
-                value is not FleetEvent.Invitation
+                value is not (FleetEvent.Invitation or FleetEvent.MissionStanding)
                 && delivery.FleetId != identity?.FleetId
                 && !(identity is null && value is FleetEvent.Left { PilotId: var departed } && departed == pilot.PilotId)
             )
@@ -101,6 +118,9 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
                         );
                     }
                     break;
+                case FleetEvent.MissionStanding standing:
+                    context.Notifications.Add(new NpcStandingSet(standing.SourceId, pilot.PilotId, standing.Value));
+                    break;
                 case FleetEvent.Resync resync:
                     context.Notifications.Add(
                         resync.Member is null ? new FleetLeaveNotification(pilot.PilotId) : new FleetJoinNotification(resync.Member)
@@ -110,11 +130,96 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
         }
     }
 
+    private static bool IsInTransit(PilotCallContext context) => context.Flight.InWarp || context.Flight.Translocating;
+
+    private void UpdateWatchlist(long actor, long fleet, string method, object?[] args)
+    {
+        IEnumerable<long> members = (method, args) switch
+        {
+            ("RegisterForDamageUpdates", [var current]) => WatchlistMembers(current),
+            ("AddToWatchlist", [List<object?> added, var current]) => WatchlistMembers(current).Concat(WatchlistMembers(added)),
+            ("RemoveFromWatchlist", [long removed, var current]) => WatchlistMembers(current).Where(id => id != removed),
+            _ => throw new InvalidDataException("Invalid fleet watchlist request."),
+        };
+        var selection = members.Where(id => id != actor).Distinct().ToArray();
+        if (selection.Length > MaximumDamageSenders)
+        {
+            throw new InvalidDataException($"Watch up to {MaximumDamageSenders} fleet members.");
+        }
+        _watchingAs = fleets.JoinMembership(actor);
+        _watchlist.Clear();
+        foreach (long id in selection)
+        {
+            if (fleets.JoinMembership(id) is { FleetId: var memberFleet } membership && memberFleet == fleet)
+            {
+                _watchlist[id] = membership;
+            }
+        }
+        foreach (long id in _watchHealth.Keys.Where(id => !_watchlist.ContainsKey(id)).ToArray())
+        {
+            _watchHealth.Remove(id);
+        }
+    }
+
+    private static IEnumerable<long> WatchlistMembers(object? value) =>
+        value switch
+        {
+            null => [],
+            HashSet<long> set when set.Count <= MaximumDamageSenders => set,
+            List<object?> list when list.Count <= MaximumDamageSenders && list.All(id => id is long) => list.Cast<long>(),
+            _ => throw new InvalidDataException("Choose valid fleet watchlist members."),
+        };
+
+    private void AdvanceWatchlist(PilotCallContext context)
+    {
+        if (_watchlist.Count == 0)
+        {
+            return;
+        }
+        if (_watchingAs != fleets.JoinMembership(context.Pilot.PilotId))
+        {
+            _watchingAs = null;
+            _watchlist.Clear();
+            _watchHealth.Clear();
+            return;
+        }
+        if (!context.Flight.CanTarget || _watchSystem != context.Pilot.SystemId)
+        {
+            _watchHealth.Clear();
+            _watchSystem = context.Pilot.SystemId;
+        }
+        if (!context.Flight.CanTarget)
+        {
+            return;
+        }
+        var visible = context.Flight.VisiblePeers;
+        foreach (var watched in _watchlist)
+        {
+            var peer = visible.FirstOrDefault(ship => ship.Pilot.PilotId == watched.Key);
+            if (
+                peer is not { Warp: null, DepartureGate: null, Arriving: false, Health: { } health }
+                || fleets.JoinMembership(watched.Key) != watched.Value
+            )
+            {
+                _watchHealth.Remove(watched.Key);
+                continue;
+            }
+            if (_watchHealth.GetValueOrDefault(watched.Key) != health)
+            {
+                _watchHealth[watched.Key] = health;
+                context.Flight.NotifyFleetHealth(health);
+            }
+        }
+    }
+
     public void Dispose()
     {
         fleets.Update(_session, null);
         _pilot = null;
         _presence = null;
+        _watchingAs = null;
+        _watchlist.Clear();
+        _watchHealth.Clear();
     }
 
     public void CancelWarpOrders(long actor) => fleets.CancelWarpOrders(actor);
@@ -330,9 +435,11 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
                     SendBroadcast(actor, id, args, method == "BroadcastToSystem" ? FleetBroadcastRange.System : FleetBroadcastRange.Bubble);
                     return PilotCallResult.None;
                 }
-                if (method == "RegisterForDamageUpdates" && (args is [List<object?> { Count: 0 }] or [HashSet<long> { Count: 0 }]))
+                if (method is "RegisterForDamageUpdates" or "AddToWatchlist" or "RemoveFromWatchlist")
                 {
-                    return PilotCallResult.None;
+                    UpdateWatchlist(actor, id, method, args);
+                    AdvanceWatchlist(context);
+                    return true;
                 }
                 throw new InvalidDataException("This fleet manager operation is not supported.");
             }

@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 154;
+    internal const int CurrentVersion = 155;
 
     public static void Open(
         WorldDbContext world,
@@ -168,6 +168,15 @@ internal static class WorldMigration
         JetcanSchema.Upgrade(world);
         JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Eden.World.Fleets.CommandBurstSchema.Upgrade(world);
+        if (version < 155)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                DROP INDEX IF EXISTS IX_WorldNpcBounty_NpcId;
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldNpcBounty_NpcId_PilotId ON WorldNpcBounty(NpcId,PilotId);
+                """
+            );
+        }
         world.Database.ExecuteSqlRaw($"PRAGMA user_version={CurrentVersion}");
         history.Commit();
     }

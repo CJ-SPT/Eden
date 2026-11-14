@@ -9,6 +9,8 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Fleets;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -16,6 +18,7 @@ using Eden.World.Corporations;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -122,43 +125,74 @@ internal static partial class NpcDamagePersistence
             }
             if (cents > 0)
             {
-                var wallet = world.Set<PilotWallet>().Find(pilot.Id) ?? world.Set<PilotWallet>().Add(new() { PilotId = pilot.Id }).Entity;
-                wallet.Cents = checked(wallet.Cents + cents);
-                long tax = CorporationWalletStore.TaxBounty(world, pilot, cents, now);
-                wallet.Cents -= tax;
-                if (tax > 0)
+                var live = LiveWorld.Find(world.WorldPath);
+                var position = new SpacePosition(npc.X, npc.Y, npc.Z);
+                var others =
+                    live?.Fleets?.Fleetmates(pilot.Id)
+                        .Where(member => EligibleForBounty(member, npc.SystemId, position, world))
+                        .Select(member => member.Id)
+                        .ToArray()
+                    ?? [];
+                long share = cents / (others.Length + 1);
+                reward = PayBounty(world, npc, pilot, cents - share * others.Length, now);
+                if (share > 0)
                 {
-                    CorporationWalletStore.AddEntry(
-                        world,
-                        pilot.Id,
-                        CorporationWalletRules.MasterKey,
-                        now,
-                        pilot.CorporationId,
-                        -tax,
-                        wallet.Cents,
-                        CorporationWalletRules.BountyTaxEntry,
-                        npc.Id,
-                        ""
-                    );
+                    foreach (long recipient in others)
+                    {
+                        PayBounty(world, npc, world.Pilots.Find(recipient)!, share, now);
+                    }
                 }
-                reward = world
-                    .Set<NpcBounty>()
-                    .Add(
-                        new()
-                        {
-                            PilotId = pilot.Id,
-                            NpcId = npc.Id,
-                            TypeId = npc.TypeId,
-                            SystemId = npc.SystemId,
-                            Time = now,
-                            AmountCents = cents,
-                            BalanceCents = wallet.Cents,
-                            TaxCents = tax,
-                        }
-                    )
-                    .Entity;
             }
         }
         return new(new(npc.Id, defense, result.Remaining), result.Applied, result.Remaining.Destroyed, reward);
+    }
+
+    private static bool EligibleForBounty(FleetPilot member, int system, SpacePosition kill, WorldAction world)
+    {
+        if (member.SystemId != system || member.InTransit || member.Position is null || !world.PilotExists(member.Id))
+        {
+            return false;
+        }
+        var position = LiveWorld.Find(world.WorldPath)?.CombatForSystem(system)?.InformationPosition(member.ShipId) ?? member.Position;
+        return position.DistanceTo(kill) <= FleetRules.CommandRange;
+    }
+
+    private static NpcBounty PayBounty(WorldAction world, WorldNpc npc, Pilot pilot, long cents, long now)
+    {
+        var wallet = world.Set<PilotWallet>().Find(pilot.Id) ?? world.Set<PilotWallet>().Add(new() { PilotId = pilot.Id }).Entity;
+        wallet.Cents = checked(wallet.Cents + cents);
+        long tax = CorporationWalletStore.TaxBounty(world, pilot, cents, now);
+        wallet.Cents -= tax;
+        if (tax > 0)
+        {
+            CorporationWalletStore.AddEntry(
+                world,
+                pilot.Id,
+                CorporationWalletRules.MasterKey,
+                now,
+                pilot.CorporationId,
+                -tax,
+                wallet.Cents,
+                CorporationWalletRules.BountyTaxEntry,
+                npc.Id,
+                ""
+            );
+        }
+        return world
+            .Set<NpcBounty>()
+            .Add(
+                new()
+                {
+                    PilotId = pilot.Id,
+                    NpcId = npc.Id,
+                    TypeId = npc.TypeId,
+                    SystemId = npc.SystemId,
+                    Time = now,
+                    AmountCents = cents,
+                    BalanceCents = wallet.Cents,
+                    TaxCents = tax,
+                }
+            )
+            .Entity;
     }
 }

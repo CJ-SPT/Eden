@@ -401,22 +401,33 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
             );
             return new(orbit.Container, orbit.Items);
         }
+        if (LiveWorld.Find(database.Path) is { } resident)
+        {
+            return resident.Economy.Inspect(world =>
+            {
+                var (_, wreck) = Access(world, catalog, pilotId, wreckId, now);
+                return new WreckInventory(WreckItem(catalog, wreck), PilotInventoryStore.List(world, catalog, wreck.OwnerId, wreckId));
+            });
+        }
         using WorldDbContext world = new(database.Path);
         var (_, wreck) = Access(world, catalog, pilotId, wreckId, now);
+        return new(WreckItem(catalog, wreck), PilotInventoryStore.List(world, catalog, pilotId, wreckId));
+    }
+
+    private static InventoryItem WreckItem(CatalogDbContext catalog, WorldWreck wreck)
+    {
+        var type = catalog.RequireItem(wreck.TypeId);
         return new(
-            new(
-                wreck.Id,
-                wreck.TypeId,
-                wreck.OwnerId,
-                wreck.SystemId,
-                (int)InventoryFlag.AutoFit,
-                1,
-                catalog.RequireItem(wreck.TypeId).GroupId,
-                WreckDefinitions.Category,
-                PilotInventoryStore.Volume(catalog, wreck.TypeId),
-                true
-            ),
-            PilotInventoryStore.List(world, catalog, pilotId, wreckId)
+            wreck.Id,
+            wreck.TypeId,
+            wreck.OwnerId,
+            wreck.SystemId,
+            (int)InventoryFlag.AutoFit,
+            1,
+            type.GroupId,
+            type.CategoryId,
+            PilotInventoryStore.Volume(catalog, wreck.TypeId),
+            true
         );
     }
 
@@ -457,6 +468,16 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                 now
             );
             scope.Commit();
+            return result;
+        }
+        if (LiveWorld.Find(database.Path) is { } resident)
+        {
+            using var action = resident.Economy.Begin(
+                new(pilots: [pilotId], ships: [shipId], resources: [new(SharedSimulationResource.Wreck, wreckId)])
+            );
+            using CatalogDbContext residentCatalog = new(database.CatalogPath);
+            var result = Take(action, residentCatalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);
+            action.Commit();
             return result;
         }
         using WorldDbContext world = new(database.Path);

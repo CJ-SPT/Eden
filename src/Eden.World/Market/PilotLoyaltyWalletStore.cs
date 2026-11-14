@@ -16,7 +16,24 @@ internal sealed class PilotLoyaltyWalletStore(WorldDatabase database) : IPilotLo
     public IReadOnlyList<LoyaltyBalance> Read(long pilotId)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.loyalty");
-        return LiveReadModels.Find(database.Path) is { } resident ? resident.Loyalty(pilotId, () => ReadSql(pilotId)) : ReadSql(pilotId);
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            return ReadSql(pilotId);
+        }
+        IReadOnlyList<LoyaltyBalance> Load() =>
+            live.Economy.Inspect(world =>
+            {
+                if (!world.PilotExists(pilotId))
+                {
+                    throw new InvalidDataException("Unknown loyalty wallet owner.");
+                }
+                return world
+                    .Filter<SavedLoyaltyBalance>(b => b.PilotId == pilotId && b.Points > 0)
+                    .OrderBy(b => b.IssuerCorporationId)
+                    .Select(b => new LoyaltyBalance(b.IssuerCorporationId, b.Points))
+                    .ToArray();
+            });
+        return live.Reads?.Loyalty(pilotId, Load) ?? Load();
     }
 
     private IReadOnlyList<LoyaltyBalance> ReadSql(long pilotId)

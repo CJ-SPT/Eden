@@ -1,15 +1,26 @@
+using Eden.Data.World.Combat;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Chat;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Chat;
 using Eden.Protocol.Fleets;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Ammunition;
 using Eden.Server;
+using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
+using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
@@ -421,6 +432,116 @@ public sealed class CooperativeFleetTests
         );
         var body = BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3);
         return BlueRead.Fields(BlueRead.Tuple(body[1], 2)[1]);
+    }
+
+    [Fact]
+    public void WatchlistSendsPrivateNativeDamageUpdatesAndStopsOnLeave()
+    {
+        using TestWorld world = new(liveWorld: true);
+        var source = world.Store.FindPilot(1000001)!;
+        var target = world.Store.FindPilot(1000002)!;
+        world.Store.SetPosition(source.ShipId, SpacePosition.Zero, source.SystemId);
+        world.Store.SetPosition(target.ShipId, new(500, 0, 0), source.SystemId);
+        using FleetClient leader = new(world, 1000001);
+        using FleetClient member = new(world, 1000002);
+        Join(leader, member);
+        member.Context.Flight.Snapshot();
+        leader.Context.Flight.Snapshot();
+        object?[] favorites = [new BlueConstructor("__builtin__.set", [new List<object?> { member.PilotId }])];
+        Assert.IsType<PilotCallResult.Success>(leader.CallService("fleetMgr", "RegisterForDamageUpdates", favorites));
+        var initial = Assert.Single(leader.Context.Flight.Updates.Select(u => u.Command).OfType<DestinyCommand.OnFleetDamageStateChange>());
+        Assert.Equal(target.ShipId, initial.Id);
+        Assert.DoesNotContain(member.Context.Flight.Updates, u => u.Command is DestinyCommand.OnFleetDamageStateChange);
+        leader.Context.Flight.Updates.Clear();
+        leader.Advance();
+        Assert.DoesNotContain(leader.Context.Flight.Updates, u => u.Command is DestinyCommand.OnFleetDamageStateChange);
+
+        var health = world.Services.GetRequiredService<IPilotHealth>().Read(member.PilotId, DateTime.UtcNow.ToFileTimeUtc());
+        var space = world.Services.GetRequiredService<SharedSpace>();
+        space.ApplyDamage(health with { Remaining = health.Remaining with { Armor = health.Remaining.Armor / 2 } });
+        leader.Context.Flight.RefreshPeers();
+        leader.Advance();
+        var damaged = Assert.Single(leader.Context.Flight.Updates.Select(u => u.Command).OfType<DestinyCommand.OnFleetDamageStateChange>());
+        Assert.Equal(.5, damaged.Damage.ArmorFraction, 4);
+        leader.Context.Flight.Updates.Clear();
+        Assert.IsType<PilotCallResult.Success>(leader.CallService("fleetMgr", "RemoveFromWatchlist", [member.PilotId, favorites[0]]));
+        space.ApplyDamage(health);
+        leader.Context.Flight.RefreshPeers();
+        leader.Advance();
+        Assert.DoesNotContain(leader.Context.Flight.Updates, u => u.Command is DestinyCommand.OnFleetDamageStateChange);
+        Assert.IsType<PilotCallResult.Success>(
+            leader.CallService("fleetMgr", "AddToWatchlist", [new List<object?> { member.PilotId }, null])
+        );
+        leader.Context.Flight.Updates.Clear();
+        member.Reply("LeaveFleet", []);
+        space.ApplyDamage(health with { Remaining = health.Remaining with { Armor = health.Remaining.Armor / 2 } });
+        leader.Context.Flight.RefreshPeers();
+        leader.Advance();
+        Assert.DoesNotContain(leader.Context.Flight.Updates, u => u.Command is DestinyCommand.OnFleetDamageStateChange);
+    }
+
+    [Fact]
+    public async Task OnGridFleetSharesBountyAndCanLootWreckUntilMembershipEnds()
+    {
+        using AmmunitionTests.Fixture fixture = new(liveWorld: true);
+        var source = fixture.Pilot;
+        var target = fixture.Db.Store.FindPilot(1000002)!;
+        var live = fixture.Db.Services.GetRequiredService<LiveWorld>();
+        var fleets = fixture.Db.Services.GetRequiredService<ICooperativeFleets>();
+        int system = fixture.Npc.SystemId;
+        fixture.Db.Store.SetPosition(source.ShipId, fixture.Npc.Position, system);
+        fixture.Db.Store.SetPosition(target.ShipId, fixture.Npc.Position + new SpacePosition(100, 0, 0), system);
+        fleets.Update(Guid.NewGuid(), new(source.PilotId, source.CorpId, source.ShipId, source.ShipTypeId, system, fixture.Npc.Position));
+        fleets.Update(Guid.NewGuid(), new(target.PilotId, target.CorpId, target.ShipId, target.ShipTypeId, system, fixture.Npc.Position));
+        var group = fleets.Create(source.PilotId);
+        long fleet = group.Id;
+        fleets.Invite(source.PilotId, fleet, target.PilotId, group.Members[0].Placement with { Role = FleetRole.Member });
+        fleets.Accept(target.PilotId, fleet);
+        long before = live.WalletBalance(source.PilotId);
+        long memberBefore = live.WalletBalance(target.PilotId);
+        long now = fixture.Clock.Now;
+        using var catalog = new CatalogDbContext(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        List<string> commands = [];
+        using (SessionPerformance.Begin("resident fleet bounty", _ => { }, force: true, command: commands.Add))
+        using (
+            var action = live.Economy.Begin(
+                new(systems: [system], pilots: [source.PilotId], resources: [new(SharedSimulationResource.Npc, fixture.Npc.Id)])
+            )
+        )
+        {
+            var npc = action.Set<WorldNpc>().Find(fixture.Npc.Id)!;
+            var attributes = PilotFittingStore.ReadAttributes(catalog, npc.TypeId).ToDictionary();
+            attributes[DogmaAttributeId.EntityKillBounty] = 3000.01;
+            var result = NpcDamagePersistence.Apply(
+                action,
+                catalog,
+                npc,
+                action.Pilots.Find(source.PilotId)!,
+                source.ShipId,
+                attributes,
+                new(10_000_000, 0, 0, 0),
+                now
+            );
+            Assert.True(result.Destroyed);
+            action.Commit();
+        }
+        Assert.Empty(commands);
+        var leadReward = Assert.Single(fixture.Combat.Rewards(source.PilotId));
+        var memberReward = Assert.Single(fixture.Combat.Rewards(target.PilotId));
+        Assert.InRange(leadReward.AmountCents - memberReward.AmountCents, 0, 1);
+        Assert.Equal(leadReward.AmountCents, live.WalletBalance(source.PilotId) - before);
+        Assert.Equal(memberReward.AmountCents, live.WalletBalance(target.PilotId) - memberBefore);
+        var wrecks = fixture.Db.Services.GetRequiredService<IWrecks>();
+        long wreck = WreckDefinitions.FirstWreckId + fixture.Npc.Id - NpcEncounterDefinitions.FirstNpcId;
+        var stack = Assert.Single(wrecks.Read(target.PilotId, wreck, now).Items);
+        var split = wrecks.Take(target.PilotId, target.ShipId, wreck, [stack.Id], 1, now);
+        Assert.Contains(split, change => change.Item.OwnerId == target.PilotId && change.Item.LocationId == target.ShipId);
+        Assert.Equal(stack.Quantity - 1, Assert.Single(wrecks.Read(source.PilotId, wreck, now).Items).Quantity);
+        fleets.Kick(source.PilotId, fleet, target.PilotId);
+        Assert.Throws<InvalidDataException>(() => wrecks.Take(target.PilotId, target.ShipId, wreck, [stack.Id], 1, now));
+        await live.FlushAsync();
+        using WorldDbContext saved = new(fixture.Db.Path);
+        Assert.Equal(2, saved.Set<NpcBounty>().Count(b => b.NpcId == fixture.Npc.Id));
     }
 
     private static long Join(FleetClient leader, FleetClient member)

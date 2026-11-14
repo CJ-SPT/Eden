@@ -67,6 +67,11 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         protected override object?[] Arguments => [Id, Damage];
     }
 
+    internal sealed record OnFleetDamageStateChange(long Id, ShipDamageState Damage) : DestinyCommand("OnFleetDamageStateChange")
+    {
+        protected override object?[] Arguments => [Id, Damage];
+    }
+
     internal sealed record CloakBall(long Id) : DestinyCommand("CloakBall")
     {
         // Pinned mass-sector cloak mode 1 is an ordinary module cloak.

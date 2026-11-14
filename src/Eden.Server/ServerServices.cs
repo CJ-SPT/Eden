@@ -57,13 +57,14 @@ internal static class ServerServices
         services.AddSingleton(new SessionDiagnostics(ServerLog.Console.Information, ServerLog.Console.Warning, ServerLog.Console.Trace));
         if (liveWorld)
         {
-            services.AddSingleton<LiveWorld>(_ =>
+            services.AddSingleton<LiveWorld>(provider =>
                 new(
                     database,
                     clock ?? TimeProvider.System,
                     combatObjects: combatObjects,
                     residentReads: residentReads,
-                    simulationObjects: simulationObjects
+                    simulationObjects: simulationObjects,
+                    fleets: provider.GetRequiredService<Eden.Gameplay.Fleets.ICooperativeFleets>()
                 )
             );
         }

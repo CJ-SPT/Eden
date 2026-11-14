@@ -156,6 +156,8 @@ public interface IPilotMissions
     IReadOnlyList<MissionOffer> Journal(long pilotId, long? agentId = null);
     MissionOffer? Current(long pilotId, long agentId);
     MissionUpdate Act(long pilotId, long agentId, MissionAction action, long? offerId = null);
+    bool CanShareReward(long pilotId, long agentId, long offerId);
+    MissionUpdate CompleteWithFleet(long pilotId, long agentId, long offerId);
     IReadOnlyList<MissionSite> Sites(int systemId);
     void Arrive(int systemId, SpacePosition position);
     MissionGate Gate(long pilotId, long gateId);
@@ -166,6 +168,7 @@ public interface IPilotMissions
 public static class MissionRules
 {
     public const int MaximumDifficulty = 1000;
+    public const int MaximumAgentLevel = 5;
     private const double Percent = 100;
     private const decimal NegotiationBonusPerLevel = 0.05m;
     private const decimal DivisionConnectionsBonusPerLevel = 0.1m;

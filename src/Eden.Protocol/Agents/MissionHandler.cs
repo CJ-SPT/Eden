@@ -140,10 +140,37 @@ internal sealed partial class MissionHandler(
                 {
                     throw new InvalidDataException("Use the action from the current mission offer.");
                 }
-                loyalty.Enter(context);
-                var update = missions.Act(pilotId, agentId, operation, instanceId == 0 ? null : instanceId);
-                Notify(context, agentId, update);
-                return new MissionConversation(update.Offer, update.Event, "Request a mission from this agent.");
+                PilotCallResult Finish(bool share)
+                {
+                    loyalty.Enter(context);
+                    var update = share
+                        ? missions.CompleteWithFleet(pilotId, agentId, instanceId)
+                        : missions.Act(pilotId, agentId, operation, instanceId == 0 ? null : instanceId);
+                    Notify(context, agentId, update);
+                    return new MissionConversation(update.Offer, update.Event, "Request a mission from this agent.");
+                }
+                if (operation == MissionAction.Complete && missions.CanShareReward(pilotId, agentId, instanceId))
+                {
+                    return new PilotCallResult.ClientCall(
+                        new ResearchDialog(
+                            "SingleChoiceBox",
+                            [
+                                "",
+                                FleetRewardLabel("CompleteShareWithFleetMessage"),
+                                new List<object?> { FleetRewardLabel("ShareWithFleetYes"), FleetRewardLabel("ShareWithFleetNo") },
+                                agentId,
+                                missions.Current(pilotId, agentId)?.MissionId,
+                                null,
+                            ],
+                            [],
+                            answer =>
+                                ResearchDialog.Choice(answer, 2) is int choice
+                                    ? Finish(choice == 0)
+                                    : new MissionConversation(missions.Current(pilotId, agentId), "", "Mission turn-in cancelled.")
+                        )
+                    );
+                }
+                return Finish(false);
             }
             var offer = missions.Current(pilotId, agentId);
             if (method == "GetMissionBriefingInfo" && args.Length == 0)
@@ -227,6 +254,8 @@ internal sealed partial class MissionHandler(
         }
         return new MissionStandingGains(gains);
     }
+
+    private static object?[] FleetRewardLabel(string name) => [$"UI/Agents/StandardMission/{name}", BlueEmpty.Dictionary];
 
     private void Notify(PilotCallContext context, long agentId, MissionUpdate update)
     {

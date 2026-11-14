@@ -115,6 +115,8 @@ public sealed class LiveCombatObjectTests
         if (!reject)
         {
             using var failed = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+            using var unchanged = new WorldDbContext(failed.Database);
+            long originalBalance = unchanged.Set<Eden.Data.World.Market.PilotWallet>().AsNoTracking().Single(w => w.PilotId == pilot).Cents;
             using (var command = failed.Database.CreateCommand())
             {
                 command.CommandText = """
@@ -124,10 +126,12 @@ public sealed class LiveCombatObjectTests
                 command.ExecuteNonQuery();
             }
             Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => failed.Project());
-            using var unchanged = new WorldDbContext(failed.Database);
             Assert.Null(unchanged.Set<WorldNpc>().Find(fixture.Npc.Id)!.DestroyedAt);
             Assert.Empty(unchanged.Set<NpcBounty>());
-            Assert.Equal(balance, unchanged.Set<Eden.Data.World.Market.PilotWallet>().Find(pilot)!.Cents);
+            Assert.Equal(
+                originalBalance,
+                unchanged.Set<Eden.Data.World.Market.PilotWallet>().AsNoTracking().Single(w => w.PilotId == pilot).Cents
+            );
         }
         using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
         checkpoint.Project();

@@ -1,11 +1,16 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Fleets;
 using Eden.Protocol.Agents;
 using Eden.Protocol.Characters;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Agents;
 
@@ -344,6 +349,60 @@ public sealed class MissionProtocolTests
         int notifications = f.Context.Notifications.Count;
         Assert.IsType<PilotCallResult.Failure>(f.Call(service, "DoAction", [token]));
         Assert.Equal(notifications, f.Context.Notifications.Count);
+    }
+
+    [Fact]
+    public async Task FleetTurnInSplitsResidentRewardsOnceAndPersistsBothShares()
+    {
+        using MissionFixture f = new(live: true);
+        var offer = f.Accept(f.Request());
+        var live = f.Services.GetRequiredService<LiveWorld>();
+        var owner = f.Context.Pilot;
+        var member = f.Db.Store.FindPilot(1000002)!;
+        var fleets = f.Services.GetRequiredService<ICooperativeFleets>();
+        fleets.Update(Guid.NewGuid(), new(owner.PilotId, owner.CorpId, owner.ShipId, owner.ShipTypeId, owner.SystemId, null));
+        fleets.Update(Guid.NewGuid(), new(member.PilotId, member.CorpId, member.ShipId, member.ShipTypeId, member.SystemId, null));
+        var fleet = fleets.Create(owner.PilotId);
+        fleets.Invite(owner.PilotId, fleet.Id, member.PilotId, fleet.Members[0].Placement with { Role = FleetRole.Member });
+        fleets.Accept(member.PilotId, fleet.Id);
+        using (var action = live.Economy.Begin(new(pilots: [owner.PilotId])))
+        {
+            var cargo = action.Set<OwnedItem>().Single(item => item.OwnerId == owner.PilotId && item.TypeId == offer.Cargo!.TypeId);
+            cargo.LocationId = MissionFixture.DestinationId;
+            action.Commit();
+        }
+        f.Dock(MissionFixture.DestinationId);
+        string service = $"@agent:{MissionFixture.AgentId}";
+        long token = offer.Id * MissionRules.ActionStride + (int)MissionAction.Complete;
+        var cancelled = Assert.IsType<PilotCallResult.ClientCall>(f.Call(service, "DoAction", [token]));
+        Assert.Equal("SingleChoiceBox", cancelled.Dialog.Method);
+        Assert.IsType<PilotCallResult.Success>(cancelled.Dialog.Complete(new object?[] { false, null }));
+        Assert.Equal(MissionState.Accepted, f.Missions.Current(owner.PilotId, offer.Agent.Id)!.State);
+        var prompt = Assert.IsType<PilotCallResult.ClientCall>(f.Call(service, "DoAction", [token]));
+        object?[] answer = [true, "radioboxOption1Selected"];
+        Assert.IsType<PilotCallResult.Success>(prompt.Dialog.Complete(answer));
+        Assert.IsType<PilotCallResult.Failure>(prompt.Dialog.Complete(answer));
+        Assert.Equal(offer.Rewards.IskCents / 2, live.WalletBalance(member.PilotId));
+        Assert.Equal(offer.Rewards.IskCents - offer.Rewards.IskCents / 2, live.WalletBalance(owner.PilotId));
+        await live.FlushAsync();
+        f.StopResident();
+        using WorldDbContext saved = new(f.Db.Path);
+        var payments = saved.Set<SavedMarketPayment>().Where(payment => payment.OrderId == offer.Id).ToArray();
+        Assert.Equal(2, payments.Length);
+        Assert.Equal(offer.Rewards.IskCents, payments.Sum(payment => payment.AmountCents));
+        Assert.Equal(
+            offer.Rewards.LoyaltyPoints,
+            saved
+                .Set<SavedLoyaltyBalance>()
+                .Where(balance => balance.IssuerCorporationId == offer.Agent.CorporationId)
+                .Sum(balance => balance.Points)
+        );
+        Assert.Equal(
+            MissionRules.Gain(0, offer.Rewards.CorporationFraction / 2),
+            saved.Set<SavedNpcStanding>().Find(member.PilotId, (long)offer.Agent.CorporationId)!.Value,
+            10
+        );
+        Assert.Null(saved.Set<SavedNpcStanding>().Find(member.PilotId, offer.Agent.Id));
     }
 
     [Fact]

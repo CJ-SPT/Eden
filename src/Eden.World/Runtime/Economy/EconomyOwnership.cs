@@ -18,6 +18,7 @@ internal static class EconomyOwnership
             SavedPersonalOrder order => order.PilotId,
             MarketExecution trade => trade.PilotId,
             SavedMarketPayment payment => payment.PilotId,
+            SavedLoyaltyBalance balance => balance.PilotId,
             SavedMarketChange change => change.PilotId,
             SavedTaskCounter counter => counter.PilotId,
             SavedCharacterSetting setting => setting.PilotId,

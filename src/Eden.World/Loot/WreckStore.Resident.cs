@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using Eden.Data.Catalog;
+using Eden.Data.World.Agents;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
@@ -8,6 +9,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -43,30 +45,36 @@ internal sealed partial class WreckStore
         InventoryFlag destinationFlag = InventoryFlag.Cargo
     )
     {
-        var (pilot, _) = Access(world, catalog, pilotId, wreckId, now);
-        var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, wreckId, itemIds, quantity, destinationFlag);
+        var (pilot, wreck) = Access(world, catalog, pilotId, wreckId, now);
+        var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, wreckId, itemIds, quantity, destinationFlag, wreck.OwnerId);
         world.SaveChanges();
         return changes;
     }
 
     private static (Pilot Pilot, WorldWreck Wreck) Access(WorldAction world, CatalogDbContext catalog, long pilotId, long wreckId, long now)
     {
-        var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
         var wreck = world.Set<WorldWreck>().Find(wreckId);
         if (
             wreck is null
             || wreck.ExpiresAt <= now
-            || wreck.OwnerId != pilotId
+            || (
+                wreck.OwnerId != pilotId
+                && LiveWorld.Find(world.WorldPath)?.Fleets?.CanShareLoot(pilotId, wreck.OwnerId, wreck.SystemId) != true
+            )
             || pilot.ActiveShip.Position is not { } position
             || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != wreck.SystemId
         )
         {
             throw new InvalidDataException("The wreck is unavailable or you do not have its loot rights.");
         }
+        world.RequireUncloaked(pilot.ActiveShipId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         var type = catalog.RequireItem(wreck.TypeId);
         if (
-            new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(wreck.X, wreck.Y, wreck.Z))
+            new SpacePosition(position.X, position.Y, position.Z).DistanceTo(
+                LiveWorld.Find(world.WorldPath)?.Tractors.Position(wreck.Id) ?? new(wreck.X, wreck.Y, wreck.Z)
+            )
                 - (hull.Radius ?? 0)
                 - (type.Radius ?? 0)
             > WreckDefinitions.TransferRange
@@ -111,6 +119,13 @@ internal sealed partial class WreckStore
         if (type is null)
         {
             throw new InvalidDataException("The defeated NPC has no supported catalog wreck.");
+        }
+        if (
+            npc.AnchorKind == NpcAnchorKind.Mission
+            && world.Set<SavedMission>().Find(npc.EncounterId - MissionRules.FirstSiteId) is { } mission
+        )
+        {
+            pilot = world.Pilots.Find(mission.PilotId) ?? pilot;
         }
         var wreck = world
             .Set<WorldWreck>()

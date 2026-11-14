@@ -26,7 +26,8 @@ internal sealed class FlightScene(
     IWrecks? wrecks,
     IPilotMissiles? missiles,
     IPilotDrones? drones,
-    IPilotCommandBursts? commandBursts = null
+    IPilotCommandBursts? commandBursts = null,
+    ICooperativeFleets? fleets = null
 )
 {
     private FlightNpcScene? _npcScene;
@@ -52,6 +53,7 @@ internal sealed class FlightScene(
     internal IReadOnlyList<NpcContact> VisibleNpcs => Npcs.Contacts;
     internal IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;
     internal IReadOnlyList<MissileContact> VisibleMissiles => _missiles;
+    internal IReadOnlyList<ShipContact> VisiblePeers => _peers;
     internal IReadOnlyList<DroneContact> VisibleDrones => Drones.Contacts;
 
     internal void RefreshNpcs(FlightSceneContext context) => Npcs.RefreshNpcs(context);
@@ -240,7 +242,18 @@ internal sealed class FlightScene(
                     w.SystemId == context.Pilot.SystemId
                     && (w.PlanetId.HasValue || position.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange)
                 )
+                .Select(wreck => WithLootRights(context, wreck))
                 .ToArray();
+
+    private WreckContact WithLootRights(FlightSceneContext context, WreckContact wreck) =>
+        wreck.PlanetId is null
+        && context.Pilot.Identity.Fleet is { FleetId: var fleet }
+        && fleets?.CanShareLoot(context.Pilot.PilotId, wreck.OwnerId, wreck.SystemId) == true
+            ? wreck with
+            {
+                LootFleetId = fleet,
+            }
+            : wreck;
 
     internal void AddWreck(FlightSceneContext context, WreckContact contact)
     {

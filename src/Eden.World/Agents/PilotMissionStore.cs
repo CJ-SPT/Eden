@@ -5,12 +5,14 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +26,8 @@ internal sealed partial class PilotMissionStore(
     WorldDatabase database,
     INpcDirectory directory,
     TimeProvider clock,
-    PilotTrainingStore training
+    PilotTrainingStore training,
+    ICooperativeFleets fleets
 ) : IPilotMissions, IPilotMissionContainers, IPilotResearch
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -38,7 +41,13 @@ internal sealed partial class PilotMissionStore(
     private static int Skill(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, MissionSocialSkill skill) =>
         Skill(world, catalog, pilot, (int)skill);
 
-    private static int Skill(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int skill)
+    private static int Skill(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, int skill) =>
+        Skill(new SqlWorldAction(world), catalog, pilot, skill);
+
+    private static int Skill(WorldAction world, CatalogDbContext catalog, Pilot pilot, MissionSocialSkill skill) =>
+        Skill(world, catalog, pilot, (int)skill);
+
+    private static int Skill(WorldAction world, CatalogDbContext catalog, Pilot pilot, int skill)
     {
         int level = PilotSkillReader.Level(world, catalog, pilot.Id, skill);
         if (pilot.Account.CloneGrade == AccountCloneGrade.Alpha)
@@ -55,7 +64,12 @@ internal sealed partial class PilotMissionStore(
 
     public AgentAccess Access(long pilotId, long agentId)
     {
-        return LiveWorld.Execute(database.Path, () => AccessOwned(pilotId, agentId), nameof(Access));
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            return AccessOwned(pilotId, agentId);
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return live.Economy.Inspect(world => Access(world, catalog, ResidentPilot(world, pilotId), Agent(agentId)));
     }
 
     private AgentAccess AccessOwned(long pilotId, long agentId)
@@ -120,9 +134,12 @@ internal sealed partial class PilotMissionStore(
         }
     }
 
-    private static AgentAccess Access(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent)
+    private static AgentAccess Access(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent) =>
+        Access(new SqlWorldAction(world), catalog, pilot, agent);
+
+    private static AgentAccess Access(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent)
     {
-        if (agent.Type is not (AgentType.Basic or AgentType.Research) || agent.Level is < 1 or > 5)
+        if (agent.Type is not (AgentType.Basic or AgentType.Research) || agent.Level is < 1 or > MissionRules.MaximumAgentLevel)
         {
             return new(false, "This special agent's mission service is not implemented.", 0, 0, 0, 0);
         }
@@ -253,7 +270,24 @@ internal sealed partial class PilotMissionStore(
 
     public IReadOnlyList<MissionOffer> Journal(long pilotId, long? agentId = null)
     {
-        return LiveWorld.Execute(database.Path, () => JournalOwned(pilotId, agentId), nameof(Journal));
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            return JournalOwned(pilotId, agentId);
+        }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return live.Economy.Read(
+            world =>
+            {
+                var pilot = ResidentPilot(world, pilotId);
+                var rows = world
+                    .Filter<SavedMission>(m => m.PilotId == pilotId && m.ClosedAt == null && (agentId == null || m.AgentId == agentId))
+                    .OrderBy(m => m.Id)
+                    .ToArray();
+                long now = Now;
+                return rows.Where(m => !Expire(world, m, now)).Select(m => Snapshot(world, catalog, pilot, m)).ToArray();
+            },
+            new(pilots: [pilotId])
+        );
     }
 
     private IReadOnlyList<MissionOffer> JournalOwned(long pilotId, long? agentId = null)
@@ -282,7 +316,28 @@ internal sealed partial class PilotMissionStore(
 
     public MissionOffer? Current(long pilotId, long agentId)
     {
-        return LiveWorld.Execute(database.Path, () => CurrentOwned(pilotId, agentId), nameof(Current));
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            return CurrentOwned(pilotId, agentId);
+        }
+        _ = Agent(agentId);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return live.Economy.Read(
+            world =>
+            {
+                var row = world
+                    .Filter<SavedMission>(m => m.PilotId == pilotId && m.AgentId == agentId)
+                    .OrderByDescending(m => m.Id)
+                    .FirstOrDefault();
+                if (row is null)
+                {
+                    return null;
+                }
+                Expire(world, row, Now);
+                return Snapshot(world, catalog, ResidentPilot(world, pilotId), row);
+            },
+            new(pilots: [pilotId])
+        );
     }
 
     private MissionOffer? CurrentOwned(long pilotId, long agentId)
@@ -306,7 +361,9 @@ internal sealed partial class PilotMissionStore(
 
     public MissionUpdate Act(long pilotId, long agentId, MissionAction action, long? offerId = null)
     {
-        return LiveWorld.Execute(database.Path, () => ActOwned(pilotId, agentId, action, offerId), nameof(Act));
+        return LiveWorld.Find(database.Path) is { } live
+            ? ActResident(live, pilotId, agentId, action, offerId)
+            : ActOwned(pilotId, agentId, action, offerId);
     }
 
     private MissionUpdate ActOwned(long pilotId, long agentId, MissionAction action, long? offerId = null)
@@ -321,131 +378,139 @@ internal sealed partial class PilotMissionStore(
             long now = Now;
             training.Advance(world, pilotId, now);
             var pilot = Pilot(world, pilotId);
-            var row = world.Set<SavedMission>().SingleOrDefault(m => m.PilotId == pilotId && m.AgentId == agentId && m.ClosedAt == null);
-            if (row is not null && Expire(world, row, now))
-            {
-                world.SaveChanges();
-                transaction.Commit();
-                return new(Snapshot(world, catalog, pilot, row), "failed", [], []);
-            }
-            if (offerId.HasValue && (row is null || row.Id != offerId))
-            {
-                throw new InvalidDataException("This mission action is stale. Reopen the agent conversation.");
-            }
-            List<InventoryChange> changes = [];
-            List<MissionStandingChange> standings = [];
-            string eventName = "";
-            MissionPayment? payment = null;
-            switch (action)
-            {
-                case MissionAction.Request:
-                    if (row is null)
-                    {
-                        RequireAgentAccess(world, catalog, pilot, agent);
-                        RequireStation(pilot, agent.StationId);
-                        row = Offer(world, catalog, pilot, agent, agent.Level, false, now);
-                        eventName = "offered";
-                    }
-                    break;
-                case MissionAction.Accept:
-                    RequireState(row, MissionState.Offered);
-                    if (!row!.Storyline)
-                    {
-                        RequireAgentAccess(world, catalog, pilot, agent);
-                    }
-                    RequireStation(pilot, agent.StationId);
-                    var profile = MissionCatalog.Find(catalog, row.MissionId);
-                    if (!profile.AvailableTo(agent) || profile.AttacksFaction(agent.FactionId))
-                    {
-                        throw new InvalidDataException("This mission is unavailable to this agent's corporation or faction.");
-                    }
-                    row.State = MissionState.Accepted;
-                    row.AcceptedAt = now;
-                    row.ExpiresAt = checked(now + MissionRules.MissionLifetime.Ticks);
-                    if (profile.Kind == MissionKind.Courier)
-                    {
-                        changes.Add(
-                            InventoryPersistence.MergeOutput(
-                                world,
-                                catalog,
-                                pilotId,
-                                agent.StationId!.Value,
-                                (int)InventoryFlag.Hangar,
-                                profile.CargoType,
-                                profile.CargoQuantity
-                            )
-                        );
-                    }
-                    if (profile.Kind == MissionKind.Mining)
-                    {
-                        SeedMiningDeposits(world, row, profile);
-                    }
-                    SeedContainers(world, catalog, row, profile);
-                    SeedStructures(world, catalog, row, profile, now);
-                    eventName = "accepted";
-                    break;
-                case MissionAction.Complete:
-                    RequireState(row, MissionState.Accepted);
-                    var mission = MissionCatalog.Find(catalog, row!.MissionId);
-                    RequireStation(pilot, mission.Kind == MissionKind.Courier ? row.DestinationStation : agent.StationId);
-                    if (mission.Kind != MissionKind.Courier && !row.ObjectiveComplete)
-                    {
-                        throw new InvalidDataException(
-                            mission.Kind == MissionKind.Mining
-                                ? "Mine the required deposits in your mission pocket first."
-                                : "The mission's combat objective is not complete."
-                        );
-                    }
-                    if (mission.CargoType > 0)
-                    {
-                        ConsumeCargo(world, catalog, pilot, row, mission, changes);
-                    }
-                    payment = Pay(world, pilot, agent, row, now, standings);
-                    Close(world, row, MissionState.Completed, now);
-                    if (!row.Storyline)
-                    {
-                        Progress(world, catalog, pilot, agent, row.Level, now);
-                    }
-                    eventName = "completed";
-                    break;
-                case MissionAction.Decline:
-                    RequireState(row, MissionState.Offered);
-                    var decline =
-                        world.Set<SavedAgentDecline>().Find(pilotId, agentId)
-                        ?? world.Add(new SavedAgentDecline { PilotId = pilotId, AgentId = agentId }).Entity;
-                    if (decline.LastFreeDeclineAt > 0 && now < decline.LastFreeDeclineAt + MissionRules.FreeDeclineInterval.Ticks)
-                    {
-                        throw new InvalidDataException("Wait four hours after your last free decline before declining another offer.");
-                    }
-                    decline.LastFreeDeclineAt = now;
-                    Close(world, row!, MissionState.Declined, now);
-                    eventName = "offer_declined";
-                    break;
-                case MissionAction.Quit:
-                    RequireState(row, MissionState.Accepted);
-                    Close(world, row!, MissionState.Quit, now);
-                    eventName = "quit";
-                    break;
-                case MissionAction.View:
-                case MissionAction.Defer:
-                    break;
-                default:
-                    throw new InvalidDataException("Unknown mission action.");
-            }
-            world.SaveChanges();
-            // Generated inventory IDs and mission IDs must be visible in the reply.
-            var snapshot = row is null ? null : Snapshot(world, catalog, pilot, row);
+            var result = Act(new SqlWorldAction(world), catalog, pilot, agent, action, offerId, now, []);
             transaction.Commit();
-            return new(
-                snapshot,
-                eventName,
-                changes,
-                standings,
-                payment?.BalanceCents,
-                payment?.PointsBefore ?? 0,
-                payment?.PointsAfter ?? 0
-            );
+            return result;
         }
+    }
+
+    private MissionUpdate Act(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        CatalogAgent agent,
+        MissionAction action,
+        long? offerId,
+        long now,
+        IReadOnlyList<long> sharers
+    )
+    {
+        long pilotId = pilot.Id;
+        long agentId = agent.Id;
+        var row = world.Set<SavedMission>().SingleOrDefault(m => m.PilotId == pilotId && m.AgentId == agentId && m.ClosedAt == null);
+        if (row is not null && Expire(world, row, now))
+        {
+            world.SaveChanges();
+            return new(Snapshot(world, catalog, pilot, row), "failed", [], []);
+        }
+        if (offerId.HasValue && (row is null || row.Id != offerId))
+        {
+            throw new InvalidDataException("This mission action is stale. Reopen the agent conversation.");
+        }
+        List<InventoryChange> changes = [];
+        List<MissionStandingChange> standings = [];
+        string eventName = "";
+        MissionPayment? payment = null;
+        switch (action)
+        {
+            case MissionAction.Request:
+                if (row is null)
+                {
+                    RequireAgentAccess(world, catalog, pilot, agent);
+                    RequireStation(pilot, agent.StationId);
+                    row = Offer(world, catalog, pilot, agent, agent.Level, false, now);
+                    eventName = "offered";
+                }
+                break;
+            case MissionAction.Accept:
+                RequireState(row, MissionState.Offered);
+                if (!row!.Storyline)
+                {
+                    RequireAgentAccess(world, catalog, pilot, agent);
+                }
+                RequireStation(pilot, agent.StationId);
+                var profile = MissionCatalog.Find(catalog, row.MissionId);
+                if (!profile.AvailableTo(agent) || profile.AttacksFaction(agent.FactionId))
+                {
+                    throw new InvalidDataException("This mission is unavailable to this agent's corporation or faction.");
+                }
+                row.State = MissionState.Accepted;
+                row.AcceptedAt = now;
+                row.ExpiresAt = checked(now + MissionRules.MissionLifetime.Ticks);
+                if (profile.Kind == MissionKind.Courier)
+                {
+                    changes.Add(
+                        InventoryPersistence.MergeOutput(
+                            world,
+                            catalog,
+                            pilotId,
+                            agent.StationId!.Value,
+                            (int)InventoryFlag.Hangar,
+                            profile.CargoType,
+                            profile.CargoQuantity
+                        )
+                    );
+                }
+                if (profile.Kind == MissionKind.Mining)
+                {
+                    SeedMiningDeposits(world, row, profile);
+                }
+                SeedContainers(world, catalog, row, profile);
+                SeedStructures(world, catalog, row, profile, now);
+                eventName = "accepted";
+                break;
+            case MissionAction.Complete:
+                RequireState(row, MissionState.Accepted);
+                var mission = MissionCatalog.Find(catalog, row!.MissionId);
+                RequireStation(pilot, mission.Kind == MissionKind.Courier ? row.DestinationStation : agent.StationId);
+                if (mission.Kind != MissionKind.Courier && !row.ObjectiveComplete)
+                {
+                    throw new InvalidDataException(
+                        mission.Kind == MissionKind.Mining
+                            ? "Mine the required deposits in your mission pocket first."
+                            : "The mission's combat objective is not complete."
+                    );
+                }
+                if (mission.CargoType > 0)
+                {
+                    ConsumeCargo(world, catalog, pilot, row, mission, changes);
+                }
+                payment = Pay(world, pilot, agent, row, now, standings, sharers);
+                Close(world, row, MissionState.Completed, now);
+                if (!row.Storyline)
+                {
+                    Progress(world, catalog, pilot, agent, row.Level, now);
+                }
+                eventName = "completed";
+                break;
+            case MissionAction.Decline:
+                RequireState(row, MissionState.Offered);
+                var decline =
+                    world.Set<SavedAgentDecline>().Find(pilotId, agentId)
+                    ?? world.Add(new SavedAgentDecline { PilotId = pilotId, AgentId = agentId }).Entity;
+                if (decline.LastFreeDeclineAt > 0 && now < decline.LastFreeDeclineAt + MissionRules.FreeDeclineInterval.Ticks)
+                {
+                    throw new InvalidDataException("Wait four hours after your last free decline before declining another offer.");
+                }
+                decline.LastFreeDeclineAt = now;
+                Close(world, row!, MissionState.Declined, now);
+                eventName = "offer_declined";
+                break;
+            case MissionAction.Quit:
+                RequireState(row, MissionState.Accepted);
+                Close(world, row!, MissionState.Quit, now);
+                eventName = "quit";
+                break;
+            case MissionAction.View:
+            case MissionAction.Defer:
+                break;
+            default:
+                throw new InvalidDataException("Unknown mission action.");
+        }
+        world.SaveChanges();
+        // Generated inventory IDs and mission IDs must be visible in the reply.
+        var snapshot = row is null ? null : Snapshot(world, catalog, pilot, row);
+        return new(snapshot, eventName, changes, standings, payment?.BalanceCents, payment?.PointsBefore ?? 0, payment?.PointsAfter ?? 0);
     }
 
     private static void RequireState(SavedMission? mission, MissionState state)
@@ -456,7 +521,10 @@ internal sealed partial class PilotMissionStore(
         }
     }
 
-    private static void RequireAgentAccess(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent)
+    private static void RequireAgentAccess(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent) =>
+        RequireAgentAccess(new SqlWorldAction(world), catalog, pilot, agent);
+
+    private static void RequireAgentAccess(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent)
     {
         var access = Access(world, catalog, pilot, agent);
         if (!access.Allowed)
@@ -473,7 +541,10 @@ internal sealed partial class PilotMissionStore(
         }
     }
 
-    private MissionOffer Snapshot(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, SavedMission row)
+    private MissionOffer Snapshot(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, SavedMission row) =>
+        Snapshot(new SqlWorldAction(world), catalog, pilot, row);
+
+    private MissionOffer Snapshot(WorldAction world, CatalogDbContext catalog, Pilot pilot, SavedMission row)
     {
         var profile = MissionCatalog.Find(catalog, row.MissionId);
         var agent = Agent(row.AgentId);
@@ -528,7 +599,7 @@ internal sealed partial class PilotMissionStore(
         };
     }
 
-    private static OwnedItem[] Cargo(WorldDbContext world, Pilot pilot, SavedMission row, MissionProfile profile) =>
+    private static OwnedItem[] Cargo(WorldAction world, Pilot pilot, SavedMission row, MissionProfile profile) =>
         world
             .Set<OwnedItem>()
             .Where(i =>
@@ -552,7 +623,7 @@ internal sealed partial class PilotMissionStore(
             .ToArray();
 
     private static void ConsumeCargo(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         SavedMission row,
