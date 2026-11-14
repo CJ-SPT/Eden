@@ -12,6 +12,7 @@ public interface IAutoMiningAvailability
 
 public interface IPilotAutoMining
 {
+    IReadOnlyList<AutoMiningOre> OreTypes();
     AutoMiningFilter ReadFilter(long pilotId);
     void SaveFilter(long pilotId, AutoMiningFilter filter);
     AutoMiningOptions ReadOptions(long pilotId);
@@ -22,6 +23,8 @@ public interface IPilotAutoMining
     IReadOnlyDictionary<long, double> Survey(long pilotId, int systemId, IReadOnlyList<long> visibleTargets);
     JettisonResult Jettison(long pilotId, long shipId, MiningFamily family);
 }
+
+public sealed record AutoMiningOre(int TypeId, int GroupId, string Name);
 
 public enum AutoMiningTargetOrder
 {
@@ -47,55 +50,85 @@ public sealed record AutoMiningModule(long Id, double Range, MiningFamily Family
 
 public sealed class AutoMiningFilter
 {
-    private const int MaximumLength = 512;
-    private static readonly Dictionary<string, int> s_oreGroups = Enum.GetValues<MiningResourceGroup>()
+    public const int MaximumTypes = 512;
+    private const int MaximumLegacyLength = 512;
+    private const int MaximumSavedLength = MaximumTypes * 13;
+    private static readonly Dictionary<string, int> s_legacyGroups = Enum.GetValues<MiningResourceGroup>()
         .ToDictionary(group => group.ToString(), group => (int)group, StringComparer.OrdinalIgnoreCase);
-
     private readonly HashSet<int> _groups;
+    private readonly HashSet<int> _types;
 
     static AutoMiningFilter()
     {
-        s_oreGroups.Add("Mercoxit", MiningDefinitions.MercoxitGroup);
-        OreGroupNames = Array.AsReadOnly(s_oreGroups.Keys.Order(StringComparer.OrdinalIgnoreCase).ToArray());
+        s_legacyGroups.Add("Mercoxit", MiningDefinitions.MercoxitGroup);
     }
 
-    private AutoMiningFilter(HashSet<int> groups)
+    private AutoMiningFilter(HashSet<int> groups, HashSet<int> types)
     {
         _groups = groups;
-        Text = string.Join(", ", s_oreGroups.Where(group => groups.Contains(group.Value)).Select(group => group.Key));
+        _types = types;
+        Text = string.Join(
+            ", ",
+            s_legacyGroups
+                .Where(group => groups.Contains(group.Value))
+                .Select(group => group.Key)
+                .Concat(types.Order().Select(typeId => FormattableString.Invariant($"#{typeId}")))
+        );
     }
 
     public const string ModId = "eden.automining";
-    public static IReadOnlyList<string> OreGroupNames { get; }
     public string Text { get; }
 
     public bool Matches(StaticSpaceObject rock) =>
-        rock.CategoryId == AsteroidDefinitions.Category
-        && (rock.GroupId == MiningDefinitions.MercoxitGroup || Enum.IsDefined((MiningResourceGroup)rock.GroupId))
-        && (_groups.Count == 0 || _groups.Contains(rock.GroupId));
+        MiningDefinitions.MatchesFamily(MiningFamily.Ore, rock.CategoryId, rock.GroupId)
+        && (Text.Length == 0 || Includes(rock.TypeId, rock.GroupId));
 
-    public static AutoMiningFilter Parse(string text)
+    public bool Includes(int typeId, int groupId) => _types.Contains(typeId) || _groups.Contains(groupId);
+
+    public static IEnumerable<string> LegacyGroupNames(IReadOnlyList<AutoMiningOre> available)
     {
-        if (text.Length > MaximumLength)
+        var groups = available.Select(ore => ore.GroupId).ToHashSet();
+        return s_legacyGroups
+            .Where(group => groups.Contains(group.Value))
+            .Select(group => group.Key)
+            .Order(StringComparer.OrdinalIgnoreCase);
+    }
+
+    public static AutoMiningFilter FromTypes(IEnumerable<int> requested, IReadOnlyList<AutoMiningOre> available)
+    {
+        var types = requested.ToHashSet();
+        if (types.Count > MaximumTypes || !types.IsSubsetOf(available.Select(ore => ore.TypeId)))
         {
-            throw new InvalidDataException($"Keep the ore filter to {MaximumLength} characters or fewer.");
+            throw new InvalidDataException("Choose ore types from the available list.");
+        }
+        return new([], types);
+    }
+
+    public static AutoMiningFilter Parse(string text, bool saved = false)
+    {
+        int limit = saved ? MaximumSavedLength : MaximumLegacyLength;
+        if (text.Length > limit)
+        {
+            throw new InvalidDataException($"Keep the ore filter to {limit} characters or fewer.");
         }
         HashSet<int> groups = [];
+        HashSet<int> types = [];
+
         foreach (string name in text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
         {
-            string key = string.Concat(name.Where(character => !char.IsWhiteSpace(character)));
-            if (!s_oreGroups.TryGetValue(key, out int group))
+            if (saved && name[0] == '#' && int.TryParse(name.AsSpan(1), out int typeId) && typeId > 0)
             {
-                throw new InvalidDataException("Enter ore group names such as Veldspar or Scordite, separated by commas.");
+                types.Add(typeId);
+                continue;
+            }
+            string key = string.Concat(name.Where(character => !char.IsWhiteSpace(character)));
+            if (!s_legacyGroups.TryGetValue(key, out int group))
+            {
+                throw new InvalidDataException("Choose ore types from the available list.");
             }
             groups.Add(group);
         }
-        var result = new AutoMiningFilter(groups);
-        if (result.Text.Length > MaximumLength)
-        {
-            throw new InvalidDataException($"Keep the ore filter to {MaximumLength} characters or fewer.");
-        }
-        return result;
+        return new(groups, types);
     }
 }
 

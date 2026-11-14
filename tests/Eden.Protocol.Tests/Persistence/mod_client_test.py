@@ -115,7 +115,8 @@ class ClientModTests(unittest.TestCase):
 class AutoMiningPanelTests(unittest.TestCase):
     def test_run_and_save_actions_stay_outside_the_scroll_and_the_picker_applies_settings(self):
         calls = []
-        state = {'status': 'Stopped', 'oreGroups': ['Scordite', 'Veldspar'], 'oreFilter': 'Scordite',
+        state = {'status': 'Stopped', 'oreTypes': [(1228, 'Scordite'), (1230, 'Veldspar'), (17470, 'Veldspar II-Grade')],
+                 'oreFilter': 'Scordite', 'selectedOreTypes': [1228],
                  'resourceFamily': 0, 'targetOrder': 0, 'approach': False, 'jettison': False,
                  'unloadStation': 0, 'unloadThreshold': 95}
 
@@ -128,7 +129,9 @@ class AutoMiningPanelTests(unittest.TestCase):
 
             def SaveSettings(self, *args):
                 calls.append(args)
-                state['oreFilter'] = args[0]
+                if args[0] is not None:
+                    state['selectedOreTypes'] = args[0]
+                    state['oreFilter'] = ', '.join('#%d' % type_id for type_id in args[0])
                 return state.copy()
 
         class Control:
@@ -201,24 +204,30 @@ class AutoMiningPanelTests(unittest.TestCase):
         panel.search_available.SetValue('invalid')
         panel.search_available.OnChange()
         self.assertEqual([], panel.available.rows)
-        panel.search_available.SetValue('veld')
+        panel.search_available.SetValue('II-Grade')
         panel.search_available.OnChange()
+        self.assertEqual(['Veldspar II-Grade'], [entry.label for entry in panel.available.rows])
         panel.available.selection = panel.available.rows[:]
         panel.add_selected()
-        panel.active.selection = [entry for entry in panel.active.rows if entry.oreGroup == 'Scordite']
+        panel.active.selection = [entry for entry in panel.active.rows if entry.oreType == 1228]
         panel.remove_selected()
-        self.assertEqual({'Veldspar'}, panel.active_groups)
+        self.assertEqual({17470}, panel.active_types)
         self.assertEqual([], calls)
         panel.threshold.SetValue('101')
         panel.apply()
         self.assertEqual([], calls)
         panel.threshold.SetValue('81')
         panel.apply()
-        self.assertEqual([('Veldspar', 0, 0, False, False, 0, 81)], calls)
+        self.assertEqual([([17470], 0, 0, False, False, 0, 81)], calls)
         panel.clear_filter()
-        self.assertEqual(set(), panel.active_groups)
+        self.assertEqual(set(), panel.active_types)
         panel.reload()
-        self.assertEqual({'Veldspar'}, panel.active_groups)
+        self.assertEqual({17470}, panel.active_types)
+        panel.apply()
+        self.assertIsNone(calls[-1][0])
+        panel.clear_filter()
+        panel.apply()
+        self.assertEqual([], calls[-1][0])
 
 
 if __name__ == '__main__':

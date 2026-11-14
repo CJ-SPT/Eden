@@ -86,6 +86,11 @@ internal static class MissionCatalog
 
     internal static bool IsMining(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && m.Mining);
 
+    internal static IEnumerable<int> MiningObjectiveTypes(CatalogDbContext catalog) =>
+        catalog
+            .ReadMany(CatalogData.Client.Missions, s_content.Value.Missions.Where(m => m.Mining).Select(m => (long)m.MissionId))
+            .Values.Select(mission => checked((int)(mission.KillMission?.ObjectiveTypeID ?? 0)));
+
     internal static MissionProfile Find(CatalogDbContext catalog, int missionId) =>
         Read(catalog).SingleOrDefault(p => p.Definition.MissionId == missionId)
         ?? throw new InvalidDataException("This mission's content is unavailable.");

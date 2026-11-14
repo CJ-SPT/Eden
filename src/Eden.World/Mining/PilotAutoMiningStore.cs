@@ -87,7 +87,9 @@ internal sealed partial class PilotAutoMiningStore(WorldDatabase database, TimeP
         });
     }
 
-    public AutoMiningFilter ReadFilter(long pilotId) => AutoMiningFilter.Parse(ReadSetting(pilotId, FilterKey) ?? "");
+    public IReadOnlyList<AutoMiningOre> OreTypes() => AutoMiningOreCatalog.Read(database.Catalog);
+
+    public AutoMiningFilter ReadFilter(long pilotId) => AutoMiningFilter.Parse(ReadSetting(pilotId, FilterKey) ?? "", saved: true);
 
     public void SaveFilter(long pilotId, AutoMiningFilter filter) => SaveSetting(pilotId, FilterKey, filter.Text);
 

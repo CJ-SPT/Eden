@@ -43,16 +43,17 @@ dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
 ```
 
 Use the hash printed by install. Append the same `--world PATH` to all four commands for a nondefault world.
-When upgrading to AutoMining 1.2.2, use a fresh export path and disable the previous package hash before enabling the new one.
+When upgrading to AutoMining 1.2.3, use a fresh export path and disable the previous package hash before enabling the new one.
 Restart Eden, then launch through Eden Launcher to receive the active mod set. In space, open **Eden Mods →
-AutoMining** from the Neocom context menu. Select ore groups in **Available ore groups** and use the right arrow
-to move them to **Active filter**. Search either list by name. Use the left arrow to remove selected groups, or
+AutoMining** from the Neocom context menu. Select ore types in **Available ore types** and use the right arrow
+to move them to **Active filter**. Search either list by name or grade. Use the left arrow to remove selected types, or
 **Clear filter** to allow all supported ore. Select **Apply settings** to save the changes for the selected
 character. **Reload** restores the saved settings. **Start** and **Stop** above the form control the run.
 
-Choose **Ore**, **Ice**, or **Gas** and select **Apply settings**. Fit a matching online harvester. The ore filter covers
-ore groups only. **Largest surveyed deposit** and **Smallest surveyed deposit** use the remaining cubic metres on
-a ship with an integrated mining scanner and online survey chipset. **Nearest first** needs no survey equipment.
+Choose **Ore**, **Ice**, or **Gas** and select **Apply settings**. Fit a matching online harvester. The ore filter applies
+in Ore mode and lets you choose each grade independently. **Largest surveyed deposit** and **Smallest surveyed deposit**
+use the remaining cubic metres on a ship with an integrated mining scanner and online survey chipset.
+**Nearest first** needs no survey equipment.
 Enable **Approach out-of-range targets** to let the ship move into harvesting range. A manual navigation order stops
 the run while automatic approach is enabled.
 

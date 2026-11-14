@@ -69,6 +69,8 @@ public static class MoonMiningRules
         [45506, 45507, 45508, 45509],
     ];
 
+    public static IEnumerable<int> OreTypes => s_ores.SelectMany(tier => tier);
+
     public static int? FindPoint(SpacePosition position, IReadOnlyList<MoonMiningPoint> points) =>
         points
             .Select(point => (point.MoonId, Distance: point.Position.DistanceTo(position)))

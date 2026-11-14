@@ -242,6 +242,7 @@ per-character ore filters, target selection and paid cycle ownership.
 [AutoMining approach, survey, and harvest handling](protocol/industry.md#automining-approach-survey-and-harvest-handling)
 covers resource selection, survey ordering, and automatic jettison.
 [AutoMining panel layout](protocol/industry.md#automining-panel-layout) records the ore picker and combined settings call.
+[AutoMining ore types and grades](protocol/industry.md#automining-ore-types-and-grades) records the spawn-backed picker.
 
 [Modulated ore mining and crystals, November 9, 2026](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
 records loaded-crystal modifiers, target compatibility, persistent wear and native shattering updates.

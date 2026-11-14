@@ -52,8 +52,8 @@ Run these commands in the deployment checkout after updating it to a revision wi
 ```sh
 docker compose build eden
 docker compose stop eden
-docker compose run --rm -T eden --mod-export-automining /data/AutoMining-1.2.2.edenmod
-docker compose run --rm -T eden --mod-install /data/AutoMining-1.2.2.edenmod
+docker compose run --rm -T eden --mod-export-automining /data/AutoMining-1.2.3.edenmod
+docker compose run --rm -T eden --mod-install /data/AutoMining-1.2.3.edenmod
 docker compose run --rm -T eden --mod-enable NEW_PACKAGE_SHA256
 docker compose run --rm -T eden --mod-build /config
 docker compose up -d eden
@@ -64,7 +64,7 @@ Use a fresh output filename when exporting again. Replace `NEW_PACKAGE_SHA256` w
 When upgrading, run `docker compose run --rm -T eden --mod-disable OLD_PACKAGE_SHA256` before enabling the new hash.
 Use the same Compose files and environment as your running deployment. If the service uses a nondefault world path,
 append the same container-side `--world PATH` to each mod command. Status should list `eden.automining` version
-`1.2.2` in the active set after startup. Then connect to the server’s existing URL in Eden Launcher, let it download
+`1.2.3` in the active set after startup. Then connect to the server’s existing URL in Eden Launcher, let it download
 the required mod set, and open **Eden Mods → AutoMining** in the Neocom. See [in-game controls](modding.md#automining).
 
 The image includes Python 3 and a standalone CPython 2.7.18 compiler. It reads the pinned archive as data and

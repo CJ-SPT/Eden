@@ -6,8 +6,10 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.Server.Modding;
+using Eden.World.Catalog;
 using Eden.World.Modding;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Administration;
@@ -19,13 +21,25 @@ public sealed class AutoMiningPackageTests
     {
         using TestWorld world = new();
         var database = new WorldDatabase(world.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO ItemCategory(Id,Name) VALUES (25,'Asteroid');
+                INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (462,'Veldspar',25);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (1230,'Veldspar',462),(17470,'Veldspar II-Grade',462);
+                INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z) VALUES (40009232,30000144,15,9,1e10,2e10,3e10);
+                INSERT INTO SourceRecord VALUES ('client/asteroidcountbytypeidbeltid','40009232','{{"1230":1,"17470":1}}');
+                """
+            );
+        }
         var store = new ModStore(database);
         string archive = Path.Combine(Path.GetDirectoryName(world.Path)!, "AutoMining.edenmod");
         Assert.True(await ModCommands.TryRun(["--mod-export-automining", archive], database));
         var package = ModPackages.Read(archive);
         Assert.Equal(AutoMiningFilter.ModId, package.Manifest.Id);
         Assert.Equal("client/automining.py", package.Manifest.ClientEntry);
-        Assert.Equal("1.2.2", package.Manifest.Version);
+        Assert.Equal("1.2.3", package.Manifest.Version);
         string hash = store.Install(archive);
         store.Enable(hash, true);
         var set = await new ModPublisher(database, store).Build(Environment.GetEnvironmentVariable("EDEN_TEST_CLIENT_ROOT")!);
@@ -45,13 +59,15 @@ public sealed class AutoMiningPackageTests
         const long stationId = 60003760;
         var replies = await Exchange("Veldspar");
         Assert.Equal(
-            ["", "Veldspar", "Veldspar", "Veldspar", "Veldspar", "Veldspar"],
+            ["", "Veldspar", "Veldspar", "#17470", "#17470", "#17470"],
             replies.Select(reply => BlueMarshal.Text(reply["oreFilter"]))
         );
         var oreGroups = Assert.IsType<List<object?>>(replies[0]["oreGroups"]).Select(BlueMarshal.Text).ToArray();
-        Assert.Equal(AutoMiningFilter.OreGroupNames, oreGroups);
-        Assert.Contains("Mercoxit", oreGroups);
-        Assert.Contains("Veldspar", oreGroups);
+        Assert.Equal(["Veldspar"], oreGroups);
+        var oreTypes = Assert.IsType<List<object?>>(replies[0]["oreTypes"]).Select(value => BlueRead.Tuple(value, 2)).ToArray();
+        Assert.Equal([1230L, 17470L], oreTypes.Select(row => Assert.IsType<long>(row[0])));
+        Assert.Equal(["Veldspar", "Veldspar II-Grade"], oreTypes.Select(row => BlueMarshal.Text(row[1])));
+        Assert.Equal([1230L, 17470L], Assert.IsType<List<object?>>(replies[1]["selectedOreTypes"]).Select(Assert.IsType<long>));
         Assert.Equal(0L, replies[0]["unloadStation"]);
         Assert.Equal(95L, replies[0]["unloadThreshold"]);
         Assert.Equal(stationId, replies[^1]["unloadStation"]);
@@ -69,7 +85,8 @@ public sealed class AutoMiningPackageTests
             }
         );
         var reconnected = Assert.Single(await Exchange(null));
-        Assert.Equal("Veldspar", BlueMarshal.Text(reconnected["oreFilter"]));
+        Assert.Equal("#17470", BlueMarshal.Text(reconnected["oreFilter"]));
+        Assert.Equal(17470L, Assert.Single(Assert.IsType<List<object?>>(reconnected["selectedOreTypes"])));
         Assert.Equal(stationId, reconnected["unloadStation"]);
         Assert.Equal(80L, reconnected["unloadThreshold"]);
         Assert.Equal((long)MiningFamily.Gas, reconnected["resourceFamily"]);
@@ -95,7 +112,15 @@ public sealed class AutoMiningPackageTests
                     PilotServicesTests.Request(
                         service,
                         "SaveSettings",
-                        [filter, (long)MiningFamily.Gas, (long)AutoMiningTargetOrder.Smallest, true, true, stationId, 80L]
+                        [
+                            new List<object?> { 17470L },
+                            (long)MiningFamily.Gas,
+                            (long)AutoMiningTargetOrder.Smallest,
+                            true,
+                            true,
+                            stationId,
+                            80L,
+                        ]
                     )
                 );
                 calls.Enqueue(

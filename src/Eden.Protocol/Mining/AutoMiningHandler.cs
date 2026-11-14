@@ -70,7 +70,20 @@ internal sealed partial class AutoMiningHandler(
                 "SaveOptions" => args is [long family, long order, bool, bool] && ValidOptions(family, order),
                 "SaveHauling" => args is [long, long and >= int.MinValue and <= int.MaxValue],
                 "SaveSettings" => args
-                    is [string or byte[], long family, long order, bool, bool, long, long and >= int.MinValue and <= int.MaxValue]
+                    is [
+                        null
+                        or string
+                        or byte[]
+                        or List<object?>,
+                        long family,
+                        long order,
+                        bool,
+                        bool,
+                        long,
+                        long
+                        and >= int.MinValue
+                        and <= int.MaxValue,
+                    ]
                     && ValidOptions(family, order),
                 _ => args.Length == 0,
             };
@@ -98,7 +111,7 @@ internal sealed partial class AutoMiningHandler(
                     {
                         return new PilotCallResult.Failure("AutoMining hauling is unavailable.");
                     }
-                    var newFilter = AutoMiningFilter.Parse(BlueMarshal.Text(args[0]));
+                    var newFilter = args[0] is null ? _filter : ReadFilter(args[0]);
                     var newOptions = ReadOptions(args.AsSpan(1, 4));
                     var newHauling = new AutoMiningHaulSettings((long)args[5]!, checked((int)(long)args[6]!));
                     CheckOptionChange(newOptions);
@@ -191,7 +204,7 @@ internal sealed partial class AutoMiningHandler(
                     }
                     break;
             }
-            return new AutoMiningStatus(_flight is not null, _status, _filter.Text, _haulSettings, Options);
+            return new AutoMiningStatus(_flight is not null, _status, _filter, _haulSettings, Options, store.OreTypes());
         }
         catch (InvalidDataException error)
         {
@@ -205,6 +218,19 @@ internal sealed partial class AutoMiningHandler(
 
     private static AutoMiningOptions ReadOptions(ReadOnlySpan<object?> args) =>
         new((MiningFamily)(long)args[0]!, (AutoMiningTargetOrder)(long)args[1]!, (bool)args[2]!, (bool)args[3]!);
+
+    private AutoMiningFilter ReadFilter(object? value)
+    {
+        if (value is not List<object?> ids)
+        {
+            return AutoMiningFilter.Parse(BlueMarshal.Text(value));
+        }
+        if (ids.Count > AutoMiningFilter.MaximumTypes || ids.Any(id => id is not (long and > 0 and <= int.MaxValue)))
+        {
+            throw new InvalidDataException("Choose ore types from the available list.");
+        }
+        return AutoMiningFilter.FromTypes(ids.Select(id => (int)(long)id!), store.OreTypes());
+    }
 
     private void CheckOptionChange(AutoMiningOptions options)
     {
@@ -459,17 +485,21 @@ internal sealed record AutoMiningStationRow(AutoMiningStation Station) : BlueMod
     public override object ToBlue() => new object[] { Station.Id, new BlueUnicode(Station.Name) };
 }
 
+internal sealed record AutoMiningOreRow(AutoMiningOre Ore) : BlueModel
+{
+    public override object ToBlue() => new object[] { Ore.TypeId, new BlueUnicode(Ore.Name) };
+}
+
 internal sealed record AutoMiningStatus(
     bool Running,
     string Status,
-    string OreFilter,
+    AutoMiningFilter Filter,
     AutoMiningHaulSettings Hauling,
-    AutoMiningOptions Options
+    AutoMiningOptions Options,
+    IReadOnlyList<AutoMiningOre> OreTypes
 ) : BlueModel
 {
-    private static readonly BlueList<BlueUnicode> s_oreGroups = new(
-        AutoMiningFilter.OreGroupNames.Select(name => new BlueUnicode(name)).ToArray()
-    );
+    internal string OreFilter => Filter.Text;
 
     public override object ToBlue() =>
         new Dictionary<string, object?>
@@ -477,7 +507,13 @@ internal sealed record AutoMiningStatus(
             ["running"] = Running,
             ["status"] = new BlueUnicode(Status),
             ["oreFilter"] = new BlueUnicode(OreFilter),
-            ["oreGroups"] = s_oreGroups,
+            ["oreGroups"] = new BlueList<BlueUnicode>(
+                AutoMiningFilter.LegacyGroupNames(OreTypes).Select(name => new BlueUnicode(name)).ToArray()
+            ),
+            ["oreTypes"] = new BlueList<AutoMiningOreRow>(OreTypes.Select(ore => new AutoMiningOreRow(ore)).ToArray()),
+            ["selectedOreTypes"] = new BlueList<int>(
+                OreTypes.Where(ore => Filter.Includes(ore.TypeId, ore.GroupId)).Select(ore => ore.TypeId).ToArray()
+            ),
             ["unloadStation"] = Hauling.StationId,
             ["unloadThreshold"] = Hauling.Threshold,
             ["resourceFamily"] = (int)Options.Family,

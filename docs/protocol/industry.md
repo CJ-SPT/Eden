@@ -244,6 +244,44 @@ partial save. The inert panel test covers control placement, list filtering, add
 
 The new panel's rendering and input still need a live client check at a small window size.
 
+## AutoMining ore types and grades
+
+AutoMining 1.2.3 uses the build 3662168 item names and type IDs for the ore picker. The list is built from positive
+counts in real asteroid belts, Eden's mining mission deposits, and the mineable types in its moon composition rules.
+This excludes internal group names and catalog entries without those spawn sources. The pinned belt data supplies
+36 types, including base, II-Grade and III-Grade Veldspar. The older local EveJS `261108.1` mining anomaly provider
+also records concrete ore type IDs from site contents (`miningAnomalyProvider.js`, SHA-256 prefix `EF6895CC753D3459`).
+[EVE University ore variants](https://wiki.eveuniversity.org/Asteroids_and_ore#Ore_variants)
+
+`GetStatus` supplies type-ID and name pairs and the selected IDs. `SaveSettings` takes an explicit list of ore type IDs,
+with an empty list allowing all compatible ore. Existing group filters keep matching their full group. The panel displays
+their available members and preserves the saved filter when applying changes to other settings. Editing the selection saves
+the exact IDs, so choosing a grade excludes the other grades unless selected. Ice and gas use their resource mode.
+
+### Automated validation
+
+The grade-targeting regression exercises catalog membership, exact target selection, saved group compatibility, and
+rejection of a type with no positive belt count. The inert panel test exercises search, selection, apply, clear and reload.
+
+Tool and solution restore passed. The final solution build took 13.36 seconds with zero warnings or errors.
+The focused run passed 65 tests in 60.24 seconds with the original pinned archive for headless packaging.
+The Python catalog, formatting policy, and inert mod client suites passed 8, 9, and 5 tests. The focused run
+selected the following `FullyQualifiedName~` filters.
+
+```text
+Eden.Protocol.Tests.Mining.MiningTests, AsteroidFieldTests, MiningMissionTests, MoonExtractionTests,
+AutoMiningPackageTests, ModLauncherApiTests
+```
+
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+With AutoMining 1.2.3 active, search the ore picker for `II-Grade` and save one matching type.
+
 ## Deep-core mining and Morphite
 
 The three Mercoxit variants in the pinned belt catalog require a deep-core module. The static Deep Core Mining Laser I,

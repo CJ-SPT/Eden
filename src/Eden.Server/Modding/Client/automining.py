@@ -97,8 +97,10 @@ class MiningPanel(object):
         self.threshold = SingleLineEditText(parent=threshold, align=uiconst.TOTOP, maxLength=3, setvalue='95')
 
     def build_filter(self, body):
-        self.ore_groups = []
-        self.active_groups = set()
+        self.ore_types = []
+        self.active_types = set()
+        self.filter_changed = False
+        self.saved_filter_unavailable = False
         self.filter_summary = EveLabelMedium(parent=body, align=uiconst.TOTOP, padBottom=6)
         lists = Container(parent=body, align=uiconst.TOTOP, height=216, padBottom=4)
         available = Container(parent=lists, align=uiconst.TOLEFT_PROP, width=0.46, padRight=8)
@@ -110,9 +112,9 @@ class MiningPanel(object):
         self.search_active = SingleLineEditText(parent=active, align=uiconst.TOTOP, hintText='Search active', padBottom=4)
         self.available = Scroll(parent=available, align=uiconst.TOALL, hasUnderlay=True, multiSelect=True)
         self.active = Scroll(parent=active, align=uiconst.TOALL, hasUnderlay=True, multiSelect=True)
-        Button(parent=arrows, align=uiconst.TOTOP, label=u'\u203a', hint='Add selected ore groups',
+        Button(parent=arrows, align=uiconst.TOTOP, label=u'\u203a', hint='Add selected ore types',
                func=self.add_selected, padBottom=6)
-        Button(parent=arrows, align=uiconst.TOTOP, label=u'\u2039', hint='Remove selected ore groups',
+        Button(parent=arrows, align=uiconst.TOTOP, label=u'\u2039', hint='Remove selected ore types',
                func=self.remove_selected)
         self.search_available.OnChange = self.refresh_available
         self.search_active.OnChange = self.refresh_active
@@ -128,38 +130,49 @@ class MiningPanel(object):
 
     def refresh_filter_summary(self):
         is_ore = self.family.GetValue() == 0
-        if is_ore:
-            summary = '%d selected' % len(self.active_groups) if self.active_groups else 'All compatible ore'
-        else:
+        if not is_ore:
             summary = 'Saved ore filter applies when Resource is set to Ore'
+        elif self.active_types:
+            summary = '%d selected' % len(self.active_types)
+        elif self.saved_filter_unavailable and not self.filter_changed:
+            summary = 'Saved ore is unavailable. Choose a type or clear the filter.'
+        else:
+            summary = 'All compatible ore'
         self.filter_summary.SetText('Ore filter: ' + summary)
 
     def refresh_available(self, *args):
-        available = [group for group in self.ore_groups if group not in self.active_groups]
-        self.available_title.SetText('Available ore groups (%d)' % len(available))
-        self.load_groups(self.available, self.search_available, available, 'All groups are in the filter.')
+        available = [(type_id, name) for type_id, name in self.ore_types if type_id not in self.active_types]
+        self.available_title.SetText('Available ore types (%d)' % len(available))
+        self.load_types(self.available, self.search_available, available, 'No additional ore types available.')
 
     def refresh_active(self, *args):
-        active = sorted(self.active_groups, key=lambda group: group.lower())
+        active = [(type_id, name) for type_id, name in self.ore_types if type_id in self.active_types]
         self.active_title.SetText('Active filter (%d)' % len(active))
-        self.load_groups(self.active, self.search_active, active, 'Empty - all compatible ore groups.')
+        self.load_types(self.active, self.search_active, active, '')
 
-    def load_groups(self, scroll, search, groups, empty):
+    def load_types(self, scroll, search, ores, empty):
         query = search.GetValue().strip().lower()
-        entries = [GetFromClass(Generic, {'label': group, 'oreGroup': group})
-                   for group in groups if query in group.lower()]
-        scroll.Load(contentList=entries, noContentHint='No matching groups.' if query else empty)
+        entries = [GetFromClass(Generic, {'label': name, 'oreType': type_id})
+                   for type_id, name in ores if query in name.lower()]
+        scroll.Load(contentList=entries, noContentHint='No matching ore types.' if query else empty)
 
     def add_selected(self, *args):
-        self.active_groups.update(entry.oreGroup for entry in self.available.GetSelected())
-        self.refresh_filter()
+        selected = self.available.GetSelected()
+        if selected:
+            self.active_types.update(entry.oreType for entry in selected)
+            self.filter_changed = True
+            self.refresh_filter()
 
     def remove_selected(self, *args):
-        self.active_groups.difference_update(entry.oreGroup for entry in self.active.GetSelected())
-        self.refresh_filter()
+        selected = self.active.GetSelected()
+        if selected:
+            self.active_types.difference_update(entry.oreType for entry in selected)
+            self.filter_changed = True
+            self.refresh_filter()
 
     def clear_filter(self, *args):
-        self.active_groups.clear()
+        self.active_types.clear()
+        self.filter_changed = True
         self.refresh_filter()
         self.notice.SetText('Filter cleared. Apply settings to save.')
 
@@ -180,8 +193,8 @@ class MiningPanel(object):
         except ValueError:
             self.notice.SetText('Enter a whole hold percentage from 1 to 100.')
             return
-        filter_text = ', '.join(sorted(self.active_groups))
-        self.request('SaveSettings', (filter_text, self.family.GetValue(), self.order.GetValue(),
+        ore_types = sorted(self.active_types) if self.filter_changed else None
+        self.request('SaveSettings', (ore_types, self.family.GetValue(), self.order.GetValue(),
                                      bool(self.approach.GetValue()), bool(self.jettison.GetValue()),
                                      self.station.GetValue(), percent))
 
@@ -222,8 +235,10 @@ class MiningPanel(object):
             self.busy = False
 
     def set_settings(self, state):
-        self.ore_groups = state['oreGroups']
-        self.active_groups = set(group.strip() for group in state['oreFilter'].split(',') if group.strip())
+        self.ore_types = state['oreTypes']
+        self.active_types = set(state['selectedOreTypes'])
+        self.filter_changed = False
+        self.saved_filter_unavailable = bool(state['oreFilter']) and not self.active_types
         self.family.LoadOptions(self.FAMILY_OPTIONS, state['resourceFamily'])
         self.order.LoadOptions(self.ORDER_OPTIONS, state['targetOrder'])
         self.approach.SetChecked(state['approach'], report=False)

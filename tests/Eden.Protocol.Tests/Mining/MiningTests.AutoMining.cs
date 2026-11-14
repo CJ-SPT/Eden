@@ -18,6 +18,71 @@ namespace Eden.Protocol.Tests.Mining;
 public sealed partial class MiningTests
 {
     [Fact]
+    public void AutoMiningOrePickerListsSpawnableGradesAndTargetsTheSavedType()
+    {
+        const int grade = 17470;
+        const long gradeRock = Fixture.Asteroid + 1;
+        const long pilotId = 90000001;
+        using Fixture f = new(useTestClock: true);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (4161,'AIR Ore',25);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (17470,'Veldspar II-Grade',462),
+                    (17471,'Veldspar III-Grade',462),(62392,'AIR Ore',4161),(28432,'Compressed Veldspar',462);
+                INSERT INTO TypeAttribute VALUES(17470,552,100);
+                INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z) VALUES (40009232,30000144,15,9,1e10,2e10,3e10);
+                INSERT INTO SourceRecord VALUES ('client/types','17470','{{"published":1,"volume":0.1}}'),
+                    ('client/asteroidcountbytypeidbeltid','40009232','{{"1230":1,"17470":1,"17471":0}}'),
+                    ('client/asteroidcountbytypeidbeltid','99999','{{"62392":1}}');
+                """
+            );
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var rock = world.Set<WorldAsteroid>().Find(Fixture.Asteroid)!;
+            world.Add(
+                new WorldAsteroid
+                {
+                    Id = gradeRock,
+                    BeltId = rock.BeltId,
+                    SystemId = rock.SystemId,
+                    TypeId = grade,
+                    Quantity = rock.Quantity,
+                    X = rock.X + 1500,
+                    Y = rock.Y,
+                    Z = rock.Z,
+                    Radius = rock.Radius,
+                }
+            );
+            world.SaveChanges();
+        }
+        var (context, targeting, mining, _) = f.Client(locked: false);
+        var store = f.Db.Services.GetRequiredService<IPilotAutoMining>();
+        var controller = CreateController(f, targeting, mining);
+        Assert.Equal(["Veldspar", "Veldspar II-Grade"], Status(Call("GetStatus")).OreTypes.Select(ore => ore.Name));
+        Assert.Equal("Veldspar", Status(Call("SaveFilter", "Veldspar")).OreFilter);
+        var oreTypes = store.OreTypes();
+        var legacy = store.ReadFilter(pilotId);
+        Assert.All(oreTypes, ore => Assert.True(legacy.Includes(ore.TypeId, ore.GroupId)));
+        Assert.IsType<PilotCallResult.Failure>(Save([17471L]));
+        Assert.Equal("Veldspar", Status(Save(null)).OreFilter);
+        Assert.Equal("#17470", Status(Save([17470L, 17470L])).OreFilter);
+        var saved = store.ReadFilter(pilotId);
+        Assert.False(saved.Includes(1230, (int)MiningResourceGroup.Veldspar));
+        Assert.True(saved.Includes(grade, (int)MiningResourceGroup.Veldspar));
+        Assert.Equal("Locking asteroid", Status(Call("Start")).Status);
+        Assert.False(targeting.IsPending(Fixture.Asteroid));
+        Assert.True(targeting.IsPending(gradeRock));
+
+        PilotCallResult Call(string method, params object?[] args) => controller.Call(context, AutoMiningHandler.Service, method, args);
+        PilotCallResult Save(List<object?>? ids) => Call("SaveSettings", ids, 0L, 0L, false, false, 0L, 95L);
+        static AutoMiningStatus Status(PilotCallResult result) =>
+            Assert.IsType<AutoMiningStatus>(Assert.IsType<PilotCallResult.Success>(result).Reply);
+    }
+
+    [Fact]
     public void AutoMiningRetargetsAfterSharedDepletionAndStopsOnceAtTheDeadline()
     {
         const long first = Fixture.Asteroid;
