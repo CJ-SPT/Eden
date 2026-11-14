@@ -68,19 +68,25 @@ public sealed partial class AdministrationTests
         {
             await renderer.Mount<SettingsPage>();
             await renderer.Change(nameof(SettingsForm.OreYieldMultiplier), "2");
+            Assert.Contains("Mining hold capacity", renderer.Text);
+            await renderer.Change(nameof(SettingsForm.GeneralMiningHoldMultiplier), "2.5");
+            await renderer.Change(nameof(SettingsForm.IceHoldMultiplier), "0.5");
+            await renderer.Change(nameof(SettingsForm.GasHoldMultiplier), "3");
             Assert.Contains("Unsaved changes", renderer.Text);
             Assert.False(renderer.Button("Save for restart").Disabled);
             await renderer.Submit();
             Assert.Contains("Revision 2 saved · pending restart.", renderer.Text);
             Assert.True(renderer.Button("Save for restart").Disabled);
-            Assert.Equal(
-                2,
-                fixture.World.Services.GetRequiredService<IWorldConfiguration>().Read().Pending!.Draft.Settings.Resources.OreYieldMultiplier
-            );
+            var config = fixture.World.Services.GetRequiredService<IWorldConfiguration>();
+            var saved = config.Read();
+            Assert.Equal(2, saved.Pending!.Draft.Settings.Resources.OreYieldMultiplier);
+            Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), saved.Pending.Draft.Settings.MiningHolds);
+            Assert.Equal(new MiningHoldPolicy(), saved.Active.Draft.Settings.MiningHolds);
             await renderer.Click("Rewards");
             await renderer.Change(nameof(SettingsForm.BountyMultiplier), "3");
             await renderer.Submit();
             Assert.Contains("Revision 3 saved · pending restart.", renderer.Text);
+            Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), config.Read().Pending!.Draft.Settings.MiningHolds);
             await renderer.Click("Gathering");
             await renderer.Click("Reset to 1×");
             Assert.False(renderer.Button("Save for restart").Disabled);

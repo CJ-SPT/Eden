@@ -7,11 +7,15 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Configuration;
 using Eden.World.Docking;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -30,18 +34,28 @@ public sealed class ResidentAdmissionTests
     private const long BlueprintShip = 140990000001;
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void PreparedBlueprintPublishesOwnedGraphWithoutSqlOrSpeculativeMembership(bool commit)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void PreparedBlueprintPublishesOwnedGraphWithoutSqlOrSpeculativeMembership(bool commit, bool mining)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        int hull = mining ? CapsuleerCommunityStore.VentureType : HaulingRules.BadgerType;
+        if (mining)
+        {
+            WorldConfigurationStore config = new(fixture.Database, fixture.Clock);
+            var current = config.Read();
+            var draft = current.Active.Draft;
+            config.Save(current.Generation, draft with { Settings = draft.Settings with { MiningHolds = new(2) } }, "admin");
+            WorldConfigurationStore.Activate(fixture.Database);
+        }
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         var live = host.GetRequiredService<LiveWorld>();
         live.Economy.Warm();
         using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
         var origin = CapsuleerProvisioningCatalog.Origins(catalog).First();
         using CapsuleerShipBlueprints blueprints = new(catalog);
-        blueprints.Prepare(catalog, origin.RaceId, HaulingRules.BadgerType, null);
+        blueprints.Prepare(catalog, origin.RaceId, hull, null, mining: mining);
         long account = live.Economy.Inspect(world =>
             world.Pilots.Where(pilot => pilot.Id == Human).Select(pilot => pilot.AccountId).Single()
         );
@@ -59,7 +73,7 @@ public sealed class ResidentAdmissionTests
                         Id = BlueprintShip,
                         OwnerId = BlueprintPilot,
                         Name = "Resident blueprint",
-                        TypeId = HaulingRules.BadgerType,
+                        TypeId = hull,
                         Position = new FlightPosition
                         {
                             SystemId = Home,
@@ -86,13 +100,14 @@ public sealed class ResidentAdmissionTests
                     action,
                     catalog,
                     origin.RaceId,
-                    HaulingRules.BadgerType,
+                    hull,
                     null,
                     BlueprintPilot,
                     BlueprintShip,
                     Station,
                     fixture.Clock.Now,
-                    requirePrepared: true
+                    requirePrepared: true,
+                    mining: mining
                 );
                 skills = action.Set<PilotSkill>().Count(skill => skill.PilotId == BlueprintPilot);
                 items = action.Set<OwnedItem>().Count(item => item.OwnerId == BlueprintPilot);
@@ -108,6 +123,13 @@ public sealed class ResidentAdmissionTests
             Assert.Equal(commit ? Home : (int?)null, live.KnownShipSystem(BlueprintShip));
             Assert.True(metrics.Commands == 0, string.Join(Environment.NewLine, commands));
             Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        if (mining)
+        {
+            using var metrics = SessionPerformance.Begin("prepared mining hold", _ => { }, force: true)!;
+            var attributes = host.GetRequiredService<IPilotFitting>().ShipAttributes(BlueprintPilot);
+            Assert.Equal(10000, attributes[DogmaAttributeId.GeneralMiningHoldCapacity]);
             Assert.Equal(0, metrics.FittingCalculations);
         }
         live.ObjectsChanged();

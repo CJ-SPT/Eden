@@ -7,6 +7,7 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
@@ -53,7 +54,20 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
         Health? Health,
         double? Capacitor,
         FrozenDictionary<DogmaAttributeId, double> Attributes
-    );
+    )
+    {
+        internal IReadOnlyDictionary<DogmaAttributeId, double> AttributesFor(MiningHoldPolicy policy)
+        {
+            if (policy is { GeneralMultiplier: 1, IceMultiplier: 1, GasMultiplier: 1 })
+            {
+                return Attributes;
+            }
+            // The scratch fitting world uses the catalog defaults.
+            var tuned = Attributes.ToDictionary();
+            WorldTuningRules.ScaleMiningHolds(policy, tuned);
+            return tuned;
+        }
+    }
 
     private sealed record InventoryGrant(
         long Id,
@@ -212,7 +226,7 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
         world.Add(new Eden.Data.World.Capsuleers.SavedCapsuleerSupplies { PilotId = pilot, ShipId = ship });
         world.SaveChanges();
         // Publish through the normal revision/transaction cache. Navigation need not rebuild the validated new fit.
-        world.StageFit(new(pilot, ship, 0), world.FitRevision(pilot), blueprint.Attributes);
+        world.StageFit(new(pilot, ship, 0), world.FitRevision(pilot), blueprint.AttributesFor(world.Settings.MiningHolds));
     }
 
     internal void Prepare(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile, bool mining = false)

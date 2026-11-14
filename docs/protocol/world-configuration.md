@@ -2,6 +2,53 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Mining hold capacity, November 14, 2026
+
+The Gathering page stages independent capacity multipliers for dogma attributes 1556 (general mining), 3136 (ice)
+and 1557 (gas). Each accepts 0.1–100× and defaults to 1×, including on older configuration documents. The active revision
+scales the fitted attributes used by mining, inventory transfers and ship primes. The operation preserves the hull’s
+existing hold selection and skill bonuses. The multiplier also applies when staging a cached simulated-pilot ship fit.
+
+Inert inspection of the original build 3662168 archive (SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`)
+confirmed that `invCacheContainer.GetCapacity` resolves the hold attribute through `inventoryFlagsCommon` and asks
+`clientDogmaIM.GetCapacityForItem` for the value on the loaded dogma item. `infosvc.GetAttributeDictForItem` can also read
+the fitted dogma item. `dogmaIM.GetAllInfo` and `ItemGetInfo` send the effective values. The existing ship brain transmits
+item-specific multiplication for the client’s fitting graph. `baseDogmaLocation._IsShipEffectValid` filters item modifiers
+to attributes present on the hull’s catalog type. The client can still show base catalog values for type-only views or when
+an item has no loaded local fitting graph. The Evejs 261108.1 specialized hold registry was checked against the pinned
+attribute mapping. [EVE University distinguishes base and skill-adjusted capacity on the Retriever](https://wiki.eveuniversity.org/Retriever).
+
+**Automated validation.** The focused .NET run passed 514 cases in 106.76 seconds. It covered settings saves, legacy
+imports, restart activation, both fitted dogma replies and the client’s ship brain, capacity-limited harvesting and
+inventory moves, and simulated-pilot fit caching. The final filter selected the following classes and method under
+`Eden.Protocol.Tests` and excluded `RoutineProjectionPersistsNewResidentFounderBeforeItsDependents`. Two disconnect
+cases in that method failed at the same founder lookup both with this change and on baseline `af6d625a`. Its third
+case passed on both. Tool and solution restore and the solution build passed with zero build warnings and errors.
+Catalog policy passed 8 checks and formatting policy passed 9. Formatting verification passed in 38.61 seconds.
+
+```text
+Persistence.MiningHoldConfigurationTests
+Persistence.PilotBrainTests
+Persistence.PilotFittingTests
+Persistence.WorldConfigurationTests
+Persistence.WorldTuningTests
+Persistence.ShipInventoryRulesTests
+Persistence.UtilityHullOperationTests
+Administration.WorldSettingsPageTests
+Administration.AdministrationTests.SettingsSaveUpdatesStatusAndKeepsControlsInteractiveAcrossRepeatedSaves
+Mining.MiningTests
+Mining.IceMiningTests
+Mining.GasMiningTests
+Mining.MiningSkillPointRewardTests
+Capsuleers.CapsuleerShipBlueprintTests
+Capsuleers.ResidentAdmissionTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer check.** Set the general mining hold to 2×, save and restart, then open an active Venture’s
+inventory and ship attributes to compare its 10,000 m³ capacity.
+
 ## NPC bounty display, November 13, 2026
 
 The in-space Selected Item panel and Show Info for a visible NPC display the gross ISK bounty from the active world revision.

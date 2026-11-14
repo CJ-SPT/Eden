@@ -138,6 +138,6 @@ internal sealed partial class CapsuleerShipBlueprints
         world.Add(new Eden.Data.World.Capsuleers.SavedCapsuleerSupplies { PilotId = pilot, ShipId = ship });
         world.SaveChanges();
         // Publish through the normal revision/transaction cache. Navigation need not rebuild the validated new fit.
-        world.StageFit(new(pilot, ship, 0), world.FitRevision(pilot), blueprint.Attributes);
+        world.StageFit(new(pilot, ship, 0), world.FitRevision(pilot), blueprint.AttributesFor(world.Settings.MiningHolds));
     }
 }

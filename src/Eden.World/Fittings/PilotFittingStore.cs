@@ -7,6 +7,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Thermal;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fittings;
@@ -87,6 +88,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
         );
         var usage = calculation.ResourceUsage(catalog);
         var result = FittingRules.Apply(attributes, calculation.SkillLevels, usage);
+        WorldTuningRules.ScaleMiningHolds(world.Settings.MiningHolds, result);
         world.StageFit(key, revision, result);
         return result;
     }

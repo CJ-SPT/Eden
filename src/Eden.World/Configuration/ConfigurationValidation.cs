@@ -33,6 +33,7 @@ internal static class ConfigurationValidation
             settings?.Economy is null
             || settings.DevelopmentSupply is null
             || settings.Resources is null
+            || settings.MiningHolds is null
             || settings.NpcPopulation is null
             || settings.Progression is null
             || settings.Simulation is null

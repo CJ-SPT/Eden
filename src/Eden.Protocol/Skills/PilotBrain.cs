@@ -63,6 +63,15 @@ internal sealed class PilotBrain(
             .ToList();
         effects.AddRange(resourceEffects);
         AddGatheringEffects(effects, shipId, tuning?.Settings.Resources ?? new());
+        if (tuning is not null)
+        {
+            // Native inventory reads the local fitting graph. The client applies
+            // item modifiers only to attributes the hull already provides.
+            foreach (var (attribute, multiplier) in WorldTuningRules.MiningHoldMultipliers(tuning.Settings.MiningHolds))
+            {
+                effects.Add(new(shipId, BrainModifier.Item, attribute, BrainOperation.PostMultiply, [], [], multiplier));
+            }
+        }
         effects.AddRange(
             MiningDefinitions
                 .SkillModifiers.Where(modifier => levels.GetValueOrDefault((int)modifier.Skill) > 0)

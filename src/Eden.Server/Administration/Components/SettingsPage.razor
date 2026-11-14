@@ -53,6 +53,17 @@ else
                 <label><InputCheckbox @bind-Value="Form.RenewBelts" />Renew asteroid belts</label>
                 <label>Renewal hour (UTC)<InputNumber @bind-Value="Form.RenewalHourUtc" min="0" max="23" /></label>
                 <p class="muted">Already saved renewal deadlines remain unchanged.</p>
+                <h3>Mining hold capacity</h3>
+                <p class="muted">Scales each existing hold after ship and skill bonuses. If a hold shrinks below its current load, unload it to free space.</p>
+                <MultiplierControl Label="General mining hold capacity" @bind-Value="Form.GeneralMiningHoldMultiplier"
+                    Description="Applies to the general mining hold, including when it carries ice or gas."
+                    ExampleAmount="5000" ExampleUnit="m³" />
+                <MultiplierControl Label="Ice hold capacity" @bind-Value="Form.IceHoldMultiplier"
+                    Description="Applies to dedicated ice holds."
+                    ExampleAmount="10000" ExampleUnit="m³" />
+                <MultiplierControl Label="Gas hold capacity" @bind-Value="Form.GasHoldMultiplier"
+                    Description="Applies to dedicated gas holds."
+                    ExampleAmount="10000" ExampleUnit="m³" />
             </section>
             <section id="settings-Rewards" class="card" hidden="@(Workspace.Activity != SettingsActivity.Rewards)">
                 <h2>Rewards</h2>

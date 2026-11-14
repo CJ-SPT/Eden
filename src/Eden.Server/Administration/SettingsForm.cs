@@ -69,6 +69,18 @@ internal sealed class SettingsForm
     [Display(Name = "Gas harvesting yield")]
     public decimal GasYieldMultiplier { get; set; } = 1;
 
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "General mining hold capacity")]
+    public decimal GeneralMiningHoldMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Ice hold capacity")]
+    public decimal IceHoldMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Gas hold capacity")]
+    public decimal GasHoldMultiplier { get; set; } = 1;
+
     [Range(typeof(decimal), "0", "100")]
     [Display(Name = "NPC bounty ISK")]
     public decimal BountyMultiplier { get; set; } = 1;
@@ -128,6 +140,9 @@ internal sealed class SettingsForm
             OreYieldMultiplier = settings.Resources.OreYieldMultiplier,
             IceYieldMultiplier = settings.Resources.IceYieldMultiplier,
             GasYieldMultiplier = settings.Resources.GasYieldMultiplier,
+            GeneralMiningHoldMultiplier = settings.MiningHolds.GeneralMultiplier,
+            IceHoldMultiplier = settings.MiningHolds.IceMultiplier,
+            GasHoldMultiplier = settings.MiningHolds.GasMultiplier,
             BountyMultiplier = settings.Rewards.BountyMultiplier,
             MissionIskMultiplier = settings.Rewards.MissionIskMultiplier,
             MissionLpMultiplier = settings.Rewards.MissionLpMultiplier,
@@ -183,6 +198,7 @@ internal sealed class SettingsForm
                 Cents(GrantIsk)
             ),
             Resources = new(RenewBelts, RenewalHourUtc, OreYieldMultiplier, IceYieldMultiplier, GasYieldMultiplier),
+            MiningHolds = new(GeneralMiningHoldMultiplier, IceHoldMultiplier, GasHoldMultiplier),
             Rewards = new(BountyMultiplier, MissionIskMultiplier, MissionLpMultiplier, MissionStandingMultiplier),
             Industry = new(ManufacturingSpeed, ResearchSpeed, CopyingSpeed, InventionSpeed, ReprocessingEfficiency),
             Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),

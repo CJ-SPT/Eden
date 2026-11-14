@@ -10,7 +10,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | --- | --- |
 | Economy | Charge service costs, default manufacturing index and progressive regional markets. |
 | Development supply | Testing market and initial wallet grants; institutional stock; testing stock/price; grant amount for future pilots. |
-| Gathering | Separate ore, ice and gas yield multipliers; enable belt renewal and set its UTC hour. |
+| Gathering | Separate ore, ice and gas yield multipliers, mining hold capacity multipliers, and belt renewal settings. |
 | Rewards | NPC bounty ISK, mission ISK, mission loyalty points and positive mission standing-gain multipliers. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
 | Progression | NPC kill-SP and mining-SP multipliers; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
@@ -41,6 +41,11 @@ Gathering, structure/industry speed and reprocessing multipliers accept **0.1–
 zero disables that reward. Forms, command imports and the administrator API enforce the same bounds. These policies belong to the
 saved world; they do not modify shared catalog definitions or autonomous NPC gathering/production.
 
+- **Gathering → Mining hold capacity** sets separate **0.1–100×** multipliers for general mining, dedicated ice and dedicated
+  gas holds. With **Save for restart**, the next server start scales existing hold capacities after ship and skill bonuses.
+  A Venture’s 5,000 m³ general mining hold becomes 10,000 m³ at 2×, including when it carries ice or gas. The active ship’s
+  dogma attributes and inventory use the tuned capacity. Ordinary cargo and static type-only Show Info retain their own
+  values. Existing contents stay in place when a hold shrinks; unload cargo to make space for new material.
 - Ore, ice and gas controls scale extraction volume after ordinary equipment and skill bonuses. Cargo space and remaining deposits
   still limit extraction, and existing critical/residue rules remain. Ice requires a completed cycle; its control changes blocks
   per completed cycle rather than cycle duration. Ore and gas retain proportional partial-cycle collection.

@@ -34,6 +34,9 @@ public static class WorldTuningRules
         ValidateRate(settings.Resources.OreYieldMultiplier);
         ValidateRate(settings.Resources.IceYieldMultiplier);
         ValidateRate(settings.Resources.GasYieldMultiplier);
+        ValidateRate(settings.MiningHolds.GeneralMultiplier);
+        ValidateRate(settings.MiningHolds.IceMultiplier);
+        ValidateRate(settings.MiningHolds.GasMultiplier);
         ValidateRate(settings.Rewards.BountyMultiplier, true);
         ValidateRate(settings.Rewards.MissionIskMultiplier, true);
         ValidateRate(settings.Rewards.MissionLpMultiplier, true);
@@ -48,6 +51,33 @@ public static class WorldTuningRules
         ValidateRate(settings.Structures.AnchoringSpeed);
         ValidateRate(settings.Structures.OnliningSpeed);
         ValidateRate(settings.Structures.UnanchoringSpeed);
+    }
+
+    public static IEnumerable<KeyValuePair<DogmaAttributeId, double>> MiningHoldMultipliers(MiningHoldPolicy policy)
+    {
+        if (policy.GeneralMultiplier != 1)
+        {
+            yield return new(DogmaAttributeId.GeneralMiningHoldCapacity, (double)policy.GeneralMultiplier);
+        }
+        if (policy.IceMultiplier != 1)
+        {
+            yield return new(DogmaAttributeId.SpecialIceHoldCapacity, (double)policy.IceMultiplier);
+        }
+        if (policy.GasMultiplier != 1)
+        {
+            yield return new(DogmaAttributeId.SpecialGasHoldCapacity, (double)policy.GasMultiplier);
+        }
+    }
+
+    public static void ScaleMiningHolds(MiningHoldPolicy policy, Dictionary<DogmaAttributeId, double> attributes)
+    {
+        foreach (var (attribute, multiplier) in MiningHoldMultipliers(policy))
+        {
+            if (attributes.TryGetValue(attribute, out double capacity) && capacity > 0)
+            {
+                attributes[attribute] = capacity * multiplier;
+            }
+        }
     }
 
     public static decimal Yield(ResourcePolicy policy, MiningFamily family) =>

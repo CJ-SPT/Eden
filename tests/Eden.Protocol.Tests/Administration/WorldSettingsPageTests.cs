@@ -93,6 +93,7 @@ public sealed class WorldSettingsPageTests
         WorldSettings settings = new()
         {
             Resources = new(OreYieldMultiplier: 2, IceYieldMultiplier: 3, GasYieldMultiplier: 4),
+            MiningHolds = new(1.5m, .5m, 2),
             Rewards = new(5, 6, 7, 8),
             Progression = new(KillSkillPointMultiplier: 9, MiningSkillPointMultiplier: 2.5m),
             Industry = new(10, 11, 12, 13, 14),
@@ -101,11 +102,13 @@ public sealed class WorldSettingsPageTests
         var form = SettingsForm.From(settings);
         var result = form.Build();
         Assert.Equal(settings.Resources, result.Resources);
+        Assert.Equal(settings.MiningHolds, result.MiningHolds);
         Assert.Equal(settings.Rewards, result.Rewards);
         Assert.Equal(settings.Industry, result.Industry);
         Assert.Equal(settings.Progression, result.Progression);
         Assert.Equal(settings.Structures, result.Structures);
         form.OreYieldMultiplier = 0;
+        form.IceHoldMultiplier = 0;
         form.BountyMultiplier = -1;
         form.MiningSkillPointMultiplier = 101;
         form.InventionSpeed = 101;
@@ -115,6 +118,7 @@ public sealed class WorldSettingsPageTests
         List<ValidationResult> errors = [];
         Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.OreYieldMultiplier)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.IceHoldMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.BountyMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningSkillPointMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.InventionSpeed)));
@@ -122,6 +126,7 @@ public sealed class WorldSettingsPageTests
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureOnliningSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureUnanchoringSpeed)));
         form.OreYieldMultiplier = 0.1m;
+        form.IceHoldMultiplier = .1m;
         form.BountyMultiplier = 0;
         form.MiningSkillPointMultiplier = 0;
         form.InventionSpeed = 100;
@@ -135,6 +140,10 @@ public sealed class WorldSettingsPageTests
             c => c.Field == "Mining skill points" && c.After == "2.5×"
         );
         Assert.Equal("2×", ConfigurationDisplay.Settings(new(), settings, null).Single(r => r.Label == "Ore mining yield").Active);
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = settings }),
+            c => c.Field == "General mining hold capacity" && c.After == "1.5×"
+        );
     }
 
     [Theory]

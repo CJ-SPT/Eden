@@ -28,6 +28,8 @@ public sealed record ResourcePolicy(
     decimal GasYieldMultiplier = 1
 );
 
+public sealed record MiningHoldPolicy(decimal GeneralMultiplier = 1, decimal IceMultiplier = 1, decimal GasMultiplier = 1);
+
 public sealed record RewardPolicy(
     decimal BountyMultiplier = 1,
     decimal MissionIskMultiplier = 1,
@@ -76,6 +78,7 @@ public sealed record WorldSettings
     public EconomicPolicy Economy { get; init; } = new();
     public DevelopmentSupplyPolicy DevelopmentSupply { get; init; } = new();
     public ResourcePolicy Resources { get; init; } = new();
+    public MiningHoldPolicy MiningHolds { get; init; } = new();
     public RewardPolicy Rewards { get; init; } = new();
     public IndustryPolicy Industry { get; init; } = new();
     public StructurePolicy Structures { get; init; } = new();
