@@ -81,11 +81,11 @@ missionId,name,template,status,reason
 1173,Ammatar Scouts Spotted,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1175,Gallente Scouts Spotted,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1176,CONCORD Scout Spotted,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1177,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1177,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1178,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1179,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1180,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1181,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1179,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1180,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1181,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1182,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1183,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1184,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -101,9 +101,9 @@ missionId,name,template,status,reason
 1196,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1197,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1198,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1199,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1200,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1201,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1199,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1200,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1201,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1207,Vengeance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1208,Vengeance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1209,Vengeance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -379,8 +379,8 @@ missionId,name,template,status,reason
 1556,Ranch Hand - Oasis Bringer (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1563,Angel Extravaganza,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1564,Angel Extravaganza,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1565,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1566,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1565,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1566,Avenge a Fallen Comrade,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1567,CONCORD Scout Spotted,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1568,Head Hunter Threat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1569,Head Hunter Threat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

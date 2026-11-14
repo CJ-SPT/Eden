@@ -9,6 +9,9 @@ import json
 import re
 from collections import Counter
 
+# Build-3662168 destructible Habitat; the similarly named scenery is not an objective.
+HABITAT_TYPE = 19715
+
 KNOWN_BLOCKERS = {
     895: 'Requires timed reinforcements',
     929: 'Requires a verified reinforcement trigger',
@@ -71,7 +74,8 @@ def mining_definition(db, mission_id, mission):
 
 
 def extend(db, missions, group):
-    def encounter(mid, faction, title, revision, groups, entry=None, warehouse=False, delivery=False, deadspace=True):
+    def encounter(mid, faction, title, revision, groups, entry=None, warehouse=False, delivery=False, deadspace=True,
+                  habitat=False):
         mission = source(db, 'client/missions', mid)
         dungeon = source(db, 'client/dungeons', mission['killMission']['dungeonID'])
         if dungeon['factionID'] != faction:
@@ -113,6 +117,12 @@ def extend(db, missions, group):
                 raise ValueError('One explicit objective carrier group is required')
             carriers[0].update(lootTypeId=mission['killMission']['objectiveTypeID'],
                                lootQuantity=mission['killMission']['objectiveQuantity'])
+        if habitat:
+            # Build 3662168 uses the overseer structure type, not decorative habitation scenery.
+            targets = [o for r in rooms.values() for o in r['objects'].values() if o['typeID'] == HABITAT_TYPE]
+            if len(targets) != 1 or mission['killMission'].get('objectiveTypeID'):
+                raise ValueError(f'Unreviewed habitat objective for mission {mid}')
+            definition['structures'] = [dict(objectId=targets[0]['objectID'], required=True, completesMission=True)]
         missions.append(definition)
 
     hidden = [
@@ -201,6 +211,37 @@ def extend(db, missions, group):
     for mid, faction, variant, level, revision, entry, roster in seek:
         encounter(mid, faction, f'Seek_and_Destroy_({variant})_(Level_{level})', revision,
                   [group(names, count, distance, required=required) for names, count, distance, required in roster], entry)
+
+    # Independently bind the report facts to the pinned catalog. The evejs packs
+    # select these reports but label their generic kill-all completion provisional.
+    # These variants have no reported reinforcement triggers; other variants stay blocked.
+    for mid, entry in [(1180, 55664), (1181, 55688)]:
+        encounter(mid, 500011, 'Avenge_a_Fallen_Comrade_(Angel_Cartel)_(Level_1)', 209636,
+                  [group('Gistii Hijacker', 2, 2000, required=False),
+                   group('Gistii Hijacker/Gistii Rogue', 3, 50000, required=False),
+                   group('Gistii Raider/Gistii Ambusher', 1, 60000, required=False),
+                   group('Gistii Hijacker', 8, 60000, required=False)], entry, habitat=True)
+    encounter(1177, 500010, 'Avenge_a_Fallen_Comrade_(Guristas_Pirates)_(Level_2)', 203235,
+              [group('Pithi Arrogator/Pithi Imputor', 4, 10000, required=False),
+               group('Pithi Infiltrator/Pithi Invader', 5, 40000, required=False),
+               group('Pithior Nihilist', 1, 40000, required=False),
+               group('Pithi Infiltrator/Pithi Invader', 3, 40000, required=False),
+               group('Pithum Silencer', 1, 40000, required=False),
+               group('Pithi Despoiler/Pithi Saboteur', 5, 60000, required=False)], 595380, habitat=True)
+    encounter(1179, 500020, 'Avenge_a_Fallen_Comrade_(Serpentis)_(Level_2)', 193385,
+              [group('Coreli Safeguard', 2, 2000, required=False),
+               group('Coreli Initiate', 4, 40000, required=False),
+               group('Corelior Soldier', 1, 40000, required=False),
+               group('Coreli Agent/Coreli Spy', 3, 50000, required=False),
+               group('Corelum Chief Patroller', 1, 50000, required=False),
+               group('Coreli Watchman/Coreli Patroller', 7, 25000, required=False)], 55616, habitat=True)
+    encounter(1200, 500006, 'Avenge_a_Fallen_Comrade_(DED)_(Level_1)', 191580,
+              [group('DED Soldier 3rd Class', 6, 25000)], 56845)
+    encounter(1201, 500006, 'Avenge_a_Fallen_Comrade_(DED)_(Level_2)', 191581,
+              [group('DED Soldier 1st Class/DED Soldier 3rd Class', 7, 45000, required=False),
+               group('DED Special Ops Piranha', 4, 55000, required=False),
+               group('DED Soldier 2nd Class', 4, 55000, required=False),
+               group('DED Officer 1st Class', 1, 55000, required=False)], 57908, habitat=True)
 
     admitted = {m['missionId'] for m in missions}
     encounters = {tuple(sorted(source(db, 'client/missions', m['missionId'])['killMission'].items())): m

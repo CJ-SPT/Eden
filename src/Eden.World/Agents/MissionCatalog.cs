@@ -379,7 +379,7 @@ internal static class MissionCatalog
             var item = rooms.SelectMany(r => r.Objects).SingleOrDefault(o => o.Id == structure.ObjectId);
             if (
                 item is null
-                || item.GroupId != MissionStructureRules.LargeCollidableStructureGroup
+                || !MissionStructureRules.IsDestructibleGroup(item.GroupId)
                 || definition.Containers.Any(c => c.ObjectId == structure.ObjectId)
                 || new NpcProfileCatalog().Read(catalog, item.TypeId).Defense.Structure <= 0
             )

@@ -3028,6 +3028,449 @@
       ]
     },
     {
+      "missionId": 1180,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Angel_Cartel)_(Level_1)",
+      "sourceRevision": "oldid=209636",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 2,
+              "range": 2000,
+              "required": false
+            },
+            {
+              "types": [
+                16877,
+                16886
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16885,
+                16874
+              ],
+              "count": 1,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                16877
+              ],
+              "count": 8,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 2928
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2927,
+          "entryObjectId": 55660
+        },
+        {
+          "roomId": 2928,
+          "entryObjectId": 55664
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 55659,
+          "destinationRoomId": 2928
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 55669,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1181,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Angel_Cartel)_(Level_1)",
+      "sourceRevision": "oldid=209636",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16877
+              ],
+              "count": 2,
+              "range": 2000,
+              "required": false
+            },
+            {
+              "types": [
+                16877,
+                16886
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16885,
+                16874
+              ],
+              "count": 1,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                16877
+              ],
+              "count": 8,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 2930
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2929,
+          "entryObjectId": 55684
+        },
+        {
+          "roomId": 2930,
+          "entryObjectId": 55688
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 55683,
+          "destinationRoomId": 2930
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 55693,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1177,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Guristas_Pirates)_(Level_2)",
+      "sourceRevision": "oldid=203235",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16981,
+                16994
+              ],
+              "count": 4,
+              "range": 10000,
+              "required": false
+            },
+            {
+              "types": [
+                16996,
+                16997
+              ],
+              "count": 5,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23971
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16996,
+                16997
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17004
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16987,
+                17002
+              ],
+              "count": 5,
+              "range": 60000,
+              "required": false
+            }
+          ],
+          "roomId": 14165
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14164,
+          "entryObjectId": 595376
+        },
+        {
+          "roomId": 14165,
+          "entryObjectId": 595380
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 595375,
+          "destinationRoomId": 14165
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 595398,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1179,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Serpentis)_(Level_2)",
+      "sourceRevision": "oldid=193385",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17113
+              ],
+              "count": 2,
+              "range": 2000,
+              "required": false
+            },
+            {
+              "types": [
+                17121
+              ],
+              "count": 4,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23994
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17118,
+                17279
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17111
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17116,
+                17120
+              ],
+              "count": 7,
+              "range": 25000,
+              "required": false
+            }
+          ],
+          "roomId": 2924
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2923,
+          "entryObjectId": 55612
+        },
+        {
+          "roomId": 2924,
+          "entryObjectId": 55616
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 55611,
+          "destinationRoomId": 2924
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 55621,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1200,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(DED)_(Level_1)",
+      "sourceRevision": "oldid=191580",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16105
+              ],
+              "count": 6,
+              "range": 25000
+            }
+          ],
+          "roomId": 3000
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2999,
+          "entryObjectId": 56844
+        },
+        {
+          "roomId": 3000,
+          "entryObjectId": 56845
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 56843,
+          "destinationRoomId": 3000
+        }
+      ]
+    },
+    {
+      "missionId": 1201,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(DED)_(Level_2)",
+      "sourceRevision": "oldid=191581",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16107,
+                16105
+              ],
+              "count": 7,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16108
+              ],
+              "count": 4,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                16106
+              ],
+              "count": 4,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                16112
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": false
+            }
+          ],
+          "roomId": 3032
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3031,
+          "entryObjectId": 57497
+        },
+        {
+          "roomId": 3032,
+          "entryObjectId": 57908
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 57496,
+          "destinationRoomId": 3032
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 57913,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
       "missionId": 937,
       "level": 1,
       "difficulty": 500,
@@ -3133,6 +3576,209 @@
         {
           "fromObjectId": 758958,
           "destinationRoomId": 17131
+        }
+      ]
+    },
+    {
+      "missionId": 1199,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(Serpentis)_(Level_2)",
+      "sourceRevision": "oldid=193385",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17113
+              ],
+              "count": 2,
+              "range": 2000,
+              "required": false
+            },
+            {
+              "types": [
+                17121
+              ],
+              "count": 4,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23994
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17118,
+                17279
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17111
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17116,
+                17120
+              ],
+              "count": 7,
+              "range": 25000,
+              "required": false
+            }
+          ],
+          "roomId": 2924
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2923,
+          "entryObjectId": 55612
+        },
+        {
+          "roomId": 2924,
+          "entryObjectId": 55616
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 55611,
+          "destinationRoomId": 2924
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 55621,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1565,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(DED)_(Level_1)",
+      "sourceRevision": "oldid=191580",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16105
+              ],
+              "count": 6,
+              "range": 25000
+            }
+          ],
+          "roomId": 3000
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2999,
+          "entryObjectId": 56844
+        },
+        {
+          "roomId": 3000,
+          "entryObjectId": 56845
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 56843,
+          "destinationRoomId": 3000
+        }
+      ]
+    },
+    {
+      "missionId": 1566,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Avenge_a_Fallen_Comrade_(DED)_(Level_2)",
+      "sourceRevision": "oldid=191581",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16107,
+                16105
+              ],
+              "count": 7,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16108
+              ],
+              "count": 4,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                16106
+              ],
+              "count": 4,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                16112
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": false
+            }
+          ],
+          "roomId": 3032
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3031,
+          "entryObjectId": 57497
+        },
+        {
+          "roomId": 3032,
+          "entryObjectId": 57908
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 57496,
+          "destinationRoomId": 3032
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 57913,
+          "required": true,
+          "completesMission": true
         }
       ]
     },

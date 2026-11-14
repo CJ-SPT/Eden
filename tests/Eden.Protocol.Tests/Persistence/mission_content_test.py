@@ -73,6 +73,25 @@ class MissionAdmissionTests(unittest.TestCase):
         self.assertEqual({m['missionId'] for m in manifest['missions']}, admitted)
         self.assertTrue(all(row['reason'] for row in audit))
 
+    def test_avenge_variants_keep_report_objectives_and_exclude_unverified_reinforcements(self):
+        manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
+        missions = {m['missionId']: m for m in manifest['missions']}
+        for mid in [1177, 1179, 1180, 1181, 1199, 1201, 1566]:
+            with self.subTest(mission=mid):
+                mission = missions[mid]
+                self.assertEqual(2, len(mission['rooms']))
+                self.assertEqual(1, len(mission['gates']))
+                self.assertEqual(1, len(mission['structures']))
+                self.assertTrue(mission['structures'][0]['required'])
+                self.assertTrue(mission['structures'][0]['completesMission'])
+                self.assertNotIn('drop', mission['structures'][0])
+                self.assertTrue(all(not g['required'] for w in mission['waves'] for g in w['groups']))
+        for mid in [1200, 1565]:
+            self.assertNotIn('structures', missions[mid])
+            self.assertEqual(6, sum(g['count'] for w in missions[mid]['waves'] for g in w['groups']))
+        for mid in [1178, 1182, 1183, 1184, 1198]:
+            self.assertNotIn(mid, missions)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,6 +3,8 @@
 [Catalog mission deadlines](protocol/agents.md#catalog-mission-deadlines--november-14-2026) records four newly admitted
 courier definitions, resident expiry and checkpoint recovery.
 
+[Avenge a Fallen Comrade](protocol/agents.md#avenge-a-fallen-comrade--november-14-2026) adds nine report-backed mission definitions, destructible Habitats and resident checkpoint coverage after comparison with evejs.
+
 [Indexed resident disjunctions](protocol/performance.md#indexed-resident-disjunctions-november-14-2026)
 records bounded engagement queries, conservative fallbacks and matched query/session measurements.
 

@@ -205,7 +205,7 @@ fixed battery positions, 19 corrected report bindings and saved-encounter compat
 
 [Modding SDK and client packages](modding.md) covers offline skill authoring, C# project generation, Python client extensions, migration, staged activation and launcher installation. [Historical skill-editor records](world-configuration.md#skill-editor) retain the earlier implementation evidence.
 
-[Ordinary agent missions](missions.md) lists all 338 admitted combat, delivery and mining definitions and links the complete catalog blocker audit. The [implementation record](protocol/agents.md) covers multi-room encounters, keyed gates and ship restrictions, combat retrieval, mission containers, destructible objectives, standing-based access, rewards, delivery storylines and native protocol evidence.
+[Ordinary agent missions](missions.md) lists all 347 admitted combat, delivery and mining definitions and links the complete catalog blocker audit. The [implementation record](protocol/agents.md) covers multi-room encounters, keyed gates and ship restrictions, combat retrieval, mission containers, destructible objectives, standing-based access, rewards, delivery storylines and native protocol evidence.
 
 [Production-driven market progression](protocol/industry.md#production-driven-market-progression--november-8-2026) records claimed-production unlocks, high-security regional hubs, dated price snapshots and migration behavior.
 
