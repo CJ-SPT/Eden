@@ -25,6 +25,19 @@ namespace Eden.World.Docking;
 
 public sealed partial class SqliteWorld
 {
+    private void SetResidentPosition(LiveWorld live, long shipId, SpacePosition? position, int? systemId)
+    {
+        using CatalogDbContext catalog = new(_database.CatalogPath);
+        using var action = live.Economy.Begin(new(systems: systemId is int system ? [system] : [], ships: [shipId]));
+        long? owner = action.Ships.Find(shipId)?.OwnerId;
+        bool transfer = SetPosition(action, catalog, shipId, position, systemId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        action.Commit();
+        if (transfer && owner is long pilot)
+        {
+            live.Heat.ClearSelection(pilot, shipId);
+        }
+    }
+
     internal static bool SetPosition(
         WorldAction world,
         CatalogDbContext catalog,
@@ -43,12 +56,14 @@ public sealed partial class SqliteWorld
             world.SaveChanges();
             return false;
         }
-        var pilot = world.Pilots.SingleOrDefault(pilot => pilot.ActiveShipId == shipId);
+        var hull = world.Ships.Find(shipId);
+        var owner = hull is null ? null : world.Pilots.Find(hull.OwnerId);
+        var pilot = owner?.ActiveShipId == shipId ? owner : null;
         bool transfer =
             position is null
             || systemId is int destinationSystem
                 && saved is not null
-                && (saved.SystemId ?? catalog.RequireStation(world.Ships.Find(shipId)!.StationId).SolarSystemId) != destinationSystem;
+                && (saved.SystemId ?? catalog.RequireStation(hull!.StationId).SolarSystemId) != destinationSystem;
         bool entered = position is not null && (saved is null || transfer);
         if (transfer)
         {
@@ -72,7 +87,7 @@ public sealed partial class SqliteWorld
             }
             else if (systemId is int destination)
             {
-                int origin = saved.SystemId ?? catalog.FindStation(world.Ships.Find(shipId)!.StationId)!.SolarSystemId;
+                int origin = saved.SystemId ?? catalog.RequireStation(hull!.StationId).SolarSystemId;
                 if (origin != destination)
                 {
                     PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.Jumped);
@@ -90,7 +105,7 @@ public sealed partial class SqliteWorld
         {
             if (saved is null)
             {
-                world.Ships.Find(shipId)!.StructureId = null;
+                hull!.StructureId = null;
             }
             saved ??= world.Positions.Add(new FlightPosition { ShipId = shipId }).Entity;
             saved.SystemId = systemId ?? saved.SystemId;

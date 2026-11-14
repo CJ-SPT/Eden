@@ -42,7 +42,8 @@ public sealed record MiningYield(
     int Residue,
     bool Depleted,
     bool CargoFull,
-    Magazine? Crystal = null
+    Magazine? Crystal = null,
+    MiningHoldFill HoldFill = default
 );
 
 public interface IPilotMining
@@ -84,6 +85,16 @@ public static class MiningDefinitions
 
     public static bool IsResource(int category, int group) =>
         category == AsteroidDefinitions.Category || category == GasCloudCategory && group == GasCloudGroup;
+
+    public static bool MatchesFamily(MiningFamily family, int category, int group) =>
+        family switch
+        {
+            MiningFamily.Ice => category == AsteroidDefinitions.Category && group == IceGroup,
+            MiningFamily.Gas => category == GasCloudCategory && group == GasCloudGroup,
+            MiningFamily.Ore => category == AsteroidDefinitions.Category
+                && (group == MercoxitGroup || Enum.IsDefined((MiningResourceGroup)group)),
+            _ => false,
+        };
 
     public static MiningFamily Family(int group, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         group is InventoryDefinitions.GasScoopGroup or InventoryDefinitions.GasHarvesterGroup ? MiningFamily.Gas

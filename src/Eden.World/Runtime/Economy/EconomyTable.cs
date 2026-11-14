@@ -439,6 +439,16 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                 {
                     var before = table.Read(key) as Eden.Data.World.Inventory.OwnedItem;
                     var after = _removed.Contains(key) ? null : _local[key] as Eden.Data.World.Inventory.OwnedItem;
+                    long priorHold = MiningHoldShip(before);
+                    long nextHold = MiningHoldShip(after);
+                    if (priorHold > 0)
+                    {
+                        changes.Add(new("ShipMiningHoldContents", priorHold, Resident: true));
+                    }
+                    if (nextHold > 0 && nextHold != priorHold)
+                    {
+                        changes.Add(new("ShipMiningHoldContents", nextHold, Resident: true));
+                    }
                     if (
                         before is null
                         || after is null
@@ -457,6 +467,18 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
             return changes;
         }
     }
+
+    private static long MiningHoldShip(Eden.Data.World.Inventory.OwnedItem? item) =>
+        item
+            is {
+                FlagId: (int)Eden.Gameplay.Inventory.InventoryFlag.Cargo
+                    or (int)Eden.Gameplay.Inventory.InventoryFlag.GeneralMiningHold
+                    or (int)Eden.Gameplay.Inventory.InventoryFlag.IceHold
+                    or (int)Eden.Gameplay.Inventory.InventoryFlag.GasHold
+            }
+            ? item.LocationId
+            : 0;
+
     public override IReadOnlyCollection<long> Owners =>
         _changes
             .Keys.SelectMany(key => new[] { table.Read(key), _removed.Contains(key) ? null : _local[key] })

@@ -29,7 +29,8 @@ internal sealed class PilotServices(
     SessionDiagnostics? diagnostics = null,
     ICapsuleerHandoff? handoff = null,
     ICapsuleerPresentation? presentation = null,
-    Eden.Modding.IModSessionEvents? modEvents = null
+    Eden.Modding.IModSessionEvents? modEvents = null,
+    Eden.Protocol.Mining.AutoMiningHandler? autoMining = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -74,7 +75,18 @@ internal sealed class PilotServices(
             handoff,
             presentation
         );
-        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations, diagnostics, anomalies, handoff, presentation);
+        PilotSessionTick tick = new(
+            clock,
+            updates,
+            skills,
+            asteroids,
+            operations,
+            diagnostics,
+            anomalies,
+            handoff,
+            presentation,
+            autoMining: autoMining
+        );
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {
             var packet = await read();
@@ -82,38 +94,49 @@ internal sealed class PilotServices(
         }
         Task? checkpoint = null;
         SessionTickSchedule? schedule = null;
-        while (true)
+        try
         {
-            var incoming = ReadArrivalAsync();
-            // Account rewards can change while the native character selector is open.
-            while (
-                updates.IsAccountMonitoring
-                || (
-                    context.ActiveFlight is { } flight
-                    && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue || updates.IsMonitoring)
-                )
-            )
+            while (true)
             {
-                schedule ??= new SessionTickSchedule(clock);
-                checkpoint ??= Task.Delay(schedule.Remaining, clock, cancellationToken);
-                await Task.WhenAny(incoming, checkpoint);
-                if (checkpoint.IsCompleted)
+                var incoming = ReadArrivalAsync();
+                // Account rewards can change while the native character selector is open.
+                while (
+                    updates.IsAccountMonitoring
+                    || (
+                        context.ActiveFlight is { } flight
+                        && (flight.Moving || flight.InBallpark || context.NextSkillCompletion.HasValue || updates.IsMonitoring)
+                    )
+                )
                 {
-                    await checkpoint;
-                    await tick.AdvanceAsync(context, output, report, accountId, clientId);
-                    modSession.Observe();
-                    schedule.Complete();
-                    checkpoint = null;
+                    schedule ??= new SessionTickSchedule(clock);
+                    checkpoint ??= Task.Delay(schedule.Remaining, clock, cancellationToken);
+                    await Task.WhenAny(incoming, checkpoint);
+                    if (checkpoint.IsCompleted)
+                    {
+                        await checkpoint;
+                        await tick.AdvanceAsync(context, output, report, accountId, clientId);
+                        modSession.Observe();
+                        schedule.Complete();
+                        checkpoint = null;
+                    }
+                    if (incoming.IsCompleted)
+                    {
+                        break;
+                    }
                 }
-                if (incoming.IsCompleted)
-                {
-                    break;
-                }
+                var arrived = await incoming;
+                SessionPerformance.ReportQueue(arrived.Received, diagnostics?.Trace ?? report);
+                await calls.ProcessAsync(arrived.Packet, arrived.Received);
+                modSession.Observe();
             }
-            var arrived = await incoming;
-            SessionPerformance.ReportQueue(arrived.Received, diagnostics?.Trace ?? report);
-            await calls.ProcessAsync(arrived.Packet, arrived.Received);
-            modSession.Observe();
+        }
+        finally
+        {
+            if (context.Selected)
+            {
+                using var system = context.Flight.UseSystem();
+                updates.DisconnectAutoMining(context);
+            }
         }
     }
 }

@@ -391,13 +391,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         var pilot = Pilot(world, pilotId);
         var position = Position(pilot);
         var values = PilotFittingStore.ShipAttributes(world, catalog, pilot);
-        if (
-            values.GetValueOrDefault(DogmaAttributeId.IntegratedMiningScanner) <= 0
-            || values.GetValueOrDefault(DogmaAttributeId.MiningScannerUpgrade) <= 0
-        )
-        {
-            throw new InvalidDataException("Use a ship with an integrated mining scanner and an online mining survey chipset.");
-        }
+        InformationRules.RequireMiningSurvey(values);
         int system = System(catalog, pilot);
         return world
             .Set<WorldAsteroid>()

@@ -24,6 +24,8 @@ internal sealed class TargetingHandler(
 
     private readonly Dictionary<long, PendingLock> _pending = [];
     private readonly HashSet<long> _locked = [];
+    private readonly HashSet<long> _miningLocks = [];
+    private readonly HashSet<long> _miningExcludedTargets = [];
     private long[] _targeters = [];
     private long _shipId;
 
@@ -51,6 +53,8 @@ internal sealed class TargetingHandler(
             CancelPendingReplies();
             _pending.Clear();
             _locked.Clear();
+            _miningLocks.Clear();
+            _miningExcludedTargets.Clear();
             _targeters = [];
         }
         _shipId = context.Pilot.ShipId;
@@ -108,6 +112,7 @@ internal sealed class TargetingHandler(
 
     private void Remove(PilotCallContext context, long target)
     {
+        _miningLocks.Remove(target);
         bool pending = _pending.Remove(target, out var scan);
         scan?.Completion.TrySetResult(CancelledLock());
         bool locked = _locked.Remove(target);
@@ -125,6 +130,32 @@ internal sealed class TargetingHandler(
     internal void CancelPassive(PilotCallContext context, long id) => Remove(context, id);
 
     internal PilotCallResult LockAutomatically(PilotCallContext context, long id) => Add(context, id);
+
+    internal void ResetAutoMiningExclusions() => _miningExcludedTargets.Clear();
+
+    internal bool IsExcludedFromAutoMining(long id) => _miningExcludedTargets.Contains(id);
+
+    internal bool LockForAutoMining(PilotCallContext context, long id)
+    {
+        if (_locked.Contains(id) || _pending.ContainsKey(id))
+        {
+            return true;
+        }
+        if (Add(context, id) is not PilotCallResult.Success { Reply: TargetLockReply })
+        {
+            return false;
+        }
+        _miningLocks.Add(id);
+        return true;
+    }
+
+    internal void ReleaseAutoMiningLocks(PilotCallContext context, Func<long, bool> keep)
+    {
+        foreach (long target in _miningLocks.Where(target => !keep(target)).ToArray())
+        {
+            Remove(context, target);
+        }
+    }
 
     private PilotCallResult Add(PilotCallContext context, long id, bool silent = false)
     {
@@ -200,13 +231,18 @@ internal sealed class TargetingHandler(
         switch (method)
         {
             case "AddTarget" when args is [long target]:
-                return Add(context, target);
+                var result = Add(context, target);
+                _miningLocks.Remove(target);
+                _miningExcludedTargets.Remove(target);
+                return result;
             case "RemoveTarget" or "CancelAddTarget" when args is [long target]:
+                ExcludeAutoMiningTarget(target);
                 Remove(context, target);
                 return PilotCallResult.None;
             case "ClearTargets" when args.Length == 0:
                 foreach (long id in _pending.Keys.Concat(_locked).ToArray())
                 {
+                    ExcludeAutoMiningTarget(id);
                     Remove(context, id);
                 }
                 return PilotCallResult.None;
@@ -216,6 +252,14 @@ internal sealed class TargetingHandler(
                 return new BlueList<long>(_targeters);
             default:
                 return PilotCallResult.Unsupported;
+        }
+    }
+
+    private void ExcludeAutoMiningTarget(long id)
+    {
+        if (_miningLocks.Contains(id))
+        {
+            _miningExcludedTargets.Add(id);
         }
     }
 
@@ -250,6 +294,8 @@ internal sealed class TargetingHandler(
         CancelPendingReplies();
         _pending.Clear();
         _locked.Clear();
+        _miningLocks.Clear();
+        _miningExcludedTargets.Clear();
         _targeters = [];
         _shipId = 0;
     }

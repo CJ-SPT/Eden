@@ -12,6 +12,7 @@ public sealed record CharacterSetting(string Key, CharacterSettingValue Value);
 public interface IPilotCharacterSettings
 {
     IReadOnlyList<CharacterSetting> Read(long pilotId);
+    CharacterSetting? Read(long pilotId, string key);
     void Save(long pilotId, CharacterSetting setting);
     void Delete(long pilotId, string key);
 }

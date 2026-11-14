@@ -52,6 +52,12 @@ internal sealed partial class EconomyTransaction
                 }
                 RemoveRange(Set<Eden.Data.World.Capsuleers.SavedCapsuleerHauler>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCharacterDeletion>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Characters.SavedCharacterSetting>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Loot.SavedJetcan>().Where(child => child.OwnerId == removed.Id));
+                if (Set<Eden.Data.World.Loot.SavedJettisonCooldown>().Find(removed.Id) is { } cooldown)
+                {
+                    Remove(cooldown);
+                }
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCombatReport>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedCompletedTask>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedHomeCloneTransfer>().Where(child => child.PilotId == removed.Id));
@@ -160,6 +166,9 @@ internal sealed partial class EconomyTransaction
                 {
                     throw new InvalidDataException("The resident ShipLoss still has WorldWreck references.");
                 }
+                break;
+            case Eden.Data.World.Loot.SavedJetcan removed:
+                RemoveRange(Filter<Eden.Data.World.Inventory.OwnedItem>(child => child.LocationId == removed.Id));
                 break;
             case Eden.Data.World.Mining.WorldAsteroid removed:
                 RemoveRange(Set<Eden.Data.World.Mining.SavedMiningDeposit>().Where(child => child.Id == removed.Id));

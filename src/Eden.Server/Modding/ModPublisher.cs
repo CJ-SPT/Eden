@@ -113,7 +113,7 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
                     JsonSerializer.Serialize(files, ModFormat.Json),
                     cancellation
                 );
-                Directory.Move(temporary, final);
+                await PublishDirectory(temporary, final, cancellation);
                 temporary = null;
             }
             store.VerifySet(id);
@@ -132,6 +132,30 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
                 Directory.Delete(temporary, recursive: true);
             }
             _gate.Release();
+        }
+    }
+
+    private static async Task PublishDirectory(string temporary, string final, CancellationToken cancellation)
+    {
+        const int maximumAttempts = 5;
+        for (int attempt = 1; ; attempt++)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            try
+            {
+                Directory.Move(temporary, final);
+                return;
+            }
+            catch (IOException error)
+                when (OperatingSystem.IsWindows()
+                    && attempt < maximumAttempts
+                    && !Directory.Exists(final)
+                    && (error.HResult & 0xFFFF) is 5 or 32 or 33
+                )
+            {
+                // Windows can briefly retain a scan handle on the newly compiled archive.
+                await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), cancellation);
+            }
         }
     }
 

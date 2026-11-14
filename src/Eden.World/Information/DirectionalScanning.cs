@@ -47,9 +47,19 @@ internal sealed partial class PilotInformationStore
         using var ownership = live?.Enter();
         var observer = live?.Reads?.DirectionalObserver(pilotId, () => LoadObserver(pilotId)) ?? LoadObserver(pilotId);
         range = InformationRules.DirectionalRange(range, observer.MaximumRange);
-        var contacts =
-            live?.Reads?.DirectionalContacts(observer.SystemId, () => LoadDirectional(observer.SystemId))
-            ?? LoadDirectional(observer.SystemId);
+        IEnumerable<DirectionalEntry> contacts = live is null
+            ? LoadDirectional(observer.SystemId, includeJetcans: true)
+            : live.Reads?.DirectionalContacts(observer.SystemId, () => LoadDirectional(observer.SystemId))
+                ?? LoadDirectional(observer.SystemId);
+        if (live is not null)
+        {
+            var cans =
+                live.Reads?.Jetcans(observer.SystemId, now)
+                ?? Eden.World.Loot.JetcanStore.ReadContacts(live, database, observer.SystemId, now).Contacts;
+            contacts = contacts.Concat(
+                cans.Select(can => new DirectionalEntry(new(can.Id, can.TypeId, can.GroupId, can.Name, can.Position)))
+            );
+        }
         live?.Tractors.Advance(now);
         var origin = live?.Combat?.InformationPosition(observer.ShipId) ?? observer.Position;
         return contacts
@@ -85,7 +95,7 @@ internal sealed partial class PilotInformationStore
         return new(pilot.ActiveShipId, System(catalog, pilot), position, maximum);
     }
 
-    private IReadOnlyList<DirectionalEntry> LoadDirectional(int system)
+    private IReadOnlyList<DirectionalEntry> LoadDirectional(int system, bool includeJetcans = false)
     {
         // These are membership/name baselines. Current resident coordinates are overlaid
         // under the world owner above, without projecting combat or tractor state to SQL.
@@ -126,10 +136,13 @@ internal sealed partial class PilotInformationStore
                 )
             );
         }
-        foreach (var can in world.Set<SavedJetcan>().AsNoTracking().Where(c => c.SystemId == system))
+        if (includeJetcans)
         {
-            var type = catalog.RequireItem(JetcanRules.TypeId);
-            contacts.Add(new(new(can.Id, type.Id, type.GroupId, type.Name, new(can.X, can.Y, can.Z)), can.ExpiresAt));
+            foreach (var can in world.Set<SavedJetcan>().AsNoTracking().Where(c => c.SystemId == system))
+            {
+                var type = catalog.RequireItem(JetcanRules.TypeId);
+                contacts.Add(new(new(can.Id, type.Id, type.GroupId, type.Name, new(can.X, can.Y, can.Z)), can.ExpiresAt));
+            }
         }
         var drones =
             from drone in world.Set<WorldDrone>().AsNoTracking()

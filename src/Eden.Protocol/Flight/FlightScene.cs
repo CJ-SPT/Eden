@@ -46,6 +46,8 @@ internal sealed class FlightScene(
     private FlightNpcScene Npcs => _npcScene ??= new(space, clock, encounters, effects, update, send);
     private FlightDroneScene Drones => _droneScene ??= new(space, clock, drones, update);
 
+    internal IReadOnlyList<StaticSpaceObject> VisibleAsteroids => _visibleAsteroids;
+
     internal IReadOnlyList<StaticSpaceObject> Objects { get; private set; } = objects;
     internal IReadOnlyList<NpcContact> VisibleNpcs => Npcs.Contacts;
     internal IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;
@@ -239,6 +241,15 @@ internal sealed class FlightScene(
                     && (w.PlanetId.HasValue || position.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange)
                 )
                 .ToArray();
+
+    internal void AddWreck(FlightSceneContext context, WreckContact contact)
+    {
+        if (context.InBallpark && contact.SystemId == context.Pilot.SystemId && !_wrecks.Any(wreck => wreck.Id == contact.Id))
+        {
+            _wrecks = [.. _wrecks, contact];
+            update(new DestinyCommand.AddBalls(Ballpark.AddWrecks([contact], space.Stamp(clock))));
+        }
+    }
 
     internal void RefreshWrecks(FlightSceneContext context)
     {

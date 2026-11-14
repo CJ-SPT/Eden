@@ -4,6 +4,7 @@ using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Corporations;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -87,6 +88,16 @@ internal static partial class InventoryPersistence
 
     internal static IReadOnlyList<InventoryChange> SplitTransfer(
         WorldDbContext world,
+        CatalogDbContext catalog,
+        OwnedItem stack,
+        InventoryItem previous,
+        long destination,
+        int flag,
+        int quantity
+    ) => SplitTransfer(new SqlWorldAction(world), catalog, stack, previous, destination, flag, quantity);
+
+    internal static IReadOnlyList<InventoryChange> SplitTransfer(
+        WorldAction world,
         CatalogDbContext catalog,
         OwnedItem stack,
         InventoryItem previous,

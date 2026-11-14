@@ -1,8 +1,8 @@
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Characters;
 
@@ -11,28 +11,49 @@ internal sealed class PilotCharacterSettingsStore(WorldDatabase database) : IPil
 {
     public IReadOnlyList<CharacterSetting> Read(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        CheckPilot(world, pilotId);
-        return world
-            .Set<SavedCharacterSetting>()
-            .AsNoTracking()
-            .Where(s => s.PilotId == pilotId)
-            .OrderBy(s => s.Key)
-            .AsEnumerable()
-            .Select(s => new CharacterSetting(
-                s.Key,
-                s.Text is { } text
-                    ? new CharacterSettingValue.Text(text)
-                    : new CharacterSettingValue.Binary(s.Binary ?? throw new InvalidDataException("Invalid saved character setting."))
-            ))
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                CheckPilot(world, pilotId);
+                return world
+                    .Filter<SavedCharacterSetting>(s => s.PilotId == pilotId)
+                    .OrderBy(s => s.Key)
+                    .AsEnumerable()
+                    .Select(Read)
+                    .ToArray();
+            }
+        );
     }
+
+    public CharacterSetting? Read(long pilotId, string key)
+    {
+        return WorldActionScope.Inspect(database, world => Read(world, pilotId, key));
+    }
+
+    internal static CharacterSetting? Read(WorldAction world, long pilotId, string key) =>
+        world.Set<SavedCharacterSetting>().Find(pilotId, key) is { } saved ? Read(saved) : null;
+
+    private static CharacterSetting Read(SavedCharacterSetting setting) =>
+        new(
+            setting.Key,
+            setting.Text is { } text
+                ? new CharacterSettingValue.Text(text)
+                : new CharacterSettingValue.Binary(
+                    setting.Binary?.ToArray() ?? throw new InvalidDataException("Invalid saved character setting.")
+                )
+        );
 
     public void Save(long pilotId, CharacterSetting setting)
     {
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        Save(transaction.World, pilotId, setting);
+        transaction.Commit();
+    }
+
+    internal static void Save(WorldAction world, long pilotId, CharacterSetting setting)
+    {
         CharacterSettingsRules.Check(setting);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
         CheckPilot(world, pilotId);
         var saved = world.Set<SavedCharacterSetting>().Find(pilotId, setting.Key);
         if (saved is null)
@@ -41,24 +62,25 @@ internal sealed class PilotCharacterSettingsStore(WorldDatabase database) : IPil
             world.Add(saved);
         }
         saved.Text = (setting.Value as CharacterSettingValue.Text)?.Value;
-        saved.Binary = (setting.Value as CharacterSettingValue.Binary)?.Value;
-        world.SaveChanges();
-        transaction.Commit();
+        saved.Binary = (setting.Value as CharacterSettingValue.Binary)?.Value.ToArray();
     }
 
     public void Delete(long pilotId, string key)
     {
         CharacterSettingsRules.CheckKey(key);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         CheckPilot(world, pilotId);
-        world.Set<SavedCharacterSetting>().Where(s => s.PilotId == pilotId && s.Key == key).ExecuteDelete();
+        if (world.Set<SavedCharacterSetting>().Find(pilotId, key) is { } saved)
+        {
+            world.Remove(saved);
+        }
         transaction.Commit();
     }
 
-    private static void CheckPilot(WorldDbContext world, long pilotId)
+    private static void CheckPilot(WorldAction world, long pilotId)
     {
-        if (!world.Pilots.Any(p => p.Id == pilotId))
+        if (world.Pilots.Find(pilotId) is null)
         {
             throw new InvalidDataException("Unknown character.");
         }

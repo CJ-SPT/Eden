@@ -18,10 +18,12 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Corporations;
+using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
@@ -248,19 +250,23 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
     public IReadOnlyList<WreckContact> List(int systemId, long now)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.wrecks");
-        var contacts = LiveReadModels.Find(database.Path) is { } resident
-            ? resident.Wrecks(systemId, now, () => ListSql(systemId, now))
-            : ListSql(systemId, now);
-        return LiveWorld.Find(database.Path)?.Tractors.Contacts(contacts, now) ?? contacts;
+        var live = LiveWorld.Find(database.Path);
+        if (live is null)
+        {
+            return ListSql(systemId, now, includeJetcans: true);
+        }
+        IReadOnlyList<WreckContact> contacts = live.Reads?.Wrecks(systemId, now, () => ListSql(systemId, now)) ?? ListSql(systemId, now);
+        var cans = live.Reads?.Jetcans(systemId, now) ?? JetcanStore.ReadContacts(live, database, systemId, now).Contacts;
+        return live.Tractors.Contacts(cans.Count == 0 ? contacts : contacts.Concat(cans).ToArray(), now);
     }
 
-    private IReadOnlyList<WreckContact> ListSql(int systemId, long now)
+    private IReadOnlyList<WreckContact> ListSql(int systemId, long now, bool includeJetcans = false)
     {
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         // Remove expired jetcans and their contents together. An empty system cache
         // reaches this path at its first read and at the next container deadline.
-        if (world.Set<SavedJetcan>().Any(c => c.SystemId == systemId && c.ExpiresAt <= now))
+        if (includeJetcans && world.Set<SavedJetcan>().Any(c => c.SystemId == systemId && c.ExpiresAt <= now))
         {
             using WorldDbContext cleanup = new(database.Path) { Participants = new(systems: [systemId]) };
             using var transaction = cleanup.Database.BeginTransaction();
@@ -312,7 +318,14 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                     type.GroupId
                 );
             })
-            .Concat(JetcanStore.Contacts(world, catalog, systemId, now))
+            .Concat(
+                includeJetcans
+                    ? JetcanStore.Contacts(
+                        catalog,
+                        JetcanStore.List(new SqlWorldAction(world), systemId).Where(c => c.ExpiresAt > now).ToArray()
+                    )
+                    : []
+            )
             .Concat(Eden.World.Planetary.PlanetaryOrbitStore.Contacts(world, catalog, systemId, now))
             .ToArray();
     }
@@ -353,12 +366,14 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
 
     public WreckInventory Read(long pilotId, long wreckId, long now)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (JetcanRules.IsJetcan(wreckId))
         {
-            return JetcanStore.Read(world, catalog, pilotId, wreckId, now);
+            return LiveWorld.Find(database.Path) is { } live
+                ? live.Economy.Inspect(world => JetcanStore.Read(world, catalog, pilotId, wreckId, now))
+                : WorldActionScope.Inspect(database, world => JetcanStore.Read(world, catalog, pilotId, wreckId, now));
         }
+        using WorldDbContext world = new(database.Path);
         if (Eden.Gameplay.Planetary.PlanetaryRules.IsOffice(wreckId) || Eden.Gameplay.Planetary.PlanetaryRules.IsLaunch(wreckId))
         {
             var orbit = Eden.World.Planetary.PlanetaryOrbitStore.Read(world, catalog, pilotId, wreckId, now);
@@ -392,10 +407,16 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
         InventoryFlag destinationFlag = InventoryFlag.Cargo
     )
     {
-        using WorldDbContext world = new(database.Path)
+        if (JetcanRules.IsJetcan(wreckId) && LiveWorld.Find(database.Path) is { } live)
         {
-            Participants = JetcanRules.IsJetcan(wreckId) ? new(pilots: [pilotId], ships: [shipId]) : null,
-        };
+            using var action = live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
+            using CatalogDbContext residentCatalog = new(database.CatalogPath);
+            action.SetAttributes(pilotId, PilotFittingStore.ShipAttributes(action, residentCatalog, pilotId));
+            var result = JetcanStore.Take(action, residentCatalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);
+            action.Commit();
+            return result;
+        }
+        using WorldDbContext world = new(database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
         var changes = Take(world, catalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);
@@ -435,7 +456,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
         }
         if (JetcanRules.IsJetcan(wreckId))
         {
-            var (owner, can) = JetcanStore.Access(world, catalog, pilotId, wreckId, now);
+            var (owner, can) = JetcanStore.Access(new SqlWorldAction(world), catalog, pilotId, wreckId, now);
             var taken = SpaceLootTransfer.Take(world, catalog, owner, shipId, wreckId, itemIds, quantity, destinationFlag);
             world.SaveChanges();
             if (!world.Set<OwnedItem>().Any(i => i.LocationId == wreckId))

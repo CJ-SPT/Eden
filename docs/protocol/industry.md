@@ -73,6 +73,159 @@ Tool and solution restore, the solution build and both Python policy suites pass
 
 **Optional maintainer checks:** In the native Industry window, quote and deliver a composite job at a fueled refinery.
 
+## AutoMining the current grid
+
+Hosts activate the bundled AutoMining package through [Eden Mods](../modding.md#automining). The pinned build-3662168
+panel uses the selected-pilot `edenAutoMining` service for Start, Stop, GetStatus and SaveFilter. The session publishes
+status changes with `OnEdenAutoMiningStatus`. Settings use an existing per-character setting row. The active run belongs
+to the selected connection, ship and system. Departing the grid through warp, docking or translocation ends the run,
+as do ship loss, disconnection and loss of targeting capability.
+
+The controller considers published public ore contacts by surface distance, with object ID breaking ties. It checks the
+fit's range, ore family, deep-core capability and loaded crystal type list, and uses the usual lock and mining cycle
+paths. Native lock time, capacitor payment, yield, cargo, crystal wear and ledger rules apply. Automatic Stop settles a
+cycle already due and cancels unfinished automatic cycles. Manual cycles and manually requested locks remain under pilot
+control. A manually stopped module stays paused until Start, and unlocking an automation-owned target skips that rock
+until Start or until the pilot requests that lock again. A full hold leaves the run waiting for space.
+
+EveJS-Automining v1.2.27 at `0986770cbc186287e9e72c0eb2377fcf1c670c89` supplied the targeting and filter behavior
+reference. The local EveJS 261108.1 mining runtime was consulted for native cargo and cycle boundaries. Eden keeps the
+existing build-3662168 motion, serialization and signed mod-archive paths.
+[AutoMining source](https://github.com/V0nCleef/EveJS-Automining/tree/v1.2.27) ·
+[EVE University mining mechanics](https://wiki.eveuniversity.org/Mining#Mining_mechanics)
+
+### Automated validation
+
+Tool and solution restore passed. The solution built with zero warnings or errors in 1.74 seconds. The focused run
+completed 314 cases in 2 minutes 36 seconds, with 312 passing and two failing. The two resident
+`ResourceRenewalTests.OverdueRenewalUsesBatchSqlAndPreservesDepositsAcrossCheckpointAndRestart` variants counted
+seven and eight SQL commands against the maximum of six. An isolated build of base commit `6056c7a4` reproduced
+both counts. All five new cases passed, including two-pilot ore conservation and retargeting, exact-deadline stop,
+manual control, filter isolation after reopening, and inert package composition with the pinned client archive.
+The warmed pending-lock decision used zero SQL commands, connection opens or fitting calculations. Both Python
+policy suites (8 and 9 tests), formatting and whitespace checks passed.
+
+The focused filter selected `Eden.Protocol.Tests.Mining`, `MiningMissionTests`, `TargetingTests`,
+`TargetLockSessionTests`, `CharacterSettingsTests`, `CharacterSettingsServiceTests`, `CharacterLogoffTests`,
+`TypedFlightTests`, `ModuleBurnout`, `AutoMiningPackageTests`, `ModRuntimeTests`, `ModFoundationTests`,
+`ModLauncherApiTests`, `ServerServicesTests` and `GameplayDependenciesTests` by fully qualified name substring.
+The full .NET suite was not run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The pinned archive checks compile the panel without starting the game.
+
+### Optional maintainer checks
+
+Open AutoMining through Eden Mods, save a filter, and verify the status, beam and target change when the first rock depletes.
+
+## AutoMining station hauling
+
+The **Unload station** list contains NPC stations in the current system. **Save Hauling** stores that station and a
+whole-number threshold from 1 to 100 percent on the selected character. The default is 95 percent. Selecting
+**Keep ore on board** disables hauling. Changes saved during a trip apply to subsequent trips.
+
+The live world uses the same ore-hold selection and capacity rules as manual mining. Reaching the threshold stops
+automatic repeats after a paid cycle. A hold with ore aboard and too little room for the next eligible unit can also
+trigger a trip below the threshold. The unload transaction moves only ore from the active mining destination hold into
+the pilot's Item Hangar. The trip waits for an active manual mining cycle to stop before departing.
+
+The session issues regular flight commands for warp, approach, dock, undock and return. It publishes the normal
+session changes and waits for the native flight binding after undock before issuing the return order. It retains the
+mining origin across trips. Manual movement during mining allows the next trip to choose a new origin, and accepted
+manual navigation during hauling ends the run. Docking and transfer rejections pause the run and display the reason.
+After returning, AutoMining checks for matching ore within mining range before resuming.
+
+Hold observations, NPC-station docking, the undock position, character settings and inventory transfers use the
+resident world during live sessions. SQLite receives detached checkpoint projections. The client panel is bundled as
+AutoMining 1.1.0. Inert inspection of build 3662168 confirmed `GameUI.OnSessionChanged` activates the station and
+inflight views, Michelle owns the ballpark, and the bundled station picker uses `carbonui.control.combo.Combo`.
+Original archive SHA-256: `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+
+The fixed origin and resumed mining were compared with upstream v1.2.27 source at
+`0986770cbc186287e9e72c0eb2377fcf1c670c89` and its earlier hauling release. Carbon Destiny remains the reference
+for movement, and Eden retains its existing warp calculations.
+[Upstream hauling](https://github.com/V0nCleef/EveJS-Automining/blob/v1.2.27/lib/hauling.js) ·
+[Upstream return qualification](https://github.com/V0nCleef/EveJS-Automining/releases/tag/v1.2.23) ·
+[EVE University mining](https://wiki.eveuniversity.org/Mining#Mining_mechanics) ·
+[EVE University timers](https://wiki.eveuniversity.org/Timers#Session_Change_Timer) ·
+[Carbon Destiny](https://github.com/carbonengine/destiny/tree/27ee40b38a563d29054b32f64c3ebc87fabaec1f)
+
+### Automated validation
+
+The final resident implementation built with zero warnings or errors in 6.54 seconds. The focused .NET run passed
+223 cases in 2 minutes 45 seconds. Three two-trip cases exercise the threshold and the next-unit capacity boundary,
+including the 100-percent setting. They verify station and space session changes, waiting for the native bind, ore and
+ledger conservation, and reopened settings and inventory. Other cases cover manual navigation, a rejected transfer,
+a depleted return site and resident character-setting projection and reopen. Warmed hold reads issued zero SQL commands,
+opened zero connections and performed zero fit calculations. Both Python policy suites passed (8 and 9 tests).
+
+The final filter matched these fully qualified name substrings: `MiningTests.AutoMining`,
+`MiningTests.SkillPointCallWithDueMiningCycle`, `MiningMissionTests`, `AutoMiningPackageTests`,
+`ModRuntimeTests`, `ModLauncherApiTests`, `FlightSessionTests`, `StationUndockTests`, `AutoNavigationTests`,
+`TranslocationTests`, `PilotServicesTests`, `CharacterLogoffTests`, `CharacterSettingsTests`,
+`CharacterSettingsServiceTests`, `PilotInventoryTests` and `GameplayDependenciesTests`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The pinned archive test compiles the panel without starting the game.
+
+### Optional maintainer checks
+
+Choose a station in the panel, then watch one unload and return cycle through the station and in-flight views.
+
+## AutoMining approach, survey, and harvest handling
+
+AutoMining 1.2.0 saves resource family, target order, approach, and jettison in the active character's settings.
+Ore, nearest target, stationary operation, and jettison off are the defaults. Options can change while mining and
+take effect on the next target selection. Finish the haul trip or stop the mod before changing options during a trip.
+
+Approach uses the normal Destiny follow order against a visible target and stops following once it is in harvesting
+and locking range. Choosing largest or smallest requires an integrated mining scanner and an online survey chipset.
+The resident survey reads current quantities within 250 km and ranks visible, compatible deposits by remaining cubic
+metres. Equal volumes sort by surface distance, then object ID.
+
+Ore and ice use the native mining effect. Gas uses the native cloud-harvesting effect. Existing mining operations own
+fitting, skills, range, cycle timing, target depletion, and resource-specific holds. The filter applies to ore only.
+
+Jettison uses the saved unload threshold and takes priority over station hauling when enabled. The resident cargo
+transaction uses the normal cargo container, loot rights, capacity, three-minute cooldown, and two-hour expiry. It
+moves only the selected resource family from the active harvest hold and can split a stack to fit the can. The owner
+receives inventory and ballpark updates at launch. Other pilots see the can on normal scene refresh. Contents and the
+shared cooldown survive checkpoint and reopen.
+
+Build 3662168 uses the native survey chipset attributes and gas harvesting effect. Original archive SHA-256:
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Upstream v1.2.27
+(`0986770cbc186287e9e72c0eb2377fcf1c670c89`) informed the volume ordering. Carbon Destiny informed the approach
+behavior. [Upstream target selection](https://github.com/V0nCleef/EveJS-Automining/blob/v1.2.27/lib/targets.js) ·
+[Carbon Destiny](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp#L2549) ·
+[EVE University mining](https://wiki.eveuniversity.org/Mining) ·
+[EVE University ice harvesting](https://wiki.eveuniversity.org/Ice_harvesting) ·
+[EVE University gas harvesting](https://wiki.eveuniversity.org/Gas_cloud_harvesting)
+
+### Automated validation
+
+The solution built with zero warnings or errors in 10.21 seconds. The focused .NET run passed 229 cases in
+3 minutes 4 seconds, including the pinned client archive compilation, existing station hauling, native survey and
+jettison calls, and the new approach, resource selection, and cooldown tests. The automated approach case reached
+harvesting range and stopped after a manual navigation order. The jetcan split and expiry issued zero world SQL commands
+and opened zero world SQL connections in the warmed resident tests. The catalog and formatting policy suites passed
+8 and 9 Python tests respectively. Formatting verification passed.
+
+The final filter selected `Eden.Protocol.Tests.Mining.MiningTests.`, `MiningCrystalTests`, `MiningMissionTests`,
+`JettisonTests`, `InformationTests`, `AutoMiningPackageTests`, `ModRuntimeTests`, `FlightSessionTests`,
+`StationUndockTests`, `AutoNavigationTests`, `CharacterSettingsTests`, `CharacterSettingsServiceTests`,
+`GameplayDependenciesTests`, `PlanetaryIndustryTests`, and `PilotInventoryTests`.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Open the panel in space, save options, and check approach, survey order, and native effect display.
+Jettison once and open the cargo container from the overview.
+
 ## Deep-core mining and Morphite
 
 The three Mercoxit variants in the pinned belt catalog require a deep-core module. The static Deep Core Mining Laser I,

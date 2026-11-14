@@ -9,7 +9,7 @@ public interface ICargoJettison
     IReadOnlyList<InventoryChange> Deposit(long pilotId, long canId, InventoryMoveRequest request, long now);
 }
 
-public sealed record JettisonResult(IReadOnlyList<InventoryChange> Changes, long RetryAfter = 0);
+public sealed record JettisonResult(IReadOnlyList<InventoryChange> Changes, long RetryAfter = 0, WreckContact? Contact = null);
 
 public static class JetcanRules
 {

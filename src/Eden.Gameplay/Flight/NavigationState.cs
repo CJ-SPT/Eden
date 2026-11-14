@@ -94,7 +94,7 @@ public sealed class NavigationState
         {
             return false;
         }
-        if (origin.DistanceTo(anchor) - hull.ShipRadius < 150_000)
+        if (origin.DistanceTo(anchor) - hull.ShipRadius < NavigationDefinitions.MinimumWarpDistance)
         {
             return false;
         }

@@ -12,24 +12,41 @@ using Eden.Gameplay.Loot;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
-using Eden.World.Propulsion;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Loot;
+
+internal sealed record JetcanView(IReadOnlyList<WreckContact> Contacts, long NextExpiry);
 
 [Injectable]
 internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
 {
     public JettisonResult Jettison(long pilotId, long shipId, IReadOnlyList<long> itemIds, long now)
     {
+        using WorldActionScope action = new(database, new(pilots: [pilotId], ships: [shipId]));
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Jettison(action.World, catalog, pilotId, shipId, itemIds, now);
+        action.Commit();
+        return result;
+    }
+
+    internal static JettisonResult Jettison(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        IReadOnlyList<long> itemIds,
+        long now,
+        bool allowSplit = false
+    )
+    {
         if (itemIds.Count is 0 or > JetcanRules.MaximumItemsPerCall)
         {
             return new([]);
         }
-        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId], ships: [shipId]) };
-        using var transaction = world.Database.BeginTransaction();
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var (pilot, system, position) = InSpace(world, catalog, pilotId);
         var ship = pilot.ActiveShip;
         var hull = catalog.RequireItem(ship.TypeId);
@@ -44,17 +61,26 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
         }
         var type = catalog.RequireItem(JetcanRules.TypeId);
         var items = LoadCargo(world, catalog, pilot, itemIds).ToDictionary(i => i.Row.Id);
-        List<Cargo> selected = [];
+        List<(Cargo Cargo, int Quantity)> selected = [];
         double available = Capacity(type);
         foreach (long id in itemIds.Distinct())
         {
-            if (
-                items.TryGetValue(id, out var cargo)
-                && cargo.Item.Volume * cargo.Item.Quantity <= available + InventoryDefinitions.ResourceTolerance
-            )
+            if (!items.TryGetValue(id, out var cargo))
             {
-                selected.Add(cargo);
-                available -= cargo.Item.Volume * cargo.Item.Quantity;
+                continue;
+            }
+            var item = cargo.Item;
+            double remaining = available + InventoryDefinitions.ResourceTolerance;
+            if (item.Volume * item.Quantity <= remaining)
+            {
+                selected.Add((cargo, item.Quantity));
+                available -= item.Volume * item.Quantity;
+            }
+            else if (allowSplit && !item.Singleton && item.Volume > 0 && item.Volume <= remaining)
+            {
+                int quantity = checked((int)Math.Floor(remaining / item.Volume));
+                selected.Add((cargo, quantity));
+                available -= item.Volume * quantity;
             }
         }
         if (selected.Count == 0)
@@ -62,11 +88,17 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
             return new([]);
         }
 
+        long canId = world.Next("WorldJetcan", JetcanRules.FirstId - 1);
+        if (!JetcanRules.IsJetcan(canId))
+        {
+            throw new InvalidDataException("No container identity is available.");
+        }
         var point = JetcanRules.LaunchPosition(position, hull.Radius ?? 0, type.Radius ?? 0);
         var can = world
             .Add(
                 new SavedJetcan
                 {
+                    Id = canId,
                     OwnerId = pilotId,
                     ShipId = ship.Id,
                     CorporationId = pilot.CorporationId,
@@ -78,20 +110,16 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
                 }
             )
             .Entity;
-        world.SaveChanges();
-
         cooldown ??= world.Add(new SavedJettisonCooldown { PilotId = pilotId }).Entity;
         cooldown.ReadyAt = checked(now + JetcanRules.Cooldown);
-        var changes = selected.Select(i => Move(i, can.Id)).ToArray();
-        world.SaveChanges();
-        transaction.Commit();
-        return new(changes);
+        var changes = selected.SelectMany(stack => Transfer(world, catalog, stack.Cargo, can.Id, stack.Quantity)).ToArray();
+        return new(changes, Contact: Contact(type, can));
     }
 
     public IReadOnlyList<InventoryChange> Deposit(long pilotId, long canId, InventoryMoveRequest request, long now)
     {
-        using WorldDbContext world = new(database.Path) { Participants = new(pilots: [pilotId]) };
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope action = new(database, new(pilots: [pilotId]));
+        var world = action.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var (pilot, can) = Access(world, catalog, pilotId, canId, now);
         var (ids, source, flag, quantity) = request;
@@ -119,31 +147,29 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
             throw new CargoCapacityException(Math.Max(0, capacity - used), added);
         }
         var changes = items.SelectMany(i => Transfer(world, catalog, i, can.Id, quantity ?? i.Item.Quantity)).ToArray();
-        world.SaveChanges();
-        transaction.Commit();
+        action.Commit();
         return changes;
     }
 
     private sealed record Cargo(OwnedItem Row, InventoryItem Item);
 
-    private static Cargo[] LoadCargo(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, IReadOnlyList<long> ids) =>
-        world
-            .Set<OwnedItem>()
-            .Where(i =>
-                ids.Contains(i.Id)
-                && i.OwnerId == pilot.Id
-                && i.LocationId == pilot.ActiveShipId
-                && !i.Online
-                && i.TypeId != CourierRules.PackageType
-                && !world.Set<IndustryJob>().Any(j => j.BlueprintId == i.Id && j.Status == IndustryJobStatus.Installed)
-                && !world.Set<OwnedItem>().Any(child => child.LocationId == i.Id)
-                && !world.Ships.Any(child => child.StoredInId == i.Id)
+    private static Cargo[] LoadCargo(WorldAction world, CatalogDbContext catalog, Pilot pilot, IReadOnlyList<long> ids)
+    {
+        long ship = pilot.ActiveShipId;
+        return ids.Distinct()
+            .Select(id => world.Set<OwnedItem>().Find(id))
+            .OfType<OwnedItem>()
+            .Where(item => item.OwnerId == pilot.Id && item.LocationId == ship && !item.Online && item.TypeId != CourierRules.PackageType)
+            .Select(item => new Cargo(item, PilotInventoryStore.Read(catalog, item)))
+            .Where(cargo =>
+                JetcanRules.CanJettison(cargo.Item)
+                && !world.Filter<OwnedItem>(child => child.LocationId == cargo.Row.Id).Any()
+                && !world.Filter<Ship>(child => child.StoredInId == cargo.Row.Id).Any()
+                && !world.Filter<IndustryJob>(job => job.BlueprintId == cargo.Row.Id && job.Status == IndustryJobStatus.Installed).Any()
             )
-            .OrderBy(i => i.Id)
-            .AsEnumerable()
-            .Select(i => new Cargo(i, PilotInventoryStore.Read(catalog, i)))
-            .Where(i => JetcanRules.CanJettison(i.Item))
+            .OrderBy(cargo => cargo.Row.Id)
             .ToArray();
+    }
 
     private static InventoryChange Move(Cargo cargo, long destination)
     {
@@ -153,7 +179,7 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
     }
 
     private static IReadOnlyList<InventoryChange> Transfer(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Cargo cargo,
         long destination,
@@ -163,19 +189,19 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
             ? [Move(cargo, destination)]
             : InventoryPersistence.SplitTransfer(world, catalog, cargo.Row, cargo.Item, destination, (int)InventoryFlag.None, quantity);
 
-    private static (Pilot Pilot, int System, SpacePosition Position) InSpace(WorldDbContext world, CatalogDbContext catalog, long pilotId)
+    private static (Pilot Pilot, int System, SpacePosition Position) InSpace(WorldAction world, CatalogDbContext catalog, long pilotId)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId);
         if (pilot?.ActiveShip.Position is not { } position)
         {
             throw new InvalidDataException("Access jettisoned cargo from a ship in space.");
         }
-        PilotSpatialModuleStore.RequireUncloaked(world, pilot.ActiveShipId);
+        world.RequireUncloaked(pilot.ActiveShipId);
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         return (pilot, system, new(position.X, position.Y, position.Z));
     }
 
-    internal static (Pilot Pilot, SavedJetcan Can) Access(WorldDbContext world, CatalogDbContext catalog, long pilotId, long id, long now)
+    internal static (Pilot Pilot, SavedJetcan Can) Access(WorldAction world, CatalogDbContext catalog, long pilotId, long id, long now)
     {
         var (pilot, system, position) = InSpace(world, catalog, pilotId);
         var can = world.Set<SavedJetcan>().Find(id);
@@ -197,16 +223,15 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
             ? type.Capacity.Value
             : throw new InvalidDataException("Missing jetcan capacity.");
 
-    private static InventoryItem[] Contents(WorldDbContext world, CatalogDbContext catalog, long id) =>
+    private static InventoryItem[] Contents(WorldAction world, CatalogDbContext catalog, long id) =>
         world
-            .Set<OwnedItem>()
-            .Where(i => i.LocationId == id)
+            .Filter<OwnedItem>(i => i.LocationId == id)
             .OrderBy(i => i.Id)
             .AsEnumerable()
             .Select(i => PilotInventoryStore.Read(catalog, i))
             .ToArray();
 
-    internal static WreckInventory Read(WorldDbContext world, CatalogDbContext catalog, long pilotId, long id, long now)
+    internal static WreckInventory Read(WorldAction world, CatalogDbContext catalog, long pilotId, long id, long now)
     {
         var (_, can) = Access(world, catalog, pilotId, id, now);
         var type = catalog.RequireItem(JetcanRules.TypeId);
@@ -225,35 +250,73 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
         return new(item, Contents(world, catalog, id), Capacity(type));
     }
 
-    internal static WreckContact[] Contacts(WorldDbContext world, CatalogDbContext catalog, int system, long now)
+    internal static WreckContact[] Contacts(CatalogDbContext catalog, IReadOnlyList<SavedJetcan> rows)
     {
-        var rows = world
-            .Set<SavedJetcan>()
-            .AsNoTracking()
-            .Where(c => c.SystemId == system && c.ExpiresAt > now)
-            .OrderBy(c => c.Id)
-            .ToArray();
-        if (rows.Length == 0)
+        if (rows.Count == 0)
         {
             return [];
         }
         var type = catalog.RequireItem(JetcanRules.TypeId);
-        return rows.Select(c => new WreckContact(
-                c.Id,
-                c.ShipId,
-                c.OwnerId,
-                c.CorporationId,
-                type.Id,
-                type.Name,
-                system,
-                new(c.X, c.Y, c.Z),
-                type.Mass ?? 0,
-                (float)(type.Radius ?? 0),
-                false,
-                type.GroupId,
-                type.CategoryId
-            ))
-            .ToArray();
+        return rows.Select(can => Contact(type, can)).ToArray();
+    }
+
+    private static WreckContact Contact(CatalogItemDefinition type, SavedJetcan can) =>
+        new(
+            can.Id,
+            can.ShipId,
+            can.OwnerId,
+            can.CorporationId,
+            type.Id,
+            type.Name,
+            can.SystemId,
+            new(can.X, can.Y, can.Z),
+            type.Mass ?? 0,
+            (float)(type.Radius ?? 0),
+            false,
+            type.GroupId,
+            type.CategoryId
+        );
+
+    internal static SavedJetcan[] List(WorldAction world, int system) =>
+        world.Filter<SavedJetcan>(can => can.SystemId == system).OrderBy(can => can.Id).ToArray();
+
+    internal static JetcanView ReadContacts(LiveWorld live, WorldDatabase database, int system, long now)
+    {
+        using var ownership = live.EnterShared("jetcan contacts");
+        var rows = live.Economy.Inspect(world => List(world, system));
+        if (rows.Any(can => can.ExpiresAt <= now))
+        {
+            using var action = live.Economy.Begin(new(systems: [system]));
+            foreach (var can in List(action, system).Where(can => can.ExpiresAt <= now))
+            {
+                action.Remove(can);
+            }
+            action.Commit();
+        }
+        var active = rows.Where(can => can.ExpiresAt > now).ToArray();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return new(Array.AsReadOnly(Contacts(catalog, active)), active.Select(can => can.ExpiresAt).DefaultIfEmpty(long.MaxValue).Min());
+    }
+
+    internal static IReadOnlyList<InventoryChange> Take(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long canId,
+        IReadOnlyList<long> items,
+        int? quantity,
+        long now,
+        InventoryFlag destinationFlag
+    )
+    {
+        var (pilot, can) = Access(world, catalog, pilotId, canId, now);
+        var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, canId, items, quantity, destinationFlag);
+        if (!world.Filter<OwnedItem>(item => item.LocationId == canId).Any())
+        {
+            world.Remove(can);
+        }
+        return changes;
     }
 
     internal static void Expire(WorldDbContext world, long now, int? system = null)

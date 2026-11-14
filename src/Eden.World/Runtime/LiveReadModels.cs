@@ -85,18 +85,44 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
 
     internal bool UnfinishedMissiles(int system, Func<bool> load) => Read(_unfinishedMissiles, system, load);
 
+    private readonly ResidentSnapshot<(long Pilot, long Ship), IReadOnlyList<AutoMiningModule>> _autoMiningModules = new(
+        "resident.autoMiningModules",
+        "WorldFitRevision",
+        "WorldAccount",
+        "WorldConfigurationState"
+    );
+
+    internal IReadOnlyList<AutoMiningModule> AutoMiningModules(long pilot, long ship, Func<IReadOnlyList<AutoMiningModule>> load) =>
+        Read(_autoMiningModules, (pilot, ship), load);
+
+    private readonly ResidentSnapshot<(long Pilot, long Ship, MiningFamily Family), AutoMiningHold> _autoMiningHolds = new(
+        "resident.autoMiningHold",
+        "WorldFitRevision",
+        "WorldConfigurationState",
+        "WorldAccount",
+        "WorldItem",
+        "ShipMiningHoldContents"
+    );
+
+    internal AutoMiningHold AutoMiningHold(long pilot, long ship, MiningFamily family, Func<AutoMiningHold> load) =>
+        Read(_autoMiningHolds, (pilot, ship, family), load);
+
     private readonly ResidentSnapshot<int, IReadOnlyList<StaticSpaceObject>> _asteroids = new("resident.asteroids", "WorldAsteroid");
     private readonly ResidentSnapshot<(int System, MiningFamily Family, long Catalog), MiningSiteView> _miningSites = new(
         "resident.miningSites",
         "WorldMiningSite"
     );
 
+    private readonly ResidentSnapshot<int, JetcanView> _jetcans = new("resident.jetcans", "WorldJetcan");
+
+    internal IReadOnlyList<WreckContact> Jetcans(int system, long now) =>
+        Read(_jetcans, system, () => JetcanStore.ReadContacts(owner, database, system, now), now, view => view.NextExpiry).Contacts;
+
     private sealed record WreckView(IReadOnlyList<WreckContact> Contacts, long NextExpiry, FrozenSet<long> Items);
 
     private readonly ResidentSnapshot<int, WreckView> _wrecks = new(
         "resident.wrecks",
         "WorldWreck",
-        "WorldJetcan",
         "WorldPlanetaryLaunch",
         "WorldPlanetaryOffice",
         "WorldItemMembership",
@@ -238,10 +264,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                         .Where(l => l.SystemId == system && l.ExpiresAt > now)
                         .Min(l => (long?)l.ExpiresAt)
                     ?? long.MaxValue;
-                long jetcanExpiry =
-                    world.Set<SavedJetcan>().Where(c => c.SystemId == system && c.ExpiresAt > now).Min(c => (long?)c.ExpiresAt)
-                    ?? long.MaxValue;
-                next = Math.Min(next, Math.Min(launchExpiry, jetcanExpiry));
+                next = Math.Min(next, launchExpiry);
                 var items = world.Set<OwnedItem>().Where(i => ids.Contains(i.LocationId)).Select(i => i.Id).ToArray().ToFrozenSet();
                 return new WreckView(contacts, next, items);
             },
@@ -326,6 +349,18 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _mailHead.Observe(changes);
         _listHead.Observe(changes);
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
+        _autoMiningModules.Observe(changes, (key, change) => change.Table != "WorldFitRevision" || key.Pilot == change.Id);
+        _autoMiningHolds.Observe(
+            changes,
+            (key, change) =>
+                change.Table switch
+                {
+                    "WorldFitRevision" => key.Pilot == change.Id,
+                    "ShipMiningHoldContents" => key.Ship == change.Id,
+                    "WorldItem" => !change.Resident,
+                    _ => true,
+                }
+        );
         ObserveDefenseProfiles(changes);
         if (changes.Any(change => change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id)))
         {
@@ -370,6 +405,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _fits.Clear();
         _defenseProfiles.Clear();
         _asteroids.Clear();
+        _autoMiningModules.Clear();
+        _autoMiningHolds.Clear();
         _unfinishedMissiles.Clear();
         _miningSites.Clear();
         _structures.Clear();
