@@ -15,26 +15,32 @@ internal sealed partial class PilotAutoMiningStore
 {
     private const string HaulKey = "eden.automining.hauling";
 
-    public AutoMiningHaulSettings ReadHauling(long pilotId)
-    {
-        var saved = ReadSetting(pilotId, HaulKey);
-        return
-            saved?.Split(':') is [var station, var threshold]
-            && long.TryParse(station, NumberStyles.None, CultureInfo.InvariantCulture, out long stationId)
-            && stationId <= int.MaxValue
-            && int.TryParse(threshold, NumberStyles.None, CultureInfo.InvariantCulture, out int percent)
-            && percent is >= 1 and <= 100
+    public AutoMiningHaulSettings ReadHauling(long pilotId) => ParseHauling(ReadSetting(pilotId, HaulKey));
+
+    private static AutoMiningHaulSettings ParseHauling(string? saved) =>
+        saved?.Split(':') is [var station, var threshold]
+        && long.TryParse(station, NumberStyles.None, CultureInfo.InvariantCulture, out long stationId)
+        && stationId <= int.MaxValue
+        && int.TryParse(threshold, NumberStyles.None, CultureInfo.InvariantCulture, out int percent)
+        && percent is >= 1 and <= 100
             ? new(stationId, percent)
             : AutoMiningHaulSettings.Disabled;
-    }
 
     public void SaveHauling(long pilotId, int systemId, AutoMiningHaulSettings hauling)
+    {
+        CheckHaulStation(systemId, hauling);
+        SaveSetting(pilotId, HaulKey, FormatHauling(hauling));
+    }
+
+    private static string FormatHauling(AutoMiningHaulSettings hauling) =>
+        FormattableString.Invariant($"{hauling.StationId}:{hauling.Threshold}");
+
+    private void CheckHaulStation(int systemId, AutoMiningHaulSettings hauling)
     {
         if (hauling.Enabled && !Stations(systemId).Any(station => station.Id == hauling.StationId))
         {
             throw new InvalidDataException("Choose an NPC station in your current solar system.");
         }
-        SaveSetting(pilotId, HaulKey, FormattableString.Invariant($"{hauling.StationId}:{hauling.Threshold}"));
     }
 
     public IReadOnlyList<AutoMiningStation> Stations(int systemId)

@@ -1,10 +1,20 @@
 """AutoMining controls for the build-3662168 Eden Mods menu."""
 import carbonui.const as uiconst
+from carbonui.button.const import ButtonVariant
+from carbonui.button.group import ButtonGroup, ButtonSizeMode
 from carbonui.control.button import Button
+from carbonui.control.checkbox import Checkbox
 from carbonui.control.combo import Combo
+from carbonui.control.scrollContainer import ScrollContainer
 from carbonui.control.singlelineedits.singleLineEditText import SingleLineEditText
 from carbonui.control.window import Window
-from eve.client.script.ui.control.eveLabel import EveLabelMedium
+from carbonui.primitives.container import Container
+from carbonui.primitives.containerAutoSize import ContainerAutoSize
+from carbonui.uiconst import AxisAlignment
+from eve.client.script.ui.control.entries.generic import Generic
+from eve.client.script.ui.control.entries.util import GetFromClass
+from eve.client.script.ui.control.eveLabel import EveHeaderSmall, EveLabelMedium
+from eve.client.script.ui.control.eveScroll import Scroll
 
 
 def register(api):
@@ -14,8 +24,19 @@ def register(api):
     sm.RegisterNotify(panel)
 
 
+class MiningWindow(Window):
+    default_windowID = 'eden_automining'
+    default_width = 660
+    default_height = 680
+    default_minSize = (480, 340)
+
+
 class MiningPanel(object):
     __notifyevents__ = ['OnEdenAutoMiningStatus']
+
+    FAMILY_OPTIONS = [('Ore', 0), ('Ice', 1), ('Gas', 2)]
+    ORDER_OPTIONS = [('Nearest first', 0), ('Largest surveyed deposit', 1), ('Smallest surveyed deposit', 2)]
+    KEEP_HARVEST = ('Keep harvest on board', 0)
 
     def __init__(self):
         self.window = None
@@ -23,38 +44,127 @@ class MiningPanel(object):
         self.busy = False
 
     def open(self, *args):
+        if self.is_current(self.revision):
+            self.window.Maximize()
+            return
         if self.busy:
             return
         self.revision += 1
-        self.window = Window.Open(windowID='eden_automining', caption='AutoMining')
-        self.window.SetMinSize((380, 520), refresh=True)
-        self.window.content.Flush()
-        parent = self.window.content
-        self.status = EveLabelMedium(parent=parent, align=uiconst.TOTOP, padBottom=8)
-        EveLabelMedium(parent=parent, text='Ore groups, separated by commas. Blank allows any ore.',
-                       align=uiconst.TOTOP, padBottom=4)
-        self.ore_filter = SingleLineEditText(parent=parent, align=uiconst.TOTOP, maxLength=512, padBottom=8)
-        self.family_options = [('Ore', 0), ('Ice', 1), ('Gas', 2)]
-        self.order_options = [('Nearest target', 0), ('Largest surveyed deposit', 1), ('Smallest surveyed deposit', 2)]
-        self.approach_options = [('Stay in place', 0), ('Approach targets on this grid', 1)]
-        self.jettison_options = [('Use station setting below', 0), ('Jettison harvest into a cargo container', 1)]
-        self.family = Combo(parent=parent, align=uiconst.TOTOP, options=self.family_options, padBottom=4)
-        self.order = Combo(parent=parent, align=uiconst.TOTOP, options=self.order_options, padBottom=4)
-        self.approach = Combo(parent=parent, align=uiconst.TOTOP, options=self.approach_options, padBottom=4)
-        self.jettison = Combo(parent=parent, align=uiconst.TOTOP, options=self.jettison_options, padBottom=8)
-        EveLabelMedium(parent=parent, text='Unload station in this system', align=uiconst.TOTOP, padBottom=4)
-        self.station = Combo(parent=parent, align=uiconst.TOTOP, options=[('Keep harvest on board', 0)], padBottom=8)
-        EveLabelMedium(parent=parent, text='Unload at hold percentage (1-100)', align=uiconst.TOTOP, padBottom=4)
-        self.threshold = SingleLineEditText(parent=parent, align=uiconst.TOTOP, maxLength=3, padBottom=8)
+        self.window = MiningWindow.Open(caption='AutoMining')
+        content = self.window.content
+        self.status = EveLabelMedium(parent=content, text='Loading status...', align=uiconst.TOTOP, padBottom=8)
+        actions = ButtonGroup(parent=content, align=uiconst.TOTOP, button_alignment=AxisAlignment.START,
+                              button_size_mode=ButtonSizeMode.DYNAMIC, padBottom=10)
+        actions.add_button(Button(label='Start', func=self.start, variant=ButtonVariant.PRIMARY))
+        actions.add_button(Button(label='Stop', func=self.stop))
+
+        footer = ContainerAutoSize(parent=content, align=uiconst.TOBOTTOM, alignMode=uiconst.TOTOP)
+        self.notice = EveLabelMedium(parent=footer, align=uiconst.TOTOP, padTop=6, maxLines=2, showEllipsis=True)
+        footer_actions = ButtonGroup(parent=footer, align=uiconst.TOTOP, button_alignment=AxisAlignment.START,
+                                     button_size_mode=ButtonSizeMode.DYNAMIC)
+        footer_actions.add_button(Button(label='Apply settings', func=self.apply, variant=ButtonVariant.PRIMARY))
+        footer_actions.add_button(Button(label='Reload', func=self.reload))
+        footer_actions.add_button(Button(label='Clear filter', func=self.clear_filter))
+
+        body = ScrollContainer(parent=content, align=uiconst.TOALL, alignMode=uiconst.TOTOP, padBottom=4)
+        self.build_options(body)
+        self.build_filter(body)
+        self.family.OnChange = self.family_changed
         self.stations = []
-        for label, callback in [('Save Filter', self.save_filter), ('Save Options', self.save_options),
-                                ('Save Hauling', self.save_hauling), ('Start', self.start), ('Stop', self.stop),
-                                ('Refresh Status', self.refresh)]:
-            Button(parent=parent, label=label, func=callback, align=uiconst.TOTOP, padBottom=4)
         self.request('GetStatus', load_settings=True)
 
+    def build_options(self, body):
+        heading = Container(parent=body, align=uiconst.TOTOP, height=50)
+        family = Container(parent=heading, align=uiconst.TOLEFT_PROP, width=0.36, padRight=12)
+        order = Container(parent=heading, align=uiconst.TOALL)
+        EveLabelMedium(parent=family, text='Resource', align=uiconst.TOTOP, padBottom=2)
+        EveLabelMedium(parent=order, text='Target order', align=uiconst.TOTOP, padBottom=2)
+        self.family = Combo(parent=family, align=uiconst.TOTOP, options=self.FAMILY_OPTIONS)
+        self.order = Combo(parent=order, align=uiconst.TOTOP, options=self.ORDER_OPTIONS)
+
+        toggles = Container(parent=body, align=uiconst.TOTOP, height=28, padTop=4, padBottom=6)
+        move = Container(parent=toggles, align=uiconst.TOLEFT_PROP, width=0.5)
+        full = Container(parent=toggles, align=uiconst.TOALL)
+        self.approach = Checkbox(parent=move, align=uiconst.TOTOP, text='Approach out-of-range targets')
+        self.jettison = Checkbox(parent=full, align=uiconst.TOTOP, text='Jettison when unloading')
+
+        hauling = Container(parent=body, align=uiconst.TOTOP, height=50, padBottom=10)
+        threshold = Container(parent=hauling, align=uiconst.TORIGHT, width=108, padLeft=12)
+        station = Container(parent=hauling, align=uiconst.TOALL)
+        EveLabelMedium(parent=station, text='Unload station', align=uiconst.TOTOP, padBottom=2)
+        EveLabelMedium(parent=threshold, text='Unload hold %', align=uiconst.TOTOP, padBottom=2)
+        self.station = Combo(parent=station, align=uiconst.TOTOP, options=[self.KEEP_HARVEST])
+        self.threshold = SingleLineEditText(parent=threshold, align=uiconst.TOTOP, maxLength=3, setvalue='95')
+
+    def build_filter(self, body):
+        self.ore_groups = []
+        self.active_groups = set()
+        self.filter_summary = EveLabelMedium(parent=body, align=uiconst.TOTOP, padBottom=6)
+        lists = Container(parent=body, align=uiconst.TOTOP, height=216, padBottom=4)
+        available = Container(parent=lists, align=uiconst.TOLEFT_PROP, width=0.46, padRight=8)
+        arrows = Container(parent=lists, align=uiconst.TOLEFT, width=38, padRight=8, padTop=76)
+        active = Container(parent=lists, align=uiconst.TOALL)
+        self.available_title = EveHeaderSmall(parent=available, align=uiconst.TOTOP, padBottom=4)
+        self.active_title = EveHeaderSmall(parent=active, align=uiconst.TOTOP, padBottom=4)
+        self.search_available = SingleLineEditText(parent=available, align=uiconst.TOTOP, hintText='Search available', padBottom=4)
+        self.search_active = SingleLineEditText(parent=active, align=uiconst.TOTOP, hintText='Search active', padBottom=4)
+        self.available = Scroll(parent=available, align=uiconst.TOALL, hasUnderlay=True, multiSelect=True)
+        self.active = Scroll(parent=active, align=uiconst.TOALL, hasUnderlay=True, multiSelect=True)
+        Button(parent=arrows, align=uiconst.TOTOP, label=u'\u203a', hint='Add selected ore groups',
+               func=self.add_selected, padBottom=6)
+        Button(parent=arrows, align=uiconst.TOTOP, label=u'\u2039', hint='Remove selected ore groups',
+               func=self.remove_selected)
+        self.search_available.OnChange = self.refresh_available
+        self.search_active.OnChange = self.refresh_active
+        self.refresh_filter()
+
+    def family_changed(self, *args):
+        self.refresh_filter_summary()
+
+    def refresh_filter(self):
+        self.refresh_filter_summary()
+        self.refresh_available()
+        self.refresh_active()
+
+    def refresh_filter_summary(self):
+        is_ore = self.family.GetValue() == 0
+        if is_ore:
+            summary = '%d selected' % len(self.active_groups) if self.active_groups else 'All compatible ore'
+        else:
+            summary = 'Saved ore filter applies when Resource is set to Ore'
+        self.filter_summary.SetText('Ore filter: ' + summary)
+
+    def refresh_available(self, *args):
+        available = [group for group in self.ore_groups if group not in self.active_groups]
+        self.available_title.SetText('Available ore groups (%d)' % len(available))
+        self.load_groups(self.available, self.search_available, available, 'All groups are in the filter.')
+
+    def refresh_active(self, *args):
+        active = sorted(self.active_groups, key=lambda group: group.lower())
+        self.active_title.SetText('Active filter (%d)' % len(active))
+        self.load_groups(self.active, self.search_active, active, 'Empty - all compatible ore groups.')
+
+    def load_groups(self, scroll, search, groups, empty):
+        query = search.GetValue().strip().lower()
+        entries = [GetFromClass(Generic, {'label': group, 'oreGroup': group})
+                   for group in groups if query in group.lower()]
+        scroll.Load(contentList=entries, noContentHint='No matching groups.' if query else empty)
+
+    def add_selected(self, *args):
+        self.active_groups.update(entry.oreGroup for entry in self.available.GetSelected())
+        self.refresh_filter()
+
+    def remove_selected(self, *args):
+        self.active_groups.difference_update(entry.oreGroup for entry in self.active.GetSelected())
+        self.refresh_filter()
+
+    def clear_filter(self, *args):
+        self.active_groups.clear()
+        self.refresh_filter()
+        self.notice.SetText('Filter cleared. Apply settings to save.')
+
     def session_changed(self, change):
-        if ('charid' in change or 'solarsystemid2' in change) and self.window is not None and not self.window.destroyed:
+        if ('charid' in change or 'solarsystemid2' in change) and self.is_current(self.revision):
             self.revision += 1
             self.window.Close()
 
@@ -62,20 +172,18 @@ class MiningPanel(object):
         if self.is_current(self.revision):
             self.status.SetText(status)
 
-    def save_filter(self, *args):
-        self.request('SaveFilter', (self.ore_filter.GetValue(),), load_filter=True)
-
-    def save_options(self, *args):
-        self.request('SaveOptions', (self.family.GetValue(), self.order.GetValue(),
-                                    bool(self.approach.GetValue()), bool(self.jettison.GetValue())), load_options=True)
-
-    def save_hauling(self, *args):
+    def apply(self, *args):
         try:
             percent = int(self.threshold.GetValue())
+            if not 1 <= percent <= 100:
+                raise ValueError()
         except ValueError:
-            self.status.SetText('Enter a whole hold percentage from 1 to 100.')
+            self.notice.SetText('Enter a whole hold percentage from 1 to 100.')
             return
-        self.request('SaveHauling', (self.station.GetValue(), percent), load_hauling=True)
+        filter_text = ', '.join(sorted(self.active_groups))
+        self.request('SaveSettings', (filter_text, self.family.GetValue(), self.order.GetValue(),
+                                     bool(self.approach.GetValue()), bool(self.jettison.GetValue()),
+                                     self.station.GetValue(), percent))
 
     def start(self, *args):
         self.request('Start')
@@ -83,12 +191,12 @@ class MiningPanel(object):
     def stop(self, *args):
         self.request('Stop')
 
-    def refresh(self, *args):
-        self.request('GetStatus')
+    def reload(self, *args):
+        self.request('GetStatus', load_settings=True)
 
-    def request(self, method, args=(), load_filter=False, load_hauling=False, load_settings=False, load_options=False):
+    def request(self, method, args=(), load_settings=False):
         if not session.charid:
-            self.status.SetText('Select a character first.')
+            self.notice.SetText('Select a character first.')
             return
         if self.busy:
             return
@@ -96,36 +204,37 @@ class MiningPanel(object):
         self.busy = True
         try:
             remote = sm.RemoteSvc('edenAutoMining')
-            result = getattr(remote, method)(*args)
-            if load_settings and 'unloadStation' in result:
+            state = getattr(remote, method)(*args)
+            if load_settings:
                 stations = remote.GetStations()
                 if self.is_current(revision):
                     self.stations = [(name, station) for station, name in stations]
             if self.is_current(revision):
-                self.status.SetText(result['status'])
-                if load_filter or load_settings:
-                    self.ore_filter.SetValue(result['oreFilter'])
-                if (load_hauling or load_settings) and 'unloadStation' in result:
-                    self.set_hauling(result)
-                if (load_options or load_settings) and 'resourceFamily' in result:
-                    self.family.LoadOptions(self.family_options, result['resourceFamily'])
-                    self.order.LoadOptions(self.order_options, result['targetOrder'])
-                    self.approach.LoadOptions(self.approach_options, int(result['approach']))
-                    self.jettison.LoadOptions(self.jettison_options, int(result['jettison']))
+                self.status.SetText(state['status'])
+                if load_settings or method == 'SaveSettings':
+                    self.set_settings(state)
+                self.notice.SetText({'GetStatus': 'Settings loaded.', 'SaveSettings': 'Settings saved.'}.get(method, ''))
         except UserError as error:
             if self.is_current(revision):
                 info = getattr(error, 'dict', None) or {}
-                self.status.SetText(info.get('info', 'AutoMining request failed.'))
+                self.notice.SetText(info.get('info', 'AutoMining request failed.'))
         finally:
             self.busy = False
 
-    def set_hauling(self, state):
+    def set_settings(self, state):
+        self.ore_groups = state['oreGroups']
+        self.active_groups = set(group.strip() for group in state['oreFilter'].split(',') if group.strip())
+        self.family.LoadOptions(self.FAMILY_OPTIONS, state['resourceFamily'])
+        self.order.LoadOptions(self.ORDER_OPTIONS, state['targetOrder'])
+        self.approach.SetChecked(state['approach'], report=False)
+        self.jettison.SetChecked(state['jettison'], report=False)
         selected = state['unloadStation']
-        options = [('Keep harvest on board', 0)] + list(self.stations)
+        options = [self.KEEP_HARVEST] + self.stations
         if selected and not any(station == selected for _, station in options):
             options.append(('Saved station is outside this system', selected))
         self.station.LoadOptions(options, selected)
         self.threshold.SetValue(str(state['unloadThreshold']))
+        self.refresh_filter()
 
     def is_current(self, revision):
         return revision == self.revision and self.window is not None and not self.window.destroyed

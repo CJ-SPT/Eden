@@ -43,7 +43,17 @@ internal sealed partial class AutoMiningHandler(
     {
         if (
             service != Service
-            || method is not ("Start" or "Stop" or "GetStatus" or "SaveFilter" or "GetStations" or "SaveHauling" or "SaveOptions")
+            || method
+                is not (
+                    "Start"
+                    or "Stop"
+                    or "GetStatus"
+                    or "SaveFilter"
+                    or "GetStations"
+                    or "SaveHauling"
+                    or "SaveOptions"
+                    or "SaveSettings"
+                )
         )
         {
             return PilotCallResult.Unsupported;
@@ -57,18 +67,11 @@ internal sealed partial class AutoMiningHandler(
             bool validArguments = method switch
             {
                 "SaveFilter" => args is [string or byte[]],
-                "SaveOptions" => args
-                    is [
-                        long
-                        and >= (long)MiningFamily.Ore
-                        and <= (long)MiningFamily.Gas,
-                        long
-                        and >= (long)AutoMiningTargetOrder.Nearest
-                        and <= (long)AutoMiningTargetOrder.Smallest,
-                        bool,
-                        bool,
-                    ],
+                "SaveOptions" => args is [long family, long order, bool, bool] && ValidOptions(family, order),
                 "SaveHauling" => args is [long, long and >= int.MinValue and <= int.MaxValue],
+                "SaveSettings" => args
+                    is [string or byte[], long family, long order, bool, bool, long, long and >= int.MinValue and <= int.MaxValue]
+                    && ValidOptions(family, order),
                 _ => args.Length == 0,
             };
             if (keywords is { Count: > 0 } || !validArguments)
@@ -90,6 +93,26 @@ internal sealed partial class AutoMiningHandler(
             _haulSettings ??= hauling?.ReadHauling(_pilotId) ?? AutoMiningHaulSettings.Disabled;
             switch (method)
             {
+                case "SaveSettings":
+                    if (hauling is null)
+                    {
+                        return new PilotCallResult.Failure("AutoMining hauling is unavailable.");
+                    }
+                    var newFilter = AutoMiningFilter.Parse(BlueMarshal.Text(args[0]));
+                    var newOptions = ReadOptions(args.AsSpan(1, 4));
+                    var newHauling = new AutoMiningHaulSettings((long)args[5]!, checked((int)(long)args[6]!));
+                    CheckOptionChange(newOptions);
+                    store.SaveSettings(_pilotId, context.Pilot.SystemId, newFilter, newOptions, newHauling);
+                    bool reselect = newOptions != Options || (newOptions.Family == MiningFamily.Ore && newFilter.Text != _filter.Text);
+                    _filter = newFilter;
+                    _options = newOptions;
+                    _haulSettings = newHauling;
+                    if (reselect)
+                    {
+                        RestartSelection(context);
+                    }
+                    UpdateRepeatThreshold();
+                    break;
                 case "GetStations":
                     return new AutoMiningStations(hauling?.Stations(context.Pilot.SystemId) ?? []);
                 case "SaveHauling":
@@ -103,16 +126,8 @@ internal sealed partial class AutoMiningHandler(
                     UpdateRepeatThreshold();
                     break;
                 case "SaveOptions":
-                    var options = new AutoMiningOptions(
-                        (MiningFamily)(long)args[0]!,
-                        (AutoMiningTargetOrder)(long)args[1]!,
-                        (bool)args[2]!,
-                        (bool)args[3]!
-                    );
-                    if (_trip is not null && options != Options)
-                    {
-                        return new PilotCallResult.Failure("Finish the haul trip or stop AutoMining before changing mining options.");
-                    }
+                    var options = ReadOptions(args);
+                    CheckOptionChange(options);
                     store.SaveOptions(_pilotId, options);
                     if (options != Options)
                     {
@@ -181,6 +196,21 @@ internal sealed partial class AutoMiningHandler(
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private static bool ValidOptions(long family, long order) =>
+        family is >= (long)MiningFamily.Ore and <= (long)MiningFamily.Gas
+        && order is >= (long)AutoMiningTargetOrder.Nearest and <= (long)AutoMiningTargetOrder.Smallest;
+
+    private static AutoMiningOptions ReadOptions(ReadOnlySpan<object?> args) =>
+        new((MiningFamily)(long)args[0]!, (AutoMiningTargetOrder)(long)args[1]!, (bool)args[2]!, (bool)args[3]!);
+
+    private void CheckOptionChange(AutoMiningOptions options)
+    {
+        if (_trip is not null && options != Options)
+        {
+            throw new InvalidDataException("Finish the haul trip or stop AutoMining before changing mining options.");
         }
     }
 
@@ -437,12 +467,17 @@ internal sealed record AutoMiningStatus(
     AutoMiningOptions Options
 ) : BlueModel
 {
+    private static readonly BlueList<BlueUnicode> s_oreGroups = new(
+        AutoMiningFilter.OreGroupNames.Select(name => new BlueUnicode(name)).ToArray()
+    );
+
     public override object ToBlue() =>
         new Dictionary<string, object?>
         {
             ["running"] = Running,
             ["status"] = new BlueUnicode(Status),
             ["oreFilter"] = new BlueUnicode(OreFilter),
+            ["oreGroups"] = s_oreGroups,
             ["unloadStation"] = Hauling.StationId,
             ["unloadThreshold"] = Hauling.Threshold,
             ["resourceFamily"] = (int)Options.Family,

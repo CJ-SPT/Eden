@@ -25,7 +25,7 @@ public sealed class AutoMiningPackageTests
         var package = ModPackages.Read(archive);
         Assert.Equal(AutoMiningFilter.ModId, package.Manifest.Id);
         Assert.Equal("client/automining.py", package.Manifest.ClientEntry);
-        Assert.Equal("1.2.1", package.Manifest.Version);
+        Assert.Equal("1.2.2", package.Manifest.Version);
         string hash = store.Install(archive);
         store.Enable(hash, true);
         var set = await new ModPublisher(database, store).Build(Environment.GetEnvironmentVariable("EDEN_TEST_CLIENT_ROOT")!);
@@ -44,7 +44,14 @@ public sealed class AutoMiningPackageTests
 
         const long stationId = 60003760;
         var replies = await Exchange("Veldspar");
-        Assert.Equal(["", "Veldspar", "Veldspar", "Veldspar", "Veldspar"], replies.Select(reply => BlueMarshal.Text(reply["oreFilter"])));
+        Assert.Equal(
+            ["", "Veldspar", "Veldspar", "Veldspar", "Veldspar", "Veldspar"],
+            replies.Select(reply => BlueMarshal.Text(reply["oreFilter"]))
+        );
+        var oreGroups = Assert.IsType<List<object?>>(replies[0]["oreGroups"]).Select(BlueMarshal.Text).ToArray();
+        Assert.Equal(AutoMiningFilter.OreGroupNames, oreGroups);
+        Assert.Contains("Mercoxit", oreGroups);
+        Assert.Contains("Veldspar", oreGroups);
         Assert.Equal(0L, replies[0]["unloadStation"]);
         Assert.Equal(95L, replies[0]["unloadThreshold"]);
         Assert.Equal(stationId, replies[^1]["unloadStation"]);
@@ -87,14 +94,23 @@ public sealed class AutoMiningPackageTests
                 calls.Enqueue(
                     PilotServicesTests.Request(
                         service,
-                        "SaveOptions",
-                        [(long)MiningFamily.Gas, (long)AutoMiningTargetOrder.Smallest, true, true]
+                        "SaveSettings",
+                        [filter, (long)MiningFamily.Gas, (long)AutoMiningTargetOrder.Smallest, true, true, stationId, 80L]
                     )
                 );
+                calls.Enqueue(
+                    PilotServicesTests.Request(
+                        service,
+                        "SaveSettings",
+                        ["Scordite", (long)MiningFamily.Ice, (long)AutoMiningTargetOrder.Nearest, false, false, stationId + 999, 55L]
+                    )
+                );
+                calls.Enqueue(PilotServicesTests.Request(service, "GetStatus", []));
                 calls.Enqueue(PilotServicesTests.Request(service, "Stop", []));
             }
             List<Dictionary<string, object?>> result = [];
             bool listedStations = false;
+            int rejectedSettings = 0;
             await Assert.ThrowsAsync<EndOfStreamException>(() =>
                 session.RunAsync(
                     () => calls.TryDequeue(out var call) ? Task.FromResult(call) : throw new EndOfStreamException(),
@@ -115,7 +131,10 @@ public sealed class AutoMiningPackageTests
                                 listedStations = true;
                             }
                         }
-                        Assert.False(message.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+                        if (message.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal))
+                        {
+                            rejectedSettings++;
+                        }
                         return Task.CompletedTask;
                     },
                     _ => { },
@@ -126,6 +145,7 @@ public sealed class AutoMiningPackageTests
                 )
             );
             Assert.Equal(filter is not null, listedStations);
+            Assert.Equal(filter is null ? 0 : 1, rejectedSettings);
             return result;
         }
     }

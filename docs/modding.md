@@ -43,21 +43,22 @@ dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
 ```
 
 Use the hash printed by install. Append the same `--world PATH` to all four commands for a nondefault world.
-When upgrading to AutoMining 1.2.1, use a fresh export path and disable the previous package hash before enabling the new one.
+When upgrading to AutoMining 1.2.2, use a fresh export path and disable the previous package hash before enabling the new one.
 Restart Eden, then launch through Eden Launcher to receive the active mod set. In space, open **Eden Mods →
-AutoMining** from the Neocom context menu. Enter comma-separated ore group names such as `Veldspar, Scordite`,
-or leave the field empty for all supported ore. Select **Save Filter**, then **Start**. The filter is saved for the
-selected character. **Stop** ends the automated run, and the panel displays changes in run status.
+AutoMining** from the Neocom context menu. Select ore groups in **Available ore groups** and use the right arrow
+to move them to **Active filter**. Search either list by name. Use the left arrow to remove selected groups, or
+**Clear filter** to allow all supported ore. Select **Apply settings** to save the changes for the selected
+character. **Reload** restores the saved settings. **Start** and **Stop** above the form control the run.
 
-Choose **Ore**, **Ice**, or **Gas** and select **Save Options**. Fit a matching online harvester. The ore filter covers
+Choose **Ore**, **Ice**, or **Gas** and select **Apply settings**. Fit a matching online harvester. The ore filter covers
 ore groups only. **Largest surveyed deposit** and **Smallest surveyed deposit** use the remaining cubic metres on
-a ship with an integrated mining scanner and online survey chipset. **Nearest target** needs no survey equipment.
-Enable **Approach targets on this grid** to let the ship move into harvesting range. A manual navigation order stops
+a ship with an integrated mining scanner and online survey chipset. **Nearest first** needs no survey equipment.
+Enable **Approach out-of-range targets** to let the ship move into harvesting range. A manual navigation order stops
 the run while automatic approach is enabled.
 
-The default unload threshold is **95%**. Use **Save Hauling** to change it or select an NPC station in the current
-system. At the threshold, or when the next eligible unit will not fit, station hauling moves the selected resource
-family to your personal Item Hangar and returns to the mining position. If **Jettison harvest into a cargo container**
+The default unload threshold is **95%**. Set **Unload hold %** or select an NPC station in the current system, then
+apply the settings. At the threshold, or when the next eligible unit will not fit, station hauling moves the selected resource
+family to your personal Item Hangar and returns to the mining position. If **Jettison when unloading**
 is enabled, AutoMining uses the same threshold and jettisons the selected harvest on the current grid. It uses the
 normal jettison cooldown, and the can expires after two hours. Choose **Keep harvest on board** and leave jettison off
 to retain the harvest in your ship.

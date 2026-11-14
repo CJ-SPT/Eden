@@ -16,6 +16,7 @@ public interface IPilotAutoMining
     void SaveFilter(long pilotId, AutoMiningFilter filter);
     AutoMiningOptions ReadOptions(long pilotId);
     void SaveOptions(long pilotId, AutoMiningOptions options);
+    void SaveSettings(long pilotId, int systemId, AutoMiningFilter filter, AutoMiningOptions options, AutoMiningHaulSettings hauling);
     IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId);
     IReadOnlyList<AutoMiningModule> Modules(long pilotId, long shipId);
     IReadOnlyDictionary<long, double> Survey(long pilotId, int systemId, IReadOnlyList<long> visibleTargets);
@@ -55,6 +56,7 @@ public sealed class AutoMiningFilter
     static AutoMiningFilter()
     {
         s_oreGroups.Add("Mercoxit", MiningDefinitions.MercoxitGroup);
+        OreGroupNames = Array.AsReadOnly(s_oreGroups.Keys.Order(StringComparer.OrdinalIgnoreCase).ToArray());
     }
 
     private AutoMiningFilter(HashSet<int> groups)
@@ -64,6 +66,7 @@ public sealed class AutoMiningFilter
     }
 
     public const string ModId = "eden.automining";
+    public static IReadOnlyList<string> OreGroupNames { get; }
     public string Text { get; }
 
     public bool Matches(StaticSpaceObject rock) =>

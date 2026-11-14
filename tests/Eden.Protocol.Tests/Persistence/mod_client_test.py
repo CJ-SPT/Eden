@@ -112,5 +112,114 @@ class ClientModTests(unittest.TestCase):
 
 
 
+class AutoMiningPanelTests(unittest.TestCase):
+    def test_run_and_save_actions_stay_outside_the_scroll_and_the_picker_applies_settings(self):
+        calls = []
+        state = {'status': 'Stopped', 'oreGroups': ['Scordite', 'Veldspar'], 'oreFilter': 'Scordite',
+                 'resourceFamily': 0, 'targetOrder': 0, 'approach': False, 'jettison': False,
+                 'unloadStation': 0, 'unloadThreshold': 95}
+
+        class Remote:
+            def GetStatus(self):
+                return state.copy()
+
+            def GetStations(self):
+                return [(60003760, 'Station')]
+
+            def SaveSettings(self, *args):
+                calls.append(args)
+                state['oreFilter'] = args[0]
+                return state.copy()
+
+        class Control:
+            def __init__(self, parent=None, **options):
+                self.parent = parent
+                self.children = []
+                self.options = options
+                self.destroyed = False
+                self.text = options.get('text', '')
+                self.value = options.get('setvalue', options.get('checked', ''))
+                if 'options' in options:
+                    self.value = options['options'][0][1]
+                if parent:
+                    parent.children.append(self)
+
+            def SetText(self, text):
+                self.text = text
+
+            def GetValue(self):
+                return self.value
+
+            def SetValue(self, value):
+                self.value = value
+
+            def LoadOptions(self, options, value):
+                self.value = value
+
+            def SetChecked(self, value, report):
+                self.value = value
+
+            def add_button(self, button):
+                button.parent = self
+                self.children.append(button)
+
+            def Load(self, contentList, noContentHint):
+                self.rows = contentList
+                self.selection = []
+
+            def GetSelected(self):
+                return self.selection
+
+        class Window(Control):
+            @classmethod
+            def Open(cls, **options):
+                window = cls(**options)
+                window.content = Control(window)
+                return window
+
+        alignments = ['TOTOP', 'TOALL', 'TOBOTTOM', 'TOLEFT', 'TOLEFT_PROP', 'TORIGHT']
+        scope = {name: Control for name in ('Button', 'ButtonGroup', 'Checkbox', 'Combo', 'Container', 'ContainerAutoSize',
+                                           'EveHeaderSmall', 'EveLabelMedium', 'Scroll', 'ScrollContainer', 'SingleLineEditText')}
+        scope.update(Window=Window, uiconst=types.SimpleNamespace(**{name: name for name in alignments}),
+                     ButtonVariant=types.SimpleNamespace(PRIMARY=1), ButtonSizeMode=types.SimpleNamespace(DYNAMIC=1),
+                     AxisAlignment=types.SimpleNamespace(START=1),
+                     Generic=Control, GetFromClass=lambda entry_type, values: types.SimpleNamespace(**values),
+                     session=types.SimpleNamespace(charid=1), sm=types.SimpleNamespace(RemoteSvc=lambda service: Remote()))
+        source = ROOT / 'src/Eden.Server/Modding/Client/automining.py'
+        exec('\n'.join(line for line in source.read_text(encoding='utf-8').splitlines()
+                       if not line.startswith(('import ', 'from '))), scope)
+        panel = scope['MiningPanel']()
+        panel.open()
+        content = panel.window.content
+        status, run, footer, body = content.children
+        self.assertEqual(('TOTOP', 'TOBOTTOM', 'TOALL'), tuple(item.options['align'] for item in (run, footer, body)))
+        self.assertEqual(['Start', 'Stop'], [button.options['label'] for button in run.children])
+        self.assertEqual(['Apply settings', 'Reload', 'Clear filter'],
+                         [button.options['label'] for button in footer.children[-1].children])
+        self.assertEqual('Stopped', status.text)
+
+        panel.search_available.SetValue('invalid')
+        panel.search_available.OnChange()
+        self.assertEqual([], panel.available.rows)
+        panel.search_available.SetValue('veld')
+        panel.search_available.OnChange()
+        panel.available.selection = panel.available.rows[:]
+        panel.add_selected()
+        panel.active.selection = [entry for entry in panel.active.rows if entry.oreGroup == 'Scordite']
+        panel.remove_selected()
+        self.assertEqual({'Veldspar'}, panel.active_groups)
+        self.assertEqual([], calls)
+        panel.threshold.SetValue('101')
+        panel.apply()
+        self.assertEqual([], calls)
+        panel.threshold.SetValue('81')
+        panel.apply()
+        self.assertEqual([('Veldspar', 0, 0, False, False, 0, 81)], calls)
+        panel.clear_filter()
+        self.assertEqual(set(), panel.active_groups)
+        panel.reload()
+        self.assertEqual({'Veldspar'}, panel.active_groups)
+
+
 if __name__ == '__main__':
     unittest.main()

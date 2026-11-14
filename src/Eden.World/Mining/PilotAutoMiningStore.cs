@@ -12,6 +12,7 @@ using Eden.World.Characters;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
 namespace Eden.World.Mining;
@@ -37,8 +38,23 @@ internal sealed partial class PilotAutoMiningStore(WorldDatabase database, TimeP
             : AutoMiningOptions.Default;
     }
 
-    public void SaveOptions(long pilotId, AutoMiningOptions options) =>
-        SaveSetting(pilotId, OptionsKey, $"{options.Family}:{options.TargetOrder}:{options.Approach}:{options.Jettison}");
+    public void SaveOptions(long pilotId, AutoMiningOptions options) => SaveSetting(pilotId, OptionsKey, FormatOptions(options));
+
+    private static string FormatOptions(AutoMiningOptions options) =>
+        $"{options.Family}:{options.TargetOrder}:{options.Approach}:{options.Jettison}";
+
+    public void SaveSettings(long pilotId, int systemId, AutoMiningFilter filter, AutoMiningOptions options, AutoMiningHaulSettings hauling)
+    {
+        using var action = RequireResidentWorld().Economy.Begin(new(pilots: [pilotId]));
+        if (hauling.StationId != ParseHauling(ReadSetting(action, pilotId, HaulKey)).StationId)
+        {
+            CheckHaulStation(systemId, hauling);
+        }
+        SaveSetting(action, pilotId, FilterKey, filter.Text);
+        SaveSetting(action, pilotId, OptionsKey, FormatOptions(options));
+        SaveSetting(action, pilotId, HaulKey, FormatHauling(hauling));
+        action.Commit();
+    }
 
     public IReadOnlyDictionary<long, double> Survey(long pilotId, int systemId, IReadOnlyList<long> visibleTargets)
     {
@@ -76,8 +92,10 @@ internal sealed partial class PilotAutoMiningStore(WorldDatabase database, TimeP
     public void SaveFilter(long pilotId, AutoMiningFilter filter) => SaveSetting(pilotId, FilterKey, filter.Text);
 
     private string? ReadSetting(long pilotId, string key) =>
-        RequireResidentWorld()
-            .Economy.Inspect(world => (PilotCharacterSettingsStore.Read(world, pilotId, key)?.Value as CharacterSettingValue.Text)?.Value);
+        RequireResidentWorld().Economy.Inspect(world => ReadSetting(world, pilotId, key));
+
+    private static string? ReadSetting(WorldAction world, long pilotId, string key) =>
+        (PilotCharacterSettingsStore.Read(world, pilotId, key)?.Value as CharacterSettingValue.Text)?.Value;
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId)
     {
@@ -93,9 +111,12 @@ internal sealed partial class PilotAutoMiningStore(WorldDatabase database, TimeP
     private void SaveSetting(long pilotId, string key, string value)
     {
         using var action = RequireResidentWorld().Economy.Begin(new(pilots: [pilotId]));
-        PilotCharacterSettingsStore.Save(action, pilotId, new(key, new CharacterSettingValue.Text(value)));
+        SaveSetting(action, pilotId, key, value);
         action.Commit();
     }
+
+    private static void SaveSetting(WorldAction world, long pilotId, string key, string value) =>
+        PilotCharacterSettingsStore.Save(world, pilotId, new(key, new CharacterSettingValue.Text(value)));
 
     public IReadOnlyList<AutoMiningModule> Modules(long pilotId, long shipId)
     {

@@ -226,6 +226,24 @@ Not performed. Agent client testing is disabled.
 Open the panel in space, save options, and check approach, survey order, and native effect display.
 Jettison once and open the cargo container from the overview.
 
+## AutoMining panel layout
+
+A live screenshot of AutoMining 1.2.1 showed Start, Stop and Refresh Status below the window. The 1.2.2 panel
+places run controls above a clipped scroll container and keeps Apply settings, Reload and Clear filter in the
+footer. Searchable Available and Active lists use the same ore-group names as the filter parser. An empty selection
+still allows all compatible ore. The panel uses the build-3662168 native button group, checkbox and scroll controls.
+
+`edenAutoMining.GetStatus` supplies the supported ore groups. `SaveSettings` validates the filter, mining options and
+hauling parameters, then saves all three existing character settings in one resident transaction. A previously saved
+station outside the current system can be retained when applying unrelated edits. A newly selected station must belong
+to the current system.
+
+Automated validation covered 44 focused .NET cases in 21 seconds, including the pinned client archive, ore-group
+reply, successful combined settings persistence across reconnects, and rejection of an invalid station without a
+partial save. The inert panel test covers control placement, list filtering, add/remove, Apply settings and Reload.
+
+The new panel's rendering and input still need a live client check at a small window size.
+
 ## Deep-core mining and Morphite
 
 The three Mercoxit variants in the pinned belt catalog require a deep-core module. The static Deep Core Mining Laser I,

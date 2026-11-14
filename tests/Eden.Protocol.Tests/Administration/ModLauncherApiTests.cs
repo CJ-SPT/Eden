@@ -60,7 +60,7 @@ public sealed class ModLauncherApiTests
         Assert.Equal(2, advertised.ApiVersion);
         Assert.Null(advertised.SkillPackage);
         Assert.Equal(set.Id, advertised.ModSet!.Id);
-        Assert.Equal(new(AutoMiningFilter.ModId, "1.2.1"), Assert.Single(advertised.ModSet.Mods));
+        Assert.Equal(new(AutoMiningFilter.ModId, "1.2.2"), Assert.Single(advertised.ModSet.Mods));
         using var denied = await http.GetAsync($"/api/v2/mod-sets/{set.Id}/code");
         Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
