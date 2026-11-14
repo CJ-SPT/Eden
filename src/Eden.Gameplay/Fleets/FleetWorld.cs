@@ -1,7 +1,7 @@
 namespace Eden.Gameplay.Fleets;
 
 // Pure transient fleet state. The World adapter serializes calls; no client/session or SQL dependency.
-public sealed class FleetWorld(long seed)
+public sealed partial class FleetWorld(long seed)
 {
     private sealed class Fleet(long id)
     {
@@ -10,6 +10,7 @@ public sealed class FleetWorld(long seed)
         public Dictionary<long, FleetWing> Wings { get; } = [];
         public bool FreeMove { get; set; }
         public string Motd { get; set; } = "";
+        public IReadOnlyList<FleetTargetTag> TargetTags { get; set; } = Array.Empty<FleetTargetTag>();
     }
 
     private sealed record Invitation(long FleetId, long Inviter, FleetPlacement Placement, long Expires);

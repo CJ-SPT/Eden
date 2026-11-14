@@ -99,6 +99,11 @@ internal sealed class CooperativeFleetStore(TimeProvider clock) : ICooperativeFl
         int? type
     ) => Write(() => _world.Broadcast(actor, fleet, kind, scope, range, item, type, Now));
 
+    public IReadOnlyList<FleetTargetTag> TargetTags(long actor) => Read(() => _world.TargetTags(actor));
+
+    public void TagTarget(long actor, long fleet, FleetTagTarget target, string? tag) =>
+        Write(() => _world.TagTarget(actor, fleet, target, tag));
+
     public void Warp(long actor, long fleet, long target, double range, SpacePosition? point) =>
         Write(() => _world.Warp(actor, fleet, target, range, point, Now));
 

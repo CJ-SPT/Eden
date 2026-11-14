@@ -169,10 +169,15 @@ internal sealed record FleetBroadcastNotification(FleetBroadcast Broadcast) : Fl
         ];
 }
 
-internal sealed record FleetStateNotification() : FleetNotification("OnFleetStateChange")
+internal sealed record FleetStateNotification(IReadOnlyList<FleetTargetTag> Tags) : FleetNotification("OnFleetStateChange")
 {
     public override object?[] Arguments =>
-        [new BlueInstance("util.KeyVal", new Dictionary<string, object?> { ["targetTags"] = new Dictionary<long, object?>() })];
+        [
+            new BlueInstance(
+                "util.KeyVal",
+                new Dictionary<string, object?> { ["targetTags"] = Tags.ToDictionary(tag => tag.ItemId, tag => (object?)tag.Tag) }
+            ),
+        ];
 }
 
 internal sealed record FleetLocationsReply(IReadOnlyList<FleetMember> Members) : BlueModel

@@ -2,6 +2,67 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Fleet target tags, November 14, 2026
+
+The next evejs comparison found that Eden always published an empty `targetTags` map and did not handle
+`beyonce.CmdFleetTagTarget`. Fleet, wing and squad commanders can now assign the native numeric and letter
+markers to nearby targets, reassign a marker to another target, replace a target's marker, and clear it with
+None or an empty string. Tags do not require a target lock and remain available to cloaked commanders. Ordinary members, including a boss without a
+command role, cannot tag; self-targets, unknown targets, invalid tags, foreign systems, out-of-range targets,
+and commands while docked or in transit reject without changing the current assignments.
+
+The pinned menu supplies `0`–`9` and `ABCDEFGHIJXYZ`. A marker names one target across the fleet, so there are
+at most 23 assignments. Immutable typed snapshots are shared through the existing serialized fleet owner.
+Each observer receives a native `OnFleetStateChange(util.KeyVal(targetTags={itemID: tag}))` only when its
+visible map changes. Late joiners and rejoining members receive the current map; other fleets and nonmembers
+receive none. Losing target visibility, docking or leaving clears the observer's map. Tags remain transient
+fleet state, with no database schema change: assignments can reappear when a target becomes visible again,
+and disbanding or restarting the server discards them. This does not add persistent target annotations.
+
+Build **3662168** was inspected inertly from the original archive, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+`menusvc.TagItem` calls `GetRemotePark().CmdFleetTagTarget(itemID, tag)`;
+`celestialCheckers.OfferFleetTagItem` requires fleet command authority;
+`fleetSvc.OnFleetStateChange` replaces its state and `GetTargetTag` indexes `targetTags` by item ID.
+The existing Blue dictionary, byte-string and notification adapters are unchanged. No client code was launched.
+
+The local evejs **261108.1** snapshot has no Git revision. Independently authored Eden code uses its own
+fleet owner and observer model; comparison evidence comes from:
+
+- `server/src/services/ship/beyonceService.js`, `Handle_CmdFleetTagTarget`, SHA-256
+  `5c13b78749bd02c31d7844d631fc88b818b299deff4ac49058a860eeb3f9027d`.
+- `server/src/services/fleets/fleetRuntime.js`, `setFleetTargetTag`, SHA-256
+  `494727d0f0793202bd9195c417fffc63cce499ea157890fc12981919be521b8f`.
+- `server/src/services/fleets/fleetPayloads.js`, `buildFleetStateChangePayload`, SHA-256
+  `bad4210618f0053dfb1a075f3bdaaaa94452f32b5c120e455e83c2d49487fea9`.
+
+Unlike evejs's permissive text normalization and boss allowance, Eden validates the pinned tag alphabet and
+command ranks. [EVE University overview tagging](https://wiki.eveuniversity.org/Overview#Tagging) describes the
+commander permissions and native overview column; [incursion roles](https://wiki.eveuniversity.org/Roles_in_Incursions#Tagger)
+describes using markers to coordinate target priority.
+
+**Automated validation.** Tool restore, solution restore/build (zero warnings/errors), 95 focused .NET tests,
+both Python policy suites (8 catalog and 9 formatting cases), and formatting/140-column verification passed.
+The final sequence took **123.94 seconds**, with **87.36 seconds** for the .NET test command.
+Development began through `tools/Test-Feature.ps1` with
+`FullyQualifiedName~NativeFleetTagsReachLateJoinersAndClearWhenTargetsDisappearOrMembershipEnds`.
+The first tests exposed test-side byte-string decoding and a resident-only SQL assertion applied to the
+file-backed fixture; both assertions were corrected. The affected fleet classes then passed 36 cases. A subsequent 94-case validation passed before the
+cloaked-commander correction; the three focused correction cases passed in an isolated build directory.
+The shared feature-test directory was locked by another test process, so that attempted build did not run tests.
+Coverage includes immutable snapshots, bounded state, current rank and boss separation, invalid requests,
+exact range boundaries, late joins, reassignment, clearing, departure and warmed observer SQL/connection/fit counts.
+The final filter combines `FullyQualifiedName~FleetRulesTests`, `FullyQualifiedName~CooperativeFleetTests`,
+`FullyQualifiedName~CommandBurstTests`, `FullyQualifiedName~ResidentFitFleetTests`,
+`FullyQualifiedName~PilotFleetTests`, `FullyQualifiedName~Eden.Protocol.Tests.Hosting`, and
+`FullyQualifiedName~CloakedCommanderCanTagVisibleContactsWithoutWeaponTargetEligibility` with `|`.
+No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Enable the overview Tag column in two fleet clients; assign and reassign a
+marker, then join late and dock to inspect the displayed updates. Native presentation remains unverified.
+
 ## Fleet roster refresh after joining, November 14, 2026
 
 The maintainer saw **Fleet (3)** and a repeated squad header with no member rows after accepting an invite.

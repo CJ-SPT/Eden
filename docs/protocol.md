@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Fleet target tags](protocol/fleets.md#fleet-target-tags-november-14-2026) records native commander tagging,
+shared assignments, late-join synchronization and visibility updates.
+
 [Criminal loot and lawful recovery](protocol/inventory.md#criminal-loot-and-lawful-recovery-november-14-2026) records automatic public
 loot creation, legal-owner access, corporation tractor rights and native security-status updates.
 

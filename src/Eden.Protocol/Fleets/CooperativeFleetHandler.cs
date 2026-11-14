@@ -10,7 +10,9 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Fleets;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystemObjects systems) : ISelectedPilotCallHandler, IDisposable
+internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets, ISystemObjects systems)
+    : ISelectedPilotCallHandler,
+        IDisposable
 {
     internal const string Prefix = "@fleet:";
     private readonly Guid _session = Guid.NewGuid();
@@ -84,7 +86,7 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
                     context.Notifications.Add(new FleetJoinNotification(joined.Member));
                     if (joined.Member.Pilot.Id == pilot.PilotId)
                     {
-                        context.Notifications.Add(new FleetStateNotification());
+                        _sentTags = null;
                     }
                     break;
                 case FleetEvent.Left left:
@@ -122,12 +124,14 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
                     context.Notifications.Add(new NpcStandingSet(standing.SourceId, pilot.PilotId, standing.Value));
                     break;
                 case FleetEvent.Resync resync:
+                    _sentTags = null;
                     context.Notifications.Add(
                         resync.Member is null ? new FleetLeaveNotification(pilot.PilotId) : new FleetJoinNotification(resync.Member)
                     );
                     break;
             }
         }
+        AdvanceTags(context);
     }
 
     private static bool IsInTransit(PilotCallContext context) => context.Flight.InWarp || context.Flight.Translocating;
@@ -220,6 +224,8 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
         _watchingAs = null;
         _watchlist.Clear();
         _watchHealth.Clear();
+        _sentTags = null;
+        _tagFleet = null;
     }
 
     public void CancelWarpOrders(long actor) => fleets.CancelWarpOrders(actor);
@@ -320,6 +326,10 @@ internal sealed class CooperativeFleetHandler(ICooperativeFleets fleets, ISystem
         Dictionary<string, object?>? keywords = null
     )
     {
+        if (service == "beyonce" && method == "CmdFleetTagTarget")
+        {
+            return TagTarget(context, args, keywords);
+        }
         bool bound = service.StartsWith(Prefix, StringComparison.Ordinal);
         if (!bound && service is not ("fleetObjectHandler" or "fleetMgr" or "fleetProxy"))
         {

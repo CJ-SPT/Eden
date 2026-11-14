@@ -73,6 +73,10 @@ public sealed record CooperativeFleet(
     string Motd
 );
 
+public sealed record FleetTargetTag(long ItemId, int SystemId, string Tag);
+
+public sealed record FleetTagTarget(long ItemId, int SystemId, SpacePosition Position);
+
 public sealed record FleetBroadcast(FleetBroadcastKind Kind, FleetBroadcastScope Scope, FleetPilot Sender, long? ItemId, int? TypeId);
 
 public sealed record FleetWarpOrder(
@@ -152,6 +156,8 @@ public interface ICooperativeFleets
         long? item,
         int? type
     );
+    IReadOnlyList<FleetTargetTag> TargetTags(long actor);
+    void TagTarget(long actor, long fleet, FleetTagTarget target, string? tag);
     void Warp(long actor, long fleet, long target, double range, SpacePosition? point);
     bool CanExecuteWarp(long actor, FleetWarpOrder order);
     void CancelWarpOrders(long actor);
@@ -159,6 +165,8 @@ public interface ICooperativeFleets
 
 public static class FleetRules
 {
+    // Build 3662168 menusvc: numeric tags and the native letter menu.
+    public const string TargetTagAlphabet = "0123456789ABCDEFGHIJXYZ";
     public const long NoGroup = -1;
     public const int BossJob = 2;
     public const int MaximumMembers = 256;

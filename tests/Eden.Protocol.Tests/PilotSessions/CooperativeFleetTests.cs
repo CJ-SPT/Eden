@@ -25,7 +25,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
-public sealed class CooperativeFleetTests
+public sealed partial class CooperativeFleetTests
 {
     [Fact]
     public void NativeCreateInviteAcceptAndLeaveKeepReferencesRosterAndSessionFieldsConsistent()

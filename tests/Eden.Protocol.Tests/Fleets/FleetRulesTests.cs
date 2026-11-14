@@ -3,7 +3,7 @@ using Eden.Gameplay.Flight;
 
 namespace Eden.Protocol.Tests.Fleets;
 
-public sealed class FleetRulesTests
+public sealed partial class FleetRulesTests
 {
     private static FleetPilot Pilot(long id, double distance = 0, int system = 30000142) =>
         new(id, 1000044, id + 1000, 601, system, new(distance, 0, 0));
