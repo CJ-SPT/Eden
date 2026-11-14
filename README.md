@@ -32,6 +32,9 @@ dotnet run --no-build --project src/Eden.Server
 | Fleets, corporations and structures | Fly in fleets, [tag shared targets](docs/protocol/fleets.md#fleet-target-tags-november-14-2026), use chat and mail, manage player corporations and shared hangars, and deploy Upwell structures with supported docking and industry services. Specialized structure systems such as moon extraction and structure combat remain pending. [Fleets](docs/protocol/fleets.md), [corporations](docs/corporations.md), [structures](docs/protocol/structures.md) |
 | World settings and mods | Tune gathering, rewards, progression, industry and structure timers through administration. Install skill mods, C# server plugins and Python client extensions. [World settings](docs/world-configuration.md), [remote administration in Docker](docs/docker.md#remote-administration), [modding guide](docs/modding.md) |
 
+New mission offers include a [timed ISK bonus](docs/protocol/agents.md#timed-mission-bonuses--november-14-2026),
+with saved deadlines and fleet reward sharing.
+
 The [feature notes](docs/feature-notes.md) detail supported content and limits. The [protocol records](docs/protocol.md)
 document automated coverage and any live client observations.
 

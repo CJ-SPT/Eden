@@ -31,6 +31,9 @@ records the member-name projection and unchanged native reply.
 
 [Direct player trading](protocol/inventory.md#direct-player-trading) records the native trade window and resident settlement.
 
+[Timed mission bonuses](protocol/agents.md#timed-mission-bonuses--november-14-2026) adds saved quotes, acceptance-based timers,
+separate wallet payments and fleet sharing.
+
 [Resident mission sites and research agents](protocol/agents.md#resident-mission-sites-and-research-agents)
 records scene admission, gate payment, container transfer and research settlement.
 

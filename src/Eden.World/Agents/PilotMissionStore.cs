@@ -606,6 +606,7 @@ internal sealed partial class PilotMissionStore(
             BriefingId = profile.BriefingId,
             PilotId = row.PilotId,
             CombatComplete = row.ObjectiveComplete,
+            Bonus = Bonus(row),
             Retrieval =
                 profile.Kind != MissionKind.Courier && profile.CargoType > 0
                     ? new(
@@ -618,6 +619,15 @@ internal sealed partial class PilotMissionStore(
                     : null,
         };
     }
+
+    private static MissionBonus? Bonus(SavedMission row) =>
+        row.BonusIskCents > 0 && row.BonusWindowTicks > 0
+            ? new(
+                row.BonusIskCents,
+                row.BonusWindowTicks,
+                row.AcceptedAt is long accepted ? checked(accepted + row.BonusWindowTicks) : null
+            )
+            : null;
 
     private static OwnedItem[] Cargo(WorldAction world, Pilot pilot, SavedMission row, MissionProfile profile) =>
         world

@@ -147,7 +147,7 @@ public sealed class MissionPersistenceTests
         Assert.True(missions.Current(MissionFixture.PilotId, MissionFixture.AgentId)!.ObjectiveComplete);
         var paid = missions.Act(MissionFixture.PilotId, MissionFixture.AgentId, MissionAction.Complete, offer.Id);
         Assert.Equal(MissionState.Completed, paid.Offer!.State);
-        Assert.Equal(offer.Rewards.IskCents, paid.BalanceCents);
+        Assert.Equal(offer.Rewards.IskCents + offer.Bonus!.IskCents, paid.BalanceCents);
         Assert.Equal(1000, paid.PointsAfter);
         Assert.Equal(2, paid.Standings.Count);
         Assert.All(paid.Standings, s => Assert.Equal(0.0075, s.After, 12));

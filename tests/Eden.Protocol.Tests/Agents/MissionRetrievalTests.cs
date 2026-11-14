@@ -335,7 +335,7 @@ public sealed class MissionRetrievalTests
                 ObjectiveComplete = hasCargo,
                 Retrieval = mission.Retrieval! with { HasCargo = hasCargo },
             };
-            var objective = BlueRead.Fields(MissionFixture.Reply(new MissionObjectives(offer)));
+            var objective = BlueRead.Fields(MissionFixture.Reply(new MissionObjectives(offer, f.Clock.Now)));
             var fetch = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(objective["objectives"])));
             Assert.Equal("fetch", BlueMarshal.Text(fetch[0]));
             var values = Assert.IsType<object?[]>(fetch[1]);

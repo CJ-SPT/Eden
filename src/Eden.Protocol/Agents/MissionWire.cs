@@ -148,7 +148,7 @@ internal sealed record MissionLocation(MissionOffer Offer, bool Pickup = false) 
     }
 }
 
-internal sealed record MissionObjectives(MissionOffer Offer) : BlueModel
+internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueModel
 {
     private const int CreditsType = 29; // Build 3662168 appConst.typeCredits.
 
@@ -247,14 +247,27 @@ internal sealed record MissionObjectives(MissionOffer Offer) : BlueModel
                 new object?[] { CreditsType, Offer.Rewards.IskCents / (double)MarketDefinitions.CentsPerIsk, null },
             },
             ["loyaltyPoints"] = Offer.Rewards.LoyaltyPoints,
-            ["bonusRewards"] = new List<object?>(),
+            // Build 3662168 agentDialogueUtil consumes ticks, type, quantity, extra, and original minutes.
+            ["bonusRewards"] = Offer.Bonus is { } bonus
+                ? new List<object?>
+                {
+                    new object?[]
+                    {
+                        bonus.Remaining(Now),
+                        CreditsType,
+                        bonus.IskCents / (double)MarketDefinitions.CentsPerIsk,
+                        null,
+                        bonus.WindowTicks / TimeSpan.TicksPerMinute,
+                    },
+                }
+                : new List<object?>(),
             ["collateral"] = new List<object?>(),
             ["researchPoints"] = 0,
         };
     }
 }
 
-internal sealed record MissionJournalInfo(MissionOffer Offer) : BlueModel
+internal sealed record MissionJournalInfo(MissionOffer Offer, long Now) : BlueModel
 {
     public override object ToBlue() =>
         new Dictionary<string, object?>
@@ -265,7 +278,7 @@ internal sealed record MissionJournalInfo(MissionOffer Offer) : BlueModel
             ["iconID"] = null,
             ["expirationTime"] = Offer.ExpiresAt,
             ["missionState"] = (int)Offer.State,
-            ["objectives"] = new MissionObjectives(Offer),
+            ["objectives"] = new MissionObjectives(Offer, Now),
         };
 }
 

@@ -184,7 +184,7 @@ public sealed class MiningMissionTests
         f.Dock(MissionFixture.StationId);
         var paid = Complete(f, mission);
         Assert.Equal(MissionState.Completed, paid.Offer!.State);
-        Assert.Equal(mission.Rewards.IskCents, paid.BalanceCents);
+        Assert.Equal(mission.Rewards.IskCents + mission.Bonus!.IskCents, paid.BalanceCents);
         Assert.Equal(mission.Rewards.LoyaltyPoints, paid.PointsAfter);
         Assert.Equal(3600, Assert.Single(paid.Items).Previous!.Quantity);
         Assert.Throws<InvalidDataException>(() => Complete(f, mission));
