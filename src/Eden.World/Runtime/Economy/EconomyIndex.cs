@@ -170,6 +170,32 @@ internal static class EconomyCandidates
                 : right is null || left.Count <= right.Count ? left
                 : right;
         }
+        if (expression is BinaryExpression { NodeType: ExpressionType.OrElse } or)
+        {
+            // Either branch can admit a row. An unindexed branch requires the full
+            // scan; union only complete candidate sets and keep the final predicate.
+            var left = Find(or.Left, row, lookup);
+            if (left is null)
+            {
+                return null;
+            }
+            var right = Find(or.Right, row, lookup);
+            if (right is null)
+            {
+                return null;
+            }
+            if (left.Count == 0)
+            {
+                return right;
+            }
+            if (right.Count == 0)
+            {
+                return left;
+            }
+            HashSet<EconomyKey> keys = new(left);
+            keys.UnionWith(right);
+            return keys;
+        }
         if (expression is BinaryExpression { NodeType: ExpressionType.Equal } equal)
         {
             return Equal(equal.Left, equal.Right) ?? Equal(equal.Right, equal.Left);

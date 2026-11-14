@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Indexed resident disjunctions](protocol/performance.md#indexed-resident-disjunctions-november-14-2026)
+records bounded engagement queries, conservative fallbacks and matched query/session measurements.
+
 [Fleet target tags](protocol/fleets.md#fleet-target-tags-november-14-2026) records native commander tagging,
 shared assignments, late-join synchronization and visibility updates.
 

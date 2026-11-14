@@ -6,6 +6,92 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Indexed resident disjunctions, November 14, 2026
+
+The resident query planner on `9c7930d0` used index candidates for conjunctions and
+membership predicates, but scanned every saved row for a disjunction. In particular,
+`LowerPilotId == pilot || HigherPilotId == pilot` ignored both existing engagement
+indexes. Crimewatch snapshots, drone legality, remote assistance and command bursts
+use this shape; storage cleanup also combines indexed location predicates.
+
+Disjunctions now union both candidate sets, remove duplicates and retain the complete
+predicate check. If either branch cannot supply a complete candidate set, the query
+retains its scan fallback. Transaction-local additions, modifications and deletions
+still overlay the saved candidates. No new index, schema, timer rule or wire format
+was introduced.
+
+The gameplay reference was [EVE University timers](https://wiki.eveuniversity.org/Timers)
+and its [remote-assistance reference](https://wiki.eveuniversity.org/Remote_assistance).
+The local older EveJS `crimewatchState.js`, SHA-256
+`46CF97D25BA2F99B925A3B4F1B5DA80596BE783AC6FCB1A3869628989A950F84`, was checked for
+`listLimitedEngagementsForCharacter` and bilateral participant matching. Its scan is
+not used as an optimization template. Existing Eden build-3662168 timer projections
+and notifications are unchanged; this is Eden resident-query infrastructure rather
+than Carbon serialization or simulation behavior. No reference code was copied.
+
+**Automated validation.** The exact initial filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.ResidentQueryIndexTests.DisjunctionOnlyVisitsIndexedEngagementCandidates`.
+The populated case failed on the old planner as intended: 20 queries visited 200,040
+rows instead of 40. Sparse and populated cases pass with the index union. The matched
+Windows Debug query replay, including an instrumented predicate, measured:
+
+| 10,002-row query, two matches | Baseline | Updated |
+| --- | ---: | ---: |
+| Candidate rows visited per query | 10,002 | 2 |
+| Mean of 20 warmed queries | 4.282 ms | 0.258 ms |
+| Allocated bytes per query | 2,569,972 | 12,158 |
+
+These are short diagnostic samples, not production latency guarantees. Tests also
+cover duplicate and empty branches, unindexed fallbacks, nested conjunctions,
+membership predicates, changed captured values, null guards, scalar and entity
+queries, rollback, committed deletion/addition and reopening a checkpoint.
+
+`ResidentQuerySessionTests.EngagementRefreshPreservesCompleteSessionFrames` runs two
+docked sessions with zero or 10,000 unrelated engagements, refreshing a shared timer
+each cycle. Both versions passed with zero SQL commands, connection opens and fitting
+calculations in the ten warmed frame pairs. The populated baseline/updated means were
+0.398/0.442 ms and sparse means were 0.348/0.355 ms: this workload does not establish a
+frame-time gain. Checkpoint flushes were measured separately at 64.916/65.466 ms for
+the populated case and 17.178/18.454 ms for the sparse case. These frames include the
+normal update and notification-flush path but exclude socket writes, outer packet
+encoding, background traffic maintenance and live-client rendering. They are a
+compatibility check, not a fleet-combat capacity benchmark.
+
+The first broader run was interrupted after a new membership test selected the C#
+span overload of array `Contains`; that test now uses explicit `Enumerable.Contains`,
+as existing resident call sites do. The corrected exact test passed. The run also
+found a pre-existing schema-coverage mismatch between SQL-quoted `"Index"` and EF's
+`Index`. A second run was interrupted after two older logistics-hull cases expected
+types 11978/11989 to remain unassemblable. All three existing failures reproduced
+with the index-union change removed. The final selection excludes those specific
+methods; no production behavior or older assertion was changed to hide them.
+
+The final selection uses these `FullyQualifiedName~` clauses joined by `|`, grouped
+and combined with the two exclusions using `&FullyQualifiedName!~`:
+
+```text
+ResidentQueryIndexTests, ResidentQuerySessionTests, ResidentEconomyTests,
+CrimewatchTests, RemoteAssistance, CommandBurstTests, ShipStorageTests,
+ResidentDroneTests, DroneDelegationCombatTests, TackleTests, MarketSummaryPerformanceTests
+
+Excluded: RegisteredResidentRowsCoverEveryScalarColumnOfTheirSavedModels,
+FutureLogisticsHullSelectorsHaveKnownConsumersWithoutEnablingTheirHullCohort
+```
+
+The final affected selection passed 274 cases in 114.11 seconds, with no skipped
+cases. Tool and solution restores passed. The final solution build took 3.08 seconds
+with zero warnings/errors. Both Python policy suites passed (8 catalog-setup and
+9 formatting-policy cases). Formatting and Git whitespace verification passed;
+the combined policy/formatting stage took 26.35 seconds.
+The full .NET suite was not run. The initial session-replay build used the wrong
+pilot system-property name; correcting it to the existing `SystemId` resolved that
+test-only build error before the matched replays. Unrelated fleet-tag changes were
+present in the shared checkout during validation and are not part of this change.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Average-price transport output, November 14, 2026
 
 The Docker log on `a297bd93` recorded three `config.GetAverageMarketPrices` outputs at
