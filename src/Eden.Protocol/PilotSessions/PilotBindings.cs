@@ -39,9 +39,11 @@ internal sealed class PilotBindings(long sessionId)
         }
     }
 
-    public void ReleaseCorporationReferences()
+    public void ReleaseCorporationReferences() => ReleaseReference("corpRegistry");
+
+    public void ReleaseReference(string service)
     {
-        if (_references.Remove("corpRegistry", out var binding))
+        if (_references.Remove(service, out var binding))
         {
             _bindings.Remove(binding.Reference.Id);
         }

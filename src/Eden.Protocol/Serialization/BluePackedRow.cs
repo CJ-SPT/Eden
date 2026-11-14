@@ -69,7 +69,15 @@ internal sealed record BlueRowDescriptor(IReadOnlyList<(string Name, BlueColumnT
 // item by ID; it never uses these client-supplied quantities or ownership fields.
 internal sealed record BluePackedRow(BlueRowDescriptor Descriptor, byte[] Packed, object?[] Objects)
 {
-    public static void Validate(byte[] packed, int length)
+    public static void Validate(byte[] packed, int length) => Decode(packed, length, []);
+
+    internal void Unpack(Span<byte> destination)
+    {
+        destination.Clear();
+        Decode(Packed, destination.Length, destination);
+    }
+
+    private static void Decode(byte[] packed, int length, Span<byte> destination)
     {
         int input = 0;
         int output = 0;
@@ -95,6 +103,10 @@ internal sealed record BluePackedRow(BlueRowDescriptor Descriptor, byte[] Packed
                 {
                     throw new InvalidDataException("Truncated Blue row literal run.");
                 }
+                if (!destination.IsEmpty)
+                {
+                    packed.AsSpan(input, count).CopyTo(destination[output..]);
+                }
                 input += count;
             }
             output += count;
@@ -107,3 +119,5 @@ internal sealed record BluePackedRow(BlueRowDescriptor Descriptor, byte[] Packed
         }
     }
 }
+
+internal sealed record BlueRowSet(IReadOnlyList<BluePackedRow> Rows);

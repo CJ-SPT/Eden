@@ -213,9 +213,16 @@ internal static class BlueMarshal
             {
                 throw new InvalidDataException("Unsupported Blue reduction dictionary iterator.");
             }
-            if (pair.Length == 2 && global.Name is "set" or "__builtin__.set" && args[0] is List<object?> ids && ids.All(id => id is long))
+            if (pair.Length == 2 && global.Name is "set" or "__builtin__.set" && args[0] is List<object?> values)
             {
-                return ids.Cast<long>().ToHashSet();
+                if (values.All(value => value is long))
+                {
+                    return values.Cast<long>().ToHashSet();
+                }
+                if (values.All(value => value is BluePackedRow))
+                {
+                    return new BlueRowSet(values.Cast<BluePackedRow>().ToArray());
+                }
             }
             if (global.Name == "blue.DBRowDescriptor" && args[0] is object?[] columns)
             {

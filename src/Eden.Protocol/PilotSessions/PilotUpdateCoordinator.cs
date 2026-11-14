@@ -27,6 +27,7 @@ using Eden.Protocol.Redemption;
 using Eden.Protocol.Repair;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Targeting;
+using Eden.Protocol.Trading;
 
 namespace Eden.Protocol.PilotSessions;
 
@@ -86,6 +87,7 @@ internal sealed class PilotUpdateCoordinator(
     CorporationContactsMonitor corporationContacts,
     BookmarkMonitor bookmarks,
     AccessGroupMonitor accessGroups,
+    PlayerTradeHandler trades,
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null,
     SmartbombHandler? smartbombs = null,
@@ -136,6 +138,7 @@ internal sealed class PilotUpdateCoordinator(
         fleets.Advance(context);
         chat.Advance(context);
         guests.Advance(context);
+        trades.Advance(context);
         calendar.Enter(context);
         inbox.Enter(context);
         mailingLists.Enter(context);
@@ -183,6 +186,7 @@ internal sealed class PilotUpdateCoordinator(
         corporations.Reset();
         corporationWallet.Reset();
         guests.Dispose();
+        trades.Dispose();
         online.Reset();
         calendar.Reset();
         inbox.Reset();
@@ -304,6 +308,7 @@ internal sealed class PilotUpdateCoordinator(
             fleets.Advance(context);
             chat.Advance(context);
             guests.Advance(context);
+            trades.Advance(context);
             online.Advance(context);
             calendar.Advance(context);
             inbox.Advance(context);

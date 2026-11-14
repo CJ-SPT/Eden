@@ -111,6 +111,8 @@ internal sealed class PilotCallContext(
 
     public string? ResolveReference(object? objectId) => _bindings.ResolveReference(objectId);
 
+    public void ReleaseReference(string service) => _bindings.ReleaseReference(service);
+
     public BlueObjectReference Reference(string service, PilotBindingLifetime lifetime = PilotBindingLifetime.Pilot) =>
         _bindings.Reference(service, lifetime);
 }

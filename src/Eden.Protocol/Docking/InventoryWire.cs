@@ -46,6 +46,8 @@ internal sealed record InventoryRow(
 
 internal static class InventoryWire
 {
+    internal const int PackedSize = 40;
+
     // Build 3662168 inventory header: nine physical columns plus two virtual getters.
     private static readonly (string Name, BlueColumnType Type)[] s_columns =
     [
@@ -61,4 +63,7 @@ internal static class InventoryWire
     ];
 
     internal static BlueConstructor Descriptor() => BlueRows.Descriptor(s_columns, inventoryVirtuals: true);
+
+    internal static bool IsInventoryDescriptor(BlueRowDescriptor descriptor) =>
+        descriptor.InventoryVirtuals && descriptor.Columns.SequenceEqual(s_columns);
 }

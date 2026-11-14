@@ -100,6 +100,9 @@ public enum MarketSkill
 
 public enum WalletEntryType
 {
+    // Build 3662168 appConst.refPlayerTrading.
+    PlayerTrading = 1,
+
     // Build 3662168 appConst.refSkillPurchase.
     SkillPurchase = 141,
 

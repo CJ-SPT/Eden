@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Direct player trading](protocol/inventory.md#direct-player-trading) records the native trade window and resident settlement.
+
 [Resident mission sites and research agents](protocol/agents.md#resident-mission-sites-and-research-agents)
 records scene admission, gate payment, container transfer and research settlement.
 
@@ -677,6 +679,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Inventory and ship ownership
 
+- [Direct player trading](protocol/inventory.md#direct-player-trading)
 - [Cargo jettison, November 13, 2026](protocol/inventory.md#cargo-jettison-november-13-2026)
 - [Personal Assets window (November 8, 2026)](protocol/inventory.md#personal-assets-window-november-8-2026)
 

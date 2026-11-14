@@ -9,6 +9,7 @@ using Eden.Protocol.Chat;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Skills;
+using Eden.Protocol.Trading;
 
 namespace Eden.Protocol.PilotSessions;
 
@@ -24,6 +25,7 @@ internal sealed class PilotServices(
     ILoginIdentity identity,
     StationGuestHandler guests,
     Eden.Protocol.Exploration.CombatAnomalyHandler anomalies,
+    PlayerTradeHandler trades,
     IPilotOperationScope? operations = null,
     ChatHandler? chat = null,
     SessionDiagnostics? diagnostics = null,
@@ -46,6 +48,7 @@ internal sealed class PilotServices(
         // Release station presence even when a read, write or cancellation ends
         // the session before the connection's dependency scope is disposed.
         using var stationPresence = guests;
+        using var tradePresence = trades;
         using var chatPresence = chat;
         using PilotCallContext context = new(
             accountId,

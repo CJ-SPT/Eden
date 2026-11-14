@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Direct player trading](#direct-player-trading)
 - [Cargo jettison, November 13, 2026](#cargo-jettison-november-13-2026)
 - [Targeted stack merging, November 9, 2026](#targeted-stack-merging-november-9-2026)
 
@@ -292,3 +293,27 @@ FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStackMergeTests|Full
 **Live acceptance.** Not performed; agent client testing is disabled. Native drag/drop interaction and inventory repaint remain unverified.
 
 **Optional maintainer checks.** After updating the server and reconnecting, drag the 80-round stack onto the 560-round stack and confirm one 640-round stack; repeat with a chosen partial quantity if desired.
+
+## Direct player trading
+
+The station Guests menu calls `trademgr.InitiateTrade(characterID)`. Eden returns a native trade moniker and sends `OnTradeInitiate` to the other connected pilot at the same docked location. The bound object lists both offers, accepts single or multiple item drops and partial stacks, updates ISK offers, and handles acceptance and cancellation. Both clients receive trade-state updates and the committed inventory changes.
+
+Offers use temporary display rows. The assets stay in the owner's personal inventory until both pilots accept the same manifest. Adding items or changing an ISK amount clears both acceptances. The resident world verifies both docked locations, available funds, ownership and the quoted asset contents before moving any items or ISK. Settlement transfers assets into the recipients' personal hangars and writes both wallet journals in one resident action. Completed trades persist through the existing checkpoint. Open trades close on cancellation, disconnect or departure and expire on server restart.
+
+Trade accepts personal hangar items, stacks in the docked active ship's holds, and inactive assembled ships with their contents. Direct drops from fitting slots and corporation storage are outside the supported sources. Installed blueprints, courier packages, asset safety wraps, and catalog-restricted items are rejected.
+
+Inert inspection used build **3662168** `code.ccp`, SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. The client paths are `pvptradesvc`, `pvptradewnd`, `invControllers.PlayerTrade`, `inventoryrestrictions.common.checks` and `moniker.Moniker`. The wallet journal uses `appConst.refPlayerTrading` (**1**). EveJS package **261108.1** supplied a comparison for the older client's trade calls and notifications. Its local service source has SHA-256 `37F12AEA4369CE56EBE705C0DF2DF394A4EA50C2FE777E2DB826F1887E16FD56`. The native accept call carries a KeyVal with a set of packed inventory rows. The decoder retains those rows as inert values for manifest comparison. [Carbon Blue Marshal.cpp, revision af0d65b](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) · [Carbon Blue PyRowSet.cpp, revision af0d65b](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/PyRowSet.cpp) · [EVE University direct-trade reference](https://wiki.eveuniversity.org/Alternate_characters#Transferring_goods_between_characters)
+
+**Automated validation.** The focused .NET run passed 238 cases in 181.22 seconds. Trade coverage includes native manifest encoding, partial and assembled items, dual acceptance, unchanged assets and balances after rejection, disconnect cleanup, duplicate-acceptance rejection and reopened checkpoints. The warmed exchange issued zero SQL commands and opened zero connections. Tool and solution restore passed. The solution build passed in 15.17 seconds with zero warnings and errors. Both Python policy suites passed, with 8 catalog cases and 9 formatting cases. Formatting verification passed in 41.36 seconds.
+
+The focused filter was:
+
+```text
+FullyQualifiedName~PlayerTradeTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~InventoryStackSplitTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~ContractAssetTests|FullyQualifiedName~ContractServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Market.MarketTests|FullyQualifiedName~Hosting.ServerServicesTests|FullyQualifiedName~Hosting.GameplayDependenciesTests|FullyQualifiedName~Hosting.DataModelOwnershipTests
+```
+
+After rebasing onto `78a2a69a`, restore, build and the `FullyQualifiedName~PlayerTradeTests|FullyQualifiedName~MiningHoldConfigurationTests` filter passed in 34.03 seconds with 7 cases. Formatting verification passed on the rebased worktree.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** From Guests, start a trade between two docked clients, exchange a partial stack for ISK, and verify both hangars and wallets. Repeat with a changed offer, then close one window and verify cancellation on the other client.

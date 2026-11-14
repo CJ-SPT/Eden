@@ -4,6 +4,7 @@ using Eden.Infrastructure.Registration;
 using Eden.Protocol.Information;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Trading;
 
 namespace Eden.Protocol.Docking;
 
@@ -11,7 +12,8 @@ namespace Eden.Protocol.Docking;
 internal sealed class DockedCompatibilityHandler(
     IPilotFleet fleet,
     DirectionalScanHandler scanner,
-    Eden.Gameplay.Structures.IPilotStructures structures
+    Eden.Gameplay.Structures.IPilotStructures structures,
+    PlayerTradeHandler trades
 ) : ISelectedPilotCallHandler
 {
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
@@ -95,6 +97,7 @@ internal sealed class DockedCompatibilityHandler(
                             .Select(w => new LocationRow(w.Id, w.Name, w.SystemId, w.Position.X, w.Position.Y, w.Position.Z))
                     )
                     .Concat(scanner.Names(context, ids.OfType<long>().ToHashSet()))
+                    .Concat(trades.Locations(ids.OfType<long>().ToHashSet()))
                     .Concat(
                         structures
                             .Names(ids.OfType<long>().Where(id => id >= Eden.Gameplay.Structures.StructureRules.FirstStructureId).ToArray())
