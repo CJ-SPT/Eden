@@ -76,9 +76,15 @@ internal static class MissionCatalog
         }
         return content;
     });
+    private static readonly CatalogDefinition<MissionProfile?> s_profile = new("agent-mission", Load, EstimatedBytes: 16384);
     private static readonly CatalogDefinition<ImmutableArray<MissionProfile>> s_profiles = new(
         "agent-missions",
-        Load,
+        (catalog, _) =>
+            s_content
+                .Value.Missions.Select(definition => catalog.Definition(s_profile, definition.MissionId))
+                .OfType<MissionProfile>()
+                .ToImmutableArray(),
+        // The full view retains profiles even if their individual cache entries are evicted.
         Estimate: profiles => 1024 + profiles.Length * 16384L
     );
 
@@ -92,68 +98,65 @@ internal static class MissionCatalog
             .Values.Select(mission => checked((int)(mission.KillMission?.ObjectiveTypeID ?? 0)));
 
     internal static MissionProfile Find(CatalogDbContext catalog, int missionId) =>
-        Read(catalog).SingleOrDefault(p => p.Definition.MissionId == missionId)
-        ?? throw new InvalidDataException("This mission's content is unavailable.");
+        catalog.Definition(s_profile, missionId) ?? throw new InvalidDataException("This mission's content is unavailable.");
 
-    private static ImmutableArray<MissionProfile> Load(CatalogDbContext catalog, int unused)
+    private static MissionProfile? Load(CatalogDbContext catalog, int missionId)
     {
-        List<MissionProfile> profiles = [];
-        foreach (var definition in s_content.Value.Missions)
+        var definition = s_content.Value.Missions.SingleOrDefault(m => m.MissionId == missionId);
+        if (definition is null)
         {
-            var mission = catalog.Read(CatalogData.Client.Missions, (long)definition.MissionId);
-            if (mission is null)
-            {
-                continue;
-            }
-            int nameId = checked((int)(mission.NameID ?? 0));
-            int briefingId = checked((int)(mission.Messages?.GetValueOrDefault("messages.mission.briefing") ?? 0));
-            string name =
-                catalog.Read(CatalogData.Client.LocalizationFsdEnUs, (long)nameId)?.Text
-                ?? catalog.Read(CatalogData.Sde.Missions, (long)definition.MissionId)?.Name?.En
-                ?? "Mission";
-            string briefing = catalog.Read(CatalogData.Client.LocalizationFsdEnUs, (long)briefingId)?.Text ?? name;
-            int? dungeonId = checked((int?)mission.KillMission?.DungeonID);
-            int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? mission.KillMission?.ObjectiveTypeID ?? 0));
-            int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? mission.KillMission?.ObjectiveQuantity ?? 0));
-            double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
-            if (definition.Mining && (mission.ContentTemplate != BasicMiningMission || dungeonId is null || !(volume > 0)))
-            {
-                throw new InvalidDataException("Mining mission does not have a catalog dungeon and objective cargo.");
-            }
-            int faction = 0;
-            int corporation = 0;
-            ImmutableArray<MissionRoomProfile> rooms = [];
-            ImmutableArray<MissionDeposit> deposits = [];
-            if (dungeonId is int id)
-            {
-                var dungeon = catalog.Require(CatalogData.Client.Dungeons, (long)id);
-                faction = checked((int)(dungeon.FactionID ?? 0));
-                corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
-                rooms = Rooms(catalog, definition, dungeon, corporation);
-                if (definition.Mining)
-                {
-                    deposits = Deposits(catalog, dungeon, cargoType, quantity, volume);
-                }
-            }
-
-            if (dungeonId.HasValue && cargoType > 0 && (quantity <= 0 || volume <= 0))
-            {
-                throw new InvalidDataException("Combat retrieval objective has invalid catalog cargo.");
-            }
-            if (!dungeonId.HasValue && (cargoType == 0 || quantity <= 0 || volume <= 0))
-            {
-                continue;
-            }
-            profiles.Add(
-                new(definition, name, nameId, briefingId, briefing, dungeonId, faction, corporation, cargoType, quantity, volume, rooms)
-                {
-                    SupplierFaction = checked((int)(mission.FactionID ?? 0)),
-                    SupplierCorporation = checked((int)(mission.CorporationID ?? 0)),
-                    Deposits = deposits,
-                }
-            );
+            return null;
         }
-        return profiles.ToImmutableArray();
+        var mission = catalog.Read(CatalogData.Client.Missions, (long)definition.MissionId);
+        if (mission is null)
+        {
+            return null;
+        }
+        int nameId = checked((int)(mission.NameID ?? 0));
+        int briefingId = checked((int)(mission.Messages?.GetValueOrDefault("messages.mission.briefing") ?? 0));
+        string name =
+            catalog.Read(CatalogData.Client.LocalizationFsdEnUs, (long)nameId)?.Text
+            ?? catalog.Read(CatalogData.Sde.Missions, (long)definition.MissionId)?.Name?.En
+            ?? "Mission";
+        string briefing = catalog.Read(CatalogData.Client.LocalizationFsdEnUs, (long)briefingId)?.Text ?? name;
+        int? dungeonId = checked((int?)mission.KillMission?.DungeonID);
+        int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? mission.KillMission?.ObjectiveTypeID ?? 0));
+        int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? mission.KillMission?.ObjectiveQuantity ?? 0));
+        double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
+        if (definition.Mining && (mission.ContentTemplate != BasicMiningMission || dungeonId is null || !(volume > 0)))
+        {
+            throw new InvalidDataException("Mining mission does not have a catalog dungeon and objective cargo.");
+        }
+        int faction = 0;
+        int corporation = 0;
+        ImmutableArray<MissionRoomProfile> rooms = [];
+        ImmutableArray<MissionDeposit> deposits = [];
+        if (dungeonId is int id)
+        {
+            var dungeon = catalog.Require(CatalogData.Client.Dungeons, (long)id);
+            faction = checked((int)(dungeon.FactionID ?? 0));
+            corporation = checked((int)(catalog.Read(CatalogData.Client.Factions, (long)faction)?.CorporationID ?? 0));
+            rooms = Rooms(catalog, definition, dungeon, corporation);
+            if (definition.Mining)
+            {
+                deposits = Deposits(catalog, dungeon, cargoType, quantity, volume);
+            }
+        }
+
+        if (dungeonId.HasValue && cargoType > 0 && (quantity <= 0 || volume <= 0))
+        {
+            throw new InvalidDataException("Combat retrieval objective has invalid catalog cargo.");
+        }
+        if (!dungeonId.HasValue && (cargoType == 0 || quantity <= 0 || volume <= 0))
+        {
+            return null;
+        }
+        return new(definition, name, nameId, briefingId, briefing, dungeonId, faction, corporation, cargoType, quantity, volume, rooms)
+        {
+            SupplierFaction = checked((int)(mission.FactionID ?? 0)),
+            SupplierCorporation = checked((int)(mission.CorporationID ?? 0)),
+            Deposits = deposits,
+        };
     }
 
     private static ImmutableArray<MissionDeposit> Deposits(

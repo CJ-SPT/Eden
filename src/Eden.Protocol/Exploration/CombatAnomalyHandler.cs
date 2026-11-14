@@ -104,6 +104,14 @@ internal sealed class CombatAnomalyHandler(
             }
         }
         _journal = journal;
+        // Docked sessions need escalation notifications, but have no space scene.
+        // Explicit scanner subscriptions still receive their normal directory updates.
+        if (context.Pilot.Position is null && _system != system)
+        {
+            TrackGhostSite(context, null, []);
+            context.Flight.RefreshAnomalies([]);
+            return;
+        }
         var current = sites.List(system, Now);
         var signatures = sites.Signatures(system, Now);
         var position = context.Pilot.Position;

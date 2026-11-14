@@ -97,6 +97,8 @@ public sealed partial class MissionStructureTests
         using (WorldDbContext world = new(f.Db.Path))
         {
             using var transaction = world.Database.BeginTransaction();
+            // The failed detached projection below must roll back to a persisted mission baseline.
+            Assert.False(world.Set<SavedMission>().Find(mission.Id)!.ObjectiveComplete);
             var target = world.Set<WorldNpc>().Find(warehouse.Id)!;
             target.ShieldCharge = 0;
             target.ArmorDamage = warehouse.Health.Defense.Armor;

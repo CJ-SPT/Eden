@@ -6,6 +6,75 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Character selection and docked first ticks, November 14, 2026
+
+The November 14 Docker log on `a297bd93` showed a 1.88-second tick ownership hold and
+a nearby 2.13-second RPC queue wait. The copied current checkpoint contained 23,399 pilots;
+the base and active skill-package catalog hashes matched the server. The three logged pilots
+were replayed concurrently with normal selection, five ticks each and reply encoding.
+This in-process replay excludes network output, background traffic maintenance and checkpoints.
+The server and original save were not modified.
+
+On `1c69d3de`, mission tracking loaded every mission profile to find one accepted mission:
+1,523 catalog commands in 658.30 ms. The first docked tick then loaded exploration catalogs,
+issuing 4,598 catalog commands across that frame while other sessions waited. Mission lookup
+now caches individual immutable profiles by catalog generation; the complete directory reuses
+those profiles. Docked sessions without a scanner subscription retain escalation notifications
+and ghost-site cleanup but do not construct a space scene. Explicit scanner registration and
+undocking continue to load and publish sites normally. Mission expiry/cargo tracking is unchanged.
+
+| Copied-save workload | Baseline | Updated |
+| --- | ---: | ---: |
+| Three concurrent character-selection calls | 1,006.57–1,074.68 ms | 492.58–576.33 ms |
+| Three first ticks, including reply encoding | 1,703.76–1,704.62 ms | 19.94–21.18 ms |
+| Cold mission-tracking catalog commands | 1,523 | 16 |
+| Catalog/SQL commands across first ticks | 4,598 | 0 |
+
+These are one Debug run per version on the development Windows host, with identical frozen inputs.
+They do not establish Docker latency or eliminate all cold fitting/roster preparation. The final
+warmed frames took 1.69–2.34 ms and performed no SQL or fitting calculations. Reproduction is in
+[the saved selection replay procedure](../testing.md#saved-character-selection-replay); raw logs
+are under ignored `artifacts/performance-review-20261114/selection-baseline` and `selection-updated`.
+
+Gameplay references: [missions](https://wiki.eveuniversity.org/Mission) and
+[combat sites](https://wiki.eveuniversity.org/Guide_to_combat_sites). Local EveJS comparison used
+`missionTrackerMgrService.js` (SHA-256 prefix `667D5DA427DD6B44`) and `scanMgrService.js`
+(`A565E0C5064A3115`): the tracker uses station/location state, and signal tracker registration
+explicitly requests the full state. Eden's pinned wire schemas and arrival/expiry rules remain unchanged.
+
+**Automated validation.** The exact cold-catalog and docked-unsubscribed-tick regressions passed.
+The configured saved-selection replay passed before and after the change (39.86 s and 41.17 s
+including test startup and snapshot setup/cleanup). The affected selection below passed all
+154 cases in 5m37s. A final exact catalog lookup rerun covers conservative cache accounting:
+the full directory retains profiles even after their individual cache entries are evicted.
+Tool/solution restores, solution build (1.13 s, no warnings/errors), both Python policy suites
+(8 and 9 cases), formatting and diff checks passed. No full .NET suite ran.
+
+The initial broader Agents run was interrupted after a rollback fixture failed at 6m54s.
+Its identical failure reproduced on `1c69d3de`: the fixture expected a SQL mission row it had
+never projected. It now establishes that baseline before injecting projection failure, and
+both resident/offline cases pass with unchanged rollback assertions. A subsequent unqualified
+`~MissionTests` filter accidentally selected `ResidentAdmissionTests`; its two disconnect
+cases failed their immediate SQL-projection expectation and remain outside this milestone.
+That interrupted run is not counted as validation; the final filter uses explicit namespaces.
+
+```powershell
+$classes = @(
+    'Agents.MissionCatalogLookupTests', 'Agents.MissionTrackerTests',
+    'Agents.MissionContentTests.ExpandedContentLoadsEveryDefinition', 'Agents.MissionLayoutTests',
+    'Agents.MiningMissionTests', 'Agents.MissionPersistenceTests', 'Agents.MissionProtocolTests',
+    'Agents.MissionStructureTests', 'Exploration.CombatAnomalyTests', 'Exploration.ProbeScanningTests',
+    'Exploration.DedAndGhostSiteTests', 'PilotSessions.CorporationSelectionTests', 'PilotSessions.TypedSessionTests'
+)
+$filter = ($classes | ForEach-Object { 'FullyQualifiedName~Eden.Protocol.Tests.' + $_ }) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After deployment, compare selection, first-tick and queue latency warnings
+when multiple pilots sign in together. Cold roster preparation and network behavior remain unverified.
+
 ## Narrow corporation owner names, November 14, 2026
 
 The Docker startup sample on `a297bd93` recorded `corpRegistry.GetEveOwners` at 263–323 ms,

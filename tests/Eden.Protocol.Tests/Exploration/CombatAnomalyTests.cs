@@ -26,6 +26,54 @@ namespace Eden.Protocol.Tests.Exploration;
 
 public sealed class CombatAnomalyTests
 {
+    [Fact]
+    public void DockedUnsubscribedTicksDoNotLoadSitesButRegistrationAndUndockingStillDo()
+    {
+        using NpcCombatTests.Fixture f = new(liveWorld: true, useTestClock: true);
+        PassiveCatalogFixture.LoadCombatAnomalies(new WorldDatabase(f.Db.Path).CatalogPath);
+        f.Db.Store.SetPosition(f.Pilot.ShipId, null, f.Pilot.SystemId);
+        var pilot = f.Pilot;
+        using var scope = f.Db.Services.CreateScope();
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            scope.ServiceProvider.GetRequiredService<FlightSessionFactory>().Create,
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        CombatAnomalyStore sites = new(new(f.Db.Path));
+        CombatAnomalyHandler handler = new(sites, f.Db.Services.GetRequiredService<Eden.Gameplay.Agents.IPilotMissions>(), f.Clock);
+        using (var metrics = SessionPerformance.Begin("docked exploration", _ => { }, force: true)!)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                handler.Advance(context);
+            }
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+            Assert.Empty(context.Notifications);
+        }
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Empty(world.Set<WorldCombatAnomaly>());
+        }
+        Assert.IsType<PilotCallResult.Success>(handler.Call(context, "scanMgr", "SignalTrackerRegister", []));
+        Assert.NotEmpty(Assert.Single(context.Notifications.OfType<SignalTrackerFullState>()).Sites);
+        context.Notifications.Clear();
+        handler.Advance(context);
+        Assert.DoesNotContain(context.Notifications, n => n is SignalTrackerFullState);
+        var site = Assert.Single(sites.List(pilot.SystemId, f.Clock.Now));
+        f.Db.Store.SetPosition(pilot.ShipId, site.Position, pilot.SystemId);
+        context.ChangeShip(f.Pilot);
+        context.Flight.Snapshot();
+        CombatAnomalyHandler unregistered = new(sites, f.Db.Services.GetRequiredService<Eden.Gameplay.Agents.IPilotMissions>(), f.Clock);
+        unregistered.Advance(context);
+        Assert.True(Assert.Single(sites.List(pilot.SystemId, f.Clock.Now)).Started);
+    }
+
     private sealed class EmptyAsteroids : IAsteroidField
     {
         public IReadOnlyList<StaticSpaceObject> List(int systemId) => [];

@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Character selection and docked first ticks](protocol/performance.md#character-selection-and-docked-first-ticks-november-14-2026)
+records individual mission catalog loading and deferred docked scene preparation.
+
 [Narrow corporation owner names](protocol/performance.md#narrow-corporation-owner-names-november-14-2026)
 records the member-name projection and unchanged native reply.
 
