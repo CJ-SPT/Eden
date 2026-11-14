@@ -288,6 +288,15 @@ public sealed class LiveWorldTests
         using LiveWorld live = new(new(db.Path), new TestClock(), _ => { });
         LauncherStore launcher = new(new(db.Path), TimeProvider.System);
         launcher.Initialize();
+        using var commands = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin("resident authentication", _ => { }, force: true)!;
+        int legacyConnections = 0;
+        using var ownership = live.ObserveOwnership(timing =>
+        {
+            if (timing.Operation == "SQLite connection")
+            {
+                Interlocked.Increment(ref legacyConnections);
+            }
+        });
         var account = launcher.Register(new("Resident account", "resident test password"));
         Assert.Equal(1, DiskValue(db.Path, $"SELECT COUNT(*) FROM LauncherCredential WHERE AccountId={account.AccountId}"));
         var session = launcher.SignIn(new("Resident account", "resident test password", true));
@@ -298,6 +307,9 @@ public sealed class LiveWorldTests
         launcher.Revoke(session.AccessToken);
         Assert.Equal(1, DiskValue(db.Path, "SELECT Revoked FROM LauncherSession"));
         await Assert.ThrowsAsync<LauncherException>(() => launcher.IssueTicketAsync(session.AccessToken));
+        Assert.Equal((long)Eden.Protocol.PilotSessions.PilotRole.Player, launcher.ReadRoles(account.AccountId));
+        Assert.Equal(0, commands.Commands);
+        Assert.Equal(0, legacyConnections);
     }
 
     [Fact]

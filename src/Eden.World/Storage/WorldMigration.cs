@@ -168,6 +168,7 @@ internal static class WorldMigration
         JetcanSchema.Upgrade(world);
         JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Eden.World.Fleets.CommandBurstSchema.Upgrade(world);
+        LauncherSchema.Upgrade(world);
         if (version < 155)
         {
             world.Database.ExecuteSqlRaw(

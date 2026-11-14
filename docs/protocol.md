@@ -887,3 +887,5 @@ Progressive supply, demand, trade settlement and validation are recorded under [
 
 [Mining skill points](protocol/industry.md#mining-skill-point-rewards-november-11-2026) cover silent unallocated rewards
 for delivered ore, ice and gas, combined yield/SP multipliers, atomic persistence and web configuration.
+
+- [Resident launcher authentication, November 14, 2026](protocol/startup.md#resident-launcher-authentication-november-14-2026)

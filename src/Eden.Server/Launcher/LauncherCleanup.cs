@@ -1,3 +1,5 @@
+using Eden.Data.World.Launcher;
+
 namespace Eden.Server.Launcher;
 
 internal sealed record LauncherCleanup(int Tickets, int RefreshTokens, int Sessions)
@@ -10,16 +12,6 @@ internal sealed partial class LauncherStore
     internal const int CleanupBatchSize = 256;
     private const int MaximumCleanupBatches = 8;
 
-    // Both branches use (Revoked,Expires). Limit candidate families before looking up children.
-    private const string TerminalFamilies = """
-        WITH terminal AS (
-            SELECT Id FROM (SELECT Id FROM LauncherSession WHERE Revoked=0 AND Expires<=$now ORDER BY Expires LIMIT $batch)
-            UNION ALL
-            SELECT Id FROM (SELECT Id FROM LauncherSession WHERE Revoked=1 ORDER BY Expires LIMIT $batch)
-            LIMIT $batch
-        )
-        """;
-
     internal void Maintain()
     {
         for (int batch = 0; batch < MaximumCleanupBatches; batch++)
@@ -31,55 +23,52 @@ internal sealed partial class LauncherStore
         }
     }
 
-    internal LauncherCleanup CleanupExpired()
-    {
-        using var db = Open();
-        using var tx = db.BeginTransaction(deferred: false);
-        long now = Now;
-        int expired = Execute(
-            db,
-            tx,
-            "DELETE FROM LauncherTicket WHERE Hash IN (SELECT Hash FROM LauncherTicket WHERE Expires<=$now ORDER BY Expires LIMIT $batch)",
-            ("$now", now),
-            ("$batch", CleanupBatchSize)
-        );
-        int tickets = Execute(
-            db,
-            tx,
-            TerminalFamilies
-                + """
-                DELETE FROM LauncherTicket WHERE Hash IN (
-                    SELECT Hash FROM LauncherTicket WHERE SessionId IN (SELECT Id FROM terminal) LIMIT $batch
+    internal LauncherCleanup CleanupExpired() =>
+        Write(world =>
+        {
+            long now = Now;
+            var sessions = world
+                .Filter<SavedLauncherSession>(row => !row.Revoked && row.Expires <= now)
+                .OrderBy(row => row.Expires)
+                .ThenBy(row => row.Id)
+                .Take(CleanupBatchSize)
+                .AsEnumerable()
+                .Concat(
+                    world
+                        .Filter<SavedLauncherSession>(row => row.Revoked)
+                        .OrderBy(row => row.Expires)
+                        .ThenBy(row => row.Id)
+                        .Take(CleanupBatchSize)
                 )
-                """,
-            ("$now", now),
-            ("$batch", CleanupBatchSize)
-        );
-        int refresh = Execute(
-            db,
-            tx,
-            TerminalFamilies
-                + """
-                DELETE FROM LauncherRefresh WHERE Hash IN (
-                    SELECT Hash FROM LauncherRefresh WHERE SessionId IN (SELECT Id FROM terminal) LIMIT $batch
+                .Take(CleanupBatchSize)
+                .ToArray();
+            var expired = world
+                .Filter<SavedLauncherTicket>(row => row.Expires <= now)
+                .OrderBy(row => row.Expires)
+                .ThenBy(row => row.Hash)
+                .Take(CleanupBatchSize)
+                .ToArray();
+            var expiredKeys = expired.Select(row => row.Hash).ToHashSet(StringComparer.Ordinal);
+            var tickets = sessions
+                .SelectMany(session => world.Filter<SavedLauncherTicket>(row => row.SessionId == session.Id))
+                .Where(row => !expiredKeys.Contains(row.Hash))
+                .Take(CleanupBatchSize)
+                .ToArray();
+            var refreshes = sessions
+                .SelectMany(session => world.Filter<SavedLauncherRefresh>(row => row.SessionId == session.Id))
+                .Take(CleanupBatchSize)
+                .ToArray();
+            world.RemoveRange(expired);
+            world.RemoveRange(tickets);
+            world.RemoveRange(refreshes);
+            world.SaveChanges();
+            var removed = sessions
+                .Where(session =>
+                    !world.Filter<SavedLauncherRefresh>(row => row.SessionId == session.Id).Any()
+                    && !world.Filter<SavedLauncherTicket>(row => row.SessionId == session.Id).Any()
                 )
-                """,
-            ("$now", now),
-            ("$batch", CleanupBatchSize)
-        );
-        int sessions = Execute(
-            db,
-            tx,
-            TerminalFamilies
-                + """
-                DELETE FROM LauncherSession WHERE Id IN (SELECT Id FROM terminal)
-                    AND NOT EXISTS (SELECT 1 FROM LauncherTicket WHERE SessionId=LauncherSession.Id)
-                    AND NOT EXISTS (SELECT 1 FROM LauncherRefresh WHERE SessionId=LauncherSession.Id)
-                """,
-            ("$now", now),
-            ("$batch", CleanupBatchSize)
-        );
-        tx.Commit();
-        return new(expired + tickets, refresh, sessions);
-    }
+                .ToArray();
+            world.RemoveRange(removed);
+            return new LauncherCleanup(expired.Length + tickets.Length, refreshes.Length, removed.Length);
+        });
 }

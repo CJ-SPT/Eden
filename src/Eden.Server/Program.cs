@@ -218,7 +218,6 @@ internal static class Program
         }
         Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
         var accounts = services.GetRequiredService<LauncherStore>();
-        accounts.Initialize();
         if (Value("--grant-redeem") is { } redeemPath)
         {
             var grant =
@@ -250,6 +249,7 @@ internal static class Program
             long residentStarted = Stopwatch.GetTimestamp();
             world.Economy.Warm();
             ServerLog.Console.Information($"Resident world loaded in {Stopwatch.GetElapsedTime(residentStarted).TotalSeconds:F2}s.");
+            accounts.Initialize();
             var mods = services.GetRequiredService<Eden.Server.Modding.ModRuntime>();
             lifetime.OnStop("mods", mods.Stop);
             mods.Start();

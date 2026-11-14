@@ -12,11 +12,15 @@ public sealed class LauncherCleanupTests
 
     private static int Count(string path, string table, bool disk = false)
     {
-        using var db = disk ? WorldConnections.FileConnection(path) : WorldConnections.Create(path);
-        db.Open();
-        using var command = db.CreateCommand();
-        command.CommandText = "SELECT COUNT(*) FROM " + table;
-        return Convert.ToInt32(command.ExecuteScalar());
+        string query = "SELECT COUNT(*) AS Value FROM " + table;
+        if (disk)
+        {
+            using var connection = WorldConnections.FileConnection(path);
+            using WorldDbContext saved = new(connection);
+            return saved.Database.SqlQueryRaw<int>(query).AsEnumerable().Single();
+        }
+        using WorldDbContext world = new(path);
+        return world.Database.SqlQueryRaw<int>(query).AsEnumerable().Single();
     }
 
     [Fact]

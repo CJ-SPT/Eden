@@ -354,3 +354,10 @@ test verified a successful download, profile-local persistence, and connection a
 
 Live game acceptance was not performed. On a deployed host, verify that a fresh launcher profile can connect using only the
 API address and the fingerprint from the server log.
+
+## Resident launcher authentication (November 14, 2026)
+
+Launcher registration, password verification, session rotation, replay revocation, roles, ticket creation and single-use ticket
+consumption use indexed resident records. Authentication mutations wait for their detached checkpoint before returning. Expired
+sessions and their child tokens are removed in bounded resident batches. Existing launcher tables and token hashes are loaded when
+the world starts. The existing launcher protocol and cryptographic verification are shared across saved worlds and resident sessions.

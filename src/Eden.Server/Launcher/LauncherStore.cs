@@ -1,16 +1,17 @@
 using System.Security.Cryptography;
 using System.Text;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Launcher;
 using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.Sqlite;
 
 namespace Eden.Server.Launcher;
 
-// Authentication tables extend the world without competing with gameplay's user_version migrations.
 [Injectable(InjectionType.Singleton)]
 internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider clock, ILauncherPasswords? passwords = null)
 {
@@ -19,41 +20,17 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
     internal const int TicketSeconds = 180;
     private const int MinimumPasswordLength = 6;
     private const int MaximumPasswordLength = 128;
+    private const long FirstAccountFloor = 1000000;
     private readonly ILauncherPasswords _passwords = passwords ?? new LauncherPasswords();
 
     private long Now => clock.GetUtcNow().ToUnixTimeSeconds();
 
-    public void Initialize()
-    {
-        using (var db = Open())
-        {
-            Execute(
-                db,
-                null,
-                """
-                CREATE TABLE IF NOT EXISTS LauncherCredential(
-                    AccountId INTEGER PRIMARY KEY REFERENCES WorldAccount(Id), NormalizedName TEXT NOT NULL UNIQUE,
-                    PasswordHash TEXT NOT NULL, Roles INTEGER NOT NULL);
-                CREATE TABLE IF NOT EXISTS LauncherSession(
-                    Id TEXT PRIMARY KEY, AccountId INTEGER NOT NULL REFERENCES WorldAccount(Id), AccessHash TEXT NOT NULL UNIQUE,
-                    AccessExpires INTEGER NOT NULL, Expires INTEGER NOT NULL, Revoked INTEGER NOT NULL DEFAULT 0);
-                CREATE TABLE IF NOT EXISTS LauncherRefresh(
-                    Hash TEXT PRIMARY KEY, SessionId TEXT NOT NULL REFERENCES LauncherSession(Id), Used INTEGER NOT NULL DEFAULT 0);
-                CREATE TABLE IF NOT EXISTS LauncherTicket(
-                    Hash TEXT PRIMARY KEY, SessionId TEXT NOT NULL REFERENCES LauncherSession(Id), Expires INTEGER NOT NULL);
-                CREATE INDEX IF NOT EXISTS IX_LauncherSession_Revoked_Expires ON LauncherSession(Revoked,Expires);
-                CREATE INDEX IF NOT EXISTS IX_LauncherRefresh_SessionId ON LauncherRefresh(SessionId);
-                CREATE INDEX IF NOT EXISTS IX_LauncherTicket_SessionId ON LauncherTicket(SessionId);
-                CREATE INDEX IF NOT EXISTS IX_LauncherTicket_Expires ON LauncherTicket(Expires);
-                """
-            );
-        }
-        Maintain();
-    }
+    public void Initialize() => Maintain();
 
     public AccountReply Register(AccountRequest request)
     {
         string name = ValidateName(request.UserName);
+        string normalized = name.ToUpperInvariant();
         ValidatePassword(request.Password);
         long roles = (long)PilotRole.Player;
         if (request.Developer)
@@ -73,212 +50,163 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
             roles = (long)PilotRole.Developer;
         }
         string passwordHash = _passwords.Hash(name, request.Password);
-        using var db = Open();
-        using var tx = db.BeginTransaction(deferred: false);
-        if (Scalar(db, tx, "SELECT Id FROM WorldAccount WHERE upper(UserName)=$name", ("$name", name.ToUpperInvariant())) is not null)
+        return Write(world =>
         {
-            throw new LauncherException("name_unavailable", "That account name is already in use.", 409);
-        }
-        long id = Convert.ToInt64(Scalar(db, tx, "SELECT MAX(COALESCE(MAX(Id),1000000),1000000)+1 FROM WorldAccount"));
-        Execute(
-            db,
-            tx,
-            "INSERT INTO WorldAccount(Id,UserName,CreatedAt,CloneGrade) VALUES($id,$name,$created,$grade)",
-            ("$id", id),
-            ("$name", name),
-            ("$created", clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
-            ("$grade", (int)AccountCloneGrade.Omega)
-        );
-        Execute(
-            db,
-            tx,
-            "INSERT INTO LauncherCredential VALUES($id,$name,$password,$roles)",
-            ("$id", id),
-            ("$name", name.ToUpperInvariant()),
-            ("$password", passwordHash),
-            ("$roles", roles)
-        );
-        tx.Commit();
-        return new(id, name, request.Developer);
+            if (
+                world.Filter<Account>(row => row.UserName.ToUpper() == normalized).Any()
+                || world.Filter<SavedLauncherCredential>(row => row.NormalizedName == normalized).Any()
+            )
+            {
+                throw new LauncherException("name_unavailable", "That account name is already in use.", 409);
+            }
+            long id = checked(Math.Max(world.Set<Account>().Select(row => (long?)row.Id).Max() ?? 0, FirstAccountFloor) + 1);
+            world.Add(
+                new Account
+                {
+                    Id = id,
+                    UserName = name,
+                    CloneGrade = AccountCloneGrade.Omega,
+                    CreatedAt = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                }
+            );
+            world.Add(
+                new SavedLauncherCredential(id)
+                {
+                    NormalizedName = normalized,
+                    PasswordHash = passwordHash,
+                    Roles = roles,
+                }
+            );
+            return new AccountReply(id, name, request.Developer);
+        });
     }
 
     private LauncherCredential? ReadCredential(string userName)
     {
-        using var db = Open();
-        using var command = Command(
-            db,
-            null,
-            """
-            SELECT a.Id,a.UserName,c.PasswordHash FROM WorldAccount a
-            JOIN LauncherCredential c ON c.AccountId=a.Id WHERE c.NormalizedName=$name
-            """,
-            ("$name", (userName ?? "").Trim().ToUpperInvariant())
+        string normalized = (userName ?? "").Trim().ToUpperInvariant();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var row = world.Filter<SavedLauncherCredential>(credential => credential.NormalizedName == normalized).SingleOrDefault();
+                var account = row is null ? null : world.Set<Account>().Find(row.AccountId);
+                return row is not null && account is not null
+                    ? new LauncherCredential(account.Id, account.UserName, row.PasswordHash)
+                    : null;
+            }
         );
-        using var reader = command.ExecuteReader();
-        return reader.Read() ? new(reader.GetInt64(0), reader.GetString(1), reader.GetString(2)) : null;
     }
 
     public SessionReply SignIn(SignInRequest request)
     {
-        // Expensive password work must never retain the resident world's connection lease.
+        // Password work is outside the world owner. Recheck the credential before issuing a session.
         var credential = ReadCredential(request.UserName);
         var verified = request.Password is { Length: <= MaximumPasswordLength }
             ? _passwords.Verify(credential?.Name ?? "", credential?.Hash, request.Password)
             : PasswordVerificationResult.Failed;
         if (credential is null || verified == PasswordVerificationResult.Failed)
         {
-            throw new LauncherException("invalid_credentials", "Invalid account name or password.", 401);
+            throw InvalidCredentials();
         }
         string? replacement =
             verified == PasswordVerificationResult.SuccessRehashNeeded ? _passwords.Hash(credential.Name, request.Password!) : null;
-        using var db = Open();
-        using var tx = db.BeginTransaction(deferred: false);
-        var current = Scalar(db, tx, "SELECT PasswordHash FROM LauncherCredential WHERE AccountId=$id", ("$id", credential.Id));
-        if (!string.Equals(current as string, credential.Hash, StringComparison.Ordinal))
+        return Write(world =>
         {
-            throw new LauncherException("invalid_credentials", "Invalid account name or password.", 401);
-        }
-        if (replacement is not null)
-        {
-            Execute(
-                db,
-                tx,
-                "UPDATE LauncherCredential SET PasswordHash=$hash WHERE AccountId=$id",
-                ("$hash", replacement),
-                ("$id", credential.Id)
+            var current = world.Set<SavedLauncherCredential>().Find(credential.Id);
+            if (current is null || !string.Equals(current.PasswordHash, credential.Hash, StringComparison.Ordinal))
+            {
+                throw InvalidCredentials();
+            }
+            current.PasswordHash = replacement ?? current.PasswordHash;
+            long now = Now;
+            string sessionId = Token();
+            string access = Token();
+            string? refresh = request.RememberMe ? Token() : null;
+            long expires = now + AccessSeconds;
+            world.Add(
+                new SavedLauncherSession(sessionId)
+                {
+                    AccountId = credential.Id,
+                    AccessHash = Hash(access),
+                    AccessExpires = expires,
+                    Expires = request.RememberMe ? now + RefreshSeconds : expires,
+                }
             );
-        }
-        var result = IssueSession(db, tx, credential.Id, credential.Name, request.RememberMe);
-        tx.Commit();
-        return result;
-    }
-
-    private SessionReply IssueSession(SqliteConnection db, SqliteTransaction tx, long id, string name, bool remember)
-    {
-        string sessionId = Token();
-        string access = Token();
-        string? refresh = remember ? Token() : null;
-        long expires = Now + AccessSeconds;
-        Execute(
-            db,
-            tx,
-            "INSERT INTO LauncherSession(Id,AccountId,AccessHash,AccessExpires,Expires) VALUES($s,$id,$a,$e,$r)",
-            ("$s", sessionId),
-            ("$id", id),
-            ("$a", Hash(access)),
-            ("$e", expires),
-            ("$r", remember ? Now + RefreshSeconds : expires)
-        );
-        if (refresh is not null)
-        {
-            Execute(db, tx, "INSERT INTO LauncherRefresh(Hash,SessionId) VALUES($h,$s)", ("$h", Hash(refresh)), ("$s", sessionId));
-        }
-        long roles = Convert.ToInt64(Scalar(db, tx, "SELECT Roles FROM LauncherCredential WHERE AccountId=$id", ("$id", id)));
-        return new(id, name, access, expires, refresh, roles == (long)PilotRole.Developer);
+            if (refresh is not null)
+            {
+                world.Add(new SavedLauncherRefresh(Hash(refresh), sessionId));
+            }
+            return new SessionReply(credential.Id, credential.Name, access, expires, refresh, current.Roles == (long)PilotRole.Developer);
+        });
     }
 
     public SessionReply Refresh(string token)
     {
-        using var db = Open();
-        using var tx = db.BeginTransaction(deferred: false);
-        using var command = Command(
-            db,
-            tx,
-            """
-            SELECT s.Id,s.AccountId,a.UserName,r.Used,s.Revoked,s.Expires FROM LauncherRefresh r
-            JOIN LauncherSession s ON s.Id=r.SessionId JOIN WorldAccount a ON a.Id=s.AccountId WHERE r.Hash=$h
-            """,
-            ("$h", Hash(token))
-        );
-        string session;
-        long id;
-        string name;
-        bool valid;
-        using (var reader = command.ExecuteReader())
-        {
-            if (!reader.Read())
+        string hash = Hash(token);
+        return Write<SessionReply?>(world =>
             {
-                throw Unauthorized();
-            }
-            session = reader.GetString(0);
-            id = reader.GetInt64(1);
-            name = reader.GetString(2);
-            valid = reader.GetInt64(3) == 0 && reader.GetInt64(4) == 0 && reader.GetInt64(5) > Now;
-        }
-        if (!valid)
-        {
-            Execute(db, tx, "UPDATE LauncherSession SET Revoked=1 WHERE Id=$s", ("$s", session));
-            tx.Commit();
-            throw Unauthorized();
-        }
-        string access = Token();
-        string refresh = Token();
-        Execute(db, tx, "UPDATE LauncherRefresh SET Used=1 WHERE Hash=$h", ("$h", Hash(token)));
-        Execute(db, tx, "INSERT INTO LauncherRefresh(Hash,SessionId) VALUES($h,$s)", ("$h", Hash(refresh)), ("$s", session));
-        Execute(
-            db,
-            tx,
-            "UPDATE LauncherSession SET AccessHash=$h,AccessExpires=$e WHERE Id=$s",
-            ("$h", Hash(access)),
-            ("$e", Now + AccessSeconds),
-            ("$s", session)
-        );
-        tx.Commit();
-        return new(id, name, access, Now + AccessSeconds, refresh, ReadRoles(id) == (long)PilotRole.Developer);
+                var refresh = world.Set<SavedLauncherRefresh>().Find(0, hash);
+                var session = refresh is null ? null : world.Set<SavedLauncherSession>().Find(0, refresh.SessionId);
+                var account = session is null ? null : world.Set<Account>().Find(session.AccountId);
+                if (refresh is null || session is null || account is null)
+                {
+                    throw Unauthorized();
+                }
+                long now = Now;
+                if (refresh.Used || session.Revoked || session.Expires <= now)
+                {
+                    session.Revoked = true;
+                    return null;
+                }
+                string access = Token();
+                string nextRefresh = Token();
+                refresh.Used = true;
+                session.AccessHash = Hash(access);
+                session.AccessExpires = now + AccessSeconds;
+                world.Add(new SavedLauncherRefresh(Hash(nextRefresh), session.Id));
+                bool developer = world.Set<SavedLauncherCredential>().Find(account.Id)?.Roles == (long)PilotRole.Developer;
+                return new(account.Id, account.UserName, access, session.AccessExpires, nextRefresh, developer);
+            }) ?? throw Unauthorized();
     }
 
     public void Revoke(string access)
     {
-        using var db = Open();
-        Execute(db, null, "UPDATE LauncherSession SET Revoked=1 WHERE AccessHash=$h", ("$h", Hash(access)));
+        string hash = Hash(access);
+        Write(world =>
+        {
+            if (world.Filter<SavedLauncherSession>(row => row.AccessHash == hash).SingleOrDefault() is { } session)
+            {
+                session.Revoked = true;
+            }
+            return true;
+        });
     }
+
+    private static SavedLauncherSession? Access(WorldAction world, string hash, long now) =>
+        world
+            .Filter<SavedLauncherSession>(row => row.AccessHash == hash && row.AccessExpires > now && !row.Revoked && row.Expires > now)
+            .SingleOrDefault();
 
     public async Task<string> IssueTicketAsync(string access, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         string ticket = "eden3." + Token();
-        using var db = Open();
-        using (var tx = db.BeginTransaction(deferred: false))
+        string hash = Hash(access);
+        Commit(world =>
         {
-            var session =
-                Scalar(
-                    db,
-                    tx,
-                    """
-                    SELECT Id FROM LauncherSession WHERE AccessHash=$h AND AccessExpires>$now AND Revoked=0 AND Expires>$now
-                    """,
-                    ("$h", Hash(access)),
-                    ("$now", Now)
-                ) as string
-                ?? throw Unauthorized();
-            Execute(db, tx, "DELETE FROM LauncherTicket WHERE Expires<=$now", ("$now", Now));
-            Execute(
-                db,
-                tx,
-                "INSERT INTO LauncherTicket VALUES($h,$s,$e)",
-                ("$h", Hash(ticket)),
-                ("$s", session),
-                ("$e", Now + TicketSeconds)
-            );
-            tx.Commit();
-        }
-        await db.CloseAsync().WaitAsync(cancellationToken);
+            long now = Now;
+            var session = Access(world, hash, now) ?? throw Unauthorized();
+            world.RemoveRange(world.Filter<SavedLauncherTicket>(row => row.Expires <= now).ToArray());
+            world.Add(new SavedLauncherTicket(Hash(ticket), session.Id, now + TicketSeconds));
+            return true;
+        });
+        await Persist().WaitAsync(cancellationToken).ConfigureAwait(false);
         return ticket;
     }
 
     public void AuthorizeAccess(string access)
     {
-        using var db = Open();
-        if (
-            Scalar(
-                db,
-                null,
-                "SELECT Id FROM LauncherSession WHERE AccessHash=$h AND AccessExpires>$now AND Revoked=0 AND Expires>$now",
-                ("$h", Hash(access)),
-                ("$now", Now)
-            )
-            is not string
-        )
+        if (WorldActionScope.Inspect(database, world => Access(world, Hash(access), Now)) is null)
         {
             throw Unauthorized();
         }
@@ -287,56 +215,82 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
     public async Task<long?> ConsumeTicketAsync(string ticket, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        object? id;
-        using var db = Open();
-        using (var tx = db.BeginTransaction(deferred: false))
+        string hash = Hash(ticket);
+        var consumed = Commit(world =>
         {
-            string hash = Hash(ticket);
-            id = Scalar(
-                db,
-                tx,
-                """
-                SELECT s.AccountId FROM LauncherTicket t JOIN LauncherSession s ON t.SessionId=s.Id
-                WHERE t.Hash=$h AND t.Expires>$now AND s.Revoked=0 AND s.Expires>$now
-                """,
-                ("$h", hash),
-                ("$now", Now)
+            var saved = world.Set<SavedLauncherTicket>().Find(0, hash);
+            if (saved is null)
+            {
+                return new TicketConsumption(false, null);
+            }
+            var session = world.Set<SavedLauncherSession>().Find(0, saved.SessionId);
+            world.Remove(saved);
+            long now = Now;
+            return new TicketConsumption(
+                true,
+                saved.Expires > now && session is { Revoked: false } && session.Expires > now ? session.AccountId : null
             );
-            Execute(db, tx, "DELETE FROM LauncherTicket WHERE Hash=$h", ("$h", hash));
-            tx.Commit();
+        });
+        if (consumed.Removed)
+        {
+            await Persist().WaitAsync(cancellationToken).ConfigureAwait(false);
         }
-        await db.CloseAsync().WaitAsync(cancellationToken);
-        return id is long account ? account : null;
+        return consumed.AccountId;
     }
+
+    private sealed record TicketConsumption(bool Removed, long? AccountId);
 
     public void SetPassword(string userName, string password)
     {
         ValidatePassword(password);
         string passwordHash = _passwords.Hash(userName, password);
-        using var db = Open();
-        using var tx = db.BeginTransaction(deferred: false);
-        var id =
-            Scalar(
-                db,
-                tx,
-                "SELECT Id FROM WorldAccount WHERE Id>0 AND upper(UserName)=$name",
-                ("$name", userName.Trim().ToUpperInvariant())
-            ) ?? throw new InvalidDataException("Unknown account.");
-        Execute(
-            db,
-            tx,
-            """
-            INSERT INTO LauncherCredential VALUES($id,$name,$hash,$roles)
-            ON CONFLICT(AccountId) DO UPDATE SET PasswordHash=excluded.PasswordHash,NormalizedName=excluded.NormalizedName
-            """,
-            ("$id", id),
-            ("$name", userName.Trim().ToUpperInvariant()),
-            ("$hash", passwordHash),
-            ("$roles", (long)PilotRole.Player)
-        );
-        Execute(db, tx, "UPDATE LauncherSession SET Revoked=1 WHERE AccountId=$id", ("$id", id));
-        tx.Commit();
+        string normalized = userName.Trim().ToUpperInvariant();
+        Write(world =>
+        {
+            long? id = world
+                .Filter<Account>(row => row.Id > 0 && row.UserName.ToUpper() == normalized)
+                .Select(row => (long?)row.Id)
+                .SingleOrDefault();
+            if (id is not long account)
+            {
+                throw new InvalidDataException("Unknown account.");
+            }
+            var credential =
+                world.Set<SavedLauncherCredential>().Find(account)
+                ?? world.Add(new SavedLauncherCredential(account) { Roles = (long)PilotRole.Player }).Entity;
+            if (world.Filter<SavedLauncherCredential>(row => row.NormalizedName == normalized && row.AccountId != account).Any())
+            {
+                throw new InvalidDataException("The account name is already assigned to a launcher credential.");
+            }
+            credential.NormalizedName = normalized;
+            credential.PasswordHash = passwordHash;
+            foreach (var session in world.Filter<SavedLauncherSession>(row => row.AccountId == account))
+            {
+                session.Revoked = true;
+            }
+            return true;
+        });
     }
+
+    public long ReadRoles(long accountId) =>
+        WorldActionScope.Inspect(database, world => world.Set<SavedLauncherCredential>().Find(accountId)?.Roles ?? (long)PilotRole.Player);
+
+    private T Write<T>(Func<WorldAction, T> operation)
+    {
+        var result = Commit(operation);
+        Persist().GetAwaiter().GetResult();
+        return result;
+    }
+
+    private T Commit<T>(Func<WorldAction, T> operation)
+    {
+        using WorldActionScope scope = new(database, TransactionParticipants.None);
+        var result = operation(scope.World);
+        scope.Commit();
+        return result;
+    }
+
+    private Task Persist() => LiveWorld.Find(database.Path)?.FlushAsync() ?? Task.CompletedTask;
 
     private static string ValidateName(string value)
     {
@@ -348,34 +302,16 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
         return name;
     }
 
-    public long ReadRoles(long accountId)
-    {
-        using var db = Open();
-        if (Scalar(db, null, "SELECT name FROM sqlite_master WHERE type='table' AND name='LauncherCredential'") is null)
-        {
-            return (long)PilotRole.Player;
-        }
-        return Scalar(db, null, "SELECT Roles FROM LauncherCredential WHERE AccountId=$id", ("$id", accountId)) is long roles
-            ? roles
-            : (long)PilotRole.Player;
-    }
-
     private static void ValidatePassword(string password)
     {
         if (password is not { Length: >= MinimumPasswordLength and <= MaximumPasswordLength })
         {
             throw new LauncherException(
                 "invalid_password",
-                $"Use a password containing {MinimumPasswordLength}–{MaximumPasswordLength} characters."
+                $"Use a password containing {MinimumPasswordLength}–{MaximumPasswordLength} characters.",
+                400
             );
         }
-    }
-
-    private SqliteConnection Open()
-    {
-        var db = WorldConnections.Create(database.Path);
-        db.Open();
-        return db;
     }
 
     private static string Token() => Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
@@ -384,37 +320,5 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
 
     private static LauncherException Unauthorized() => new("unauthorized", "Please sign in again.", 401);
 
-    private static SqliteCommand Command(SqliteConnection db, SqliteTransaction? tx, string sql, params (string, object)[] values)
-    {
-        var command = db.CreateCommand();
-        command.Transaction = tx;
-        command.CommandText = sql;
-        foreach (var (name, value) in values)
-        {
-            command.Parameters.AddWithValue(name, value);
-        }
-        return command;
-    }
-
-    private static object? Scalar(SqliteConnection db, SqliteTransaction? tx, string sql, params (string, object)[] values)
-    {
-        using var command = Command(db, tx, sql, values);
-        var value = command.ExecuteScalar();
-        if (value is not null && !sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-        {
-            WorldConnections.RequireDurableClose(db);
-        }
-        return value is DBNull ? null : value;
-    }
-
-    private static int Execute(SqliteConnection db, SqliteTransaction? tx, string sql, params (string, object)[] values)
-    {
-        using var command = Command(db, tx, sql, values);
-        int changed = command.ExecuteNonQuery();
-        if (changed != 0 || sql.TrimStart().StartsWith("CREATE", StringComparison.OrdinalIgnoreCase))
-        {
-            WorldConnections.RequireDurableClose(db);
-        }
-        return changed;
-    }
+    private static LauncherException InvalidCredentials() => new("invalid_credentials", "Invalid account name or password.", 401);
 }
