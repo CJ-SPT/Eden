@@ -293,6 +293,8 @@ covers resource selection, survey ordering, and automatic jettison.
 [AutoMining ore types and grades](protocol/industry.md#automining-ore-types-and-grades) records the spawn-backed picker.
 [AutoMining player fleets and system routes](protocol/industry.md#automining-player-fleets-and-system-routes) records
 opt-in fleet following, ordered belt routes and cross-system unloading.
+[AutoMining searchable plans and rat avoidance](protocol/industry.md#automining-searchable-plans-and-rat-avoidance)
+records global station/system search, atomic plan saving, full-belt approach and visible-NPC retreat.
 
 [Modulated ore mining and crystals, November 9, 2026](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
 records loaded-crystal modifiers, target compatibility, persistent wear and native shattering updates.
