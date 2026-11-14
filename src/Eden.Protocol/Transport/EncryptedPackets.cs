@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Buffers;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Transport;
@@ -9,6 +10,7 @@ namespace Eden.Protocol.Transport;
 internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken cancellationToken)
 {
     internal const int CompressionThreshold = 64 * 1024;
+    internal const int CompactCompressionThreshold = 1024 * 1024;
     internal const int MaximumOutgoingBytes = 16 * 1024 * 1024;
 
     // Build 3662168 SocketGPS sets a 10 MiB packet limit. Reserve the four-byte frame header.
@@ -35,7 +37,10 @@ internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken
     public async Task WriteAsync(object? value)
     {
         using ArrayPoolBufferWriter<byte> plain = new();
-        BlueMarshal.Encode(plain, value);
+        using (SessionLatency.Measure(SessionLatencyPhase.OutputEncode))
+        {
+            BlueMarshal.Encode(plain, value);
+        }
         if (plain.WrittenCount > MaximumOutgoingBytes)
         {
             throw new OutgoingPacketSizeException("Encoded session message", plain.WrittenCount, MaximumOutgoingBytes);
@@ -45,7 +50,11 @@ internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken
             // Build 3662168's transport inflates a zlib envelope after decryption,
             // the same form accepted by ReadAsync. Incoming bounds stay unchanged.
             using ArrayPoolBufferWriter<byte> buffer = new();
-            using (ZLibStream compressor = new(buffer.AsStream(), CompressionLevel.Fastest))
+            // Large catalog replies spend more bandwidth than small updates. A bounded higher
+            // compression level reduces their frame size without changing the zlib envelope.
+            var level = plain.WrittenCount > CompactCompressionThreshold ? CompressionLevel.Optimal : CompressionLevel.Fastest;
+            using (SessionLatency.Measure(SessionLatencyPhase.OutputCompress))
+            using (ZLibStream compressor = new(buffer.AsStream(), level))
             {
                 compressor.Write(plain.WrittenSpan);
             }
@@ -62,9 +71,23 @@ internal sealed class EncryptedPackets(Stream stream, Aes aes, CancellationToken
         {
             throw new OutgoingPacketSizeException("Encrypted session frame", length, MaximumOutgoingCiphertextBytes);
         }
-        using var ciphertext = MemoryOwner<byte>.Allocate(length);
-        int written = aes.EncryptCbc(plain.Span, aes.IV, ciphertext.Span);
-        await PacketStream.WriteAsync(stream, ciphertext.Memory[..written], cancellationToken, MaximumOutgoingCiphertextBytes);
+        // Encrypt directly behind the frame header, then submit the complete frame in one write.
+        // Keep this pooled memory until the asynchronous stream write has finished.
+        using var frame = MemoryOwner<byte>.Allocate(sizeof(uint) + length);
+        int written;
+        using (SessionLatency.Measure(SessionLatencyPhase.OutputEncrypt))
+        {
+            written = aes.EncryptCbc(plain.Span, aes.IV, frame.Span[sizeof(uint)..]);
+        }
+        using (SessionLatency.Measure(SessionLatencyPhase.OutputWrite))
+        {
+            await PacketStream.WriteFrameAsync(
+                stream,
+                frame.Memory[..(sizeof(uint) + written)],
+                cancellationToken,
+                MaximumOutgoingCiphertextBytes
+            );
+        }
     }
 }
 

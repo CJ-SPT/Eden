@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
@@ -29,7 +30,12 @@ internal sealed class PilotSessionOutput(
     {
         try
         {
-            await write(request.CallSucceeded(reply));
+            BlueInstance packet;
+            using (SessionLatency.Measure(SessionLatencyPhase.OutputEncode))
+            {
+                packet = request.CallSucceeded(reply);
+            }
+            await write(packet);
         }
         catch (OutgoingPacketSizeException error)
         {

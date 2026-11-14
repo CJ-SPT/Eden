@@ -30,27 +30,7 @@ public sealed partial class ServerPerformanceReplayTests
         ConcurrentQueue<string> reports = new();
         try
         {
-            foreach (string file in new[] { "traffic.sqlite", "world.sqlite.skills.sqlite", "world.sqlite.skills-active" })
-            {
-                if (File.Exists(Path.Combine(source, file)))
-                {
-                    File.Copy(Path.Combine(source, file), Path.Combine(directory, file));
-                }
-            }
-            string packages = Path.Combine(source, "world.sqlite.skill-packages");
-            if (File.Exists(Path.Combine(source, "world.sqlite.skills-active")))
-            {
-                packages = Path.Combine(packages, File.ReadAllText(Path.Combine(source, "world.sqlite.skills-active")).Trim());
-            }
-            if (Directory.Exists(packages))
-            {
-                foreach (string file in Directory.EnumerateFiles(packages, "*", SearchOption.AllDirectories))
-                {
-                    string target = Path.Combine(directory, Path.GetRelativePath(source, file));
-                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                    File.Copy(file, target);
-                }
-            }
+            CopyReplaySidecars(source, directory);
             WorldDatabase database = new(Path.Combine(directory, "world.sqlite"));
             TestClock clock = new(new DateTimeOffset(2026, 11, 14, 6, 46, 0, TimeSpan.Zero));
             WorldInitialization.Initialize(database, clock);
@@ -139,6 +119,31 @@ public sealed partial class ServerPerformanceReplayTests
                 File.WriteAllLines(Path.Combine(destination, "selection.log"), reports);
             }
             Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private static void CopyReplaySidecars(string source, string directory)
+    {
+        foreach (string file in new[] { "traffic.sqlite", "world.sqlite.skills.sqlite", "world.sqlite.skills-active" })
+        {
+            if (File.Exists(Path.Combine(source, file)))
+            {
+                File.Copy(Path.Combine(source, file), Path.Combine(directory, file));
+            }
+        }
+        string packages = Path.Combine(source, "world.sqlite.skill-packages");
+        if (File.Exists(Path.Combine(source, "world.sqlite.skills-active")))
+        {
+            packages = Path.Combine(packages, File.ReadAllText(Path.Combine(source, "world.sqlite.skills-active")).Trim());
+        }
+        if (Directory.Exists(packages))
+        {
+            foreach (string file in Directory.EnumerateFiles(packages, "*", SearchOption.AllDirectories))
+            {
+                string target = Path.Combine(directory, Path.GetRelativePath(source, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(file, target);
+            }
         }
     }
 }

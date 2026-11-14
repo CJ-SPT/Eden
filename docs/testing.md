@@ -99,6 +99,25 @@ November 14, 2026 clock and preserves the copied pilot locations. Its logs separ
 fitting calculations, waits and full call/frame times. Compare the same save and pilot list sequentially;
 the Windows Debug replay does not establish production latency or sustained capacity.
 
+## Saved average-price output replay
+
+`ServerPerformanceReplayTests.ReplaySavedAveragePriceOutput` copies the same frozen world,
+catalog and active skill sidecars as the selection replay, warms the public price cache,
+and sends ten complete Macho replies through production compression, encryption and
+framing to a memory stream. Each decrypted/inflated frame must match the expected envelope.
+It reports compression-level sizes and output-stage timings; it does not measure TCP or WAN latency.
+
+```powershell
+$env:EDEN_PERFORMANCE_SOURCE = 'F:\frozen-eden-save'
+$env:EDEN_PERFORMANCE_OUTPUT = 'F:\price-output-results'
+.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ReplaySavedAveragePriceOutput'
+```
+
+Without `EDEN_PERFORMANCE_SOURCE`, this optional test only reports setup instructions.
+Run baseline and updated assemblies sequentially with identical inputs and keep other
+substantial work out of the measurement window. Read `price-output.log` for byte counts,
+compression costs, and warm output timings; the first output also includes cold code paths.
+
 ## Reporting and publishing
 
 Agents perform **automated testing only**: no game launch, Computer Use, interactive gameplay acceptance, or extended manual server-testing substitute unless the user explicitly requests live testing. Report automated checks, results, elapsed time, and limitations separately from live acceptance: **"Not performed; agent client testing is disabled."** Provide at most three optional maintainer actions when visual or gameplay checks remain. Native rendering, input, and gameplay feel remain unverified until tested. Automated validation and confirmation that the milestone commit is on the remote branch establish completion; live acceptance is not required. See the [contributor testing policy](../AGENTS.md#testing).

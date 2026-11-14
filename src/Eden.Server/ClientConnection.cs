@@ -19,6 +19,7 @@ internal sealed class ClientConnection(PilotLogin login)
             ServerLog.Console.Debug($"Accepted {client.Client.RemoteEndPoint}.");
             try
             {
+                client.NoDelay = true;
                 NetworkStream stream = client.GetStream();
                 await CompatibilityHandshake.ServeAsync(
                     stream,

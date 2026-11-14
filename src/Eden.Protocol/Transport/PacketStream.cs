@@ -11,6 +11,25 @@ public static class PacketStream
     // exceed 16 KiB; the high four header bits remain unsupported transport flags.
     internal const int MaxSessionBytes = 1024 * 1024;
 
+    // Callers reserve the first four bytes and retain the frame until this write completes.
+    internal static async Task WriteFrameAsync(
+        Stream stream,
+        Memory<byte> frame,
+        CancellationToken cancellationToken,
+        int maxPayloadBytes,
+        TimeProvider? clock = null
+    )
+    {
+        int length = frame.Length - sizeof(uint);
+        if (length <= 0 || length > maxPayloadBytes)
+        {
+            throw new ArgumentOutOfRangeException(nameof(frame));
+        }
+        BinaryPrimitives.WriteUInt32LittleEndian(frame.Span, (uint)length);
+        using StreamDeadline deadline = new(cancellationToken, clock);
+        await stream.WriteAsync(frame, deadline.Token);
+    }
+
     public static async Task<byte[]> ReadAsync(
         Stream stream,
         CancellationToken cancellationToken,

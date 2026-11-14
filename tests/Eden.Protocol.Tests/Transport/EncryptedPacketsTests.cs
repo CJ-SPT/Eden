@@ -1,7 +1,10 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Industry;
 using Eden.Protocol.Market;
+using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
 
@@ -9,6 +12,58 @@ namespace Eden.Protocol.Tests.Transport;
 
 public sealed class EncryptedPacketsTests
 {
+    [Fact]
+    public async Task LargeAveragePriceRepliesPreserveTheirEnvelopeAndUseOneCompactFrameWrite()
+    {
+        var prices = Enumerable.Range(1, 20_000).Select(id => new MarketValuation(id, id * 1.23m, id * 0.45m)).ToArray();
+        EconomicPricesReply reply = new(prices);
+        var request = IncomingMachoPacket.Read(
+            Eden.Protocol.Tests.PilotSessions.PilotServicesTests.Request("config", "GetAverageMarketPrices", [])
+        );
+        var packet = request.CallSucceeded(reply);
+        byte[] expected = BlueMarshal.Encode(packet);
+        Assert.True(expected.Length > EncryptedPackets.CompactCompressionThreshold);
+        using MemoryStream fast = new();
+        using (ZLibStream compressor = new(fast, CompressionLevel.Fastest, leaveOpen: true))
+        {
+            compressor.Write(expected);
+        }
+        using Aes aes = Aes.Create();
+        using CountingStream stream = new();
+        List<string> reports = [];
+        using (SessionPerformance.Begin("price output", _ => { }, force: true))
+        using (new SessionLatency("price output", reports.Add, reports.Add))
+        {
+            await new EncryptedPackets(stream, aes, default).WriteAsync(packet);
+        }
+        Assert.Equal(1, stream.Writes);
+        Assert.True(stream.Length < fast.Length);
+        string report = Assert.Single(reports);
+        foreach (string stage in new[] { "OutputEncode", "OutputCompress", "OutputEncrypt", "OutputWrite" })
+        {
+            Assert.Contains(stage + "=", report);
+        }
+        stream.Position = 0;
+        byte[] ciphertext = await PacketStream.ReadAsync(stream, default, EncryptedPackets.MaximumOutgoingCiphertextBytes);
+        using ZLibStream inflater = new(new MemoryStream(aes.DecryptCbc(ciphertext, aes.IV)), CompressionMode.Decompress);
+        using MemoryStream decoded = new();
+        await inflater.CopyToAsync(decoded);
+        Assert.Equal(expected, decoded.ToArray());
+        var envelope = IncomingMachoPacket.Read(BlueMarshal.Decode(decoded.ToArray()));
+        Assert.Equal(reply.EncodeReply(), BlueRead.Bytes(BlueRead.Tuple(envelope.Fields[4], 1)[0]));
+    }
+
+    private sealed class CountingStream : MemoryStream
+    {
+        internal int Writes { get; private set; }
+
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            Writes++;
+            return base.WriteAsync(buffer, cancellationToken);
+        }
+    }
+
     [Fact]
     public async Task IncompressibleRepliesKeepTheirOriginalPayloadAcrossRepeatedPoolReuse()
     {

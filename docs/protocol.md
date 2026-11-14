@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Average-price transport output](protocol/performance.md#average-price-transport-output-november-14-2026)
+records compact frame writes, large-reply compression and output-stage diagnostics.
+
 [Character selection and docked first ticks](protocol/performance.md#character-selection-and-docked-first-ticks-november-14-2026)
 records individual mission catalog loading and deferred docked scene preparation.
 

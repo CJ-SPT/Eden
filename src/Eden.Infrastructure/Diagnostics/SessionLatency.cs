@@ -18,6 +18,10 @@ public enum SessionLatencyPhase
     Motion,
     Contacts,
     Output,
+    OutputEncode,
+    OutputCompress,
+    OutputEncrypt,
+    OutputWrite,
 }
 
 // These inclusive phase times may overlap. In particular, world waits can occur inside updates.

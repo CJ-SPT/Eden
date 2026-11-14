@@ -49,6 +49,21 @@ public sealed class PacketStreamTests
         Assert.Equal(Convert.FromHexString("02000000ABCD"), stream.ToArray());
     }
 
+    [Fact]
+    public async Task PreparedFrameValidatesPayloadAndPreservesAdjacentPackets()
+    {
+        using MemoryStream stream = new();
+        await PacketStream.WriteFrameAsync(stream, Convert.FromHexString("00000000ABCD"), default, 2);
+        await PacketStream.WriteFrameAsync(stream, Convert.FromHexString("FFFFFFFFEF"), default, 2);
+        Assert.Equal(Convert.FromHexString("02000000ABCD01000000EF"), stream.ToArray());
+        long length = stream.Length;
+        foreach (int size in new[] { 0, 3, 4, 7 })
+        {
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => PacketStream.WriteFrameAsync(stream, new byte[size], default, 2));
+        }
+        Assert.Equal(length, stream.Length);
+    }
+
     private sealed class FragmentedStream(byte[] bytes) : MemoryStream(bytes)
     {
         public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)

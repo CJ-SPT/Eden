@@ -82,6 +82,25 @@ public sealed class StreamDeadlineTests
     }
 
     [Fact]
+    public async Task PreparedFrameWriteRetainsItsDeadlineAndShutdownCancellation()
+    {
+        TestClock time = new();
+        CheckpointClock clock = new(time);
+        using StalledStream stream = new([]);
+        var writing = PacketStream.WriteFrameAsync(stream, new byte[5], default, 1, clock);
+        await stream.Started.Task;
+        time.Seconds = 30;
+        clock.FireDueTimers();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => writing);
+        using CancellationTokenSource stop = new();
+        using StalledStream cancelled = new([]);
+        writing = PacketStream.WriteFrameAsync(cancelled, new byte[5], stop.Token, 1, clock);
+        await cancelled.Started.Task;
+        await stop.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => writing);
+    }
+
+    [Fact]
     public async Task SilenceBeforeAFrameHasNoDeadlineAndShutdownStillCancelsIt()
     {
         TestClock time = new();

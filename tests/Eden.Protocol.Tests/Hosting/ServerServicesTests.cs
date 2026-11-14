@@ -82,6 +82,7 @@ public sealed class ServerServicesTests
         using TcpClient accepted = await listener.AcceptTcpClientAsync(timeout.Token);
         using ConnectionAdmission admission = new(world.Services.GetRequiredService<PilotGate>());
         Task serving = scope.ServiceProvider.GetRequiredService<ClientConnection>().ServeAsync(accepted, admission, timeout.Token);
+        Assert.True(accepted.NoDelay);
         var wire = client.GetStream();
         await PacketStream.ReadAsync(wire, timeout.Token);
         await PacketStream.WriteAsync(

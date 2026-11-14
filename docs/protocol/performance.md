@@ -6,6 +6,78 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Average-price transport output, November 14, 2026
+
+The Docker log on `a297bd93` recorded three `config.GetAverageMarketPrices` outputs at
+231.15, 315.40 and 251.84 ms, with handlers at 10.66–26.99 ms. The shared price cache
+already retained the encoded public price body. A replay of the frozen catalog/save
+produced a 1,444,545-byte body and a 1,444,754-byte Macho envelope. Local encoding,
+compression and encryption did not reproduce the remote stall: warmed output to a
+memory stream took 1.64–2.35 ms on `d85a9b24`. This excludes socket backpressure and WAN
+transfer; the old log cannot establish which output stage caused the remote delay.
+
+Encrypted packets now reserve their four-byte header in the pooled ciphertext buffer,
+encrypt directly after it and submit one complete frame to the stream. Buffer ownership,
+size validation before writing, cancellation and the existing deadline remain intact.
+Accepted gameplay sockets set `NoDelay`, matching the existing chat listener. Replies
+larger than 1 MiB use zlib `Optimal`; smaller compressible replies retain `Fastest` and
+incompressible output retains the original payload. This trades extra compression CPU for
+less bandwidth on large replies; it is not a CPU throughput improvement.
+
+The copied average-price frame shrank from 282,132 to 216,244 bytes, a 23.4% reduction.
+The updated warmed memory-stream output took 12.25–15.49 ms with phase logging enabled.
+A separate compression comparison produced 282,119 bytes at `Fastest`, 216,224 at
+`Optimal`, and 210,929 at `SmallestSize`; the last level saved little more and cost
+roughly three times as much CPU as `Optimal`, so it is not used. These Windows Debug
+measurements are diagnostic samples, not production latency or capacity guarantees.
+
+Slow-call warnings now retain `Output` and additionally report `OutputEncode`,
+`OutputCompress`, `OutputEncrypt` and `OutputWrite`, including inner reply encoding.
+The output phases are included in `Output`; they must not be summed with it. The write
+phase measures stream completion, not receipt or processing by the remote client.
+This gives the next deployment enough detail to distinguish compression from blocked
+writes. No server deployment or restart was performed for this milestone.
+
+The wire schema and build-3662168 zlib/AES/frame conventions are unchanged. Reference
+checks used Carbon Blue [`fcbf0c2e`](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp),
+the existing pinned transport findings, and the local EveJS `socketTuning.js`
+(SHA-256 `36729690D5E6010C140D152ACA90C6F7C7A7049C15914E95C7D5095014B2ABFE`),
+which enables no-delay by default. The [.NET socket documentation](https://learn.microsoft.com/en-us/dotnet/api/system.net.sockets.tcpclient.nodelay)
+describes the latency/packet-efficiency tradeoff. No reference implementation was copied.
+
+**Automated validation.** The exact
+`EncryptedPacketsTests.LargeAveragePriceRepliesPreserveTheirEnvelopeAndUseOneCompactFrameWrite`
+regression passed. It compares the complete decrypted/inflated envelope byte-for-byte,
+checks the unchanged nested price body, one stream write, smaller output and phase
+log fields. Existing coverage checks small and incompressible replies, asynchronous pool
+reuse, incoming expansion and outgoing encoded/ciphertext limits. New prepared-frame
+cases check adjacent frames, rejection before writing, deadlines and shutdown cancellation.
+The real socket login test asserts `NoDelay`; price-cache tests retain same-tick policy
+and adjustment visibility. The configured saved-price replay passed before and after
+(28.98 s and 24.45 s runner time, including snapshot setup and cleanup).
+
+The final affected selection passed 45 cases in 11 s (14.39 s runner time):
+
+```powershell
+$classes = @(
+    'Transport.', 'Market.MarketValuationTests', 'Hosting.ServerServicesTests',
+    'Hosting.ConnectionOwnershipTests', 'Combat.SessionLatencyTests', 'PilotSessions.TypedSessionTests'
+)
+$filter = ($classes | ForEach-Object { 'FullyQualifiedName~Eden.Protocol.Tests.' + $_ }) -join '|'
+.\tools\Test-Feature.ps1 -Filter $filter
+```
+
+Tool/solution restores, solution build (5.69 s, no warnings/errors), both Python policy
+suites (8 and 9 cases), formatting and Git whitespace checks passed. The initial replay
+failed because its copied save omitted the active skill catalog; the harness now shares
+the selection replay's sidecar-copy helper. It only reads the frozen source. No full
+.NET suite ran. Reproduction is in [the saved-price replay procedure](../testing.md#saved-average-price-output-replay).
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After deployment, compare average-price warnings and
+frame latency for the same clients, especially `OutputCompress` versus `OutputWrite`.
+
 ## Character selection and docked first ticks, November 14, 2026
 
 The November 14 Docker log on `a297bd93` showed a 1.88-second tick ownership hold and
