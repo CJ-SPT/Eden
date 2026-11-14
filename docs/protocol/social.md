@@ -474,3 +474,52 @@ Final filter:
 
 **Optional maintainer checks.** After rebuilding/restarting the server, reconnect chat and compare Local against docked guests;
 observe one arrival/departure while Local remains open. Native timing and rendering remain unverified.
+
+## Resident mail, inbox and calendar
+
+Mail, mailing lists, contact notifications and personal calendars now use the resident transaction owner.
+A send publishes its message, per-pilot mailbox copies and ordered delivery entries together. Joining a
+mailing list publishes its membership, feed and optional welcome mail in the same action. Per-pilot mail
+and mailing-list cursors are maintained from committed rows so an acknowledged poll skips feed history.
+Contact blocks are visible to the next send or invitation. Calendar invitations, edits and cancellations
+publish their private change records with the event. The process-local revision advances after commit.
+
+The older local EveJS distribution identifies itself as `261108.1`. Reference checks covered audience
+selection and delivery in `mailState.js` (SHA-256 prefix `82B61A1F917EC16B`) and event creation and
+responses in `calendarRuntimeState.js` (`0F6CDE6AD3340639`). EVE University's calendar reference
+documents the use of UTC. [EVE Server Time](https://wiki.eveuniversity.org/EVE_Server_Time)
+
+### Automated validation
+
+The warmed resident fixture verifies same-tick mail and list delivery, acknowledged cursors, rejected
+invitations, attendee replies, and zero SQL commands, connection opens and fitting calculations.
+A forced calendar-feed failure during checkpoint projection rolls the entire saved image back.
+Retrying the same checkpoint preserves the original mail IDs, origins, and calendar responses.
+Contact-label renames that exchange two names across several actions also survive one checkpoint.
+The file-backed inbox rollback test now checks the tracked adapter's exception type and verifies
+that every affected entry keeps its original read and deletion state.
+
+The combined run through `tools/Test-Feature.ps1` passed 236 cases in 91.82 seconds. Tool and solution
+restore passed, the solution built in 6.85 seconds with zero warnings or errors, and the Python catalog
+and formatting policy suites passed 8 and 9 cases. `tools/Format.ps1 -Check` passed. The run selected
+these `FullyQualifiedName~` filters.
+
+```text
+WreckTests, CalendarTests, CharacterDeletionTests, InboxTests, MailingListLifecycleTests, MailingListTests,
+MailLifecycleTests, MailTests, PilotBookmarksTests, PilotContactsTests, ResidentSocialTests, SharedBookmarksTests,
+BookmarkServiceTests, CalendarServiceTests, ContactsServiceTests, InboxServiceTests, MailArrivalContractTests,
+MailComposerDefaultsTests, MailingListServiceTests, MailServiceTests, SharedBookmarkServiceTests,
+PlanetaryIndustryTests, PlanetaryProtocolTests, PlanetaryRulesTests, PlanetarySkillExtractionTests
+```
+
+After incorporating the concurrent AutoMining change, the solution built in 7.93 seconds and 47
+affected cases passed in 23.88 seconds. The rerun selected `ResidentSocialTests`,
+`SharedBookmarkServiceTests`, `CalendarServiceTests`, `InboxTests`, `PlanetaryIndustryTests`, and `WreckTests`.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

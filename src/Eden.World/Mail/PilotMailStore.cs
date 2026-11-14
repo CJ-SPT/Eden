@@ -4,9 +4,8 @@ using Eden.Data.World.Mail;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
-using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mail;
 
@@ -22,22 +21,23 @@ internal sealed record MailDeliveryPlan(
 [Injectable]
 internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock) : IPilotMail
 {
-    private static void Pilot(WorldDbContext world, long pilot)
+    private static void Pilot(WorldAction world, long pilot)
     {
-        if (!world.Pilots.Any(p => p.Id == pilot))
+        if (!world.PilotExists(pilot))
         {
             throw new InvalidDataException("Unknown mail pilot.");
         }
     }
 
-    private static IQueryable<SavedMailEntry> Visible(WorldDbContext world, long pilot) =>
-        world.Set<SavedMailEntry>().Where(e => e.PilotId == pilot && !e.Deleted);
+    private static IQueryable<SavedMailEntry> Visible(WorldAction world, long pilot) =>
+        world.Filter<SavedMailEntry>(e => e.PilotId == pilot && !e.Deleted);
 
-    private static SavedMailEntry Entry(WorldDbContext world, long pilot, long message) =>
-        Visible(world, pilot).SingleOrDefault(e => e.MessageId == message)
-        ?? throw new InvalidDataException("That message is not in your mailbox.");
+    private static SavedMailEntry Entry(WorldAction world, long pilot, long message) =>
+        world.Set<SavedMailEntry>().Find(pilot, message) is { Deleted: false } entry
+            ? entry
+            : throw new InvalidDataException("That message is not in your mailbox.");
 
-    private static void Feed(WorldDbContext world, SavedMailEntry entry, MailChangeKind kind, Guid origin) =>
+    private static void Feed(WorldAction world, SavedMailEntry entry, MailChangeKind kind, Guid origin) =>
         world.Add(
             new SavedMailChange
             {
@@ -50,7 +50,7 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
             }
         );
 
-    private static void LabelFeed(WorldDbContext world, long pilot, long label, Guid origin) =>
+    private static void LabelFeed(WorldAction world, long pilot, long label, Guid origin) =>
         world.Add(
             new SavedMailChange
             {
@@ -63,57 +63,65 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
 
     public long Observe(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        Pilot(world, pilotId);
-        return world.Set<SavedMailChange>().Where(c => c.PilotId == pilotId).Max(c => (long?)c.Id) ?? 0;
+        return WorldActionScope.Inspect<long>(
+            database,
+            world =>
+            {
+                Pilot(world, pilotId);
+                return world.MailHead(pilotId);
+            }
+        );
     }
 
     public MailChangeBatch Changes(long pilotId, long cursor)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.mailChanges");
-        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasMailChanges(pilotId, cursor))
-        {
-            return new(cursor, false, []);
-        }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var rows = world
-            .Set<SavedMailChange>()
-            .Where(c => c.PilotId == pilotId && c.Id > cursor)
-            .OrderBy(c => c.Id)
-            .Take(MailRules.FeedBatch + 1)
-            .ToArray();
-        List<MailChange> changes = [];
-        foreach (var row in rows.Take(MailRules.FeedBatch))
-        {
-            cursor = row.Id;
-            MailHeader? header = null;
-            MailLabel? label = null;
-            if (
-                row.Kind is MailChangeKind.Sent or MailChangeKind.State or MailChangeKind.Trashed or MailChangeKind.Restored
-                && !Visible(world, pilotId).Any(e => e.MessageId == row.MessageId)
-            )
+        return WorldActionScope.Inspect<MailChangeBatch>(
+            database,
+            world =>
             {
-                // Native trash/restore callbacks index the header directly. Coalesce
-                // a permanently deleted message to its safe deletion event instead
-                // of reviving it or updating a header that was never delivered.
-                continue;
-            }
-            if (row.Kind == MailChangeKind.Sent)
-            {
-                header = world.Set<SavedMail>().Find(row.MessageId)!.Header();
-            }
-            if (row.Kind == MailChangeKind.Label)
-            {
-                label = world.Set<SavedMailLabel>().Find(pilotId, row.LabelId)?.Snapshot();
-                if (label is null)
+                if (cursor >= world.MailHead(pilotId))
                 {
-                    continue;
+                    return new(cursor, false, []);
                 }
+                var rows = world
+                    .Filter<SavedMailChange>(c => c.PilotId == pilotId && c.Id > cursor)
+                    .OrderBy(c => c.Id)
+                    .Take(MailRules.FeedBatch + 1)
+                    .ToArray();
+                List<MailChange> changes = [];
+                foreach (var row in rows.Take(MailRules.FeedBatch))
+                {
+                    cursor = row.Id;
+                    MailHeader? header = null;
+                    MailLabel? label = null;
+                    if (
+                        row.Kind is MailChangeKind.Sent or MailChangeKind.State or MailChangeKind.Trashed or MailChangeKind.Restored
+                        && world.Set<SavedMailEntry>().Find(pilotId, row.MessageId) is not { Deleted: false }
+                    )
+                    {
+                        // Native trash/restore callbacks index the header directly. Coalesce
+                        // a permanently deleted message to its safe deletion event instead
+                        // of reviving it or updating a header that was never delivered.
+                        continue;
+                    }
+                    if (row.Kind == MailChangeKind.Sent)
+                    {
+                        header = world.Set<SavedMail>().Find(row.MessageId)!.Header();
+                    }
+                    if (row.Kind == MailChangeKind.Label)
+                    {
+                        label = world.Set<SavedMailLabel>().Find(pilotId, row.LabelId)?.Snapshot();
+                        if (label is null)
+                        {
+                            continue;
+                        }
+                    }
+                    changes.Add(new(row.Id, row.Origin, row.Kind, new(row.MessageId, row.Status, row.Labels), header, label));
+                }
+                return new MailChangeBatch(cursor, rows.Length > MailRules.FeedBatch, changes);
             }
-            changes.Add(new(row.Id, row.Origin, row.Kind, new(row.MessageId, row.Status, row.Labels), header, label));
-        }
-        return new(cursor, rows.Length > MailRules.FeedBatch, changes);
+        );
     }
 
     public MailSnapshot Sync(long pilotId, long? first, long last)
@@ -122,38 +130,45 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         {
             throw new InvalidDataException("Invalid mail synchronization range.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        Pilot(world, pilotId);
-        var states = Visible(world, pilotId).OrderBy(e => e.MessageId).AsEnumerable().Select(e => e.Snapshot()).ToArray();
-        var ids = states.Select(s => s.Id).ToArray();
-        var headers = world
-            .Set<SavedMail>()
-            .Where(m => ids.Contains(m.Id) && (m.Id > last || (first.HasValue && m.Id < first)))
-            .OrderBy(m => m.Id)
-            .AsEnumerable()
-            .Select(m => m.Header())
-            .ToArray();
-        return new(headers.Where(h => h.Id > last).ToArray(), headers.Where(h => first.HasValue && h.Id < first).ToArray(), states);
+        return WorldActionScope.Inspect<MailSnapshot>(
+            database,
+            world =>
+            {
+                Pilot(world, pilotId);
+                var states = Visible(world, pilotId).OrderBy(e => e.MessageId).AsEnumerable().Select(e => e.Snapshot()).ToArray();
+                var headers = states
+                    .Select(s => s.Id)
+                    .Where(id => id > last || (first.HasValue && id < first))
+                    .Select(id => world.Set<SavedMail>().Find(id)!.Header())
+                    .ToArray();
+                return new MailSnapshot(
+                    headers.Where(h => h.Id > last).ToArray(),
+                    headers.Where(h => first.HasValue && h.Id < first).ToArray(),
+                    states
+                );
+            }
+        );
     }
 
     public IReadOnlyList<MailHeader> Headers(long pilotId, IReadOnlyList<long> ids)
     {
-        using WorldDbContext world = new(database.Path);
-        var visible = Visible(world, pilotId).Where(e => ids.Contains(e.MessageId)).Select(e => e.MessageId);
-        return world
-            .Set<SavedMail>()
-            .Where(m => visible.Contains(m.Id))
-            .OrderBy(m => m.Id)
-            .AsEnumerable()
-            .Select(m => m.Header())
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<MailHeader>>(
+            database,
+            world =>
+            {
+                return ids.Distinct()
+                    .Order()
+                    .Where(id => world.Set<SavedMailEntry>().Find(pilotId, id) is { Deleted: false })
+                    .Select(id => world.Set<SavedMail>().Find(id)!.Header())
+                    .ToArray();
+            }
+        );
     }
 
     public string Body(long pilotId, long messageId, bool markRead, Guid origin)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         var entry = Entry(world, pilotId, messageId);
         if (markRead && !entry.Status.HasFlag(MailStatus.Read))
         {
@@ -169,14 +184,14 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
     public long Send(long pilotId, MailDraft draft, Guid origin)
     {
         MailRules.Draft(draft);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         Pilot(world, pilotId);
-        if (world.Pilots.Count(p => draft.Recipients.Contains(p.Id)) != draft.Recipients.Count)
+        if (draft.Recipients.Any(id => !world.PilotExists(id)))
         {
             throw new InvalidDataException("Mail can be sent only to local Eden pilots.");
         }
-        if (world.Set<SavedBlockedContact>().Any(b => draft.Recipients.Contains(b.PilotId) && b.ContactId == pilotId))
+        if (draft.Recipients.Any(id => world.Set<SavedBlockedContact>().Find(id, pilotId) is not null))
         {
             throw new InvalidDataException("A recipient is blocking mail from you.");
         }
@@ -187,7 +202,7 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         long cutoff = checked(now - TimeSpan.TicksPerMinute);
-        if (world.Set<SavedMail>().Count(m => m.SenderId == pilotId && m.SentAt > cutoff) >= MailRules.MaximumPerMinute)
+        if (world.Filter<SavedMail>(m => m.SenderId == pilotId && m.SentAt > cutoff).Count() >= MailRules.MaximumPerMinute)
         {
             throw new InvalidDataException("You may send at most five messages per minute.");
         }
@@ -202,7 +217,7 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         return id;
     }
 
-    internal static long Deliver(WorldDbContext world, MailDeliveryPlan plan, Guid origin)
+    internal static long Deliver(WorldAction world, MailDeliveryPlan plan, Guid origin)
     {
         var mail = world
             .Add(
@@ -239,7 +254,7 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         return mail.Id;
     }
 
-    private static SavedMailEntry[] Select(WorldDbContext world, long pilot, MailSelection selection)
+    private static SavedMailEntry[] Select(WorldAction world, long pilot, MailSelection selection)
     {
         var query = Visible(world, pilot);
         switch (selection)
@@ -261,9 +276,9 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
                 return query.Where(e => (e.Status & MailStatus.Trashed) != 0).ToArray();
             case MailSelection.List list when list.Id > 0:
                 return query
-                    .Where(e =>
-                        (e.Status & MailStatus.Trashed) == 0 && world.Set<SavedMail>().Any(m => m.Id == e.MessageId && m.ListId == list.Id)
-                    )
+                    .Where(e => (e.Status & MailStatus.Trashed) == 0)
+                    .AsEnumerable()
+                    .Where(e => world.Set<SavedMail>().Find(e.MessageId)?.ListId == list.Id)
                     .ToArray();
             case MailSelection.Label label:
                 CheckMask(world, pilot, label.Mask);
@@ -273,10 +288,10 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         }
     }
 
-    private static void CheckMask(WorldDbContext world, long pilot, long mask)
+    private static void CheckMask(WorldAction world, long pilot, long mask)
     {
         long allowed = MailRules.SystemLabels;
-        foreach (long id in world.Set<SavedMailLabel>().Where(l => l.PilotId == pilot).Select(l => l.Id))
+        foreach (long id in world.Filter<SavedMailLabel>(l => l.PilotId == pilot).Select(l => l.Id))
         {
             allowed |= id;
         }
@@ -288,8 +303,8 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
 
     public void Change(long pilotId, MailSelection selection, MailOperation operation, long labels, Guid origin)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         Pilot(world, pilotId);
         if (operation is MailOperation.AssignLabels or MailOperation.RemoveLabels or MailOperation.ReplaceLabels)
         {
@@ -333,24 +348,28 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
 
     public IReadOnlyList<MailLabel> Labels(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        Pilot(world, pilotId);
-        return world
-            .Set<SavedMailLabel>()
-            .Where(l => l.PilotId == pilotId)
-            .OrderBy(l => l.Id)
-            .AsEnumerable()
-            .Select(l => l.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<MailLabel>>(
+            database,
+            world =>
+            {
+                Pilot(world, pilotId);
+                return world
+                    .Filter<SavedMailLabel>(l => l.PilotId == pilotId)
+                    .OrderBy(l => l.Id)
+                    .AsEnumerable()
+                    .Select(l => l.Snapshot())
+                    .ToArray();
+            }
+        );
     }
 
     public long CreateLabel(long pilotId, string name, int? color, Guid origin)
     {
         MailRules.Label(name, color);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         Pilot(world, pilotId);
-        var existing = world.Set<SavedMailLabel>().Where(l => l.PilotId == pilotId).ToArray();
+        var existing = world.Filter<SavedMailLabel>(l => l.PilotId == pilotId).ToArray();
         if (existing.Any(l => l.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
         {
             throw new InvalidDataException("A mail label with that name already exists.");
@@ -382,8 +401,8 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
     public void EditLabel(long pilotId, long labelId, string? name, int? color, Guid origin)
     {
         MailRules.LabelId(labelId);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         Pilot(world, pilotId);
         var label = world.Set<SavedMailLabel>().Find(pilotId, labelId);
         if (labelId < MailRules.FirstCustomLabel)
@@ -403,8 +422,7 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
             MailRules.Label(name, color);
             if (
                 world
-                    .Set<SavedMailLabel>()
-                    .Where(l => l.PilotId == pilotId && l.Id != labelId)
+                    .Filter<SavedMailLabel>(l => l.PilotId == pilotId && l.Id != labelId)
                     .AsEnumerable()
                     .Any(l => l.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
             )
@@ -433,10 +451,10 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         {
             throw new InvalidDataException("System mail labels cannot be deleted.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         var label = world.Set<SavedMailLabel>().Find(pilotId, labelId) ?? throw new InvalidDataException("Unknown mail label.");
-        foreach (var entry in world.Set<SavedMailEntry>().Where(e => e.PilotId == pilotId && (e.Labels & labelId) != 0))
+        foreach (var entry in world.Filter<SavedMailEntry>(e => e.PilotId == pilotId && (e.Labels & labelId) != 0))
         {
             entry.Labels &= ~labelId;
             if (!entry.Deleted)

@@ -827,6 +827,12 @@ internal sealed partial class ResidentEconomy
         RegisterCharacterSettings();
         RegisterJetcans();
         RegisterStructureIndustryTables();
+        RegisterMailTables();
+        RegisterContactTables();
+        RegisterCalendarTables();
+        RegisterBookmarksTables();
+        RegisterAccessGroupsTables();
+        RegisterPlanetaryTables();
         Register(
             new EconomyTable<InventoryOwner, EconomyInventoryOwner>(
                 "WorldInventoryOwner",

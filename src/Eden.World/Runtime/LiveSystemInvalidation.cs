@@ -123,11 +123,14 @@ internal sealed partial class LiveReadModels
                     : world.Set<OwnedItem>().Where(i => inventoryIds.Contains(i.Id)).Select(i => i.LocationId).ToHashSet()
                 : [];
         bool Arrived(int system, CombatRowChange change) => locations.TryGetValue(change.Id, out int current) && current == system;
-        if (launches.Length > 0)
+        foreach (long id in launches)
         {
-            foreach (var launch in world.Set<Eden.Data.World.Planetary.SavedPlanetaryLaunch>().Where(l => launches.Contains(l.Id)))
+            var row = resident
+                ? owner.Economy.Peek<Eden.Data.World.Planetary.SavedPlanetaryLaunch>(id)
+                : world.Set<Eden.Data.World.Planetary.SavedPlanetaryLaunch>().Find(checked((int)id));
+            if (row is not null)
             {
-                locations[launch.Id] = launch.SystemId;
+                locations[id] = row.SystemId;
             }
         }
         if (jetcans.Length > 0)
@@ -140,11 +143,14 @@ internal sealed partial class LiveReadModels
                 }
             }
         }
-        if (offices.Length > 0)
+        foreach (long id in offices)
         {
-            foreach (var office in world.Set<Eden.Data.World.Planetary.SavedPlanetaryOffice>().Where(o => offices.Contains(o.PlanetId)))
+            var row = resident
+                ? owner.Economy.Peek<Eden.Data.World.Planetary.SavedPlanetaryOffice>(id)
+                : world.Set<Eden.Data.World.Planetary.SavedPlanetaryOffice>().Find(checked((int)id));
+            if (row is not null)
             {
-                locations[office.PlanetId] = office.SystemId;
+                locations[id] = row.SystemId;
             }
         }
         _directionalContacts.ObserveValues(

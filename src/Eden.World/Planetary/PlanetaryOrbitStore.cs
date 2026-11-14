@@ -9,6 +9,7 @@ using Eden.Gameplay.Planetary;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Loot;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +21,7 @@ internal static class PlanetaryOrbitStore
     private const double OfficeCapacity = 35000;
     private const double OrbitAltitude = 1_000_000;
 
-    internal static void EnsureOffice(WorldDbContext world, PlanetaryPlanet planet)
+    internal static void EnsureOffice(WorldAction world, PlanetaryPlanet planet)
     {
         if (world.Set<SavedPlanetaryOffice>().Find(planet.Id) is not null)
         {
@@ -38,18 +39,21 @@ internal static class PlanetaryOrbitStore
         );
     }
 
-    internal static IReadOnlyList<WreckContact> Contacts(WorldDbContext world, CatalogDbContext catalog, int systemId, long now)
+    internal static long NextExpiry(WorldAction world, int systemId, long now) =>
+        world.Filter<SavedPlanetaryLaunch>(l => l.SystemId == systemId && l.ExpiresAt > now).Min(l => (long?)l.ExpiresAt) ?? long.MaxValue;
+
+    internal static IReadOnlyList<WreckContact> Contacts(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
-        var offices = world.Set<SavedPlanetaryOffice>().Where(o => o.SystemId == systemId).ToArray();
-        var launches = world.Set<SavedPlanetaryLaunch>().Where(l => l.SystemId == systemId && l.ExpiresAt > now).ToArray();
+        var offices = world.Filter<SavedPlanetaryOffice>(o => o.SystemId == systemId).ToArray();
+        var launches = world.Filter<SavedPlanetaryLaunch>(l => l.SystemId == systemId && l.ExpiresAt > now).ToArray();
         if (offices.Length == 0 && launches.Length == 0)
         {
             return [];
         }
         var officeType = catalog.RequireItem(PlanetaryRules.CustomsOfficeType);
         var launchType = catalog.RequireItem(PlanetaryRules.LaunchContainerType);
-        var ids = launches.Select(l => (long)l.Id).ToArray();
-        var occupied = world.Set<OwnedItem>().Where(i => ids.Contains(i.LocationId)).Select(i => i.LocationId).Distinct().ToHashSet();
+        var ids = launches.Select(l => (long)l.Id).ToHashSet();
+        var occupied = world.Filter<OwnedItem>(i => ids.Contains(i.LocationId)).Select(i => i.LocationId).Distinct().ToHashSet();
         return offices
             .Select(o => new WreckContact(
                 PlanetaryRules.OfficeId(o.PlanetId),
@@ -88,7 +92,7 @@ internal static class PlanetaryOrbitStore
     }
 
     private static (Pilot Pilot, int SystemId, int TypeId, SpacePosition Position) Access(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long containerId,
@@ -96,7 +100,7 @@ internal static class PlanetaryOrbitStore
     )
     {
         var pilot =
-            world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId)
+            world.Filter<Pilot>(p => p.Id == pilotId).SingleOrDefault()
             ?? throw new InvalidDataException("Choose an existing pilot before accessing orbital cargo.");
         int systemId;
         int typeId;
@@ -128,7 +132,7 @@ internal static class PlanetaryOrbitStore
         if (
             pilot.ActiveShip.Position is not { } position
             || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != systemId
-            || world.Set<SpatialNavigationState>().Any(s => s.ShipId == pilot.ActiveShipId && s.CloakModuleId != 0)
+            || world.Set<SpatialNavigationState>().Find(pilot.ActiveShipId) is { CloakModuleId: not 0 }
         )
         {
             throw new InvalidDataException("Approach the orbital container in an uncloaked ship in its solar system.");
@@ -144,7 +148,7 @@ internal static class PlanetaryOrbitStore
         return (pilot, systemId, typeId, target);
     }
 
-    internal static PlanetaryOrbitInventory Read(WorldDbContext world, CatalogDbContext catalog, long pilotId, long containerId, long now)
+    internal static PlanetaryOrbitInventory Read(WorldAction world, CatalogDbContext catalog, long pilotId, long containerId, long now)
     {
         var (_, systemId, typeId, _) = Access(world, catalog, pilotId, containerId, now);
         var type = catalog.RequireItem(typeId);
@@ -167,6 +171,16 @@ internal static class PlanetaryOrbitStore
 
     internal static IReadOnlyList<InventoryChange> Move(
         WorldDbContext world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long containerId,
+        bool toOrbit,
+        InventoryMoveRequest request,
+        long now
+    ) => Move(new SqlWorldAction(world), catalog, pilotId, containerId, toOrbit, request, now);
+
+    internal static IReadOnlyList<InventoryChange> Move(
+        WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
         long containerId,
@@ -239,11 +253,10 @@ internal static class PlanetaryOrbitStore
         return changes;
     }
 
-    internal static void CheckOfficeCapacity(WorldDbContext world, CatalogDbContext catalog, long pilotId, long containerId)
+    internal static void CheckOfficeCapacity(WorldAction world, CatalogDbContext catalog, long pilotId, long containerId)
     {
         double used = world
-            .Set<OwnedItem>()
-            .Where(i => i.OwnerId == pilotId && i.LocationId == containerId)
+            .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == containerId)
             .AsEnumerable()
             .Concat(world.Set<OwnedItem>().Local)
             .DistinctBy(i => i.Id)
@@ -255,9 +268,9 @@ internal static class PlanetaryOrbitStore
         }
     }
 
-    internal static void DeleteLaunch(WorldDbContext world, SavedPlanetaryLaunch launch)
+    internal static void DeleteLaunch(WorldAction world, SavedPlanetaryLaunch launch)
     {
-        world.RemoveRange(world.Set<OwnedItem>().Where(i => i.LocationId == launch.Id));
+        world.RemoveRange(world.Filter<OwnedItem>(i => i.LocationId == launch.Id));
         world.Remove(launch);
     }
 }

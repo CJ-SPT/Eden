@@ -163,3 +163,30 @@ Not performed; agent client testing is disabled.
 1. Deploy a command center, build an extractor/basic-processing layout and verify scan, Submit and production visuals.
 2. Import/export through a launchpad and collect a command-center launch through its journal warp destination.
 3. Reconnect after an extraction cycle and inspect retained layout, goods, timers and the Planets directory.
+
+## Resident planetary industry
+
+Colony edits and advancement, skill checks, taxes, customs storage and launch cargo use resident state.
+Colony advancement, commodity changes, wallet fees, launch IDs and pin IDs commit in the same action.
+Office and launch publication includes the affected system, so a previously empty orbital view refreshes
+as soon as the action commits. The orbital view uses the next saved launch expiry and includes resident
+cargo changes. Existing saves retain the same tables and identity sequences.
+
+Reference checks covered saved colony state in the local EveJS `261108.1` `planetRuntimeStore.js`
+(SHA-256 prefix `CB74256D55A9ADD0`) and its separate customs settlement operation.
+[EVE University planetary industry](https://wiki.eveuniversity.org/Planetary_Industry)
+
+### Automated validation
+
+The focused cases cover resident and file-backed customs import/export and taxation, launch collection
+and expiry, same-tick orbital publication, and colony production after reopening a checkpoint. Warmed
+empty and populated orbital reads assert zero SQL commands, connection opens and fitting calculations.
+[Combined validation](social.md#resident-mail-inbox-and-calendar)
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

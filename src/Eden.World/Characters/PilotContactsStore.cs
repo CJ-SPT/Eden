@@ -5,6 +5,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Mail;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -83,27 +84,34 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
 
     private PersonalContacts ReadContacts(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        CheckPilot(world, pilotId);
-        return new(
-            world
-                .Set<SavedContact>()
-                .Where(c => c.PilotId == pilotId)
-                .OrderBy(c => c.ContactId)
-                .Select(c => new PersonalContact(c.ContactId, c.Standing, c.InWatchlist, c.LabelMask))
-                .AsEnumerable()
-                .Concat(
+        return WorldActionScope.Inspect<PersonalContacts>(
+            database,
+            world =>
+            {
+                CheckPilot(world, pilotId);
+                return new(
                     world
-                        .Set<SavedAgentContact>()
-                        .Where(c => c.PilotId == pilotId)
-                        .Select(c => c.AgentId)
+                        .Filter<SavedContact>(c => c.PilotId == pilotId)
+                        .OrderBy(c => c.ContactId)
+                        .Select(c => new PersonalContact(c.ContactId, c.Standing, c.InWatchlist, c.LabelMask))
                         .AsEnumerable()
-                        .Where(id => npcs.Agent(id) is not null)
-                        .Select(id => new PersonalContact(id, 0, false, 0))
-                )
-                .OrderBy(c => c.ContactId)
-                .ToArray(),
-            world.Set<SavedBlockedContact>().Where(c => c.PilotId == pilotId).OrderBy(c => c.ContactId).Select(c => c.ContactId).ToArray()
+                        .Concat(
+                            world
+                                .Filter<SavedAgentContact>(c => c.PilotId == pilotId)
+                                .Select(c => c.AgentId)
+                                .AsEnumerable()
+                                .Where(id => npcs.Agent(id) is not null)
+                                .Select(id => new PersonalContact(id, 0, false, 0))
+                        )
+                        .OrderBy(c => c.ContactId)
+                        .ToArray(),
+                    world
+                        .Filter<SavedBlockedContact>(c => c.PilotId == pilotId)
+                        .OrderBy(c => c.ContactId)
+                        .Select(c => c.ContactId)
+                        .ToArray()
+                );
+            }
         );
     }
 
@@ -204,16 +212,16 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             world =>
             {
                 ContactRules.CheckContacts(pilotId, contacts);
-                var known = world.Pilots.Where(p => contacts.Contains(p.Id)).Select(p => p.Id).ToHashSet();
+                var known = contacts.Where(world.PilotExists).ToHashSet();
                 known.UnionWith(
-                    world.Set<SavedAgentContact>().Where(c => c.PilotId == pilotId && contacts.Contains(c.AgentId)).Select(c => c.AgentId)
+                    world.Filter<SavedAgentContact>(c => c.PilotId == pilotId && contacts.Contains(c.AgentId)).Select(c => c.AgentId)
                 );
                 if (contacts.Any(id => !known.Contains(id) && npcs.Agent(id) is null))
                 {
                     throw new InvalidDataException("Choose known pilots or agents to remove.");
                 }
-                world.Set<SavedContact>().Where(c => c.PilotId == pilotId && contacts.Contains(c.ContactId)).ExecuteDelete();
-                world.Set<SavedAgentContact>().Where(c => c.PilotId == pilotId && contacts.Contains(c.AgentId)).ExecuteDelete();
+                world.RemoveRange(world.Filter<SavedContact>(c => c.PilotId == pilotId && contacts.Contains(c.ContactId)).ToArray());
+                world.RemoveRange(world.Filter<SavedAgentContact>(c => c.PilotId == pilotId && contacts.Contains(c.AgentId)).ToArray());
             }
         );
 
@@ -240,14 +248,18 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
 
     public IReadOnlyList<ContactLabel> Labels(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        CheckPilot(world, pilotId);
-        return world
-            .Set<SavedContactLabel>()
-            .Where(l => l.PilotId == pilotId)
-            .OrderBy(l => l.Id)
-            .Select(l => new ContactLabel(l.Id, l.Name, l.Color))
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<ContactLabel>>(
+            database,
+            world =>
+            {
+                CheckPilot(world, pilotId);
+                return world
+                    .Filter<SavedContactLabel>(l => l.PilotId == pilotId)
+                    .OrderBy(l => l.Id)
+                    .Select(l => new ContactLabel(l.Id, l.Name, l.Color))
+                    .ToArray();
+            }
+        );
     }
 
     public long CreateLabel(long pilotId, string name, int? color)
@@ -260,7 +272,7 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             world =>
             {
                 CheckUniqueName(world, pilotId, name, null);
-                var used = world.Set<SavedContactLabel>().Where(l => l.PilotId == pilotId).Select(l => l.Id).ToHashSet();
+                var used = world.Filter<SavedContactLabel>(l => l.PilotId == pilotId).Select(l => l.Id).ToHashSet();
                 id = Enumerable.Range(0, ContactRules.MaximumLabels).Select(bit => 1L << bit).FirstOrDefault(bit => !used.Contains(bit));
                 if (id == 0)
                 {
@@ -320,7 +332,7 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             {
                 var label =
                     world.Set<SavedContactLabel>().Find(pilotId, labelId) ?? throw new InvalidDataException("Unknown contact label.");
-                foreach (var contact in world.Set<SavedContact>().Where(c => c.PilotId == pilotId && (c.LabelMask & labelId) != 0))
+                foreach (var contact in world.Filter<SavedContact>(c => c.PilotId == pilotId && (c.LabelMask & labelId) != 0))
                 {
                     contact.LabelMask &= ~labelId;
                 }
@@ -335,8 +347,7 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             world =>
             {
                 long available = world
-                    .Set<SavedContactLabel>()
-                    .Where(l => l.PilotId == pilotId)
+                    .Filter<SavedContactLabel>(l => l.PilotId == pilotId)
                     .Select(l => l.Id)
                     .AsEnumerable()
                     .Aggregate(0L, (all, id) => all | id);
@@ -351,24 +362,23 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             }
         );
 
-    private void Write(long pilotId, Action<WorldDbContext> operation, bool publishInbox = false)
+    private void Write(long pilotId, Action<WorldAction> operation, bool publishInbox = false)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         CheckPilot(world, pilotId);
         operation(world);
-        world.SaveChanges();
-        transaction.Commit();
         if (publishInbox)
         {
-            inbox.Publish();
+            world.AfterCommit(inbox.Publish);
         }
+        transaction.Commit();
     }
 
-    private static SavedContact[] RequireContacts(WorldDbContext world, long pilotId, IReadOnlyList<long> contacts)
+    private static SavedContact[] RequireContacts(WorldAction world, long pilotId, IReadOnlyList<long> contacts)
     {
         CheckTargets(world, pilotId, contacts);
-        var saved = world.Set<SavedContact>().Where(c => c.PilotId == pilotId && contacts.Contains(c.ContactId)).ToArray();
+        var saved = world.Filter<SavedContact>(c => c.PilotId == pilotId && contacts.Contains(c.ContactId)).ToArray();
         if (saved.Length != contacts.Distinct().Count())
         {
             throw new InvalidDataException("Choose existing personal contacts.");
@@ -376,24 +386,24 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
         return saved;
     }
 
-    private static void CheckTargets(WorldDbContext world, long pilotId, IReadOnlyList<long> contacts)
+    private static void CheckTargets(WorldAction world, long pilotId, IReadOnlyList<long> contacts)
     {
         ContactRules.CheckContacts(pilotId, contacts);
-        if (world.Pilots.Count(p => contacts.Contains(p.Id)) != contacts.Distinct().Count())
+        if (contacts.Any(id => !world.PilotExists(id)))
         {
             throw new InvalidDataException("Choose known Eden pilots as contacts.");
         }
     }
 
-    private static void CheckPilot(WorldDbContext world, long pilotId)
+    private static void CheckPilot(WorldAction world, long pilotId)
     {
-        if (!world.Pilots.Any(p => p.Id == pilotId))
+        if (!world.PilotExists(pilotId))
         {
             throw new InvalidDataException("Unknown character.");
         }
     }
 
-    private static void CheckUniqueName(WorldDbContext world, long pilotId, string name, long? except)
+    private static void CheckUniqueName(WorldAction world, long pilotId, string name, long? except)
     {
         if (world.Set<SavedContactLabel>().Any(l => l.PilotId == pilotId && l.Id != except && l.Name == name))
         {

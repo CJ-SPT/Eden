@@ -42,6 +42,12 @@ internal sealed partial class EconomyTransaction(
 
     internal override long NextExpiry => store.NextExpiry;
 
+    internal override bool PilotExists(long id) => store.IsPilot(id);
+
+    internal override long MailHead(long pilot) => store.MailHead(pilot);
+
+    internal override long MailingListHead(long pilot) => store.MailingListHead(pilot);
+
     internal override long MarketHead(long pilot) => store.MarketHead(pilot);
 
     internal override EconomyStructure? Structure(long id) => store.Structure(id);

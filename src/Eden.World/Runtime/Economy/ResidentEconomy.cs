@@ -287,6 +287,8 @@ internal sealed partial class ResidentEconomy
         ClearCommandBursts();
         ClearCombatIndexes();
         _marketHeads.Clear();
+        _mailHeads.Clear();
+        _listHeads.Clear();
         _staleHeads.Clear();
         foreach (var table in _tables.Values)
         {

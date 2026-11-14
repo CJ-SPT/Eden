@@ -1,5 +1,10 @@
 # Protocol findings and milestone records
 
+[Resident mail, inbox and calendar](protocol/social.md#resident-mail-inbox-and-calendar),
+[resident bookmarks and access lists](protocol/navigation.md#resident-bookmarks-and-access-lists), and
+[resident planetary industry](protocol/planetary.md#resident-planetary-industry)
+record the saved-world cutover and checkpoint coverage.
+
 [Resident structures, spatial modules, translocation, and industry](protocol/performance.md#resident-structures-spatial-modules-translocation-and-industry)
 records the live-world cutover and checkpoint validation for these paths.
 

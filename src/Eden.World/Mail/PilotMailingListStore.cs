@@ -6,38 +6,37 @@ using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
-using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mail;
 
 [Injectable]
 internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider clock) : IPilotMailingLists
 {
-    private static SavedMailingList Active(WorldDbContext world, long id) =>
+    private static SavedMailingList Active(WorldAction world, long id) =>
         world.Set<SavedMailingList>().SingleOrDefault(l => l.Id == id && !l.Deleted)
         ?? throw new InvalidDataException("That mailing list does not exist.");
 
-    private static Pilot Pilot(WorldDbContext world, long pilot) =>
+    private static Pilot Pilot(WorldAction world, long pilot) =>
         world.Pilots.Find(pilot) ?? throw new InvalidDataException("Unknown mailing-list pilot.");
 
-    private static MailingListRole Role(WorldDbContext world, long pilot, long list) =>
+    private static MailingListRole Role(WorldAction world, long pilot, long list) =>
         world.Set<SavedMailingListMember>().Find(list, pilot)?.Role
         ?? throw new InvalidDataException("You are not subscribed to this mailing list.");
 
-    private static SavedMailingList Manage(WorldDbContext world, long pilot, long listId)
+    private static SavedMailingList Manage(WorldAction world, long pilot, long listId)
     {
         var list = Active(world, listId);
         MailingListRules.Manager(Role(world, pilot, listId));
         return list;
     }
 
-    private static Dictionary<long, MailingListAccess> Access(WorldDbContext world, long list) =>
-        world.Set<SavedMailingListAccess>().Where(a => a.ListId == list).ToDictionary(a => a.EntityId, a => a.Access);
+    private static Dictionary<long, MailingListAccess> Access(WorldAction world, long list) =>
+        world.Filter<SavedMailingListAccess>(a => a.ListId == list).ToDictionary(a => a.EntityId, a => a.Access);
 
     private static void Feed(
-        WorldDbContext world,
+        WorldAction world,
         long pilot,
         long list,
         MailingListChangeKind kind,
@@ -57,33 +56,41 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public IReadOnlyList<MailingListInfo> Joined(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        return (
-            from member in world.Set<SavedMailingListMember>()
-            join list in world.Set<SavedMailingList>() on member.ListId equals list.Id
-            where member.PilotId == pilotId && !list.Deleted
-            orderby list.Id
-            select new { List = list, member.Role }
-        )
-            .AsEnumerable()
-            .Select(r => r.List.Info(r.Role))
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<MailingListInfo>>(
+            database,
+            world =>
+            {
+                return world
+                    .Filter<SavedMailingListMember>(m => m.PilotId == pilotId)
+                    .OrderBy(m => m.ListId)
+                    .AsEnumerable()
+                    .Select(m => (List: world.Set<SavedMailingList>().Find(m.ListId), m.Role))
+                    .Where(m => m.List is { Deleted: false })
+                    .Select(m => m.List!.Info(m.Role))
+                    .ToArray();
+            }
+        );
     }
 
     public MailingListInfo? Info(long pilotId, long listId)
     {
-        using WorldDbContext world = new(database.Path);
-        // Historical mail still names a deleted list. Names and IDs are tombstoned.
-        var list = world.Set<SavedMailingList>().Find(listId);
-        return list?.Info(world.Set<SavedMailingListMember>().Find(listId, pilotId)?.Role ?? MailingListRole.Member);
+        return WorldActionScope.Inspect<MailingListInfo?>(
+            database,
+            world =>
+            {
+                // Historical mail still names a deleted list. Names and IDs are tombstoned.
+                var list = world.Set<SavedMailingList>().Find(listId);
+                return list?.Info(world.Set<SavedMailingListMember>().Find(listId, pilotId)?.Role ?? MailingListRole.Member);
+            }
+        );
     }
 
     public long Create(long pilotId, string name, MailingListDefaults defaults, Guid origin)
     {
         var normalized = MailingListRules.Name(name);
         MailingListRules.Defaults(defaults);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         _ = Pilot(world, pilotId);
         if (world.Set<SavedMailingList>().Any(l => l.Key == normalized.Key && !l.Deleted))
         {
@@ -119,8 +126,8 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
     public MailingListInfo Join(long pilotId, string name, Guid origin)
     {
         var normalized = MailingListRules.Name(name);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         var pilot = Pilot(world, pilotId);
         var list =
             world.Set<SavedMailingList>().SingleOrDefault(l => l.Key == normalized.Key && !l.Deleted)
@@ -155,8 +162,8 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public void Leave(long pilotId, long listId, Guid origin)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         var list = Active(world, listId);
         if (list.OwnerId == pilotId)
         {
@@ -174,14 +181,14 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public void Delete(long pilotId, long listId, Guid origin)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         var list = Active(world, listId);
         if (list.OwnerId != pilotId)
         {
             throw new InvalidDataException("Only the mailing-list owner can delete it.");
         }
-        foreach (var member in world.Set<SavedMailingListMember>().Where(m => m.ListId == listId))
+        foreach (var member in world.Filter<SavedMailingListMember>(m => m.ListId == listId))
         {
             Feed(world, member.PilotId, listId, MailingListChangeKind.Deleted, origin);
             world.Remove(member);
@@ -193,9 +200,14 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public IReadOnlyDictionary<long, MailingListRole> Members(long pilotId, long listId)
     {
-        using WorldDbContext world = new(database.Path);
-        _ = Manage(world, pilotId, listId);
-        return world.Set<SavedMailingListMember>().Where(m => m.ListId == listId).ToDictionary(m => m.PilotId, m => m.Role);
+        return WorldActionScope.Inspect<IReadOnlyDictionary<long, MailingListRole>>(
+            database,
+            world =>
+            {
+                _ = Manage(world, pilotId, listId);
+                return world.Filter<SavedMailingListMember>(m => m.ListId == listId).ToDictionary(m => m.PilotId, m => m.Role);
+            }
+        );
     }
 
     public void ChangeMembers(long pilotId, long listId, IReadOnlyList<long> members, MailingListRole? role, Guid origin)
@@ -205,10 +217,10 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         {
             throw new InvalidDataException("Choose a member, muted or operator role.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         var list = Manage(world, pilotId, listId);
-        var selected = world.Set<SavedMailingListMember>().Where(m => m.ListId == listId && members.Contains(m.PilotId)).ToArray();
+        var selected = world.Filter<SavedMailingListMember>(m => m.ListId == listId && members.Contains(m.PilotId)).ToArray();
         if (members.Contains(list.OwnerId) || selected.Length != members.Count)
         {
             throw new InvalidDataException("Choose current members other than the owner.");
@@ -232,7 +244,7 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         transaction.Commit();
     }
 
-    private static void Block(WorldDbContext world, long list, long entity)
+    private static void Block(WorldAction world, long list, long entity)
     {
         var entry =
             world.Set<SavedMailingListAccess>().Find(list, entity)
@@ -242,17 +254,21 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public MailingListSettings Settings(long pilotId, long listId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        var list = Manage(world, pilotId, listId);
-        return new(new(list.DefaultAccess, list.DefaultRole), Access(world, listId));
+        return WorldActionScope.Inspect<MailingListSettings>(
+            database,
+            world =>
+            {
+                var list = Manage(world, pilotId, listId);
+                return new MailingListSettings(new(list.DefaultAccess, list.DefaultRole), Access(world, listId));
+            }
+        );
     }
 
     public void SetDefaults(long pilotId, long listId, MailingListDefaults defaults)
     {
         MailingListRules.Defaults(defaults);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         var list = Manage(world, pilotId, listId);
         // Closing public enrollment does not evict existing subscribers or mute them.
         list.DefaultAccess = defaults.Access;
@@ -268,8 +284,8 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         {
             throw new InvalidDataException("Invalid mailing-list access.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var list = Manage(world, pilotId, listId);
         foreach (var (entity, value) in access)
@@ -292,12 +308,11 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         }
         world.SaveChanges();
         var rules = Access(world, listId);
-        var members = (
-            from member in world.Set<SavedMailingListMember>()
-            join pilot in world.Pilots on member.PilotId equals pilot.Id
-            where member.ListId == listId && member.PilotId != list.OwnerId
-            select new { Member = member, pilot.CorporationId }
-        ).ToArray();
+        var members = world
+            .Filter<SavedMailingListMember>(m => m.ListId == listId && m.PilotId != list.OwnerId)
+            .AsEnumerable()
+            .Select(m => (Member: m, CorporationId: Pilot(world, m.PilotId).CorporationId))
+            .ToArray();
         foreach (
             var row in members.Where(m =>
                 MailingListRules.Access(m.Member.PilotId, m.CorporationId, MailingListAccess.Allowed, rules) == MailingListAccess.Blocked
@@ -313,8 +328,8 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public void ClearAccess(long pilotId, long listId, long entityId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         _ = Manage(world, pilotId, listId);
         var entry = world.Set<SavedMailingListAccess>().Find(listId, entityId);
         if (entry is not null)
@@ -327,9 +342,14 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public MailingListWelcome? Welcome(long pilotId, long listId)
     {
-        using WorldDbContext world = new(database.Path);
-        var list = Manage(world, pilotId, listId);
-        return list.WelcomeTitle is null ? null : new(list.WelcomeTitle, list.WelcomeBody ?? "");
+        return WorldActionScope.Inspect<MailingListWelcome?>(
+            database,
+            world =>
+            {
+                var list = Manage(world, pilotId, listId);
+                return list.WelcomeTitle is null ? null : new(list.WelcomeTitle, list.WelcomeBody ?? "");
+            }
+        );
     }
 
     public void SaveWelcome(long pilotId, long listId, MailingListWelcome? welcome, bool send, Guid origin)
@@ -338,14 +358,14 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         {
             MailRules.Draft(new([pilotId], welcome.Title, welcome.Body, null, null));
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         var list = Manage(world, pilotId, listId);
         list.WelcomeTitle = welcome?.Title;
         list.WelcomeBody = welcome?.Body;
         if (send && welcome is not null)
         {
-            var audience = world.Set<SavedMailingListMember>().Where(m => m.ListId == listId).Select(m => m.PilotId).ToArray();
+            var audience = world.Filter<SavedMailingListMember>(m => m.ListId == listId).Select(m => m.PilotId).ToArray();
             WelcomeDelivery(world, list, [], audience, origin);
         }
         world.SaveChanges();
@@ -353,7 +373,7 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
     }
 
     private void WelcomeDelivery(
-        WorldDbContext world,
+        WorldAction world,
         SavedMailingList list,
         IReadOnlyList<long> direct,
         IReadOnlyList<long> audience,
@@ -372,7 +392,7 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
             origin
         );
 
-    internal static IReadOnlyList<long> Audience(WorldDbContext world, long pilotId, long listId)
+    internal static IReadOnlyList<long> Audience(WorldAction world, long pilotId, long listId)
     {
         var list = Active(world, listId);
         if (Role(world, pilotId, listId) == MailingListRole.Muted)
@@ -388,14 +408,11 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
         {
             throw new InvalidDataException("You are blocked from this mailing list.");
         }
-        var blocked = world.Set<SavedBlockedContact>().Where(b => b.ContactId == pilotId).Select(b => b.PilotId).ToHashSet();
-        return (
-            from member in world.Set<SavedMailingListMember>()
-            join pilot in world.Pilots on member.PilotId equals pilot.Id
-            where member.ListId == listId
-            select new { pilot.Id, pilot.CorporationId }
-        )
+        var blocked = world.Filter<SavedBlockedContact>(b => b.ContactId == pilotId).Select(b => b.PilotId).ToHashSet();
+        return world
+            .Filter<SavedMailingListMember>(m => m.ListId == listId)
             .AsEnumerable()
+            .Select(m => Pilot(world, m.PilotId))
             .Where(p =>
                 !blocked.Contains(p.Id)
                 && (
@@ -409,25 +426,36 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
 
     public long Observe(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<SavedMailingListChange>().Where(c => c.PilotId == pilotId).Max(c => (long?)c.Id) ?? 0;
+        return WorldActionScope.Inspect<long>(
+            database,
+            world =>
+            {
+                return world.MailingListHead(pilotId);
+            }
+        );
     }
 
     public MailingListChanges Changes(long pilotId, long cursor)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.listChanges");
-        if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasListChanges(pilotId, cursor))
-        {
-            return new(cursor, false, []);
-        }
-        using WorldDbContext world = new(database.Path);
-        var rows = world
-            .Set<SavedMailingListChange>()
-            .Where(c => c.PilotId == pilotId && c.Id > cursor)
-            .OrderBy(c => c.Id)
-            .Take(MailRules.FeedBatch + 1)
-            .ToArray();
-        var items = rows.Take(MailRules.FeedBatch).Select(c => new MailingListChange(c.Id, c.ListId, c.Kind, c.Role, c.Origin)).ToArray();
-        return new(items.LastOrDefault()?.Id ?? cursor, rows.Length > MailRules.FeedBatch, items);
+        return WorldActionScope.Inspect<MailingListChanges>(
+            database,
+            world =>
+            {
+                if (cursor >= world.MailingListHead(pilotId))
+                {
+                    return new(cursor, false, []);
+                }
+                var rows = world
+                    .Filter<SavedMailingListChange>(c => c.PilotId == pilotId && c.Id > cursor)
+                    .OrderBy(c => c.Id)
+                    .Take(MailRules.FeedBatch + 1)
+                    .ToArray();
+                var items = rows.Take(MailRules.FeedBatch)
+                    .Select(c => new MailingListChange(c.Id, c.ListId, c.Kind, c.Role, c.Origin))
+                    .ToArray();
+                return new MailingListChanges(items.LastOrDefault()?.Id ?? cursor, rows.Length > MailRules.FeedBatch, items);
+            }
+        );
     }
 }

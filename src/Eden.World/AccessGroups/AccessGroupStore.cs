@@ -1,10 +1,12 @@
 using Eden.Data.World.AccessGroups;
+using Eden.Data.World.Bookmarks;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.AccessGroups;
 using Eden.Gameplay.Bookmarks;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.AccessGroups;
 
@@ -17,73 +19,88 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
 
     public IReadOnlyList<AccessGroupContents> ReadContents(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        long corporation = PilotCorporation(world, pilotId);
-        var members = world
-            .Set<SavedAccessGroupMember>()
-            .OrderBy(m => m.GroupId)
-            .ThenBy(m => m.OwnerId)
-            .AsEnumerable()
-            .ToLookup(m => m.GroupId, m => new AccessGroupMember(m.OwnerId, m.Role));
-        List<AccessGroupContents> result = [];
-        foreach (var group in world.Set<SavedAccessGroup>().OrderBy(g => g.Id))
-        {
-            var rows = members[group.Id].ToArray();
-            var role = AccessGroupRules.Resolve(rows, pilotId, corporation);
-            if (AccessGroupRules.CanManage(role))
+        return WorldActionScope.Inspect<IReadOnlyList<AccessGroupContents>>(
+            database,
+            world =>
             {
-                result.Add(
-                    new(
-                        new(
-                            group.Id,
-                            group.CreatorId,
-                            group.Name,
-                            group.Description,
-                            role,
-                            rows.Where(m => m.Role == AccessGroupRole.Admin).Select(m => m.OwnerId).ToArray()
-                        ),
-                        rows
-                    )
-                );
+                long corporation = PilotCorporation(world, pilotId);
+                var members = world
+                    .Set<SavedAccessGroupMember>()
+                    .OrderBy(m => m.GroupId)
+                    .ThenBy(m => m.OwnerId)
+                    .AsEnumerable()
+                    .ToLookup(m => m.GroupId, m => new AccessGroupMember(m.OwnerId, m.Role));
+                List<AccessGroupContents> result = [];
+                foreach (var group in world.Set<SavedAccessGroup>().OrderBy(g => g.Id))
+                {
+                    var rows = members[group.Id].ToArray();
+                    var role = AccessGroupRules.Resolve(rows, pilotId, corporation);
+                    if (AccessGroupRules.CanManage(role))
+                    {
+                        result.Add(
+                            new(
+                                new(
+                                    group.Id,
+                                    group.CreatorId,
+                                    group.Name,
+                                    group.Description,
+                                    role,
+                                    rows.Where(m => m.Role == AccessGroupRole.Admin).Select(m => m.OwnerId).ToArray()
+                                ),
+                                rows
+                            )
+                        );
+                    }
+                }
+                return result;
             }
-        }
-        return result;
+        );
     }
 
     public AccessGroup? Find(long pilotId, long groupId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        if (world.Set<SavedAccessGroup>().Find(groupId) is not { } group)
-        {
-            return null;
-        }
-        var result = Snapshot(world, pilotId, group);
-        return AccessGroupRules.CanManage(result.Role) ? result : null;
+        return WorldActionScope.Inspect<AccessGroup?>(
+            database,
+            world =>
+            {
+                if (world.Set<SavedAccessGroup>().Find(groupId) is not { } group)
+                {
+                    return null;
+                }
+                var result = Snapshot(world, pilotId, group);
+                return AccessGroupRules.CanManage(result.Role) ? result : null;
+            }
+        );
     }
 
     public IReadOnlyList<AccessGroupMember> Members(long pilotId, long groupId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        Require(world, pilotId, groupId);
-        return MemberRows(world, groupId);
+        return WorldActionScope.Inspect<IReadOnlyList<AccessGroupMember>>(
+            database,
+            world =>
+            {
+                Require(world, pilotId, groupId);
+                return MemberRows(world, groupId);
+            }
+        );
     }
 
     public IReadOnlyList<AccessGroupLog> Logs(long pilotId, long groupId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        Require(world, pilotId, groupId);
-        return world
-            .Set<SavedAccessGroupLog>()
-            .Where(l => l.GroupId == groupId)
-            .OrderByDescending(l => l.Id)
-            .Take(AccessGroupRules.MaximumLogEntries)
-            .AsEnumerable()
-            .Select(l => l.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<AccessGroupLog>>(
+            database,
+            world =>
+            {
+                Require(world, pilotId, groupId);
+                return world
+                    .Filter<SavedAccessGroupLog>(l => l.GroupId == groupId)
+                    .OrderByDescending(l => l.Id)
+                    .Take(AccessGroupRules.MaximumLogEntries)
+                    .AsEnumerable()
+                    .Select(l => l.Snapshot())
+                    .ToArray();
+            }
+        );
     }
 
     public AccessGroup Create(long pilotId, string name, string description)
@@ -128,10 +145,38 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
         Write(world =>
         {
             var group = Require(world, pilotId, groupId, true);
-            // References are cleared by SQLite ON DELETE SET NULL. Losing the only admin
-            // list can intentionally make a shared folder inaccessible, as self-demotion can.
-            world.Set<SavedAccessGroupMember>().Where(m => m.GroupId == groupId).ExecuteDelete();
-            world.Set<SavedAccessGroupLog>().Where(l => l.GroupId == groupId).ExecuteDelete();
+            // Clear grants before pruning connections. Losing the only admin list
+            // can intentionally make a shared folder inaccessible, as self-demotion can.
+            world.RemoveRange(world.Filter<SavedAccessGroupMember>(m => m.GroupId == groupId).ToArray());
+            world.RemoveRange(world.Filter<SavedAccessGroupLog>(l => l.GroupId == groupId).ToArray());
+            foreach (
+                var folder in world
+                    .Filter<SavedBookmarkFolder>(f => f.AdminGroupId == groupId)
+                    .AsEnumerable()
+                    .Concat(world.Filter<SavedBookmarkFolder>(f => f.ManageGroupId == groupId))
+                    .Concat(world.Filter<SavedBookmarkFolder>(f => f.UseGroupId == groupId))
+                    .Concat(world.Filter<SavedBookmarkFolder>(f => f.ViewGroupId == groupId))
+                    .DistinctBy(f => f.Id)
+                    .ToArray()
+            )
+            {
+                if (folder.AdminGroupId == groupId)
+                {
+                    folder.AdminGroupId = null;
+                }
+                if (folder.ManageGroupId == groupId)
+                {
+                    folder.ManageGroupId = null;
+                }
+                if (folder.UseGroupId == groupId)
+                {
+                    folder.UseGroupId = null;
+                }
+                if (folder.ViewGroupId == groupId)
+                {
+                    folder.ViewGroupId = null;
+                }
+            }
             world.Remove(group);
             return true;
         });
@@ -173,13 +218,14 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
         {
             Require(world, pilotId, groupId, mutate: true);
             var actor = Role(world, pilotId, groupId);
-            var current = world.Set<SavedAccessGroupMember>().Where(m => m.GroupId == groupId).ToDictionary(m => m.OwnerId);
-            long[] ids = members.Select(m => m.OwnerId).ToArray();
-            var characters = world.Pilots.Where(p => ids.Contains(p.Id)).Select(p => p.Id).ToHashSet();
-            var corporations = world.Set<SavedCorporation>().Where(c => ids.Contains((long)c.Id)).Select(c => (long)c.Id).ToHashSet();
+            var current = world.Filter<SavedAccessGroupMember>(m => m.GroupId == groupId).ToDictionary(m => m.OwnerId);
+            var ids = members.Select(m => m.OwnerId).ToHashSet();
+            var characters = ids.Where(world.PilotExists).ToHashSet();
+            var corporations = world.Filter<SavedCorporation>(c => ids.Contains((long)c.Id)).Select(c => (long)c.Id).ToHashSet();
             var managed = world
-                .Set<SavedAccessGroupMember>()
-                .Where(m => ids.Contains(m.OwnerId) && (m.Role == AccessGroupRole.Admin || m.Role == AccessGroupRole.Manager))
+                .Filter<SavedAccessGroupMember>(m =>
+                    ids.Contains(m.OwnerId) && (m.Role == AccessGroupRole.Admin || m.Role == AccessGroupRole.Manager)
+                )
                 .GroupBy(m => m.OwnerId)
                 .Select(g => new { Owner = g.Key, Count = g.Count() })
                 .ToDictionary(g => g.Owner, g => g.Count);
@@ -252,22 +298,21 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
         });
     }
 
-    internal static AccessGroupRole Role(WorldDbContext world, long pilotId, long groupId) =>
+    internal static AccessGroupRole Role(WorldAction world, long pilotId, long groupId) =>
         AccessGroupRules.Resolve(MemberRows(world, groupId), pilotId, PilotCorporation(world, pilotId));
 
-    internal static long PilotCorporation(WorldDbContext world, long pilotId) =>
-        world.Pilots.Where(p => p.Id == pilotId).Select(p => (long?)p.CorporationId).SingleOrDefault()
+    internal static long PilotCorporation(WorldAction world, long pilotId) =>
+        world.Filter<Pilot>(p => p.Id == pilotId).Select(p => (long?)p.CorporationId).SingleOrDefault()
         ?? throw new InvalidDataException("Unknown character.");
 
-    private static AccessGroupMember[] MemberRows(WorldDbContext world, long groupId) =>
+    private static AccessGroupMember[] MemberRows(WorldAction world, long groupId) =>
         world
-            .Set<SavedAccessGroupMember>()
-            .Where(m => m.GroupId == groupId)
+            .Filter<SavedAccessGroupMember>(m => m.GroupId == groupId)
             .OrderBy(m => m.OwnerId)
             .Select(m => new AccessGroupMember(m.OwnerId, m.Role))
             .ToArray();
 
-    private static AccessGroup Snapshot(WorldDbContext world, long pilotId, SavedAccessGroup group) =>
+    private static AccessGroup Snapshot(WorldAction world, long pilotId, SavedAccessGroup group) =>
         new(
             group.Id,
             group.CreatorId,
@@ -277,7 +322,7 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
             MemberRows(world, group.Id).Where(m => m.Role == AccessGroupRole.Admin).Select(m => m.OwnerId).ToArray()
         );
 
-    private static SavedAccessGroup Require(WorldDbContext world, long pilotId, long id, bool admin = false, bool mutate = false)
+    private static SavedAccessGroup Require(WorldAction world, long pilotId, long id, bool admin = false, bool mutate = false)
     {
         var group = world.Set<SavedAccessGroup>().Find(id) ?? throw new InvalidDataException("Unknown access list.");
         if (group.IsCorporation && (admin || mutate))
@@ -293,7 +338,7 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
     }
 
     private void Log(
-        WorldDbContext world,
+        WorldAction world,
         long actor,
         long group,
         AccessGroupChange change,
@@ -318,16 +363,16 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
             }
         );
 
-    private T Write<T>(Func<WorldDbContext, T> operation)
+    private T Write<T>(Func<WorldAction, T> operation)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         T result = operation(world);
         world.SaveChanges();
         Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world);
         world.SaveChanges();
+        world.AfterCommit(database.NotifyAccessGroupsChanged);
         transaction.Commit();
-        database.NotifyAccessGroupsChanged();
         return result;
     }
 }

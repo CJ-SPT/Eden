@@ -20,6 +20,7 @@ using Eden.World.Loot;
 using Eden.World.Mail;
 using Eden.World.Mining;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -74,8 +75,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "WorldPilot",
         "WorldLoyaltyWallet"
     );
-    private readonly ResidentSnapshot<long, long> _mailHead = new("resident.mailHead", "WorldMailChange");
-    private readonly ResidentSnapshot<long, long> _listHead = new("resident.listHead", "WorldMailingListChange");
     private readonly ResidentSnapshot<long, FrozenDictionary<DogmaAttributeId, double>> _fits = new(
         "resident.fit",
         "WorldFitRevision",
@@ -210,30 +209,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
 
     internal long Extraction(long pilot, Func<long> load) => Read(_extraction, pilot, load);
 
-    internal bool HasMailChanges(long pilot, long cursor) =>
-        cursor
-        < Read(
-            _mailHead,
-            pilot,
-            () =>
-            {
-                using WorldDbContext world = new(database.Path);
-                return world.Set<SavedMailChange>().Where(c => c.PilotId == pilot).Max(c => (long?)c.Id) ?? 0;
-            }
-        );
-
-    internal bool HasListChanges(long pilot, long cursor) =>
-        cursor
-        < Read(
-            _listHead,
-            pilot,
-            () =>
-            {
-                using WorldDbContext world = new(database.Path);
-                return world.Set<SavedMailingListChange>().Where(c => c.PilotId == pilot).Max(c => (long?)c.Id) ?? 0;
-            }
-        );
-
     internal IReadOnlyList<LoyaltyBalance> Loyalty(long pilot, Func<IReadOnlyList<LoyaltyBalance>> load) =>
         Read(_loyalty, pilot, () => Array.AsReadOnly(load().ToArray()));
 
@@ -253,20 +228,19 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
             () =>
             {
                 var contacts = Array.AsReadOnly(load().ToArray());
-                using WorldDbContext world = new(database.Path);
-                long next =
-                    world.Set<WorldWreck>().Where(w => w.SystemId == system && w.ExpiresAt > now).Min(w => (long?)w.ExpiresAt)
-                    ?? long.MaxValue;
-                var ids = contacts.Select(c => c.Id).ToArray();
-                long launchExpiry =
-                    world
-                        .Set<Eden.Data.World.Planetary.SavedPlanetaryLaunch>()
-                        .Where(l => l.SystemId == system && l.ExpiresAt > now)
-                        .Min(l => (long?)l.ExpiresAt)
-                    ?? long.MaxValue;
-                next = Math.Min(next, launchExpiry);
-                var items = world.Set<OwnedItem>().Where(i => ids.Contains(i.LocationId)).Select(i => i.Id).ToArray().ToFrozenSet();
-                return new WreckView(contacts, next, items);
+                return WorldActionScope.Inspect(
+                    database,
+                    world =>
+                    {
+                        long wreckExpiry =
+                            world.Filter<WorldWreck>(w => w.SystemId == system && w.ExpiresAt > now).Min(w => (long?)w.ExpiresAt)
+                            ?? long.MaxValue;
+                        long launchExpiry = Eden.World.Planetary.PlanetaryOrbitStore.NextExpiry(world, system, now);
+                        var ids = contacts.Select(c => c.Id).ToHashSet();
+                        var items = world.Filter<OwnedItem>(i => ids.Contains(i.LocationId)).Select(i => i.Id).ToFrozenSet();
+                        return new WreckView(contacts, Math.Min(wreckExpiry, launchExpiry), items);
+                    }
+                );
             },
             now,
             view => view.NextExpiry
@@ -346,8 +320,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _points.Observe(changes, (pilot, change) => pilot == change.Id);
         _extraction.Observe(changes, (pilot, change) => pilot == change.Id);
         _loyalty.Observe(changes);
-        _mailHead.Observe(changes);
-        _listHead.Observe(changes);
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
         _autoMiningModules.Observe(changes, (key, change) => change.Table != "WorldFitRevision" || key.Pilot == change.Id);
         _autoMiningHolds.Observe(
@@ -400,8 +372,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _points.Clear();
         _extraction.Clear();
         _loyalty.Clear();
-        _mailHead.Clear();
-        _listHead.Clear();
         _fits.Clear();
         _defenseProfiles.Clear();
         _asteroids.Clear();

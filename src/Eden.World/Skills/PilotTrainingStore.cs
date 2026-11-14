@@ -30,6 +30,9 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
     internal TrainingState Advance(WorldDbContext world, long pilotId, long now) =>
         UpdateCore(world, pilotId, null, false, false, null, null, false, now).Training;
 
+    internal TrainingState Advance(WorldAction world, long pilotId, long now) =>
+        UpdateCore(world, pilotId, null, false, false, null, null, false, now).Training;
+
     public TrainingState Advance(long pilotId) => Update(pilotId, null, false, false).Training;
 
     public TrainingState Save(long pilotId, IReadOnlyList<TrainingTarget> targets, bool activate) =>

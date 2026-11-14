@@ -3,8 +3,8 @@ using Eden.Data.World.Mail;
 using Eden.Gameplay.Notifications;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Mail;
 
@@ -22,13 +22,12 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
 {
     public long Revision => signal.Revision;
 
-    internal static void AddContact(WorldDbContext world, long sender, long receiver, bool added, double level, string message, long time)
+    internal static void AddContact(WorldAction world, long sender, long receiver, bool added, double level, string message, long time)
     {
         InboxRules.CheckMessage(message);
         if (
-            world
-                .Set<SavedBlockedContact>()
-                .Any(b => (b.PilotId == receiver && b.ContactId == sender) || (b.PilotId == sender && b.ContactId == receiver))
+            world.Set<SavedBlockedContact>().Find(receiver, sender) is not null
+            || world.Set<SavedBlockedContact>().Find(sender, receiver) is not null
         )
         {
             throw new InvalidDataException("A blocked pilot cannot receive this contact notification.");
@@ -46,18 +45,18 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
         );
     }
 
-    private static void CheckPilot(WorldDbContext world, long id)
+    private static void CheckPilot(WorldAction world, long id)
     {
-        if (!world.Pilots.Any(p => p.Id == id))
+        if (!world.PilotExists(id))
         {
             throw new InvalidDataException("Unknown notification recipient.");
         }
     }
 
-    private static IQueryable<SavedInboxNotification> Visible(WorldDbContext world, long pilot, InboxGroup? group = null)
+    private static IQueryable<SavedInboxNotification> Visible(WorldAction world, long pilot, InboxGroup? group = null)
     {
         InboxRules.CheckGroup(group);
-        var rows = world.Set<SavedInboxNotification>().Where(n => n.ReceiverId == pilot && !n.Deleted);
+        var rows = world.Filter<SavedInboxNotification>(n => n.ReceiverId == pilot && !n.Deleted);
         return group switch
         {
             null => rows,
@@ -72,9 +71,14 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
 
     public long Observe(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        CheckPilot(world, pilotId);
-        return world.Set<SavedInboxNotification>().Where(n => n.ReceiverId == pilotId).Select(n => (long?)n.Id).Max() ?? 0;
+        return WorldActionScope.Inspect<long>(
+            database,
+            world =>
+            {
+                CheckPilot(world, pilotId);
+                return world.Filter<SavedInboxNotification>(n => n.ReceiverId == pilotId).Select(n => (long?)n.Id).Max() ?? 0;
+            }
+        );
     }
 
     public InboxChanges Changes(long pilotId, long after)
@@ -83,21 +87,24 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
         {
             throw new InvalidDataException("Invalid notification delivery cursor.");
         }
-        using WorldDbContext world = new(database.Path);
-        CheckPilot(world, pilotId);
-        // Include tombstones/read rows in the cursor stream so they cannot be
-        // reannounced as new unread notifications after a client mutation.
-        var rows = world
-            .Set<SavedInboxNotification>()
-            .AsNoTracking()
-            .Where(n => n.ReceiverId == pilotId && n.Id > after)
-            .OrderBy(n => n.Id)
-            .Take(InboxRules.DeliveryBatchSize + 1)
-            .AsEnumerable()
-            .Select(n => n.Snapshot())
-            .ToArray();
-        var batch = rows.Take(InboxRules.DeliveryBatchSize).ToArray();
-        return new(batch.LastOrDefault()?.Id ?? after, batch, rows.Length > batch.Length);
+        return WorldActionScope.Inspect<InboxChanges>(
+            database,
+            world =>
+            {
+                CheckPilot(world, pilotId);
+                // Include tombstones/read rows in the cursor stream so they cannot be
+                // reannounced as new unread notifications after a client mutation.
+                var rows = world
+                    .Filter<SavedInboxNotification>(n => n.ReceiverId == pilotId && n.Id > after)
+                    .OrderBy(n => n.Id)
+                    .Take(InboxRules.DeliveryBatchSize + 1)
+                    .AsEnumerable()
+                    .Select(n => n.Snapshot())
+                    .ToArray();
+                var batch = rows.Take(InboxRules.DeliveryBatchSize).ToArray();
+                return new InboxChanges(batch.LastOrDefault()?.Id ?? after, batch, rows.Length > batch.Length);
+            }
+        );
     }
 
     public IReadOnlyList<InboxNotification> Read(long pilotId, InboxQuery query)
@@ -106,23 +113,32 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
         {
             throw new InvalidDataException("Invalid notification history cutoff.");
         }
-        using WorldDbContext world = new(database.Path);
-        CheckPilot(world, pilotId);
-        var rows = Visible(world, pilotId, query.Group).AsNoTracking().Where(n => n.Id > query.AfterId);
-        if (query.UnreadOnly)
-        {
-            rows = rows.Where(n => !n.Processed);
-        }
-        return rows.OrderByDescending(n => n.Created).ThenByDescending(n => n.Id).AsEnumerable().Select(n => n.Snapshot()).ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<InboxNotification>>(
+            database,
+            world =>
+            {
+                CheckPilot(world, pilotId);
+                var rows = Visible(world, pilotId, query.Group).Where(n => n.Id > query.AfterId);
+                if (query.UnreadOnly)
+                {
+                    rows = rows.Where(n => !n.Processed);
+                }
+                return rows.OrderByDescending(n => n.Created)
+                    .ThenByDescending(n => n.Id)
+                    .AsEnumerable()
+                    .Select(n => n.Snapshot())
+                    .ToArray();
+            }
+        );
     }
 
     private void Selected(long pilot, IReadOnlyList<long> ids, bool delete)
     {
         InboxRules.CheckIds(ids);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         CheckPilot(world, pilot);
-        var rows = world.Set<SavedInboxNotification>().Where(n => n.ReceiverId == pilot && ids.Contains(n.Id)).ToArray();
+        var rows = world.Filter<SavedInboxNotification>(n => n.ReceiverId == pilot && ids.Contains(n.Id)).ToArray();
         if (rows.Length != ids.Distinct().Count())
         {
             throw new InvalidDataException("Select notifications belonging to your selected pilot.");
@@ -148,17 +164,19 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
 
     private void Group(long pilot, InboxGroup? group, bool delete)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var transaction = new WorldActionScope(database, TransactionParticipants.None);
+        var world = transaction.World;
         CheckPilot(world, pilot);
-        var rows = Visible(world, pilot, group);
-        if (delete)
+        foreach (var row in Visible(world, pilot, group))
         {
-            rows.ExecuteUpdate(set => set.SetProperty(n => n.Deleted, true));
-        }
-        else
-        {
-            rows.ExecuteUpdate(set => set.SetProperty(n => n.Processed, true));
+            if (delete)
+            {
+                row.Deleted = true;
+            }
+            else
+            {
+                row.Processed = true;
+            }
         }
         transaction.Commit();
     }

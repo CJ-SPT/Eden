@@ -14,9 +14,9 @@ using Eden.World.Catalog;
 using Eden.World.Economy;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Planetary;
 
@@ -26,26 +26,36 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    private static void RequireOmega(WorldDbContext world, long pilotId)
+    private static void RequireOmega(WorldAction world, long pilotId)
     {
-        if (world.Pilots.Where(p => p.Id == pilotId).Select(p => p.Account.CloneGrade).Single() != AccountCloneGrade.Omega)
+        if (world.Filter<Pilot>(p => p.Id == pilotId).Select(p => p.Account.CloneGrade).Single() != AccountCloneGrade.Omega)
         {
             throw new InvalidDataException("Planetary operations require an Omega pilot.");
         }
     }
 
-    private T Write<T>(Func<WorldDbContext, CatalogDbContext, long, T> action) =>
+    private T Write<T>(
+        long pilotId,
+        Func<WorldAction, CatalogDbContext, long, T> action,
+        Func<WorldAction, CatalogDbContext, int?>? orbitalSystem = null
+    ) =>
         LiveWorld.Execute(
             database.Path,
             () =>
             {
-                using var owner = database.EnterMovement();
-                using WorldDbContext world = new(database.Path);
+                using var ownership = LiveWorld.Find(database.Path)?.EnterShared("planetary industry");
+                using var movement = database.EnterMovement();
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                using var transaction = world.Database.BeginTransaction();
+                using var transaction = new WorldActionScope(
+                    database,
+                    new(pilots: [pilotId]),
+                    orbitalSystem is null
+                        ? null
+                        : world => new(pilots: [pilotId], systems: orbitalSystem(world, catalog) is int system ? [system] : [])
+                );
+                var world = transaction.World;
                 long now = Now;
                 var result = action(world, catalog, now);
-                world.SaveChanges();
                 transaction.Commit();
                 return result;
             },
@@ -64,12 +74,13 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
         return colony;
     }
 
-    private static SavedPlanetaryColony Require(WorldDbContext world, long pilotId, int planetId) =>
+    private static SavedPlanetaryColony Require(WorldAction world, long pilotId, int planetId) =>
         world.Set<SavedPlanetaryColony>().Find(pilotId, planetId)
         ?? throw new InvalidDataException("You do not have a colony on this planet.");
 
     public PlanetarySnapshot Read(long pilotId, int planetId) =>
         Write(
+            pilotId,
             (world, catalog, now) =>
             {
                 var planet = PlanetaryCatalogReader.Planet(catalog, planetId);
@@ -80,47 +91,63 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
 
     public IReadOnlyList<PlanetarySummary> List(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return world
-            .Set<SavedPlanetaryColony>()
-            .Where(c => c.PilotId == pilotId)
-            .OrderBy(c => c.PlanetId)
-            .AsEnumerable()
-            .Select(c => new PlanetarySummary(PlanetaryCatalogReader.Planet(catalog, c.PlanetId), ReadState(c).Pins.Count))
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<PlanetarySummary>>(
+            database,
+            world =>
+            {
+                return world
+                    .Filter<SavedPlanetaryColony>(c => c.PilotId == pilotId)
+                    .OrderBy(c => c.PlanetId)
+                    .AsEnumerable()
+                    .Select(c => new PlanetarySummary(PlanetaryCatalogReader.Planet(catalog, c.PlanetId), ReadState(c).Pins.Count))
+                    .ToArray();
+            }
+        );
     }
 
     public IReadOnlyList<PlanetaryColony> Networks(int planetId)
     {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedPlanetaryColony>()
-            .Where(c => c.PlanetId == planetId)
-            .OrderBy(c => c.PilotId)
-            .AsEnumerable()
-            .Select(ReadState)
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<PlanetaryColony>>(
+            database,
+            world =>
+            {
+                return world
+                    .Filter<SavedPlanetaryColony>(c => c.PlanetId == planetId)
+                    .OrderBy(c => c.PilotId)
+                    .AsEnumerable()
+                    .Select(ReadState)
+                    .ToArray();
+            }
+        );
     }
 
     public PlanetaryResourceField ResourceField(long pilotId, int planetId, int typeId, int bands)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        RequireOmega(world, pilotId);
-        var planet = PlanetaryCatalogReader.Planet(catalog, planetId);
-        PlanetarySurveySkills skills = new(
-            PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.RemoteSensingSkill),
-            PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.PlanetologySkill),
-            PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.AdvancedPlanetologySkill)
+        return WorldActionScope.Inspect<PlanetaryResourceField>(
+            database,
+            world =>
+            {
+                RequireOmega(world, pilotId);
+                var planet = PlanetaryCatalogReader.Planet(catalog, planetId);
+                PlanetarySurveySkills skills = new(
+                    PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.RemoteSensingSkill),
+                    PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.PlanetologySkill),
+                    PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.AdvancedPlanetologySkill)
+                );
+                return PlanetaryResources.Survey(planet, typeId, bands, skills, ScanAccess(world, catalog, pilotId, planet));
+            }
         );
-        return PlanetaryResources.Survey(planet, typeId, bands, skills, ScanAccess(world, catalog, pilotId, planet));
     }
 
-    private static PlanetarySurveyAccess ScanAccess(WorldDbContext world, CatalogDbContext catalog, long pilotId, PlanetaryPlanet planet)
+    private static PlanetarySurveyAccess ScanAccess(WorldAction world, CatalogDbContext catalog, long pilotId, PlanetaryPlanet planet)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        int current = pilot.ActiveShip.Position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
+        var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
+        int current =
+            pilot.ActiveShip.Position?.SystemId
+            ?? (pilot.ActiveShip.StructureId is long structure ? world.Structure(structure)?.SystemId : null)
+            ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         if (current == planet.SystemId || world.Set<SavedPlanetaryColony>().Find(pilotId, planet.Id) is not null)
         {
             return new(true, true, null, null);
@@ -141,28 +168,32 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
 
     public double CustomsTaxRate(long pilotId, long officeId)
     {
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        if (!PlanetaryRules.IsOffice(officeId) || world.Set<SavedPlanetaryOffice>().Find(PlanetaryRules.OfficePlanet(officeId)) is null)
-        {
-            throw new InvalidDataException("Choose an existing planetary customs office.");
-        }
-        // Interbus tariffs are unaffected by Customs Code Expertise. Player customs
-        // ownership and its separate empire tax component are not enabled here.
-        return PlanetaryRules.InterbusTaxRate;
+        return WorldActionScope.Inspect<double>(
+            database,
+            world =>
+            {
+                if (
+                    !PlanetaryRules.IsOffice(officeId)
+                    || world.Set<SavedPlanetaryOffice>().Find(PlanetaryRules.OfficePlanet(officeId)) is null
+                )
+                {
+                    throw new InvalidDataException("Choose an existing planetary customs office.");
+                }
+                // Interbus tariffs are unaffected by Customs Code Expertise. Player customs
+                // ownership and its separate empire tax component are not enabled here.
+                return PlanetaryRules.InterbusTaxRate;
+            }
+        );
     }
 
     public PlanetaryChange Update(long pilotId, int planetId, IReadOnlyList<PlanetaryCommand> commands) =>
         Write(
+            pilotId,
             (world, catalog, now) =>
             {
                 var planet = PlanetaryCatalogReader.Planet(catalog, planetId);
                 var definitions = PlanetaryCatalogReader.Read(catalog);
-                var pilot = world
-                    .Pilots.Include(p => p.Account)
-                    .Include(p => p.ActiveShip)
-                        .ThenInclude(s => s.Position)
-                    .Single(p => p.Id == pilotId);
+                var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
                 if (!planet.Colonizable || pilot.Account.CloneGrade != AccountCloneGrade.Omega)
                 {
                     throw new InvalidDataException("Planetary colonies require an Omega pilot and a colonizable planet.");
@@ -201,7 +232,7 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                     {
                         throw new InvalidDataException("Deploy a command center from a ship in the planet's solar system.");
                     }
-                    int colonies = world.Set<SavedPlanetaryColony>().Count(c => c.PilotId == pilotId);
+                    int colonies = world.Filter<SavedPlanetaryColony>(c => c.PilotId == pilotId).Count();
                     int limit = 1 + PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.InterplanetaryConsolidationSkill);
                     if (colonies >= limit)
                     {
@@ -263,11 +294,13 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                 saved.LastEditAt = now;
                 PlanetaryOrbitStore.EnsureOffice(world, planet);
                 return new PlanetaryChange(result.Colony, changes, balance);
-            }
+            },
+            (_, catalog) => PlanetaryCatalogReader.Planet(catalog, planetId).SystemId
         );
 
     public void Abandon(long pilotId, int planetId) =>
         Write(
+            pilotId,
             (world, _, _) =>
             {
                 world.Remove(Require(world, pilotId, planetId));
@@ -285,37 +318,42 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
         double radius
     )
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        RequireOmega(world, pilotId);
-        var saved = world.Set<SavedPlanetaryColony>().Find(pilotId, planetId);
-        var colony = saved is null ? PlanetaryRules.Empty(pilotId, planetId, Now) : ReadState(saved);
-        var planet = PlanetaryCatalogReader.Planet(catalog, planetId);
-        var definitions = PlanetaryCatalogReader.Read(catalog);
-        if (PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.RemoteSensingSkill) < 1)
-        {
-            throw new InvalidDataException("Train Remote Sensing before surveying extraction programs.");
-        }
-        PlanetaryResources.Proximity(
-            PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.RemoteSensingSkill),
-            ScanAccess(world, catalog, pilotId, planet)
+        return WorldActionScope.Inspect<PlanetaryProgramQuote>(
+            database,
+            world =>
+            {
+                RequireOmega(world, pilotId);
+                var saved = world.Set<SavedPlanetaryColony>().Find(pilotId, planetId);
+                var colony = saved is null ? PlanetaryRules.Empty(pilotId, planetId, Now) : ReadState(saved);
+                var planet = PlanetaryCatalogReader.Planet(catalog, planetId);
+                var definitions = PlanetaryCatalogReader.Read(catalog);
+                if (PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.RemoteSensingSkill) < 1)
+                {
+                    throw new InvalidDataException("Train Remote Sensing before surveying extraction programs.");
+                }
+                PlanetaryResources.Proximity(
+                    PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.RemoteSensingSkill),
+                    ScanAccess(world, catalog, pilotId, planet)
+                );
+                bool temporary = pinId.TemporaryKind == 1 && pinId.Value >= 0;
+                PlanetaryPin pin;
+                if (temporary)
+                {
+                    var type = definitions.Pins.Values.Single(p => p.Kind == PlanetaryPinKind.Extractor && p.PlanetTypeId == planet.TypeId);
+                    pin = new(-1, type.TypeId, 0, 0, Now, []);
+                }
+                else if (pinId.TemporaryKind == 0)
+                {
+                    pin = PlanetaryRules.Pin(colony, pinId.Value);
+                }
+                else
+                {
+                    throw new InvalidDataException("Choose an extractor control unit.");
+                }
+                return PlanetaryRules.Quote(planet, definitions, pin, typeId, heads, radius, colony.Pins, validateRange: !temporary);
+            }
         );
-        bool temporary = pinId.TemporaryKind == 1 && pinId.Value >= 0;
-        PlanetaryPin pin;
-        if (temporary)
-        {
-            var type = definitions.Pins.Values.Single(p => p.Kind == PlanetaryPinKind.Extractor && p.PlanetTypeId == planet.TypeId);
-            pin = new(-1, type.TypeId, 0, 0, Now, []);
-        }
-        else if (pinId.TemporaryKind == 0)
-        {
-            pin = PlanetaryRules.Pin(colony, pinId.Value);
-        }
-        else
-        {
-            throw new InvalidDataException("Choose an extractor control unit.");
-        }
-        return PlanetaryRules.Quote(planet, definitions, pin, typeId, heads, radius, colony.Pins, validateRange: !temporary);
     }
 
     public PlanetaryTransfer Transfer(
@@ -325,6 +363,7 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
         IReadOnlyList<PlanetaryCommodity> commodities
     ) =>
         Write(
+            pilotId,
             (world, catalog, now) =>
             {
                 RequireOmega(world, pilotId);
@@ -338,6 +377,7 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
 
     public PlanetaryChange Launch(long pilotId, int planetId, long pinId, IReadOnlyList<PlanetaryCommodity> commodities) =>
         Write(
+            pilotId,
             (world, catalog, now) =>
             {
                 RequireOmega(world, pilotId);
@@ -396,24 +436,30 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                 colony = colony with { Pins = colony.Pins.Select(p => p.Id == pinId ? p with { LastLaunchAt = now } : p).ToArray() };
                 Save(saved, colony);
                 return new PlanetaryChange(colony, [], balance);
-            }
+            },
+            (_, catalog) => PlanetaryCatalogReader.Planet(catalog, planetId).SystemId
         );
 
     public IReadOnlyList<PlanetaryLaunch> Launches(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        long now = Now;
-        return world
-            .Set<SavedPlanetaryLaunch>()
-            .Where(l => l.PilotId == pilotId && l.ExpiresAt > now)
-            .OrderBy(l => l.Id)
-            .AsEnumerable()
-            .Select(l => new PlanetaryLaunch(l.Id, l.PilotId, l.PlanetId, l.SystemId, l.CreatedAt, l.ExpiresAt, new(l.X, l.Y, l.Z)))
-            .ToArray();
+        return WorldActionScope.Inspect<IReadOnlyList<PlanetaryLaunch>>(
+            database,
+            world =>
+            {
+                long now = Now;
+                return world
+                    .Filter<SavedPlanetaryLaunch>(l => l.PilotId == pilotId && l.ExpiresAt > now)
+                    .OrderBy(l => l.Id)
+                    .AsEnumerable()
+                    .Select(l => new PlanetaryLaunch(l.Id, l.PilotId, l.PlanetId, l.SystemId, l.CreatedAt, l.ExpiresAt, new(l.X, l.Y, l.Z)))
+                    .ToArray();
+            }
+        );
     }
 
     public void DeleteLaunch(long pilotId, int launchId) =>
         Write(
+            pilotId,
             (world, _, _) =>
             {
                 var launch = world.Set<SavedPlanetaryLaunch>().Find(launchId);
@@ -423,25 +469,36 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                 }
                 PlanetaryOrbitStore.DeleteLaunch(world, launch);
                 return true;
-            }
+            },
+            (world, _) => world.Set<SavedPlanetaryLaunch>().Find(launchId)?.SystemId
         );
 
     public IReadOnlyList<WreckContact> OrbitContacts(int systemId, long now)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return PlanetaryOrbitStore.Contacts(world, catalog, systemId, now);
+        return WorldActionScope.Inspect<IReadOnlyList<WreckContact>>(
+            database,
+            world =>
+            {
+                return PlanetaryOrbitStore.Contacts(world, catalog, systemId, now);
+            }
+        );
     }
 
     public PlanetaryOrbitInventory OrbitInventory(long pilotId, long containerId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return PlanetaryOrbitStore.Read(world, catalog, pilotId, containerId, Now);
+        return WorldActionScope.Inspect<PlanetaryOrbitInventory>(
+            database,
+            world =>
+            {
+                return PlanetaryOrbitStore.Read(world, catalog, pilotId, containerId, Now);
+            }
+        );
     }
 
     public IReadOnlyList<InventoryChange> MoveOrbitCargo(long pilotId, long containerId, bool toOrbit, InventoryMoveRequest request) =>
-        Write((world, catalog, now) => PlanetaryOrbitStore.Move(world, catalog, pilotId, containerId, toOrbit, request, now));
+        Write(pilotId, (world, catalog, now) => PlanetaryOrbitStore.Move(world, catalog, pilotId, containerId, toOrbit, request, now));
 
     public PlanetaryChange ImportExport(
         long pilotId,
@@ -451,6 +508,7 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
         IReadOnlyList<PlanetaryCommodity> exports
     ) =>
         Write(
+            pilotId,
             (world, catalog, now) =>
             {
                 RequireOmega(world, pilotId);

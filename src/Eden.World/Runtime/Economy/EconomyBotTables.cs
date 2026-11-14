@@ -3348,6 +3348,58 @@ internal sealed partial class EconomyTransaction
                 value.Id = value.Id == 0 ? Next("WorldRepairPayment") : value.Id;
                 Reserve("WorldRepairPayment", value.Id);
                 break;
+            case Eden.Data.World.Mail.SavedInboxNotification value:
+                value.Id = value.Id == 0 ? Next("WorldInboxNotification") : value.Id;
+                Reserve("WorldInboxNotification", value.Id);
+                break;
+            case Eden.Data.World.Mail.SavedMail value:
+                value.Id = value.Id == 0 ? Next("WorldMail") : value.Id;
+                Reserve("WorldMail", value.Id);
+                break;
+            case Eden.Data.World.Mail.SavedMailChange value:
+                value.Id = value.Id == 0 ? Next("WorldMailChange") : value.Id;
+                Reserve("WorldMailChange", value.Id);
+                break;
+            case Eden.Data.World.Mail.SavedMailingList value:
+                value.Id = value.Id == 0 ? Next("WorldMailingList") : value.Id;
+                Reserve("WorldMailingList", value.Id);
+                break;
+            case Eden.Data.World.Mail.SavedMailingListChange value:
+                value.Id = value.Id == 0 ? Next("WorldMailingListChange") : value.Id;
+                Reserve("WorldMailingListChange", value.Id);
+                break;
+            case Eden.Data.World.Calendar.SavedCalendarEvent value:
+                value.Id = value.Id == 0 ? Next("WorldCalendarEvent") : value.Id;
+                Reserve("WorldCalendarEvent", value.Id);
+                break;
+            case Eden.Data.World.Calendar.SavedCalendarChange value:
+                value.Id = value.Id == 0 ? Next("WorldCalendarChange") : value.Id;
+                Reserve("WorldCalendarChange", value.Id);
+                break;
+            case Eden.Data.World.Bookmarks.SavedBookmarkFolder value:
+                value.Id = value.Id == 0 ? Next("WorldBookmarkFolder") : value.Id;
+                Reserve("WorldBookmarkFolder", value.Id);
+                break;
+            case Eden.Data.World.Bookmarks.SavedBookmarkSubfolder value:
+                value.Id = value.Id == 0 ? Next("WorldBookmarkSubfolder") : value.Id;
+                Reserve("WorldBookmarkSubfolder", value.Id);
+                break;
+            case Eden.Data.World.Bookmarks.SavedBookmark value:
+                value.Id = value.Id == 0 ? Next("WorldBookmark") : value.Id;
+                Reserve("WorldBookmark", value.Id);
+                break;
+            case Eden.Data.World.AccessGroups.SavedAccessGroup value:
+                value.Id = value.Id == 0 ? Next("WorldAccessGroup") : value.Id;
+                Reserve("WorldAccessGroup", value.Id);
+                break;
+            case Eden.Data.World.AccessGroups.SavedAccessGroupLog value:
+                value.Id = value.Id == 0 ? Next("WorldAccessGroupLog") : value.Id;
+                Reserve("WorldAccessGroupLog", value.Id);
+                break;
+            case Eden.Data.World.Planetary.SavedPlanetaryLaunch value:
+                value.Id = value.Id == 0 ? checked((int)Next("WorldPlanetaryLaunch")) : value.Id;
+                Reserve("WorldPlanetaryLaunch", value.Id);
+                break;
             case Eden.Data.World.Structures.SavedMoonExtraction value:
                 value.Id = value.Id == 0 ? Next("WorldMoonExtraction") : value.Id;
                 Reserve("WorldMoonExtraction", value.Id);

@@ -214,8 +214,8 @@ public sealed class InboxTests
         }
         Assert.Throws<DbUpdateException>(() => inbox.MarkRead(Recipient, ids));
         Assert.Throws<DbUpdateException>(() => inbox.Delete(Recipient, ids));
-        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => inbox.MarkGroupRead(Recipient, null));
-        Assert.Throws<Microsoft.Data.Sqlite.SqliteException>(() => inbox.DeleteGroup(Recipient, null));
+        Assert.Throws<DbUpdateException>(() => inbox.MarkGroupRead(Recipient, null));
+        Assert.Throws<DbUpdateException>(() => inbox.DeleteGroup(Recipient, null));
         var rows = inbox.Read(Recipient, new());
         Assert.Equal(2, rows.Count);
         Assert.All(rows, n => Assert.False(n.Processed));

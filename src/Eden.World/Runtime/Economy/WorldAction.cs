@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Docking;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Mail;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
@@ -30,6 +31,9 @@ internal abstract class WorldAction
     }
 
     internal abstract int PilotCount { get; }
+
+    internal virtual bool PilotExists(long id) => Filter<Pilot>(p => p.Id == id).Any();
+
     internal abstract bool HasPilotName(string name);
     internal abstract bool TrafficCharacterTaken(long character);
     internal abstract bool Prepared(InstitutionalPreparation value);
@@ -38,6 +42,11 @@ internal abstract class WorldAction
     internal abstract string WorldPath { get; }
     internal abstract long ActiveTicks { get; }
     internal abstract long NextExpiry { get; }
+
+    internal virtual long MailHead(long pilot) => Filter<SavedMailChange>(c => c.PilotId == pilot).Max(c => (long?)c.Id) ?? 0;
+
+    internal virtual long MailingListHead(long pilot) => Filter<SavedMailingListChange>(c => c.PilotId == pilot).Max(c => (long?)c.Id) ?? 0;
+
     internal abstract long MarketHead(long pilot);
     internal abstract EconomyStructure? Structure(long id);
     internal abstract int StructureSystemId(long id);

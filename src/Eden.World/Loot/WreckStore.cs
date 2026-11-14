@@ -255,9 +255,30 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
         {
             return ListSql(systemId, now, includeJetcans: true);
         }
-        IReadOnlyList<WreckContact> contacts = live.Reads?.Wrecks(systemId, now, () => ListSql(systemId, now)) ?? ListSql(systemId, now);
+        IReadOnlyList<WreckContact> contacts = live.Reads?.Wrecks(systemId, now, Load) ?? Load();
         var cans = live.Reads?.Jetcans(systemId, now) ?? JetcanStore.ReadContacts(live, database, systemId, now).Contacts;
         return live.Tractors.Contacts(cans.Count == 0 ? contacts : contacts.Concat(cans).ToArray(), now);
+
+        IReadOnlyList<WreckContact> Load() => live.SqlConnections == 0 ? ListResident(systemId, now) : ListSql(systemId, now);
+    }
+
+    private IReadOnlyList<WreckContact> ListResident(int systemId, long now)
+    {
+        using WorldActionScope scope = new(database, new(systems: [systemId]));
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var world = scope.World;
+        var expired = world.Filter<WorldWreck>(w => w.SystemId == systemId && w.ExpiresAt <= now).Select(w => w.Id).ToHashSet();
+        if (expired.Count != 0)
+        {
+            world.RemoveRange(world.Filter<OwnedItem>(i => expired.Contains(i.LocationId)));
+            foreach (var ship in world.Filter<Ship>(s => s.StoredInId.HasValue && expired.Contains(s.StoredInId.Value)).ToArray())
+            {
+                ShipStoragePersistence.Destroy(world, ship);
+            }
+        }
+        var contacts = ReadContacts(world, catalog, systemId, now);
+        scope.Commit();
+        return contacts;
     }
 
     private IReadOnlyList<WreckContact> ListSql(int systemId, long now, bool includeJetcans = false)
@@ -286,18 +307,25 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
             ShipStoragePersistence.Destroy(world, expired);
         }
         world.SaveChanges();
-        var wrecks = world
-            .Set<WorldWreck>()
-            .AsNoTracking()
-            .Where(w => w.SystemId == systemId && w.ExpiresAt > now)
-            .OrderBy(w => w.Id)
-            .ToArray();
+        var action = new SqlWorldAction(world);
+        var contacts = ReadContacts(action, catalog, systemId, now);
+        return includeJetcans
+            ? contacts
+                .Concat(JetcanStore.Contacts(catalog, JetcanStore.List(action, systemId).Where(c => c.ExpiresAt > now).ToArray()))
+                .ToArray()
+            : contacts;
+    }
+
+    private static IReadOnlyList<WreckContact> ReadContacts(WorldAction world, CatalogDbContext catalog, int systemId, long now)
+    {
+        var wrecks = world.Filter<WorldWreck>(w => w.SystemId == systemId && w.ExpiresAt > now).OrderBy(w => w.Id).ToArray();
+        var ids = wrecks.Select(w => w.Id).ToHashSet();
+        var storedInIds = ids.Select(id => (long?)id).ToHashSet();
         var occupied = world
-            .Set<OwnedItem>()
-            .Where(i => wrecks.Select(w => w.Id).Contains(i.LocationId))
+            .Filter<OwnedItem>(i => ids.Contains(i.LocationId))
             .Select(i => i.LocationId)
-            .Distinct()
-            .Concat(world.Ships.Where(s => wrecks.Select(w => (long?)w.Id).Contains(s.StoredInId)).Select(s => s.StoredInId!.Value))
+            .AsEnumerable()
+            .Concat(world.Filter<Ship>(s => storedInIds.Contains(s.StoredInId)).Select(s => s.StoredInId!.Value))
             .ToHashSet();
         return wrecks
             .Select(w =>
@@ -318,14 +346,6 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                     type.GroupId
                 );
             })
-            .Concat(
-                includeJetcans
-                    ? JetcanStore.Contacts(
-                        catalog,
-                        JetcanStore.List(new SqlWorldAction(world), systemId).Where(c => c.ExpiresAt > now).ToArray()
-                    )
-                    : []
-            )
             .Concat(Eden.World.Planetary.PlanetaryOrbitStore.Contacts(world, catalog, systemId, now))
             .ToArray();
     }
@@ -373,12 +393,15 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                 ? live.Economy.Inspect(world => JetcanStore.Read(world, catalog, pilotId, wreckId, now))
                 : WorldActionScope.Inspect(database, world => JetcanStore.Read(world, catalog, pilotId, wreckId, now));
         }
-        using WorldDbContext world = new(database.Path);
         if (Eden.Gameplay.Planetary.PlanetaryRules.IsOffice(wreckId) || Eden.Gameplay.Planetary.PlanetaryRules.IsLaunch(wreckId))
         {
-            var orbit = Eden.World.Planetary.PlanetaryOrbitStore.Read(world, catalog, pilotId, wreckId, now);
+            var orbit = WorldActionScope.Inspect(
+                database,
+                world => Eden.World.Planetary.PlanetaryOrbitStore.Read(world, catalog, pilotId, wreckId, now)
+            );
             return new(orbit.Container, orbit.Items);
         }
+        using WorldDbContext world = new(database.Path);
         var (_, wreck) = Access(world, catalog, pilotId, wreckId, now);
         return new(
             new(
@@ -414,6 +437,26 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
             action.SetAttributes(pilotId, PilotFittingStore.ShipAttributes(action, residentCatalog, pilotId));
             var result = JetcanStore.Take(action, residentCatalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);
             action.Commit();
+            return result;
+        }
+        if (Eden.Gameplay.Planetary.PlanetaryRules.IsOffice(wreckId) || Eden.Gameplay.Planetary.PlanetaryRules.IsLaunch(wreckId))
+        {
+            using WorldActionScope scope = new(database, new(pilots: [pilotId], ships: [shipId]));
+            using CatalogDbContext source = new(database.CatalogPath);
+            if (!scope.World.Filter<Pilot>(p => p.Id == pilotId && p.ActiveShipId == shipId).Any())
+            {
+                throw new InvalidDataException("Transfer orbital cargo into your active ship.");
+            }
+            var result = Eden.World.Planetary.PlanetaryOrbitStore.Move(
+                scope.World,
+                source,
+                pilotId,
+                wreckId,
+                false,
+                new(itemIds, wreckId, (int)destinationFlag, quantity),
+                now
+            );
+            scope.Commit();
             return result;
         }
         using WorldDbContext world = new(database.Path);

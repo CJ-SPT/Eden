@@ -205,10 +205,13 @@ public sealed class PlanetaryIndustryTests
         Assert.Equal(first.BalanceCents, world.Set<PilotWallet>().Find(f.PilotId)!.Cents);
     }
 
-    [Fact]
-    public void CustomsImportExportAndShipCollectionPreserveRealCommoditiesAndTaxes()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CustomsImportExportAndShipCollectionPreserveRealCommoditiesAndTaxes(bool resident)
     {
         using var f = Prepare();
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
         var colony = Deploy(f);
         var industry = Industry(f);
         long office = PlanetaryRules.OfficeId(PlanetId);
@@ -234,6 +237,7 @@ public sealed class PlanetaryIndustryTests
         var changes = f.Db.Services.GetRequiredService<IWrecks>().Take(f.PilotId, f.ShipId, office, [water.Id], 20, f.Clock.Now);
         Assert.Equal(f.ShipId, Assert.Single(changes).Item.LocationId);
         Assert.Empty(industry.OrbitInventory(f.PilotId, office).Items);
+        live?.Dispose();
         using WorldDbContext world = new(f.Db.Path);
         var import = Assert.Single(world.Set<SavedServicePayment>(), p => p.Kind == WalletEntryType.PlanetaryImportTax);
         Assert.Equal(-255_000, import.AmountCents);
@@ -265,10 +269,13 @@ public sealed class PlanetaryIndustryTests
         Assert.Equal(JsonSerializer.Serialize(colony), JsonSerializer.Serialize(industry.Read(f.PilotId, PlanetId).Colony));
     }
 
-    [Fact]
-    public void CommandLaunchCanBeCollectedOnceAndCannotBeOpenedByAnotherPilotOrAfterExpiry()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CommandLaunchCanBeCollectedOnceAndCannotBeOpenedByAnotherPilotOrAfterExpiry(bool resident)
     {
         using var f = Prepare();
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
         var colony = Deploy(f);
         var industry = Industry(f);
         f.Clock.Seconds += 3600;
@@ -292,6 +299,7 @@ public sealed class PlanetaryIndustryTests
         Assert.Throws<InvalidDataException>(() =>
             f.Db.Services.GetRequiredService<IWrecks>().Take(f.PilotId, f.ShipId, launch.Id, [item.Id], null, f.Clock.Now)
         );
+        live?.Dispose();
         WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
         Assert.Equal(launch, Assert.Single(industry.Launches(f.PilotId)));
         f.Clock.Seconds += PlanetaryRules.LaunchLifetime / TimeSpan.TicksPerSecond;
@@ -317,7 +325,14 @@ public sealed class PlanetaryIndustryTests
                 Assert.Equal(0, empty.FittingCalculations);
             }
             Deploy(f);
-            var office = Assert.Single(wrecks.List(system, f.Clock.Now));
+            WreckContact office;
+            List<string> queries = [];
+            using (var refresh = SessionPerformance.Begin("refresh planetary orbit", _ => { }, force: true, command: queries.Add)!)
+            {
+                office = Assert.Single(wrecks.List(system, f.Clock.Now));
+                Assert.DoesNotContain(queries, sql => sql.Contains("World", StringComparison.Ordinal));
+                Assert.Equal(0, refresh.FittingCalculations);
+            }
             Assert.Equal(PlanetaryRules.OfficeId(PlanetId), office.Id);
             using (var warmed = SessionPerformance.Begin("warmed planetary orbit", _ => { }, force: true)!)
             {

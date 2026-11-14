@@ -884,3 +884,31 @@ $filter = @(
 
 **Optional maintainer checks.** After updating the server, open the empty-space menu and expand Anomalies in a system
 with combat anomalies or ice belts.
+
+## Resident bookmarks and access lists
+
+Personal and shared folders, subfolders, saved locations, connections and access lists use resident rows.
+A shared grant removal prunes unavailable connections before the bookmark revision advances. The
+checkpoint updates dependent locations before removing a referenced subfolder, so a move followed by
+a subfolder deletion persists as one generation. Existing expiry and shared navigation delay checks
+use the same saved timestamps.
+
+Reference checks covered folder permissions and connected views in the local EveJS `261108.1`
+`bookmarkRuntimeAccess.js` (SHA-256 prefix `A2EAD43C07B9E6E1`). [EVE University bookmarks](https://wiki.eveuniversity.org/Bookmarks)
+
+### Automated validation
+
+A warmed owner and guest fixture verifies immediate revocation, a move across folders, and reopened
+locations and connections, with zero SQL commands, connection opens and fitting calculations.
+The fixture uses a resolved coordinate target so it measures saved-world operations independently of
+catalog loading. The first affected run caught a .NET array containment expression that bound to a
+span method inside a file-backed access-list query. Membership checks now use a set and the pilot
+identity index. [Combined validation](social.md#resident-mail-inbox-and-calendar)
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

@@ -45,6 +45,26 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotImplant>().Where(child => child.CloneId == removed.Id));
                 break;
             case Eden.Data.World.Characters.Pilot removed:
+                RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarEvent>(c => c.OwnerId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarParticipant>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarChange>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Mail.SavedMailEntry>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Mail.SavedMailLabel>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Mail.SavedMailChange>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Mail.SavedMailingListMember>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Mail.SavedMailingListChange>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Mail.SavedInboxNotification>(c => c.ReceiverId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedContact>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedContact>(c => c.ContactId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedAgentContact>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedContactLabel>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedBlockedContact>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedBlockedContact>(c => c.ContactId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Bookmarks.SavedBookmark>(c => c.CreatorId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Bookmarks.SavedBookmarkFolder>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Bookmarks.SavedBookmarkConnection>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Planetary.SavedPlanetaryColony>(c => c.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Planetary.SavedPlanetaryLaunch>(c => c.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Agents.SavedMission>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>().Where(child => child.PilotId == removed.Id));
                 if (Set<Eden.Data.World.Capsuleers.SavedCapsuleerCommunity>().Any(child => child.PilotId == removed.Id))
@@ -126,6 +146,18 @@ internal sealed partial class EconomyTransaction
                 break;
             case Eden.Data.World.Mining.SavedMiningSite removed:
                 RemoveRange(Set<Eden.Data.World.Mining.SavedMiningDeposit>().Where(child => child.SiteId == removed.Id));
+                break;
+            case Eden.Data.World.Calendar.SavedCalendarEvent removed:
+                RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarParticipant>(c => c.EventId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarChange>(c => c.EventId == removed.Id));
+                break;
+            case Eden.Data.World.Bookmarks.SavedBookmarkFolder removed:
+                RemoveRange(Filter<Eden.Data.World.Bookmarks.SavedBookmark>(b => b.FolderId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Bookmarks.SavedBookmarkSubfolder>(s => s.FolderId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Bookmarks.SavedBookmarkConnection>(c => c.FolderId == removed.Id));
+                break;
+            case Eden.Data.World.Planetary.SavedPlanetaryLaunch removed:
+                RemoveRange(Filter<Eden.Data.World.Inventory.OwnedItem>(i => i.LocationId == removed.Id));
                 break;
             case Eden.Data.World.Agents.SavedMission removed:
                 RemoveRange(Set<Eden.Data.World.Agents.SavedMissionMember>().Where(child => child.MissionId == removed.Id));
