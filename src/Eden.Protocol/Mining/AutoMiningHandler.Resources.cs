@@ -14,7 +14,8 @@ internal sealed partial class AutoMiningHandler
 
     private void RestartSelection(PilotCallContext context)
     {
-        if (_flight is null || _trip is not null)
+        _routeExhausted = false;
+        if (_flight is null || _trip is not null || _journey is not null)
         {
             return;
         }

@@ -153,6 +153,8 @@ internal sealed partial class FlightSession(
     internal StaticSpaceObject? LocalStation(long id) =>
         Scene.Objects.FirstOrDefault(body => body.Id == id && body.CategoryId == (int)InventoryCategory.Station);
 
+    internal StaticSpaceObject? LocalObject(long id) => Scene.Objects.FirstOrDefault(body => body.Id == id);
+
     internal bool NearEnoughToDock(StaticSpaceObject station) =>
         Pilot.Position is { } position
         && position.DistanceTo(station.Position) <= station.Radius + Pilot.Flight.ShipRadius + DockingDefinitions.MaximumRange;
@@ -973,7 +975,7 @@ internal sealed partial class FlightSession(
     private PilotCallResult.Failure? TravelFailure(CrimewatchTravel action, int? destination = null) =>
         FlightTravel.CheckPermission(crimewatch, Pilot.PilotId, action, destination);
 
-    public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems)
+    public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems, bool automatic = false)
     {
         Checkpoint();
         var departure = _travel.PrepareGate(
@@ -988,7 +990,10 @@ internal sealed partial class FlightSession(
             return departure.Result;
         }
         // Keep the source scene alive for the camera handoff before transferring the pilot.
-        PilotNavigationRevision++;
+        if (!automatic)
+        {
+            PilotNavigationRevision++;
+        }
         _travel.BeginGate(transit, Stamp, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);

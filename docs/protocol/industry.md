@@ -375,7 +375,7 @@ The three connections use pinned wormhole types and jump mass limits. Stable con
 supply. Rolling connections, total-mass collapse and Sleeper waves in the reservoirs remain pending.
 
 The nine pinned reservoir templates supply all nine Fullerite gases through finite deposits. The template rotates after expiry
-or depletion and follows the documented C1–C6 restrictions for perimeter, frontier and core sites. The audit follows the
+or depletion and follows the documented C1â€“C6 restrictions for perimeter, frontier and core sites. The audit follows the
 implemented routes and reservoir templates. It models closed acquisition paths for 543 of 1,188 admitted Tech II recipes,
 including the Ark, Anshar, Nomad and Rhea. Its 412 remaining distinct blockers include missing legitimate blueprint price
 references and special loot or LP paths. Those items remain unavailable through NPC sell supply where no legitimate source
@@ -1942,3 +1942,74 @@ Not performed; agent client testing is disabled.
 **Optional maintainer checks**
 
 After restarting with the updated build, compare the first and second market opens in the affected region on the same save.
+
+## AutoMining player fleets and system routes
+
+AutoMining **1.3.0**, November 14, 2026, adds per-character ordered system routes and explicit Solo / Lead / Follow
+fleet modes. `edenAutoMining.SaveRoute(text, mode)` validates up to 32 comma-separated catalog system names or IDs
+and connected reciprocal gate paths before saving a single character setting. It rejects edits during an active run.
+All status replies add `routeSystems` (Unicode names) and `fleetMode` (integer). Existing settings calls remain compatible.
+The bundled panel exposes route editing, stays open across system changes, and refreshes the local station picker on Reload.
+
+Routes visit each selected system's catalog asteroid belts in order, moving on once no compatible target remains
+within the ship's configured reach. Approach extends that reach using the existing harvesting controller.
+Each listed system must contain belts. Routes are ore-only, single-pass, and use shortest stargate paths through all
+security levels; native safer routing, avoidance preferences, wormholes, scanned gas sites and automatic looping are
+not part of this route planner. Ice and gas remain supported on the current grid, including following a fleet boss's
+starting position. Belts, ships, range checks, skills, targeting, capacitor, yield and inventory rules remain authoritative.
+
+Only the current player fleet boss can publish a leading run. Other players must explicitly select Follow and Start.
+The leader publishes the mining destination, rather than its transient gate/station position. Followers keep their own
+harvesting and unload settings, finish their current journey/haul, and catch up to the latest destination. The boss
+does not wait for every member. A stopped boss, changed boss, lost membership or expired 30-second leader heartbeat
+ends following. Ordinary monitoring checks fleet identities without rebuilding a full roster per follower per tick.
+No NPC ships, recruitment, shared holds, loot ownership changes or payout allocation are introduced.
+
+Travel uses the existing point warp, follow, gate validation, departure publication, session change and destination
+ballpark binding paths. Expected automatic gate transitions preserve the run without advancing the manual-navigation
+revision. Unexpected system/ship changes, manual commands and failed/timed-out travel cancel it. Cancellation preserves
+manual mining and locks; an already committed warp or jump can finish, with no subsequent automatic navigation.
+Route runs are connection-local and never restart automatically after reconnecting.
+
+The selected unload station can be in a previous system during route/fleet runs. The ship travels back through normal
+gates, docks and atomically unloads its selected resource family into its personal hangar. Solo/leading ships return to
+their saved mining position; followers rejoin the boss's latest mining destination. Depleted return sites advance an
+active route rather than ending the hauling loop prematurely. Ordinary solo current-grid hauling retains its local-station
+restriction. Settings and inventory survive checkpoint reopen; active routes and fleet destinations are intentionally transient.
+
+Gameplay references: [EVE University mining](https://wiki.eveuniversity.org/Mining),
+[public fleet control boundaries](https://wiki.eveuniversity.org/Public_fleets), and
+[ordered route planning](https://wiki.eveuniversity.org/Star_Map#Autopilot_tab).
+The local EveJS snapshot identifies itself as **261108.1** and has no Git metadata; its mining runtime and NPC command
+service were checked as references, with no source copied. `miningRuntime.js` SHA-256:
+`0A4A64EE74D915099DC268ACD4FF0CF6EEB5DE4E11011797AC04FD0372AA93B5`.
+The unchanged Destiny motion/reference boundary was checked against
+[Carbon Ballpark.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp).
+The new service is Eden-specific; it reuses the pinned build-3662168 panel controls and existing wire/session adapters.
+
+### Automated validation
+
+Tool/solution restore and solution build passed, with zero warnings/errors (final build 0.91 seconds). The final
+focused run passed **140/140** cases with no skips in **76.57 seconds**, including inert signed mod-package compilation
+against `E:/EdenDev/3662168`. The initial exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Mining.AutoMiningRouteRulesTests.ShortestPathIsStableAndRejectsDisconnectedSystems`.
+New deterministic tests exercise route settings/reopen and malformed-input unchanged state, paired-gate solo/fleet
+travel, shared-deposit conservation, route completion, opt-in, boss stop, membership changes, stale leader state,
+manual navigation, and cross-system unloading/return through real session frames. Development failures in new fixture
+assertions/catalog setup were corrected. The first broader run passed 139/140 cases and exposed a repeated-Start
+regression for manually stopped modules; the controller now resets manual exclusions without restarting an active route.
+
+The final filter ORs these fully qualified name substrings: `Eden.Protocol.Tests.Mining.MiningTests`,
+`AutoMiningRouteRulesTests`, `CooperativeFleetTests`, `FleetRulesTests`, `FlightSessionTests`, `GateTravelRulesTests`,
+`TypedFlightTests`, `AutoMiningPackageTests`, `ServerServicesTests`, and `GameplayDependenciesTests`.
+The full .NET suite was not run. Python catalog/formatting policies passed **8 + 9** cases in **1.18 seconds**;
+the client loader/panel tests passed **5** cases in **0.014 seconds**. Formatting and whitespace checks passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Export and activate 1.3.0, then check panel layout and status updates while crossing a gate.
+- With two player clients, verify fleet catch-up and independent unloading on a short route.

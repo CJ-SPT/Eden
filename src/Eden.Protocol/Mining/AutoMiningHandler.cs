@@ -17,7 +17,10 @@ internal sealed partial class AutoMiningHandler(
     TargetingHandler targeting,
     MiningHandler mining,
     IAutoMiningAvailability? availability = null,
-    IPilotAutoMiningHauling? hauling = null
+    IPilotAutoMiningHauling? hauling = null,
+    IPilotAutoMiningRoutes? routes = null,
+    IAutoMiningFleets? fleets = null,
+    ISystemObjects? systems = null
 ) : ISelectedPilotCallHandler
 {
     internal const string Service = "edenAutoMining";
@@ -53,6 +56,7 @@ internal sealed partial class AutoMiningHandler(
                     or "SaveHauling"
                     or "SaveOptions"
                     or "SaveSettings"
+                    or "SaveRoute"
                 )
         )
         {
@@ -66,6 +70,7 @@ internal sealed partial class AutoMiningHandler(
         {
             bool validArguments = method switch
             {
+                "SaveRoute" => args is [string or byte[], long mode] && mode is >= 0 and <= (long)AutoMiningFleetMode.Follow,
                 "SaveFilter" => args is [string or byte[]],
                 "SaveOptions" => args is [long family, long order, bool, bool] && ValidOptions(family, order),
                 "SaveHauling" => args is [long, long and >= int.MinValue and <= int.MaxValue],
@@ -98,14 +103,28 @@ internal sealed partial class AutoMiningHandler(
                 _filter = null;
                 _options = null;
                 _haulSettings = null;
+                _route = null;
                 _jettisonReadyAt = 0;
                 _status = "Stopped";
             }
             _filter ??= store.ReadFilter(_pilotId);
             _options ??= store.ReadOptions(_pilotId);
             _haulSettings ??= hauling?.ReadHauling(_pilotId) ?? AutoMiningHaulSettings.Disabled;
+            _route ??= routes?.ReadRoute(_pilotId) ?? AutoMiningRoute.Empty;
             switch (method)
             {
+                case "SaveRoute":
+                    if (_flight is not null)
+                    {
+                        throw new InvalidDataException("Stop AutoMining before changing the route or fleet mode.");
+                    }
+                    _route = (routes ?? throw new InvalidDataException("AutoMining routes are unavailable.")).SaveRoute(
+                        _pilotId,
+                        context.Pilot.SystemId,
+                        BlueMarshal.Text(args[0]),
+                        (AutoMiningFleetMode)(long)args[1]!
+                    );
+                    break;
                 case "SaveSettings":
                     if (hauling is null)
                     {
@@ -150,8 +169,16 @@ internal sealed partial class AutoMiningHandler(
                     }
                     break;
                 case "Start":
-                    if (_trip is not null)
+                    if (_flight is not null)
                     {
+                        if (_trip is null && _journey is null)
+                        {
+                            mining.ResetManualStops();
+                            targeting.ResetAutoMiningExclusions();
+                            _nextDecision = clock.GetTimestamp();
+                            _routeExhausted = false;
+                            Advance(context);
+                        }
                         break;
                     }
                     context.Flight.Checkpoint();
@@ -164,6 +191,7 @@ internal sealed partial class AutoMiningHandler(
                     {
                         return new PilotCallResult.Failure("Fit and online a harvesting module for the selected resource first.");
                     }
+                    PrepareRoute(context);
                     _flight = context.Flight;
                     _ship = context.Pilot.ShipId;
                     _system = context.Pilot.SystemId;
@@ -173,6 +201,7 @@ internal sealed partial class AutoMiningHandler(
                     mining.ResetManualStops();
                     targeting.ResetAutoMiningExclusions();
                     _nextDecision = clock.GetTimestamp();
+                    StartRoute(context);
                     targeting.Advance(context);
                     if (UnloadEnabled)
                     {
@@ -187,7 +216,7 @@ internal sealed partial class AutoMiningHandler(
                         CheckFlight(context);
                         targeting.Advance(context);
                     }
-                    if (_trip is not null && context.Pilot.Position is not null)
+                    if ((_trip is not null || _journey is not null) && context.Pilot.Position is not null)
                     {
                         _ = context.Flight.Execute(new FlightCommand.Stop(), automatic: true);
                     }
@@ -204,10 +233,18 @@ internal sealed partial class AutoMiningHandler(
                     }
                     break;
             }
-            return new AutoMiningStatus(_flight is not null, _status, _filter, _haulSettings, Options, store.OreTypes());
+            return new AutoMiningStatus(_flight is not null, _status, _filter, _haulSettings, Options, store.OreTypes())
+            {
+                RouteText = routes?.Describe(_route) ?? "",
+                FleetMode = _route.FleetMode,
+            };
         }
         catch (InvalidDataException error)
         {
+            if (method == "Start" && _flight is not null)
+            {
+                Cancel(context, "Paused: " + error.Message);
+            }
             return new PilotCallResult.Failure(error.Message);
         }
     }
@@ -234,9 +271,17 @@ internal sealed partial class AutoMiningHandler(
 
     private void CheckOptionChange(AutoMiningOptions options)
     {
-        if (_trip is not null && options != Options)
+        if ((_trip is not null || _journey is not null) && options != Options)
         {
             throw new InvalidDataException("Finish the haul trip or stop AutoMining before changing mining options.");
+        }
+        if (
+            _flight is not null
+            && _route is { Systems.Length: > 0, FleetMode: not AutoMiningFleetMode.Follow }
+            && options.Family != MiningFamily.Ore
+        )
+        {
+            throw new InvalidDataException("Stop the asteroid-belt route before changing resource family.");
         }
     }
 
@@ -246,19 +291,30 @@ internal sealed partial class AutoMiningHandler(
         {
             return;
         }
+        if (
+            ReferenceEquals(context.ActiveFlight, flight)
+            && context.Pilot.ShipId == _ship
+            && _expectedSystem == context.Pilot.SystemId
+            && _journey is not null
+        )
+        {
+            _system = context.Pilot.SystemId;
+            _expectedSystem = null;
+            _journey = _journey with { Started = clock.GetTimestamp(), MovingTo = null };
+        }
         if (!ReferenceEquals(context.ActiveFlight, flight) || context.Pilot.ShipId != _ship || context.Pilot.SystemId != _system)
         {
             Cancel(context, "Stopped after changing ship or system");
         }
-        else if ((_trip is not null || Options.Approach) && _navigationRevision != flight.PilotNavigationRevision)
+        else if ((_trip is not null || Options.Approach || RouteActive) && _navigationRevision != flight.PilotNavigationRevision)
         {
             Cancel(context, "Stopped for manual navigation");
         }
-        else if (_trip is null && !CanRun(flight))
+        else if (_trip is null && _journey is null && !CanRun(flight))
         {
             Cancel(context, "Stopped after leaving the grid or losing targeting");
         }
-        else if (_trip is not null && (flight.Translocating || flight.Cloaked || flight.MicroJumpSpooling))
+        else if ((_trip is not null || _journey is not null) && (flight.Translocating || flight.Cloaked || flight.MicroJumpSpooling))
         {
             Cancel(context, "Stopped after a manual ship maneuver");
         }
@@ -275,6 +331,15 @@ internal sealed partial class AutoMiningHandler(
     {
         if (_flight is not null)
         {
+            if (
+                (_journey is not null || _trip is not null)
+                && ReferenceEquals(context.ActiveFlight, _flight)
+                && _navigationRevision == _flight.PilotNavigationRevision
+                && context.Pilot.Position is not null
+            )
+            {
+                _ = _flight.Execute(new FlightCommand.Stop(), automatic: true);
+            }
             StopApproach(context);
             mining.StopAutomatic(context, settleDue);
             if (context.Selected)
@@ -285,6 +350,11 @@ internal sealed partial class AutoMiningHandler(
             targeting.ResetAutoMiningExclusions();
             _flight = null;
             _trip = null;
+            _journey = null;
+            _destination = null;
+            _expectedSystem = null;
+            _routeExhausted = false;
+            fleets?.Stop(_pilotId);
             _miningOrigin = null;
             mining.AutoRepeatThreshold = null;
         }
@@ -307,6 +377,17 @@ internal sealed partial class AutoMiningHandler(
     private void AdvanceSelection(PilotCallContext context, bool sessionTick)
     {
         CheckFlight(context);
+        if (_flight is not null && RouteActive)
+        {
+            if (!sessionTick)
+            {
+                return;
+            }
+            if (AdvanceRoute(context))
+            {
+                return;
+            }
+        }
         if (_trip is not null)
         {
             if (sessionTick)
@@ -330,7 +411,7 @@ internal sealed partial class AutoMiningHandler(
                 return;
             }
         }
-        else if (sessionTick)
+        else if (sessionTick && !RouteActive)
         {
             // The RPC and tick coordinators already advance ordinary grid mining.
             return;
@@ -444,6 +525,7 @@ internal sealed partial class AutoMiningHandler(
         }
         else
         {
+            _routeExhausted = RouteActive && candidates.Length == 0 && blocked is null && !mining.HasCycle;
             var waiting =
                 Options.Family == MiningFamily.Ore ? "Waiting for matching ore in range" : "Waiting for matching resources in range";
             SetStatus(context, blocked ?? waiting, blocked is null ? s_retryInterval : s_blockedInterval);
@@ -499,6 +581,8 @@ internal sealed record AutoMiningStatus(
     IReadOnlyList<AutoMiningOre> OreTypes
 ) : BlueModel
 {
+    internal string RouteText { get; init; } = "";
+    internal AutoMiningFleetMode FleetMode { get; init; }
     internal string OreFilter => Filter.Text;
 
     public override object ToBlue() =>
@@ -520,5 +604,7 @@ internal sealed record AutoMiningStatus(
             ["targetOrder"] = (int)Options.TargetOrder,
             ["approach"] = Options.Approach,
             ["jettison"] = Options.Jettison,
+            ["routeSystems"] = new BlueUnicode(RouteText),
+            ["fleetMode"] = (int)FleetMode,
         };
 }

@@ -43,7 +43,7 @@ dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
 ```
 
 Use the hash printed by install. Append the same `--world PATH` to all four commands for a nondefault world.
-When upgrading to AutoMining 1.2.3, use a fresh export path and disable the previous package hash before enabling the new one.
+When upgrading to AutoMining 1.3.0, use a fresh export path and disable the previous package hash before enabling the new one.
 Restart Eden, then launch through Eden Launcher to receive the active mod set. In space, open **Eden Mods →
 AutoMining** from the Neocom context menu. Select ore types in **Available ore types** and use the right arrow
 to move them to **Active filter**. Search either list by name or grade. Use the left arrow to remove selected types, or
@@ -64,9 +64,32 @@ is enabled, AutoMining uses the same threshold and jettisons the selected harves
 normal jettison cooldown, and the can expires after two hours. Choose **Keep harvest on board** and leave jettison off
 to retain the harvest in your ship.
 
+For a multi-system ore route, enter ordered system names separated by commas under **Route and fleet**, for example
+`Jita, Perimeter, Jita`, and select **Save route / fleet** while stopped. Up to 32 system visits are supported, including
+repeated systems. Every system must have asteroid belts. **Start** visits each system's belts in catalog order and moves
+on when no compatible resource remains within reach. Enable **Approach out-of-range targets** to reach more of each belt.
+Routes use the shortest connected stargate path through **all security levels**, without the native autopilot's avoidance
+or safer-route preferences. A route ends after its last belt; it does not loop or resume after reconnecting. An empty route
+keeps the existing current-grid behavior. System routes currently cover ore belts; ice and gas remain current-grid modes.
+
+For player fleets, the fleet boss selects **Lead fleet (boss)** and starts first. Members select **Follow fleet boss**,
+save, then start individually. Followers travel to the boss's current mining destination using their own ships and gates.
+Their personal route is ignored while following. Their ore filter, resource family, modules, target selection, unload
+station and threshold remain their own. The boss advances independently; followers finish their current journey or haul
+before following a changed destination. There is no automatic recruitment, NPC control, shared cargo or payout allocation.
+Fleet following also works with an empty boss route at the boss's starting mining position.
+
+Choose your unload station before departing its system. During a route or fleet run, a full ship travels back to that
+saved station, unloads into its own hangar, and returns to its mining position; followers rejoin the boss's latest destination.
+Ordinary current-grid solo hauling still requires a local station. The panel remains open across gate jumps; **Reload**
+refreshes the local station picker. Stop before changing route or fleet mode. Stop, manual navigation, ship changes,
+disconnects, travel failures, loss of fleet membership or a stopped/changed fleet boss end the affected run. A committed
+gate transition or warp can finish after stopping, but automation issues no further travel orders.
+
 See the protocol records for [mining cycles](protocol/industry.md#automining-the-current-grid),
 [automatic station hauling](protocol/industry.md#automining-station-hauling), and
-[approach, survey, harvesting, and jettison](protocol/industry.md#automining-approach-survey-and-harvest-handling).
+[approach, survey, harvesting, and jettison](protocol/industry.md#automining-approach-survey-and-harvest-handling), and
+[player fleets and system routes](protocol/industry.md#automining-player-fleets-and-system-routes).
 
 ## Identity and persistence
 

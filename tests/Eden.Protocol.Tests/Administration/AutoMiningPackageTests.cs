@@ -39,7 +39,7 @@ public sealed class AutoMiningPackageTests
         var package = ModPackages.Read(archive);
         Assert.Equal(AutoMiningFilter.ModId, package.Manifest.Id);
         Assert.Equal("client/automining.py", package.Manifest.ClientEntry);
-        Assert.Equal("1.2.3", package.Manifest.Version);
+        Assert.Equal("1.3.0", package.Manifest.Version);
         string hash = store.Install(archive);
         store.Enable(hash, true);
         var set = await new ModPublisher(database, store).Build(Environment.GetEnvironmentVariable("EDEN_TEST_CLIENT_ROOT")!);

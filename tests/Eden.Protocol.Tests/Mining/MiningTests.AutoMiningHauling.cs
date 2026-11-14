@@ -162,13 +162,17 @@ public sealed partial class MiningTests
         private readonly PilotCallRouter _router;
         private readonly AutoMiningHandler _auto;
 
-        public HaulFixture(double oreCapacity, bool rejectUnload = false, int? remainingOre = null)
+        public HaulFixture(double oreCapacity, bool rejectUnload = false, int? remainingOre = null, bool multiSystem = false)
         {
             Db = new(useTestClock: true);
             _fits = new(new(Db.Db.Path));
             var owner = Db.Db.Store.FindPilot(1000001)!;
             Station = owner.StationId;
             Origin = owner.Home.Position + new SpacePosition(10_000_000, 0, 0);
+            if (multiSystem)
+            {
+                Origin = new SpacePosition(10_001_000_000, 20_000_000_000, 30_000_000_000);
+            }
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Db.Path).CatalogPath, writable: true))
             {
                 int holdAttribute = (int)Eden.Gameplay.Dogma.DogmaAttributeId.GeneralMiningHoldCapacity;
@@ -178,6 +182,15 @@ public sealed partial class MiningTests
                 catalog.Database.ExecuteSqlInterpolated(
                     $"INSERT INTO TypeAttribute VALUES ({owner.ShipTypeId},{holdAttribute},{oreCapacity})"
                 );
+                if (multiSystem)
+                {
+                    catalog.Database.ExecuteSqlInterpolated(
+                        $"""
+                        INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z)
+                        VALUES (40009232,30000144,15,9,{Origin.X},{Origin.Y},{Origin.Z})
+                        """
+                    );
+                }
             }
             using (WorldDbContext world = new(Db.Db.Path))
             {
@@ -185,6 +198,10 @@ public sealed partial class MiningTests
                 rock.X = Origin.X + 1500;
                 rock.Y = Origin.Y;
                 rock.Z = Origin.Z;
+                if (multiSystem)
+                {
+                    rock.SystemId = 30000144;
+                }
                 if (remainingOre is int quantity)
                 {
                     rock.Quantity = quantity;
@@ -214,7 +231,10 @@ public sealed partial class MiningTests
                 targeting,
                 Mining,
                 new TestAutoMiningAvailability(true),
-                _hauling
+                _hauling,
+                services.GetRequiredService<IPilotAutoMiningRoutes>(),
+                services.GetRequiredService<IAutoMiningFleets>(),
+                services.GetRequiredService<ISystemObjects>()
             );
             var updates = services.GetRequiredService<PilotUpdateCoordinator>();
             updates.Enter(Context);

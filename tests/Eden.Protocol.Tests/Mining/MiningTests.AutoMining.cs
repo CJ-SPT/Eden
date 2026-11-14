@@ -252,7 +252,10 @@ public sealed partial class MiningTests
             targeting,
             mining,
             new TestAutoMiningAvailability(enabled),
-            f.Db.Services.GetRequiredService<IPilotAutoMiningHauling>()
+            f.Db.Services.GetRequiredService<IPilotAutoMiningHauling>(),
+            f.Db.Services.GetRequiredService<IPilotAutoMiningRoutes>(),
+            f.Db.Services.GetRequiredService<IAutoMiningFleets>(),
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Flight.ISystemObjects>()
         );
 
     private sealed record TestAutoMiningAvailability(bool AutoMiningEnabled) : IAutoMiningAvailability;

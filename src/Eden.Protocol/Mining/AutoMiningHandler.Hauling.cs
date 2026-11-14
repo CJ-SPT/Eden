@@ -21,7 +21,7 @@ internal sealed partial class AutoMiningHandler
         ApproachingOrigin,
     }
 
-    private sealed record HaulTrip(long StationId, SpacePosition Origin, HaulPhase Phase, long Started);
+    private sealed record HaulTrip(long StationId, SpacePosition Origin, int OriginSystem, HaulPhase Phase, long Started);
 
     // Account for the standard point-warp offset and the last braking tick.
     private const double ReturnTolerance = 2500;
@@ -63,7 +63,8 @@ internal sealed partial class AutoMiningHandler
         {
             return TryJettison(context);
         }
-        if (flight.LocalStation(settings.StationId) is not { } station)
+        var station = flight.LocalStation(settings.StationId);
+        if (station is null && !RouteActive)
         {
             Cancel(context, "Paused: choose an unload station in this system.", settleDue: true);
             return true;
@@ -72,7 +73,19 @@ internal sealed partial class AutoMiningHandler
         mining.StopAutomatic(context, settleDue: true);
         targeting.ReleaseAutoMiningLocks(context, mining.IsMiningTarget);
         _miningOrigin ??= context.Pilot.Position!;
-        _trip = new(station.Id, _miningOrigin, HaulPhase.Departing, clock.GetTimestamp());
+        _trip = new(settings.StationId, _miningOrigin, _system, HaulPhase.Departing, clock.GetTimestamp());
+        if (station is null)
+        {
+            try
+            {
+                BeginJourney(context, routes!.Station(settings.StationId), JourneyPurpose.Unload);
+            }
+            catch (InvalidDataException error)
+            {
+                Cancel(context, "Paused: " + error.Message);
+            }
+            return true;
+        }
         UpdateStatus(context, "Heading to unload station");
         AdvanceHaul(context);
         return true;
@@ -203,6 +216,19 @@ internal sealed partial class AutoMiningHandler
 
     private void BeginReturn(PilotCallContext context, HaulTrip trip)
     {
+        if (_route?.FleetMode == AutoMiningFleetMode.Follow)
+        {
+            var destination = fleets!.Follow(_pilotId, _leader);
+            _destination = destination;
+            _trip = null;
+            BeginJourney(context, destination, JourneyPurpose.Mining);
+            return;
+        }
+        if (_system != trip.OriginSystem)
+        {
+            BeginJourney(context, new(trip.OriginSystem, -_ship, trip.Origin, "Saved mining position"), JourneyPurpose.Return);
+            return;
+        }
         var flight = _flight!;
         var position = flight.Pilot.Position!;
         double distance = position.DistanceTo(trip.Origin);
@@ -248,7 +274,8 @@ internal sealed partial class AutoMiningHandler
         }
         var modules = store.Modules(_pilotId, _ship);
         if (
-            !flight.VisibleAsteroids.Any(rock =>
+            !RouteActive
+            && !flight.VisibleAsteroids.Any(rock =>
                 Options.Matches(rock, _filter!)
                 && !targeting.IsExcludedFromAutoMining(rock.Id)
                 && modules.Any(module =>

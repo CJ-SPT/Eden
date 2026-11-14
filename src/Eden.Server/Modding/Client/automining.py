@@ -36,6 +36,7 @@ class MiningPanel(object):
 
     FAMILY_OPTIONS = [('Ore', 0), ('Ice', 1), ('Gas', 2)]
     ORDER_OPTIONS = [('Nearest first', 0), ('Largest surveyed deposit', 1), ('Smallest surveyed deposit', 2)]
+    FLEET_OPTIONS = [('Solo', 0), ('Lead fleet (boss)', 1), ('Follow fleet boss', 2)]
     KEEP_HARVEST = ('Keep harvest on board', 0)
 
     def __init__(self):
@@ -68,6 +69,7 @@ class MiningPanel(object):
 
         body = ScrollContainer(parent=content, align=uiconst.TOALL, alignMode=uiconst.TOTOP, padBottom=4)
         self.build_options(body)
+        self.build_route(body)
         self.build_filter(body)
         self.family.OnChange = self.family_changed
         self.stations = []
@@ -95,6 +97,23 @@ class MiningPanel(object):
         EveLabelMedium(parent=threshold, text='Unload hold %', align=uiconst.TOTOP, padBottom=2)
         self.station = Combo(parent=station, align=uiconst.TOTOP, options=[self.KEEP_HARVEST])
         self.threshold = SingleLineEditText(parent=threshold, align=uiconst.TOTOP, maxLength=3, setvalue='95')
+
+    def build_route(self, body):
+        EveHeaderSmall(parent=body, text='Route and fleet', align=uiconst.TOTOP, padBottom=4)
+        EveLabelMedium(parent=body, text='Ordered system names, separated by commas. Empty = current grid.',
+                       align=uiconst.TOTOP, padBottom=4)
+        self.route = SingleLineEditText(parent=body, align=uiconst.TOTOP, maxLength=2048,
+                                        hintText='Example: Jita, Perimeter', padBottom=6)
+        row = Container(parent=body, align=uiconst.TOTOP, height=32, padBottom=8)
+        Button(parent=row, align=uiconst.TORIGHT, label='Save route / fleet', func=self.save_route, padLeft=12)
+        self.fleet = Combo(parent=row, align=uiconst.TOALL, options=self.FLEET_OPTIONS)
+        EveLabelMedium(parent=body, align=uiconst.TOTOP, padBottom=10,
+                       text='Routes visit ore belts once using shortest gate paths (all security levels). '
+                            'Enable approach to reach distant rocks. Followers use the boss\'s destination '
+                            'and their own harvesting settings. Stop before changing route or fleet mode.')
+
+    def save_route(self, *args):
+        self.request('SaveRoute', (self.route.GetValue().strip(), self.fleet.GetValue()))
 
     def build_filter(self, body):
         self.ore_types = []
@@ -177,9 +196,11 @@ class MiningPanel(object):
         self.notice.SetText('Filter cleared. Apply settings to save.')
 
     def session_changed(self, change):
-        if ('charid' in change or 'solarsystemid2' in change) and self.is_current(self.revision):
+        if 'charid' in change and self.is_current(self.revision):
             self.revision += 1
             self.window.Close()
+        elif 'solarsystemid2' in change and self.is_current(self.revision):
+            self.notice.SetText('System changed. Reload to refresh the local unload station list.')
 
     def OnEdenAutoMiningStatus(self, status):
         if self.is_current(self.revision):
@@ -226,7 +247,11 @@ class MiningPanel(object):
                 self.status.SetText(state['status'])
                 if load_settings or method == 'SaveSettings':
                     self.set_settings(state)
-                self.notice.SetText({'GetStatus': 'Settings loaded.', 'SaveSettings': 'Settings saved.'}.get(method, ''))
+                if load_settings or method == 'SaveRoute':
+                    self.route.SetValue(state.get('routeSystems', ''))
+                    self.fleet.LoadOptions(self.FLEET_OPTIONS, state.get('fleetMode', 0))
+                self.notice.SetText({'GetStatus': 'Settings loaded.', 'SaveSettings': 'Settings saved.',
+                                     'SaveRoute': 'Route and fleet mode saved.'}.get(method, ''))
         except UserError as error:
             if self.is_current(revision):
                 info = getattr(error, 'dict', None) or {}

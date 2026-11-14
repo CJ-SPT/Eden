@@ -115,6 +115,7 @@ class ClientModTests(unittest.TestCase):
 class AutoMiningPanelTests(unittest.TestCase):
     def test_run_and_save_actions_stay_outside_the_scroll_and_the_picker_applies_settings(self):
         calls = []
+        route_calls = []
         state = {'status': 'Stopped', 'oreTypes': [(1228, 'Scordite'), (1230, 'Veldspar'), (17470, 'Veldspar II-Grade')],
                  'oreFilter': 'Scordite', 'selectedOreTypes': [1228],
                  'resourceFamily': 0, 'targetOrder': 0, 'approach': False, 'jettison': False,
@@ -132,6 +133,11 @@ class AutoMiningPanelTests(unittest.TestCase):
                 if args[0] is not None:
                     state['selectedOreTypes'] = args[0]
                     state['oreFilter'] = ', '.join('#%d' % type_id for type_id in args[0])
+                return state.copy()
+
+            def SaveRoute(self, systems, mode):
+                route_calls.append((systems, mode))
+                state.update(routeSystems=systems, fleetMode=mode)
                 return state.copy()
 
         class Control:
@@ -228,6 +234,17 @@ class AutoMiningPanelTests(unittest.TestCase):
         panel.clear_filter()
         panel.apply()
         self.assertEqual([], calls[-1][0])
+        panel.route.SetValue('Jita, Perimeter')
+        panel.fleet.LoadOptions(panel.FLEET_OPTIONS, 1)
+        panel.save_route()
+        self.assertEqual([('Jita, Perimeter', 1)], route_calls)
+        panel.session_changed({'solarsystemid2': (30000142, 30000144)})
+        self.assertFalse(panel.window.destroyed)
+        panel.OnEdenAutoMiningStatus('Jumping to the next route system')
+        self.assertEqual('Jumping to the next route system', panel.status.text)
+        panel.reload()
+        self.assertEqual('Jita, Perimeter', panel.route.GetValue())
+        self.assertEqual(1, panel.fleet.GetValue())
 
 
 if __name__ == '__main__':

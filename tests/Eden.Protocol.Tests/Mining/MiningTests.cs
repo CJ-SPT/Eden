@@ -433,7 +433,8 @@ public sealed partial class MiningTests
                         Space,
                         objects,
                         [new(module, (int)laser, (int)InventoryFlag.HighSlot0)],
-                        docking: Db.Services.GetRequiredService<IStationDocking>()
+                        docking: Db.Services.GetRequiredService<IStationDocking>(),
+                        gates: Db.Services.GetRequiredService<IPilotGateTravel>()
                     ),
                 account,
                 SignedSettings.Empty
