@@ -7901,6 +7901,17 @@
       ]
     },
     {
+      "id": 11702,
+      "name": "Transaction And Salary Logs",
+      "groupId": 314,
+      "groupName": "Miscellaneous",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 12274,
       "name": "Ballistic Control System I",
       "groupId": 367,
@@ -63306,6 +63317,17 @@
       "attributes": []
     },
     {
+      "id": 26904,
+      "name": "Secure Coded Package",
+      "groupId": 526,
+      "groupName": "Commodities",
+      "categoryId": 17,
+      "mass": 25.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 27058,
       "name": "Thukker Small Wreck",
       "groupId": 186,
@@ -107339,6 +107361,86 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 55005,
+      "data": {
+        "language": "en-us",
+        "text": "Transaction Data Delivery",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 55006,
+      "data": {
+        "language": "en-us",
+        "text": "Transaction Data Delivery",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 55007,
+      "data": {
+        "language": "en-us",
+        "text": "Transaction Data Delivery",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 55008,
+      "data": {
+        "language": "en-us",
+        "text": "Transaction Data Delivery",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 55009,
+      "data": {
+        "language": "en-us",
+        "text": "Transaction Data Delivery",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 55010,
+      "data": {
+        "language": "en-us",
+        "text": "Transaction Data Delivery",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 55011,
+      "data": {
+        "language": "en-us",
+        "text": "Transaction Data Delivery",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 55012,
+      "data": {
+        "language": "en-us",
+        "text": "Transaction Data Delivery",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 55103,
       "data": {
         "language": "en-us",
@@ -109383,6 +109485,16 @@
       "data": {
         "language": "en-us",
         "text": "Ridiculous Oil Prices",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 57992,
+      "data": {
+        "language": "en-us",
+        "text": "Salve for Sis",
         "metadata": null,
         "tokens": null
       }
@@ -111769,6 +111881,726 @@
             "variableName": "agentID"
           }
         }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130400,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130401,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130402,
+      "data": {
+        "language": "en-us",
+        "text": "I am very disappointed in you.  This failure might result in catastrophic consequences, should the logs you were supposed to transfer fall into the wrong hands.  If this happens I will hold you fully responsible.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130403,
+      "data": {
+        "language": "en-us",
+        "text": "Thank you.  Be careful out there, those logs must <b>not</b> fall into the wrong hands.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130404,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130405,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130406,
+      "data": {
+        "language": "en-us",
+        "text": "I am very disappointed in you.  This failure might result in catastrophic consequences, should the logs you were supposed to transfer fall into the wrong hands.  If this happens I will hold you fully responsible.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130407,
+      "data": {
+        "language": "en-us",
+        "text": "Thank you.  Be careful out there, those logs must <b>not</b> fall into the wrong hands.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130408,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130409,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130410,
+      "data": {
+        "language": "en-us",
+        "text": "I am very disappointed in you.  This failure might result in catastrophic consequences, should the logs you were supposed to transfer fall into the wrong hands.  If this happens I will hold you fully responsible.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130411,
+      "data": {
+        "language": "en-us",
+        "text": "Thank you.  Be careful out there, those logs must <b>not</b> fall into the wrong hands.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130412,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130413,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130414,
+      "data": {
+        "language": "en-us",
+        "text": "I am very disappointed in you.  This failure might result in catastrophic consequences, should the logs you were supposed to transfer fall into the wrong hands.  If this happens I will hold you fully responsible.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130415,
+      "data": {
+        "language": "en-us",
+        "text": "Thank you.  Be careful out there, those logs must <b>not</b> fall into the wrong hands.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130416,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130417,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130418,
+      "data": {
+        "language": "en-us",
+        "text": "I am very disappointed in you.  This failure might result in catastrophic consequences, should the logs you were supposed to transfer fall into the wrong hands.  If this happens I will hold you fully responsible.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130419,
+      "data": {
+        "language": "en-us",
+        "text": "Thank you.  Be careful out there, those logs must <b>not</b> fall into the wrong hands.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130420,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130421,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130422,
+      "data": {
+        "language": "en-us",
+        "text": "I am very disappointed in you.  This failure might result in catastrophic consequences, should the logs you were supposed to transfer fall into the wrong hands.  If this happens I will hold you fully responsible.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130423,
+      "data": {
+        "language": "en-us",
+        "text": "Thank you.  Be careful out there, those logs must <b>not</b> fall into the wrong hands.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130424,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130425,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130426,
+      "data": {
+        "language": "en-us",
+        "text": "I am very disappointed in you.  This failure might result in catastrophic consequences, should the logs you were supposed to transfer fall into the wrong hands.  If this happens I will hold you fully responsible.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130427,
+      "data": {
+        "language": "en-us",
+        "text": "Thank you.  Be careful out there, those logs must <b>not</b> fall into the wrong hands.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130428,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130429,
+      "data": {
+        "language": "en-us",
+        "text": "I have an important job for you, {[character]player.name}.  Because of your good standing and the fact you have successfully completed a number of missions for {[npcOrganization]agentFactionID.name} we have decided you are worth the trust of a very important courier job. It entails bringing a large cargo of transaction and salary logs to this station from {[location]objectiveLocationID.name} where they have been stored for the last few weeks for a routine inspection by the authorities.  This data holds information of sensitive nature on our recent business dealings, earnings and expenses and wages that we pay our staff members.  Under no circumstances may any of these reports be lost, or worse yet fall into the wrong hands.  Pirates have a tendency to want this information so they can sell it to our rivals.  They used to have easy access to this information by hacking our transmission calls, but now that we send these reports via freight this is no longer as serious of a problem.  I trust you on this, {[character]player.name}, don't let me down.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveLocationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveLocationID"
+          },
+          "{[npcOrganization]agentFactionID.name}": {
+            "conditionalValues": [],
+            "variableType": 1,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentFactionID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130430,
+      "data": {
+        "language": "en-us",
+        "text": "I am very disappointed in you.  This failure might result in catastrophic consequences, should the logs you were supposed to transfer fall into the wrong hands.  If this happens I will hold you fully responsible.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 130431,
+      "data": {
+        "language": "en-us",
+        "text": "Thank you.  Be careful out there, those logs must <b>not</b> fall into the wrong hands.",
+        "metadata": null,
+        "tokens": null
       }
     },
     {
@@ -117703,6 +118535,146 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 134969,
+      "data": {
+        "language": "en-us",
+        "text": "Rare Equals Expensive",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134970,
+      "data": {
+        "language": "en-us",
+        "text": "Well, now she's never gonna talk to me again. Although maybe that's for the best…",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134971,
+      "data": {
+        "language": "en-us",
+        "text": "I'll let them know you're coming. The perfume should be in a secure coded package in your hangar — with what I paid for it, I'm not taking any chances. I may be forgetful, but I'm not stupid. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134972,
+      "data": {
+        "language": "en-us",
+        "text": "Oh, thank you! Things were already getting tense. If she thought I'd forgotten again, I think she might've stopped speaking to me!",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134973,
+      "data": {
+        "language": "en-us",
+        "text": "She's never gonna talk to me again.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134974,
+      "data": {
+        "language": "en-us",
+        "text": "She realized I didn't have her present yet, and she wouldn't believe me when I told her it was on the way! She said she should've known I'd forget again, and she's never gonna speak to me again!\r\nThis is gonna be a shitty week. Thanks a bunch, jerk.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134975,
+      "data": {
+        "language": "en-us",
+        "text": "She realized I didn't have her present yet, and she wouldn't believe me when I told her it was on the way! She said she should've known I'd forget again, and she's never gonna speak to me again!\r\nThis is gonna be a shitty week. Thanks a bunch, jerk.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134976,
+      "data": {
+        "language": "en-us",
+        "text": "What the hell happened??",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134977,
+      "data": {
+        "language": "en-us",
+        "text": "What the hell happened??",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134978,
+      "data": {
+        "language": "en-us",
+        "text": "Well, since you asked so nicely… yeah, sure. I'll help. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134979,
+      "data": {
+        "language": "en-us",
+        "text": "I've got your… well, whatever's in this box.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134980,
+      "data": {
+        "language": "en-us",
+        "text": "I don't want to contribute to spoiling your sister. Take a stance, will you?!",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134981,
+      "data": {
+        "language": "en-us",
+        "text": "I've been thinking about it, and your sister sounds kinda mean. I don't wanna get her present. Let her fume. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134982,
+      "data": {
+        "language": "en-us",
+        "text": "Maybe. What did you have in mind?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 135237,
       "data": {
         "language": "en-us",
@@ -120371,6 +121343,26 @@
             "variableName": "objectiveDestinationID"
           }
         }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 143414,
+      "data": {
+        "language": "en-us",
+        "text": "Deliver the secure coded package for your agent.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 143415,
+      "data": {
+        "language": "en-us",
+        "text": "Well, it's my sister. I mean, I remembered her birthday this time, I swear. I planned out the gift, got it ordered in advance — and it was not cheap, let me tell you. I found a specialty perfume maker, and it turns out my sister likes the smells of really damn expensive things. And of course the fancy-pants perfumer has a ridiculous waiting list. But I got everything done in time!\r\n<br><br>\r\nI just need you to deliver it. I'll pay you, okay?",
+        "metadata": null,
+        "tokens": null
       }
     },
     {
@@ -130152,6 +131144,16 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 144486,
+      "data": {
+        "language": "en-us",
+        "text": "Trade is a booming industry. Humanity is spread out over such a vast area of space that everything is rare <i>somewhere</i>, and there's always someone willing to make that journey for a profit, however small. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 144503,
       "data": {
         "language": "en-us",
@@ -132286,6 +133288,230 @@
           "objectiveQuantity": 0
         },
         "nameID": 54969
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 2305,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 55005,
+        "messages": {
+          "messages.mission.briefing": 130400,
+          "messages.mission.offered.agentsays": 130401,
+          "messages.mission.quitted.agentsays": 130402,
+          "messages.mission.accepted.agentsays": 130403
+        },
+        "fixedLpRewardOmega": 0,
+        "missionRewards": {
+          "reward": {}
+        },
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11702,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 2306,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 55006,
+        "messages": {
+          "messages.mission.briefing": 130404,
+          "messages.mission.offered.agentsays": 130405,
+          "messages.mission.quitted.agentsays": 130406,
+          "messages.mission.accepted.agentsays": 130407
+        },
+        "fixedLpRewardOmega": 0,
+        "missionRewards": {
+          "reward": {}
+        },
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11702,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 2307,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 55007,
+        "messages": {
+          "messages.mission.briefing": 130408,
+          "messages.mission.offered.agentsays": 130409,
+          "messages.mission.quitted.agentsays": 130410,
+          "messages.mission.accepted.agentsays": 130411
+        },
+        "fixedLpRewardOmega": 0,
+        "missionRewards": {
+          "reward": {}
+        },
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11702,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 2308,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 55008,
+        "messages": {
+          "messages.mission.briefing": 130412,
+          "messages.mission.offered.agentsays": 130413,
+          "messages.mission.quitted.agentsays": 130414,
+          "messages.mission.accepted.agentsays": 130415
+        },
+        "fixedLpRewardOmega": 0,
+        "missionRewards": {
+          "bonusTimeInterval": 60,
+          "bonusReward": {
+            "rewardTypeID": 29,
+            "rewardQuantity": 1000000
+          },
+          "reward": {
+            "rewardTypeID": 29,
+            "rewardQuantity": 4000000
+          }
+        },
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11702,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 2309,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 55009,
+        "messages": {
+          "messages.mission.briefing": 130416,
+          "messages.mission.offered.agentsays": 130417,
+          "messages.mission.quitted.agentsays": 130418,
+          "messages.mission.accepted.agentsays": 130419
+        },
+        "fixedLpRewardOmega": 0,
+        "missionRewards": {
+          "reward": {}
+        },
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11702,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 2310,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 55010,
+        "messages": {
+          "messages.mission.briefing": 130420,
+          "messages.mission.offered.agentsays": 130421,
+          "messages.mission.quitted.agentsays": 130422,
+          "messages.mission.accepted.agentsays": 130423
+        },
+        "fixedLpRewardOmega": 0,
+        "missionRewards": {
+          "reward": {}
+        },
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11702,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 2311,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 55011,
+        "messages": {
+          "messages.mission.briefing": 130424,
+          "messages.mission.offered.agentsays": 130425,
+          "messages.mission.quitted.agentsays": 130426,
+          "messages.mission.accepted.agentsays": 130427
+        },
+        "fixedLpRewardOmega": 0,
+        "missionRewards": {
+          "bonusTimeInterval": 60,
+          "bonusReward": {
+            "rewardTypeID": 29,
+            "rewardQuantity": 1000000
+          },
+          "reward": {
+            "rewardTypeID": 29,
+            "rewardQuantity": 4000000
+          }
+        },
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11702,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 2312,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 55012,
+        "messages": {
+          "messages.mission.briefing": 130428,
+          "messages.mission.offered.agentsays": 130429,
+          "messages.mission.quitted.agentsays": 130430,
+          "messages.mission.accepted.agentsays": 130431
+        },
+        "fixedLpRewardOmega": 0,
+        "missionRewards": {
+          "bonusTimeInterval": 60,
+          "bonusReward": {
+            "rewardTypeID": 29,
+            "rewardQuantity": 5000000
+          },
+          "reward": {
+            "rewardTypeID": 29,
+            "rewardQuantity": 10000000
+          }
+        },
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11702,
+          "objectiveQuantity": 1
+        }
       }
     },
     {
@@ -136474,6 +137700,42 @@
           "objectiveSingleton": 0,
           "objectiveTypeID": 2619,
           "objectiveQuantity": 4
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4837,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 134977,
+          "messages.mission.briefing": 143414,
+          "messages.mission.offered.agentsays": 143415,
+          "messages.mission.complete.charsays": 134979,
+          "messages.mission.extrainfo.header": 134969,
+          "messages.mission.quitted.agentsays": 134970,
+          "messages.mission.declined.agentsays": 134973,
+          "messages.mission.accept.charsays": 134978,
+          "messages.mission.extrainfo.body": 144486,
+          "messages.mission.timeout.emailheader": 134976,
+          "messages.mission.decline.charsays": 134980,
+          "messages.mission.quit.charsays": 134981,
+          "messages.mission.accepted.agentsays": 134971,
+          "messages.mission.ask.charsays": 134982,
+          "messages.mission.timeout.emailbody": 134974,
+          "messages.mission.completed.agentsays": 134972,
+          "messages.mission.offerexpired.email.body": 134975
+        },
+        "fixedLpRewardOmega": 0,
+        "expirationTime": 10080,
+        "nameID": 57992,
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 26904,
+          "objectiveQuantity": 1
         }
       }
     },
@@ -214239,6 +215501,24 @@
     },
     {
       "dataset": "client/types",
+      "key": 11702,
+      "data": {
+        "descriptionID": 88018,
+        "typeID": 11702,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77604,
+        "iconID": 1192,
+        "published": 1,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 314
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 12274,
       "data": {
         "descriptionID": 93014,
@@ -219801,6 +221081,24 @@
     },
     {
       "dataset": "client/types",
+      "key": 26904,
+      "data": {
+        "descriptionID": 93049,
+        "typeID": 26904,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 103842,
+        "iconID": 2039,
+        "published": 1,
+        "volume": 120.0,
+        "mass": 25.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 526
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 27058,
       "data": {
         "descriptionID": 82365,
@@ -222939,6 +224237,78 @@
     },
     {
       "dataset": "sde/missions",
+      "key": 2305,
+      "data": {
+        "name": {
+          "en": "Transaction Data Delivery"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 2306,
+      "data": {
+        "name": {
+          "en": "Transaction Data Delivery"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 2307,
+      "data": {
+        "name": {
+          "en": "Transaction Data Delivery"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 2308,
+      "data": {
+        "name": {
+          "en": "Transaction Data Delivery"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 2309,
+      "data": {
+        "name": {
+          "en": "Transaction Data Delivery"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 2310,
+      "data": {
+        "name": {
+          "en": "Transaction Data Delivery"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 2311,
+      "data": {
+        "name": {
+          "en": "Transaction Data Delivery"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 2312,
+      "data": {
+        "name": {
+          "en": "Transaction Data Delivery"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
       "key": 2537,
       "data": {
         "name": {
@@ -224680,6 +226050,15 @@
       "data": {
         "name": {
           "en": "Warriors and Their Weapons"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4837,
+      "data": {
+        "name": {
+          "en": "Salve for Sis"
         }
       }
     },

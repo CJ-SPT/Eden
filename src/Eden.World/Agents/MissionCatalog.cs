@@ -33,6 +33,7 @@ internal sealed record MissionProfile(
         : DungeonId.HasValue ? MissionKind.Combat
         : MissionKind.Courier;
 
+    internal bool CargoSingleton { get; init; }
     internal TimeSpan Lifetime { get; init; }
     internal int SupplierFaction { get; init; }
     internal int SupplierCorporation { get; init; }
@@ -123,6 +124,12 @@ internal static class MissionCatalog
         int? dungeonId = checked((int?)mission.KillMission?.DungeonID);
         int cargoType = checked((int)(mission.CourierMission?.ObjectiveTypeID ?? mission.KillMission?.ObjectiveTypeID ?? 0));
         int quantity = checked((int)(mission.CourierMission?.ObjectiveQuantity ?? mission.KillMission?.ObjectiveQuantity ?? 0));
+        bool singleton = (mission.CourierMission?.ObjectiveSingleton ?? 0) switch
+        {
+            0 => false,
+            1 when quantity == 1 => true,
+            _ => throw new InvalidDataException("Unsupported singleton mission cargo definition."),
+        };
         double volume = cargoType == 0 ? 0 : catalog.Read(CatalogData.Client.Types, (long)cargoType)?.Volume ?? 0;
         if (definition.Mining && (mission.ContentTemplate != BasicMiningMission || dungeonId is null || !(volume > 0)))
         {
@@ -154,6 +161,7 @@ internal static class MissionCatalog
         }
         return new(definition, name, nameId, briefingId, briefing, dungeonId, faction, corporation, cargoType, quantity, volume, rooms)
         {
+            CargoSingleton = singleton,
             Lifetime = MissionRules.Lifetime(mission.ExpirationTime),
             SupplierFaction = checked((int)(mission.FactionID ?? 0)),
             SupplierCorporation = checked((int)(mission.CorporationID ?? 0)),

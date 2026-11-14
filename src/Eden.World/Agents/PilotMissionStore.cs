@@ -459,17 +459,7 @@ internal sealed partial class PilotMissionStore(
                 row.ExpiresAt = checked(now + profile.Lifetime.Ticks);
                 if (profile.Kind == MissionKind.Courier)
                 {
-                    changes.Add(
-                        InventoryPersistence.MergeOutput(
-                            world,
-                            catalog,
-                            pilotId,
-                            agent.StationId!.Value,
-                            (int)InventoryFlag.Hangar,
-                            profile.CargoType,
-                            profile.CargoQuantity
-                        )
-                    );
+                    changes.Add(CreateCourierCargo(world, catalog, pilotId, agent.StationId!.Value, profile));
                 }
                 if (profile.Kind == MissionKind.Mining)
                 {
@@ -635,8 +625,9 @@ internal sealed partial class PilotMissionStore(
             .Where(i =>
                 i.OwnerId == pilot.Id
                 && i.TypeId == profile.CargoType
-                && !i.Singleton
+                && i.Singleton == profile.CargoSingleton
                 && i.Quantity > 0
+                && (!i.Singleton || i.Quantity == 1)
                 && (
                     i.LocationId == row.DestinationStation && i.FlagId == (int)InventoryFlag.Hangar
                     || i.LocationId == pilot.ActiveShipId && i.FlagId == (int)InventoryFlag.Cargo

@@ -970,14 +970,14 @@ missionId,name,template,status,reason
 2302,License To Fly (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2303,License To Fly (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2304,The Graduation Certificate,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2305,Transaction Data Delivery,GenericStorylineCourierMission,blocked,Requires singleton objective inventory
-2306,Transaction Data Delivery,GenericStorylineCourierMission,blocked,Requires singleton objective inventory
-2307,Transaction Data Delivery,GenericStorylineCourierMission,blocked,Requires singleton objective inventory
-2308,Transaction Data Delivery,GenericStorylineCourierMission,blocked,Requires singleton objective inventory
-2309,Transaction Data Delivery,GenericStorylineCourierMission,blocked,Requires singleton objective inventory
-2310,Transaction Data Delivery,GenericStorylineCourierMission,blocked,Requires singleton objective inventory
-2311,Transaction Data Delivery,GenericStorylineCourierMission,blocked,Requires singleton objective inventory
-2312,Transaction Data Delivery,GenericStorylineCourierMission,blocked,Requires singleton objective inventory
+2305,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
+2306,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
+2307,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
+2308,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
+2309,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
+2310,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
+2311,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
+2312,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
 2317,A Force to Be Reckoned With,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 2318,A Force to Be Reckoned With,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 2319,A Force to Be Reckoned With,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -1865,7 +1865,7 @@ missionId,name,template,status,reason
 4834,Send in the Marines,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4835,Warriors and Their Weapons,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4836,"You, Trit",BasicTradeMission,blocked,Requires another mission or agent lifecycle
-4837,Salve for Sis,BasicCourierMission,blocked,Requires singleton objective inventory
+4837,Salve for Sis,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4838,Save the Trees - Seeding a Future (1 of 3),BasicCourierMission,blocked,Requires mission-chain progression
 4839,Save the Trees – Forest's Revenge (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
 4840,Save the Trees – Save the People (3 of 3),BasicCourierMission,blocked,Requires mission-chain progression

@@ -32,8 +32,8 @@ dotnet run --no-build --project src/Eden.Server
 | Fleets, corporations and structures | Fly in fleets, [tag shared targets](docs/protocol/fleets.md#fleet-target-tags-november-14-2026), use chat and mail, manage player corporations and shared hangars, and deploy Upwell structures with supported docking and industry services. Specialized structure systems such as moon extraction and structure combat remain pending. [Fleets](docs/protocol/fleets.md), [corporations](docs/corporations.md), [structures](docs/protocol/structures.md) |
 | World settings and mods | Tune gathering, rewards, progression, industry and structure timers through administration. Install skill mods, C# server plugins and Python client extensions. [World settings](docs/world-configuration.md), [remote administration in Docker](docs/docker.md#remote-administration), [modding guide](docs/modding.md) |
 
-Four [short-deadline courier definitions](docs/missions.md#short-deadline-deliveries) now honor their catalog offer and completion windows,
-bringing the supported mission pool to 347 definitions.
+Mission support includes [short-deadline deliveries](docs/missions.md#short-deadline-deliveries) and
+[singleton courier cargo](docs/missions.md#singleton-courier-cargo), for 356 supported definitions.
 
 New mission offers include a [timed ISK bonus](docs/protocol/agents.md#timed-mission-bonuses--november-14-2026),
 with saved deadlines and fleet reward sharing.

@@ -3783,6 +3783,86 @@
       ]
     },
     {
+      "missionId": 2305,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2306,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2307,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2308,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2309,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2310,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2311,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 2312,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
       "missionId": 2585,
       "level": 1,
       "difficulty": 500,
@@ -5629,6 +5709,16 @@
     },
     {
       "missionId": 4835,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "build-3662168 client/missions; Eden delivery volume-band policy",
+      "sourceRevision": "3662168",
+      "waves": []
+    },
+    {
+      "missionId": 4837,
       "level": 1,
       "difficulty": 500,
       "storyline": false,

@@ -42,8 +42,11 @@ def delivery_rejection(mission, name, volume):
     if any(mission.get(k) for k in ('nodeGraphID', 'clientObjectives', 'contentTags', 'initialAgentGiftTypeID')):
         return 'Requires authored scripts, objectives or initial gifts'
     cargo = mission.get('courierMission', {})
-    if cargo.get('objectiveSingleton'):
-        return 'Requires singleton objective inventory'
+    singleton = cargo.get('objectiveSingleton', 0)
+    quantity = cargo.get('objectiveQuantity')
+    if (type(singleton) is not int or singleton not in (0, 1)
+            or singleton == 1 and (type(quantity) is not int or quantity != 1)):
+        return 'Requires another objective inventory form'
     if not cargo.get('objectiveTypeID') or not 0 < cargo.get('objectiveQuantity', 0) <= 2147483647 or volume <= 0:
         return 'Missing usable cargo definition'
     expiration = mission.get('expirationTime', 10080)

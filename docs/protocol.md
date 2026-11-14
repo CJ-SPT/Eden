@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Singleton mission cargo](protocol/agents.md#singleton-mission-cargo--november-14-2026) records nine newly admitted courier
+definitions, distinct inventory identities, resident checkpoint recovery and atomic turn-in.
+
 [Catalog mission deadlines](protocol/agents.md#catalog-mission-deadlines--november-14-2026) records four newly admitted
 courier definitions, resident expiry and checkpoint recovery.
 

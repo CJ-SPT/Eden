@@ -2,6 +2,70 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Singleton mission cargo — November 14, 2026
+
+The remaining courier inventory blocker affected eight Transaction Data Delivery templates (**2305–2312**) and
+Salve for Sis (**4837**). Build-3662168 `courierMission.objectiveSingleton=1` requires an indivisible objective with
+quantity one. The compiler and runtime catalog now admit this form while rejecting other singleton flags or quantities.
+Normal stack objectives retain their prior behavior.
+
+Acceptance allocates a distinct `OwnedItem` with `Singleton=true` through the resident world action. Existing items of
+the same type are not merged or modified. Normal inventory movement preserves the identity; existing stack and
+repackaging rules reject these items. The mission's shared cargo query requires the catalog singleton form, a valid
+single-item quantity, personal ownership and either active-ship Cargo Hold or personal destination hangar custody.
+Packaged lookalikes, foreign owners, other stations, nested containers and specialized holds do not count. Settlement
+consumes one eligible item in stable item-ID order through the existing atomic mission reward transaction. It does not
+bind turn-in exclusively to the originally issued identity. Failed payment restores the item and accepted mission;
+duplicate acceptance and completion cannot issue or pay twice.
+
+The existing inventory checkpoint already stores identity and singleton state, so no schema or alternate persistence
+path was added. Native `OnItemChange` uses the existing assembled quantity sentinel and junk-location removal behavior;
+creation does not publish an invalid physical quantity change for a singleton. No wire codec changed.
+
+The regenerated audit admits **356** definitions and blocks **2,536**: 59 combat, 182 ordinary deliveries, 92 delivery
+storylines and 23 mining missions. The offline fixture contains 716 types and 4,309 source records. All nine new
+profiles inherit Eden's volume-based level-one assignment, route selection, reward calculation and bonus policy.
+Storylines still use the existing sixteen-completion faction/level progression. This does not implement report-specific
+collateral, random implant rewards or reversed pickup routes.
+
+Gameplay evidence: the [University Transaction Data Delivery report](https://wiki.eveuniversity.org/Transaction_Data_Delivery)
+describes transporting one set of Transaction And Salary Logs; its other reward/route details are distinguished above.
+The [distribution list](https://wiki.eveuniversity.org/Distribution_mission_reports) lists Salve for Sis; its individual
+report was inaccessible during this audit. Pinned catalog item identities are **11702** and **26904** respectively.
+Read-only secondary inspection used local evejs **261108.1**, `server/src/services/agent/agentMissionRuntime.js`, SHA-256
+`f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`. Its `sumItemStackQuantity` and courier consumption
+allocation count singleton inventory as one unit. Eden's implementation uses its own typed inventory and resident
+transaction owner; no evejs implementation or content was copied.
+
+**Automated validation.** Tool and solution restores passed. The final solution build passed with no warnings or errors
+in 0.92 seconds. The final affected-behavior selection passed **95/95 in 111.45 seconds** using:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionSingletonTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionBonusTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionRetrievalTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MiningMissionTests|FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters
+```
+
+Catalog policy **8/8**, formatting policy **9/9** and mission admission **10/10** passed in **2.00 seconds** combined.
+`Format.ps1` was applied; final `Format.ps1 -Check` passed across **2,133 files**, including the 140-column check, in
+**31.12 seconds**. The final build/test/policy/format sequence took **145.73 seconds**. Added local documentation links,
+UTF-8 and `git diff --check` passed. All 347 pre-existing manifest definitions and all prior fixture records were retained.
+No full .NET suite was requested or run.
+
+The starting exact method filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionSingletonTests.EverySingletonDeliveryIssuesDistinctCargoAndSettlesOnceAfterCheckpoint`.
+All nine catalog cases passed (build 5.90 seconds; tests 19.99 seconds), after correcting a missing protocol namespace
+import. The initial complete singleton class run passed 24/26 (build 5.12 seconds; tests 35.16 seconds); two foreign-owner
+fixtures failed validation because their inventory owner was not registered. Registering that owner corrected setup,
+and the exact `InvalidSingletonCargoCannotCompleteOrChangeInventoryAndRewards` method passed 12/12 (build 5.27 seconds;
+tests 23.17 seconds). The exact `RewardFailureRollsBackSingletonConsumptionAndNativeCompletionRemovesItOnce` method
+also passed both destination-hangar cases (build 8.71 seconds; tests 11.21 seconds), with native inventory movement,
+payment overflow rollback and singleton removal notifications. New lifecycle and rejection tests use the resident world; SQL is limited to fixture catalog setup
+and inspection of completed checkpoints.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Accept Salve for Sis, move its package through ship cargo, and verify it disappears from
+the native inventory on successful hand-in.
+
 ## Catalog mission deadlines — November 14, 2026
 
 The catalog audit excluded four otherwise supported courier definitions solely because their `expirationTime` differs
