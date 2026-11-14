@@ -2377,7 +2377,8 @@ internal sealed partial class ResidentEconomy
                         row.TypeId,
                         row.X,
                         row.Y,
-                        row.Z
+                        row.Z,
+                        row.Abandoned
                     ),
                 state => new Eden.Data.World.Loot.WorldWreck
                 {
@@ -2396,9 +2397,11 @@ internal sealed partial class ResidentEconomy
                     X = state.X,
                     Y = state.Y,
                     Z = state.Z,
+                    Abandoned = state.Abandoned,
                 },
                 ProjectWorldWreck,
-                "Id,CorporationId,CreatedAt,ExpiresAt,Name,NpcId,OwnerId,SalvageJson,SalvagedAt,ShipId,SystemId," + "TypeId,X,Y,Z",
+                "Id,CorporationId,CreatedAt,ExpiresAt,Name,NpcId,OwnerId,SalvageJson,SalvagedAt,ShipId,SystemId,"
+                    + "TypeId,X,Y,Z,Abandoned",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -2415,7 +2418,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt32(12),
                         reader.GetDouble(13),
                         reader.GetDouble(14),
-                        reader.GetDouble(15)
+                        reader.GetDouble(15),
+                        reader.GetBoolean(16)
                     ),
                 state => new(state.Id),
                 indexes:

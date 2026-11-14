@@ -17,7 +17,7 @@ using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Loot;
 
-public sealed class JettisonTests
+public sealed partial class JettisonTests
 {
     private const int SystemId = 30000142;
     private const long AccountId = 1000001;
@@ -156,7 +156,7 @@ public sealed class JettisonTests
         var can = Assert.Single(wrecks.List(SystemId, Now));
         Assert.Equal(canId, can.Id);
         db.Store.SetPosition(wing.ShipId, can.Position, SystemId);
-        Assert.Throws<InvalidDataException>(() => wrecks.Read(wing.PilotId, canId, Now));
+        Assert.Single(wrecks.Read(wing.PilotId, canId, Now).Items);
         db.Store.SetPosition(pilot.ShipId, can.Position + new SpacePosition(5000, 0, 0), SystemId);
         Assert.Throws<InvalidDataException>(() => wrecks.Read(pilot.PilotId, canId, Now));
         db.Store.SetPosition(pilot.ShipId, s_position, SystemId);

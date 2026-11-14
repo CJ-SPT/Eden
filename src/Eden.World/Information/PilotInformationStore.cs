@@ -151,8 +151,8 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
                 resources: [new(SharedSimulationResource.Npc, targetId), new(SharedSimulationResource.Wreck, targetId)]
             );
 
-    private bool CanTractor(long pilot, long owner) =>
-        pilot == owner || fleets?.Identity(pilot) is { } source && fleets.Identity(owner)?.FleetId == source.FleetId;
+    private bool CanTractor(long pilot, long owner, bool abandoned) =>
+        abandoned || pilot == owner || fleets?.Identity(pilot) is { } source && fleets.Identity(owner)?.FleetId == source.FleetId;
 
     private void CheckTarget(WorldAction world, CatalogDbContext catalog, Pilot pilot, long targetId, InformationModule module, long now)
     {
@@ -167,7 +167,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
                 || wreck.SystemId != system
                 || wreck.ExpiresAt <= now
                 || module.Effect == DogmaEffect.Salvaging && (wreck.SalvagedAt is not null || wreck.SalvageJson is null)
-                || module.Effect == DogmaEffect.TractorBeam && !CanTractor(pilot.Id, wreck.OwnerId)
+                || module.Effect == DogmaEffect.TractorBeam && !CanTractor(pilot.Id, wreck.OwnerId, wreck.Abandoned)
             )
             {
                 throw new InvalidDataException("This wreck is unavailable or cannot be tractored by this pilot.");

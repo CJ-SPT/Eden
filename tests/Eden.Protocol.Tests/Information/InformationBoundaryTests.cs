@@ -167,17 +167,23 @@ public sealed partial class InformationTests
         using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSql($"UPDATE TypeAttribute SET Value={1000d} WHERE ItemTypeId={25861} AND AttributeId={902}");
+            string security = JsonSerializer.Serialize(new { securityStatus = 0.8 });
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142',{security})");
         }
         using (WorldDbContext world = new(f.Db.Path))
         {
-            world.Set<WorldWreck>().Find(wreck)!.OwnerId = f.Db.Store.FindPilot(1000002)!.PilotId;
+            long owner = f.Db.Store.FindPilot(1000002)!.PilotId;
+            world.Set<WorldWreck>().Find(wreck)!.OwnerId = owner;
+            world.Set<OwnedItem>().Single(i => i.LocationId == wreck).OwnerId = owner;
             world.Set<WorldWreck>().Find(wreck)!.SalvageJson = "[]";
             world.SaveChanges();
         }
         var cycle = Store(f).Begin(f.PilotId, module, DogmaEffect.Salvaging, wreck, new HashSet<long> { wreck }, f.Clock.Now);
         f.Clock.Milliseconds += (long)cycle.Cycle.Module.DurationMilliseconds;
         Assert.True(Store(f).Complete(f.PilotId, module, cycle.Cycle.ReadyAt, f.Clock.Now).Salvage!.Success);
-        Assert.Throws<InvalidDataException>(() => f.Db.Services.GetRequiredService<IWrecks>().Read(f.PilotId, wreck, f.Clock.Now));
+        var loot = f.Db.Services.GetRequiredService<IWrecks>();
+        var stack = Assert.Single(loot.Read(f.PilotId, wreck, f.Clock.Now).Items);
+        Assert.Throws<InvalidDataException>(() => loot.Take(f.PilotId, f.ShipId, wreck, [stack.Id], null, f.Clock.Now));
         using WorldDbContext verify = new(f.Db.Path);
         Assert.Empty(verify.Set<SavedPilotHostility>());
         Assert.Equal(17, verify.Set<OwnedItem>().Single(i => i.LocationId == wreck).Quantity);

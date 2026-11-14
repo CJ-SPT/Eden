@@ -11,6 +11,7 @@ public sealed class SavedJetcan
     public double Y { get; set; }
     public double Z { get; set; }
     public long ExpiresAt { get; set; }
+    public bool Abandoned { get; set; }
 }
 
 public sealed class SavedJettisonCooldown

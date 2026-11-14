@@ -19,7 +19,8 @@ internal sealed record EconomyWorldWreck(
     int TypeId,
     double X,
     double Y,
-    double Z
+    double Z,
+    bool Abandoned
 );
 
 internal sealed partial class ResidentEconomy
@@ -49,7 +50,7 @@ internal sealed partial class ResidentEconomy
                     $"""
                     INSERT INTO WorldWreck(
                         Id,CorporationId,CreatedAt,ExpiresAt,Name,NpcId,OwnerId,SalvageJson,SalvagedAt,ShipId,SystemId,
-                        TypeId,X,Y,Z
+                        TypeId,X,Y,Z,Abandoned
                     )
                     SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.CorporationId'),json_extract(value,'$.CreatedAt'),
@@ -57,13 +58,13 @@ internal sealed partial class ResidentEconomy
                         json_extract(value,'$.OwnerId'),json_extract(value,'$.SalvageJson'),
                         json_extract(value,'$.SalvagedAt'),json_extract(value,'$.ShipId'),json_extract(value,'$.SystemId'),
                         json_extract(value,'$.TypeId'),json_extract(value,'$.X'),json_extract(value,'$.Y'),
-                        json_extract(value,'$.Z')
+                        json_extract(value,'$.Z'),json_extract(value,'$.Abandoned')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET
                         CorporationId=excluded.CorporationId,CreatedAt=excluded.CreatedAt,ExpiresAt=excluded.ExpiresAt,
                         Name=excluded.Name,NpcId=excluded.NpcId,OwnerId=excluded.OwnerId,SalvageJson=excluded.SalvageJson,
                         SalvagedAt=excluded.SalvagedAt,ShipId=excluded.ShipId,SystemId=excluded.SystemId,
-                        TypeId=excluded.TypeId,X=excluded.X,Y=excluded.Y,Z=excluded.Z
+                        TypeId=excluded.TypeId,X=excluded.X,Y=excluded.Y,Z=excluded.Z,Abandoned=excluded.Abandoned
                     """
                 );
             }

@@ -45,8 +45,23 @@ internal sealed partial class WreckStore
         InventoryFlag destinationFlag = InventoryFlag.Cargo
     )
     {
+        if (JetcanRules.IsJetcan(wreckId))
+        {
+            return JetcanStore.Take(world, catalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);
+        }
         var (pilot, wreck) = Access(world, catalog, pilotId, wreckId, now);
+        bool theft = SpaceLootRights.CheckTake(
+            world,
+            catalog,
+            pilot,
+            wreck.SystemId,
+            new(wreck.OwnerId, wreck.CorporationId, wreck.Abandoned)
+        );
         var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, wreckId, itemIds, quantity, destinationFlag, wreck.OwnerId);
+        if (theft)
+        {
+            SpaceLootRights.RecordTheft(world, pilot, wreck.SystemId, now);
+        }
         world.SaveChanges();
         return changes;
     }
@@ -58,15 +73,11 @@ internal sealed partial class WreckStore
         if (
             wreck is null
             || wreck.ExpiresAt <= now
-            || (
-                wreck.OwnerId != pilotId
-                && LiveWorld.Find(world.WorldPath)?.Fleets?.CanShareLoot(pilotId, wreck.OwnerId, wreck.SystemId) != true
-            )
             || pilot.ActiveShip.Position is not { } position
             || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != wreck.SystemId
         )
         {
-            throw new InvalidDataException("The wreck is unavailable or you do not have its loot rights.");
+            throw new InvalidDataException("The wreck is unavailable.");
         }
         world.RequireUncloaked(pilot.ActiveShipId);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);

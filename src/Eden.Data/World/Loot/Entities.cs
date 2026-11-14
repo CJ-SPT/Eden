@@ -23,6 +23,7 @@ public sealed class WorldWreck
     public double Z { get; set; }
     public long CreatedAt { get; set; }
     public long ExpiresAt { get; set; }
+    public bool Abandoned { get; set; }
     public string? SalvageJson { get; set; }
     public long? SalvagedAt { get; set; }
 }

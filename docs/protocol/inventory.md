@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Loot abandonment and theft, November 14, 2026](#loot-abandonment-and-theft-november-14-2026)
+
 - [Direct player trading](#direct-player-trading)
 - [Cargo jettison, November 13, 2026](#cargo-jettison-november-13-2026)
 - [Targeted stack merging, November 9, 2026](#targeted-stack-merging-november-9-2026)
@@ -23,6 +25,92 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Loot abandonment and theft, November 14, 2026
+
+The evejs comparison identified two missing gameplay paths: the native **Abandon Loot / Abandon All**
+command and taking another pilot's wreck or jetcan contents with Crimewatch consequences.
+`beyonce.CmdAbandonLoot([itemIDs])` now makes the caller's nearby wrecks and jetcans public. It preserves
+item ownership and expiry, accepts at most 1,000 distinct positive IDs, and skips foreign, missing,
+expired or out-of-range entries. Empty selections are harmless. The pilot must be uncloaked and in space.
+
+Build 3662168's `menuSvcExtras/menuFunctions.pyj` sends a Python list for both menu actions.
+`AbandonAllLoot` selects by `HaveLootRight`, which can include fleet/corporation loot; the server must
+skip entries the caller does not own instead of rejecting the entire selection. The existing slim
+`lootRights=(ownerID, corporationID, fleetID, abandoned)` now carries the saved public flag, and
+`OnSlimItemChange` publishes the update without replacing the ball. Public wrecks also accept tractor
+beams from other pilots, including during resident advancement.
+
+Nearby pilots can inspect foreign contents without a timer. Taking them checks the current owner,
+player-corporation rights, fleet access and abandoned state. Sharing an NPC corporation grants no rights.
+Unauthorized taking in high/low security space is blocked by full safety; partial/disabled safety
+permits it and starts or refreshes the 15-minute suspect timer. Alpha pilots retain Eden's enforced full
+safety in high security even if a lower setting was saved elsewhere. Null-security theft creates no flag.
+An active criminal timer is extended instead of creating a suspect timer, following CCP's documented
+rule. This intentionally differs from the inspected evejs implementation, which skips that extension.
+Theft alone creates no weapons, PvP or limited-engagement timer. Existing Crimewatch polling sends the
+native timer/system-flag notifications and clears them at the saved deadline.
+
+Inventory transfer and the consequence commit together. Invalid quantities, capacity failures and
+failed writes leave ownership and timers unchanged. Empty jetcans disappear after committed transfer.
+Schema **157** adds `Abandoned` to wrecks and jetcans, defaulting existing records to private. Resident
+snapshots, SQL projection and disk checkpoints preserve it, including updates to already-checkpointed
+containers. The migration adds the column before historical salvage backfill materializes wrecks.
+
+Scope remains wrecks and jetcans: this does not add automatic abandonment for criminal owners,
+player-deployable launches, protected corporation property, or changes to salvage mechanics.
+The historical owner-only limitation in the cargo-jettison record below is superseded by this milestone.
+
+Reference evidence:
+
+- Inert inspection used the original build-3662168 archive with SHA-256
+  `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+- The local evejs snapshot has no Git metadata, advertises version `261108.1` and targets client build
+  3396210. It was used to identify gaps; Eden's C# implementation was independently authored against
+  its typed state and the pinned client contract. Inspected SHA-256 values:
+  - `server/src/services/ship/beyonceService.js`:
+    `5c13b78749bd02c31d7844d631fc88b818b299deff4ac49058a860eeb3f9027d`
+  - `server/src/space/runtime/spaceRuntime/pilotCommands.js`:
+    `6148a777fec47f3598a1a4f2e4616ac4ff1e399a556629723b16f45aa91de272`
+  - `server/src/space/runtime/inventoryLootRights.js`:
+    `e308a33d85a403fc9b2a250d326c7e177e35d4d74699958b6ccfba33d0bc46d9`
+  - `server/src/services/_shared/spaceLootEntitlement.js`:
+    `242f50a504fb8c7e9240a3d04a657b2373ba0e9098187eecba8c4855720272f0`
+  - `server/src/services/security/crimewatchState.js`:
+    `46cf97d25ba2f99b925a3b4f1b5da80596be783ac6fcb1a3869628989a950f84`
+- Gameplay references: [EVE University salvaging](https://wiki.eveuniversity.org/Salvaging),
+  [ninja salvaging and stealing](https://wiki.eveuniversity.org/Ninja_Salvaging_and_Stealing),
+  [CCP suspect timer](https://support.eveonline.com/hc/en-us/articles/203268571-Suspect-Timer),
+  [ship safety](https://support.eveonline.com/hc/en-us/articles/205268171-Ship-Safety-Setting), and
+  [criminal timer precedence](https://support.eveonline.com/hc/en-us/articles/203268591-Criminal-Timer).
+  Eden reuses its existing Blue and Destiny encoders and tractor movement rules; no engine algorithm changed.
+
+**Automated validation** — Tool/solution restore, solution build with zero warnings or errors,
+**204 focused .NET tests**, both Python policy suites (**8** catalog and **9** formatting cases), and
+`tools/Format.ps1 -Check` passed. The final sequence took **107.56 seconds**, including **66.77 seconds**
+for .NET tests. It used `--artifacts-path artifacts/loot-rights-tests` to isolate outputs from concurrent
+checkout work. No full .NET suite was run.
+
+The initial exact method filter was
+`FullyQualifiedName~ForeignLootIsReadableButTakingRequiresSafetyAndCommitsOnlyASuspectTimer`.
+The final filter joined `FullyQualifiedName~` clauses for `Eden.Protocol.Tests.Loot`,
+`Eden.Protocol.Tests.Information`, `Eden.Protocol.Tests.Combat.CrimewatchTests`,
+`Eden.Protocol.Tests.Persistence.InventoryStackSplitTests`, `Eden.Protocol.Tests.Persistence.ResidentReadTests`,
+`Eden.Protocol.Tests.Planetary.PlanetaryProtocolTests`, `Eden.Protocol.Tests.Combat.NpcCombatTests`, and
+`OnGridFleetSharesBountyAndCanLootWreckUntilMembershipEnds` with `|`.
+
+Coverage includes native RPCs and slim serialization, observer updates, safety and Alpha restrictions,
+partial/full transfers, rollback after an inventory write failure, repeat-taking rejection, exact timer
+expiry, criminal precedence, fleet permissions, public tractor movement, schema-156 migration, reopened
+worlds and disk checkpoints of existing containers. Development runs found and corrected missing fixture
+security data and SQL jetcan deletion ordering. An older salvage test was updated to assert that inspection
+is legal while taking remains safety-gated. One early build failed on incomplete concurrent AutoMining edits;
+a rerun reported the old salvage assertion after its source changed, so final validation used isolated outputs.
+
+**Live acceptance** — Not performed; agent client testing is disabled.
+
+**Optional maintainer checks** — With two pilots, check the blue wreck/container marker after **Abandon All**
+and the suspect HUD timer after looting a yellow container with partial safety.
 
 ## Cargo jettison, November 13, 2026
 

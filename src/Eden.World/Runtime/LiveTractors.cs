@@ -93,7 +93,8 @@ internal sealed class LiveTractors(LiveWorld owner, WorldDatabase database)
             bool allowed =
                 tractor.Cycle.TargetOwnerId == tractor.Cycle.PilotId
                 || tractor.Fleets?.Identity(tractor.Cycle.PilotId) is { } sourceFleet
-                    && tractor.Fleets.Identity(tractor.Cycle.TargetOwnerId ?? 0)?.FleetId == sourceFleet.FleetId;
+                    && tractor.Fleets.Identity(tractor.Cycle.TargetOwnerId ?? 0)?.FleetId == sourceFleet.FleetId
+                || owner.Economy.Peek<Eden.Data.World.Loot.WorldWreck>(tractor.Cycle.TargetId)?.Abandoned == true;
             if (!allowed)
             {
                 _cycles.Remove(module);

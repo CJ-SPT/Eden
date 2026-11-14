@@ -25,7 +25,7 @@ using Clock = Eden.Protocol.Tests.Fixtures.TestClock;
 
 namespace Eden.Protocol.Tests.Loot;
 
-public sealed class WreckTests
+public sealed partial class WreckTests
 {
     private static readonly DateTimeOffset s_start = DateTimeOffset.UtcNow;
     private static long Now => s_start.UtcDateTime.ToFileTimeUtc();
@@ -197,7 +197,7 @@ public sealed class WreckTests
         long id = f.Item;
         var wing = f.Db.Store.FindPilot(1000002)!;
         f.Db.Store.SetPosition(wing.ShipId, f.Wreck.Position, f.Wreck.SystemId);
-        Assert.Throws<InvalidDataException>(() => f.Store.Read(wing.PilotId, f.Wreck.Id, Now));
+        Assert.NotEmpty(f.Store.Read(wing.PilotId, f.Wreck.Id, Now).Items);
         Assert.Throws<InvalidDataException>(() => f.Store.Take(wing.PilotId, wing.ShipId, f.Wreck.Id, [id], null, Now));
         Assert.Throws<InvalidDataException>(() => f.Store.Take(f.Pilot.PilotId, wing.ShipId, f.Wreck.Id, [id], null, Now));
         Assert.Throws<InvalidDataException>(() => f.Store.Take(f.Pilot.PilotId, f.Pilot.ShipId, f.Wreck.Id, [id, id], null, Now));

@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 156;
+    internal const int CurrentVersion = 157;
 
     public static void Open(
         WorldDbContext world,
@@ -110,6 +110,8 @@ internal static class WorldMigration
         NpcEnergySchema.Upgrade(world);
         RemoteAssistanceSchema.Upgrade(world);
         Eden.World.Information.InformationSchema.Upgrade(world);
+        JetcanSchema.Upgrade(world);
+        SpaceLootRights.Upgrade(world);
         Eden.World.Information.SalvagePersistence.Upgrade(world, catalog);
         NaniteRepairPersistence.Reconcile(world, catalog, clock);
         ModuleConditionPersistence.Reconcile(world, catalog, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
@@ -165,7 +167,6 @@ internal static class WorldMigration
         Eden.World.Mining.MiningLedgerSchema.Upgrade(world);
         CorporationContactSchema.Upgrade(world);
         Eden.World.Bookmarks.SharedBookmarkSchema.Upgrade(world, catalog);
-        JetcanSchema.Upgrade(world);
         JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Eden.World.Fleets.CommandBurstSchema.Upgrade(world);
         LauncherSchema.Upgrade(world);

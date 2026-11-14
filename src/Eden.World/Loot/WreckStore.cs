@@ -343,45 +343,12 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                     type.Mass ?? 0,
                     (float)(type.Radius ?? 0),
                     !occupied.Contains(w.Id),
-                    type.GroupId
+                    type.GroupId,
+                    Abandoned: w.Abandoned
                 );
             })
             .Concat(Eden.World.Planetary.PlanetaryOrbitStore.Contacts(world, catalog, systemId, now))
             .ToArray();
-    }
-
-    private static (Pilot Pilot, WorldWreck Wreck) Access(
-        WorldDbContext world,
-        CatalogDbContext catalog,
-        long pilotId,
-        long wreckId,
-        long now
-    )
-    {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-        var wreck = world.Set<WorldWreck>().Find(wreckId);
-        if (
-            wreck is null
-            || wreck.ExpiresAt <= now
-            || wreck.OwnerId != pilotId
-            || pilot.ActiveShip.Position is not { } position
-            || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != wreck.SystemId
-        )
-        {
-            throw new InvalidDataException("The wreck is unavailable or you do not have its loot rights.");
-        }
-        var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
-        var type = catalog.RequireItem(wreck.TypeId);
-        if (
-            new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(wreck.X, wreck.Y, wreck.Z))
-                - (hull.Radius ?? 0)
-                - (type.Radius ?? 0)
-            > WreckDefinitions.TransferRange
-        )
-        {
-            throw new InvalidDataException("Approach within 2,500 m of the wreck to transfer its contents.");
-        }
-        return (pilot, wreck);
     }
 
     public WreckInventory Read(long pilotId, long wreckId, long now)
@@ -410,8 +377,8 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
             });
         }
         using WorldDbContext world = new(database.Path);
-        var (_, wreck) = Access(world, catalog, pilotId, wreckId, now);
-        return new(WreckItem(catalog, wreck), PilotInventoryStore.List(world, catalog, pilotId, wreckId));
+        var (_, wreck) = Access(new SqlWorldAction(world), catalog, pilotId, wreckId, now);
+        return new(WreckItem(catalog, wreck), PilotInventoryStore.List(world, catalog, wreck.OwnerId, wreckId));
     }
 
     private static InventoryItem WreckItem(CatalogDbContext catalog, WorldWreck wreck)
@@ -518,20 +485,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
             world.SaveChanges();
             return orbitChanges;
         }
-        if (JetcanRules.IsJetcan(wreckId))
-        {
-            var (owner, can) = JetcanStore.Access(new SqlWorldAction(world), catalog, pilotId, wreckId, now);
-            var taken = SpaceLootTransfer.Take(world, catalog, owner, shipId, wreckId, itemIds, quantity, destinationFlag);
-            world.SaveChanges();
-            if (!world.Set<OwnedItem>().Any(i => i.LocationId == wreckId))
-            {
-                world.Remove(can);
-                world.SaveChanges();
-            }
-            return taken;
-        }
-        var (pilot, _) = Access(world, catalog, pilotId, wreckId, now);
-        var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, wreckId, itemIds, quantity, destinationFlag);
+        var changes = Take(new SqlWorldAction(world), catalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);
         world.SaveChanges();
         return changes;
     }

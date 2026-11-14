@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Loot abandonment and theft](protocol/inventory.md#loot-abandonment-and-theft-november-14-2026) records native public loot,
+safety-gated transfers, suspect timers and persistent wreck/jetcan rights.
+
 [Notepad and shared settings](protocol/social.md#notepad-and-shared-settings--november-14-2026) records nine missing
 calls identified through evejs comparison, persistent private notes and cross-pilot overview/filter/broadcast links.
 
@@ -704,6 +707,8 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 - [Direct player trading](protocol/inventory.md#direct-player-trading)
 - [Cargo jettison, November 13, 2026](protocol/inventory.md#cargo-jettison-november-13-2026)
+- [Loot abandonment and theft, November 14, 2026](protocol/inventory.md#loot-abandonment-and-theft-november-14-2026)
+
 - [Personal Assets window (November 8, 2026)](protocol/inventory.md#personal-assets-window-november-8-2026)
 
 - [Production stack consolidation and repackaging (November 6, 2026)](protocol/inventory.md#production-stack-consolidation-and-repackaging-november-6-2026)

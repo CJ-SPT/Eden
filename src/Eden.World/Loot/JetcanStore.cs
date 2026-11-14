@@ -207,20 +207,12 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
         long pilotId,
         long id,
         long now,
-        bool fleetLoot = false
+        bool allowForeign = false
     )
     {
         var (pilot, system, position) = InSpace(world, catalog, pilotId);
         var can = world.Set<SavedJetcan>().Find(id);
-        if (
-            can is null
-            || can.ExpiresAt <= now
-            || can.SystemId != system
-            || (
-                can.OwnerId != pilotId
-                && (!fleetLoot || LiveWorld.Find(world.WorldPath)?.Fleets?.CanShareLoot(pilotId, can.OwnerId, system) != true)
-            )
-        )
+        if (can is null || can.ExpiresAt <= now || can.SystemId != system || (can.OwnerId != pilotId && !allowForeign))
         {
             throw new InvalidDataException("The cargo container is unavailable or you do not have its loot rights.");
         }
@@ -248,7 +240,7 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
 
     internal static WreckInventory Read(WorldAction world, CatalogDbContext catalog, long pilotId, long id, long now)
     {
-        var (_, can) = Access(world, catalog, pilotId, id, now, fleetLoot: true);
+        var (_, can) = Access(world, catalog, pilotId, id, now, allowForeign: true);
         var type = catalog.RequireItem(JetcanRules.TypeId);
         var item = new InventoryItem(
             can.Id,
@@ -289,7 +281,8 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
             (float)(type.Radius ?? 0),
             false,
             type.GroupId,
-            type.CategoryId
+            type.CategoryId,
+            Abandoned: can.Abandoned
         );
 
     internal static SavedJetcan[] List(WorldAction world, int system) =>
@@ -325,8 +318,16 @@ internal sealed class JetcanStore(WorldDatabase database) : ICargoJettison
         InventoryFlag destinationFlag
     )
     {
-        var (pilot, can) = Access(world, catalog, pilotId, canId, now, fleetLoot: true);
+        var (pilot, can) = Access(world, catalog, pilotId, canId, now, allowForeign: true);
+        bool theft = SpaceLootRights.CheckTake(world, catalog, pilot, can.SystemId, new(can.OwnerId, can.CorporationId, can.Abandoned));
         var changes = SpaceLootTransfer.Take(world, catalog, pilot, shipId, canId, items, quantity, destinationFlag, can.OwnerId);
+        if (theft)
+        {
+            SpaceLootRights.RecordTheft(world, pilot, can.SystemId, now);
+        }
+        // SQL-backed queries must see the moved items before checking whether the can is empty.
+        // This flush remains inside the caller's transaction, together with the theft consequence.
+        world.SaveChanges();
         if (!world.Filter<OwnedItem>(item => item.LocationId == canId).Any())
         {
             world.Remove(can);

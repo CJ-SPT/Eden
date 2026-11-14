@@ -16,7 +16,8 @@ internal sealed partial class ResidentEconomy
         double X,
         double Y,
         double Z,
-        long ExpiresAt
+        long ExpiresAt,
+        bool Abandoned
     );
 
     private sealed record EconomyJettisonCooldown(long PilotId, long ReadyAt);
@@ -27,7 +28,19 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<SavedJetcan, EconomyJetcan>(
                 "WorldJetcan",
                 row => new(row.Id),
-                row => new(row.Id, row.OwnerId, row.ShipId, row.CorporationId, row.SystemId, row.X, row.Y, row.Z, row.ExpiresAt),
+                row =>
+                    new(
+                        row.Id,
+                        row.OwnerId,
+                        row.ShipId,
+                        row.CorporationId,
+                        row.SystemId,
+                        row.X,
+                        row.Y,
+                        row.Z,
+                        row.ExpiresAt,
+                        row.Abandoned
+                    ),
                 row =>
                     new()
                     {
@@ -40,9 +53,10 @@ internal sealed partial class ResidentEconomy
                         Y = row.Y,
                         Z = row.Z,
                         ExpiresAt = row.ExpiresAt,
+                        Abandoned = row.Abandoned,
                     },
                 ProjectJetcans,
-                "Id,OwnerId,ShipId,CorporationId,SystemId,X,Y,Z,ExpiresAt",
+                "Id,OwnerId,ShipId,CorporationId,SystemId,X,Y,Z,ExpiresAt,Abandoned",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -53,7 +67,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(6),
                         reader.GetDouble(7),
                         reader.GetDouble(8),
-                        reader.GetInt64(9)
+                        reader.GetInt64(9),
+                        reader.GetBoolean(10)
                     ),
                 row => new(row.Id),
                 indexes: [new(nameof(SavedJetcan.SystemId), row => row.SystemId), new(nameof(SavedJetcan.OwnerId), row => row.OwnerId)],
@@ -91,12 +106,13 @@ internal sealed partial class ResidentEconomy
             {
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldJetcan(Id,OwnerId,ShipId,CorporationId,SystemId,X,Y,Z,ExpiresAt)
+                    INSERT INTO WorldJetcan(Id,OwnerId,ShipId,CorporationId,SystemId,X,Y,Z,ExpiresAt,Abandoned)
                     SELECT json_extract(value,'$.Id'),json_extract(value,'$.OwnerId'),json_extract(value,'$.ShipId'),
                         json_extract(value,'$.CorporationId'),json_extract(value,'$.SystemId'),json_extract(value,'$.X'),
-                        json_extract(value,'$.Y'),json_extract(value,'$.Z'),json_extract(value,'$.ExpiresAt')
+                        json_extract(value,'$.Y'),json_extract(value,'$.Z'),json_extract(value,'$.ExpiresAt'),
+                        json_extract(value,'$.Abandoned')
                     FROM json_each({JsonSerializer.Serialize(rows)}) WHERE 1
-                    ON CONFLICT(Id) DO NOTHING
+                    ON CONFLICT(Id) DO UPDATE SET Abandoned=excluded.Abandoned
                     """
                 );
             }

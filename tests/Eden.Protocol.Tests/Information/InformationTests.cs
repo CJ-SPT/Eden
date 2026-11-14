@@ -298,4 +298,40 @@ public sealed partial class InformationTests
             Store(f).Begin(f.PilotId, module, DogmaEffect.TractorBeam, wreck, new HashSet<long> { wreck }, f.Clock.Now)
         );
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PublicWrecksCanBeTractoredWithoutChangingOwnership(bool resident)
+    {
+        using Fixture f = Prepare();
+        long module = f.Fit(24348);
+        Space(f);
+        long wreck = Wreck(f, 10000);
+        var owner = f.Db.Store.FindPilot(1000002)!;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<WorldWreck>().Find(wreck)!.OwnerId = owner.PilotId;
+            world.SaveChanges();
+        }
+        using LiveWorld? live = resident ? new(new(f.Db.Path), f.Clock, _ => { }) : null;
+        f.Db.Services.GetRequiredService<ISpaceLootRights>().Abandon(owner.PilotId, [wreck], f.Clock.Now);
+        var activation = Store(f).Begin(f.PilotId, module, DogmaEffect.TractorBeam, wreck, new HashSet<long> { wreck }, f.Clock.Now);
+        long until = f.Clock.Now + TimeSpan.TicksPerSecond * 2;
+        Store(f).AdvanceTractor(activation.Cycle, until);
+        double x = f.Db.Store.FindPilot(1000001)!.Position!.X;
+        if (live is not null)
+        {
+            Assert.Equal(x + 9000, live.Tractors.Position(wreck)!.X, 5);
+        }
+        else
+        {
+            using WorldDbContext saved = new(f.Db.Path);
+            Assert.Equal(x + 9000, saved.Set<WorldWreck>().Find(wreck)!.X, 5);
+        }
+        Store(f).Stop(f.PilotId, module, until);
+        using WorldDbContext final = new(f.Db.Path);
+        Assert.Equal(owner.PilotId, final.Set<WorldWreck>().Find(wreck)!.OwnerId);
+        Assert.True(final.Set<WorldWreck>().Find(wreck)!.Abandoned);
+    }
 }
