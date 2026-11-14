@@ -170,6 +170,7 @@ public sealed class AutoNavigationTests
         {
             Assert.Null(fixture.Reply("CmdStargateJump", [source, exit, home.ShipId]));
             Assert.IsType<PilotCallResult.UnsupportedCall>(fixture.Call("CmdStargateJump", [source, exit, home.ShipId]));
+            flight.GateDeparturePublished();
             fixture.Clock.Seconds += FlightSession.JumpDurationTicks;
             Assert.True(flight.CompleteJump());
             Assert.False(flight.CompleteJump());

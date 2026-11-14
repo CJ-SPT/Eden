@@ -109,7 +109,15 @@ internal sealed class PilotSessionOutput(
                 (diagnostics?.Trace ?? report)($"MotionHull viewer={flight.Pilot.ShipId} hull={flight.Pilot.Flight}");
             }
             bool hasFullState = flight.Updates.Any(update => update.Command is DestinyCommand.SetState);
+            bool hasOwnGateDeparture = flight.Updates.Any(update =>
+                update.Command is DestinyCommand.JumpOut jump && jump.Id == flight.Pilot.ShipId
+            );
             await SendNotificationAsync(new DestinyUpdatesNotification(flight.Updates));
+            if (hasOwnGateDeparture)
+            {
+                // Give SubwayService time to prepare the destination after sending JumpOut.
+                flight.GateDeparturePublished();
+            }
             if (hasFullState)
             {
                 // Source scene clearing runs asynchronously in build 3662168.

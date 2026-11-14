@@ -99,6 +99,10 @@ internal sealed partial class FlightSession(
     internal int CurrentStamp => Stamp;
 
     public bool Translocating => _travel.Translocating;
+    private bool SourceSceneLocked =>
+        _travel.Gate is { Destination.Wormhole: null }
+        || _travel.Translocation is { } transfer && (!transfer.AwaitingSourceState || transfer.PublishedSourceStamp is not null);
+
     private DockedPilot _pilot = pilot;
     public DockedPilot Pilot
     {
@@ -697,7 +701,7 @@ internal sealed partial class FlightSession(
         PublishMotion();
         var contact = CreateContact();
         space.Publish(contact);
-        Scene.RefreshPeers(SceneContext, contact);
+        Scene.RefreshPeers(SceneContext, contact, preserveSourceState: SourceSceneLocked);
     }
 
     internal IReadOnlyList<ShipContact> VisiblePeers => Scene.VisiblePeers;
@@ -855,6 +859,8 @@ internal sealed partial class FlightSession(
 
     public void SourceStatePublished() => _travel.SourceStatePublished(Stamp);
 
+    internal void GateDeparturePublished() => _travel.GateDeparturePublished(clock.GetTimestamp());
+
     public void StartPendingTranslocation()
     {
         using (space.UseSystem(Pilot.SystemId))
@@ -899,7 +905,7 @@ internal sealed partial class FlightSession(
     {
         // A new source SetState would run the client's asynchronous DoBallClear
         // and finalize the active jump camera before destination arrival.
-        if (_travel.Translocation is { } transfer && (!transfer.AwaitingSourceState || transfer.PublishedSourceStamp is not null))
+        if (SourceSceneLocked)
         {
             return;
         }
@@ -1030,7 +1036,7 @@ internal sealed partial class FlightSession(
 
     public bool CompleteJump()
     {
-        if (_travel.GateDue(Stamp) is not { } jump)
+        if (_travel.GateDue(Stamp, clock) is not { } jump)
         {
             return false;
         }

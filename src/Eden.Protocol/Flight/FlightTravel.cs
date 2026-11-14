@@ -14,7 +14,7 @@ internal sealed record GateDestination(
     IWormholeTravel? Wormhole = null
 );
 
-internal sealed record GateTransit(GateDestination Destination, int TransferStamp);
+internal sealed record GateTransit(GateDestination Destination, int TransferStamp, long? DepartureSentAt = null);
 
 internal sealed record TranslocationTransit(
     IPilotTranslocation Travel,
@@ -79,7 +79,25 @@ internal sealed class FlightTravel
         Gate = new(destination, stamp + JumpDurationTicks);
     }
 
-    internal GateDestination? GateDue(int stamp) => Gate is { } gate && stamp >= gate.TransferStamp ? gate.Destination : null;
+    internal void GateDeparturePublished(long timestamp)
+    {
+        if (Gate is { Destination.Wormhole: null, DepartureSentAt: null } gate)
+        {
+            Gate = gate with { DepartureSentAt = timestamp };
+        }
+    }
+
+    internal GateDestination? GateDue(int stamp, TimeProvider clock)
+    {
+        if (Gate is not { } gate)
+        {
+            return null;
+        }
+        bool due = gate.Destination.Wormhole is not null
+            ? stamp >= gate.TransferStamp
+            : gate.DepartureSentAt is long sent && clock.GetElapsedTime(sent) >= TimeSpan.FromSeconds(JumpDurationTicks);
+        return due ? gate.Destination : null;
+    }
 
     internal FlightJumpDecision PrepareGate(
         FlightTravelContext context,

@@ -1,8 +1,10 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Mining;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Skills;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Flight;
@@ -121,6 +123,114 @@ public sealed class GateActivityProtocolTests
     }
 
     [Fact]
+    public async Task GateHandoffWaitsForDepartureOutputAndKeepsTheSourceSceneDuringRetries()
+    {
+        const long accountId = 1000001;
+        const long clientId = 42;
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock);
+        var gate = world.Objects.Single(body => body.DestinationGateId is not null);
+        var systems = world.Services.GetRequiredService<ISystemObjects>();
+        var pilot = world.Store.FindPilot(accountId)!;
+        var destination = systems.Load(gate.DestinationSystemId!.Value);
+        var exit = destination.Single(body => body.Id == gate.DestinationGateId);
+        var resident = world.Store.FindPilot(1000002)!;
+        world.Store.SetPosition(resident.ShipId, exit.Position + new SpacePosition(exit.Radius + 1_000, 0, 0), gate.DestinationSystemId);
+        world.Store.SetPosition(pilot.ShipId, gate.Position + new SpacePosition(gate.Radius + pilot.Flight.ShipRadius + 100, 0, 0));
+        pilot = world.Store.FindPilot(accountId)!;
+        SharedSpace space = new();
+        using FlightSession observer = new(world.Store, world.Store.FindPilot(1000002)!, clock, space, destination);
+        observer.Snapshot();
+        observer.Updates.Clear();
+        using PilotCallContext context = new(
+            accountId,
+            pilot.Account,
+            [pilot],
+            selected => new(world.Store, selected, clock, space, world.Objects),
+            clientId,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        var flight = context.Flight;
+        var sourcePeer = new ShipContact(
+            PilotContact.From(pilot) with
+            {
+                ShipId = 2000000000001,
+                Position = pilot.Position! + new SpacePosition(0, 10_000, 0),
+            },
+            SpacePosition.Zero,
+            null,
+            0,
+            null
+        );
+        space.Publish(sourcePeer);
+        flight.Snapshot();
+        flight.Updates.Clear();
+        clock.Milliseconds = 999;
+        Assert.Same(PilotCallResult.None, flight.StartJump(new FlightCommand.Jump(gate.Id, exit.Id, pilot.ShipId), systems));
+
+        flight.Snapshot();
+        Assert.Single(flight.Updates, update => update.Command is DestinyCommand.JumpOut);
+        space.Publish(
+            sourcePeer with
+            {
+                Warp = new(sourcePeer.Pilot.Position!, sourcePeer.Pilot.Position! + new SpacePosition(1_000_000, 0, 0), 1, pilot.Flight, 0),
+            }
+        );
+        flight.RefreshPeers();
+        Assert.DoesNotContain(flight.Updates, update => update.Command is DestinyCommand.SetState);
+        Assert.NotNull(Assert.Single(flight.VisiblePeers).Warp);
+
+        List<BlueInstance> packets = [];
+        TaskCompletionSource sent = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        PilotSessionOutput output = new(
+            context,
+            accountId,
+            clientId,
+            packet =>
+            {
+                packets.Add(Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(packet))));
+                return packets.Count == 1 ? sent.Task : Task.CompletedTask;
+            },
+            _ => { }
+        );
+        var sending = output.FlushFlightUpdatesAsync();
+        clock.Milliseconds = 5250;
+        Assert.False(flight.CompleteJump());
+        Assert.Equal(pilot.SystemId, world.Store.FindPilot(accountId)!.SystemId);
+        sent.SetResult();
+        await sending;
+
+        clock.Milliseconds = 8249;
+        Assert.False(flight.CompleteJump());
+        Assert.Empty(flight.Updates);
+        clock.Milliseconds++;
+        using var scope = world.Services.CreateScope();
+        PilotSessionTick tick = new(
+            clock,
+            scope.ServiceProvider.GetRequiredService<PilotUpdateCoordinator>(),
+            scope.ServiceProvider.GetRequiredService<SkillHandler>(),
+            scope.ServiceProvider.GetRequiredService<IAsteroidField>()
+        );
+        await tick.AdvanceAsync(context, output, _ => { }, accountId, clientId);
+        Assert.False(flight.CompleteJump());
+        Assert.Equal(gate.DestinationSystemId, world.Store.FindPilot(accountId)!.SystemId);
+        Assert.EndsWith(".Notification", packets[0].Name);
+        var change = Assert.Single(packets, packet => packet.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal));
+        Assert.True(packets.IndexOf(change) > 0);
+        var body = BlueRead.Tuple(BlueRead.Tuple(change.State, 14)[4], 3);
+        var delta = BlueRead.Fields(BlueRead.Tuple(body[1], 2)[1]);
+        Assert.Equal(new object?[] { (long)pilot.SystemId, (long)gate.DestinationSystemId.Value }, delta["locationid"]);
+        flight.Snapshot();
+        Assert.IsType<DestinyCommand.SetState>(flight.Updates[0].Command);
+        Assert.Equal(resident.ShipId, Assert.Single(flight.VisiblePeers).Pilot.ShipId);
+        Assert.Single(flight.Updates, update => update.Command is DestinyCommand.SpecialEffect { Graphic: "effects.JumpIn" });
+        observer.RefreshPeers();
+        Assert.Equal(pilot.ShipId, Assert.Single(observer.VisiblePeers).Pilot.ShipId);
+        Assert.Single(observer.Updates, update => update.Command is DestinyCommand.AddBalls);
+    }
+
+    [Fact]
     public void HumanGateTravelActivatesEachActualGateOnceAndKeepsShipEffects()
     {
         using TestWorld world = new();
@@ -141,6 +251,7 @@ public sealed class GateActivityProtocolTests
         var departure = Assert.Single(session.Updates, update => update.Command is DestinyCommand.GateActivity);
         Assert.Equal(new DestinyCommand.GateActivity(gate.Id, false), departure.Command);
         Assert.Single(session.Updates, update => update.Command is DestinyCommand.JumpOut);
+        session.GateDeparturePublished();
         clock.Seconds = 10;
         Assert.True(session.CompleteJump());
         session.Updates.Clear();

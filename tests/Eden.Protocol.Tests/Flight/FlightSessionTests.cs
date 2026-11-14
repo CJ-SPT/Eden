@@ -474,6 +474,7 @@ public sealed class FlightSessionTests
             EffectArguments(session).Single()
         );
         Assert.Same(PilotCallResult.Unsupported, session.StartJump(args, systems));
+        session.GateDeparturePublished();
         Assert.False(session.CompleteJump());
         Assert.Equal(0, TaskTrackingTestData.Count(db, TaskEvents.Jumped));
         clock.Seconds += 2;
@@ -491,6 +492,7 @@ public sealed class FlightSessionTests
         clock.Seconds += 90;
         session.Checkpoint();
         Assert.Same(PilotCallResult.None, session.StartJump([args[1], args[0], args[2]], systems));
+        session.GateDeparturePublished();
         clock.Seconds += 10;
         Assert.True(session.CompleteJump());
         Assert.Equal(pilot.SystemId, session.Pilot.SystemId);

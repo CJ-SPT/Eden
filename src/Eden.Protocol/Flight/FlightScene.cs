@@ -469,12 +469,13 @@ internal sealed class FlightScene(
     internal void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp) =>
         FlightEffects.CorrectPosition(send, id, position, velocity, stamp);
 
-    internal void RefreshPeers(FlightSceneContext context, ShipContact contact)
+    internal void RefreshPeers(FlightSceneContext context, ShipContact contact, bool preserveSourceState = false)
     {
         var current = space.Peers(context.Pilot);
         var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
         if (
-            current.Any(ship =>
+            !preserveSourceState
+            && current.Any(ship =>
                 ship.Warp is not null
                 && previousById.TryGetValue(ship.Pilot.ShipId, out var old)
                 && old.Warp != ship.Warp

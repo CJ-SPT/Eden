@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Stargate handoff timing, November 14, 2026](#stargate-handoff-timing-november-14-2026)
 - [Shared bookmark folders and access lists, November 11, 2026](#shared-bookmark-folders-and-access-lists--november-11-2026)
 
 - [Dynamic and scan-result bookmarks, November 11, 2026](#dynamic-and-scan-result-bookmarks--november-11-2026)
@@ -42,6 +43,39 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Stargate handoff timing, November 14, 2026
+
+Death Scout's client reported an intermittent hang after the Jachanu to Kihtaled autopilot leg. The game log recorded the
+jump at 12:51:47 a.m. ET and the waypoint completion two seconds later. The 12:53 a.m. server checkpoint and the subsequent
+character selection both placed the same ship in Kihtaled. Another pilot was in Kihtaled outside the arrival grid. The
+available logs confirm the location change and lack a client exception or per-packet trace for the hanging transition.
+
+In build 3662168, `SubwayService.StartJump` loads the destination scene before assigning `spaceSubwayEffect`.
+`OnSessionChanged` handles `locationid` only while `InJump()` is true, so an early session change can miss the handoff.
+Eden's old deadline used the whole-second stamp at call dispatch, which gave the client less time when the command arrived
+near a tick boundary or output was delayed. The server now starts the three-second monotonic interval when it finishes
+sending the pilot's `JumpOut`. An observer's `JumpOut` does not start the interval. During a pending gate jump, explicit
+state refreshes and peer warp updates preserve the source ballpark. Destination bind still sends the destination `SetState`
+and `JumpIn` in order.
+
+The client reference is `parklife/subwaySvc.pyj` in the verified build-3662168 archive with SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Reviewed the gate handoff in evejs `261108.1`,
+`server/src/space/transitions.js` with SHA-256 `89AE36918B01F9A2AC4C678D9F0354B9CF58AC5D5C4068715052742758824769`.
+The gameplay and movement references are [EVE University stargates](https://wiki.eveuniversity.org/Stargates) and
+[Carbon Destiny Ballpark.cpp, revision 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp).
+
+**Automated validation.** The focused regression reproduces a source `SetState` during departure on the previous code.
+It holds the send open past the old deadline, checks the new deadline at the millisecond boundary, and confirms the
+session delta, saved location, destination snapshot, and visibility in both directions with a pilot already on the arrival grid.
+The focused run passed 142 tests in 117 seconds using `GateActivityProtocolTests`, `FlightSessionTests`, `AutoNavigationTests`,
+`WormholeTravelTests`, `TranslocationTests`, `PilotServicesTests`, and `PilotBindingsTests`. The solution built without warnings
+or errors in seven seconds. All eight catalog and nine formatting policy tests passed. Formatting verification passed in 33 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After deployment, repeat the autopilot route through the final Jachanu to Kihtaled gate
+with a second client in Kihtaled and check that the tunnel clears and flight controls return.
 
 ## Shared bookmark folders and access lists — November 11, 2026
 
