@@ -40,6 +40,8 @@ public sealed record CorporationMember(
 
 public sealed record CorporationEmployment(int CorporationId, long StartedAt);
 
+public sealed record CorporationMemberName(long PilotId, string Name);
+
 public sealed record CorporationCreation(PlayerCorporation Corporation, long BalanceCents);
 
 public sealed record CorporationPayment(long Id, long PilotId, int CorporationId, long Time, long BalanceCents);
@@ -58,6 +60,7 @@ public interface IPlayerCorporations
     PlayerCorporation? Read(int corporationId);
     CorporationCreation Create(long pilotId, CorporationDetails details);
     IReadOnlyList<CorporationMember> Members(long viewerId);
+    IReadOnlyList<CorporationMemberName> MemberNames(long viewerId);
     CorporationIdentity Identity(long pilotId);
     IReadOnlyList<CorporationEmployment> Employment(long pilotId);
     IReadOnlyList<string> SuggestTickers(string name);

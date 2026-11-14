@@ -106,6 +106,23 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         );
     }
 
+    public IReadOnlyList<CorporationMemberName> MemberNames(long viewerId) =>
+        WorldActionScope.Inspect<IReadOnlyList<CorporationMemberName>>(
+            database,
+            world =>
+            {
+                int corporation =
+                    world.Pilots.Where(p => p.Id == viewerId).Select(p => (int?)p.CorporationId).SingleOrDefault()
+                    ?? throw new InvalidDataException("Unknown pilot.");
+                return world
+                    .Pilots.Where(p => p.CorporationId == corporation)
+                    .Select(p => new CorporationMemberName(p.Id, p.Name))
+                    .OrderBy(p => p.PilotId)
+                    .ToArray();
+            },
+            consistentFileRead: true
+        );
+
     public IReadOnlyList<CorporationMember> Members(long viewerId)
     {
         return WorldActionScope.Inspect<IReadOnlyList<CorporationMember>>(

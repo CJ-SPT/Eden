@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Narrow corporation owner names](protocol/performance.md#narrow-corporation-owner-names-november-14-2026)
+records the member-name projection and unchanged native reply.
+
 [Direct player trading](protocol/inventory.md#direct-player-trading) records the native trade window and resident settlement.
 
 [Resident mission sites and research agents](protocol/agents.md#resident-mission-sites-and-research-agents)

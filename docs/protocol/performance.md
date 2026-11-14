@@ -6,6 +6,39 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Narrow corporation owner names, November 14, 2026
+
+The Docker startup sample on `a297bd93` recorded `corpRegistry.GetEveOwners` at 263–323 ms,
+with 261–318 ms in its handler. It used the full member loader, including employment and
+role evaluation, although the wire reply needs only member IDs and names. The replacement
+projects a named identity record directly from resident snapshots, then sorts those small
+records. File-backed worlds use the same projection in a consistent read transaction.
+The wire schema, viewer corporation, ordering and invalid-argument behavior are unchanged.
+
+Build 3662168's `bco_members` disassembly calls `GetEveOwners()` without arguments and reads
+`ownerID` into its member list. The local EveJS `corpRegistryRuntime.js` comparison
+(SHA-256 `41D691387FF45DCE3CF4680DA40291557B868F0B3F589234D0EB244B77C4E35C`)
+also derives owner records from corporation membership; its older reply layout is not adopted.
+[EVE University's member guide](https://wiki.eveuniversity.org/Managing_corporation_members)
+describes the corporation-wide member list.
+
+**Automated validation.** The exact
+`CorporationOwnerNamesTests.OwnerReplyProjectsNamesWithoutMaterializingMembersOrReadingSql`
+filter passed (11.02 s build, 7.93 s runner). The final affected selection passed 54 cases
+in 35 s, selecting `CorporationOwnerNamesTests`, `PlayerCorporationTests`,
+`CorporationMembershipTests`, `CorporationAdministrationTests`, `CorporationSelectionTests`
+and `CorporationRoleTests` through `FullyQualifiedName~` joined with `|`.
+Coverage includes byte-identical replies, zero resident materializations/SQL/connections/fits,
+same-tick join/leave and rename visibility, rollback and reopened saves. A 130-member fixture
+recorded five full reads at 12.10 ms and five narrow reads including assertions at 3.04 ms;
+these are diagnostic Debug timings, not production latency or a controlled throughput claim.
+Tool/solution restore, solution build (1.17 s, no warnings/errors), both Python policy suites
+(8 and 9 cases), formatting verification and `git diff --check` passed. No full .NET suite ran.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Gameplay SQL migration and replay
 
 Paid heat burnout commits module damage, offline state, activity cancellation, and

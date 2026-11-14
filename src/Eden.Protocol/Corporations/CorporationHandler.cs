@@ -125,7 +125,7 @@ internal sealed partial class CorporationHandler(
                 case ("GetEveOwners", []):
                     return new CompatibilityRowset(
                         ["ownerID", "ownerName", "typeID"],
-                        corporations.Members(context.Pilot.PilotId).Select(m => new EveOwnerRow(m.PilotId, m.Name)).ToArray()
+                        corporations.MemberNames(context.Pilot.PilotId).Select(m => new EveOwnerRow(m.PilotId, m.Name)).ToArray()
                     );
                 case ("GetMember", [long pilot]):
                     var member =
