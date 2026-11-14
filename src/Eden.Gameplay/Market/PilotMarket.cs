@@ -109,6 +109,9 @@ public enum WalletEntryType
     // Build 3662168 appConst.refAgentMissionReward.
     AgentMissionReward = 33,
 
+    // Build 3662168 appConst.refAgentMissionTimeBonusReward.
+    AgentMissionTimeBonusReward = 34,
+
     // Build 3662168 appConst.refPaymentToLPStore.
     LoyaltyStore = 26,
 

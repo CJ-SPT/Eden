@@ -100,6 +100,8 @@ internal sealed partial class PilotMissionStore
             Y = station.Y + MissionRules.PlacementOffset,
             Z = station.Z - offset,
             IskCents = reward.IskCents,
+            BonusIskCents = MissionBonusRules.Quote(reward.IskCents),
+            BonusWindowTicks = MissionBonusRules.Window.Ticks,
             LoyaltyPoints = reward.LoyaltyPoints,
             CorporationFraction = reward.CorporationFraction,
             FactionFraction = reward.FactionFraction,
@@ -134,11 +136,13 @@ internal sealed partial class PilotMissionStore
     {
         int count = sharers.Count + 1;
         long iskShare = mission.IskCents / count;
+        long bonus = Bonus(mission)?.Payable(now) ?? 0;
+        long bonusShare = bonus / count;
         long lpShare = mission.LoyaltyPoints / count;
         double standingShare = mission.CorporationFraction / count;
         foreach (long recipient in sharers)
         {
-            Credit(world, recipient, agent, mission, now, iskShare, lpShare);
+            Credit(world, recipient, agent, mission, now, iskShare, bonusShare, lpShare);
             List<MissionStandingChange> gains = [];
             Gain(world, recipient, agent.CorporationId, standingShare, now, agent.CorporationId, mission.SystemId, gains);
             foreach (var gain in gains)
@@ -153,6 +157,7 @@ internal sealed partial class PilotMissionStore
             mission,
             now,
             mission.IskCents - iskShare * sharers.Count,
+            bonus - bonusShare * sharers.Count,
             mission.LoyaltyPoints - lpShare * sharers.Count
         );
         Gain(world, pilot.Id, agent.Id, mission.CorporationFraction, now, agent.CorporationId, mission.SystemId, standings);
@@ -171,6 +176,7 @@ internal sealed partial class PilotMissionStore
         SavedMission mission,
         long now,
         long isk,
+        long bonus,
         long points
     )
     {
@@ -188,6 +194,22 @@ internal sealed partial class PilotMissionStore
                 Time = now,
             }
         );
+        if (bonus > 0)
+        {
+            wallet.Cents = checked(wallet.Cents + bonus);
+            world.Add(
+                new SavedMarketPayment
+                {
+                    PilotId = pilotId,
+                    CounterpartyId = agent.Id,
+                    OrderId = mission.Id,
+                    Kind = WalletEntryType.AgentMissionTimeBonusReward,
+                    AmountCents = bonus,
+                    BalanceCents = wallet.Cents,
+                    Time = now,
+                }
+            );
+        }
         var lp =
             world.Set<SavedLoyaltyBalance>().Find(pilotId, agent.CorporationId)
             ?? world.Add(new SavedLoyaltyBalance { PilotId = pilotId, IssuerCorporationId = agent.CorporationId }).Entity;

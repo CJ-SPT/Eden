@@ -111,6 +111,7 @@ public sealed record MissionOffer(
     public long PilotId { get; init; }
     public MissionRetrieval? Retrieval { get; init; }
     public bool CombatComplete { get; init; }
+    public MissionBonus? Bonus { get; init; }
 }
 
 public sealed record MissionStandingChange(long SourceId, double Before, double After);

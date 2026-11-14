@@ -23,7 +23,8 @@ internal sealed partial class MissionHandler(
     IStationDirectory stations,
     IPilotInteractionHistory history,
     LoyaltyWalletHandler loyalty,
-    CooperativeFleetHandler fleets
+    CooperativeFleetHandler fleets,
+    TimeProvider clock
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -179,7 +180,7 @@ internal sealed partial class MissionHandler(
             }
             if (method == "GetMissionObjectiveInfo" && args.Length == 0)
             {
-                return offer is null ? BlueEmpty.Dictionary : new MissionObjectives(offer);
+                return offer is null ? BlueEmpty.Dictionary : new MissionObjectives(offer, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
             if (method == "GetMissionKeywords" && args is [long content] && offer?.MissionId == content)
             {
@@ -194,7 +195,7 @@ internal sealed partial class MissionHandler(
                 && (contentId is null || Equals(contentId, (long?)offer?.MissionId))
             )
             {
-                return offer is null ? PilotCallResult.None : new MissionJournalInfo(offer);
+                return offer is null ? PilotCallResult.None : new MissionJournalInfo(offer, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
             if (method == "GetStandingGainsForMission" && args is [long missionId] && offer?.MissionId == missionId)
             {

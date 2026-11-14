@@ -23,6 +23,8 @@ public sealed class SavedMission
     public int Wave { get; set; } = -1;
     public bool ObjectiveComplete { get; set; }
     public long IskCents { get; set; }
+    public long BonusIskCents { get; set; }
+    public long BonusWindowTicks { get; set; }
     public long LoyaltyPoints { get; set; }
     public double CorporationFraction { get; set; }
     public double FactionFraction { get; set; }

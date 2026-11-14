@@ -2,6 +2,57 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Timed mission bonuses — November 14, 2026
+
+The evejs comparison found timed rewards missing from Eden's otherwise shared mission settlement path.
+New combat, delivery, mining and delivery-storyline offers now quote an additional **50% of their base ISK**
+for turn-in within **six hours of acceptance**. This is explicit Eden policy, not a recovered CCP reward table.
+Existing base ISK, LP and standing bands are unchanged. Negotiation and world reward scaling already applied to
+base ISK also affect the bonus quote. The amount and interval are saved when the offer is created; waiting to accept,
+reconnecting or restarting cannot reroll the quote. Completion at or after the exact deadline pays only the base reward.
+Missing the bonus does not fail the mission or change its seven-day completion deadline.
+
+The resident world owns the quote, acceptance timestamp, inventory consumption, wallet entries and mission closure.
+The existing immutable checkpoint captures the bonus fields with the mission generation. Schema 158 adds zero-default
+bonus columns; existing offers and accepted missions retain their old quotes without retroactive bonuses.
+Fleet turn-in splits base and bonus independently among the same recipients, with each integer remainder going to the owner.
+A separate native wallet entry records the bonus. Duplicate turn-in cannot pay again, and failed settlement rolls back
+both payments and cargo consumption together.
+
+The reference is local evejs **261108.1**, `server/src/services/agent/agentMissionRuntime.js`, SHA-256
+`f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`; the release has no Git metadata.
+Its timer and reward presentation identified the gap; no JavaScript or authored reward tables were imported.
+[EVE University mission timers](https://wiki.eveuniversity.org/Missions#Bonus_timer) describes an acceptance-based bonus
+window of ten minutes to six hours. Eden uses the upper bound for this initial policy.
+Static inspection of build **3662168** `eve/client/script/ui/station/agents/agentDialogueUtil.pyj` confirmed
+`bonusRewards` entries contain `(remainingTicks, typeID, quantity, extra, originalIntervalMinutes)`.
+The original `code.ccp` SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+`appConst.typeCredits` is **29**, and `refAgentMissionTimeBonusReward` is **34**. Bound objective and journal reads
+calculate remaining ticks from the current clock, retaining expired entries so the client can display its expired-bonus text.
+[Carbon Blue Marshal.cpp, af0d65b](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+was consulted for the existing list/tuple representation; the codec is unchanged.
+
+**Automated validation.** Tool and solution restores passed. The solution built with zero warnings/errors in **6.14 seconds**.
+The final focused run passed **625/625 tests in 484.06 seconds**, using
+`FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~WorldTuningTests|FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting`.
+The catalog and formatting policy suites passed **8/8** and **9/9** cases; policy plus formatting validation took **28.04 seconds**.
+CSharpier checked **2,128 files**; the 140-column check and `git diff --check` passed. No full .NET suite was requested or run.
+
+Development began with the exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionBonusTests.ResidentBonusSurvivesCheckpointAndSettlesAtTheExactDeadline`.
+Its three boundary cases passed in **18.13 seconds** after correcting the test's Credits type expectation from 1 to 29.
+A subsequent combined run passed 34/35 cases: the overflow fixture incorrectly assumed a wallet row already existed.
+Creating that row fixed the fixture; its exact method passed in **7.35 seconds**, and the final run above includes the correction.
+A missing test namespace import was also corrected during development. Coverage includes offered/native countdowns,
+checkpoint/reopen, one tick before/exactly at/after expiry, stale and wrong-station rejection, overflow rollback,
+idempotent migration, and fleet confirmation delayed across expiry. New persistence and settlement cases run only with
+the resident world active; SQL is used for migration and checkpoint inspection.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Accept a new mission and check the native bonus countdown, then turn it in before the
+bonus deadline and inspect the separate wallet journal payment.
+
 ## Warping out of The Blockade
 
 On November 13, 2026, build 3662168 on server revision `b56bbca3` disconnected the pilot twice at 09:47:38 and

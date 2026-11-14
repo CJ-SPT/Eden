@@ -117,5 +117,14 @@ internal static class MissionSchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldMissionMember ADD COLUMN LootQuantity INTEGER NOT NULL DEFAULT 0");
         }
+        var missionColumns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldMission')").ToHashSet();
+        if (!missionColumns.Contains("BonusIskCents"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldMission ADD COLUMN BonusIskCents INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!missionColumns.Contains("BonusWindowTicks"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldMission ADD COLUMN BonusWindowTicks INTEGER NOT NULL DEFAULT 0");
+        }
     }
 }

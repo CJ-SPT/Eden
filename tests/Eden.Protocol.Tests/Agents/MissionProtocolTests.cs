@@ -3,6 +3,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Fleets;
+using Eden.Gameplay.Market;
 using Eden.Protocol.Agents;
 using Eden.Protocol.Characters;
 using Eden.Protocol.PilotSessions;
@@ -184,7 +185,7 @@ public sealed class MissionProtocolTests
     {
         using MissionFixture f = new(division: MissionRules.SecurityDivision);
         var offer = f.Request() with { ObjectiveComplete = completed };
-        var objectives = BlueRead.Fields(MissionFixture.Reply(new MissionObjectives(offer)));
+        var objectives = BlueRead.Fields(MissionFixture.Reply(new MissionObjectives(offer, f.Clock.Now)));
         var dungeon = BlueRead.Fields(Assert.Single(Assert.IsType<List<object?>>(objectives["dungeons"])));
         // The native renderer branches on key presence, then uses restrictions as
         // a list index and treats completionStatus=0 as a failed, struck-out site.
@@ -351,8 +352,10 @@ public sealed class MissionProtocolTests
         Assert.Equal(notifications, f.Context.Notifications.Count);
     }
 
-    [Fact]
-    public async Task FleetTurnInSplitsResidentRewardsOnceAndPersistsBothShares()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FleetTurnInSplitsResidentRewardsOnceAndPersistsBothShares(bool expireDuringPrompt)
     {
         using MissionFixture f = new(live: true);
         var offer = f.Accept(f.Request());
@@ -379,17 +382,24 @@ public sealed class MissionProtocolTests
         Assert.IsType<PilotCallResult.Success>(cancelled.Dialog.Complete(new object?[] { false, null }));
         Assert.Equal(MissionState.Accepted, f.Missions.Current(owner.PilotId, offer.Agent.Id)!.State);
         var prompt = Assert.IsType<PilotCallResult.ClientCall>(f.Call(service, "DoAction", [token]));
+        if (expireDuringPrompt)
+        {
+            f.Clock.AdvanceWallTime(MissionBonusRules.Window);
+        }
         object?[] answer = [true, "radioboxOption1Selected"];
         Assert.IsType<PilotCallResult.Success>(prompt.Dialog.Complete(answer));
         Assert.IsType<PilotCallResult.Failure>(prompt.Dialog.Complete(answer));
-        Assert.Equal(offer.Rewards.IskCents / 2, live.WalletBalance(member.PilotId));
-        Assert.Equal(offer.Rewards.IskCents - offer.Rewards.IskCents / 2, live.WalletBalance(owner.PilotId));
+        long bonus = expireDuringPrompt ? 0 : offer.Bonus!.IskCents;
+        long total = offer.Rewards.IskCents + bonus;
+        Assert.Equal(total / 2, live.WalletBalance(member.PilotId));
+        Assert.Equal(total - total / 2, live.WalletBalance(owner.PilotId));
         await live.FlushAsync();
         f.StopResident();
         using WorldDbContext saved = new(f.Db.Path);
         var payments = saved.Set<SavedMarketPayment>().Where(payment => payment.OrderId == offer.Id).ToArray();
-        Assert.Equal(2, payments.Length);
-        Assert.Equal(offer.Rewards.IskCents, payments.Sum(payment => payment.AmountCents));
+        Assert.Equal(expireDuringPrompt ? 2 : 4, payments.Length);
+        Assert.Equal(total, payments.Sum(payment => payment.AmountCents));
+        Assert.Equal(bonus, payments.Where(payment => payment.Kind == WalletEntryType.AgentMissionTimeBonusReward).Sum(p => p.AmountCents));
         Assert.Equal(
             offer.Rewards.LoyaltyPoints,
             saved

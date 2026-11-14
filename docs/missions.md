@@ -4,6 +4,10 @@
 
 The build-3662168 pool contains **334 definitions: 50 combat encounters, 177 ordinary deliveries, 84 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,558** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
 
+New offers include a timed ISK bonus: an additional **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
+The base reward remains available after that window. Existing saved offers keep their original rewards.
+See [timed bonus rules and validation](protocol/agents.md#timed-mission-bonuses--november-14-2026).
+
 ## Mining content
 
 | Level | Admitted definitions |
