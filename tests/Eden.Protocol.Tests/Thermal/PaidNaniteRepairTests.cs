@@ -46,7 +46,13 @@ public sealed partial class PaidNaniteRepairTests
         internal long Now => Fit.Clock.Now;
         internal IPilotNaniteRepair Repairs => Fit.Db.Services.GetRequiredService<IPilotNaniteRepair>();
 
-        internal Fixture(bool live = false, int paste = 50, bool second = false, int type = ShieldBooster)
+        internal Fixture(
+            bool live = false,
+            int paste = 50,
+            bool second = false,
+            int type = ShieldBooster,
+            Action<SqliteConnection, string>? persist = null
+        )
         {
             PassiveCatalogFixture.LoadOverload(Fit.CatalogPath);
             Pilot = Fit.PilotId;
@@ -59,7 +65,7 @@ public sealed partial class PaidNaniteRepairTests
                 Fit.Grant(NaniteRepairRules.PasteType, paste, cargo: true);
             }
             Fit.Db.Store.SetPosition(Ship, SpacePosition.Zero);
-            Live = live ? new(new(Fit.Db.Path), Fit.Clock, _ => { }) : null;
+            Live = live ? new(new(Fit.Db.Path), Fit.Clock, _ => { }, persist) : null;
         }
 
         internal void Damage(long module, double damage)
@@ -137,7 +143,7 @@ public sealed partial class PaidNaniteRepairTests
     [Fact]
     public void FailedPasteReturnRollsBackProgressAndCanRetryWithoutDuplicatingMaterial()
     {
-        using Fixture f = new(live: true, paste: 200);
+        using Fixture f = new(live: false, paste: 200);
         SetRepairBasePrice(f, 2600000);
         var schedule = f.Start();
         using (WorldDbContext world = new(f.Fit.Db.Path))
@@ -164,6 +170,43 @@ public sealed partial class PaidNaniteRepairTests
         Assert.Equal(175, f.Paste());
         Assert.Equal(15, f.Repairs.Stop(f.Pilot, f.Ship, schedule.Key, f.Now)!.Damage, 8);
         Assert.Equal(175, f.Paste());
+    }
+
+    [Fact]
+    public async Task FailedResidentCheckpointRetainsTheCommittedPasteRefundForRetry()
+    {
+        bool reject = false;
+        using Fixture f = new(
+            live: true,
+            paste: 200,
+            persist: (source, path) =>
+            {
+                if (reject)
+                {
+                    throw new IOException("rejected paste checkpoint");
+                }
+                LiveWorld.PersistSnapshot(source, path);
+            }
+        );
+        SetRepairBasePrice(f, 2600000);
+        var schedule = f.Start();
+        await f.Live!.FlushAsync();
+        f.At(schedule.Key.StartedAt + TimeSpan.TicksPerMinute / 2);
+        Assert.Equal(15, f.Repairs.Stop(f.Pilot, f.Ship, schedule.Key, f.Now)!.Damage, 8);
+        reject = true;
+        try
+        {
+            await Assert.ThrowsAsync<IOException>(f.Live.FlushAsync);
+            Assert.Empty(f.Repairs.Read(f.Pilot, f.Ship, f.Now));
+        }
+        finally
+        {
+            reject = false;
+        }
+        await f.Live.FlushAsync();
+        f.Live.Dispose();
+        Assert.Equal(175, f.Paste());
+        Assert.Equal(15, f.DamageLeft(f.Module), 8);
     }
 
     [Fact]

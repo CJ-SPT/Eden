@@ -52,7 +52,7 @@ public sealed class RepairHeatTests
         internal long Second { get; }
         internal int Type { get; }
         internal int Group { get; }
-        internal LiveWorld Live { get; }
+        internal LiveWorld? Live { get; }
         internal RepairEvents Events { get; } = new();
         internal long Now => Fit.Clock.Now;
         internal PilotLocalRepairStore Local => new(new(Fit.Db.Path));
@@ -60,7 +60,7 @@ public sealed class RepairHeatTests
         internal IPilotShipHeat Heat => Fit.Db.Services.GetRequiredService<IPilotShipHeat>();
         internal IPilotAmmunition Ammo => Fit.Db.Services.GetRequiredService<IPilotAmmunition>();
 
-        internal Fixture(int type, bool fueled = false, bool second = false)
+        internal Fixture(int type, bool fueled = false, bool second = false, bool resident = true)
         {
             Type = type;
             PassiveCatalogFixture.LoadOverload(Fit.CatalogPath);
@@ -126,7 +126,7 @@ public sealed class RepairHeatTests
                 }
                 world.SaveChanges();
             }
-            Live = new(new(Fit.Db.Path), Fit.Clock, _ => { });
+            Live = resident ? new(new(Fit.Db.Path), Fit.Clock, _ => { }) : null;
         }
 
         internal IReadOnlyDictionary<DogmaAttributeId, double> Normal() =>
@@ -156,7 +156,7 @@ public sealed class RepairHeatTests
 
         public void Dispose()
         {
-            Live.Dispose();
+            Live?.Dispose();
             Fit.Dispose();
         }
     }
@@ -303,7 +303,7 @@ public sealed class RepairHeatTests
     [InlineData(AncillaryRemoteShield)]
     public void RejectedHeatPersistenceRollsBackRepairsFuelCapacitorAndEvents(int type)
     {
-        using Fixture f = new(type, fueled: true);
+        using Fixture f = new(type, fueled: true, resident: false);
         int charges = Assert.Single(f.Ammo.Read(f.Pilot, f.Ship)).Quantity;
         double capacitor = f.Fit.Db.Services.GetRequiredService<IPilotShipResources>().Capacitor(f.Pilot, f.Now);
         ModuleCooldownKind previousKind;
@@ -361,12 +361,12 @@ public sealed class RepairHeatTests
         }
         var paid = f.Local.StartOverloaded(f.Pilot, f.Module, f.Now, ancillary: true);
         var heat = Assert.Single(f.Read().Cycles);
-        int remaining = f.Live.Economy.Inspect(world => world.Set<OwnedItem>().Single(item => item.LocationId == f.Module).Quantity);
+        int remaining = f.Live!.Economy.Inspect(world => world.Set<OwnedItem>().Single(item => item.LocationId == f.Module).Quantity);
         Assert.True(remaining < charges);
         Assert.True(paid.Capacitor < capacitor);
         Assert.Throws<InvalidDataException>(() => f.Local.StartOverloaded(f.Pilot, f.Module, f.Now, ancillary: true));
         Assert.Empty(f.Events.Applied);
-        using (var failed = Assert.IsType<WorldSnapshot>(f.Live.CaptureSnapshot()))
+        using (var failed = Assert.IsType<WorldSnapshot>(f.Live!.CaptureSnapshot()))
         {
             using (var command = failed.Database.CreateCommand())
             {
@@ -384,7 +384,7 @@ public sealed class RepairHeatTests
             Assert.Equal(previousDeadline, unchanged.ReadyAt);
         }
         Assert.Equal(heat.Key, Assert.Single(f.Read().Cycles).Key);
-        using var retry = Assert.IsType<WorldSnapshot>(f.Live.CaptureSnapshot());
+        using var retry = Assert.IsType<WorldSnapshot>(f.Live!.CaptureSnapshot());
         retry.Project();
         using WorldDbContext reopened = new(retry.Database);
         Assert.Equal(remaining, reopened.Set<OwnedItem>().Single(item => item.LocationId == f.Module).Quantity);
@@ -433,7 +433,7 @@ public sealed class RepairHeatTests
     [Fact]
     public void FailedRemoteCancellationPreservesBothTheRepairAndItsHeatSource()
     {
-        using Fixture f = new(11355);
+        using Fixture f = new(11355, resident: false);
         var paid = f.StartRemote();
         f.At(paid.Cycle.StartedAt + (paid.Cycle.CompletesAt - paid.Cycle.StartedAt) / 2);
         var before = f.Read();
@@ -516,7 +516,7 @@ public sealed class RepairHeatTests
         double amount = f.Expected(DogmaAttributeId.ArmorRepairAmount);
         var paid = f.Local.StartOverloaded(f.Pilot, f.Module, f.Now);
         f.At(paid.Schedule.StartedAt + (paid.Schedule.CompletesAt - paid.Schedule.StartedAt) / 2);
-        using var snapshot = Assert.IsType<WorldSnapshot>(f.Live.CaptureSnapshot());
+        using var snapshot = Assert.IsType<WorldSnapshot>(f.Live!.CaptureSnapshot());
         snapshot.Project();
         using (WorldDbContext captured = new(snapshot.Database))
         {

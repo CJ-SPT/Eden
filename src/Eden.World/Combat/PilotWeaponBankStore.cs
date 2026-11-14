@@ -7,6 +7,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat.Weapons;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,16 +33,19 @@ internal sealed partial class PilotWeaponBankStore(WorldDatabase database, TimeP
         return bank is null ? [moduleId] : new[] { bank.MasterId }.Concat(bank.SlaveIds).ToArray();
     }
 
-    public IReadOnlyList<WeaponBank> Read(long pilotId, long shipId)
-    {
-        using WorldDbContext world = new(database.Path);
-        CheckShip(world, pilotId, shipId);
-        return Read(world, shipId);
-    }
+    public IReadOnlyList<WeaponBank> Read(long pilotId, long shipId) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                CheckShip(world, pilotId, shipId);
+                return Read(world, shipId);
+            }
+        );
 
-    private static void CheckShip(WorldDbContext world, long pilotId, long shipId)
+    private static void CheckShip(WorldAction world, long pilotId, long shipId)
     {
-        if (!world.Ships.Any(s => s.Id == shipId && s.OwnerId == pilotId))
+        if (world.Ships.Find(shipId)?.OwnerId != pilotId)
         {
             throw new InvalidDataException("The ship is unavailable.");
         }
@@ -49,17 +53,16 @@ internal sealed partial class PilotWeaponBankStore(WorldDatabase database, TimeP
 
     public WeaponBankChange Change(long pilotId, long shipId, WeaponBankOperation operation, long masterId = 0, long sourceId = 0)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         CheckShip(world, pilotId, shipId);
-        if (!world.Pilots.Any(p => p.Id == pilotId && p.ActiveShipId == shipId))
+        if (world.Pilots.Find(pilotId)?.ActiveShipId != shipId)
         {
             throw new InvalidDataException("Group weapons on your active ship.");
         }
         var modules = world
-            .Set<OwnedItem>()
-            .Where(i => i.OwnerId == pilotId && i.LocationId == shipId && i.Singleton)
+            .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == shipId && i.Singleton)
             .OrderBy(i => i.FlagId)
             .ToArray();
         var weapons = modules
@@ -79,26 +82,35 @@ internal sealed partial class PilotWeaponBankStore(WorldDatabase database, TimeP
             .SelectMany(b => new[] { b.MasterId }.Concat(b.SlaveIds))
             .ToHashSet();
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        if (world.Set<ModuleCooldown>().Any(c => changed.Contains(c.ModuleId) && c.ReadyAt > now))
+        if (changed.Any(id => world.Set<ModuleCooldown>().Find(id)?.ReadyAt > now))
         {
             throw new InvalidDataException("Finish weapon cycles and reloads before changing groups.");
         }
-        world.Set<SavedWeaponLink>().Where(l => l.ShipId == shipId).ExecuteDelete();
-        foreach (var bank in result.Banks)
+        var desired = result
+            .Banks.SelectMany(bank => bank.SlaveIds.Select(slave => (Slave: slave, Master: bank.MasterId)))
+            .ToDictionary(link => link.Slave, link => link.Master);
+        foreach (var link in world.Filter<SavedWeaponLink>(l => l.ShipId == shipId).ToArray())
         {
-            foreach (long slave in bank.SlaveIds)
+            if (desired.Remove(link.SlaveId, out long master))
             {
-                world.Add(
-                    new SavedWeaponLink
-                    {
-                        ShipId = shipId,
-                        MasterId = bank.MasterId,
-                        SlaveId = slave,
-                    }
-                );
+                link.MasterId = master;
+            }
+            else
+            {
+                world.Remove(link);
             }
         }
-        world.SaveChanges();
+        foreach (var (slave, master) in desired)
+        {
+            world.Add(
+                new SavedWeaponLink
+                {
+                    ShipId = shipId,
+                    MasterId = master,
+                    SlaveId = slave,
+                }
+            );
+        }
         transaction.Commit();
         return result;
     }

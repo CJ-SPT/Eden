@@ -11,6 +11,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 
@@ -33,9 +34,9 @@ internal sealed partial class PilotSecurityStatusStore(WorldDatabase database, T
 
     public SecurityStatusView Read(long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        if (!world.Pilots.Any(p => p.Id == pilotId))
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
+        if (!world.PilotExists(pilotId))
         {
             throw new InvalidDataException("Unknown character security status.");
         }
@@ -43,27 +44,28 @@ internal sealed partial class PilotSecurityStatusStore(WorldDatabase database, T
         double value = world.Set<SavedSecurityStatus>().Find(pilotId)?.Value ?? 0;
         SecurityStatusRules.Check(value);
         long? due = world.Set<PendingSecurityReward>().Find(pilotId)?.Due;
-        world.SaveChanges();
-        transaction.Commit();
         if (changed)
         {
-            signal.Publish();
+            world.AfterCommit(signal.Publish);
         }
+        transaction.Commit();
         return new(value, due);
     }
 
     public IReadOnlyList<SecurityStatusTransaction> History(long pilotId)
     {
         Read(pilotId);
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedSecurityTransaction>()
-            .Where(t => t.PilotId == pilotId)
-            .OrderByDescending(t => t.Time)
-            .ThenByDescending(t => t.Id)
-            .AsEnumerable()
-            .Select(t => t.Snapshot())
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<SavedSecurityTransaction>(t => t.PilotId == pilotId)
+                    .OrderByDescending(t => t.Time)
+                    .ThenByDescending(t => t.Id)
+                    .AsEnumerable()
+                    .Select(t => t.Snapshot())
+                    .ToArray()
+        );
     }
 
     internal static void RecordKill(

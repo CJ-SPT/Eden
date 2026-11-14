@@ -8,8 +8,8 @@ using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Thermal;
 
@@ -33,31 +33,33 @@ internal sealed class PilotNaniteRepairStore(WorldDatabase database) : IPilotNan
             live.Nanites.Advance(now);
             return live.Nanites.Read(pilotId, shipId);
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var rows = world.Set<SavedNaniteRepair>().Where(r => r.PilotId == pilotId && r.ShipId == shipId).ToArray();
+        var rows = world.Filter<SavedNaniteRepair>(r => r.PilotId == pilotId && r.ShipId == shipId).ToArray();
         foreach (var row in rows.Where(r => r.CompletesAt <= now))
         {
             NaniteRepairPersistence.Finish(world, catalog, row, now);
         }
         var active = rows.Where(r => r.CompletesAt > now).Select(NaniteRepairPersistence.Schedule).ToArray();
-        world.SaveChanges();
         transaction.Commit();
         return Array.AsReadOnly(active);
     }
 
-    public NaniteRepairBatch Start(long pilotId, long shipId, IReadOnlyList<long> modules, long now)
+    public NaniteRepairBatch Start(long pilotId, long shipId, IReadOnlyList<long> modules, long now) =>
+        LiveWorld.Execute(database.Path, () => StartOwned(pilotId, shipId, modules, now), nameof(Start));
+
+    private NaniteRepairBatch StartOwned(long pilotId, long shipId, IReadOnlyList<long> modules, long now)
     {
         CheckClock(now);
         if (modules.Count is 0 or > MaximumModules || modules.Any(m => m <= 0) || modules.Distinct().Count() != modules.Count)
         {
             throw new InvalidDataException("Select distinct fitted modules to repair.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId);
         if (pilot?.ActiveShipId != shipId || pilot.ActiveShip.Position is null || pilot.ActiveShip.OwnerId != pilotId)
         {
             throw new InvalidDataException("Repair your own active ship's fitted modules in space.");
@@ -73,8 +75,7 @@ internal sealed class PilotNaniteRepairStore(WorldDatabase database) : IPilotNan
         }
         var calculation = FittingCalculation.Read(world, catalog, pilot);
         var stacks = world
-            .Set<OwnedItem>()
-            .Where(i =>
+            .Filter<OwnedItem>(i =>
                 i.OwnerId == pilotId
                 && i.LocationId == shipId
                 && i.FlagId == (int)InventoryFlag.Cargo
@@ -164,17 +165,19 @@ internal sealed class PilotNaniteRepairStore(WorldDatabase database) : IPilotNan
             .Where(s => previous.ContainsKey(s.Id))
             .Select(s => new InventoryChange(PilotInventoryStore.Read(catalog, s), previous[s.Id]))
             .ToArray();
-        world.SaveChanges();
         transaction.Commit();
         return new(started.ToArray(), missing.ToArray(), failed.ToArray(), inventory);
     }
 
-    public ModuleCondition? Stop(long pilotId, long shipId, NaniteRepairKey expected, long now)
+    public ModuleCondition? Stop(long pilotId, long shipId, NaniteRepairKey expected, long now) =>
+        LiveWorld.Execute(database.Path, () => StopOwned(pilotId, shipId, expected, now), nameof(Stop));
+
+    private ModuleCondition? StopOwned(long pilotId, long shipId, NaniteRepairKey expected, long now)
     {
         CheckClock(now);
         NaniteRepairRules.ValidateKey(expected);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var item = world.Set<OwnedItem>().Find(expected.ModuleId);
         if (item?.OwnerId != pilotId || item.LocationId != shipId || ShipHeatPersistence.Rack(item.FlagId) is null)
@@ -189,20 +192,21 @@ internal sealed class PilotNaniteRepairStore(WorldDatabase database) : IPilotNan
         var condition = row is null
             ? ModuleConditionPersistence.Read(world, catalog, item)
             : NaniteRepairPersistence.Finish(world, catalog, row, now);
-        world.SaveChanges();
         transaction.Commit();
         return condition;
     }
 
-    public IReadOnlyList<ModuleCondition> Cancel(long pilotId, long shipId, long now)
+    public IReadOnlyList<ModuleCondition> Cancel(long pilotId, long shipId, long now) =>
+        LiveWorld.Execute(database.Path, () => CancelOwned(pilotId, shipId, now), nameof(Cancel));
+
+    private IReadOnlyList<ModuleCondition> CancelOwned(long pilotId, long shipId, long now)
     {
         CheckClock(now);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var rows = world.Set<SavedNaniteRepair>().Where(r => r.PilotId == pilotId && r.ShipId == shipId).ToArray();
+        var rows = world.Filter<SavedNaniteRepair>(r => r.PilotId == pilotId && r.ShipId == shipId).ToArray();
         var conditions = rows.Select(r => NaniteRepairPersistence.Finish(world, catalog, r, now)).OfType<ModuleCondition>().ToArray();
-        world.SaveChanges();
         transaction.Commit();
         return conditions;
     }

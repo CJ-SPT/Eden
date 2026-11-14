@@ -1,21 +1,20 @@
 using System.Collections.Frozen;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Thermal;
 using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Runtime.Combat;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Thermal;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime;
 
-// Paid repair deadlines are SQL transitions, not per-tick module writes. The
-// immutable active set also gives resident volleys a cheap busy guard.
+// Paid repair deadlines use resident actions. The immutable active set also
+// gives resident volleys a cheap busy guard.
 internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clock, int? system = null)
 {
-    private sealed record PilotLocation(long PilotId, long ShipId);
-
     private IReadOnlyDictionary<long, NaniteRepairSchedule> _current = FrozenDictionary<long, NaniteRepairSchedule>.Empty;
     private IReadOnlySet<long> _ships = FrozenSet<long>.Empty;
     private IReadOnlySet<long> _pilots = FrozenSet<long>.Empty;
@@ -112,25 +111,24 @@ internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clo
             {
                 return;
             }
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using var transaction = new WorldActionScope(database, new(pilots: _pilots, ships: _ships));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
             Dictionary<long, OwnedItem> items = [];
             Dictionary<long, double> damage = [];
             Dictionary<long, long> activeShips = [];
             if (_membership)
             {
-                long[] modules = _current.Keys.ToArray();
-                long[] pilots = _pilots.ToArray();
-                items = world.Set<OwnedItem>().Where(i => modules.Contains(i.Id)).ToDictionary(i => i.Id);
-                damage = world
-                    .Set<SavedModuleCondition>()
-                    .Where(c => modules.Contains(c.ModuleId))
+                items = _current.Keys.Select(id => world.Set<OwnedItem>().Find(id)).OfType<OwnedItem>().ToDictionary(i => i.Id);
+                damage = _current
+                    .Keys.Select(id => world.Set<SavedModuleCondition>().Find(id))
+                    .OfType<SavedModuleCondition>()
                     .ToDictionary(c => c.ModuleId, c => c.Damage);
-                activeShips = world
-                    .Pilots.Where(p => pilots.Contains(p.Id) && p.ActiveShip.OwnerId == p.Id && p.ActiveShip.Position != null)
-                    .Select(p => new PilotLocation(p.Id, p.ActiveShipId))
-                    .ToDictionary(p => p.PilotId, p => p.ShipId);
+                activeShips = _pilots
+                    .Select(id => world.Set<Pilot>().Find(id))
+                    .OfType<Pilot>()
+                    .Where(p => p.ActiveShip.OwnerId == p.Id && p.ActiveShip.Position is not null)
+                    .ToDictionary(p => p.Id, p => p.ActiveShipId);
             }
             foreach (var schedule in _current.Values)
             {
@@ -163,8 +161,8 @@ internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clo
                     }
                 }
             }
-            world.SaveChanges();
             transaction.Commit();
+            transaction.Dispose();
             _valid = false;
             Load();
             _membership = false;
@@ -178,14 +176,16 @@ internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clo
 
     private void Load()
     {
-        using WorldDbContext world = new(database.Path) { IsResidentProjection = true };
-        var rows = world.Set<SavedNaniteRepair>().AsNoTracking();
-        if (system is int id)
-        {
-            var members = ResidentSystemMembership.Ships(world, database, id);
-            rows = rows.Where(r => members.Contains(r.ShipId));
-        }
-        var schedules = rows.ToArray().Select(NaniteRepairPersistence.Schedule).ToArray();
+        var schedules = WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<SavedNaniteRepair>(_ => true)
+                    .AsEnumerable()
+                    .Where(row => system is null || InSystem(world, row.ShipId, system.Value))
+                    .Select(NaniteRepairPersistence.Schedule)
+                    .ToArray()
+        );
         _current = schedules.ToFrozenDictionary(s => s.Key.ModuleId);
         _ships = schedules.Select(s => s.ShipId).ToFrozenSet();
         _pilots = schedules.Select(s => s.PilotId).ToFrozenSet();
@@ -199,5 +199,11 @@ internal sealed class LiveNaniteRepairs(WorldDatabase database, TimeProvider clo
             _membershipAt = null;
         }
         _valid = true;
+    }
+
+    private bool InSystem(WorldAction world, long shipId, int systemId)
+    {
+        var ship = world.Ships.Find(shipId);
+        return ship is not null && (ship.Position?.SystemId ?? database.Catalog.FindStation(ship.StationId)?.SolarSystemId) == systemId;
     }
 }

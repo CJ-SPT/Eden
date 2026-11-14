@@ -7,8 +7,8 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Thermal;
 
@@ -48,7 +48,10 @@ internal sealed partial class PilotOverloadStore(WorldDatabase database) : IPilo
         );
     }
 
-    public IReadOnlyList<ModuleOverloadState> Set(ModuleOverloadCommand command)
+    public IReadOnlyList<ModuleOverloadState> Set(ModuleOverloadCommand command) =>
+        LiveWorld.Execute(database.Path, () => SetOwned(command), nameof(Set));
+
+    private IReadOnlyList<ModuleOverloadState> SetOwned(ModuleOverloadCommand command)
     {
         if (
             !Enum.IsDefined(command.Scope)
@@ -69,16 +72,15 @@ internal sealed partial class PilotOverloadStore(WorldDatabase database) : IPilo
         bool rack = command.Scope == OverloadScope.Rack;
         bool enabled = command.Enabled;
         long now = command.Time;
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
-        Eden.World.Propulsion.PilotSpatialModuleStore.RequireUncloaked(world, ship);
+        using WorldActionScope transaction = new(database, new(pilots: [pilot], ships: [ship]));
+        var world = transaction.World;
+        world.RequireUncloaked(ship);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var actor =
-            world
-                .Pilots.Include(p => p.ActiveShip)
-                    .ThenInclude(s => s.Position)
-                .SingleOrDefault(p => p.Id == pilot && p.ActiveShipId == ship && p.ActiveShip.Position != null)
-            ?? throw new InvalidDataException("Overload your own active ship in space.");
+        var actor = world.Pilots.Find(pilot);
+        if (actor?.ActiveShipId != ship || actor.ActiveShip.Position is null)
+        {
+            throw new InvalidDataException("Overload your own active ship in space.");
+        }
         var calculation = FittingCalculation.Read(world, catalog, actor);
         var selected =
             calculation.Modules.SingleOrDefault(m => m.Item.Id == module)
@@ -138,8 +140,8 @@ internal sealed partial class PilotOverloadStore(WorldDatabase database) : IPilo
                     : cycles.Any(c => c.ModuleId == m.Item.Id)
             ))
             .ToArray();
+        world.AfterCommit(() => heat.Select(pilot, ship, result.Select(r => r.ModuleId).ToArray(), enabled));
         transaction.Commit();
-        heat.Select(pilot, ship, result.Select(r => r.ModuleId).ToArray(), enabled);
         return Array.AsReadOnly(result);
     }
 }

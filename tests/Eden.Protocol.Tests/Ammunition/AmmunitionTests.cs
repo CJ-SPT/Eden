@@ -48,7 +48,7 @@ public sealed class AmmunitionTests
 
         public Fixture(bool liveWorld = false)
         {
-            Db = new(liveWorld: liveWorld);
+            Db = new(clock: liveWorld ? Clock : null, liveWorld: liveWorld);
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {

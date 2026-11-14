@@ -1532,3 +1532,30 @@ recovered station login; returning to the corrected anomaly remains unverified.
 
 **Optional maintainer checks.** Restart with the rebuilt server and revisit Serpentis Refuge in
 Botane, then reconnect while the character is at that site.
+
+
+## Resident combat service state
+
+Nanite repair starts, cancels, refunds and deadline settlement use resident actions.
+Heat selection validates the current fit, paid cycles and repairs under the same owner.
+Magazine reads, charge changes, unloads and weapon bank updates share the committed inventory
+and cooldown state. Safety changes, Crimewatch snapshots and security-status settlement read
+the resident rows, including pending rewards and their history.
+
+Gameplay references are [overheating and nanite paste](https://wiki.eveuniversity.org/Overheating),
+[weapon grouping](https://wiki.eveuniversity.org/Tips_and_Tricks#Modules/Rigs), and
+[safety settings](https://wiki.eveuniversity.org/Safety_settings). The local EveJS 261108.1
+comparison used `moduleHeat.js`, `moduleChargeReload.js` and `crimewatchState.js`
+(SHA-256 prefixes `C5C30F1133BEF594`, `07183B1308F6A754` and `46CF97D25BA2F99B`).
+
+**Automated validation.** The 558-case thermal, ammunition, bank, Crimewatch, security-status,
+and gas test filter passed 552 cases in 4 minutes 29 seconds. Five of the six failures also
+reproduced on the pre-milestone revision and injected SQL failures into resident commands.
+Those tests now exercise the direct-file adapter. The sixth used a relational magazine baseline
+that was still resident and wall clocks that differed across the fixture and world. The corrected
+fixtures and the resident paste refund checkpoint retry passed the 12-case follow-up in 16 seconds.
+The build, Python policy suites and formatting checks passed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.

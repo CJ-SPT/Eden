@@ -81,8 +81,8 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
     public CrimewatchSnapshot Read(long pilotId, int systemId)
     {
         var state = LiveReadModels.Find(database.Path) is { } resident
-            ? resident.Crimewatch(pilotId, systemId, () => ReadSql(pilotId, systemId))
-            : ReadSql(pilotId, systemId);
+            ? resident.Crimewatch(pilotId, systemId, () => ReadSavedState(pilotId, systemId))
+            : ReadSavedState(pilotId, systemId);
         if (LiveCombatRuntime.Find(database.Path, pilotId)?.NpcTimer(pilotId) is { } npc)
         {
             state = state with
@@ -99,41 +99,35 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
         return LiveCombatRuntime.Find(database.Path, pilotId)?.DroneCrimewatch(pilotId, systemId, state) ?? state;
     }
 
-    private CrimewatchSnapshot ReadSql(long pilotId, int systemId)
+    private CrimewatchSnapshot ReadSavedState(long pilotId, int systemId)
     {
-        return LiveWorld.Execute(database.Path, () => ReadSqlOwned(pilotId, systemId), nameof(ReadSql));
+        return LiveWorld.Execute(database.Path, () => ReadSavedStateOwned(pilotId, systemId), nameof(ReadSavedState));
     }
 
-    private CrimewatchSnapshot ReadSqlOwned(long pilotId, int systemId)
+    private CrimewatchSnapshot ReadSavedStateOwned(long pilotId, int systemId)
     {
-        // This typed snapshot merges the current resident NPC timer in Read().
-        // Direct SQL crimewatch callers still require normal projection.
-        using WorldDbContext world = new(database.Path) { ReadsResidentNpcTimer = true };
-        // The resident owner serializes this complete read snapshot. File-backed
-        // worlds retain their SQL transaction; mutations use the normal bridge.
-        using var ownership = LiveWorld.Find(database.Path)?.Enter();
-        using var transaction = ownership is null ? world.Database.BeginTransaction() : null;
-        var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return WorldActionScope.Inspect(database, world => ReadSavedState(world, catalog, pilotId, systemId));
+    }
+
+    private static CrimewatchSnapshot ReadSavedState(WorldAction world, CatalogDbContext catalog, long pilotId, int systemId)
+    {
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown crimewatch pilot.");
         var timers = world.Set<SavedCrimewatch>().Find(pilotId)?.Timers() ?? CrimewatchTimers.Empty;
         var engagements = world
-            .Set<SavedEngagement>()
-            .AsNoTracking()
-            .Where(e => e.LowerPilotId == pilotId || e.HigherPilotId == pilotId)
+            .Filter<SavedEngagement>(e => e.LowerPilotId == pilotId || e.HigherPilotId == pilotId)
             .OrderBy(e => e.LowerPilotId)
             .ThenBy(e => e.HigherPilotId)
             .AsEnumerable()
             .Select(e => new LimitedEngagement(e.LowerPilotId == pilotId ? e.HigherPilotId : e.LowerPilotId, e.ActiveUntil, e.ExpiresAt))
             .ToArray();
         var flags = world
-            .Set<SavedCrimewatch>()
-            .AsNoTracking()
-            .Where(s => s.SystemId == systemId && (s.CriminalUntil > 0 || s.SuspectUntil > 0))
+            .Filter<SavedCrimewatch>(s => s.SystemId == systemId && (s.CriminalUntil > 0 || s.SuspectUntil > 0))
             .OrderBy(s => s.PilotId)
             .AsEnumerable()
             .Select(s => new FlaggedPilot(s.PilotId, s.Timers()))
             .ToArray();
         var safety = pilot.SafetyLevel;
-        using CatalogDbContext catalog = new(database.CatalogPath);
         if (
             world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha
             && CrimewatchPersistence.Security(catalog, systemId, false) >= CrimewatchRules.HighSecurity

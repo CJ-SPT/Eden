@@ -242,6 +242,9 @@ covers anomaly lifecycle, DED access, expeditions, gas and ice, and Agency count
 [Resident probes and pirate exploration](protocol/information.md#resident-probes-and-pirate-exploration)
 covers scan state, analyzer actions, loot, and Ghost Site settlement.
 
+[Resident combat service state](protocol/combat.md#resident-combat-service-state)
+covers overload and paste, ammunition and banks, safety, and security status.
+
 ## Topics
 
 [Tech II supply audit](protocol/industry.md#tech-ii-supply-audit-and-refinery-bootstrap),

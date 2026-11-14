@@ -510,6 +510,11 @@ public sealed class ShipHeatTests
             world.SaveChanges();
         }
         f.Load(quantity: 400);
+        // Direct-file projection provides the relational magazine baseline for the rollback assertion.
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            Assert.Equal(200, world.Set<OwnedItem>().Single(i => i.LocationId == f.Gun).Quantity);
+        }
         f.Clock.Milliseconds += 5000;
         f.Space();
         var heat = f.Db.Services.GetRequiredService<IPilotShipHeat>();

@@ -10,6 +10,7 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Repair;
 using Eden.World.Catalog;
+using Eden.World.Docking;
 using Eden.World.Repair;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -246,22 +247,11 @@ public sealed class OverloadControlTests
         );
         f.Db.Store.SetPosition(ship, new SpacePosition(100, 0, 0));
         Assert.Contains(module, controls.Requested(f.PilotId, ship));
-        using (WorldDbContext world = new(f.Db.Path))
+        using (var action = live.Economy.Begin(new(pilots: [f.PilotId], ships: [ship])))
         {
-            world.Database.ExecuteSqlRaw(
-                """
-                CREATE TRIGGER RejectThermalDock BEFORE DELETE ON WorldPosition
-                BEGIN SELECT RAISE(ABORT,'rejected thermal docking'); END
-                """
-            );
+            Assert.True(SqliteWorld.SetPosition(action, catalog, ship, null, null, f.Clock.Now));
         }
-        var rejected = Assert.Throws<DbUpdateException>(() => f.Db.Store.SetPosition(ship, null));
-        Assert.IsType<SqliteException>(rejected.InnerException);
         Assert.Contains(module, controls.Requested(f.PilotId, ship));
-        using (WorldDbContext world = new(f.Db.Path))
-        {
-            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectThermalDock");
-        }
         f.Db.Store.SetPosition(ship, null);
         Assert.Empty(controls.Requested(f.PilotId, ship));
     }

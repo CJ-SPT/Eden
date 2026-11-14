@@ -4,19 +4,19 @@ using Eden.Gameplay.Docking;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Combat;
 
 [Injectable]
 internal sealed class PilotSafetyStore(WorldDatabase database) : IPilotSafety
 {
-    public ShipSafetyLevel Read(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world.Pilots.Single(p => p.Id == pilotId).SafetyLevel;
-    }
+    public ShipSafetyLevel Read(long pilotId) =>
+        WorldActionScope.Inspect(
+            database,
+            world => world.Pilots.Find(pilotId)?.SafetyLevel ?? throw new InvalidDataException("Unknown ship safety pilot.")
+        );
 
     public void Set(long pilotId, ShipSafetyLevel level)
     {
@@ -24,8 +24,9 @@ internal sealed class PilotSafetyStore(WorldDatabase database) : IPilotSafety
         {
             throw new InvalidDataException("Choose full, partial or disabled ship safety.");
         }
-        using WorldDbContext world = new(database.Path);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown ship safety pilot.");
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (
             level != ShipSafetyLevel.Full
@@ -37,6 +38,6 @@ internal sealed class PilotSafetyStore(WorldDatabase database) : IPilotSafety
             throw new InvalidDataException("Alpha pilots use full safety in high-security space.");
         }
         pilot.SafetyLevel = level;
-        world.SaveChanges();
+        transaction.Commit();
     }
 }

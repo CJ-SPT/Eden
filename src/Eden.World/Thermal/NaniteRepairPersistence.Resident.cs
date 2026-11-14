@@ -109,4 +109,47 @@ internal static partial class NaniteRepairPersistence
             Finish(world, catalog, row, now);
         }
     }
+
+    internal static bool Active(WorldAction world, long module, long now) =>
+        world.Set<ModuleCooldown>().Any(c => c.ModuleId == module && c.Kind == ModuleCooldownKind.Cycle && c.ReadyAt > now)
+        || world.Set<ActiveFittedModule>().Any(m => m.ModuleId == module && (m.ExpiresAt == 0 || m.ExpiresAt > now))
+        || world.Set<PendingLocalRepair>().Any(r => r.ModuleId == module)
+        || world.Set<WorldRemoteRepair>().Any(r => r.ModuleId == module)
+        || world.Set<WorldRemoteAssistance>().Any(r => r.ModuleId == module)
+        || world.Set<WorldPlayerEwar>().Any(r => r.ModuleId == module)
+        || world.Set<WorldTackle>().Any(r => r.ModuleId == module);
+
+    internal static NaniteRepairQuote Quote(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        FittingCalculation? calculation = null
+    )
+    {
+        var pilot = world.Pilots.Find(pilotId);
+        var item = world.Set<OwnedItem>().Find(moduleId);
+        if (
+            pilot is null
+            || item is null
+            || item.OwnerId != pilotId
+            || item.LocationId != pilot.ActiveShipId
+            || ShipHeatPersistence.Rack(item.FlagId) is null
+        )
+        {
+            throw new InvalidDataException("Quote nanite repairs only for a module fitted to your active ship.");
+        }
+        var condition = ModuleConditionPersistence.Read(world, catalog, item);
+        var price = NaniteRepairCatalog.Price(catalog, item.TypeId);
+        calculation ??= FittingCalculation.Read(world, catalog, pilot);
+        return NaniteRepairRules.Quote(
+            condition,
+            price.ComputedBasePrice,
+            price.PasteBasePrice,
+            new(
+                calculation.Graph.Read(pilotId, DogmaAttributeId.ModuleRepairRate),
+                calculation.Graph.Read(pilotId, DogmaAttributeId.ModuleRepairCostMultiplier)
+            )
+        );
+    }
 }

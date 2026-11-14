@@ -23,6 +23,7 @@ using Eden.World.Fleets;
 using Eden.World.Inventory;
 using Eden.World.Mining;
 using Eden.World.Repair;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -51,47 +52,55 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
         );
     }
 
-    public IReadOnlyList<Magazine> Read(long pilotId, long shipId)
-    {
-        using WorldDbContext world = new(database.Path);
-        var pilot = Pilot(world, pilotId, shipId);
-        var modules = world
-            .Set<OwnedItem>()
-            .Where(i =>
-                i.OwnerId == pilot.Id
-                && i.LocationId == shipId
-                && i.FlagId >= (int)InventoryFlag.LowSlot0
-                && i.FlagId <= (int)InventoryFlag.HighSlot7
-            )
-            .OrderBy(i => i.FlagId)
-            .ToArray();
-        return modules
-            .Select(module => (module, charge: Contents(world, module.Id)))
-            .Where(p => p.charge is not null)
-            .Select(p => Read(world, p.module, p.charge!))
-            .ToArray();
-    }
+    public IReadOnlyList<Magazine> Read(long pilotId, long shipId) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var pilot = Pilot(world, pilotId, shipId);
+                var modules = world
+                    .Filter<OwnedItem>(i =>
+                        i.OwnerId == pilot.Id
+                        && i.LocationId == shipId
+                        && i.FlagId >= (int)InventoryFlag.LowSlot0
+                        && i.FlagId <= (int)InventoryFlag.HighSlot7
+                    )
+                    .OrderBy(i => i.FlagId)
+                    .ToArray();
+                return modules
+                    .Select(module => (module, charge: Contents(world, module.Id)))
+                    .Where(p => p.charge is not null)
+                    .Select(p => Read(world, p.module, p.charge!))
+                    .ToArray();
+            }
+        );
 
     public IReadOnlyDictionary<DogmaAttributeId, double> ChargeAttributes(long pilotId, long shipId, long moduleId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = Pilot(world, pilotId, shipId);
-        var module = world.Set<OwnedItem>().SingleOrDefault(i => i.Id == moduleId && i.OwnerId == pilotId && i.LocationId == shipId);
-        if (
-            module is null
-            || !InventoryDefinitions.IsFittedSlot(module.FlagId)
-            || Contents(world, moduleId) is not { } charge
-            || charge.OwnerId != pilotId
-        )
-        {
-            throw new InvalidDataException("The loaded ammunition is unavailable.");
-        }
-        int group = catalog.RequireItem(charge.TypeId).GroupId;
-        return (group == ProbeScanRules.ProbeGroup || MissileDefinitions.ChargeGroups.Contains(group))
-            ? FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(charge.Id)
-            : Attributes(catalog, charge.TypeId);
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var pilot = Pilot(world, pilotId, shipId);
+                var module = world.Set<OwnedItem>().Find(moduleId);
+                if (
+                    module is null
+                    || module.OwnerId != pilotId
+                    || module.LocationId != shipId
+                    || !InventoryDefinitions.IsFittedSlot(module.FlagId)
+                    || Contents(world, moduleId) is not { } charge
+                    || charge.OwnerId != pilotId
+                )
+                {
+                    throw new InvalidDataException("The loaded ammunition is unavailable.");
+                }
+                int group = catalog.RequireItem(charge.TypeId).GroupId;
+                return (group == ProbeScanRules.ProbeGroup || MissileDefinitions.ChargeGroups.Contains(group))
+                    ? FittingCalculation.Read(world, catalog, pilot).Graph.Attributes(charge.Id)
+                    : Attributes(catalog, charge.TypeId);
+            }
+        );
     }
 
     private static Pilot Pilot(WorldDbContext world, long pilotId, long shipId)
@@ -220,8 +229,8 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
         long now
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var result = Load(world, catalog, pilotId, shipId, moduleIds, chargeIds, sourceId, now);
         transaction.Commit();
@@ -447,11 +456,11 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
         long now
     )
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId, shipId);
-        Eden.World.Propulsion.PilotSpatialModuleStore.RequireUncloaked(world, shipId);
+        world.RequireUncloaked(shipId);
         if (
             !(
                 (destinationId == shipId && flagId == (int)InventoryFlag.Cargo)

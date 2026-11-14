@@ -481,11 +481,8 @@ public sealed partial class ElectronicSupportHeatTests
     public void HeatInsertionFailureRollsBackBothPoolsEffectsCooldownsAndPublishedEvents(int type)
     {
         using Fixture f = new(type);
-        if (f.Kind is Family.Capacitor or Family.Ewar)
-        {
-            // Preserve rejection coverage at the offline SQL adapter boundary.
-            f.Live.Dispose();
-        }
+        // Inject a SQL failure in the file-backed adapter.
+        f.Live.Dispose();
         double source = f.SourceCharge;
         double target = f.TargetCharge;
         using (WorldDbContext world = new(f.Fit.Db.Path))
@@ -519,11 +516,8 @@ public sealed partial class ElectronicSupportHeatTests
     public void FailedStopKeepsTheStoredEffectAndHeatFromTheSamePaidGeneration(int type)
     {
         using Fixture f = new(type);
-        if (f.Kind is Family.Capacitor or Family.Ewar)
-        {
-            // Preserve rejection coverage at the offline SQL adapter boundary.
-            f.Live.Dispose();
-        }
+        // Inject a SQL failure in the file-backed adapter.
+        f.Live.Dispose();
         f.Pay();
         var cycle = Assert.Single(f.Read().Cycles);
         f.At(cycle.StartedAt + (cycle.CompletesAt - cycle.StartedAt) / 2);
