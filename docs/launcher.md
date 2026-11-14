@@ -67,6 +67,9 @@ certificate, even when the server reads it from a PEM file.
 
 API v1 provides metadata, registration, sign-in, refresh, logout and launch tickets. Access tokens last 15 minutes; optional remembered sessions rotate and expire after 30 days. Refresh replay revokes the token family. Game tickets are single-use with a 180-second lifetime. Credentials and token hashes use additive Launcher tables in the world database, independent of gameplay migration numbering.
 
+Remembered sign-ins survive server restarts and Docker updates that reuse the same world save. Keep **Remember me on this
+computer** selected when signing in to the launcher. The launcher saves the sign-in for the API address you used.
+
 The password hasher uses ASP.NET Core's versioned format with 210,000 iterations. Passwords contain 6–128 characters. Usernames contain 3–32 ASCII letters, digits, spaces, dots, underscores or hyphens and are unique without case distinctions. New standard and developer accounts are Omega and have three empty character slots. The server assigns the clone grade during registration; existing launcher builds use this default without an update. Registration does not change existing accounts' clone grades.
 
 API responses disable caching. Registration and authentication are rate limited. Manifest signing validates the exact pinned prefix and permits the chat bundle and active client package hashes to vary. Windows uses the local Windows key store. On Linux, Eden generates a process-local signing key and embeds the public verification key in each signed manifest. Legacy development tickets require Windows and explicit `--development-login` on the host and provisioning command, with loopback-only hosting.

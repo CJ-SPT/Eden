@@ -55,13 +55,21 @@ public sealed class LauncherCleanupTests
         clock.AdvanceWallTime(TimeSpan.FromDays(31));
         var current = store.SignIn(new("Reopen pilot", Password, true));
         world.Services.Dispose();
-        LauncherStore reopened = new(new(world.Path), clock);
+        WorldDatabase database = new(world.Path);
+        using LiveWorld? restarted = resident ? new(database, clock, _ => { }) : null;
+        LauncherStore reopened = new(database, clock);
         reopened.Initialize();
         reopened.Initialize();
         Assert.Equal(1, Count(world.Path, "LauncherSession"));
         Assert.Equal(1, Count(world.Path, "LauncherRefresh"));
         Assert.Equal(0, Count(world.Path, "LauncherTicket"));
         Assert.NotNull(await reopened.IssueTicketAsync(current.AccessToken));
+        clock.AdvanceWallTime(TimeSpan.FromSeconds(LauncherStore.AccessSeconds));
+        await Assert.ThrowsAsync<LauncherException>(() => reopened.IssueTicketAsync(current.AccessToken));
+        var renewed = reopened.Refresh(current.RefreshToken!);
+        Assert.Equal(current.AccountId, renewed.AccountId);
+        Assert.NotEqual(current.RefreshToken, renewed.RefreshToken);
+        Assert.NotNull(await reopened.IssueTicketAsync(renewed.AccessToken));
         Assert.Equal(2, Count(world.Path, "WorldPilot"));
     }
 
