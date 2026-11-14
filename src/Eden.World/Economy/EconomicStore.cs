@@ -38,18 +38,19 @@ internal sealed class EconomicStore(WorldDatabase database) : IEconomicPrices
         }
     }
 
-    public IReadOnlyList<AdjustedPrice> Prices()
-    {
-        using WorldDbContext world = new(database.Path);
-        return Enabled(world)
-            ? world
-                .Set<SavedAdjustedPrice>()
-                .OrderBy(p => p.TypeId)
-                .AsEnumerable()
-                .Select(p => new AdjustedPrice(p.TypeId, p.PriceIsk))
-                .ToArray()
-            : [];
-    }
+    public IReadOnlyList<AdjustedPrice> Prices() =>
+        WorldActionScope.Inspect<IReadOnlyList<AdjustedPrice>>(
+            database,
+            world =>
+                Enabled(world)
+                    ? world
+                        .Set<SavedAdjustedPrice>()
+                        .OrderBy(p => p.TypeId)
+                        .AsEnumerable()
+                        .Select(p => new AdjustedPrice(p.TypeId, p.PriceIsk))
+                        .ToArray()
+                    : []
+        );
 
     internal static bool Enabled(WorldDbContext world) => Policy(world).ChargeServiceCosts;
 

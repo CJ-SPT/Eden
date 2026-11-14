@@ -8,7 +8,11 @@ internal sealed partial class EconomyTransaction
         switch (row)
         {
             case Eden.Data.World.Characters.Account removed:
+                RemoveRange(Filter<Eden.Data.World.Redemption.SavedRedeemToken>(child => child.AccountId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.Pilot>().Where(child => child.AccountId == removed.Id));
+                break;
+            case Eden.Data.World.Redemption.SavedRedeemToken removed:
+                RemoveRange(Filter<Eden.Data.World.Market.SavedRedeemedCurrency>(child => child.TokenId == removed.Id));
                 break;
             case Eden.Data.World.Inventory.InventoryOwner removed:
                 if (Set<Eden.Data.World.Inventory.OwnedItem>().Any(child => child.OwnerId == removed.Id))
@@ -49,6 +53,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotImplant>().Where(child => child.CloneId == removed.Id));
                 break;
             case Eden.Data.World.Characters.Pilot removed:
+                RemoveRange(Filter<Eden.Data.World.Market.SavedRedeemedCurrency>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Market.TestingWalletGrant>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Characters.SavedPilotNote>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Characters.SavedBooster>(child => child.PilotId == removed.Id));

@@ -6,11 +6,13 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Redemption;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +62,38 @@ internal static class CurrencyTestData
 
 public sealed class CurrencyRewardTests
 {
+    [Fact]
+    public async Task ResidentRedemptionPublishesWalletAndQueueTogetherWithoutSqlAndReopens()
+    {
+        var clock = CalendarTestData.Clock();
+        using var db = CurrencyTestData.Create(clock);
+        var wallet = db.Services.GetRequiredService<IPilotWalletReader>();
+        var store = RedemptionTests.Store(db);
+        long tokenId;
+        using (LiveWorld live = new(new(db.Path), clock, _ => { }))
+        {
+            Assert.Empty(store.Read(RedemptionTests.Account));
+            _ = wallet.Journal(FreePointTestData.Pilot);
+            var token = CurrencyTestData.Grant(db, RedeemCurrencyType.Isk, 25);
+            tokenId = token.Id;
+            List<string> commands = [];
+            using (SessionPerformance.Begin("resident redemption and journal", _ => { }, force: true, command: commands.Add))
+            {
+                Assert.Equal(token, Assert.Single(store.Read(RedemptionTests.Account)));
+                Assert.Equal(2500, Assert.Single(CurrencyTestData.Claim(db, token).Currencies).Amount);
+                Assert.Equal(2500, wallet.Balance(FreePointTestData.Pilot));
+                Assert.Equal(tokenId, Assert.Single(wallet.Journal(FreePointTestData.Pilot).RedeemedCurrencies!).TokenId);
+                Assert.Empty(store.Read(RedemptionTests.Account));
+                Assert.Single(CurrencyTestData.Claim(db, token).Errors);
+                Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
+            }
+            await live.FlushAsync();
+        }
+        Assert.Equal(2500, wallet.Balance(FreePointTestData.Pilot));
+        Assert.Equal(tokenId, Assert.Single(wallet.Journal(FreePointTestData.Pilot).RedeemedCurrencies!).TokenId);
+        Assert.Empty(store.Read(RedemptionTests.Account));
+    }
+
     [Theory]
     [InlineData(RedeemCurrencyType.Isk, 1, 100L)]
     [InlineData(RedeemCurrencyType.Isk, 23, 2300L)]
@@ -259,10 +293,13 @@ public sealed class CurrencyRewardTests
             world.SaveChanges();
             world.Database.ExecuteSqlRaw("DROP TABLE WorldRedeemedCurrency; DROP TABLE WorldLoyaltyWallet; PRAGMA user_version=56;");
         }
-        WorldInitialization.Open(db.Path);
+        WorldInitialization.Initialize(new(db.Path), clock);
         Assert.Equal(1000, FreePointTestData.Points(db).Balance(FreePointTestData.Pilot));
         Assert.Equal(0, CurrencyTestData.Cash(db));
-        RedemptionTests.Store(db).Reverse(RedemptionTests.Account, FreePointTestData.Pilot, item);
+        using (WorldDbContext recovered = new(db.Path))
+        {
+            Assert.Null(recovered.Set<OwnedItem>().Find(item));
+        }
         var returned = Assert.Single(RedemptionTests.Store(db).Read(RedemptionTests.Account));
         Assert.Equal(2500, Assert.Single(CurrencyTestData.Claim(db, returned).Currencies).Amount);
         Assert.Single(CurrencyTestData.Claim(db, returned).Errors);

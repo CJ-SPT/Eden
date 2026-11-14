@@ -11,9 +11,9 @@ using Eden.World.Characters;
 using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Redemption;
 
@@ -24,20 +24,21 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
 
     public RedeemToken Grant(RedeemGrant grant)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var token = Grant(world, catalog, grant, Now);
-        world.SaveChanges();
+        var token = Grant(transaction.World, catalog, grant, Now);
         transaction.Commit();
         return token;
     }
 
-    internal static RedeemToken Grant(WorldDbContext world, CatalogDbContext catalog, RedeemGrant grant, long now)
+    internal static RedeemToken Grant(WorldDbContext world, CatalogDbContext catalog, RedeemGrant grant, long now) =>
+        Grant(new SqlWorldAction(world), catalog, grant, now);
+
+    internal static RedeemToken Grant(WorldAction world, CatalogDbContext catalog, RedeemGrant grant, long now)
     {
         RedemptionRules.Check(grant);
         Account(world, grant.AccountId);
-        var prior = world.Set<SavedRedeemToken>().SingleOrDefault(t => t.AccountId == grant.AccountId && t.Reference == grant.Reference);
+        var prior = world.Filter<SavedRedeemToken>(t => t.AccountId == grant.AccountId && t.Reference == grant.Reference).SingleOrDefault();
         if (prior is not null)
         {
             if (
@@ -89,26 +90,29 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
     public IReadOnlyList<RedeemToken> Read(long accountId) =>
         LiveReadModels.Find(database.Path)?.RedeemTokens(accountId, Now, () => ReadTokens(accountId)) ?? ReadTokens(accountId);
 
-    private IReadOnlyList<RedeemToken> ReadTokens(long accountId)
-    {
-        using WorldDbContext world = new(database.Path);
-        Account(world, accountId);
-        long now = Now;
-        return world
-            .Set<SavedRedeemToken>()
-            .AsNoTracking()
-            .Where(t => t.AccountId == accountId && t.State == RedeemTokenState.Pending && (t.ExpiresAt == null || t.ExpiresAt > now))
-            .OrderBy(t => t.Id)
-            .AsEnumerable()
-            .Select(t => t.Snapshot())
-            .ToArray();
-    }
+    private IReadOnlyList<RedeemToken> ReadTokens(long accountId) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                Account(world, accountId);
+                long now = Now;
+                return world
+                    .Filter<SavedRedeemToken>(t =>
+                        t.AccountId == accountId && t.State == RedeemTokenState.Pending && (t.ExpiresAt == null || t.ExpiresAt > now)
+                    )
+                    .OrderBy(t => t.Id)
+                    .AsEnumerable()
+                    .Select(t => t.Snapshot())
+                    .ToArray();
+            }
+        );
 
     public RedeemResult Claim(long accountId, long pilotId, IReadOnlyList<RedeemSelection> tokens, bool useHomeStation)
     {
         RedemptionRules.CheckBatch(tokens.Select(t => t.TokenId).ToArray());
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         var pilot = Pilot(world, accountId, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         int? destination =
@@ -172,7 +176,7 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
             InventoryItem snapshot;
             OwnedItem item = new()
             {
-                Id = InventoryPersistence.NextId(world),
+                Id = world.NextItemId(),
                 OwnerId = pilotId,
                 LocationId = station,
                 FlagId = (int)InventoryFlag.Hangar,
@@ -205,8 +209,8 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
     public void Trash(long accountId, IReadOnlyList<long> tokens)
     {
         RedemptionRules.CheckBatch(tokens);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
         Account(world, accountId);
         long now = Now;
         foreach (long id in tokens)
@@ -225,15 +229,15 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
 
     public InventoryChange Reverse(long accountId, long pilotId, long itemId)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         var pilot = Pilot(world, accountId, pilotId);
         var item = world.Set<OwnedItem>().Find(itemId);
         var original = world
-            .Set<SavedRedeemToken>()
-            .SingleOrDefault(t =>
+            .Filter<SavedRedeemToken>(t =>
                 t.AccountId == accountId && t.ItemId == itemId && t.State == RedeemTokenState.Claimed && t.ReversedAt == null
-            );
+            )
+            .SingleOrDefault();
         long now = Now;
         if (
             original is null
@@ -277,20 +281,18 @@ internal sealed class AccountRedemptionStore(WorldDatabase database, TimeProvide
         return new(previous with { Quantity = 0 }, previous);
     }
 
-    private static void Account(WorldDbContext world, long accountId)
+    private static void Account(WorldAction world, long accountId)
     {
-        if (!world.Set<Account>().Any(a => a.Id == accountId))
+        if (world.Set<Account>().Find(accountId) is null)
         {
             throw new InvalidDataException("Unknown redeem account.");
         }
     }
 
-    private static Pilot Pilot(WorldDbContext world, long accountId, long pilotId) =>
-        world
-            .Pilots.Include(p => p.ActiveShip)
-                .ThenInclude(s => s.Position)
-            .SingleOrDefault(p => p.Id == pilotId && p.AccountId == accountId)
-        ?? throw new InvalidDataException("Choose a character on this account.");
+    private static Pilot Pilot(WorldAction world, long accountId, long pilotId) =>
+        world.Pilots.Find(pilotId) is { } pilot && pilot.AccountId == accountId
+            ? pilot
+            : throw new InvalidDataException("Choose a character on this account.");
 
     private static void CheckStation(CatalogDbContext catalog, int id)
     {

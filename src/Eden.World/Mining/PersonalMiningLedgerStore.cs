@@ -4,6 +4,7 @@ using Eden.Data.World.Structures;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,10 +13,11 @@ namespace Eden.World.Mining;
 [Injectable]
 internal sealed partial class PersonalMiningLedgerStore(WorldDatabase database, TimeProvider clock) : IPersonalMiningLedger
 {
-    public IReadOnlyList<PersonalMiningLog> Read(long pilotId)
+    public IReadOnlyList<PersonalMiningLog> Read(long pilotId) => WorldActionScope.Inspect(database, world => Read(world, pilotId));
+
+    private IReadOnlyList<PersonalMiningLog> Read(WorldAction world, long pilotId)
     {
-        using WorldDbContext world = new(database.Path);
-        if (!world.Pilots.Any(p => p.Id == pilotId))
+        if (!world.PilotExists(pilotId))
         {
             throw new InvalidDataException("Read the mining ledger for a known pilot.");
         }
@@ -23,9 +25,7 @@ internal sealed partial class PersonalMiningLedgerStore(WorldDatabase database, 
         long first = MiningLedgerRules.EarliestDay(now);
         long today = MiningLedgerRules.Day(now);
         return world
-            .Set<SavedPersonalMiningLog>()
-            .AsNoTracking()
-            .Where(l => l.PilotId == pilotId && l.Day >= first && l.Day <= today)
+            .Filter<SavedPersonalMiningLog>(l => l.PilotId == pilotId && l.Day >= first && l.Day <= today)
             .OrderByDescending(l => l.Day)
             .ThenBy(l => l.SystemId)
             .ThenBy(l => l.TypeId)

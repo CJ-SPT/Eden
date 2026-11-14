@@ -3394,6 +3394,10 @@ internal sealed partial class EconomyTransaction
                 value.Id = value.Id == 0 ? Next("WorldSkillInjection") : value.Id;
                 Reserve("WorldSkillInjection", value.Id);
                 break;
+            case Eden.Data.World.Redemption.SavedRedeemToken value:
+                value.Id = value.Id == 0 ? Next("WorldRedeemToken") : value.Id;
+                Reserve("WorldRedeemToken", value.Id);
+                break;
             case Eden.Data.World.Combat.WorldMissile value:
                 value.Id = value.Id == 0 ? Next("WorldMissile") : value.Id;
                 Reserve("WorldMissile", value.Id);

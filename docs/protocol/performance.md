@@ -6,6 +6,33 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Resident wallet history, redemption, and ledgers
+
+The personal wallet journal reads market trades, bounties, repairs, clone fees,
+contract and corporation payments, developer grants, redemption receipts, and service
+payments from one resident view. The half-open date window and entry ordering are
+preserved. Personal mining history and published adjusted prices also read resident state.
+
+Account redemption commits token status and its inventory, ISK, EverMarks, or skill-point
+credit together. The queue cache invalidates against committed token changes and applies
+the exact expiration boundary. Developer item grants reuse the same resident action.
+
+The gameplay reference was [Evergreen Daily Login Rewards](https://wiki.eveuniversity.org/Evergreen_Daily_Login_Rewards).
+The local EveJS 261108.1 comparison used `accountService.js`, `rewardRedeemTokens.js`, and
+`miningLedgerState.js` (SHA-256 prefixes `F427B0968885C250`, `F9C52FD6F292A5DF`, and
+`48029829136CF9C0`).
+
+**Automated validation.** The focused wallet, redemption, market, mining, clone, and
+developer-tool run passed 358 cases in 3 minutes 47 seconds. Its remaining version-56
+fixture passed after correcting it to exercise startup's automatic recovery with the
+fixture clock. The resident regression observed no world-table SQL across granting,
+claiming, and reading the wallet, and verified the journal and token state after reopen.
+Solution build, both Python policy suites, and formatting verification passed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Arrival movement and fitting costs, November 11, 2026
 
 The supplied 03:22:56–03:23:20 sample contains 48 budget warnings: 32 Arrival units (38.90 ms mean,

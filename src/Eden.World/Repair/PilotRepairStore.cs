@@ -232,20 +232,14 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         return new(wallet.Cents, repairs, modules);
     }
 
-    public IReadOnlyList<RepairPayment> Payments(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return Payments(world, pilotId);
-    }
+    public IReadOnlyList<RepairPayment> Payments(long pilotId) => WorldActionScope.Inspect(database, world => Payments(world, pilotId));
 
-    internal static IReadOnlyList<RepairPayment> Payments(WorldDbContext world, long pilotId, HistoryPeriod? period = null)
+    internal static IReadOnlyList<RepairPayment> Payments(WorldAction world, long pilotId, HistoryPeriod? period = null)
     {
         long from = period?.From ?? 0;
         long until = period?.Until ?? long.MaxValue;
         return world
-            .Set<StationRepairPayment>()
-            .AsNoTracking()
-            .Where(p => p.PilotId == pilotId && p.Time >= from && p.Time < until)
+            .Filter<StationRepairPayment>(p => p.PilotId == pilotId && p.Time >= from && p.Time < until)
             .OrderByDescending(p => p.Time)
             .ThenByDescending(p => p.Id)
             .Select(p => new RepairPayment(p.Id, p.PilotId, p.StationId, p.StationOwnerId, p.AmountCents, p.BalanceCents, p.Time))

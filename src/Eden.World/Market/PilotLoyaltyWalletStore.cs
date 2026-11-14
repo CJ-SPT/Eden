@@ -5,6 +5,7 @@ using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;
 using Eden.World.Redemption;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -56,7 +57,7 @@ internal sealed class PilotLoyaltyWalletStore(WorldDatabase database) : IPilotLo
         return rows.Where(b => b.Points > 0).Select(b => new LoyaltyBalance(b.IssuerCorporationId, b.Points)).ToArray();
     }
 
-    internal static RedeemedCurrency Credit(WorldDbContext world, long pilotId, SavedRedeemToken token, RedeemCurrencyKind kind, long now)
+    internal static RedeemedCurrency Credit(WorldAction world, long pilotId, SavedRedeemToken token, RedeemCurrencyKind kind, long now)
     {
         long amount = CurrencyRewardRules.Amount(kind, token.Quantity);
         long before;

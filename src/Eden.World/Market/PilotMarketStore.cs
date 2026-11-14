@@ -10,6 +10,7 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Docking;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Structures;
@@ -450,27 +451,7 @@ internal sealed partial class PilotMarketStore(
         {
             throw new InvalidDataException("Choose between one and 1000 market transactions.");
         }
-        return Transactions(world, pilotId, new(0, query?.Before), query?.Limit);
-    }
-
-    internal static IReadOnlyList<MarketTrade> Transactions(
-        WorldDbContext world,
-        long pilotId,
-        HistoryPeriod? period = null,
-        int? limit = null
-    )
-    {
-        long from = period?.From ?? 0;
-        long until = period?.Until ?? long.MaxValue;
-        return world
-            .Set<MarketExecution>()
-            .AsNoTracking()
-            .Where(t => t.PilotId == pilotId && t.Time >= from && t.Time < until)
-            .OrderByDescending(t => t.Id)
-            .Take(limit ?? int.MaxValue)
-            .AsEnumerable()
-            .Select(Read)
-            .ToArray();
+        return Transactions(new SqlWorldAction(world), pilotId, new(0, query?.Before), query?.Limit);
     }
 
     public IReadOnlyList<MarketHistoryDay> History(long pilotId, IReadOnlyList<int> typeIds)

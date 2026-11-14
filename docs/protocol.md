@@ -693,6 +693,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Mining, industry and markets
 
+- [Resident wallet history, redemption, and ledgers](protocol/performance.md#resident-wallet-history-redemption-and-ledgers)
 - [Personal mining ledger, November 11, 2026](protocol/industry.md#personal-mining-ledger--november-11-2026)
 
 - [Refreshing market quotes after an immediate fill](protocol/industry.md#refreshing-market-quotes-after-an-immediate-fill)

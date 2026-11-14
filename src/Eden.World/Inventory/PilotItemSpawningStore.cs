@@ -3,8 +3,8 @@ using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Redemption;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Inventory;
 
@@ -13,10 +13,10 @@ internal sealed class PilotItemSpawningStore(WorldDatabase database, TimeProvide
 {
     public ItemSpawnResult Create(long pilotId, long expectedShipId, ItemSpawnRequest request)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [expectedShipId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId);
         if (pilot is null || pilot.ActiveShipId != expectedShipId)
         {
             throw new InvalidDataException("The selected pilot or active ship changed. Select the pilot again.");
