@@ -12,6 +12,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
@@ -734,7 +735,8 @@ public sealed class MarketTests
             Assert.Single(context.Notifications, n => n.Name == "OnAccountChange").Arguments
         );
         Assert.Single(context.Notifications, n => n.Name == "OnItemChange");
-        Assert.Single(context.Notifications, n => n.Name == "OnOwnOrdersChanged");
+        string[] expectedOrderChanges = method == "BuyMultipleItems" ? ["Filled", "Expiry"] : ["Filled"];
+        Assert.Equal(expectedOrderChanges, context.Notifications.OfType<OwnOrdersChanged>().Select(change => change.Reason));
         Assert.Equal(selling ? 0 : 1, context.Notifications.Count(n => n.Name == "OnMarketItemReceived"));
         var inventory = f.Inventory.List(pilot.PilotId, pilot.StationId);
         Assert.Equal(selling ? 130 : 132, inventory.Single(i => i.Id == OreId).Quantity);

@@ -348,7 +348,8 @@ internal sealed class PilotCallRouter(
                 }
                 var reference = context.Reference(
                     boundService,
-                    service is "charMgr" or "agentMgr" or "planetMgr" or "planetOrbitalRegistryBroker"
+                    // The corporation moniker is cached against corpid across docking and travel.
+                    service is "charMgr" or "agentMgr" or "planetMgr" or "planetOrbitalRegistryBroker" or "corpRegistry"
                         ? PilotBindingLifetime.Pilot
                         : PilotBindingLifetime.Location
                 );

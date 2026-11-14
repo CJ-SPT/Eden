@@ -210,6 +210,44 @@ public sealed class CorporationMembershipTests
     }
 
     [Fact]
+    public void NativeApplicationSubmissionReturnsThePersistedId()
+    {
+        using TestWorld db = new();
+        PlayerCorporationTests.Prepare(db);
+        int corporation = db
+            .Services.GetRequiredService<IPlayerCorporations>()
+            .Create(Ceo, PlayerCorporationTests.Details())
+            .Corporation.Id;
+        using Client applicant = new(db, 1000002);
+        var router = applicant.Services.GetRequiredService<PilotCallRouter>();
+        var context = applicant.Context;
+        Assert.IsType<BlueInstance>(router.CallWire(context, "corpmgr", "GetPublicInfo", new object?[] { (long)corporation }, _ => { }));
+        Assert.IsType<BlueInstance>(
+            router.CallWire(context, "corpmgr", "GetAggressionSettings", new object?[] { (long)corporation }, _ => { })
+        );
+        var registry = Assert.IsType<BoundPilotReply>(
+            Assert.IsType<PilotCallResult.Success>(applicant.Call("MachoBindObject", [(long)NpcCorporation, null])).Reply
+        );
+        context.ReleaseLocationReferences();
+        string service = router.ResolveService(context, [1L, (long)PilotLogin.NodeId, null, null], registry.Reference.Id);
+        Assert.Empty(
+            Assert.IsType<Dictionary<long, object?>>(
+                router.CallWire(context, service, "GetMyApplications", Array.Empty<object?>(), _ => { })
+            )
+        );
+        const string text = "Interested in joining — 探索";
+        var arguments = BlueMarshal.Decode(BlueMarshal.Encode(new object?[] { (long)corporation, new BlueUnicode(text) }));
+        long id = Assert.IsType<long>(router.CallWire(context, service, "InsertApplication", arguments, _ => { }));
+        var saved = Assert.Single(db.Services.GetRequiredService<ICorporationMembership>().Applications(Applicant, false));
+        Assert.Equal(saved.Id, id);
+        Assert.Equal(text, saved.Text);
+        Assert.Equal(CorporationApplicationStatus.Applied, saved.Status);
+        Assert.Equal(NpcCorporation, applicant.Context.Pilot.CorpId);
+        Assert.IsType<PilotCallResult.Failure>(applicant.Call("InsertApplication", [(long)corporation, text]));
+        Assert.Single(db.Services.GetRequiredService<ICorporationMembership>().Applications(Applicant, false));
+    }
+
+    [Fact]
     public async Task ConnectedSessionsReceiveOrderedChangesOnceAndMoveChatBeforeTheNextRequest()
     {
         TestClock clock = new();
@@ -218,7 +256,7 @@ public sealed class CorporationMembershipTests
         int id = db.Services.GetRequiredService<IPlayerCorporations>().Create(Ceo, PlayerCorporationTests.Details()).Corporation.Id;
         using Client ceo = new(db, 1000001);
         using Client applicant = new(db, 1000002);
-        Assert.Null(applicant.Reply("InsertApplication", [(long)id, "Hello"]));
+        long applicationId = Assert.IsType<long>(applicant.Reply("InsertApplication", [(long)id, "Hello"]));
         ceo.Advance();
         Assert.Equal(
             CorporationApplicationStatus.Applied,
@@ -229,6 +267,7 @@ public sealed class CorporationMembershipTests
         Assert.Empty(ceo.Context.Notifications);
         var membership = db.Services.GetRequiredService<ICorporationMembership>();
         var application = Assert.Single(membership.Applications(Applicant, false));
+        Assert.Equal(applicationId, application.Id);
         var ownApplications = Assert.IsType<Dictionary<long, object?>>(applicant.Reply("GetMyApplications", []));
         var ownRow = BlueRead.Fields(Assert.IsType<BlueInstance>(Assert.Single(Assert.IsType<List<object?>>(ownApplications[id]))).State);
         Assert.Equal(application.Id, ownRow["applicationID"]);

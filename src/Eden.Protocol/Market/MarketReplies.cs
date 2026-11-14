@@ -55,16 +55,33 @@ internal sealed record MarketHistoryPair(IReadOnlyList<MarketHistoryDay> Days, l
 
 internal sealed record CachedMarketOrders(IBlueWritable Result, long Version) : BlueModel
 {
-    public override object ToBlue() =>
-        new BlueInstance(
+    public override object ToBlue()
+    {
+        byte[] payload = BlueMarshal.Encode(Result);
+        return new BlueInstance(
             "carbon.common.script.net.objectCaching.CachedMethodCallResult",
             new object?[]
             {
                 new Dictionary<string, object?> { ["versionCheck"] = "always", ["sessionInfo"] = "regionid" },
-                BlueMarshal.Encode(Result),
-                new object?[] { Version, 0L },
+                payload,
+                new object?[] { Version, PayloadChecksum(payload) },
             }
         );
+    }
+
+    // Native object caching compares the Adler-32 field to decide whether the payload changed.
+    private static int PayloadChecksum(ReadOnlySpan<byte> payload)
+    {
+        const uint adlerModulus = 65521;
+        uint sum = 1;
+        uint accumulated = 0;
+        foreach (byte value in payload)
+        {
+            sum = (sum + value) % adlerModulus;
+            accumulated = (accumulated + sum) % adlerModulus;
+        }
+        return unchecked((int)((accumulated << 16) | sum));
+    }
 }
 
 internal sealed record MarketTransactionReply(MarketTrade Trade, long AccountId) : BlueModel
@@ -137,8 +154,7 @@ internal sealed record WalletJournalEntry(
 
 internal sealed record WalletDescription([property: JsonPropertyName("DESC")] string Reason);
 
-internal sealed record OwnOrdersChanged(IReadOnlyList<MarketOrderRow> Orders, string Reason = "Expiry")
-    : PilotNotification("OnOwnOrdersChanged")
+internal sealed record OwnOrdersChanged(IReadOnlyList<MarketOrderRow> Orders, string Reason) : PilotNotification("OnOwnOrdersChanged")
 {
     public override object?[] Arguments => [Orders.Select(order => (object?)order.ToBlue()).ToList(), Reason, false];
 }

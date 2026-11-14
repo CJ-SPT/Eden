@@ -34,7 +34,7 @@ internal sealed class MarketHandler(
         return CachedOrders(new MarketOrderBook(book.Where(o => !o.Bid).ToArray(), book.Where(o => o.Bid).ToArray()));
     }
 
-    private BlueList<MarketOrderRow> Changed(PilotCallContext context, MarketResult result)
+    private BlueList<MarketOrderRow> Changed(PilotCallContext context, MarketResult result, bool multiBuy = false)
     {
         foreach (var change in result.Changes)
         {
@@ -61,9 +61,13 @@ internal sealed class MarketHandler(
                 )
             )
             .ToList();
-        // Completed immediate orders invalidate the client's order and transaction
-        // caches. They are executions, not outstanding personal listings.
-        context.Notifications.Add(new OwnOrdersChanged(orders));
+        // The visible book refreshes for a fill. MultiBuy separately waits for
+        // Expiry on the execution IDs returned to its pending-order list.
+        context.Notifications.Add(new OwnOrdersChanged(orders, "Filled"));
+        if (multiBuy)
+        {
+            context.Notifications.Add(new OwnOrdersChanged(orders, "Expiry"));
+        }
         foreach (var change in result.Changes.Where(c => c.Previous is null))
         {
             context.Notifications.Add(new MarketItemReceived(change.Item));
@@ -248,7 +252,7 @@ internal sealed class MarketHandler(
                     return PilotCallResult.None;
                 case "BuyMultipleItems" when args is [long destination, List<object?> entries, false or 0L]:
                     var purchases = entries.Select(MarketRequestWire.Purchase).ToArray();
-                    return Changed(context, market.Buy(context.Pilot.PilotId, checked((int)destination), purchases));
+                    return Changed(context, market.Buy(context.Pilot.PilotId, checked((int)destination), purchases), multiBuy: true);
                 case "CharGetTransactions" when args is [null or long]:
                     return new BlueList<MarketTransactionReply>(
                         market

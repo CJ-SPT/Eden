@@ -117,7 +117,7 @@ public sealed class RemoteMarketTests
             Assert.Single(Assert.IsType<List<object?>>(result));
         }
         Assert.Equal(before - UnitPrice * 2, f.Market.Balance(pilot.PilotId));
-        var changed = Assert.IsType<OwnOrdersChanged>(Assert.Single(context.Notifications, n => n.Name == "OnOwnOrdersChanged"));
+        var changed = Assert.Single(context.Notifications.OfType<OwnOrdersChanged>(), n => n.Reason == "Filled");
         var order = Assert.Single(changed.Orders).Order;
         Assert.Equal(SellingStation, order.StationId);
         Assert.Equal(sellingSystem, order.SystemId);

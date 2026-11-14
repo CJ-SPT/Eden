@@ -7,6 +7,32 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Refreshing market quotes after an immediate fill
+
+The November 13 client log reported repeated stale-price rejections following a Venture purchase at Kihtaled VIII.
+The server checkpoint recorded the first unit at 227,392.88 ISK. The same regional order had 19 units remaining at
+229,098.33 ISK after the fill.
+
+In build **3662168**, `marketsvc.OnOwnOrdersChanged` invalidates the order RPC cache, while `marketbase.OnOwnOrdersChanged`
+skips visible market reloads on `Expiry`. Eden had sent `Expiry` for all immediate fills. Immediate executions now
+send `Filled` to refresh the price and remaining volume. MultiBuy also receives `Expiry` for the same execution IDs
+because `buyMultiFromBase.OnOwnOrdersChanged` uses those IDs to clear the pending purchases. `objectCaching` compares
+the checksum in the version pair, so market book replies now include the native payload Adler-32 in place of a fixed
+zero. Price limits still apply to each trade.
+
+Inert inspection used the original build archive, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**.
+EVE.js **261108.1** was checked for order-change reason handling. [CCP order matching](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders) ·
+[EVE University trading guide](https://wiki.eveuniversity.org/Trading)
+
+**Automated validation.** The targeted test reproduced the missing fill notification for both single buys and
+MultiBuy. It checks a repeat purchase against the updated quote for the same finite regional order, unchanged book
+checksums on repeated reads, and atomic rejection of the old quote.
+
+**Live acceptance.** Not performed because agent client testing is disabled.
+
+**Optional maintainer checks.** With market auto-refresh enabled, buy one Venture and then buy another from the same
+listing at the updated price. Check the seller's remaining volume after each fill.
+
 ## Tech II supply audit and refinery bootstrap
 
 The [build-3662168 audit](../tech-two-supply-audit.json) traces the admitted Tech II manufacturing catalog and the first refinery's

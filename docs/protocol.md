@@ -637,6 +637,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Corporations
 
+- [Corporation registry lifetime and application replies](protocol/corporations.md#corporation-registry-lifetime-and-application-replies)
 - [Corporation contacts and standings, November 11, 2026](protocol/corporations.md#corporation-contacts-and-standings--november-11-2026)
 
 - <a id="corporation-share-holdings-and-native-wallet-panels"></a>[Corporation share holdings and native wallet panels](protocol/corporations.md#corporation-share-holdings-and-native-wallet-panels)
@@ -692,6 +693,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 - [Personal mining ledger, November 11, 2026](protocol/industry.md#personal-mining-ledger--november-11-2026)
 
+- [Refreshing market quotes after an immediate fill](protocol/industry.md#refreshing-market-quotes-after-an-immediate-fill)
 - [Immediate regional purchases (November 11, 2026)](protocol/industry.md#immediate-regional-purchases-november-11-2026)
 
 - [Regional best-ask performance (November 12, 2026)](protocol/industry.md#regional-best-ask-performance-november-12-2026)

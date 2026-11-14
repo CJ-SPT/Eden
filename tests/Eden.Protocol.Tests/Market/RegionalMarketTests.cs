@@ -3,6 +3,10 @@ using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Protocol.Flight;
+using Eden.Protocol.Market;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Capsuleers;
 using Eden.Server;
 using Eden.World.Catalog;
@@ -22,6 +26,94 @@ public sealed class RegionalMarketTests
     private const int HubStation = 60003760;
     private const int Ammunition = 215;
     private const int Merlin = 603; // Audited starter production cohort.
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ImmediatePurchaseRefreshesTheVisibleBookBeforeBuyingAgain(bool multiBuy)
+    {
+        using CapsuleerHaulerTests.Fixture f = UnlockedFixture();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var scope = host.CreateScope();
+        var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+        var market = host.GetRequiredService<IPilotMarket>();
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        using PilotCallContext context = new(
+            1000001,
+            pilot.Account,
+            [pilot],
+            scope.ServiceProvider.GetRequiredService<FlightSessionFactory>().Create,
+            42,
+            SignedSettings.Empty
+        );
+        context.Select(pilot);
+        const int quantity = 100;
+        CachedMarketOrders Book() =>
+            Assert.IsType<CachedMarketOrders>(
+                Assert
+                    .IsType<PilotCallResult.Success>(
+                        router.Call(context, "marketProxy", "GetOrders", new object?[] { (long)Ammunition }, _ => { })
+                    )
+                    .Reply
+            );
+        MarketOrder Ask(CachedMarketOrders reply) =>
+            Assert.IsType<MarketOrderBook>(reply.Result).Sell.Single(o => o.StationId == HubStation);
+        PilotCallResult Buy(MarketOrder quote)
+        {
+            double price = (double)quote.PriceCents / MarketDefinitions.CentsPerIsk;
+            object?[] args = multiBuy
+                ?
+                [
+                    (long)HubStation,
+                    new List<object?>
+                    {
+                        new BlueInstance(
+                            "utillib.KeyVal",
+                            new Dictionary<string, object?>
+                            {
+                                ["typeID"] = (long)Ammunition,
+                                ["price"] = price,
+                                ["quantity"] = (long)quantity,
+                            }
+                        ),
+                    },
+                    false,
+                ]
+                : [(long)HubStation, (long)Ammunition, price, (long)quantity, (long)MarketDefinitions.StationRange, 1L, 0L, false, null];
+            return router.Call(context, "marketProxy", multiBuy ? "BuyMultipleItems" : "PlaceBuyOrder", args, _ => { });
+        }
+        var firstBook = Book();
+        var firstAsk = Ask(firstBook);
+        Fund(f.Database, pilot.PilotId, firstAsk.PriceCents * quantity * 10);
+        long before = market.Balance(pilot.PilotId);
+        var first = Assert.IsType<PilotCallResult.Success>(Buy(firstAsk));
+        var updates = context.Notifications.OfType<OwnOrdersChanged>().ToArray();
+        Assert.Equal(multiBuy ? new[] { "Filled", "Expiry" } : ["Filled"], updates.Select(e => e.Reason));
+        if (multiBuy)
+        {
+            Assert.Equal(BlueMarshal.Encode(first.Reply), BlueMarshal.Encode(updates[1].Arguments[0]));
+        }
+        var refreshedBook = Book();
+        var refreshedAsk = Ask(refreshedBook);
+        Assert.Equal(firstAsk.Id, refreshedAsk.Id);
+        Assert.Equal(firstAsk.Remaining - quantity, refreshedAsk.Remaining);
+        Assert.True(refreshedAsk.PriceCents > firstAsk.PriceCents);
+        object? Checksum(CachedMarketOrders reply) =>
+            BlueRead.Tuple(BlueRead.Tuple(Assert.IsType<BlueInstance>(reply.ToBlue()).State, 3)[2], 2)[1];
+        Assert.NotEqual(Checksum(firstBook), Checksum(refreshedBook));
+        Assert.Equal(Checksum(refreshedBook), Checksum(Book()));
+        context.Notifications.Clear();
+        long afterFirst = before - firstAsk.PriceCents * quantity;
+        Assert.IsType<PilotCallResult.Failure>(Buy(firstAsk));
+        Assert.Equal(afterFirst, market.Balance(pilot.PilotId));
+        Assert.Single(market.Transactions(pilot.PilotId));
+        Assert.Empty(context.Notifications);
+        Assert.IsType<PilotCallResult.Success>(Buy(refreshedAsk));
+        Assert.Equal(afterFirst - refreshedAsk.PriceCents * quantity, market.Balance(pilot.PilotId));
+        Assert.Equal(2, market.Transactions(pilot.PilotId).Count);
+        using WorldDbContext saved = new(f.Database.Path);
+        Assert.Equal(2 * quantity, saved.Set<OwnedItem>().Single(i => i.OwnerId == pilot.PilotId && i.TypeId == Ammunition).Quantity);
+    }
 
     [Fact]
     public void RemoteHubPurchaseConsumesFiniteStockAndLeavesGoodsForPickup()

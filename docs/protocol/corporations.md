@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation registry lifetime and application replies](#corporation-registry-lifetime-and-application-replies)
 - [Corporation contacts and standings, November 11, 2026](#corporation-contacts-and-standings--november-11-2026)
 
 - [Corporation Show Info window audit, November 9, 2026](#corporation-show-info-window-audit-november-9-2026)
@@ -30,6 +31,41 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation registry lifetime and application replies
+
+The November 13 screenshot showed a partially constructed corporation window after gate travel. The client game log
+recorded `Unsupported local call corpRegistry.MachoBindObject` at 23:09:37 ET. The running server's warning logs did not
+identify the bind's embedded method. Read-only inspection confirmed the selected pilot was the CEO of an existing player
+corporation.
+
+Build **3662168** `base_corporation.GetCorpRegistry` and `eveMoniker.GetCorpRegistry` cache the registry by `corpid`.
+Eden had been releasing the reference on location changes, which left the client holding an expired reference when it
+opened corporation panels or queried applications after travel. Registry references now live until corporation change
+or pilot logoff. Binds still validate the selected pilot's current corporation. `bco_applications.InsertApplication`
+returns the registry reply to `ApplyForMembership`, and `recruitmentEntry.Apply` consumes it as the application ID.
+Eden now returns the ID from the committed application.
+
+Inert inspection used the original build archive, SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**.
+EVE.js **261108.1** was checked for registry binding and application reply behavior. Eden reuses its existing object
+reference and integer encoders. [EVE University recruitment guide](https://wiki.eveuniversity.org/Recruiting_corporation_members) ·
+[Carbon Blue `Marshal.cpp` at fcbf0c2e](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+
+**Automated validation.** The targeted regressions reproduced the expired reference and missing application ID.
+The corrected cases cover location departure, corporation change, public application dialog queries, submission
+through a retained reference, Unicode text, persistence and duplicate rejection.
+The combined corporation, session, market and serialization run passed 546 cases in 161 seconds. The filter
+included `Corporation`, `PilotBindingsTests`, `PilotServicesTests`, `HomeStationServiceTests`, `CharacterLogoffTests`,
+`Eden.Protocol.Tests.Market` and `Eden.Protocol.Tests.Serialization`. Three cases reproduced on base `f964b2ae`
+and were excluded from the final run: `RegisteredResidentRowsCoverEveryScalarColumnOfTheirSavedModels`,
+`FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` and
+`MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback`.
+Tool and solution restore, build, both Python policy suites and formatting passed in 235 seconds overall.
+
+**Live acceptance.** Not performed because agent client testing is disabled.
+
+**Optional maintainer checks.** After updating the server, reopen Corporation after a gate jump. From an eligible pilot,
+apply through a recruiting corporation's Show Info window and check My Applications.
 
 ## Corporation contacts and standings — November 11, 2026
 

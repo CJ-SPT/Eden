@@ -172,9 +172,9 @@ internal sealed partial class CorporationHandler
             switch (method, args)
             {
                 case ("InsertApplication", [long corporation, var text]) when corporation is > 0 and <= int.MaxValue:
-                    membership.Apply(pilot, (int)corporation, Text(text));
+                    var application = membership.Apply(pilot, (int)corporation, Text(text));
                     Advance(context);
-                    return PilotCallResult.None;
+                    return application.Id;
                 case ("UpdateApplicationOffer", [long id, long applicant, long corporation, var text, long status, var response, var date])
                     when id > 0
                         && applicant > 0
