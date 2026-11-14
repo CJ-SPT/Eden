@@ -2,6 +2,7 @@ using System.Globalization;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Infrastructure.Diagnostics;
+using Eden.World.Catalog;
 using Eden.World.Market;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
@@ -42,8 +43,10 @@ internal sealed record EconomyCheckpoint(IReadOnlyList<IEconomyProjection> Table
 internal sealed partial class ResidentEconomy
 {
     private const int ProjectionBatchSize = 128;
-    private readonly LiveWorld _owner;
-    private readonly WorldDatabase _database;
+    private readonly LiveWorld? _live;
+    private readonly WorldDatabase? _source;
+    private LiveWorld _owner => _live ?? throw new InvalidOperationException("The fitting preview has no live world.");
+    private WorldDatabase _database => _source ?? throw new InvalidOperationException("The fitting preview has no saved world.");
     private readonly Dictionary<Type, IEconomyTable> _tables = [];
     private readonly Dictionary<string, long> _sequences = new(StringComparer.Ordinal);
     private readonly HashSet<string> _dirtySequences = [];
@@ -204,12 +207,17 @@ internal sealed partial class ResidentEconomy
         return result;
     }
 
+    private ResidentEconomy() => RegisterTables();
+
     internal ResidentEconomy(LiveWorld owner, WorldDatabase database)
+        : this()
     {
-        _owner = owner;
-        _database = database;
-        RegisterTables();
+        _live = owner;
+        _source = database;
     }
+
+    internal static EconomyTransaction PreviewFit(CatalogDbContext catalog) =>
+        new(new ResidentEconomy(), null, null, null, null, null, catalog);
 
     private void Register<TRow, TState>(EconomyTable<TRow, TState> table)
         where TRow : class

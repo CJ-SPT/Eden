@@ -49,7 +49,8 @@ internal sealed partial class EconomyTransaction
         return false;
     }
 
-    internal override string? FitRevision(long pilot) => PendingFitChanges() ? null : store.FitRevision(pilot);
+    internal override string? FitRevision(long pilot) =>
+        previewCatalog is not null || PendingFitChanges() ? null : store.FitRevision(pilot);
 
     internal override Dictionary<DogmaAttributeId, double>? CachedFit(FitCacheKey key, string? revision) =>
         revision is null ? null

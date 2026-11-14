@@ -21,11 +21,12 @@ internal sealed partial class EconomyTransaction
 
     internal void ImportCombat(TransactionParticipants? participants)
     {
+        var live = owner ?? throw new InvalidOperationException("Combat import requires a live world.");
         // Capture named participants and resources, without copying every NPC in their systems.
         var ships = participants is null
             ? null
             : new TransactionParticipants(pilots: participants.Pilots, ships: participants.Ships, resources: participants.Resources);
-        _combat = owner.Combat?.CaptureCheckpoint(ships);
+        _combat = live.Combat?.CaptureCheckpoint(ships);
         var heatShips = participants is null
             ? []
             : participants
@@ -35,7 +36,7 @@ internal sealed partial class EconomyTransaction
                 .ToArray();
         foreach (long ship in heatShips)
         {
-            var heatOwner = owner.HeatForKnownShip(ship);
+            var heatOwner = live.HeatForKnownShip(ship);
             var projection = heatOwner.CaptureShip(ship);
             if (projection is null)
             {

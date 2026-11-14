@@ -97,6 +97,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
         var synchronization = host.GetRequiredService<IWorldSynchronization>();
         int blueprints = 0;
+        List<string> blueprintCommands = [];
         using (
             var metrics = SessionPerformance.Begin(
                 "miner preparation",
@@ -108,13 +109,29 @@ public sealed class CapsuleerBackgroundPreparationTests
                         blueprints++;
                     }
                 },
-                force: true
+                force: true,
+                command: sql =>
+                {
+                    if (
+                        sql.Contains("World", StringComparison.Ordinal)
+                        && new System.Diagnostics.StackTrace()
+                            .GetFrames()
+                            .Any(frame =>
+                                frame.GetMethod()?.DeclaringType == typeof(CapsuleerShipBlueprints)
+                                && frame.GetMethod()?.Name is "Build" or ".ctor"
+                            )
+                    )
+                    {
+                        blueprintCommands.Add(sql);
+                    }
+                }
             )
         )
         {
             Assert.Null(preparation.PrepareNext().Failure);
         }
         Assert.True(blueprints > 0);
+        Assert.Empty(blueprintCommands);
         using WorldDbContext saved = new(f.Database.Path);
         var miner = Assert.Single(saved.Set<SavedCapsuleerAgent>());
         Assert.Equal(CapsuleerCareer.Mining, miner.Career);

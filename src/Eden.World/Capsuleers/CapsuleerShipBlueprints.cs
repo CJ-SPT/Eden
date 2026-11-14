@@ -15,6 +15,7 @@ using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,6 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
     private const long TemplateTime = TimeSpan.TicksPerDay;
     private const int ShipContainer = -1;
     private const int StationContainer = -2;
-    private readonly TrafficValidationImage _image = new();
     private readonly Dictionary<(int Race, string Fit), Blueprint> _blueprints = [];
     private readonly Dictionary<(int Race, string Fit), Blueprint> _prepared = [];
 
@@ -62,7 +62,7 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
             {
                 return Attributes;
             }
-            // The scratch fitting world uses the catalog defaults.
+            // The fitting preview uses default world settings.
             var tuned = Attributes.ToDictionary();
             WorldTuningRules.ScaleMiningHolds(policy, tuned);
             return tuned;
@@ -81,43 +81,7 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
         double CrystalDamage
     );
 
-    internal CapsuleerShipBlueprints(CatalogDbContext catalog)
-    {
-        _station = catalog.Definitions.Stations.Keys.First();
-        using WorldDbContext world = _image.Open();
-        world.Database.EnsureCreated();
-        using var transaction = world.Database.BeginTransaction();
-        world.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys=ON");
-        world.Add(
-            new Account
-            {
-                Id = 1,
-                UserName = "Population blueprint",
-                CloneGrade = AccountCloneGrade.Omega,
-            }
-        );
-        world.Add(new InventoryOwner { Id = TemplatePilot });
-        world.Add(
-            new Ship
-            {
-                Id = TemplateShip,
-                OwnerId = TemplatePilot,
-                StationId = _station,
-                Name = "Population blueprint",
-            }
-        );
-        world.Add(
-            new Pilot
-            {
-                Id = TemplatePilot,
-                AccountId = 1,
-                ActiveShipId = TemplateShip,
-                Name = "Population blueprint",
-            }
-        );
-        world.SaveChanges();
-        transaction.Commit();
-    }
+    internal CapsuleerShipBlueprints(CatalogDbContext catalog) => _station = catalog.Definitions.Stations.Keys.First();
 
     internal void Create(
         WorldDbContext world,
@@ -262,10 +226,36 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
     private Blueprint Build(CatalogDbContext catalog, int race, int hull, TrafficProfile? profile, bool mining)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.shipBlueprint");
-        using WorldDbContext world = _image.Open();
-        using var transaction = world.Database.BeginTransaction();
-        world.Ships.Single().TypeId = hull;
-        world.Pilots.Single().RaceId = race;
+        using var world = ResidentEconomy.PreviewFit(catalog);
+        world.Add(
+            new Account
+            {
+                Id = 1,
+                UserName = "Population blueprint",
+                CloneGrade = AccountCloneGrade.Omega,
+            }
+        );
+        world.Add(new InventoryOwner { Id = TemplatePilot });
+        world.Add(
+            new Ship
+            {
+                Id = TemplateShip,
+                OwnerId = TemplatePilot,
+                StationId = _station,
+                TypeId = hull,
+                Name = "Population blueprint",
+            }
+        );
+        world.Add(
+            new Pilot
+            {
+                Id = TemplatePilot,
+                AccountId = 1,
+                ActiveShipId = TemplateShip,
+                RaceId = race,
+                Name = "Population blueprint",
+            }
+        );
         world.SaveChanges();
         StartingSkills.Grant(world, catalog, TemplatePilot, race);
         CapsuleerCommunityStore.GrantRequirements(world, catalog, TemplatePilot, hull, []);
@@ -310,17 +300,12 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
         }
         CapsuleerSupplyStore.Ensure(world, catalog, TemplatePilot, TemplateShip);
         world.SaveChanges();
-        var items = world.Set<OwnedItem>().AsNoTracking().OrderBy(item => item.Id).ToArray();
+        var items = world.Set<OwnedItem>().OrderBy(item => item.Id).ToArray();
         var indices = items.Select((item, index) => (item.Id, Index: index)).ToDictionary(item => item.Id, item => item.Index);
-        var health = world.Set<ShipHealthState>().AsNoTracking().SingleOrDefault();
-        var energy = world.Set<ShipEnergy>().AsNoTracking().SingleOrDefault();
+        var health = world.Set<ShipHealthState>().SingleOrDefault();
+        var energy = world.Set<ShipEnergy>().SingleOrDefault();
         var blueprint = new Blueprint(
-            world
-                .Set<PilotSkill>()
-                .AsNoTracking()
-                .OrderBy(skill => skill.TypeId)
-                .Select(skill => new Skill(skill.TypeId, skill.Points))
-                .ToArray(),
+            world.Set<PilotSkill>().OrderBy(skill => skill.TypeId).Select(skill => new Skill(skill.TypeId, skill.Points)).ToArray(),
             items
                 .Select(item => new Item(
                     item.TypeId,
@@ -336,7 +321,6 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
                 .ToArray(),
             world
                 .Set<ModuleCooldown>()
-                .AsNoTracking()
                 .AsEnumerable()
                 .Select(cooldown => new Cooldown(indices[cooldown.ModuleId], cooldown.ReadyAt - TemplateTime, cooldown.Kind))
                 .ToArray(),
@@ -344,11 +328,14 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
             energy?.Charge,
             PilotFittingStore.ShipAttributes(world, catalog, TemplatePilot).ToFrozenDictionary()
         );
-        // The scratch transaction rolls back every identity and grant. Only immutable blueprint values escape.
         return blueprint;
     }
 
-    public void Dispose() => _image.Dispose();
+    public void Dispose()
+    {
+        _prepared.Clear();
+        _blueprints.Clear();
+    }
 }
 
 internal sealed class CapsuleerBlueprintNotPreparedException : Exception { }

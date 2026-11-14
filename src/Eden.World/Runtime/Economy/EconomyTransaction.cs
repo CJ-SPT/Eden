@@ -10,6 +10,7 @@ using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
+using Eden.World.Configuration;
 using Eden.World.Market;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
@@ -19,11 +20,12 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class EconomyTransaction(
     ResidentEconomy store,
-    LiveWorld owner,
-    WorldDatabase database,
-    IDisposable lease,
-    IDisposable systems,
-    TransactionParticipants? participants
+    LiveWorld? owner,
+    WorldDatabase? database,
+    IDisposable? lease,
+    IDisposable? systems,
+    TransactionParticipants? participants,
+    CatalogDbContext? previewCatalog = null
 ) : WorldAction, IDisposable
 {
     private readonly Dictionary<Type, IEconomySet> _sets = [];
@@ -77,8 +79,8 @@ internal sealed partial class EconomyTransaction(
         {
             return attributes;
         }
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        var result = Eden.World.Fittings.PilotFittingStore.ShipAttributes(this, catalog, pilot);
+        using CatalogDbContext? catalog = previewCatalog is null ? new(database!.CatalogPath) : null;
+        var result = Eden.World.Fittings.PilotFittingStore.ShipAttributes(this, previewCatalog ?? catalog!, pilot);
         _attributes[pilot] = result;
         return result;
     }
@@ -94,10 +96,10 @@ internal sealed partial class EconomyTransaction(
         }
     }
 
-    internal override long ActiveTicks => owner.CapsuleerActivity.Read().ElapsedTicks;
+    internal override long ActiveTicks => owner?.CapsuleerActivity.Read().ElapsedTicks ?? 0;
     internal int Materializations => _sets.Values.Sum(set => set.Materializations);
-    internal override WorldSettings Settings => database.Settings;
-    internal override string WorldPath => database.Path;
+    internal override WorldSettings Settings => database?.Settings ?? WorldConfigurationSlot.Defaults;
+    internal override string WorldPath => database?.Path ?? string.Empty;
 
     internal override EconomySet<T> Set<T>()
         where T : class
@@ -201,13 +203,13 @@ internal sealed partial class EconomyTransaction(
     internal bool Overlay<T>(T row)
         where T : class
     {
-        if (row is FlightPosition position && owner.CombatForShip(position.ShipId)?.InformationPosition(position.ShipId) is { } current)
+        if (row is FlightPosition position && owner?.CombatForShip(position.ShipId)?.InformationPosition(position.ShipId) is { } current)
         {
             (position.X, position.Y, position.Z) = (current.X, current.Y, current.Z);
         }
         if (row is OwnedItem item)
         {
-            return owner.CombatForKnownPilot(item.OwnerId)?.OverlayEconomicItem(item) ?? true;
+            return owner?.CombatForKnownPilot(item.OwnerId)?.OverlayEconomicItem(item) ?? true;
         }
         return true;
     }
@@ -395,6 +397,7 @@ internal sealed partial class EconomyTransaction(
         {
             throw new InvalidOperationException("This economic transaction already committed.");
         }
+        var live = owner ?? throw new InvalidOperationException("A fitting preview cannot publish changes.");
         Validate();
         var sets = _sets.Values.ToArray();
         foreach (var set in sets)
@@ -404,7 +407,7 @@ internal sealed partial class EconomyTransaction(
         var changes = sets.SelectMany(set => set.Changes).ToArray();
         var marketLocations =
             changes.Any(c => c.Table is "WorldMarketOrder" or "WorldPersonalOrder" or "WorldRegionalMarketStock")
-            && owner.MarketSummaries.HasViews
+            && live.MarketSummaries.HasViews
                 ? AffectedMarketLocations(changes)
                 : [];
         long[] candidates = sets.SelectMany(set => set.Owners).Distinct().ToArray();
@@ -415,7 +418,7 @@ internal sealed partial class EconomyTransaction(
         long[] pilots = candidates.Where(store.IsPilot).ToArray();
         if (_combat is not null)
         {
-            owner.AcknowledgeEconomicCombat(_combat);
+            live.AcknowledgeEconomicCombat(_combat);
         }
         foreach (var heat in _heat)
         {
@@ -479,8 +482,8 @@ internal sealed partial class EconomyTransaction(
         }
         _disposed = true;
         store.End();
-        systems.Dispose();
-        lease.Dispose();
+        systems?.Dispose();
+        lease?.Dispose();
     }
 }
 

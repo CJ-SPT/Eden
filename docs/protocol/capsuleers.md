@@ -1002,3 +1002,11 @@ automated synthetic-fixture results, not a full-galaxy capacity measurement; the
 
 **Optional maintainer checks.** Restart with a changed traffic multiplier and inspect the global preparation log and Population
 page before visiting another system; lower and restore the multiplier across restarts to observe retained pilots returning.
+
+## Resident ship blueprints (November 14, 2026)
+
+Cold founder and inbound-visitor ship templates use a private typed fitting preview with the same resident inventory, skill,
+fitting and supply operations as gameplay. Preparation takes place outside world ownership and publishes only immutable blueprint
+values. The live provisioning action reserves identities and applies equipment, skills, timers and ship resources together.
+Catalog reads are permitted during preparation. The founder regression checks that blueprint creation issues zero saved-world
+SQL commands and runs outside world ownership. The offline traffic-import validator remains a separate tool.
