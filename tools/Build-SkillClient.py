@@ -41,6 +41,17 @@ def CloneGradeStorage():
         pass
     return eden_skill_overlay.alpha_storage(_eden_original())
 '''),
+    'eve/client/script/ui/shared/fleet/fleet.pyj': ('ReloadScrollEntry', '''
+def ReloadScrollEntry(self, headerNode):
+    # The full refresh already schedules another pass when an event arrives
+    # during its scroll rebuild. Avoid inserting the same child nodes twice.
+    if getattr(self, 'loading_HandleFleetChanged', False):
+        self.pending_HandleFleetChanged = True
+        return
+    def _eden_original(self, headerNode):
+        pass
+    return _eden_original(self, headerNode)
+'''),
 }
 
 

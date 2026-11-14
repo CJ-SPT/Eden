@@ -2,6 +2,55 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Fleet roster refresh after joining, November 14, 2026
+
+The maintainer saw **Fleet (3)** and a repeated squad header with no member rows after accepting an invite.
+The fleet boss's client showed both squad members. The logs confirmed receipt of the invitations.
+
+Build 3662168's `MyFleetPanel.DoHandleFleetChanged` rebuilds the scroll from a copy of the fleet roster.
+An incoming fleetmate update can also call `ReloadScrollEntry` through the incremental wing refresh.
+The native `Scroll.PrepareSubContent` inserts child rows before it publishes the parent's `subNodes`.
+An incremental refresh in that interval can insert the same squad again. The packaged client now defers
+the incremental scroll mutation during a full roster rebuild and uses the existing pending refresh to read
+the latest membership. Idle incremental refreshes still use the native method.
+
+The headless replay used the original build archive (SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`) and the same client fleet methods found in
+the prepared archive. It reproduced duplicate children by delivering a fleetmate notification during scroll insertion.
+The correction leaves one squad and includes all three pilots after the deferred refresh. The original UI exception
+or scheduling sequence was not captured from the maintainer's client. The server membership and roster wire paths
+use the existing models. [EVE University Fleet interface](https://wiki.eveuniversity.org/Fleet_interface) ·
+[Carbon Blue Marshal.cpp](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+The older local EVE.js `fleetRuntime.js` (SHA-256
+`494727D0F0793202BD9195C417FFFC63CCE499EA157890FC12981919BE521B8F`) likewise publishes another member's join to fleet peers.
+
+Build a new client set from the current selection through [Eden Mods](../modding.md#host-commands). On Docker, build the
+updated image, stop Eden, and run `docker compose run --rm -T eden --mod-build /config` using the deployment's normal
+Compose options and pinned source archive. Start Eden to activate the new set. Relaunch through Eden Launcher to install it.
+
+**Automated validation.** On top of `ccbb57f0`, the solution built with zero warnings or errors in 3.92 seconds after
+tool and solution restore. The focused .NET run passed 167 tests and skipped one optional browser case in 24.82 seconds.
+The first run on the updated base exposed the launcher's hard-coded AutoMining version assertion after its upgrade to
+1.3.0. The test now compares the advertised version with the exported package manifest. The filter used
+`FullyQualifiedName~` with each value below, joined by `|`.
+
+```text
+CooperativeFleetTests
+FleetRulesTests
+Eden.Protocol.Tests.Administration
+Eden.Protocol.Tests.Launcher
+```
+
+Catalog and formatting policy suites passed eight and nine cases. The exact native fleet replay passed with the pinned
+Windows DLL and standalone CPython 2.7.18 in under one second each. The Windows replay fixture uses explicit Python
+attribute assignment so its scroll stubs behave the same in both interpreters. The skill adapter's 11 native assertions
+and the five mod-loader cases passed. Formatting and diff checks passed. The final validation sequence took 85.95 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Accept an invitation with a second pilot, then invite a third pilot and check the squad
+roster on both existing clients.
+
 ## Default fleet invitations, November 14, 2026
 
 The default **Invite to Fleet** menu item, the multi-select character menu, and dropping a pilot into **My Fleet** send

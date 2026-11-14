@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Eden.Infrastructure.Registration;
+using Eden.Server.Modding;
 using Eden.World.Skills;
 using Eden.World.Storage;
 
@@ -56,7 +57,8 @@ internal sealed class SkillClientPublisher(WorldDatabase database, SkillEditorSt
                 Path.Combine(temporary, "catalog.sqlite"),
                 snapshot
             );
-            string id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(snapshot.CatalogFingerprint + generation + overlay)));
+            string identity = ModPublisher.ClientCompositionVersion + snapshot.CatalogFingerprint + generation + overlay;
+            string id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)));
             string folder = SkillPackageActivation.DirectoryPath(database.Path, id);
             if (!Directory.Exists(folder))
             {

@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using Eden.Gameplay.Mining;
+using Eden.Modding;
 using Eden.Server.Authentication;
 using Eden.Server.Launcher;
 using Eden.Server.Modding;
@@ -24,6 +25,7 @@ public sealed class ModLauncherApiTests
         string client = Environment.GetEnvironmentVariable("EDEN_TEST_CLIENT_ROOT")!;
         string archive = Path.Combine(Path.GetDirectoryName(world.Path)!, "AutoMining.edenmod");
         Assert.True(await ModCommands.TryRun(["--mod-export-automining", archive], database));
+        string version = ModPackages.Read(archive).Manifest.Version;
         store.Enable(store.Install(archive), true);
 
         ModPublisher publisher = new(database, store);
@@ -60,7 +62,7 @@ public sealed class ModLauncherApiTests
         Assert.Equal(2, advertised.ApiVersion);
         Assert.Null(advertised.SkillPackage);
         Assert.Equal(set.Id, advertised.ModSet!.Id);
-        Assert.Equal(new(AutoMiningFilter.ModId, "1.2.3"), Assert.Single(advertised.ModSet.Mods));
+        Assert.Equal(new(AutoMiningFilter.ModId, version), Assert.Single(advertised.ModSet.Mods));
         using var denied = await http.GetAsync($"/api/v2/mod-sets/{set.Id}/code");
         Assert.Equal(HttpStatusCode.Unauthorized, denied.StatusCode);
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
