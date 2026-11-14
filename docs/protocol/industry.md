@@ -174,6 +174,58 @@ Not performed; agent client testing is disabled. The pinned archive test compile
 
 Choose a station in the panel, then watch one unload and return cycle through the station and in-flight views.
 
+## AutoMining approach, survey, and harvest handling
+
+AutoMining 1.2.0 saves resource family, target order, approach, and jettison in the active character's settings.
+Ore, nearest target, stationary operation, and jettison off are the defaults. Options can change while mining and
+take effect on the next target selection. Finish the haul trip or stop the mod before changing options during a trip.
+
+Approach uses the normal Destiny follow order against a visible target and stops following once it is in harvesting
+and locking range. Choosing largest or smallest requires an integrated mining scanner and an online survey chipset.
+The resident survey reads current quantities within 250 km and ranks visible, compatible deposits by remaining cubic
+metres. Equal volumes sort by surface distance, then object ID.
+
+Ore and ice use the native mining effect. Gas uses the native cloud-harvesting effect. Existing mining operations own
+fitting, skills, range, cycle timing, target depletion, and resource-specific holds. The filter applies to ore only.
+
+Jettison uses the saved unload threshold and takes priority over station hauling when enabled. The resident cargo
+transaction uses the normal cargo container, loot rights, capacity, three-minute cooldown, and two-hour expiry. It
+moves only the selected resource family from the active harvest hold and can split a stack to fit the can. The owner
+receives inventory and ballpark updates at launch. Other pilots see the can on normal scene refresh. Contents and the
+shared cooldown survive checkpoint and reopen.
+
+Build 3662168 uses the native survey chipset attributes and gas harvesting effect. Original archive SHA-256:
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. Upstream v1.2.27
+(`0986770cbc186287e9e72c0eb2377fcf1c670c89`) informed the volume ordering. Carbon Destiny informed the approach
+behavior. [Upstream target selection](https://github.com/V0nCleef/EveJS-Automining/blob/v1.2.27/lib/targets.js) ·
+[Carbon Destiny](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp#L2549) ·
+[EVE University mining](https://wiki.eveuniversity.org/Mining) ·
+[EVE University ice harvesting](https://wiki.eveuniversity.org/Ice_harvesting) ·
+[EVE University gas harvesting](https://wiki.eveuniversity.org/Gas_cloud_harvesting)
+
+### Automated validation
+
+The solution built with zero warnings or errors in 10.21 seconds. The focused .NET run passed 229 cases in
+3 minutes 4 seconds, including the pinned client archive compilation, existing station hauling, native survey and
+jettison calls, and the new approach, resource selection, and cooldown tests. The automated approach case reached
+harvesting range and stopped after a manual navigation order. The jetcan split and expiry issued zero world SQL commands
+and opened zero world SQL connections in the warmed resident tests. The catalog and formatting policy suites passed
+8 and 9 Python tests respectively. Formatting verification passed.
+
+The final filter selected `Eden.Protocol.Tests.Mining.MiningTests.`, `MiningCrystalTests`, `MiningMissionTests`,
+`JettisonTests`, `InformationTests`, `AutoMiningPackageTests`, `ModRuntimeTests`, `FlightSessionTests`,
+`StationUndockTests`, `AutoNavigationTests`, `CharacterSettingsTests`, `CharacterSettingsServiceTests`,
+`GameplayDependenciesTests`, `PlanetaryIndustryTests`, and `PilotInventoryTests`.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Open the panel in space, save options, and check approach, survey order, and native effect display.
+Jettison once and open the cargo container from the overview.
+
 ## Deep-core mining and Morphite
 
 The three Mercoxit variants in the pinned belt catalog require a deep-core module. The static Deep Core Mining Laser I,

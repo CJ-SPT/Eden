@@ -27,20 +27,29 @@ class MiningPanel(object):
             return
         self.revision += 1
         self.window = Window.Open(windowID='eden_automining', caption='AutoMining')
-        self.window.SetMinSize((360, 350), refresh=True)
+        self.window.SetMinSize((380, 520), refresh=True)
         self.window.content.Flush()
         parent = self.window.content
         self.status = EveLabelMedium(parent=parent, align=uiconst.TOTOP, padBottom=8)
         EveLabelMedium(parent=parent, text='Ore groups, separated by commas. Blank allows any ore.',
                        align=uiconst.TOTOP, padBottom=4)
         self.ore_filter = SingleLineEditText(parent=parent, align=uiconst.TOTOP, maxLength=512, padBottom=8)
+        self.family_options = [('Ore', 0), ('Ice', 1), ('Gas', 2)]
+        self.order_options = [('Nearest target', 0), ('Largest surveyed deposit', 1), ('Smallest surveyed deposit', 2)]
+        self.approach_options = [('Stay in place', 0), ('Approach targets on this grid', 1)]
+        self.jettison_options = [('Use station setting below', 0), ('Jettison harvest into a cargo container', 1)]
+        self.family = Combo(parent=parent, align=uiconst.TOTOP, options=self.family_options, padBottom=4)
+        self.order = Combo(parent=parent, align=uiconst.TOTOP, options=self.order_options, padBottom=4)
+        self.approach = Combo(parent=parent, align=uiconst.TOTOP, options=self.approach_options, padBottom=4)
+        self.jettison = Combo(parent=parent, align=uiconst.TOTOP, options=self.jettison_options, padBottom=8)
         EveLabelMedium(parent=parent, text='Unload station in this system', align=uiconst.TOTOP, padBottom=4)
-        self.station = Combo(parent=parent, align=uiconst.TOTOP, options=[('Keep ore on board', 0)], padBottom=8)
+        self.station = Combo(parent=parent, align=uiconst.TOTOP, options=[('Keep harvest on board', 0)], padBottom=8)
         EveLabelMedium(parent=parent, text='Unload at hold percentage (1-100)', align=uiconst.TOTOP, padBottom=4)
         self.threshold = SingleLineEditText(parent=parent, align=uiconst.TOTOP, maxLength=3, padBottom=8)
         self.stations = []
-        for label, callback in [('Save Filter', self.save_filter), ('Save Hauling', self.save_hauling), ('Start', self.start),
-                                ('Stop', self.stop), ('Refresh Status', self.refresh)]:
+        for label, callback in [('Save Filter', self.save_filter), ('Save Options', self.save_options),
+                                ('Save Hauling', self.save_hauling), ('Start', self.start), ('Stop', self.stop),
+                                ('Refresh Status', self.refresh)]:
             Button(parent=parent, label=label, func=callback, align=uiconst.TOTOP, padBottom=4)
         self.request('GetStatus', load_settings=True)
 
@@ -55,6 +64,10 @@ class MiningPanel(object):
 
     def save_filter(self, *args):
         self.request('SaveFilter', (self.ore_filter.GetValue(),), load_filter=True)
+
+    def save_options(self, *args):
+        self.request('SaveOptions', (self.family.GetValue(), self.order.GetValue(),
+                                    bool(self.approach.GetValue()), bool(self.jettison.GetValue())), load_options=True)
 
     def save_hauling(self, *args):
         try:
@@ -73,7 +86,7 @@ class MiningPanel(object):
     def refresh(self, *args):
         self.request('GetStatus')
 
-    def request(self, method, args=(), load_filter=False, load_hauling=False, load_settings=False):
+    def request(self, method, args=(), load_filter=False, load_hauling=False, load_settings=False, load_options=False):
         if not session.charid:
             self.status.SetText('Select a character first.')
             return
@@ -94,6 +107,11 @@ class MiningPanel(object):
                     self.ore_filter.SetValue(result['oreFilter'])
                 if (load_hauling or load_settings) and 'unloadStation' in result:
                     self.set_hauling(result)
+                if (load_options or load_settings) and 'resourceFamily' in result:
+                    self.family.LoadOptions(self.family_options, result['resourceFamily'])
+                    self.order.LoadOptions(self.order_options, result['targetOrder'])
+                    self.approach.LoadOptions(self.approach_options, int(result['approach']))
+                    self.jettison.LoadOptions(self.jettison_options, int(result['jettison']))
         except UserError as error:
             if self.is_current(revision):
                 info = getattr(error, 'dict', None) or {}
@@ -103,7 +121,7 @@ class MiningPanel(object):
 
     def set_hauling(self, state):
         selected = state['unloadStation']
-        options = [('Keep ore on board', 0)] + list(self.stations)
+        options = [('Keep harvest on board', 0)] + list(self.stations)
         if selected and not any(station == selected for _, station in options):
             options.append(('Saved station is outside this system', selected))
         self.station.LoadOptions(options, selected)

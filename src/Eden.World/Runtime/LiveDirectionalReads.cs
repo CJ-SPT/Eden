@@ -21,7 +21,6 @@ internal sealed partial class LiveReadModels
         "WorldItem",
         "WorldNpc",
         "WorldWreck",
-        "WorldJetcan",
         "WorldLogoff",
         "WorldCapsuleerSuspension"
     );

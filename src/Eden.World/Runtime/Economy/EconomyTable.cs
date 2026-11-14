@@ -437,15 +437,15 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                 {
                     var before = table.Read(key) as Eden.Data.World.Inventory.OwnedItem;
                     var after = _removed.Contains(key) ? null : _local[key] as Eden.Data.World.Inventory.OwnedItem;
-                    long priorHold = OreHoldShip(before);
-                    long nextHold = OreHoldShip(after);
+                    long priorHold = MiningHoldShip(before);
+                    long nextHold = MiningHoldShip(after);
                     if (priorHold > 0)
                     {
-                        changes.Add(new("ShipOreHoldContents", priorHold, Resident: true));
+                        changes.Add(new("ShipMiningHoldContents", priorHold, Resident: true));
                     }
                     if (nextHold > 0 && nextHold != priorHold)
                     {
-                        changes.Add(new("ShipOreHoldContents", nextHold, Resident: true));
+                        changes.Add(new("ShipMiningHoldContents", nextHold, Resident: true));
                     }
                     if (
                         before is null
@@ -466,8 +466,14 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
         }
     }
 
-    private static long OreHoldShip(Eden.Data.World.Inventory.OwnedItem? item) =>
-        item is { FlagId: (int)Eden.Gameplay.Inventory.InventoryFlag.Cargo or (int)Eden.Gameplay.Inventory.InventoryFlag.GeneralMiningHold }
+    private static long MiningHoldShip(Eden.Data.World.Inventory.OwnedItem? item) =>
+        item
+            is {
+                FlagId: (int)Eden.Gameplay.Inventory.InventoryFlag.Cargo
+                    or (int)Eden.Gameplay.Inventory.InventoryFlag.GeneralMiningHold
+                    or (int)Eden.Gameplay.Inventory.InventoryFlag.IceHold
+                    or (int)Eden.Gameplay.Inventory.InventoryFlag.GasHold
+            }
             ? item.LocationId
             : 0;
 

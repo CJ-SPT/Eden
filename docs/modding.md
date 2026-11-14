@@ -40,18 +40,28 @@ dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
 ```
 
 Use the hash printed by install. Append the same `--world PATH` to all four commands for a nondefault world.
-When upgrading from AutoMining 1.0.0, use a fresh export path and disable the old package hash before enabling 1.1.0.
+When upgrading to AutoMining 1.2.0, use a fresh export path and disable the previous package hash before enabling the new one.
 Restart Eden, then launch through Eden Launcher to receive the active mod set. In space, open **Eden Mods →
 AutoMining** from the Neocom context menu. Enter comma-separated ore group names such as `Veldspar, Scordite`,
 or leave the field empty for all supported ore. Select **Save Filter**, then **Start**. The filter is saved for the
 selected character. **Stop** ends the automated run, and the panel displays changes in run status.
 
-To haul automatically, choose an **Unload station** in your current system and select **Save Hauling**. The default
-threshold is **95%**. At the threshold, or when the next eligible unit will not fit, AutoMining docks, moves ore to
-your personal Item Hangar, undocks, and returns to its saved mining position. **Keep ore on board** disables hauling.
+Choose **Ore**, **Ice**, or **Gas** and select **Save Options**. Fit a matching online harvester. The ore filter covers
+ore groups only. **Largest surveyed deposit** and **Smallest surveyed deposit** use the remaining cubic metres on
+a ship with an integrated mining scanner and online survey chipset. **Nearest target** needs no survey equipment.
+Enable **Approach targets on this grid** to let the ship move into harvesting range. A manual navigation order stops
+the run while automatic approach is enabled.
 
-See the protocol records for [mining cycles](protocol/industry.md#automining-the-current-grid) and
-[automatic station hauling](protocol/industry.md#automining-station-hauling).
+The default unload threshold is **95%**. Use **Save Hauling** to change it or select an NPC station in the current
+system. At the threshold, or when the next eligible unit will not fit, station hauling moves the selected resource
+family to your personal Item Hangar and returns to the mining position. If **Jettison harvest into a cargo container**
+is enabled, AutoMining uses the same threshold and jettisons the selected harvest on the current grid. It uses the
+normal jettison cooldown, and the can expires after two hours. Choose **Keep harvest on board** and leave jettison off
+to retain the harvest in your ship.
+
+See the protocol records for [mining cycles](protocol/industry.md#automining-the-current-grid),
+[automatic station hauling](protocol/industry.md#automining-station-hauling), and
+[approach, survey, harvesting, and jettison](protocol/industry.md#automining-approach-survey-and-harvest-handling).
 
 ## Identity and persistence
 

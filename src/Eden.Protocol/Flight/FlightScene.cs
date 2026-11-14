@@ -242,6 +242,15 @@ internal sealed class FlightScene(
                 )
                 .ToArray();
 
+    internal void AddWreck(FlightSceneContext context, WreckContact contact)
+    {
+        if (context.InBallpark && contact.SystemId == context.Pilot.SystemId && !_wrecks.Any(wreck => wreck.Id == contact.Id))
+        {
+            _wrecks = [.. _wrecks, contact];
+            update(new DestinyCommand.AddBalls(Ballpark.AddWrecks([contact], space.Stamp(clock))));
+        }
+    }
+
     internal void RefreshWrecks(FlightSceneContext context)
     {
         if (!context.InBallpark)

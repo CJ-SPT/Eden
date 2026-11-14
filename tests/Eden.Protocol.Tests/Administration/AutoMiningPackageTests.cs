@@ -25,7 +25,7 @@ public sealed class AutoMiningPackageTests
         var package = ModPackages.Read(archive);
         Assert.Equal(AutoMiningFilter.ModId, package.Manifest.Id);
         Assert.Equal("client/automining.py", package.Manifest.ClientEntry);
-        Assert.Equal("1.1.0", package.Manifest.Version);
+        Assert.Equal("1.2.0", package.Manifest.Version);
         string hash = store.Install(archive);
         store.Enable(hash, true);
         var set = await new ModPublisher(database, store).Build(Environment.GetEnvironmentVariable("EDEN_TEST_CLIENT_ROOT")!);
@@ -35,7 +35,7 @@ public sealed class AutoMiningPackageTests
             Assert.Contains(code.Entries, entry => entry.FullName.EndsWith("/automining.pyj", StringComparison.Ordinal));
         }
         Assert.True(store.BeginActivation());
-        using var services = ServerServices.Build(new WorldDatabase(world.Path));
+        using var services = ServerServices.Build(new WorldDatabase(world.Path), liveWorld: true);
         var runtime = services.GetRequiredService<ModRuntime>();
         Assert.False(runtime.AutoMiningEnabled);
         runtime.Start();
@@ -44,11 +44,15 @@ public sealed class AutoMiningPackageTests
 
         const long stationId = 60003760;
         var replies = await Exchange("Veldspar");
-        Assert.Equal(["", "Veldspar", "Veldspar", "Veldspar"], replies.Select(reply => BlueMarshal.Text(reply["oreFilter"])));
+        Assert.Equal(["", "Veldspar", "Veldspar", "Veldspar", "Veldspar"], replies.Select(reply => BlueMarshal.Text(reply["oreFilter"])));
         Assert.Equal(0L, replies[0]["unloadStation"]);
         Assert.Equal(95L, replies[0]["unloadThreshold"]);
         Assert.Equal(stationId, replies[^1]["unloadStation"]);
         Assert.Equal(80L, replies[^1]["unloadThreshold"]);
+        Assert.Equal((long)MiningFamily.Ore, replies[0]["resourceFamily"]);
+        Assert.Equal((long)AutoMiningTargetOrder.Nearest, replies[0]["targetOrder"]);
+        Assert.Equal(false, replies[0]["approach"]);
+        Assert.Equal(false, replies[0]["jettison"]);
         Assert.All(
             replies,
             reply =>
@@ -61,6 +65,10 @@ public sealed class AutoMiningPackageTests
         Assert.Equal("Veldspar", BlueMarshal.Text(reconnected["oreFilter"]));
         Assert.Equal(stationId, reconnected["unloadStation"]);
         Assert.Equal(80L, reconnected["unloadThreshold"]);
+        Assert.Equal((long)MiningFamily.Gas, reconnected["resourceFamily"]);
+        Assert.Equal((long)AutoMiningTargetOrder.Smallest, reconnected["targetOrder"]);
+        Assert.Equal(true, reconnected["approach"]);
+        Assert.Equal(true, reconnected["jettison"]);
 
         async Task<List<Dictionary<string, object?>>> Exchange(string? filter)
         {
@@ -76,6 +84,13 @@ public sealed class AutoMiningPackageTests
                 calls.Enqueue(PilotServicesTests.Request(service, "SaveFilter", [filter]));
                 calls.Enqueue(PilotServicesTests.Request(service, "GetStations", []));
                 calls.Enqueue(PilotServicesTests.Request(service, "SaveHauling", [stationId, 80L]));
+                calls.Enqueue(
+                    PilotServicesTests.Request(
+                        service,
+                        "SaveOptions",
+                        [(long)MiningFamily.Gas, (long)AutoMiningTargetOrder.Smallest, true, true]
+                    )
+                );
                 calls.Enqueue(PilotServicesTests.Request(service, "Stop", []));
             }
             List<Dictionary<string, object?>> result = [];

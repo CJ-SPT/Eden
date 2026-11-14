@@ -7,8 +7,8 @@ public interface IPilotAutoMiningHauling
     AutoMiningHaulSettings ReadHauling(long pilotId);
     void SaveHauling(long pilotId, int systemId, AutoMiningHaulSettings settings);
     IReadOnlyList<AutoMiningStation> Stations(int systemId);
-    AutoMiningHold ReadHold(long pilotId, long shipId);
-    IReadOnlyList<InventoryChange> Unload(long pilotId, long shipId, long stationId);
+    AutoMiningHold ReadHold(long pilotId, long shipId, MiningFamily family = MiningFamily.Ore);
+    IReadOnlyList<InventoryChange> Unload(long pilotId, long shipId, long stationId, MiningFamily family = MiningFamily.Ore);
 }
 
 public sealed record AutoMiningStation(long Id, string Name);
@@ -38,11 +38,10 @@ public readonly record struct MiningHoldFill(double Capacity, double Used)
     public bool Reached(int percent) => Capacity > 0 && Used + InventoryDefinitions.ResourceTolerance >= Capacity * percent / 100;
 }
 
-public readonly record struct AutoMiningHold(MiningHoldFill Fill, bool HasOre)
+public readonly record struct AutoMiningHold(MiningHoldFill Fill, bool HasResource)
 {
-    public bool ShouldUnload(int percent, bool unitDoesNotFit) => HasOre && (Fill.Reached(percent) || unitDoesNotFit);
+    public bool ShouldUnload(int percent, bool unitDoesNotFit) => HasResource && (Fill.Reached(percent) || unitDoesNotFit);
 
-    public static bool IsOre(InventoryItem item) =>
-        item is { CategoryId: AsteroidDefinitions.Category, Quantity: > 0 }
-        && (item.GroupId == MiningDefinitions.MercoxitGroup || Enum.IsDefined((MiningResourceGroup)item.GroupId));
+    public static bool IsResource(InventoryItem item, MiningFamily family) =>
+        item.Quantity > 0 && MiningDefinitions.MatchesFamily(family, item.CategoryId, item.GroupId);
 }

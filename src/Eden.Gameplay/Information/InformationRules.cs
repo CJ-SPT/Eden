@@ -42,6 +42,17 @@ public static class InformationRules
     public const double TractorStopDistance = 1500;
     public const double MiningScanRange = 250_000;
 
+    public static void RequireMiningSurvey(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        if (
+            attributes.GetValueOrDefault(DogmaAttributeId.IntegratedMiningScanner) <= 0
+            || attributes.GetValueOrDefault(DogmaAttributeId.MiningScannerUpgrade) <= 0
+        )
+        {
+            throw new InvalidDataException("Use a ship with an integrated mining scanner and an online mining survey chipset.");
+        }
+    }
+
     public static DogmaEffect? Effect(int group) =>
         (InformationGroup)group switch
         {

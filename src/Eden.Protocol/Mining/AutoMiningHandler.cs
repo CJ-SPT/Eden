@@ -14,7 +14,6 @@ namespace Eden.Protocol.Mining;
 internal sealed partial class AutoMiningHandler(
     TimeProvider clock,
     IPilotAutoMining store,
-    IPilotFitting fitting,
     TargetingHandler targeting,
     MiningHandler mining,
     IAutoMiningAvailability? availability = null,
@@ -26,6 +25,8 @@ internal sealed partial class AutoMiningHandler(
     private static readonly TimeSpan s_blockedInterval = TimeSpan.FromSeconds(3);
     private long _pilotId;
     private AutoMiningFilter? _filter;
+    private AutoMiningOptions? _options;
+    private AutoMiningOptions Options => _options ?? AutoMiningOptions.Default;
     private FlightSession? _flight;
     private long _ship;
     private int _system;
@@ -40,7 +41,10 @@ internal sealed partial class AutoMiningHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service != Service || method is not ("Start" or "Stop" or "GetStatus" or "SaveFilter" or "GetStations" or "SaveHauling"))
+        if (
+            service != Service
+            || method is not ("Start" or "Stop" or "GetStatus" or "SaveFilter" or "GetStations" or "SaveHauling" or "SaveOptions")
+        )
         {
             return PilotCallResult.Unsupported;
         }
@@ -53,6 +57,17 @@ internal sealed partial class AutoMiningHandler(
             bool validArguments = method switch
             {
                 "SaveFilter" => args is [string or byte[]],
+                "SaveOptions" => args
+                    is [
+                        long
+                        and >= (long)MiningFamily.Ore
+                        and <= (long)MiningFamily.Gas,
+                        long
+                        and >= (long)AutoMiningTargetOrder.Nearest
+                        and <= (long)AutoMiningTargetOrder.Smallest,
+                        bool,
+                        bool,
+                    ],
                 "SaveHauling" => args is [long, long and >= int.MinValue and <= int.MaxValue],
                 _ => args.Length == 0,
             };
@@ -65,10 +80,13 @@ internal sealed partial class AutoMiningHandler(
             {
                 _pilotId = context.Pilot.PilotId;
                 _filter = null;
+                _options = null;
                 _haulSettings = null;
+                _jettisonReadyAt = 0;
                 _status = "Stopped";
             }
             _filter ??= store.ReadFilter(_pilotId);
+            _options ??= store.ReadOptions(_pilotId);
             _haulSettings ??= hauling?.ReadHauling(_pilotId) ?? AutoMiningHaulSettings.Disabled;
             switch (method)
             {
@@ -82,7 +100,26 @@ internal sealed partial class AutoMiningHandler(
                     var settings = new AutoMiningHaulSettings((long)args[0]!, checked((int)(long)args[1]!));
                     hauling.SaveHauling(_pilotId, context.Pilot.SystemId, settings);
                     _haulSettings = settings;
-                    mining.AutoRepeatThreshold = _flight is not null && settings.Enabled ? settings.Threshold : null;
+                    UpdateRepeatThreshold();
+                    break;
+                case "SaveOptions":
+                    var options = new AutoMiningOptions(
+                        (MiningFamily)(long)args[0]!,
+                        (AutoMiningTargetOrder)(long)args[1]!,
+                        (bool)args[2]!,
+                        (bool)args[3]!
+                    );
+                    if (_trip is not null && options != Options)
+                    {
+                        return new PilotCallResult.Failure("Finish the haul trip or stop AutoMining before changing mining options.");
+                    }
+                    store.SaveOptions(_pilotId, options);
+                    if (options != Options)
+                    {
+                        _options = options;
+                        RestartSelection(context);
+                        UpdateRepeatThreshold();
+                    }
                     break;
                 case "Start":
                     if (_trip is not null)
@@ -95,21 +132,21 @@ internal sealed partial class AutoMiningHandler(
                     {
                         return new PilotCallResult.Failure("Start AutoMining in space outside warp, with targeting available.");
                     }
-                    if (store.Modules(_pilotId, context.Pilot.ShipId).Count == 0)
+                    if (!store.Modules(_pilotId, context.Pilot.ShipId).Any(module => module.Family == Options.Family))
                     {
-                        return new PilotCallResult.Failure("Fit and online an ore mining laser or strip miner first.");
+                        return new PilotCallResult.Failure("Fit and online a harvesting module for the selected resource first.");
                     }
                     _flight = context.Flight;
                     _ship = context.Pilot.ShipId;
                     _system = context.Pilot.SystemId;
                     _navigationRevision = _flight.PilotNavigationRevision;
                     _miningOrigin = null;
-                    mining.AutoRepeatThreshold = _haulSettings.Enabled ? _haulSettings.Threshold : null;
+                    UpdateRepeatThreshold();
                     mining.ResetManualStops();
                     targeting.ResetAutoMiningExclusions();
                     _nextDecision = clock.GetTimestamp();
                     targeting.Advance(context);
-                    if (_haulSettings.Enabled)
+                    if (UnloadEnabled)
                     {
                         UpdateStatus(context, "Starting AutoMining");
                     }
@@ -133,22 +170,13 @@ internal sealed partial class AutoMiningHandler(
                     store.SaveFilter(_pilotId, filter);
                     bool changed = filter.Text != _filter.Text;
                     _filter = filter;
-                    if (_flight is not null && _trip is null && changed)
+                    if (changed && Options.Family == MiningFamily.Ore)
                     {
-                        context.Flight.Checkpoint();
-                        CheckFlight(context);
-                        if (_flight is not null)
-                        {
-                            targeting.Advance(context);
-                            mining.StopAutomatic(context, settleDue: true);
-                            targeting.ReleaseAutoMiningLocks(context, mining.IsMiningTarget);
-                            _nextDecision = clock.GetTimestamp();
-                            Advance(context);
-                        }
+                        RestartSelection(context);
                     }
                     break;
             }
-            return new AutoMiningStatus(_flight is not null, _status, _filter.Text, _haulSettings);
+            return new AutoMiningStatus(_flight is not null, _status, _filter.Text, _haulSettings, Options);
         }
         catch (InvalidDataException error)
         {
@@ -166,7 +194,7 @@ internal sealed partial class AutoMiningHandler(
         {
             Cancel(context, "Stopped after changing ship or system");
         }
-        else if (_trip is not null && _navigationRevision != flight.PilotNavigationRevision)
+        else if ((_trip is not null || Options.Approach) && _navigationRevision != flight.PilotNavigationRevision)
         {
             Cancel(context, "Stopped for manual navigation");
         }
@@ -191,6 +219,7 @@ internal sealed partial class AutoMiningHandler(
     {
         if (_flight is not null)
         {
+            StopApproach(context);
             mining.StopAutomatic(context, settleDue);
             if (context.Selected)
             {
@@ -208,6 +237,19 @@ internal sealed partial class AutoMiningHandler(
 
     public void Advance(PilotCallContext context, bool sessionTick = false)
     {
+        try
+        {
+            AdvanceSelection(context, sessionTick);
+        }
+        catch (InvalidDataException error)
+        {
+            StopApproach(context);
+            SetStatus(context, error.Message, s_blockedInterval);
+        }
+    }
+
+    private void AdvanceSelection(PilotCallContext context, bool sessionTick)
+    {
         CheckFlight(context);
         if (_trip is not null)
         {
@@ -221,7 +263,7 @@ internal sealed partial class AutoMiningHandler(
         {
             return;
         }
-        if (_haulSettings is { Enabled: true })
+        if (UnloadEnabled)
         {
             if (!sessionTick)
             {
@@ -238,28 +280,43 @@ internal sealed partial class AutoMiningHandler(
             return;
         }
 
-        var modules = store.Modules(_pilotId, _ship);
+        var modules = store.Modules(_pilotId, _ship).Where(module => module.Family == Options.Family).ToArray();
         var idle = modules.Where(module => !mining.IsActive(module.Id) && !mining.WasManuallyStopped(module.Id)).ToArray();
         if (idle.Length == 0)
         {
+            StopApproach(context);
             SetStatus(
                 context,
                 modules.Any(module => mining.IsAutomatic(module.Id)) ? "Mining"
-                    : modules.Count == 0 ? "Waiting for an online ore mining module"
+                    : modules.Length == 0 ? "Waiting for an online harvesting module"
                     : "Waiting for a free mining module",
                 s_retryInterval
             );
             return;
         }
 
-        double lockRange = fitting.ShipAttributes(_pilotId).GetValueOrDefault(DogmaAttributeId.MaxTargetRange);
-        var candidates = AutoMiningCandidate.Nearest(
-            _flight.VisibleAsteroids,
-            _filter!,
-            context.Pilot.Position!,
-            context.Pilot.Flight.ShipRadius,
-            Math.Min(lockRange, idle.Max(module => module.Range))
-        );
+        double lockRange = store.ShipAttributes(_pilotId).GetValueOrDefault(DogmaAttributeId.MaxTargetRange);
+        AutoMiningCandidate[] ranked;
+        try
+        {
+            ranked = RankedTargets(context, idle, lockRange);
+        }
+        catch (InvalidDataException error)
+        {
+            StopApproach(context);
+            targeting.ReleaseAutoMiningLocks(context, mining.IsMiningTarget);
+            SetStatus(context, error.Message, s_blockedInterval);
+            return;
+        }
+        var candidates = ranked
+            .Where(candidate => candidate.Distance <= lockRange && idle.Any(module => Eligible(module, candidate)))
+            .ToArray();
+        if (TryApproach(context, ranked, candidates, idle, lockRange))
+        {
+            targeting.ReleaseAutoMiningLocks(context, mining.IsMiningTarget);
+            return;
+        }
+        StopApproach(context);
         // Release idle automatic locks before asking for another. Keep a lock
         // when a manual cycle or a pilot's own lock request has taken it over.
         targeting.ReleaseAutoMiningLocks(
@@ -293,7 +350,7 @@ internal sealed partial class AutoMiningHandler(
                 }
                 try
                 {
-                    mining.StartAutomatic(context, module.Id, target);
+                    mining.StartAutomatic(context, module, target);
                     break;
                 }
                 catch (CargoCapacityException)
@@ -314,23 +371,31 @@ internal sealed partial class AutoMiningHandler(
         }
         else if (pending)
         {
-            SetStatus(context, "Locking asteroid", s_retryInterval);
+            SetStatus(context, Options.Family == MiningFamily.Gas ? "Locking gas cloud" : "Locking asteroid", s_retryInterval);
         }
         else if (holdFull)
         {
             if (!sessionTick || !TryBeginHaul(context, unitDoesNotFit: true))
             {
-                SetStatus(context, "Ore hold has no room for another unit", s_blockedInterval);
+                SetStatus(
+                    context,
+                    Options.Family == MiningFamily.Ore
+                        ? "Ore hold has no room for another unit"
+                        : "Harvesting hold has no room for another unit",
+                    s_blockedInterval
+                );
             }
         }
         else
         {
-            SetStatus(context, blocked ?? "Waiting for matching ore in range", blocked is null ? s_retryInterval : s_blockedInterval);
+            var waiting =
+                Options.Family == MiningFamily.Ore ? "Waiting for matching ore in range" : "Waiting for matching resources in range";
+            SetStatus(context, blocked ?? waiting, blocked is null ? s_retryInterval : s_blockedInterval);
         }
     }
 
     private bool Eligible(AutoMiningModule module, AutoMiningCandidate candidate) =>
-        candidate.Distance <= module.Range && !targeting.IsExcludedFromAutoMining(candidate.Rock.Id) && module.Matches(candidate.Rock);
+        candidate.Distance <= module.Range && module.Matches(candidate.Rock);
 
     private void SetStatus(PilotCallContext context, string status, TimeSpan retry)
     {
@@ -364,7 +429,13 @@ internal sealed record AutoMiningStationRow(AutoMiningStation Station) : BlueMod
     public override object ToBlue() => new object[] { Station.Id, new BlueUnicode(Station.Name) };
 }
 
-internal sealed record AutoMiningStatus(bool Running, string Status, string OreFilter, AutoMiningHaulSettings Hauling) : BlueModel
+internal sealed record AutoMiningStatus(
+    bool Running,
+    string Status,
+    string OreFilter,
+    AutoMiningHaulSettings Hauling,
+    AutoMiningOptions Options
+) : BlueModel
 {
     public override object ToBlue() =>
         new Dictionary<string, object?>
@@ -374,5 +445,9 @@ internal sealed record AutoMiningStatus(bool Running, string Status, string OreF
             ["oreFilter"] = new BlueUnicode(OreFilter),
             ["unloadStation"] = Hauling.StationId,
             ["unloadThreshold"] = Hauling.Threshold,
+            ["resourceFamily"] = (int)Options.Family,
+            ["targetOrder"] = (int)Options.TargetOrder,
+            ["approach"] = Options.Approach,
+            ["jettison"] = Options.Jettison,
         };
 }

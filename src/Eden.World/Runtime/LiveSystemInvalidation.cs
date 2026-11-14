@@ -15,7 +15,7 @@ internal sealed partial class LiveReadModels
     // empty destination. Coordinate projection never changes another system's view.
     private void ObserveSystemContacts(IReadOnlyCollection<CombatRowChange> changes)
     {
-        if (!_directionalContacts.HasEntries && !_wrecks.HasEntries && !_drones.HasEntries)
+        if (!_directionalContacts.HasEntries && !_wrecks.HasEntries && !_drones.HasEntries && !_jetcans.HasEntries)
         {
             return;
         }
@@ -132,9 +132,12 @@ internal sealed partial class LiveReadModels
         }
         if (jetcans.Length > 0)
         {
-            foreach (var can in world.Set<SavedJetcan>().Where(c => jetcans.Contains(c.Id)).Select(c => new { c.Id, c.SystemId }))
+            foreach (long id in jetcans)
             {
-                locations[can.Id] = can.SystemId;
+                if (owner.Economy.Peek<SavedJetcan>(id) is { } can)
+                {
+                    locations[id] = can.SystemId;
+                }
             }
         }
         if (offices.Length > 0)
@@ -150,6 +153,10 @@ internal sealed partial class LiveReadModels
                 change.Table is "WorldLogoff" or "WorldCapsuleerSuspension"
                 || Arrived(system, change)
                 || entries.Any(e => e.Contact.Id == change.Id)
+        );
+        _jetcans.ObserveValues(
+            changes,
+            (system, view, change) => Arrived(system, change) || view.Contacts.Any(contact => contact.Id == change.Id)
         );
         _wrecks.ObserveValues(
             changes,

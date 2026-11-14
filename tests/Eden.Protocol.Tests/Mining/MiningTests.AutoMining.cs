@@ -94,6 +94,7 @@ public sealed partial class MiningTests
         f.Disconnect(context);
         f.Disconnect(wing);
         f.Reopen();
+        using var reopened = new LiveWorld(new(f.Db.Path), f.Clock);
         var saved = f.Db.Services.GetRequiredService<IPilotAutoMining>();
         Assert.Equal("Veldspar", saved.ReadFilter(90000001).Text);
         Assert.Equal("", saved.ReadFilter(90000002).Text);
@@ -183,10 +184,10 @@ public sealed partial class MiningTests
         new(
             f.Clock,
             f.Db.Services.GetRequiredService<IPilotAutoMining>(),
-            f.Db.Services.GetRequiredService<IPilotFitting>(),
             targeting,
             mining,
-            new TestAutoMiningAvailability(enabled)
+            new TestAutoMiningAvailability(enabled),
+            f.Db.Services.GetRequiredService<IPilotAutoMiningHauling>()
         );
 
     private sealed record TestAutoMiningAvailability(bool AutoMiningEnabled) : IAutoMiningAvailability;

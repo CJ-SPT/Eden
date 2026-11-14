@@ -1,10 +1,11 @@
 using System.Globalization;
 using Eden.Data.World.Inventory;
-using Eden.Gameplay.Characters;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Loot;
 using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Loot;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 
@@ -16,7 +17,7 @@ internal sealed partial class PilotAutoMiningStore
 
     public AutoMiningHaulSettings ReadHauling(long pilotId)
     {
-        var saved = (settings.Read(pilotId, HaulKey)?.Value as CharacterSettingValue.Text)?.Value;
+        var saved = ReadSetting(pilotId, HaulKey);
         return
             saved?.Split(':') is [var station, var threshold]
             && long.TryParse(station, NumberStyles.None, CultureInfo.InvariantCulture, out long stationId)
@@ -33,10 +34,7 @@ internal sealed partial class PilotAutoMiningStore
         {
             throw new InvalidDataException("Choose an NPC station in your current solar system.");
         }
-        settings.Save(
-            pilotId,
-            new(HaulKey, new CharacterSettingValue.Text(FormattableString.Invariant($"{hauling.StationId}:{hauling.Threshold}")))
-        );
+        SaveSetting(pilotId, HaulKey, FormattableString.Invariant($"{hauling.StationId}:{hauling.Threshold}"));
     }
 
     public IReadOnlyList<AutoMiningStation> Stations(int systemId)
@@ -50,34 +48,34 @@ internal sealed partial class PilotAutoMiningStore
             .ToArray();
     }
 
-    public AutoMiningHold ReadHold(long pilotId, long shipId)
+    public AutoMiningHold ReadHold(long pilotId, long shipId, MiningFamily family)
     {
         var live = RequireResidentWorld();
         AutoMiningHold Load()
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
-            var attributes = fitting.ShipAttributes(pilotId);
+            var attributes = ShipAttributes(pilotId);
             return live.Economy.Inspect(
                 world =>
                 {
                     var ship = ActiveShip(world, pilotId, shipId);
-                    var flag = PilotMiningStore.OreHold(catalog, ship.TypeId, MiningFamily.Ore);
+                    var flag = PilotMiningStore.OreHold(catalog, ship.TypeId, family);
                     double capacity = ShipHoldRules.Capacity((int)flag, attributes);
                     var items = PilotInventoryStore.List(world, catalog, pilotId, shipId).Where(item => item.FlagId == (int)flag);
                     var stacks = items.ToArray();
                     return new AutoMiningHold(
                         new(capacity, stacks.Sum(item => item.Volume * item.Quantity)),
-                        stacks.Any(AutoMiningHold.IsOre)
+                        stacks.Any(item => AutoMiningHold.IsResource(item, family))
                     );
                 },
                 new(ships: [shipId])
             );
         }
 
-        return LiveReadModels.Find(database.Path) is { } resident ? resident.AutoMiningHold(pilotId, shipId, Load) : Load();
+        return live.Reads is { } resident ? resident.AutoMiningHold(pilotId, shipId, family, Load) : Load();
     }
 
-    public IReadOnlyList<InventoryChange> Unload(long pilotId, long shipId, long stationId)
+    public IReadOnlyList<InventoryChange> Unload(long pilotId, long shipId, long stationId, MiningFamily family)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         using var action = RequireResidentWorld().Economy.Begin(new(pilots: [pilotId]));
@@ -87,24 +85,49 @@ internal sealed partial class PilotAutoMiningStore
             throw new InvalidDataException("Dock the active ship at the selected station before unloading.");
         }
 
-        var flag = PilotMiningStore.OreHold(catalog, ship.TypeId, MiningFamily.Ore);
-        long[] ore = PilotInventoryStore
+        var flag = PilotMiningStore.OreHold(catalog, ship.TypeId, family);
+        long[] resources = PilotInventoryStore
             .List(action, catalog, pilotId, shipId)
-            .Where(item => item.FlagId == (int)flag && AutoMiningHold.IsOre(item))
+            .Where(item => item.FlagId == (int)flag && AutoMiningHold.IsResource(item, family))
             .Select(item => item.Id)
             .ToArray();
-        if (ore.Length == 0)
+        if (resources.Length == 0)
         {
             return [];
         }
-        var request = new InventoryMoveRequest(ore, shipId, (int)InventoryFlag.Hangar, null);
+        var request = new InventoryMoveRequest(resources, shipId, (int)InventoryFlag.Hangar, null);
         var result = PilotInventoryStore.Move(action, catalog, pilotId, stationId, request, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         action.Commit();
         return result;
     }
 
+    public JettisonResult Jettison(long pilotId, long shipId, MiningFamily family)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        using var action = RequireResidentWorld().Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
+        var ship = ActiveShip(action, pilotId, shipId);
+        var flag = PilotMiningStore.OreHold(catalog, ship.TypeId, family);
+        var resources = PilotInventoryStore
+            .List(action, catalog, pilotId, shipId)
+            .Where(item => item.FlagId == (int)flag && AutoMiningHold.IsResource(item, family))
+            .Take(JetcanRules.MaximumItemsPerCall)
+            .Select(item => item.Id)
+            .ToArray();
+        var result = JetcanStore.Jettison(
+            action,
+            catalog,
+            pilotId,
+            shipId,
+            resources,
+            clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+            allowSplit: true
+        );
+        action.Commit();
+        return result;
+    }
+
     private LiveWorld RequireResidentWorld() =>
-        LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Automatic hauling requires the live world.");
+        LiveWorld.Find(database.Path) ?? throw new InvalidDataException("AutoMining requires the resident world.");
 
     private static Ship ActiveShip(WorldAction world, long pilot, long ship) =>
         world.Pilots.Find(pilot) is { ActiveShipId: var id } owner && id == ship

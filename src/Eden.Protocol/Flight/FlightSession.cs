@@ -295,6 +295,8 @@ internal sealed partial class FlightSession(
 
     public void RefreshWrecks() => Scene.RefreshWrecks(SceneContext);
 
+    internal void AddWreck(Eden.Gameplay.Loot.WreckContact contact) => Scene.AddWreck(SceneContext, contact);
+
     public void RefreshNpcs() => Scene.RefreshNpcs(SceneContext);
 
     public void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon) => Scene.NotifyNpcWeapon(npcId, weapon);

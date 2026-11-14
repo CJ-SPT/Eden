@@ -28,11 +28,11 @@ internal sealed class PilotCharacterSettingsStore(WorldDatabase database) : IPil
 
     public CharacterSetting? Read(long pilotId, string key)
     {
-        return WorldActionScope.Inspect(
-            database,
-            world => world.Set<SavedCharacterSetting>().Find(pilotId, key) is { } saved ? Read(saved) : null
-        );
+        return WorldActionScope.Inspect(database, world => Read(world, pilotId, key));
     }
+
+    internal static CharacterSetting? Read(WorldAction world, long pilotId, string key) =>
+        world.Set<SavedCharacterSetting>().Find(pilotId, key) is { } saved ? Read(saved) : null;
 
     private static CharacterSetting Read(SavedCharacterSetting setting) =>
         new(
@@ -46,9 +46,14 @@ internal sealed class PilotCharacterSettingsStore(WorldDatabase database) : IPil
 
     public void Save(long pilotId, CharacterSetting setting)
     {
-        CharacterSettingsRules.Check(setting);
         using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
-        var world = transaction.World;
+        Save(transaction.World, pilotId, setting);
+        transaction.Commit();
+    }
+
+    internal static void Save(WorldAction world, long pilotId, CharacterSetting setting)
+    {
+        CharacterSettingsRules.Check(setting);
         CheckPilot(world, pilotId);
         var saved = world.Set<SavedCharacterSetting>().Find(pilotId, setting.Key);
         if (saved is null)
@@ -58,7 +63,6 @@ internal sealed class PilotCharacterSettingsStore(WorldDatabase database) : IPil
         }
         saved.Text = (setting.Value as CharacterSettingValue.Text)?.Value;
         saved.Binary = (setting.Value as CharacterSettingValue.Binary)?.Value.ToArray();
-        transaction.Commit();
     }
 
     public void Delete(long pilotId, string key)

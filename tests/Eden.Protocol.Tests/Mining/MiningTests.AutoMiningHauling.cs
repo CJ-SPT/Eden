@@ -116,7 +116,7 @@ public sealed partial class MiningTests
         await f.WaitFor(() => f.Context.Pilot.Position is not null);
         await f.Calls.ProcessAsync(PilotServicesTests.Request("beyonce", "MachoBindObject", [(long)f.Context.Pilot.SystemId, null]));
         await f.WaitFor(() => !f.Status().Running);
-        Assert.Contains("no matching ore in mining range", f.Status().Status);
+        Assert.Contains("no matching resource within reach", f.Status().Status);
         Assert.False(f.Mining.IsActive(f.Module));
         Assert.Equal(63, Assert.Single(f.Ore(f.Station)).Quantity);
         Assert.Empty(f.Ore(f.Context.Pilot.ShipId));
@@ -211,7 +211,6 @@ public sealed partial class MiningTests
             _auto = new AutoMiningHandler(
                 Db.Clock,
                 services.GetRequiredService<IPilotAutoMining>(),
-                services.GetRequiredService<IPilotFitting>(),
                 targeting,
                 Mining,
                 new TestAutoMiningAvailability(true),
@@ -252,7 +251,8 @@ public sealed partial class MiningTests
         private static AutoMiningStatus Status(PilotCallResult result) =>
             Assert.IsType<AutoMiningStatus>(Assert.IsType<PilotCallResult.Success>(result).Reply);
 
-        public InventoryItem[] Ore(long location) => Inventory.List(Context.Pilot.PilotId, location).Where(AutoMiningHold.IsOre).ToArray();
+        public InventoryItem[] Ore(long location) =>
+            Inventory.List(Context.Pilot.PilotId, location).Where(item => AutoMiningHold.IsResource(item, MiningFamily.Ore)).ToArray();
 
         public async Task Step(int seconds)
         {
@@ -289,16 +289,16 @@ public sealed partial class MiningTests
 
             public IReadOnlyList<AutoMiningStation> Stations(int systemId) => store.Stations(systemId);
 
-            public AutoMiningHold ReadHold(long pilotId, long shipId) => store.ReadHold(pilotId, shipId);
+            public AutoMiningHold ReadHold(long pilotId, long shipId, MiningFamily family) => store.ReadHold(pilotId, shipId, family);
 
-            public IReadOnlyList<InventoryChange> Unload(long pilotId, long shipId, long stationId)
+            public IReadOnlyList<InventoryChange> Unload(long pilotId, long shipId, long stationId, MiningFamily family)
             {
                 Attempts++;
                 if (rejectUnload)
                 {
                     throw new InvalidDataException("test transfer rejection");
                 }
-                return store.Unload(pilotId, shipId, stationId);
+                return store.Unload(pilotId, shipId, stationId, family);
             }
         }
     }

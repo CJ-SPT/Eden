@@ -57,7 +57,10 @@ internal sealed class JettisonHandler(ICargoJettison cargo, TimeProvider clock) 
                 {
                     InventoryChangesWire.NotifyItemChange(context, change);
                 }
-                context.Flight.RefreshWrecks();
+                if (result.Contact is { } contact)
+                {
+                    context.Flight.AddWreck(contact);
+                }
             }
             return new JettisonReply(result.Changes.Select(c => c.Item.Id).ToArray());
         }

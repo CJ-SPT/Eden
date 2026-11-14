@@ -1,5 +1,7 @@
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Loot;
 
 namespace Eden.Gameplay.Mining;
 
@@ -12,10 +14,30 @@ public interface IPilotAutoMining
 {
     AutoMiningFilter ReadFilter(long pilotId);
     void SaveFilter(long pilotId, AutoMiningFilter filter);
+    AutoMiningOptions ReadOptions(long pilotId);
+    void SaveOptions(long pilotId, AutoMiningOptions options);
+    IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes(long pilotId);
     IReadOnlyList<AutoMiningModule> Modules(long pilotId, long shipId);
+    IReadOnlyDictionary<long, double> Survey(long pilotId, int systemId, IReadOnlyList<long> visibleTargets);
+    JettisonResult Jettison(long pilotId, long shipId, MiningFamily family);
 }
 
-public sealed record AutoMiningModule(long Id, double Range, bool DeepCore, InventoryTypeList? CrystalTargets)
+public enum AutoMiningTargetOrder
+{
+    Nearest,
+    Largest,
+    Smallest,
+}
+
+public sealed record AutoMiningOptions(MiningFamily Family, AutoMiningTargetOrder TargetOrder, bool Approach, bool Jettison)
+{
+    public static AutoMiningOptions Default { get; } = new(MiningFamily.Ore, AutoMiningTargetOrder.Nearest, false, false);
+
+    public bool Matches(StaticSpaceObject rock, AutoMiningFilter filter) =>
+        Family == MiningFamily.Ore ? filter.Matches(rock) : MiningDefinitions.MatchesFamily(Family, rock.CategoryId, rock.GroupId);
+}
+
+public sealed record AutoMiningModule(long Id, double Range, MiningFamily Family, bool DeepCore, InventoryTypeList? CrystalTargets)
 {
     public bool Matches(StaticSpaceObject rock) =>
         (rock.GroupId != MiningDefinitions.MercoxitGroup || DeepCore)
@@ -77,14 +99,12 @@ public sealed class AutoMiningFilter
 public readonly record struct AutoMiningCandidate(StaticSpaceObject Rock, double Distance)
 {
     public static AutoMiningCandidate[] Nearest(
-        IReadOnlyList<StaticSpaceObject> rocks,
-        AutoMiningFilter filter,
+        IEnumerable<StaticSpaceObject> rocks,
         SpacePosition origin,
         double shipRadius,
         double range
     ) =>
         rocks
-            .Where(filter.Matches)
             .Select(rock => new AutoMiningCandidate(rock, Math.Max(0, origin.DistanceTo(rock.Position) - shipRadius - rock.Radius)))
             .Where(candidate => candidate.Distance <= range)
             .OrderBy(candidate => candidate.Distance)

@@ -43,6 +43,7 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
     internal int? AutoRepeatThreshold { get; set; }
 
     internal bool HasManualCycle => _cycles.Values.Any(cycle => !cycle.Automatic);
+    internal bool HasCycle => _cycles.Count > 0;
 
     internal bool IsAutomatic(long module) => _cycles.TryGetValue(module, out var cycle) && cycle.Automatic;
 
@@ -52,8 +53,15 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
 
     internal bool WasManuallyStopped(long module) => _manuallyStopped.Contains(module);
 
-    internal void StartAutomatic(PilotCallContext context, long module, long target) =>
-        Start(context, module, target, int.MaxValue, effect: DogmaEffect.MiningLaser, automatic: true);
+    internal void StartAutomatic(PilotCallContext context, AutoMiningModule module, long target) =>
+        Start(
+            context,
+            module.Id,
+            target,
+            int.MaxValue,
+            effect: module.Family == MiningFamily.Gas ? DogmaEffect.MiningClouds : DogmaEffect.MiningLaser,
+            automatic: true
+        );
 
     internal void StopAutomatic(PilotCallContext context, bool settleDue = false)
     {
@@ -275,8 +283,9 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
         long? stopAutomatic =
             method == "Deactivate"
             && args is [long stoppedModule, var stoppedEffect]
-            && MiningWireDefinitions.Effect(BlueMarshal.Text(stoppedEffect)) == DogmaEffect.MiningLaser
-            && IsAutomatic(stoppedModule)
+            && _cycles.TryGetValue(stoppedModule, out var stoppedCycle)
+            && stoppedCycle.Automatic
+            && MiningWireDefinitions.Effect(BlueMarshal.Text(stoppedEffect)) == stoppedCycle.Laser.Effect
                 ? stoppedModule
                 : null;
         context.Flight.Checkpoint();

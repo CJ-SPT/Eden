@@ -37,13 +37,18 @@ internal sealed partial class AutoMiningHandler
 
     internal bool IsHauling => _trip is not null;
 
+    private bool UnloadEnabled => Options.Jettison || _haulSettings is { Enabled: true };
+
+    private void UpdateRepeatThreshold() =>
+        mining.AutoRepeatThreshold = _flight is not null && UnloadEnabled ? _haulSettings!.Threshold : null;
+
     private bool TryBeginHaul(PilotCallContext context, bool unitDoesNotFit = false)
     {
-        if (_haulSettings is not { Enabled: true } settings || hauling is null || _flight is not { } flight)
+        if (!UnloadEnabled || _haulSettings is not { } settings || hauling is null || _flight is not { } flight)
         {
             return false;
         }
-        var hold = hauling.ReadHold(_pilotId, _ship);
+        var hold = hauling.ReadHold(_pilotId, _ship, Options.Family);
         if (!hold.ShouldUnload(settings.Threshold, unitDoesNotFit))
         {
             return false;
@@ -52,6 +57,11 @@ internal sealed partial class AutoMiningHandler
         {
             SetStatus(context, "Waiting for manually started mining to stop before unloading", s_retryInterval);
             return true;
+        }
+        StopApproach(context);
+        if (Options.Jettison)
+        {
+            return TryJettison(context);
         }
         if (flight.LocalStation(settings.StationId) is not { } station)
         {
@@ -80,16 +90,20 @@ internal sealed partial class AutoMiningHandler
                     TravelToStation(context, trip);
                     break;
                 case HaulPhase.Unloading:
-                    foreach (var change in hauling!.Unload(_pilotId, _ship, trip.StationId))
+                    foreach (var change in hauling!.Unload(_pilotId, _ship, trip.StationId, Options.Family))
                     {
                         InventoryChangesWire.NotifyItemChange(context, change);
                     }
-                    EnterPhase(context, HaulPhase.Undocking, "Ore unloaded. Preparing to undock");
+                    EnterPhase(
+                        context,
+                        HaulPhase.Undocking,
+                        Options.Family == MiningFamily.Ore ? "Ore unloaded. Preparing to undock" : "Hold unloaded. Preparing to undock"
+                    );
                     break;
                 case HaulPhase.Undocking:
                     if (clock.GetElapsedTime(trip.Started) >= s_stationWait)
                     {
-                        ExecuteHaulCommand(flight, new FlightCommand.Undock(_ship), "Could not undock from the unload station.");
+                        ExecuteAutomaticCommand(flight, new FlightCommand.Undock(_ship), "Could not undock from the unload station.");
                         EnterPhase(context, HaulPhase.WaitingForBallpark, "Waiting for the flight scene");
                     }
                     break;
@@ -129,7 +143,7 @@ internal sealed partial class AutoMiningHandler
                 case HaulPhase.ApproachingOrigin:
                     if (flight.Pilot.Position!.DistanceTo(trip.Origin) <= ReturnTolerance)
                     {
-                        ExecuteHaulCommand(flight, new FlightCommand.Stop(), "Could not stop at the mining site.");
+                        ExecuteAutomaticCommand(flight, new FlightCommand.Stop(), "Could not stop at the mining site.");
                         ResumeMining(context, trip);
                     }
                     else
@@ -145,7 +159,7 @@ internal sealed partial class AutoMiningHandler
         }
         catch (CargoCapacityException)
         {
-            Cancel(context, "Paused: the ore could not be transferred to the personal hangar.");
+            Cancel(context, "Paused: the resources could not be transferred to the personal hangar.");
         }
     }
 
@@ -160,8 +174,8 @@ internal sealed partial class AutoMiningHandler
         }
         if (flight.NearEnoughToDock(station))
         {
-            ExecuteHaulCommand(flight, new FlightCommand.Dock(station.Id, _ship), "Could not dock at the unload station.");
-            EnterPhase(context, HaulPhase.Unloading, "Docked. Unloading ore");
+            ExecuteAutomaticCommand(flight, new FlightCommand.Dock(station.Id, _ship), "Could not dock at the unload station.");
+            EnterPhase(context, HaulPhase.Unloading, "Docked. Unloading the mining hold");
             return;
         }
         var position = flight.Pilot.Position ?? throw new InvalidDataException("The ship left space before reaching the unload station.");
@@ -177,12 +191,12 @@ internal sealed partial class AutoMiningHandler
             {
                 throw new InvalidDataException("The warp did not reach the unload station.");
             }
-            ExecuteHaulCommand(flight, new FlightCommand.WarpTo(station.Id, 0), "Could not warp to the unload station.");
+            ExecuteAutomaticCommand(flight, new FlightCommand.WarpTo(station.Id, 0), "Could not warp to the unload station.");
             EnterPhase(context, HaulPhase.ToStation, "Warping to the unload station");
         }
         else
         {
-            ExecuteHaulCommand(flight, new FlightCommand.Follow(station.Id, 0, false), "Could not approach the unload station.");
+            ExecuteAutomaticCommand(flight, new FlightCommand.Follow(station.Id, 0, false), "Could not approach the unload station.");
             EnterPhase(context, HaulPhase.ApproachingStation, "Approaching the unload station");
         }
     }
@@ -194,7 +208,7 @@ internal sealed partial class AutoMiningHandler
         double distance = position.DistanceTo(trip.Origin);
         if (distance <= ReturnTolerance)
         {
-            ExecuteHaulCommand(flight, new FlightCommand.Stop(), "Could not stop at the mining site.");
+            ExecuteAutomaticCommand(flight, new FlightCommand.Stop(), "Could not stop at the mining site.");
             ResumeMining(context, trip);
         }
         else if (distance - flight.Pilot.Flight.ShipRadius < NavigationDefinitions.MinimumWarpDistance)
@@ -204,7 +218,11 @@ internal sealed partial class AutoMiningHandler
         else
         {
             // Reuse bookmark-style point warp and the normal landing offset.
-            ExecuteHaulCommand(flight, new FlightCommand.WarpToPoint(-_ship, trip.Origin, 0), "Could not warp back to the mining site.");
+            ExecuteAutomaticCommand(
+                flight,
+                new FlightCommand.WarpToPoint(-_ship, trip.Origin, 0),
+                "Could not warp back to the mining site."
+            );
             EnterPhase(context, HaulPhase.Returning, "Returning to the mining site");
         }
     }
@@ -213,7 +231,11 @@ internal sealed partial class AutoMiningHandler
     {
         var flight = _flight!;
         var direction = (trip.Origin - flight.Pilot.Position!).Unit;
-        ExecuteHaulCommand(flight, new FlightCommand.Heading(direction.X, direction.Y, direction.Z), "Could not approach the mining site.");
+        ExecuteAutomaticCommand(
+            flight,
+            new FlightCommand.Heading(direction.X, direction.Y, direction.Z),
+            "Could not approach the mining site."
+        );
         EnterPhase(context, HaulPhase.ApproachingOrigin, "Approaching the saved mining position");
     }
 
@@ -227,16 +249,20 @@ internal sealed partial class AutoMiningHandler
         var modules = store.Modules(_pilotId, _ship);
         if (
             !flight.VisibleAsteroids.Any(rock =>
-                _filter!.Matches(rock)
+                Options.Matches(rock, _filter!)
                 && !targeting.IsExcludedFromAutoMining(rock.Id)
                 && modules.Any(module =>
-                    module.Matches(rock)
-                    && flight.Pilot.Position!.DistanceTo(rock.Position) - flight.Pilot.Flight.ShipRadius - rock.Radius <= module.Range
+                    module.Family == Options.Family
+                    && module.Matches(rock)
+                    && (
+                        Options.Approach
+                        || flight.Pilot.Position!.DistanceTo(rock.Position) - flight.Pilot.Flight.ShipRadius - rock.Radius <= module.Range
+                    )
                 )
             )
         )
         {
-            throw new InvalidDataException("There is no matching ore in mining range at the saved position.");
+            throw new InvalidDataException("There is no matching resource within reach of the saved position.");
         }
         _trip = null;
         SetStatus(context, "Back at the mining site", s_retryInterval);
@@ -256,7 +282,7 @@ internal sealed partial class AutoMiningHandler
         }
     }
 
-    private static void ExecuteHaulCommand(FlightSession flight, FlightCommand command, string message)
+    private static void ExecuteAutomaticCommand(FlightSession flight, FlightCommand command, string message)
     {
         var result = flight.Execute(command, automatic: true);
         if (result is not PilotCallResult.Success)

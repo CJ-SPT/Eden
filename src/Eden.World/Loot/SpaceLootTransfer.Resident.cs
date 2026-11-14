@@ -1,6 +1,7 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Loot;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Inventory;
@@ -78,7 +79,11 @@ internal static partial class SpaceLootTransfer
         {
             var before = PilotInventoryStore.Read(catalog, item);
             int moved = quantity ?? item.Quantity;
-            if (moved < item.Quantity)
+            if (moved < item.Quantity && JetcanRules.IsJetcan(containerId))
+            {
+                changes.AddRange(InventoryPersistence.SplitTransfer(world, catalog, item, before, shipId, (int)destinationFlag, moved));
+            }
+            else if (moved < item.Quantity)
             {
                 item.Quantity -= moved;
                 changes.Add(new(PilotInventoryStore.Read(catalog, item), before));
