@@ -79,6 +79,40 @@ For comparisons, preserve the complete baseline runtime output and run the same 
 sequentially on the same host and source save. Keep builds, unrelated tests and other substantial work out of the
 measurement window. Record runtime revisions, build configuration and machine details with the results.
 
+## Saved space-session frame replay
+
+For a moving space session, `ServerPerformanceReplayTests.ProfileSavedSpaceSessionFrames`
+copies the same frozen world/catalog and active skill sidecars into a private directory.
+It places the pilot two million metres along X from the home-station coordinates in
+the pilot's current system, starts ordinary
+forward movement, warms 20 frames and measures 100 full frames, including any outgoing
+packet encoding. The last ten warmup frames collect phase timings and assert zero SQL,
+connection opens and fitting calculations. Measured frames disable performance tracing;
+checkpoint capture/projection/copy/write costs are recorded separately afterward.
+
+```powershell
+$env:EDEN_TRACE_PERFORMANCE = '0'
+$env:EDEN_FRAME_SOURCE = 'F:\frozen-eden-save'
+$env:EDEN_FRAME_OUTPUT = 'F:\frame-results'
+$env:EDEN_FRAME_PILOT = '90001835'
+.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ProfileSavedSpaceSessionFrames'
+```
+
+The output contains `frames.json` (individual timings, allocation, counted warmup frames,
+phase summaries, final position/velocity and checkpoints) and `frames.log`. Compare the
+same test assembly against preserved baseline and updated runtime dependencies, running
+one replay at a time without builds or other tests in the measurement window. An unset
+`EDEN_FRAME_SOURCE` only prints instructions. This replay has one moving session and no
+concurrent maintenance, socket writes or active weapon/miner cycle; it does not establish
+fleet capacity or live-client rendering performance.
+
+`EDEN_FRAME_WARMUP` and `EDEN_FRAME_SAMPLES` override the default 20/100 frames; warmup
+must be at least ten. For longer comparisons, use 100/1,000, disable tiered compilation
+with `DOTNET_TieredCompilation=0` in both test processes, and use the same CPU affinity
+for both. Keep normal scheduler results separate from these controlled measurements.
+Only `CountedFrames` and `Phases` have active SQL/connection/fitting counters; the zero
+counter fields in uninstrumented `Frames` are placeholders, not additional assertions.
+
 ## Saved character-selection replay
 
 `ServerPerformanceReplayTests.ReplaySavedCharacterSelectionAndFirstTicks` copies a frozen world and catalog,

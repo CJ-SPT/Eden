@@ -66,6 +66,22 @@ and inspection of completed checkpoints.
 **Optional maintainer checks.** Accept Salve for Sis, move its package through ship cargo, and verify it disappears from
 the native inventory on successful hand-in.
 
+### Singleton integration with main
+
+Integration with `ff57cb1b` preserved the flight-performance changes and both protocol-index entries. Tool restore,
+solution restore and build passed. The following focused selection passed **31/31**:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionSingletonTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.StaticCollisionAllocationTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.StaticSceneFrameTests
+```
+
+Catalog policy 8/8, formatting policy 9/9, mission admission 10/10 and `Format.ps1 -Check` across 2,136 files also passed.
+The complete integration validation took **76.85 seconds**. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** No additional checks beyond the inventory check above.
+
 ## Catalog mission deadlines — November 14, 2026
 
 The catalog audit excluded four otherwise supported courier definitions solely because their `expirationTime` differs

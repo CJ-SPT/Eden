@@ -3,6 +3,9 @@
 [Singleton mission cargo](protocol/agents.md#singleton-mission-cargo--november-14-2026) records nine newly admitted courier
 definitions, distinct inventory identities, resident checkpoint recovery and atomic turn-in.
 
+[Static scene frame costs](protocol/performance.md#static-scene-frame-costs-november-14-2026)
+records reduced collision/asteroid allocations and complete moving-session measurements.
+
 [Catalog mission deadlines](protocol/agents.md#catalog-mission-deadlines--november-14-2026) records four newly admitted
 courier definitions, resident expiry and checkpoint recovery.
 

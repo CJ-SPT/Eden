@@ -6,6 +6,130 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Static scene frame costs, November 14, 2026
+
+The moving saved-world session replay found repeated allocations in static collision
+preparation and asteroid scene refresh. Collision preparation cloned a hull and built
+a motion record for every static object, including distant and non-solid objects.
+Asteroid refresh rebuilt the merged scene and then materialized all visible static
+objects before selecting public asteroids, even when the resident field was unchanged.
+
+Static collision candidates now pass the existing swept contact calculation before
+allocating their fixed-body records. The exact radius arithmetic, input ordering and
+collision response are retained. Asteroid scene refresh reuses the resident immutable
+field snapshot until that source or the containing scene changes. Visibility is still
+recomputed against the current position on every refresh. Public resource depletion,
+mission deposits and same-tick scene changes retain their existing rules.
+
+Reference checks covered [EVE University bumping](https://wiki.eveuniversity.org/Advanced_piloting_techniques)
+and [asteroids](https://wiki.eveuniversity.org/Asteroids). Carbon Destiny revision
+`27ee40b38a563d29054b32f64c3ebc87fabaec1f`,
+[`Collision.cpp`](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Collision.cpp)
+and [`Ballpark.cpp`](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp),
+preserves overlap/time-of-impact rejection and ordered collision response. The older
+local EveJS `server/src/space/destiny/stream/ballEncoding.js`, SHA-256
+`7A5AEE64E1AC6CB5328E19729D65FC343717F8C9CB536DE4330629CF2A1C86C1`, explicitly disables
+massive ship flags while collision handling is absent there; it was not used as a
+collision implementation reference. No reference code was copied; client wire formats are unchanged.
+
+**Automated validation.** The initial exact filters were
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.StaticCollisionAllocationTests.DistantStaticBodiesDoNotAllocateCollisionRecordsPerFrame`
+and `FullyQualifiedName=Eden.Protocol.Tests.Flight.StaticSceneFrameTests.UnchangedAsteroidsReuseSceneObjectsButVisibilityAndSceneReplacementStayCurrent`.
+Both failed on the original production code: 20 frames with 2,000 distant static
+objects allocated 4,812,480 bytes in collision preparation and 661,600 bytes in scene
+refresh. The corrected regressions pass bounds of 20,480 and 40,960 bytes respectively.
+Boundary tests compare the original solver path against overlap, tangency, end-of-step
+contacts, large coordinates, reversed candidate ordering and non-solid exclusions.
+Scene tests cover range entry/exit, empty/depleted fields, replaced scenes and changed
+asteroid snapshots.
+
+The opt-in `ServerPerformanceReplayTests.ProfileSavedSpaceSessionFrames` uses the same
+frozen world/catalog and active skill sidecars for both runtimes. It places one selected
+pilot away from the home-station coordinates, issues forward movement, advances complete session
+ticks and encodes any outgoing packets. It counts SQL commands, connection opens and
+fitting calculations during the last ten warmed frames, then disables tracing during
+timing. All counted frames had zero of each. The final replay also asserts actual
+movement and agreement between the current flight and resident saved position.
+Checkpoint work is measured after the frames, separately.
+The procedure and controls are in the [testing guide](../testing.md#saved-space-session-frame-replay).
+
+Early 20-warmup/100-frame Windows Debug runs were scheduler-sensitive: baseline then
+updated means were 1.740/0.849 ms, but reverse-order updated/baseline means were
+1.049/0.980 ms. These short runs do not establish a reproducible latency gain. They
+did consistently reduce allocation from 337,693–340,201 to 205,394 bytes per frame.
+
+The longer comparison used 100 warmup and 1,000 measured frames per run on Windows,
+an Intel Core i5-14600KF, .NET SDK 10.0.403 and Debug assemblies. Both processes were
+restricted to logical CPU 0 with `DOTNET_TieredCompilation=0`; tracing was disabled
+for measured frames. The preserved baseline dependencies came from `c0b38fe1`; the
+updated checkout also contained the unrelated Avenge mission-definition merge
+`a900407f`, and the controlled/extended builds included catalog deadline support
+from `8f8af9c7`. The identical replay test assembly was copied into the preserved baseline
+runtime before each pair. No builds or other tests were run during measurement.
+
+| 1,000-frame fixed-core run | Baseline mean / median / p95 | Updated mean / median / p95 |
+| --- | ---: | ---: |
+| Baseline first | 0.718 / 0.595 / 1.153 ms | 0.656 / 0.512 / 1.011 ms |
+| Updated first | 0.640 / 0.563 / 1.006 ms | 0.680 / 0.538 / 1.054 ms |
+
+The fixed-core medians improved, but mean and p95 did not improve consistently across
+these runs. Both pairs allocated 337,000/204,712 bytes per baseline/updated frame.
+
+The final extended pair used 1,000 warmup and 10,000 measured frames, restricted both
+processes to logical CPU 2 and retained disabled tiered compilation. The baseline ran
+first. It showed lower complete frame latency as well as reduced allocation:
+
+| 10,000-frame replay | Baseline | Updated |
+| --- | ---: | ---: |
+| Mean | 0.846 ms | 0.620 ms |
+| Median | 0.671 ms | 0.551 ms |
+| p95 | 1.457 ms | 0.904 ms |
+| p99 | 3.422 ms | 1.481 ms |
+| Maximum | 34.689 ms | 6.738 ms |
+| Allocated bytes per frame | 337,010 | 204,722 |
+
+The final positions and velocities matched exactly, and both replays passed in
+53/47 seconds including setup, copying and disposal. Checkpoint capture took
+31.967/19.215 ms, projection 19.416/17.882 ms, copy 219.035/185.955 ms and file write
+1,464.906/1,331.357 ms for baseline/updated respectively. Those one-off checkpoint
+measurements are reported separately and do not establish a checkpoint optimization.
+The 27% mean, 18% median and 39% allocation reductions apply to this extended pair;
+the shorter-run variability above limits any broader latency claim.
+
+Local raw reports are under `artifacts/frame-improvements/` in `baseline-final`,
+`updated-final`, `baseline-repeat`, `updated-repeat`, `baseline-controlled`,
+`updated-controlled`, `baseline-controlled-repeat`, `updated-controlled-repeat`,
+`baseline-extended` and `updated-extended`. Saved databases and personal sidecars are
+excluded from version control.
+
+This is one moving session against a populated saved world, without concurrent
+maintenance, socket writes, active weapons/miners or live clients. It measures the
+complete session update/output path, not rendering or fleet capacity. Normal scheduler
+results above and fixed-core results must not be treated as interchangeable. The
+first replay-report implementation attempted to serialize the recursive `SpacePosition.Unit`
+property; named vectors fixed that reporting failure. Final-position reporting was
+also corrected to read `Flight.Pilot.Position` rather than the home-station coordinate accessors.
+
+The final affected selection passed all 315 cases without skips in 232.94 seconds
+on `8f8af9c7` plus this change. It uses these `FullyQualifiedName~` clauses joined by `|`:
+
+```text
+Eden.Protocol.Tests.Flight, Eden.Protocol.Tests.Mining.AsteroidFieldTests,
+Eden.Protocol.Tests.Agents.MiningMissionTests, Eden.Protocol.Tests.Combat.LiveSimulationTests,
+Eden.Protocol.Tests.Combat.ResidentFitFleetTests, Eden.Protocol.Tests.Structures.StructureTests
+```
+
+This selection covers owners/observers, empty and populated scenes, shared-grid
+fleets, SQL/connection/fitting counters, collision ordering and reopened checkpoints.
+Tool/solution restores passed; the final solution build passed in 5.09 seconds with
+zero warnings/errors, followed by a 1.37-second focused-test build. Both Python policy
+suites passed (8 catalog-setup and 9 formatting-policy cases). Formatting verification
+passed in 33.25 seconds, as did Git whitespace checks. The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Indexed resident disjunctions, November 14, 2026
 
 The resident query planner on `9c7930d0` used index candidates for conjunctions and
