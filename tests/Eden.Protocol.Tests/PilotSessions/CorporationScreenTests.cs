@@ -17,6 +17,66 @@ public sealed class CorporationScreenTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    public async Task OpportunitiesReadsTheNativeUnenlistedTuple(bool playerCorporation)
+    {
+        using TestWorld db = new();
+        if (playerCorporation)
+        {
+            PlayerCorporationTests.Prepare(db);
+            db.Services.GetRequiredService<IPlayerCorporations>().Create(90000001, PlayerCorporationTests.Details());
+        }
+
+        var pilot = db.Store.FindPilot(1000001)!;
+        using var scope = db.Services.CreateScope();
+        var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
+        const string service = "fwCharacterEnlistmentMgr";
+        const string method = "GetMyEnlistment";
+        Queue<object?> requests = new([
+            PilotServicesTests.Request(service, method, []),
+            PilotServicesTests.Request("charUnboundMgr", "SelectCharacterID", [pilot.PilotId]),
+            PilotServicesTests.Request(service, method, []),
+            PilotServicesTests.Request(service, method, []),
+            PilotServicesTests.Request(service, method, [pilot.PilotId]),
+            PilotServicesTests.Request(service, method, [], keywords: new() { ["characterID"] = pilot.PilotId }),
+        ]);
+        List<BlueInstance> packets = [];
+        await Assert.ThrowsAsync<EndOfStreamException>(() =>
+            session.RunAsync(
+                () => requests.TryDequeue(out var next) ? Task.FromResult(next) : throw new EndOfStreamException(),
+                packet =>
+                {
+                    packets.Add(Assert.IsType<BlueInstance>(packet));
+                    return Task.CompletedTask;
+                },
+                _ => { },
+                1000001,
+                42,
+                SignedSettings.Empty,
+                CancellationToken.None
+            )
+        );
+        var responses = packets
+            .Where(p =>
+                p.Name.EndsWith(".CallRsp", StringComparison.Ordinal) || p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal)
+            )
+            .ToArray();
+        Assert.Equal(6, responses.Length);
+        Assert.EndsWith(".ErrorResponse", responses[0].Name, StringComparison.Ordinal);
+        Assert.All(
+            responses[2..4],
+            response =>
+            {
+                Assert.EndsWith(".CallRsp", response.Name, StringComparison.Ordinal);
+                Assert.All(BlueRead.Tuple(Reply(response), 3), Assert.Null);
+            }
+        );
+        Assert.All(responses[4..], response => Assert.EndsWith(".ErrorResponse", response.Name, StringComparison.Ordinal));
+        Assert.Equal(pilot, db.Store.FindPilot(1000001));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public async Task DetailsStartupRoutesTheNativeEnlistmentQueryAndItsSurroundingReads(bool playerCorporation)
     {
         using TestWorld db = new();

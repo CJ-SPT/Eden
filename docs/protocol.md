@@ -625,6 +625,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="player-corporation-character-selection-logo-correction"></a>[Player corporation character-selection logo correction](protocol/corporations.md#player-corporation-character-selection-logo-correction)
 - <a id="corporation-creation-ceo-refresh-correction"></a>[Corporation creation CEO refresh correction](protocol/corporations.md#corporation-creation-ceo-refresh-correction)
 - <a id="corporation-details-faction-enlistment-service-correction"></a>[Corporation Details faction-enlistment service correction](protocol/corporations.md#corporation-details-faction-enlistment-service-correction)
+- [Opportunities enlistment and Freelance Jobs startup](protocol/corporations.md#opportunities-enlistment-and-freelance-jobs-startup)
 - <a id="corporation-window-voting-capability-startup-correction"></a>[Corporation window voting-capability startup correction](protocol/corporations.md#corporation-window-voting-capability-startup-correction)
 - <a id="player-corporation-applications-and-membership"></a>[Player corporation applications and membership](protocol/corporations.md#player-corporation-applications-and-membership)
 - <a id="player-corporations-creation-foundation"></a>[Player corporations: creation foundation](protocol/corporations.md#player-corporations-creation-foundation)

@@ -1,0 +1,8 @@
+syntax = "proto3";
+package eve_public.solarsystem;
+option csharp_namespace = "Eden.Protocol.Gateway.SolarSystems";
+
+// Pinned build 3662168 solarsystem_pb2.pyj.
+message Identifier {
+  uint64 sequential = 1;
+}

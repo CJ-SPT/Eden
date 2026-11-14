@@ -126,6 +126,13 @@ internal sealed partial class CorporationHandler
                 ? new CorporationAggressionReply(corporations.Read((int)id)?.Details.FriendlyFireEnabled ?? false)
                 : new PilotCallResult.Failure("Choose a corporation.");
         }
+        // Opportunities providers read this through fwEnlistmentSvc.GetMyFaction.
+        if (service == "fwCharacterEnlistmentMgr" && method == "GetMyEnlistment")
+        {
+            return args is [] && keywords is null or { Count: 0 }
+                ? new CharacterEnlistmentReply()
+                : new PilotCallResult.Failure("Unexpected enlistment arguments.");
+        }
         // Build 3662168 fwEnlistmentSvc forwards this Details-panel query to
         // fwCharacterEnlistmentMgr, independently of the older facWarMgr service.
         if (service == "fwCharacterEnlistmentMgr" && method == "GetCorpAllowedEnlistmentFactions")
@@ -246,6 +253,13 @@ internal sealed partial class CorporationHandler
             return new PilotCallResult.Failure(error.Message);
         }
     }
+}
+
+internal sealed record CharacterEnlistmentReply : BlueModel
+{
+    // Build 3662168 unpacks effective faction, direct faction and corporation faction in this order.
+    // Eden has no faction warfare enlistments.
+    public override object ToBlue() => new object?[] { null, null, null };
 }
 
 internal sealed record CorporationApplicationReply(CorporationApplication Application) : BlueModel

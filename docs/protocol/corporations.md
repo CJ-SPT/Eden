@@ -393,6 +393,22 @@ Sources: inert inspection of unchanged build **3662168** `code.ccp`, SHA-256 **3
 
 **Optional maintainer checks:** Rebuild/restart, reopen the corporation screen and expand Details for an NPC member and a player-corporation CEO.
 
+## Opportunities enlistment and Freelance Jobs startup
+
+The reported Opportunities window showed an unsupported `fwCharacterEnlistmentMgr.GetMyEnlistment` dialog and a separate Freelance Jobs loading error. The Factional Warfare and Pirate Insurgencies providers call `fwEnlistmentSvc.GetMyFaction`, which refreshes its cache through the remote read. The selected-pilot service now answers the zero-argument call with the native three-element tuple of Python None values, in effective, direct, and corporation faction order.
+
+The Freelance Jobs provider separately loads nearby broadcasts, committed projects, and unclaimed rewards. The public gateway now returns HTTP 200 and the corresponding native response type for `GetAllBroadcasted`, `GetAllCommitted`, and `GetAllUnredeemed`. The client treats omitted system entries as having no broadcasts and the default empty next-page token as the end of rewards pagination. Eden has no faction warfare enlistments or freelance projects to publish.
+
+Inert inspection used build **3662168**, `code.ccp` SHA-256 **C317DDF3292AF412752157DC8DC58991F30E39E106AE6B7F0A2F67A77847721D**. The wire contracts come from `fwEnlistmentSvc._UpdateMyEnlistmentState`, the Freelance Projects provider, repository and messenger, and `eve_public/freelance/project/api/requests_pb2.pyj`. EVE.js release **261108.1** (client build **3396210**) was checked as a behavioral reference. [Carbon Blue tuple and None serialization at af0d65b](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp) · [EVE University faction warfare](https://wiki.eveuniversity.org/Faction_Warfare) · [CCP Freelance Jobs](https://support.eveonline.com/hc/en-us/articles/20210930509340-Freelance-Jobs)
+
+**Automated validation.** Five targeted regressions reproduced the two session errors and three gateway 501 responses (11.42 seconds), then passed with the correction (15.03 seconds). The session tests cover NPC and player corporation members, repeat reads, preselection and malformed calls, and unchanged pilot state. Gateway tests assert native response envelopes and empty payloads for representative requests.
+
+The focused filter `FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Gateway` passed **116 tests** in **62.40 seconds**. Tool and solution restore, solution build with zero warnings or errors, both Python policy suites (8 catalog and 9 formatting tests), formatting verification, and diff checks passed in **101.25 seconds** overall. Validation used automated sessions and gateway requests.
+
+**Live acceptance.** Not performed because agent client testing is disabled. The screenshot records the original behavior.
+
+**Optional maintainer checks.** After updating the server, open Opportunities and refresh Freelance Jobs. Verify the enlistment dialog stays closed and the panel displays its empty state.
+
 ## Corporation window voting-capability startup correction
 
 The maintainer reported **Invalid Packet Destination — Unsupported local call voteManager.CanViewVotes** when opening the corporation screen after the player-corporation milestones. The pinned client's `corporationWindow.construct_corporation_panels` asks `corpvotes.CanViewVotes(session.corpid)` while building the window for both NPC and player corporations. `corporation/voting/voting.CanViewVotes` forwards a single corporation ID to the unbound `voteManager.CanViewVotes` service and caches the boolean reply for the current corporation. Eden had no owner for that service/method, so its router sent the unsupported-call error before window construction could finish.

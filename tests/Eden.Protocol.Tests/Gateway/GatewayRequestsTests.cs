@@ -12,6 +12,37 @@ public sealed class GatewayRequestsTests
 {
     private const string PaletteApi = "type.googleapis.com/eve_public.cosmetic.corporation.palette.api.";
     private const string MercenaryDenActivityApi = "type.googleapis.com/eve_public.sovereignty.mercenaryden.activity.api.";
+    private const string FreelanceApi = "type.googleapis.com/eve_public.freelance.project.api.";
+
+    [Theory]
+    [InlineData("GetAllBroadcasted", "0A0508EAC5A70E0A0508EBC5A70E")]
+    [InlineData("GetAllCommitted", "")]
+    [InlineData("GetAllUnredeemed", "0A020832")]
+    public void OpportunitiesFreelanceReadsReceiveNativeEmptyResults(string operation, string payload)
+    {
+        using TestWorld world = new();
+        var request = new Request
+        {
+            ApplicationInstanceUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
+            CorrelationUuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
+            AuthoritativeContext = new AuthoritativeContext
+            {
+                Identity = new ActiveIdentity { Character = new CharacterIdentifier { Sequential = 90000001 } },
+            },
+            Payload = new Any
+            {
+                TypeUrl = FreelanceApi + operation + "Request",
+                Value = ByteString.CopyFrom(Convert.FromHexString(payload)),
+            },
+        };
+
+        var response = Response.Parser.ParseFrom(world.Services.GetRequiredService<GatewayRequests>().Handle(request).ToByteArray());
+        Assert.Equal(200u, response.StatusCode);
+        Assert.Equal(request.ApplicationInstanceUuid, response.ApplicationInstanceUuid);
+        Assert.Equal(request.CorrelationUuid, response.CorrelationUuid);
+        Assert.Equal(FreelanceApi + operation + "Response", response.Payload.TypeUrl);
+        Assert.Empty(response.Payload.Value);
+    }
 
     [Fact]
     public void EmptySpaceMenuReceivesASuccessfulEmptyMercenaryDenActivityList()

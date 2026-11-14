@@ -27,6 +27,10 @@ message CharacterIdentifier {
   uint32 sequential = 1;
 }
 
+message NextPage {
+  string token = 1;
+}
+
 message Response {
   google.protobuf.Timestamp dispatched = 1;
   bytes correlation_uuid = 2;

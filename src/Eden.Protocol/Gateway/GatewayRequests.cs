@@ -21,6 +21,7 @@ public sealed class GatewayRequests(
 {
     private readonly ByteString _instanceId = ByteString.CopyFrom(Guid.NewGuid().ToByteArray());
     private const string PersonalPlans = "eve_public.character.skill.plan.";
+    private const string FreelanceProjects = "eve_public.freelance.project.api.";
 
     public Response Handle(Request request)
     {
@@ -51,10 +52,11 @@ public sealed class GatewayRequests(
                     // zero balance avoids the stock wallet's failure callback re-entering
                     // PersonalWalletPanel.Load while its tabs are still being constructed.
                     "eve_public.plex.vault.api.BalanceRequest" => new PlexVault.BalanceResponse { Balance = new Plex.Currency() },
-                    // Corporation Show Info has a Freelance Projects tab. Eden publishes
-                    // no projects, so the repository receives a successful empty collection.
-                    "eve_public.freelance.project.api.GetAllActiveForCorporationRequest" =>
-                        new Freelance.GetAllActiveForCorporationResponse(),
+                    // Opportunities and Corporation Show Info share the freelance repository. Eden publishes no projects.
+                    FreelanceProjects + "GetAllActiveForCorporationRequest" => new Freelance.GetAllActiveForCorporationResponse(),
+                    FreelanceProjects + "GetAllBroadcastedRequest" => new Freelance.GetAllBroadcastedResponse(),
+                    FreelanceProjects + "GetAllCommittedRequest" => new Freelance.GetAllCommittedResponse(),
+                    FreelanceProjects + "GetAllUnredeemedRequest" => new Freelance.GetAllUnredeemedResponse(),
                     // The empty-space menu primes the activity cache synchronously until this read succeeds.
                     "eve_public.sovereignty.mercenaryden.activity.api.GetAllRequest" => new MercenaryDenActivity.GetAllResponse(),
                     _ => null,

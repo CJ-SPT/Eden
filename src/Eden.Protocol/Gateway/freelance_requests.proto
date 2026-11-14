@@ -2,9 +2,30 @@ syntax = "proto3";
 package eve_public.freelance.project.api;
 option csharp_namespace = "Eden.Protocol.Gateway.Freelance";
 
+import "envelope.proto";
 import "freelance_project.proto";
+import "solar_system.proto";
 
 // Pinned requests_pb2.pyj: the Show Info repository reads repeated projects.
 message GetAllActiveForCorporationResponse {
   repeated eve_public.freelance.project.Identifier projects = 1;
+}
+
+// Pinned requests_pb2.pyj: the Opportunities repository accepts empty results for all three stores.
+message GetAllBroadcastedResponse {
+  message Broadcasted {
+    eve_public.solarsystem.Identifier solar_system = 1;
+    repeated eve_public.freelance.project.Identifier projects = 2;
+  }
+
+  repeated Broadcasted broadcasted = 1;
+}
+
+message GetAllCommittedResponse {
+  repeated eve_public.freelance.project.Identifier projects = 1;
+}
+
+message GetAllUnredeemedResponse {
+  repeated eve_public.freelance.project.Identifier projects = 1;
+  eve_public.NextPage next_page = 2;
 }
