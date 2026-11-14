@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Presence failure diagnostics](protocol/social.md#presence-failure-diagnostics-november-14-2026)
+records the unresolved Local/Guests report, verified deployment and bounded native failure capture.
+
 [Resident NPC missiles and hull loss](protocol/performance.md#resident-npc-missiles-and-hull-loss-november-11-2026)
 records resident launch, flight, hull destruction, insurance and checkpoint retry.
 

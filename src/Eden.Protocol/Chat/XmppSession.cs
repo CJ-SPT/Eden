@@ -9,7 +9,7 @@ namespace Eden.Protocol.Chat;
 [Injectable]
 public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
 {
-    public async Task RunAsync(Stream stream, CancellationToken cancellation)
+    public async Task RunAsync(Stream stream, CancellationToken cancellation, Action<long>? established = null)
     {
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         lifetime.CancelAfter(TimeSpan.FromSeconds(30));
@@ -156,6 +156,7 @@ public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
                         await WriteAsync(XmppWire.Xml(XmppWire.Result(stanza)));
                         ready = true;
                         lifetime.CancelAfter(Timeout.InfiniteTimeSpan);
+                        established?.Invoke(connection.Pilot.Id);
                         events = DeliverAsync(connection);
                         continue;
                     }

@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Channels;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Fleets;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Chat;
 using Eden.Server.Launcher;
@@ -249,6 +250,12 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock, I
             bool accepted = queue.Writer.TryWrite(delivery);
             if (!accepted || delivery.Event is ChatEvent.Closed)
             {
+                if (!accepted)
+                {
+                    ServerLog.Console.Warning(
+                        $"Chat delivery queue exhausted for pilot {_world.ConnectedPilot(delivery.Recipient)?.Id}; closing connection."
+                    );
+                }
                 _queues.Remove(delivery.Recipient);
                 queue.Writer.TryComplete();
                 foreach (var departed in _world.Disconnect(delivery.Recipient))

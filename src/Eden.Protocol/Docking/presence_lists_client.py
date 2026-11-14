@@ -15,6 +15,62 @@ def install_presence_lists():
     from eve.client.script.ui.shared.dockedUI.guests import GuestsPanel
     from eve.client.script.ui.station.base import StationSvc
 
+    def observe(cls, name):
+        original = getattr(cls, name)
+        if getattr(original, '_eden_presence_diagnostic', False):
+            return
+
+        def observed(self, *args, **kwargs):
+            try:
+                result = original(self, *args, **kwargs)
+            except Exception:
+                presence_diagnostic(name, self, failed=True)
+                raise
+            presence_diagnostic(name, self)
+            return result
+
+        observed._eden_presence_diagnostic = True
+        observed._eden_presence_serialized = getattr(original, '_eden_presence_serialized', False)
+        setattr(cls, name, observed)
+
+    diagnostic_count = [0, 0]
+
+    def presence_diagnostic(event, view=None, failed=False):
+        # Bound this temporary diagnostic to one small file per client process.
+        # Never include chat text, exception messages, frame locals or credentials.
+        try:
+            import os
+            import sys
+            bucket = 1 if failed else 0
+            if diagnostic_count[bucket] >= 128:
+                return
+            diagnostic_count[bucket] += 1
+            scroll = getattr(view, 'userlist', None) or getattr(view, '_scroll', None)
+            members = getattr(view, 'members', None)
+            controller = getattr(view, '_controller', None)
+            guests = getattr(controller, 'guest_list', None)
+            state = {'members': sorted(members)[:64] if members is not None else None,
+                     'guests': sorted(guests.guests_by_character_id)[:64] if guests is not None else None,
+                     'rows': [node.charID for node in scroll.GetNodes()][:64] if scroll is not None else None,
+                     'destroyed': getattr(view, 'destroyed', None)}
+            frames = []
+            error = None
+            if failed:
+                error_type, _, trace = sys.exc_info()
+                error = error_type.__name__
+                while trace is not None and len(frames) < 24:
+                    code = trace.tb_frame.f_code
+                    frames.append((code.co_filename, code.co_name, trace.tb_lineno))
+                    trace = trace.tb_next
+            root = os.environ.get('TEMP') or os.environ.get('TMP')
+            if root:
+                path = os.path.join(root, 'eden-presence-%s.log' % os.getpid())
+                with open(path, 'w' if sum(diagnostic_count) == 1 else 'a') as output:
+                    output.write('event=%s state=%r error=%s frames=%r\n' % (event, state, error, frames))
+        except Exception:
+            # Diagnostics must not change the native call's result or exception.
+            pass
+
     def protect(cls, name, before=None):
         original = getattr(cls, name)
         if getattr(original, '_eden_presence_serialized', False):
@@ -164,6 +220,15 @@ def install_presence_lists():
         StationSvc.GetGuests = station_guests
         StationSvc.OnCharNowInStation = track(arrive)
         StationSvc.OnCharNoLongerInStation = track(depart)
+
+    diagnostics_installed = not getattr(XmppChatWindow.InitUsers, '_eden_presence_diagnostic', False)
+    for name in ('InitUsers', 'SetChannel', 'CharacterJoinedChannel', 'CharacterLeftChannel'):
+        observe(XmppChatWindow, name)
+    for name in ('_update_scroll_content', '_get_filtered_guests', '_add_guest_to_scroll', '_remove_guest_from_scroll'):
+        observe(GuestsPanel, name)
+    observe(StationSvc, 'GetGuests')
+    if diagnostics_installed:
+        presence_diagnostic('installed-v1')
 
 
 install_presence_lists()

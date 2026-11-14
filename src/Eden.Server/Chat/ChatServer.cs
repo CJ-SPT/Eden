@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -90,6 +91,9 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
 
     private async Task ServeAsync(long id, TcpClient client)
     {
+        long started = Stopwatch.GetTimestamp();
+        long? pilotId = null;
+        string reason = "peer-stream-ended";
         try
         {
             client.NoDelay = true;
@@ -108,16 +112,30 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
                 );
             }
             using var scope = scopes.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<XmppSession>().RunAsync(stream, _stop.Token);
+            await scope
+                .ServiceProvider.GetRequiredService<XmppSession>()
+                .RunAsync(
+                    stream,
+                    _stop.Token,
+                    pilot =>
+                    {
+                        pilotId = pilot;
+                        ServerLog.Console.Information($"Chat connection {id} established for pilot {pilot}.");
+                    }
+                );
         }
         catch (AuthenticationException error)
         {
+            reason = "tls-" + error.GetType().Name;
             if (!_stop.IsCancellationRequested)
             {
                 ServerLog.Console.Warning($"Chat TLS negotiation failed ({error.GetType().Name}).");
             }
         }
-        catch (ObjectDisposedException) when (_stop.IsCancellationRequested) { }
+        catch (ObjectDisposedException) when (_stop.IsCancellationRequested)
+        {
+            reason = "server-stopped";
+        }
         catch (Exception error)
             when (error
                     is IOException
@@ -129,6 +147,7 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
                         or ArgumentException
             )
         {
+            reason = error.GetType().Name;
             // Stanzas and authentication tokens must never enter host logs.
             if (!_stop.IsCancellationRequested)
             {
@@ -144,6 +163,10 @@ internal sealed class ChatServer(IServiceScopeFactory scopes, ChatCertificate ce
         }
         finally
         {
+            ServerLog.Console.Information(
+                $"Chat connection {id} ended: pilot={pilotId}, reason={(_stop.IsCancellationRequested ? "server-stopped" : reason)}, "
+                    + $"elapsed={Stopwatch.GetElapsedTime(started).TotalSeconds:F2}s."
+            );
             client.Dispose();
             _clients.TryRemove(id, out _);
         }

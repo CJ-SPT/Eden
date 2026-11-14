@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Presence failure diagnostics, November 14, 2026](#presence-failure-diagnostics-november-14-2026)
 - [Chat channel handoffs and queued station signals, November 14, 2026](#chat-channel-handoffs-and-queued-station-signals-november-14-2026)
 - [Local presence and station guest snapshots, November 12, 2026](#local-presence-and-station-guest-snapshots-november-12-2026)
 - [Translocation destination Local handoff (November 6, 2026)](#translocation-destination-local-handoff-november-6-2026)
@@ -24,6 +25,50 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
+
+## Presence failure diagnostics, November 14, 2026
+
+The user's fresh-session screenshots still show Local with five members and four rows, a chat reconnect,
+and Guests with three members but no rows. Read-only SSH verification found the Docker host running
+`0218f7dbc837d1657aff030ae3835dc497ecf286`, including the earlier presence adapters. Its saved world
+contains the three selected pilots with valid corporations and ordinary Player roles; none has the
+chat-invisibility flag. These observations do not establish which native operation failed.
+
+The local evejs station snapshot and XMPP metadata paths were compared with build 3662168's native
+guest panel, owner records, row construction and chat parser. The reference directory has no Git metadata.
+Inspected SHA-256 values are `34c675bfafdfc62474a9afa29a673a40dc3ed072c3f2c3806ddd8fccef246f6e`
+for `stationService.js` and `9058203c0dc4253b2edde87df5f45a977ec51d44e08425e58ba18af7308afb65`
+for `xmppStubServer.js`. No reference implementation was copied. The differences checked did not
+reproduce the reported failure. Expected Local membership includes docked pilots;
+see [EVE University](https://wiki.eveuniversity.org/Identifying_war_targets_in_Local).
+
+The login adapter now writes bounded diagnostics to `%TEMP%/eden-presence-<process-id>.log`: installation,
+member/guest IDs, scroll IDs, and exception types with code locations. It preserves native return values
+and exceptions, excludes exception text, frame locals, chat messages and credentials, and tolerates
+unwritable output. Each process records at most 128 successful operations and 128 failures, with up to
+64 IDs per list and 24 stack frames. A fresh process overwrites a reused PID's file. Reinstalling the
+adapter neither wraps methods twice nor resets the diagnostic. Chat lifecycle logs now identify the
+pilot, connection, duration, closure category and any exhausted delivery queue in normal host logging.
+
+This is diagnostic coverage, not a claimed fix. A fresh client login against the diagnostic server is
+required before the native failure can be collected. Existing processes retain their old adapters.
+
+**Automated validation.** Tool/solution restore and solution build passed (5.27 seconds, zero warnings
+or errors). The exact native presence test passed, followed by 69 focused tests in 19.80 seconds with
+`EDEN_TEST_CLIENT_ROOT=E:\EdenDev\3662168`. The final filter combined `FullyQualifiedName~` selections
+for `Eden.Protocol.Tests.Chat`, `StationGuestTests`, `PresenceListTests`, `ConcordOverviewTests`,
+`PilotLoginTests`, `StreamDeadlineTests` and `ServerLogTests`. The pinned native harness checks that diagnostics
+retain the original row exception, omit private exception text, tolerate write failures and bound output.
+Both Python policy suites passed (8 catalog cases in 1.34 seconds, 9 formatting cases in 0.02 seconds),
+and formatting application, verification and diff checks passed. No full regression suite was run.
+The first exact `Test-Feature.ps1` invocation was blocked by another active testhost locking its shared
+output DLL; subsequent validation uses an isolated artifacts directory without stopping the other run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. Read-only deployed-revision,
+server-log and saved-world inspection was performed. No interactive client was launched or controlled.
+
+**Optional maintainer checks.** Reopen the clients after the diagnostic server update, reproduce the
+blank list, and retain the per-process presence logs and matching server chat lifecycle lines.
 
 ## Chat channel handoffs and queued station signals, November 14, 2026
 

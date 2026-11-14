@@ -12,6 +12,7 @@ import zipfile
 import zlib
 
 expression = Path(sys.argv[1]).read_bytes()
+diagnostic_path = Path(sys.argv[1]).with_suffix('.presence.log')
 root = Path(sys.argv[2])
 binaries = root / 'tq/bin64'
 runtime_path = binaries / 'python27.dll'
@@ -328,6 +329,13 @@ def temp_lock(key):
         locks_by_key[key] = Lock()
     return locks_by_key[key]
 
+# Use the native interpreter's real file writer, but isolate its diagnostic path.
+diagnostic_os = type(sys)('os')
+diagnostic_os.environ = {'TEMP': 'test-temp'}
+diagnostic_os.getpid = lambda: 123
+diagnostic_os.path = Value(join=lambda root, name: DIAGNOSTIC_PATH)
+sys.modules['os'] = diagnostic_os
+
 names = ['carbon', 'carbon.common', 'carbon.common.script', 'carbon.common.script.sys',
          'carbon.common.script.sys.serviceConst', 'json', 'locks',
          'xmppchatclient', 'xmppchatclient.xmppchatwindow', 'xmppchatclient.xmppchatsvc',
@@ -354,6 +362,30 @@ assert eval(expression, {}) == {}
 installed = ChatWindow.InitUsers.im_func
 assert eval(expression, {}) == {}
 assert ChatWindow.InitUsers.im_func is installed
+
+# A row failure must reach the diagnostic with its native stack and still raise
+# the original exception. Exception text may contain private data and is omitted.
+row_error = RuntimeError('private-chat-and-token-must-not-be-logged')
+def broken_owner(char_id):
+    raise row_error
+original_get = scope['cfg'].eveowners.Get
+scope['cfg'].eveowners.Get = broken_owner
+try:
+    ChatWindow().InitUsers()
+    raise AssertionError('The native row exception was swallowed')
+except RuntimeError as caught:
+    assert caught is row_error
+finally:
+    scope['cfg'].eveowners.Get = original_get
+diagnostic = open(DIAGNOSTIC_PATH).read()
+assert 'installed-v1' in diagnostic
+assert 'event=InitUsers' in diagnostic and 'error=RuntimeError' in diagnostic
+assert 'broken_owner' in diagnostic
+assert 'private-chat-and-token' not in diagnostic
+# An unavailable output directory must not prevent native rows from populating.
+diagnostic_os.path.join = lambda root, name: DIAGNOSTIC_PATH + '/missing/file.log'
+ChatWindow().InitUsers()
+diagnostic_os.path.join = lambda root, name: DIAGNOSTIC_PATH
 
 panel._update_scroll_content()
 assert guest_owners.retries == [[2]]
@@ -469,14 +501,21 @@ for cycle in range(3):
         assert set(window.userlistNodesByName) == set(window.members)
         assert window.count == len(window.userlist.nodes)
 print('Native presence list assertions passed in the pinned Python 2 runtime')
+for attempt in range(300):
+    ChatWindow().InitUsers()
+assert len(open(DIAGNOSTIC_PATH).readlines()) <= 256
 '''
 for name, blob in [('CHAT_BLOB', chat), ('CHAT_SERVICE_BLOB', chat_service),
                    ('GUEST_BLOB', guests), ('STATION_BLOB', station), ('EXPRESSION_BLOB', expression)]:
     worker = worker.replace(name, repr(blob))
+worker = worker.replace('DIAGNOSTIC_PATH', repr(str(diagnostic_path)))
 
-with os.add_dll_directory(str(binaries)):
-    runtime = ctypes.CDLL(str(runtime_path))
-    ctypes.c_int.in_dll(runtime, 'Py_NoSiteFlag').value = 1
-    runtime.Py_InitializeEx(0)
-    if runtime.PyRun_SimpleString(worker.encode('ascii')):
-        raise SystemExit('Native presence list assertions failed')
+try:
+    with os.add_dll_directory(str(binaries)):
+        runtime = ctypes.CDLL(str(runtime_path))
+        ctypes.c_int.in_dll(runtime, 'Py_NoSiteFlag').value = 1
+        runtime.Py_InitializeEx(0)
+        if runtime.PyRun_SimpleString(worker.encode('ascii')):
+            raise SystemExit('Native presence list assertions failed')
+finally:
+    diagnostic_path.unlink(missing_ok=True)
